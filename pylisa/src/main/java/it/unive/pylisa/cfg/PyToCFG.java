@@ -3,8 +3,10 @@ package it.unive.pylisa.cfg;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,6 +16,7 @@ import java.util.List;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -21,10 +24,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import it.unive.lisa.cfg.CFG;
+import it.unive.lisa.cfg.CFGDescriptor;
 import it.unive.lisa.cfg.edge.FalseEdge;
 import it.unive.lisa.cfg.edge.SequentialEdge;
 import it.unive.lisa.cfg.edge.TrueEdge;
 import it.unive.lisa.cfg.statement.NoOp;
+import it.unive.lisa.cfg.statement.Parameter;
 import it.unive.lisa.cfg.statement.Statement;
 import it.unive.lisa.logging.IterationLogger;
 import it.unive.pylisa.antlr.Python3BaseVisitor;
@@ -179,6 +184,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	 * @return collection of @CFG in file
 	 * @throws IOException if {@code stream} to file cannot be written to or closed
 	 */
+	public Python3Parser p;
 	public Collection<CFG> toLiSACFG() throws IOException {
 		log.info("PyToCFG setup...");
 		log.info("Reading file... " + filePath);
@@ -193,9 +199,12 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 
 		Python3Lexer lexer = new Python3Lexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
 		Python3Parser parser = new Python3Parser(new CommonTokenStream(lexer));
+		p = parser;
 		ParseTree tree = parser.file_input();
 				
 		visit(tree);
+		
+		
 		stream.close();
 		
 		return cfgs;
@@ -216,9 +225,61 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 		return super.visitSingle_input(ctx);
 	}
 
+
+	
+	
 	@Override
 	public T visitFile_input(File_inputContext ctx) {
-		return super.visitFile_input(ctx);
+		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
+			Compound_stmtContext comp = stmt.compound_stmt();
+			FuncdefContext funcDecl = comp.funcdef();
+			currentCFG = new CFG(buildCFGDescriptor(funcDecl));
+			cfgs.add(currentCFG);
+			visitFuncdef(funcDecl);				
+		}
+			
+
+		/*
+		// Visit of each FunctionDeclContext appearing in the source code
+		// and creating the corresponding CFG object (we do this to handle CFG calls)
+		for (FunctionDeclContext funcDecl : 
+			IterationLogger.iterate(log, ctx.functionDecl(), "Parsing function declarations...", "Function declarations")) 
+			cfgs.add(new CFG(buildCFGDescriptor(funcDecl)));
+
+		// Visit of each FunctionDeclContext populating the corresponding cfg
+		for (FunctionDeclContext funcDecl : IterationLogger.iterate(log, ctx.functionDecl(), "Visiting function declarations...", "Function declarations")) {
+			currentCFG = getCFGByName(funcDecl.IDENTIFIER().getText());
+			visitFunctionDecl(funcDecl);			
+		}
+*/
+		return null;
+		
+	}
+	
+	private int getLine(ParserRuleContext ctx) {
+		return ctx.getStart().getLine();
+	} 
+
+	private int getCol(ParserRuleContext ctx) {
+		return ctx.getStop().getCharPositionInLine();
+	} 
+
+	private int getCol(Token ctx) {
+		return ctx.getCharPositionInLine();
+	} 
+
+	private int getLine(Token ctx) {
+		return ctx.getLine();
+	} 
+	
+	private CFGDescriptor buildCFGDescriptor(FuncdefContext funcDecl) {
+		String funcName = funcDecl.NAME().getText();
+		TypedargslistContext formalPars = funcDecl.parameters().typedargslist();
+
+		Parameter[] cfgArgs = new Parameter[]{};
+
+			
+		return new CFGDescriptor(funcName, cfgArgs);
 	}
 
 	@Override
@@ -289,8 +350,12 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 
 	@Override
 	public T visitStmt(StmtContext ctx) {
-		// TODO Auto-generated method stub
-		return super.visitStmt(ctx);
+		log.info(ctx.getText());
+		Object result = visitChildren(ctx);
+		if (!(result instanceof Pair<?,?>))
+			throw new IllegalStateException("Pair of Statements expected");
+		else 
+			return (T) result;
 	}
 
 	@Override
@@ -446,7 +511,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	@Override
 	public T visitCompound_stmt(Compound_stmtContext ctx) {
 		// TODO Auto-generated method stub
-		return super.visitCompound_stmt(ctx);
+		return (T) visitChildren(ctx);
 	}
 
 	@Override
@@ -456,25 +521,43 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	}
 
 	@Override
-	public  Pair<Statement, Statement> visitIf_stmt(If_stmtContext ctx) {
+	public  T visitIf_stmt(If_stmtContext ctx) {
 
-		//log.info("Sono nell'if");
+
+		
+		log.info("Sono nell'if");
 		// Visit if statement Boolean Guard
 		//visitTest(ctx.test(0));
 		
 		//log.info("test");
 		//visitSuite(ctx.suite(0));
 		
+
 		// Visit if statement Boolean Guard
 		Statement booleanGuard = (Statement) visitTest(ctx.test(0));
 		currentCFG.addNode(booleanGuard);
 		
+		Statement x = new Statement(currentCFG,"ciao",0,0);
+
+		try {  
+            Writer w = new FileWriter("./output.txt");  
+            currentCFG.dump(w, "test");
+            w.close();
+            log.info("Done");  
+        } catch (IOException e) {
+        	log.info("c'è stato un errore");
+            e.printStackTrace();  
+        }  
+		
+		
 		NoOp ifExitNode = new NoOp(currentCFG);
 		currentCFG.addNode(ifExitNode);
 		
-		Pair<Statement, Statement> trueBlock = visitSuite(ctx.suite(0));
-		Statement exitStatementTrueBranch = trueBlock.getRight();
-		Statement entryStatementTrueBranch = trueBlock.getLeft();
+
+		
+//		Pair<Statement, Statement> trueBlock = visitSuite(ctx.suite(0));
+//		Statement exitStatementTrueBranch = trueBlock.getRight();
+//		Statement entryStatementTrueBranch = trueBlock.getLeft();
 		
 		//if testLenght is >1 the context contains elif
 		int testLenght=ctx.test().size();
@@ -482,17 +565,29 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 		if (ctx.ELIF() == null && ctx.ELSE() == null) {
 			
 			// If statement without else and elif branch
-			currentCFG.addEdge(new TrueEdge(booleanGuard, entryStatementTrueBranch));			
-			currentCFG.addEdge(new FalseEdge(booleanGuard, ifExitNode));			
-			currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
+//			currentCFG.addEdge(new TrueEdge(booleanGuard, entryStatementTrueBranch));			
+//			currentCFG.addEdge(new FalseEdge(booleanGuard, ifExitNode));			
+//			currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
 			
 		} else {	
-			
-			if (ctx.ELIF() != NULL) {
+			int i=1;
+			if (ctx.ELIF() != null) {
 				
+				//continue visit every elif
+				while (ctx.test(i) != null) {
+					
+					Statement booleanGuardElif = (Statement) visitTest(ctx.test(i));
+					currentCFG.addNode(booleanGuardElif);
+					currentCFG.addEdge(new FalseEdge(booleanGuard, booleanGuardElif));
+//					
+//					Pair<Statement, Statement> trueBlockElif = visitSuite(ctx.suite(i));
+//					Statement exitStatementTrueBranchElif = trueBlock.getRight();
+//					Statement entryStatementTrueBranchElif = trueBlock.getLeft();
+					
+				}
 			}
 			
-			if(ctx.ELSE() != NULL) {
+			if(ctx.ELSE() != null) {
 				
 			}
 		}
@@ -554,6 +649,14 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	public T visitSuite(SuiteContext ctx) {
 		log.info("Sono nel suite");
 		log.info(ctx.getText());
+		for(StmtContext stmt : ctx.stmt()) {
+			Object result = visitStmt(stmt);
+			
+			/*
+			laststmt != null
+					entry nuovo aggacia al veccchio
+					*/
+		}
 		return null;
 	}
 
@@ -561,8 +664,6 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	public T visitTest(TestContext ctx) {
 		log.info("Sono nel test");
 		log.info(ctx.getText());
-		log.info("or test");
-		log.info(ctx.or_test(0));
 		return null;
 	}
 
@@ -610,52 +711,53 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 
 	@Override
 	public T visitComp_op(Comp_opContext ctx) {
-		
-		// Python equals (==)
-		if (ctx.EQUALS() != null)
-			return new PyEquals();
-
-		// Python grater (>)
-		if (ctx.GREATER_THAN() != null) 
-			return new PyGreater();
-
-		// Python greater equal (>=)
-		if (ctx.GT_EQ() != null)
-			return new PyGreaterEqual();
-
-		// Python in (in)
-		if (ctx.IN() != null)
-			return new PyIn();
-
-		// Python is (is)
-		if (ctx.IS() != null) 
-			return new PyIs();
-
-		// Python less (<)
-		if (ctx.LESS_THAN() != null)
-			return new PyLess();
-
-		// Python less equal (<=)
-		if (ctx.LT_EQ() != null)
-			return new PyLessEqual();
-
-		// Python not (not)
-		if (ctx.NOT() != null)
-			return new PyNot();
-
-		// Python not equals (<>)
-		if (ctx.NOT_EQ_1() != null)
-			return new PyNot1();
-
-		// Python not equals (!=)
-		if (ctx.NOT_EQ_2() != null)
-			return new PyNot2();
-
-		Object child = visitChildren(ctx);
-		if (!(child instanceof Comp_op))
-			throw new IllegalStateException("Comp_op expected, found Statement instead");
-		else
-			return (Comp_op) child;
+		return null;
+//		
+//		// Python equals (==)
+//		if (ctx.EQUALS() != null)
+//			return new PyEquals();
+//
+//		// Python grater (>)
+//		if (ctx.GREATER_THAN() != null) 
+//			return new PyGreater();
+//
+//		// Python greater equal (>=)
+//		if (ctx.GT_EQ() != null)
+//			return new PyGreaterEqual();
+//
+//		// Python in (in)
+//		if (ctx.IN() != null)
+//			return new PyIn();
+//
+//		// Python is (is)
+//		if (ctx.IS() != null) 
+//			return new PyIs();
+//
+//		// Python less (<)
+//		if (ctx.LESS_THAN() != null)
+//			return new PyLess();
+//
+//		// Python less equal (<=)
+//		if (ctx.LT_EQ() != null)
+//			return new PyLessEqual();
+//
+//		// Python not (not)
+//		if (ctx.NOT() != null)
+//			return new PyNot();
+//
+//		// Python not equals (<>)
+//		if (ctx.NOT_EQ_1() != null)
+//			return new PyNot1();
+//
+//		// Python not equals (!=)
+//		if (ctx.NOT_EQ_2() != null)
+//			return new PyNot2();
+//
+//		Object child = visitChildren(ctx);
+//		if (!(child instanceof Comp_op))
+//			throw new IllegalStateException("Comp_op expected, found Statement instead");
+//		else
+//			return (Comp_op) child;
 	}
 
 	@Override
