@@ -203,7 +203,8 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 		ParseTree tree = parser.file_input();
 				
 		visit(tree);
-		
+		log.info(tree.getClass());
+		log.info(tree.toStringTree(parser));
 		
 		stream.close();
 		
@@ -239,19 +240,18 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 		}
 			
 
-		/*
-		// Visit of each FunctionDeclContext appearing in the source code
-		// and creating the corresponding CFG object (we do this to handle CFG calls)
-		for (FunctionDeclContext funcDecl : 
-			IterationLogger.iterate(log, ctx.functionDecl(), "Parsing function declarations...", "Function declarations")) 
-			cfgs.add(new CFG(buildCFGDescriptor(funcDecl)));
+//		
+//		// Visit of each FunctionDeclContext appearing in the source code
+//		// and creating the corresponding CFG object (we do this to handle CFG calls)
+//		for (FuncdefContext funcDef : IterationLogger.iterate(log, ctx., "Parsing function declarations...", "Function declarations")) 
+//			cfgs.add(new CFG(buildCFGDescriptor(funcDef)));
+//
+//		// Visit of each FunctionDeclContext populating the corresponding cfg
+//		for (FunctionDeclContext funcDecl : IterationLogger.iterate(log, ctx.functionDecl(), "Visiting function declarations...", "Function declarations")) {
+//			currentCFG = getCFGByName(funcDecl.IDENTIFIER().getText());
+//			visitFunctionDecl(funcDecl);			
+//		}
 
-		// Visit of each FunctionDeclContext populating the corresponding cfg
-		for (FunctionDeclContext funcDecl : IterationLogger.iterate(log, ctx.functionDecl(), "Visiting function declarations...", "Function declarations")) {
-			currentCFG = getCFGByName(funcDecl.IDENTIFIER().getText());
-			visitFunctionDecl(funcDecl);			
-		}
-*/
 		return null;
 		
 	}
@@ -352,9 +352,9 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	public T visitStmt(StmtContext ctx) {
 		log.info(ctx.getText());
 		Object result = visitChildren(ctx);
-		if (!(result instanceof Pair<?,?>))
+		/*if (!(result instanceof Pair<?,?>))
 			throw new IllegalStateException("Pair of Statements expected");
-		else 
+		else */
 			return (T) result;
 	}
 
@@ -664,6 +664,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	public T visitTest(TestContext ctx) {
 		log.info("Sono nel test");
 		log.info(ctx.getText());
+
 		return null;
 	}
 
