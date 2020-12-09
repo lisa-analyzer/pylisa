@@ -28,6 +28,7 @@ import it.unive.lisa.cfg.CFGDescriptor;
 import it.unive.lisa.cfg.edge.FalseEdge;
 import it.unive.lisa.cfg.edge.SequentialEdge;
 import it.unive.lisa.cfg.edge.TrueEdge;
+import it.unive.lisa.cfg.statement.Expression;
 import it.unive.lisa.cfg.statement.NoOp;
 import it.unive.lisa.cfg.statement.Parameter;
 import it.unive.lisa.cfg.statement.Statement;
@@ -122,6 +123,7 @@ import it.unive.pylisa.antlr.Python3Parser.Yield_argContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
 import it.unive.pylisa.antlr.Python3Visitor;
+import it.unive.pylisa.cfg.expression.binary.PyEquals;
 
 
 
@@ -714,52 +716,52 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	@Override
 	public T visitComp_op(Comp_opContext ctx) {
 		return null;
-//		
-//		// Python equals (==)
-//		if (ctx.EQUALS() != null)
-//			return new PyEquals();
-//
-//		// Python greater (>)
-//		if (ctx.GREATER_THAN() != null) 
-//			return new PyGreater();
-//
-//		// Python greater equal (>=)
-//		if (ctx.GT_EQ() != null)
-//			return new PyGreaterEqual();
-//
-//		// Python in (in)
-//		if (ctx.IN() != null)
-//			return new PyIn();
-//
-//		// Python is (is)
-//		if (ctx.IS() != null) 
-//			return new PyIs();
-//
-//		// Python less (<)
-//		if (ctx.LESS_THAN() != null)
-//			return new PyLess();
-//
-//		// Python less equal (<=)
-//		if (ctx.LT_EQ() != null)
-//			return new PyLessEqual();
-//
-//		// Python not (not)
-//		if (ctx.NOT() != null)
-//			return new PyNot();
-//
-//		// Python not equals (<>)
-//		if (ctx.NOT_EQ_1() != null)
-//			return new PyNot1();
-//
-//		// Python not equals (!=)
-//		if (ctx.NOT_EQ_2() != null)
-//			return new PyNot2();
-//
-//		Object child = visitChildren(ctx);
-//		if (!(child instanceof Comp_op))
-//			throw new IllegalStateException("Comp_op expected, found Statement instead");
-//		else
-//			return (Comp_op) child;
+		
+		//	Python equals (==)
+		if (ctx.EQUALS() != null)
+			return new PyEquals(currentCFG, sourceFile, int line, int col, Expression left, Expression right);
+
+		// Python greater (>)
+		if (ctx.GREATER_THAN() != null) 
+			return new PyGreater();
+
+		// Python greater equal (>=)
+		if (ctx.GT_EQ() != null)
+			return new PyGreaterEqual();
+
+		// Python in (in)
+		if (ctx.IN() != null)
+			return new PyIn();
+
+		// Python is (is)
+		if (ctx.IS() != null) 
+			return new PyIs();
+
+		// Python less (<)
+		if (ctx.LESS_THAN() != null)
+			return new PyLess();
+
+		// Python less equal (<=)
+		if (ctx.LT_EQ() != null)
+			return new PyLessEqual();
+
+		// Python not (not)
+		if (ctx.NOT() != null)
+			return new PyNot();
+
+		// Python not equals (<>)
+		if (ctx.NOT_EQ_1() != null)
+			return new PyNot1();
+
+		// Python not equals (!=)
+		if (ctx.NOT_EQ_2() != null)
+			return new PyNot2();
+
+		Object child = visitChildren(ctx);
+		if (!(child instanceof Comp_op))
+			throw new IllegalStateException("Comp_op expected, found Statement instead");
+		else
+			return (Comp_op) child;
 	}
 
 	@Override

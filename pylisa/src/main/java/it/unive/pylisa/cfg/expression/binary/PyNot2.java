@@ -5,22 +5,18 @@ import it.unive.lisa.cfg.statement.Expression;
 import it.unive.lisa.cfg.statement.NativeCall;
 import it.unive.pylisa.cfg.type.PyBoolType;
 
-public class PyEquals extends NativeCall{
+public class PyNot2 extends NativeCall {
 
 	/**
-	 * Builds the equality test.
+	 * Builds the logical not.
 	 * 
 	 * @param cfg        the {@link CFG} where this operation lies
 	 * @param sourceFile the source file name where this operation is defined
 	 * @param line       the line number where this operation is defined
 	 * @param col        the column where this operation is defined
-	 * @param left       the left-hand side of this operation
-	 * @param right      the right-hand side of this operation
+	 * @param expression the operand of this operation
 	 */
-
-	public PyEquals(CFG cfg, String sourceFile, int line, int col, Expression left, Expression right) {
-		super(cfg, sourceFile, line, col, "==", PyBoolType.INSTANCE, left, right);
+	public PyNot2(CFG cfg, String sourceFile, int line, int col, Expression expression) {
+		super(cfg, sourceFile, line, col, "!=", PyBoolType.INSTANCE, expression);
 	}
-
 }
-

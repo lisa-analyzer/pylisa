@@ -5,10 +5,10 @@ import it.unive.lisa.cfg.statement.Expression;
 import it.unive.lisa.cfg.statement.NativeCall;
 import it.unive.pylisa.cfg.type.PyBoolType;
 
-public class PyEquals extends NativeCall{
+public class PyLess extends NativeCall {
 
 	/**
-	 * Builds the equality test.
+	 * Builds the less than.
 	 * 
 	 * @param cfg        the {@link CFG} where this operation lies
 	 * @param sourceFile the source file name where this operation is defined
@@ -17,10 +17,8 @@ public class PyEquals extends NativeCall{
 	 * @param left       the left-hand side of this operation
 	 * @param right      the right-hand side of this operation
 	 */
-
-	public PyEquals(CFG cfg, String sourceFile, int line, int col, Expression left, Expression right) {
-		super(cfg, sourceFile, line, col, "==", PyBoolType.INSTANCE, left, right);
+	public PyLess(CFG cfg, String sourceFile, int line, int col, Expression left, Expression right) {
+		super(cfg, sourceFile, line, col, "<", PyBoolType.INSTANCE, left, right);
 	}
 
 }
-
