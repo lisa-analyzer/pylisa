@@ -523,7 +523,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	@Override
 	public  T visitIf_stmt(If_stmtContext ctx) {
 
-
+/*
 		
 		log.info("Sono nell'if");
 		// Visit if statement Boolean Guard
@@ -537,59 +537,60 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 		Statement booleanGuard = (Statement) visitTest(ctx.test(0));
 		currentCFG.addNode(booleanGuard);
 		
-		Statement x = new Statement(currentCFG,"ciao",0,0);
-
-		try {  
-            Writer w = new FileWriter("./output.txt");  
-            currentCFG.dump(w, "test");
-            w.close();
-            log.info("Done");  
-        } catch (IOException e) {
-        	log.info("c'è stato un errore");
-            e.printStackTrace();  
-        }  
-		
+//		Statement x = new Statement(currentCFG,"ciao",0,0);
+//
+//		try {  
+//            Writer w = new FileWriter("./output.txt");  
+//            currentCFG.dump(w, "test");
+//            w.close();
+//            log.info("Done");  
+//        } catch (IOException e) {
+//        	log.info("c'è stato un errore");
+//            e.printStackTrace();  
+//        }  
+//		
 		
 		NoOp ifExitNode = new NoOp(currentCFG);
 		currentCFG.addNode(ifExitNode);
 		
 
 		
-//		Pair<Statement, Statement> trueBlock = visitSuite(ctx.suite(0));
-//		Statement exitStatementTrueBranch = trueBlock.getRight();
-//		Statement entryStatementTrueBranch = trueBlock.getLeft();
+		Pair<Statement, Statement> trueBlock = visitSuite(ctx.suite(0));
+		Statement exitStatementTrueBranch = trueBlock.getRight();
+		Statement entryStatementTrueBranch = trueBlock.getLeft();
 		
 		//if testLenght is >1 the context contains elif
 		int testLenght=ctx.test().size();
 		
 		if (ctx.ELIF() == null && ctx.ELSE() == null) {
 			
-			// If statement without else and elif branch
-//			currentCFG.addEdge(new TrueEdge(booleanGuard, entryStatementTrueBranch));			
-//			currentCFG.addEdge(new FalseEdge(booleanGuard, ifExitNode));			
-//			currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
+			//If statement without else and elif
+			currentCFG.addEdge(new TrueEdge(booleanGuard, entryStatementTrueBranch));			
+			currentCFG.addEdge(new FalseEdge(booleanGuard, ifExitNode));			
+			currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
 			
-		} else {	
-			int i=1;
+		} else if(ctx.ELIF() != null && ctx.ELSE() == null){
+			
+			//If statement without else but with elif
 			if (ctx.ELIF() != null) {
-				
-				//continue visit every elif
+				int i=1;
+				//visit every elif
 				while (ctx.test(i) != null) {
 					
 					Statement booleanGuardElif = (Statement) visitTest(ctx.test(i));
 					currentCFG.addNode(booleanGuardElif);
 					currentCFG.addEdge(new FalseEdge(booleanGuard, booleanGuardElif));
-//					
-//					Pair<Statement, Statement> trueBlockElif = visitSuite(ctx.suite(i));
-//					Statement exitStatementTrueBranchElif = trueBlock.getRight();
-//					Statement entryStatementTrueBranchElif = trueBlock.getLeft();
 					
+					Pair<Statement, Statement> trueBlockElif = visitSuite(ctx.suite(i));
+					Statement exitStatementTrueBranchElif = trueBlock.getRight();
+					Statement entryStatementTrueBranchElif = trueBlock.getLeft();			
 				}
 			}
+
+		} else if(ctx.ELIF() != null && ctx.ELSE() != null) {
 			
-			if(ctx.ELSE() != null) {
-				
-			}
+			//If statement with else but with elif
+			
 		}
 		
 		
@@ -602,10 +603,10 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 		
 
 	 	
+		*/
 		
 		
-		
-		return null;
+		return super.visitIf_stmt(ctx);
 	}
 
 	@Override
@@ -718,7 +719,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 //		if (ctx.EQUALS() != null)
 //			return new PyEquals();
 //
-//		// Python grater (>)
+//		// Python greater (>)
 //		if (ctx.GREATER_THAN() != null) 
 //			return new PyGreater();
 //
