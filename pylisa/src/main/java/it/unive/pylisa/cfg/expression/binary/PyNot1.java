@@ -16,7 +16,7 @@ public class PyNot1 extends NativeCall {
 	 * @param col        the column where this operation is defined
 	 * @param expression the operand of this operation
 	 */
-	public PyNot1(CFG cfg, String sourceFile, int line, int col, Expression expression) {
-		super(cfg, sourceFile, line, col, "<>", PyBoolType.INSTANCE, expression);
+	public PyNot1(CFG cfg, String sourceFile, int line, int col, Expression left, Expression right) {
+		super(cfg, sourceFile, line, col, "<>", PyBoolType.INSTANCE, left, right);
 	}
 }

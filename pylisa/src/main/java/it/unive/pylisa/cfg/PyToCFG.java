@@ -28,10 +28,13 @@ import it.unive.lisa.cfg.CFGDescriptor;
 import it.unive.lisa.cfg.edge.FalseEdge;
 import it.unive.lisa.cfg.edge.SequentialEdge;
 import it.unive.lisa.cfg.edge.TrueEdge;
+import it.unive.lisa.cfg.statement.Assignment;
 import it.unive.lisa.cfg.statement.Expression;
+import it.unive.lisa.cfg.statement.Literal;
 import it.unive.lisa.cfg.statement.NoOp;
 import it.unive.lisa.cfg.statement.Parameter;
 import it.unive.lisa.cfg.statement.Statement;
+import it.unive.lisa.cfg.statement.Variable;
 import it.unive.lisa.logging.IterationLogger;
 import it.unive.pylisa.antlr.Python3BaseVisitor;
 import it.unive.pylisa.antlr.Python3Lexer;
@@ -124,6 +127,12 @@ import it.unive.pylisa.antlr.Python3Parser.Yield_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
 import it.unive.pylisa.antlr.Python3Visitor;
 import it.unive.pylisa.cfg.expression.binary.PyEquals;
+import it.unive.pylisa.cfg.expression.binary.PyGreater;
+import it.unive.pylisa.cfg.expression.binary.PyIn;
+import it.unive.pylisa.cfg.expression.binary.PyIs;
+import it.unive.pylisa.cfg.expression.binary.PyNot;
+import it.unive.pylisa.cfg.expression.binary.PyNot1;
+import it.unive.pylisa.cfg.expression.binary.PyNot2;
 
 
 
@@ -186,7 +195,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	 * @return collection of @CFG in file
 	 * @throws IOException if {@code stream} to file cannot be written to or closed
 	 */
-	public Python3Parser p;
+
 	public Collection<CFG> toLiSACFG() throws IOException {
 		log.info("PyToCFG setup...");
 		log.info("Reading file... " + filePath);
@@ -201,11 +210,9 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 
 		Python3Lexer lexer = new Python3Lexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
 		Python3Parser parser = new Python3Parser(new CommonTokenStream(lexer));
-		p = parser;
 		ParseTree tree = parser.file_input();
 				
 		visit(tree);
-		log.info(tree.getClass());
 		log.info(tree.toStringTree(parser));
 		
 		stream.close();
@@ -238,7 +245,16 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 			FuncdefContext funcDecl = comp.funcdef();
 			currentCFG = new CFG(buildCFGDescriptor(funcDecl));
 			cfgs.add(currentCFG);
-			visitFuncdef(funcDecl);				
+			visitFuncdef(funcDecl);		
+			try {  
+	          Writer w = new FileWriter("./output.txt");  
+	          currentCFG.dump(w, "Prova");
+	          w.close();
+	          log.info("Done");  
+	      } catch (IOException e) {
+	      	log.info("c'è stato un errore");
+	          e.printStackTrace();  
+	      }  
 		}
 			
 
@@ -375,6 +391,14 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	@Override
 	public T visitExpr_stmt(Expr_stmtContext ctx) {
 		// TODO Auto-generated method stub
+		
+		//è un assegnazione
+		if(ctx.ASSIGN().size() > 0) {
+			T target = visitChildren(ctx.testlist_star_expr(0));
+			T expression = visitChildren(ctx.testlist_star_expr(1));
+			T assegnazione = (T)new Assignment(currentCFG, (Expression)target, (Expression)expression);
+			currentCFG.addNode((Statement) assegnazione);
+		}
 		return super.visitExpr_stmt(ctx);
 	}
 
@@ -525,6 +549,8 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	@Override
 	public  T visitIf_stmt(If_stmtContext ctx) {
 
+		T condition = visitTest(ctx.test(0));
+		 currentCFG.addNode((Statement) condition);
 /*
 		
 		log.info("Sono nell'if");
@@ -651,24 +677,18 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	@Override
 	public T visitSuite(SuiteContext ctx) {
 		log.info("Sono nel suite");
-		log.info(ctx.getText());
-		for(StmtContext stmt : ctx.stmt()) {
-			Object result = visitStmt(stmt);
-			
-			/*
-			laststmt != null
-					entry nuovo aggacia al veccchio
-					*/
-		}
-		return null;
+		
+		
+		return (T)visitStmt(ctx.stmt(0));
+
 	}
 
 	@Override
 	public T visitTest(TestContext ctx) {
 		log.info("Sono nel test");
-		log.info(ctx.getText());
-
-		return null;
+		
+		 
+		return super.visitTest(ctx);
 	}
 
 	@Override
@@ -709,59 +729,123 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 
 	@Override
 	public T visitComparison(ComparisonContext ctx) {
-		// TODO Auto-generated method stub
-		return super.visitComparison(ctx);
+		int line = getLine(ctx);
+		int col = getCol(ctx);
+		
+		//ho solo un expression
+		int nExpr = ctx.expr().size();
+		T result = null;
+		switch(nExpr) {
+		case 1:
+			result = visitExpr(ctx.expr(0));
+			break;
+		case 2:
+			if (ctx.comp_op(0).EQUALS() != null)
+				return (T)new PyEquals(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+
+			// Python greater (>)
+			if (ctx.comp_op(0).GREATER_THAN() != null) {
+				log.info("MAGGIORE");
+				return (T)new PyGreater(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+			}
+			// Python greater equal (>=)
+			if (ctx.comp_op(0).GT_EQ() != null)
+				return (T)new PyEquals(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+
+			// Python in (in)
+			if (ctx.comp_op(0).IN() != null)
+				return (T)new PyIn(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+
+			// Python is (is)
+			if (ctx.comp_op(0).IS() != null) 
+				return (T)new PyIs(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+
+			// Python less (<)
+			if (ctx.comp_op(0).LESS_THAN() != null)
+				return (T)new PyEquals(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+
+			// Python less equal (<=)
+			if (ctx.comp_op(0).LT_EQ() != null)
+				return (T)new PyEquals(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+
+			// Python not (not)
+			if (ctx.comp_op(0).NOT() != null)
+				return (T)new PyNot(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)));
+
+			// Python not equals (<>)
+			if (ctx.comp_op(0).NOT_EQ_1() != null)
+				return (T)new PyNot1(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+
+			// Python not equals (!=)
+			if (ctx.comp_op(0).NOT_EQ_2() != null)
+				return (T)new PyNot2(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+			
+			break;
+			
+			
+		}
+		
+		return result;
+		/*
+		 * ho sicuramente un expression se solo 1 ritorno il nodo
+		 * 
+		 * 
+		 */
+		//return super.visitComparison(ctx);
 	}
 
 	@Override
 	public T visitComp_op(Comp_opContext ctx) {
-		return null;
-		
+		int line = getLine(ctx);
+		int col = getCol(ctx);
+		/*
 		//	Python equals (==)
 		if (ctx.EQUALS() != null)
-			return new PyEquals(currentCFG, sourceFile, int line, int col, Expression left, Expression right);
+			return new PyEquals(currentCFG, file, line, col, visitExpr(ctx.expr(1)), visitExpr(ctx.right));
 
 		// Python greater (>)
 		if (ctx.GREATER_THAN() != null) 
-			return new PyGreater();
+			return new PyEquals(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
 
 		// Python greater equal (>=)
 		if (ctx.GT_EQ() != null)
-			return new PyGreaterEqual();
+			return new PyEquals(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
 
 		// Python in (in)
 		if (ctx.IN() != null)
-			return new PyIn();
+			return new PyIn(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
 
 		// Python is (is)
 		if (ctx.IS() != null) 
-			return new PyIs();
+			return new PyIs(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
 
 		// Python less (<)
 		if (ctx.LESS_THAN() != null)
-			return new PyLess();
+			return new PyEquals(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
 
 		// Python less equal (<=)
 		if (ctx.LT_EQ() != null)
-			return new PyLessEqual();
+			return new PyEquals(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
 
 		// Python not (not)
 		if (ctx.NOT() != null)
-			return new PyNot();
+			return new PyNot(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
 
 		// Python not equals (<>)
 		if (ctx.NOT_EQ_1() != null)
-			return new PyNot1();
+			return new PyNot1(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
 
 		// Python not equals (!=)
 		if (ctx.NOT_EQ_2() != null)
-			return new PyNot2();
+			return new PyNot2(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
 
 		Object child = visitChildren(ctx);
 		if (!(child instanceof Comp_op))
 			throw new IllegalStateException("Comp_op expected, found Statement instead");
 		else
 			return (Comp_op) child;
+			*/
+		return null;
 	}
 
 	@Override
@@ -770,7 +854,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 		return super.visitStar_expr(ctx);
 	}
 
-	@Override
+
 	public T visitExpr(ExprContext ctx) {
 		// TODO Auto-generated method stub
 		return super.visitExpr(ctx);
@@ -827,6 +911,18 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 	@Override
 	public T visitAtom(AtomContext ctx) {
 		// TODO Auto-generated method stub
+		if(ctx.NAME() != null) {
+			//new variabile
+			log.info("NAME:");
+			log.info(ctx.NAME());
+			return (T)new Variable(currentCFG, ctx.NAME().getText());
+		}
+		else if(ctx.NUMBER() != null) {
+			//literal
+			log.info("NUMBER:");
+			log.info(ctx.NUMBER());
+			return (T)new Literal(currentCFG, ctx.NUMBER().getText());
+		}
 		return super.visitAtom(ctx);
 	}
 
