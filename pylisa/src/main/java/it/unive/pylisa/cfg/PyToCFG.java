@@ -126,13 +126,17 @@ import it.unive.pylisa.antlr.Python3Parser.Yield_argContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
 import it.unive.pylisa.antlr.Python3Visitor;
+import it.unive.pylisa.cfg.expression.binary.PyAnd;
 import it.unive.pylisa.cfg.expression.binary.PyEquals;
 import it.unive.pylisa.cfg.expression.binary.PyGreater;
 import it.unive.pylisa.cfg.expression.binary.PyIn;
 import it.unive.pylisa.cfg.expression.binary.PyIs;
+import it.unive.pylisa.cfg.expression.binary.PyLess;
+import it.unive.pylisa.cfg.expression.binary.PyLessEqual;
 import it.unive.pylisa.cfg.expression.binary.PyNot;
 import it.unive.pylisa.cfg.expression.binary.PyNot1;
 import it.unive.pylisa.cfg.expression.binary.PyNot2;
+import it.unive.pylisa.cfg.expression.binary.PyOr;
 
 
 
@@ -685,16 +689,30 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 
 	@Override
 	public T visitTest(TestContext ctx) {
-		log.info("Sono nel test");
-		
+		if(ctx.IF()==null) {
+			return visitOr_test(ctx.or_test(0));
+		}else {
+			Statement trueCase = (Statement) visitOr_test(ctx.or_test(0));
+			Statement booleanGuard = (Statement) visitOr_test(ctx.or_test(0));
+			Statement falseCase = (Statement) visitTest(ctx.test());
+			
+			
+			currentCFG.addEdge(new TrueEdge(booleanGuard, trueCase));			
+			currentCFG.addEdge(new FalseEdge(booleanGuard, falseCase));			
+			currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
+			
+			return null;
+		}
 		 
-		return super.visitTest(ctx);
-	}
+		}
 
 	@Override
 	public T visitTest_nocond(Test_nocondContext ctx) {
-		// TODO Auto-generated method stub
-		return super.visitTest_nocond(ctx);
+		if(ctx.or_test()!=null) {
+			return visitOr_test(ctx.or_test());
+		}else{
+			return visitLambdef_nocond(ctx.lambdef_nocond());
+		}
 	}
 
 	@Override
@@ -711,24 +729,66 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 
 	@Override
 	public T visitOr_test(Or_testContext ctx) {
-		// TODO Auto-generated method stub
-		return super.visitOr_test(ctx);
+		int line = getLine(ctx);
+		int col = getCol(ctx);
+		
+		int nAndTest= ctx.and_test().size();
+		int i=0;
+		if(nAndTest==1) {
+			return visitAnd_test(ctx.and_test(0));
+		}else if(nAndTest==2) {
+			return (T) new PyOr(currentCFG,"",line,col,(Expression)visitAnd_test(ctx.and_test(0)),(Expression)visitAnd_test(ctx.and_test(1)));
+		}else {
+			//nNotTest= 5
+			T temp = (T) new PyOr(currentCFG, "", line, col, (Expression)visitAnd_test(ctx.and_test(nAndTest-2)),(Expression)visitAnd_test(ctx.and_test(nAndTest-1)));
+			nAndTest = nAndTest -2;
+			while(nAndTest > 0) {
+				temp = (T) new PyOr(currentCFG, "", line, col, (Expression)visitAnd_test(ctx.and_test(--nAndTest)),(Expression)temp);
+			}
+			return temp;
+		}
 	}
 
 	@Override
 	public T visitAnd_test(And_testContext ctx) {
-		// TODO Auto-generated method stub
-		return super.visitAnd_test(ctx);
+		int line = getLine(ctx);
+		int col = getCol(ctx);
+		
+		int nNotTest= ctx.not_test().size();
+		int i=0;
+		if(nNotTest==1) {
+			return visitNot_test(ctx.not_test(0));
+		}else if(nNotTest==2) {
+			return (T) new PyAnd(currentCFG,"",line,col,(Expression)visitNot_test(ctx.not_test(0)),(Expression)visitNot_test(ctx.not_test(1)));
+		}else {
+			//nNotTest= 5
+			T temp = (T) new PyAnd(currentCFG, "", line, col, (Expression)visitNot_test(ctx.not_test(nNotTest-2)),(Expression)visitNot_test(ctx.not_test(nNotTest-1)));
+					nNotTest = nNotTest -2 ;
+			while(nNotTest > 0) {
+				temp = (T) new PyAnd(currentCFG, "", line, col, (Expression)visitNot_test(ctx.not_test(--nNotTest)),(Expression)temp);
+			}
+			
+			return temp;
+		}
 	}
 
 	@Override
 	public T visitNot_test(Not_testContext ctx) {
-		// TODO Auto-generated method stub
-		return super.visitNot_test(ctx);
+		int line = getLine(ctx);
+		int col = getCol(ctx);
+		
+		if(ctx.NOT()!=null) {
+			return (T) new PyNot(currentCFG, "", line, col, (Expression)visitNot_test(ctx.not_test()));
+		}else {
+			return visitComparison(ctx.comparison());
+		}
+		
+		
 	}
 
 	@Override
 	public T visitComparison(ComparisonContext ctx) {
+		
 		int line = getLine(ctx);
 		int col = getCol(ctx);
 		
@@ -740,111 +800,58 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 			result = visitExpr(ctx.expr(0));
 			break;
 		case 2:
-			if (ctx.comp_op(0).EQUALS() != null)
-				return (T)new PyEquals(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+			
+			Comp_opContext operator=ctx.comp_op(0);
+			Expression left = (Expression)visitExpr(ctx.expr(0));
+			Expression right = (Expression)visitExpr(ctx.expr(1));
+			if (operator.EQUALS() != null)
+				result = (T)new PyEquals(currentCFG, "", line, col, left, right);
 
 			// Python greater (>)
-			if (ctx.comp_op(0).GREATER_THAN() != null) {
-				log.info("MAGGIORE");
-				return (T)new PyGreater(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+			if (operator.GREATER_THAN() != null) {
+				result = (T)new PyGreater(currentCFG, "", line, col, left, right);
 			}
 			// Python greater equal (>=)
-			if (ctx.comp_op(0).GT_EQ() != null)
-				return (T)new PyEquals(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+			if (operator.GT_EQ() != null)
+				result = (T)new PyEquals(currentCFG, "", line, col, left, right);
 
 			// Python in (in)
-			if (ctx.comp_op(0).IN() != null)
-				return (T)new PyIn(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+			if (operator.IN() != null)
+				result = (T)new PyIn(currentCFG, "", line, col, left, right);
 
 			// Python is (is)
-			if (ctx.comp_op(0).IS() != null) 
-				return (T)new PyIs(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+			if (operator.IS() != null) 
+				result = (T)new PyIs(currentCFG, "", line, col, left, right);
 
 			// Python less (<)
-			if (ctx.comp_op(0).LESS_THAN() != null)
-				return (T)new PyEquals(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+			if (operator.LESS_THAN() != null)
+				result = (T)new PyLess(currentCFG, "", line, col, left, right);
 
 			// Python less equal (<=)
-			if (ctx.comp_op(0).LT_EQ() != null)
-				return (T)new PyEquals(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+			if (operator.LT_EQ() != null)
+				result = (T)new PyLessEqual(currentCFG, "", line, col, left, right);
 
 			// Python not (not)
-			if (ctx.comp_op(0).NOT() != null)
-				return (T)new PyNot(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)));
+			if (operator.NOT() != null)
+				result = (T)new PyNot(currentCFG, "", line, col, left);
 
 			// Python not equals (<>)
-			if (ctx.comp_op(0).NOT_EQ_1() != null)
-				return (T)new PyNot1(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+			if (operator.NOT_EQ_1() != null)
+				result = (T)new PyNot1(currentCFG, "", line, col, left, right);
 
 			// Python not equals (!=)
-			if (ctx.comp_op(0).NOT_EQ_2() != null)
-				return (T)new PyNot2(currentCFG, "", line, col, (Expression)visitExpr(ctx.expr(0)), (Expression)visitExpr(ctx.expr(1)));
+			if (operator.NOT_EQ_2() != null)
+				result = (T)new PyNot2(currentCFG, "", line, col, left, right);
 			
 			break;
-			
-			
 		}
 		
 		return result;
-		/*
-		 * ho sicuramente un expression se solo 1 ritorno il nodo
-		 * 
-		 * 
-		 */
-		//return super.visitComparison(ctx);
 	}
 
 	@Override
 	public T visitComp_op(Comp_opContext ctx) {
-		int line = getLine(ctx);
-		int col = getCol(ctx);
-		/*
-		//	Python equals (==)
-		if (ctx.EQUALS() != null)
-			return new PyEquals(currentCFG, file, line, col, visitExpr(ctx.expr(1)), visitExpr(ctx.right));
-
-		// Python greater (>)
-		if (ctx.GREATER_THAN() != null) 
-			return new PyEquals(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
-
-		// Python greater equal (>=)
-		if (ctx.GT_EQ() != null)
-			return new PyEquals(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
-
-		// Python in (in)
-		if (ctx.IN() != null)
-			return new PyIn(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
-
-		// Python is (is)
-		if (ctx.IS() != null) 
-			return new PyIs(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
-
-		// Python less (<)
-		if (ctx.LESS_THAN() != null)
-			return new PyEquals(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
-
-		// Python less equal (<=)
-		if (ctx.LT_EQ() != null)
-			return new PyEquals(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
-
-		// Python not (not)
-		if (ctx.NOT() != null)
-			return new PyNot(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
-
-		// Python not equals (<>)
-		if (ctx.NOT_EQ_1() != null)
-			return new PyNot1(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
-
-		// Python not equals (!=)
-		if (ctx.NOT_EQ_2() != null)
-			return new PyNot2(currentCFG, file, line, col, visitExpr(ctx.left), visitExpr(ctx.right));
-
-		Object child = visitChildren(ctx);
-		if (!(child instanceof Comp_op))
-			throw new IllegalStateException("Comp_op expected, found Statement instead");
-		else
-			return (Comp_op) child;
-			*/
+	
 		return null;
 	}
 

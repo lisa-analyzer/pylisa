@@ -1,5 +1,5 @@
 digraph Prova {
-node0 [shape = rect,peripheries=2,label = <&gt;(7, 2)>];
+node0 [shape = rect,peripheries=2,label = <or(and(&gt;(1, 2), and(&lt;(2, 22), &gt;(3, 1))), or(&lt;(4, 10), &lt;(5, 100)))>];
 node1 [shape = rect,peripheries=2,label = <pos = 3>];
 node2 [shape = rect,peripheries=2,label = <pos = 4>];
 }

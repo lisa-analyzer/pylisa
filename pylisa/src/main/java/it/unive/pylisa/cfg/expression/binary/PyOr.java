@@ -5,8 +5,7 @@ import it.unive.lisa.cfg.statement.Expression;
 import it.unive.lisa.cfg.statement.NativeCall;
 import it.unive.pylisa.cfg.type.PyBoolType;
 
-public class PyNot2 extends NativeCall {
-
+public class PyOr extends NativeCall{
 	/**
 	 * Builds the logical not.
 	 * 
@@ -16,7 +15,7 @@ public class PyNot2 extends NativeCall {
 	 * @param col        the column where this operation is defined
 	 * @param expression the operand of this operation
 	 */
-	public PyNot2(CFG cfg, String sourceFile, int line, int col, Expression left, Expression right) {
-		super(cfg, sourceFile, line, col, "!=", PyBoolType.INSTANCE, left, right);
+	public PyOr(CFG cfg, String sourceFile, int line, int col, Expression left, Expression right) {
+		super(cfg, sourceFile, line, col, "or", PyBoolType.INSTANCE, left, right);
 	}
 }

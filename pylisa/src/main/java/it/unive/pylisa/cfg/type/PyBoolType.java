@@ -13,16 +13,6 @@ public class PyBoolType implements BooleanType{
 	}
 
 	@Override
-	public boolean canBeAssignedTo(Type other) {
-		return other.isBooleanType() || other.isUntyped();
-	}
-
-	@Override
-	public Type commonSupertype(Type other) {
-		return other.isBooleanType() ? this : Untyped.INSTANCE;
-	}
-
-	@Override
 	public String toString() {
 		return "bool";
 	}

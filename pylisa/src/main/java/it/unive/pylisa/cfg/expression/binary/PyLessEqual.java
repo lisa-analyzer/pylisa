@@ -18,7 +18,7 @@ public class PyLessEqual extends NativeCall {
 	 * @param right      the right-hand side of this operation
 	 */
 	public PyLessEqual(CFG cfg, String sourceFile, int line, int col, Expression left, Expression right) {
-		super(cfg, sourceFile, line, col, "<", PyBoolType.INSTANCE, left, right);
+		super(cfg, sourceFile, line, col, "<=", PyBoolType.INSTANCE, left, right);
 	}
 
 }
