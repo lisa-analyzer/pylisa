@@ -555,7 +555,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 
 		T condition = visitTest(ctx.test(0));
 		 currentCFG.addNode((Statement) condition);
-/*
+
 		
 		log.info("Sono nell'if");
 		// Visit if statement Boolean Guard
@@ -594,34 +594,80 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 		//if testLenght is >1 the context contains elif
 		int testLenght=ctx.test().size();
 		
+		currentCFG.addEdge(new TrueEdge(booleanGuard, entryStatementTrueBranch));	
+		currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));	
+		
 		if (ctx.ELIF() == null && ctx.ELSE() == null) {
 			
 			//If statement without else and elif
-			currentCFG.addEdge(new TrueEdge(booleanGuard, entryStatementTrueBranch));			
+					
 			currentCFG.addEdge(new FalseEdge(booleanGuard, ifExitNode));			
 			currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
 			
 		} else if(ctx.ELIF() != null && ctx.ELSE() == null){
 			
 			//If statement without else but with elif
+			
 			if (ctx.ELIF() != null) {
+				int nElif=ctx.test().size();
 				int i=1;
 				//visit every elif
-				while (ctx.test(i) != null) {
+				while (i <nElif) {
+				
 					
 					Statement booleanGuardElif = (Statement) visitTest(ctx.test(i));
 					currentCFG.addNode(booleanGuardElif);
 					currentCFG.addEdge(new FalseEdge(booleanGuard, booleanGuardElif));
 					
-					Pair<Statement, Statement> trueBlockElif = visitSuite(ctx.suite(i));
+					Pair<Statement, Statement> trueBlockElif = (Pair<Statement, Statement>) visitSuite(ctx.suite(i));
 					Statement exitStatementTrueBranchElif = trueBlock.getRight();
-					Statement entryStatementTrueBranchElif = trueBlock.getLeft();			
+					Statement entryStatementTrueBranchElif = trueBlock.getLeft();
+					currentCFG.addEdge(new TrueEdge(booleanGuardElif, entryStatementTrueBranchElif));
+					currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranchElif, booleanGuardElif));
 				}
 			}
 
-		} else if(ctx.ELIF() != null && ctx.ELSE() != null) {
+		} else if(ctx.ELIF() == null && ctx.ELSE() != null){
 			
-			//If statement with else but with elif
+			//If statement with else 
+			
+			Pair<Statement, Statement> falseBlock = (Pair<Statement, Statement>) visitSuite(ctx.suite(1));
+			Statement exitStatementFalseBranch = falseBlock.getRight();
+			Statement entryStatementFalseBranch = falseBlock.getLeft();
+
+			currentCFG.addEdge(new FalseEdge(booleanGuard, entryStatementFalseBranch));
+			currentCFG.addEdge(new SequentialEdge(exitStatementFalseBranch, ifExitNode));
+			
+		} else {
+			
+			//If statement with else and with elif
+			
+			int nSuite=ctx.suite().size();
+			
+			Pair<Statement, Statement> falseBlock = (Pair<Statement, Statement>) visitSuite(ctx.suite(nSuite));
+			Statement exitStatementFalseBranch = falseBlock.getRight();
+			Statement entryStatementFalseBranch = falseBlock.getLeft();
+
+			
+			int nElif=ctx.test().size();
+			int i=1;
+			//visit every elif
+			while (i <nElif) {
+			
+				
+				Statement booleanGuardElif = (Statement) visitTest(ctx.test(i));
+				currentCFG.addNode(booleanGuardElif);
+				currentCFG.addEdge(new FalseEdge(booleanGuard, booleanGuardElif));
+				
+				Pair<Statement, Statement> trueBlockElif = (Pair<Statement, Statement>) visitSuite(ctx.suite(i));
+				Statement exitStatementTrueBranchElif = trueBlock.trueBlockElif();
+				Statement entryStatementTrueBranchElif = trueBlock.trueBlockElif();
+				currentCFG.addEdge(new TrueEdge(booleanGuardElif, entryStatementTrueBranchElif));
+				currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranchElif, entryStatementFalseBranch));
+			}
+			
+
+			currentCFG.addEdge(new SequentialEdge(exitStatementFalseBranch, ifExitNode));
 			
 		}
 		
@@ -635,7 +681,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 		
 
 	 	
-		*/
+		
 		
 		
 		return super.visitIf_stmt(ctx);
