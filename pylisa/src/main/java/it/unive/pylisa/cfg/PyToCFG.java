@@ -726,10 +726,34 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 
 	@Override
 	public T visitSuite(SuiteContext ctx) {
-		log.info("Sono nel suite");
+		if(ctx.simple_stmt()!=null) {
+			return visitSimple_stmt(ctx.simple_stmt());
+		}else {
+			int nStatement=ctx.stmt().size();
+			if(nStatement==1) {
+				Statement stmt=(Statement) visitStmt(ctx.stmt(0));
+				return Pair.of(stmt.getLeft(),stmt.getRight());
+			}else if(nStatement==2) {
+				Statement firstStmt=(Statement) visitStmt(ctx.stmt(0));
+				Statement lastStmt=(Statement) visitStmt(ctx.stmt(1));
+				currentCFG.addEdge(new SequentialEdge(firstStmt.getRight(), lastStmt.getLeft()));
+				return Pair.of(firstStmt.getLeft(), lastStmt.getRight());
+			}else {
+				Statement firstStmt=(Statement) visitStmt(ctx.stmt(0));
+				Statement lastStmt=(Statement) visitStmt(ctx.stmt(1));
+				int i=1;
+				Statement prevStm=firstStmt;
+				while(i<nStatement) {
+					Statement currentStm=(Statement) visitStmt(ctx.stmt(i));
+					currentCFG.addEdge(new SequentialEdge(prevStm.getRight(), currentStm.getLeft()));
+					prevStm=currentStm;
+					i++;
+				}
+				currentCFG.addEdge(new SequentialEdge(currentStm.getRight(), lastStmt.getLeft()));
+				return Pair.of(firstStmt.getLeft(), lastStmt.getRight());
+			}
+		}
 		
-		
-		return (T)visitStmt(ctx.stmt(0));
 
 	}
 
@@ -747,7 +771,8 @@ public class PyToCFG<T> extends Python3BaseVisitor<T>{
 			currentCFG.addEdge(new FalseEdge(booleanGuard, falseCase));			
 			currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
 			
-			return null;
+			
+			return Pair.of(trueCase, falseCase);
 		}
 		 
 		}
