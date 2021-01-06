@@ -26,5 +26,17 @@ public class PyBoolType implements BooleanType{
 	public int hashCode() {
 		return BooleanType.class.getName().hashCode();
 	}
+
+	@Override
+	public boolean canBeAssignedTo(Type other) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Type commonSupertype(Type other) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 }

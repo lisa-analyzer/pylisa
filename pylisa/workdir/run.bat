@@ -1,0 +1,1 @@
+dot.exe -Tjpeg -o"grafo.jpg" untyped__repr_info().dot

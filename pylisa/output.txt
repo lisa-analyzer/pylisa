@@ -1,5 +1,9 @@
-digraph Prova {
-node0 [shape = rect,peripheries=2,label = <or(and(&gt;(1, 2), and(&lt;(2, 22), &gt;(3, 1))), or(&lt;(4, 10), &lt;(5, 100)))>];
-node1 [shape = rect,peripheries=2,label = <pos = 3>];
-node2 [shape = rect,peripheries=2,label = <pos = 4>];
+digraph {
+subgraph cluster_legend {
+	label="Legend";
+	style=dotted;
+	node [shape=plaintext];
+	"legend" [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0"><tr><td align="right">node border&nbsp;</td><td align="left"><font color="gray">gray</font>, single</td></tr><tr><td align="right">entrypoint border&nbsp;</td><td align="left"><font color="black">black</font>, single</td></tr><tr><td align="right">exitpoint border&nbsp;</td><td align="left"><font color="black">black</font>, double</td></tr><tr><td align="right">sequential edge&nbsp;</td><td align="left"><font color="black">black</font>, solid</td></tr><tr><td align="right">true edge&nbsp;</td><td align="left"><font color="blue">blue</font>, dashed</td></tr><tr><td align="right">false edge&nbsp;</td><td align="left"><font color="red">red</font>, dashed</td></tr></table>>];
+}
+
 }
