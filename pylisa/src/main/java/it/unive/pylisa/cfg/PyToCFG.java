@@ -151,6 +151,7 @@ import it.unive.pylisa.cfg.expression.binary.PyMul;
 import it.unive.pylisa.cfg.expression.binary.PyNot1;
 import it.unive.pylisa.cfg.expression.binary.PyNot2;
 import it.unive.pylisa.cfg.expression.binary.PyOr;
+import it.unive.pylisa.cfg.expression.binary.PyPower;
 import it.unive.pylisa.cfg.expression.binary.PyShiftLeft;
 import it.unive.pylisa.cfg.expression.binary.PyShiftRight;
 import it.unive.pylisa.cfg.expression.binary.PyXor;
@@ -983,7 +984,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 	public T visitXor_expr(Xor_exprContext ctx) {
 		int line = getLine(ctx);
 		int col = getCol(ctx);
-
+	
 		int nAnd = ctx.and_expr().size();
 	
 		if (nAnd == 1) {
@@ -1005,17 +1006,38 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitAnd_expr(And_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return super.visitAnd_expr(ctx);
+		int line = getLine(ctx);
+		int col = getCol(ctx);
+		int nShift = ctx.shift_expr().size();
+	
+		if (nShift == 1) {
+			return visitShift_expr(ctx.shift_expr(0));
+		} else if (nShift == 2) {
+			return (T) new PyAnd(currentCFG, "", line, col, (Expression) visitShift_expr(ctx.shift_expr(0)),
+					(Expression) visitShift_expr(ctx.shift_expr(1)));
+		} else {
+			T temp = (T) new PyAnd(currentCFG, "", line, col, (Expression) visitShift_expr(ctx.shift_expr(nShift - 2)),
+					(Expression) visitShift_expr(ctx.shift_expr(nShift - 1)));
+			nShift = nShift - 2;
+			while (nShift > 0) {
+				temp = (T) new PyAnd(currentCFG, "", line, col, (Expression) visitShift_expr(ctx.shift_expr(--nShift)),
+						(Expression) temp);
+			}
+			return temp;
+		}
 	}
 
 	@Override
 	public T visitRight_shift(Right_shiftContext ctx) {
-		
+
 		int line = getLine(ctx);
 		int col = getCol(ctx);
-		
-		return (T) new PyShiftRight(currentCFG, "", line, col, (Expression)visitArith_expr(ctx.arith_expr()), (Expression)visitShift_expr(ctx.shift_expr()));	
+	
+		if (ctx.RIGHT_SHIFT()==null) {
+			return visitArith_expr(ctx.arith_expr());
+		} else  {
+			return (T) new PyShiftRight(currentCFG, "", line, col, (Expression)visitArith_expr(ctx.arith_expr()), (Expression)visitShift_expr(ctx.shift_expr()));
+		}
 	}
 	
 	@Override
@@ -1023,7 +1045,11 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		int line = getLine(ctx);
 		int col = getCol(ctx);
 		
-		return (T) new PyShiftLeft(currentCFG, "", line, col, (Expression)visitArith_expr(ctx.arith_expr()), (Expression)visitShift_expr(ctx.shift_expr()));	
+		if (ctx.LEFT_SHIFT()==null) {
+			return visitArith_expr(ctx.arith_expr());
+		} else  {
+			return (T) new PyShiftLeft(currentCFG, "", line, col, (Expression)visitArith_expr(ctx.arith_expr()), (Expression)visitShift_expr(ctx.shift_expr()));	
+		}	
 	}
 	
 	@Override
@@ -1042,7 +1068,11 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		int line = getLine(ctx);
 		int col = getCol(ctx);
 		
-		return (T) new PyMinus(currentCFG, "", line, col, (Expression)visitTerm(ctx.term()), (Expression)visitArith_expr(ctx.arith_expr()));
+		if (ctx.arith_expr()==null) {
+			return visitTerm(ctx.term());
+		} else  {
+			return (T) new PyMinus(currentCFG, "", line, col, (Expression)visitTerm(ctx.term()), (Expression)visitArith_expr(ctx.arith_expr()));	
+		}
 	}
 	
 	@Override
@@ -1050,7 +1080,12 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		int line = getLine(ctx);
 		int col = getCol(ctx);
 		
-		return (T) new PyAdd(currentCFG, "", line, col, (Expression)visitTerm(ctx.term()), (Expression)visitArith_expr(ctx.arith_expr()));
+		if (ctx.arith_expr()==null) {
+			return visitTerm(ctx.term());
+		} else  {
+			return (T) new PyAdd(currentCFG, "", line, col, (Expression)visitTerm(ctx.term()), (Expression)visitArith_expr(ctx.arith_expr()));
+		}
+		
 	}
 
 	@Override
@@ -1068,38 +1103,66 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		int line = getLine(ctx);
 		int col = getCol(ctx);
 		
-		return (T) new PyMul(currentCFG, "", line, col, (Expression)visitFactor(ctx.factor()), (Expression)visitTerm(ctx.term()));
+		if (ctx.term()==null) {
+			return visitFactor(ctx.factor());
+		} else  {
+			return (T) new PyMul(currentCFG, "", line, col, (Expression)visitFactor(ctx.factor()), (Expression)visitTerm(ctx.term()));
+		}	
+		
 	}
 	
 	public T visitMat_mul(Mat_mulContext ctx) {
 		int line = getLine(ctx);
 		int col = getCol(ctx);
 		
-		return (T) new PyMatMul(currentCFG, "", line, col, (Expression)visitFactor(ctx.factor()), (Expression)visitTerm(ctx.term()));
+		if (ctx.term()==null) {
+			return visitFactor(ctx.factor());
+		} else  {
+			return (T) new PyMatMul(currentCFG, "", line, col, (Expression)visitFactor(ctx.factor()), (Expression)visitTerm(ctx.term()));
+		}	
+		
+		
 	}
 	
 	public T visitDiv(DivContext ctx) {
 		int line = getLine(ctx);
 		int col = getCol(ctx);
 		
-		return (T) new PyDiv(currentCFG, "", line, col, (Expression)visitFactor(ctx.factor()), (Expression)visitTerm(ctx.term()));
+		if (ctx.term()==null) {
+			return visitFactor(ctx.factor());
+		} else  {
+			return (T) new PyDiv(currentCFG, "", line, col, (Expression)visitFactor(ctx.factor()), (Expression)visitTerm(ctx.term()));
+		}	
+
+		
 	}
 	
 	public T visitMod(ModContext ctx) {
 		int line = getLine(ctx);
 		int col = getCol(ctx);
 		
-		return (T) new PyMod(currentCFG, "", line, col, (Expression)visitFactor(ctx.factor()), (Expression)visitTerm(ctx.term()));
+		if (ctx.term()==null) {
+			return visitFactor(ctx.factor());
+		} else  {
+			return (T) new PyMod(currentCFG, "", line, col, (Expression)visitFactor(ctx.factor()), (Expression)visitTerm(ctx.term()));
+		}
+		
 	}	
 	
 	public T visitFloorDiv(FloorDivContext ctx) {
 		int line = getLine(ctx);
 		int col = getCol(ctx);
 		
-		return (T) new PyFloorDiv(currentCFG, "", line, col, (Expression)visitFactor(ctx.factor()), (Expression)visitTerm(ctx.term()));
+		if (ctx.term()==null) {
+			return visitFactor(ctx.factor());
+		} else  {
+			return (T) new PyFloorDiv(currentCFG, "", line, col, (Expression)visitFactor(ctx.factor()), (Expression)visitTerm(ctx.term()));
+		}		
 	}
+	
 	@Override
 	public T visitTerm(TermContext ctx) {
+		log.info("dentro il term");
 		if(ctx.mul()!=null) {
 			return visitMul(ctx.mul());
 		}
@@ -1120,20 +1183,27 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitFactor(FactorContext ctx) {
-		// TODO Auto-generated method stub
+		// TODO complete this method
+		if(ctx.power()!=null) {
+			return visitPower(ctx.power());
+		}
 		return super.visitFactor(ctx);
 	}
 
 	@Override
 	public T visitPower(PowerContext ctx) {
-		// TODO Auto-generated method stub
+		int line = getLine(ctx);
+		int col = getCol(ctx);
+		
+		if(ctx.POWER()!=null) {
+			return (T) new PyPower(currentCFG, "", line, col, (Expression)visitAtom_expr(ctx.atom_expr()), (Expression)visitFactor(ctx.factor()));
+		}
 		return super.visitPower(ctx);
 	}
 
 	@Override
 	public T visitAtom_expr(Atom_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return super.visitAtom_expr(ctx);
+		return visitAtom(ctx.atom());
 	}
 
 	@Override
@@ -1191,10 +1261,59 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 	public T visitExprlist(ExprlistContext ctx) {
 		int expSize=ctx.expr().size();
 		int starExpSize=ctx.star_expr().size();
-		if(ctx.expr()!=null && ctx.star_expr()==null) {
+		log.info(expSize);
+		Pair<Statement,Statement> expPair= null;
+		Pair<Statement,Statement> starExpPair = null;
+		
+		if(expSize==1) {
+			Expression exp=(Expression) visitExpr(ctx.expr(0));
+			currentCFG.addNode(exp);
+			expPair= Pair.of(exp,exp);
+		}else if(expSize>1){				
+			Expression firstExp=(Expression) visitExpr(ctx.expr(0));
+			Expression lastExp=(Expression) visitExpr(ctx.expr(expSize));
+			currentCFG.addNode(firstExp);
+			currentCFG.addNode(lastExp);
 			
+			Expression prevExp=firstExp;
+			for(int i=1; i<expSize;i++) {
+				Expression currentExp=(Expression) visitExpr(ctx.expr(i));
+				currentCFG.addNode(currentExp);
+				currentCFG.addEdge(new SequentialEdge(prevExp, currentExp));
+				prevExp=currentExp;
+			}
+			currentCFG.addEdge(new SequentialEdge(prevExp, lastExp));	
+			expPair=Pair.of(firstExp,lastExp);
 		}
-		return super.visitExprlist(ctx);
+		
+		if(starExpSize==1) {
+			Expression starExp=(Expression) visitStar_expr(ctx.star_expr(0));
+			currentCFG.addNode(starExp);
+			starExpPair=Pair.of(starExp,starExp);
+		}else if(starExpSize>1){
+			Expression firstExp=(Expression) visitStar_expr(ctx.star_expr(0));
+			Expression lastExp=(Expression) visitStar_expr(ctx.star_expr(starExpSize));	
+			currentCFG.addNode(firstExp);
+			currentCFG.addNode(lastExp);
+				
+			Expression prevExp=firstExp;
+			for(int i=1; i<expSize;i++) {
+				Expression currentExp=(Expression) visitStar_expr(ctx.star_expr(i));
+				currentCFG.addNode(currentExp);
+				currentCFG.addEdge(new SequentialEdge(prevExp, currentExp));
+				prevExp=currentExp;
+			}
+			currentCFG.addEdge(new SequentialEdge(prevExp, lastExp));
+			starExpPair=Pair.of(firstExp, lastExp);	
+		}
+
+		if(expSize>0 && starExpSize>0 ) {
+			return (T) Pair.of(expPair.getLeft(),starExpPair.getRight());
+		}else if(expSize==0) {
+			return (T) starExpPair;
+		}else {
+			return (T) expPair;
+		}
 	}
 
 	@Override
