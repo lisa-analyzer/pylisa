@@ -700,20 +700,33 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 	@Override
 	public T visitFor_stmt(For_stmtContext ctx) {
 		
+		NoOp forExitNode = new NoOp(currentCFG);
+		currentCFG.addNode(forExitNode);
+		
 		Pair<Statement, Statement> exprlist=(Pair<Statement, Statement>) visitExprlist(ctx.exprlist());
 		
 		Pair<Statement, Statement> testList=(Pair<Statement, Statement>) visitTestlist(ctx.testlist());
-		currentCFG.addNode(testList.getLeft());
-		currentCFG.addNode(testList.getRight());
+		
+		currentCFG.addEdge(new SequentialEdge(exprlist.getRight(), testList.getLeft()));
 		
 		Pair<Statement, Statement> body=(Pair<Statement, Statement>) visitSuite(ctx.suite(0));
+		
+		currentCFG.addEdge(new TrueEdge(testList.getRight(), body.getLeft()));
+		currentCFG.addEdge(new TrueEdge(exprlist.getLeft(), body.getRight()));
+		
 		if(ctx.ELSE()!=null) {
+			
 			Pair<Statement, Statement> falseCond=(Pair<Statement, Statement>) visitSuite(ctx.suite(1));
+			currentCFG.addEdge(new FalseEdge(testList.getLeft(), falseCond.getLeft()));
+			currentCFG.addEdge(new SequentialEdge(falseCond.getRight(), forExitNode));
 		}else {
 			
 		}
 		
-		return super.visitFor_stmt(ctx);
+		
+		return (T) Pair.of(exprlist.getLeft(), forExitNode);
+		
+		
 	}
 
 	@Override
@@ -1318,14 +1331,16 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitTestlist(TestlistContext ctx) {
-		Pair<Statement,Statement> firstTest=(Pair<Statement, Statement>) visitTest(ctx.test(0));
-		Pair<Statement,Statement> prevTest=firstTest;
+		Statement firstTest= (Statement) visitTest(ctx.test(0));
+		currentCFG.addNode(firstTest);
+		Statement prevTest=firstTest;
 		for(int i=1;i<ctx.test().size();i++) {
-			Pair<Statement,Statement> currentTest=(Pair<Statement, Statement>) visitTest(ctx.test(i));
-			currentCFG.addEdge(new SequentialEdge(prevTest.getRight(), currentTest.getLeft()));
+			Statement currentTest=(Statement) visitTest(ctx.test(i));
+			currentCFG.addNode(currentTest);
+			currentCFG.addEdge(new SequentialEdge(prevTest, currentTest));
 			prevTest=currentTest;
 		}
-		return (T) Pair.of(firstTest.getLeft(), prevTest.getRight());
+		return (T) Pair.of(firstTest, prevTest);
 	}
 
 	@Override
