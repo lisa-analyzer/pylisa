@@ -156,6 +156,7 @@ import it.unive.pylisa.cfg.expression.binary.PyShiftLeft;
 import it.unive.pylisa.cfg.expression.binary.PyShiftRight;
 import it.unive.pylisa.cfg.expression.binary.PyXor;
 import it.unive.pylisa.cfg.expression.unary.PyNot;
+import it.unive.pylisa.cfg.expression.unary.PyStringLiteral;
 import it.unive.pylisa.cfg.type.PyIntType;
 import it.unive.pylisa.cfg.type.PyStringType;
 
@@ -731,7 +732,46 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitTry_stmt(Try_stmtContext ctx) {
-		// TODO Auto-generated method stub
+		/*
+		
+		NoOp TryExitNode = new NoOp(currentCFG);
+		currentCFG.addNode(TryExitNode);
+		
+		Pair<Statement, Statement> tryBlock = (Pair<Statement, Statement>) visitSuite(ctx.suite(0));
+		
+		int nException=ctx.except_clause().size();
+		
+		Pair<Statement, Statement> firstClauseException = (Pair<Statement, Statement>) visitExcept_clause(ctx.except_clause(0));
+		
+		Pair<Statement, Statement> firstSuiteException = (Pair<Statement, Statement>) visitSuite(ctx.suite(1));
+		
+		currentCFG.addEdge(new TrueEdge(tryBlock.getRight(), firstClauseException.getLeft()));
+		
+		currentCFG.addEdge(new SequentialEdge(firstClauseException.getRight(), firstSuiteException.getLeft()));
+		
+		Pair<Statement, Statement> lastClauseExc=firstClauseException;
+		Pair<Statement, Statement> lastSuiteExc=firstSuiteException;
+		
+		for(int i=2;i<=nException;i++) {
+			
+			Pair<Statement, Statement> currentClauseExc = (Pair<Statement, Statement>) visitSuite(ctx.suite(i));
+			Pair<Statement, Statement>  currentSuiteExc= (Pair<Statement, Statement>)  visitExcept_clause(ctx.except_clause(i-1));
+			
+			currentCFG.addEdge(new SequentialEdge(currentClauseExc.getRight(), currentSuiteExc.getLeft()));
+			currentCFG.addEdge(new SequentialEdge(lastSuiteExc.getRight(), currentClauseExc.getLeft()));
+			
+			lastSuiteExc=currentSuiteExc;
+			lastClauseExc=currentClauseExc;
+		}
+		
+		if(ctx.ELSE()!=null) {
+			int posElseSuite=1+nException;
+			Pair<Statement, Statement> elseBlock = (Pair<Statement, Statement>) visitSuite(ctx.suite(posElseSuite));
+			
+			currentCFG.addEdge(new SequentialEdge(lastSuiteExc.getRight(), currentClauseExc.getLeft()));
+		}
+		
+		*/
 		return super.visitTry_stmt(ctx);
 	}
 
@@ -1221,6 +1261,8 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitAtom(AtomContext ctx) {
+		int line = getLine(ctx);
+		int col = getCol(ctx);
 		// TODO Auto-generated method stub
 		if (ctx.NAME() != null) {
 			// new variabile
@@ -1235,14 +1277,21 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		} else if (ctx.STRING().size() > 0) {
 			log.info(ctx.STRING(0));
 			//TODO da sisttemare
-			return (T) new Literal(currentCFG, ctx.STRING(0).getText(), PyStringType.INSTANCE);
+			return (T) new PyStringLiteral(currentCFG,"", line, col, ctx.STRING(0).getText());
+		} else if(ctx.yield_expr()!=null) {
+			return visitYield_expr(ctx.yield_expr());
+		} else if (ctx.testlist_comp()!=null) {
+			return visitTestlist_comp(ctx.testlist_comp());
+		} else if(ctx.dictorsetmaker()!=null) {
+			return visitDictorsetmaker(ctx.dictorsetmaker());
 		}
+		
 		return super.visitAtom(ctx);
 	}
 
 	@Override
 	public T visitTestlist_comp(Testlist_compContext ctx) {
-		// TODO Auto-generated method stub
+		ctx.
 		return super.visitTestlist_comp(ctx);
 	}
 
