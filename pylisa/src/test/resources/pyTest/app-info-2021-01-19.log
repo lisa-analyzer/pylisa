@@ -1,0 +1,30 @@
+[INFO ] 2021-01-19 14:57:53.888 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-19 14:57:53.896 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-19 14:57:54.088 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (compound_stmt (for_stmt for (exprlist (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom x)))))))))))))) in (testlist (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom fruits))))))))))))))))))) : (suite                    (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom i))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 2))))))))))))))))))))) 2)) 2)))) 2))))   i=2)
+[INFO ] 2021-01-19 14:57:54.093 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-19 14:57:54.096 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-19 14:57:54.103 [main] PyToCFG - 1
+[INFO ] 2021-01-19 14:57:54.103 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-19 14:57:54.103 [main] PyToCFG - NAME:
+[INFO ] 2021-01-19 14:57:54.103 [main] PyToCFG - x
+[INFO ] 2021-01-19 14:57:54.106 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-19 14:57:54.107 [main] PyToCFG - NAME:
+[INFO ] 2021-01-19 14:57:54.107 [main] PyToCFG - fruits
+[INFO ] 2021-01-19 14:57:54.107 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-19 14:57:54.108 [main] PyToCFG - 1
+[INFO ] 2021-01-19 14:57:54.108 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-19 14:57:54.108 [main] PyToCFG - NAME:
+[INFO ] 2021-01-19 14:57:54.108 [main] PyToCFG - i
+[INFO ] 2021-01-19 14:57:54.108 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-19 14:57:54.108 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-19 14:57:54.108 [main] PyToCFG - 2
+[INFO ] 2021-01-19 14:57:54.110 [main] PyToCFG - i
+[INFO ] 2021-01-19 14:57:54.110 [main] PyToCFG - 2
+[INFO ] 2021-01-19 14:57:54.111 [main] PyToCFG - i = 2
+[INFO ] 2021-01-19 14:57:54.112 [main] PyToCFG - i = 2
+[INFO ] 2021-01-19 14:57:54.112 [main] PyToCFG - small
+[INFO ] 2021-01-19 14:57:54.112 [main] PyToCFG - i = 2
+[INFO ] 2021-01-19 14:57:54.113 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-19 14:57:54.113 [main] PyToCFG - i = 2
+[INFO ] 2021-01-19 14:57:54.158 [main] PyToCFG - Done
+[INFO ] 2021-01-19 14:57:54.165 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 69ms 635200ns]

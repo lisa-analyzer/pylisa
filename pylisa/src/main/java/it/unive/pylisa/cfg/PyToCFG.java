@@ -429,15 +429,13 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 	}
 
 	@Override
-	public T visitExpr_stmt(Expr_stmtContext ctx) {
-		// TODO Auto-generated method stub
+	public T visitExpr_stmt(Expr_stmtContext ctx) {		
 
 		T assegnazione = null;
-		log.info("passo per di qui");
-		log.info(ctx.ASSIGN().size());
 		
 		// è un assegnazione
 		if (ctx.ASSIGN().size() > 0) {
+			
 			T target = visitChildren(ctx.testlist_star_expr(0));
 			T expression = visitChildren(ctx.testlist_star_expr(1));
 			log.info(target);
@@ -518,8 +516,11 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitImport_stmt(Import_stmtContext ctx) {
-		// TODO Auto-generated method stub
-		return super.visitImport_stmt(ctx);
+		if(ctx.import_from()!=null) {
+			return visitImport_from(ctx.import_from());
+		}else{
+			return visitImport_name(ctx.import_name());
+		}
 	}
 
 	@Override
@@ -777,14 +778,36 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitWith_stmt(With_stmtContext ctx) {
-		// TODO Auto-generated method stub
-		return super.visitWith_stmt(ctx);
+		int withSize=ctx.with_item().size();
+		Pair<Statement, Statement> withItem=(Pair<Statement, Statement>) visitWith_item(ctx.with_item(0));
+		Pair<Statement, Statement> prev=withItem;
+		Pair<Statement, Statement> curr=withItem;
+		for(int i=1;i<withSize;i++) {
+			curr=(Pair<Statement, Statement>) visitWith_item(ctx.with_item(i));
+			currentCFG.addEdge(new SequentialEdge(prev.getRight(), curr.getLeft()));
+			prev=curr;
+		}
+		Pair<Statement, Statement> suite=(Pair<Statement, Statement>) visitSuite(ctx.suite());
+		currentCFG.addNode(suite.getLeft());
+		currentCFG.addNode(suite.getRight());
+		currentCFG.addEdge(new SequentialEdge(curr.getRight(),suite.getLeft()));
+		
+		return (T) Pair.of(withItem.getLeft(),suite.getRight());
 	}
 
 	@Override
 	public T visitWith_item(With_itemContext ctx) {
-		// TODO Auto-generated method stub
-		return super.visitWith_item(ctx);
+		Statement test=(Statement) visitTest(ctx.test());
+		currentCFG.addNode(test);
+		if(ctx.expr()!=null) {
+			Statement expr =(Statement) visitExpr(ctx.expr());
+			currentCFG.addNode(expr);
+			currentCFG.addEdge(new SequentialEdge(test, expr));
+			return (T) Pair.of(test,expr);
+		}else {
+			return (T) Pair.of(test,test);
+		}
+		
 	}
 
 	@Override
@@ -798,8 +821,6 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		if (ctx.simple_stmt() != null) {
 			Statement simple = (Statement)visitSimple_stmt(ctx.simple_stmt());
 			Pair<Statement, Statement> result = Pair.of(simple,simple);
-			log.info("sono dentro al simple");
-			log.info(result);
 			
 			return (T)result;
 		} else {
@@ -1263,7 +1284,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 	public T visitAtom(AtomContext ctx) {
 		int line = getLine(ctx);
 		int col = getCol(ctx);
-		// TODO Auto-generated method stub
+		
 		if (ctx.NAME() != null) {
 			// new variabile
 			log.info("NAME:");
@@ -1291,8 +1312,25 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitTestlist_comp(Testlist_compContext ctx) {
-		ctx.
-		return super.visitTestlist_comp(ctx);
+		Pair<Statement,Statement> elem =(Pair<Statement, Statement>) visitTestOrStar(ctx.testOrStar(0));
+		Pair<Statement,Statement> prev = null;
+		Pair<Statement,Statement> current;
+		if(ctx.comp_for()!=null) {			
+			Pair<Statement,Statement> forClause= (Pair<Statement, Statement>) visitComp_for(ctx.comp_for());
+			currentCFG.addEdge(new SequentialEdge(elem.getRight(), forClause.getLeft()));
+			int nTestOrStar=ctx.testOrStar().size();
+			prev=forClause;
+			for(int i=1; i<nTestOrStar;i++) {
+				current=(Pair<Statement, Statement>) visitTestOrStar(ctx.testOrStar(i));
+				currentCFG.addEdge(new SequentialEdge(prev.getRight(), current.getLeft()));
+				current=prev;
+			}
+		}
+		if(ctx.comp_for()==null) {
+			return (T) elem;
+		}else {
+			return (T) Pair.of(elem.getLeft(), prev.getRight());
+		}
 	}
 
 	@Override
