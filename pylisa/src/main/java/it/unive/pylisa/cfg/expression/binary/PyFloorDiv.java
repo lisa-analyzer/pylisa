@@ -10,11 +10,31 @@ import it.unive.lisa.cfg.statement.BinaryNativeCall;
 import it.unive.lisa.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 
+/**
+ * A Python numerical floor division function call (e1 // e2).
+ * 
+ * @author Nicolò Barbato
+ */
+
 public class PyFloorDiv extends BinaryNativeCall{
+	
+	/**
+	 * Builds a Python floor division expression at a given location in the program.
+	 * 
+	 * @param cfg           the cfg that this expression belongs to
+	 * @param sourceFile    the source file where this expression happens. If
+	 *                      unknown, use {@code null}
+	 * @param line          the line number where this expression happens in the
+	 *                      source file. If unknown, use {@code -1}
+	 * @param col           the column where this expression happens in the source
+	 *                      file. If unknown, use {@code -1}
+	 * @param exp1		    left-hand side operand
+	 * @param exp2		    right-hand side operand
+	 */
+	
 
 	public PyFloorDiv(CFG cfg, String sourceFile, int line, int col, Expression left, Expression right) {
 		super(cfg, sourceFile, line, col, "//", left, right);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override

@@ -156,8 +156,8 @@ import it.unive.pylisa.cfg.expression.binary.PyShiftLeft;
 import it.unive.pylisa.cfg.expression.binary.PyShiftRight;
 import it.unive.pylisa.cfg.expression.binary.PyXor;
 import it.unive.pylisa.cfg.expression.unary.PyNot;
-import it.unive.pylisa.cfg.expression.unary.PyStringLiteral;
 import it.unive.pylisa.cfg.type.PyIntType;
+import it.unive.pylisa.cfg.type.PyStringLiteral;
 import it.unive.pylisa.cfg.type.PyStringType;
 
 public class PyToCFG<T> extends Python3BaseVisitor<T> {
@@ -615,9 +615,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		
 		
 		// if testLenght is >1 the context contains elif
-		
 
-		
 		currentCFG.addEdge(new TrueEdge(booleanGuard, entryStatementTrueBranch));
 		currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
 

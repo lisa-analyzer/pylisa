@@ -1,0 +1,1742 @@
+[INFO ] 2021-01-24 16:28:12.526 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 16:28:12.534 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 16:28:12.840 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (compound_stmt (with_stmt with (with_item (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom open) (trailer ( (arglist (argument (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 'output.txt'))))))))))))))))))) , (argument (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 'w')))))))))))))))))))) ))))))))))))))))))) as (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom f)))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 2))))))))))))))))))))) 2)) 2)))) 2))))   a=2)
+[INFO ] 2021-01-24 16:28:12.848 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 16:28:12.851 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 16:28:12.855 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:28:12.856 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 16:28:12.856 [main] PyToCFG - open
+[INFO ] 2021-01-24 16:28:12.861 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:28:12.862 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 16:28:12.862 [main] PyToCFG - f
+[INFO ] 2021-01-24 16:28:12.863 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 16:28:12.863 [main] PyToCFG - 1
+[INFO ] 2021-01-24 16:28:12.863 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:28:12.863 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 16:28:12.863 [main] PyToCFG - a
+[INFO ] 2021-01-24 16:28:12.864 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:28:12.864 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 16:28:12.864 [main] PyToCFG - 2
+[INFO ] 2021-01-24 16:28:12.867 [main] PyToCFG - a
+[INFO ] 2021-01-24 16:28:12.867 [main] PyToCFG - 2
+[INFO ] 2021-01-24 16:28:12.868 [main] PyToCFG - a = 2
+[INFO ] 2021-01-24 16:28:12.869 [main] PyToCFG - a = 2
+[INFO ] 2021-01-24 16:28:12.869 [main] PyToCFG - small
+[INFO ] 2021-01-24 16:28:12.869 [main] PyToCFG - a = 2
+[INFO ] 2021-01-24 16:28:12.869 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 16:28:12.870 [main] PyToCFG - a = 2
+[INFO ] 2021-01-24 16:28:12.903 [main] PyToCFG - Done
+[INFO ] 2021-01-24 16:28:12.909 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 58ms 923400ns]
+[INFO ] 2021-01-24 16:29:04.216 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 16:29:04.219 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 16:29:04.420 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (compound_stmt (if_stmt if (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr shift_expr)))))))) <missing ':'> (suite (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr shift_expr)))))))))))))))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 2))))))))))))))))))) (annassign : test)))   ))                  (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1))))))))))))))))))))) 1)) 1)))) 1   a=1)
+[INFO ] 2021-01-24 16:29:04.422 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 16:29:04.426 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 16:29:53.495 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 16:29:53.497 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 16:29:53.664 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 4)))))))))))))))))))))   )) (stmt (compound_stmt (if_stmt if (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr shift_expr)))))))) <missing ':'> (suite (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr shift_expr)))))))))))))))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 2))))))))))))))))))) (annassign : test)))   ))                  (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1))))))))))))))))))))) 1)) 1)))) 1   b=1)
+[INFO ] 2021-01-24 16:29:53.668 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 16:29:53.673 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 16:29:53.676 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 16:29:53.677 [main] PyToCFG - 1
+[INFO ] 2021-01-24 16:29:53.677 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:29:53.677 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 16:29:53.678 [main] PyToCFG - a
+[INFO ] 2021-01-24 16:29:53.680 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:29:53.680 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 16:29:53.680 [main] PyToCFG - 4
+[INFO ] 2021-01-24 16:29:53.681 [main] PyToCFG - a
+[INFO ] 2021-01-24 16:29:53.681 [main] PyToCFG - 4
+[INFO ] 2021-01-24 16:29:53.682 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 16:29:53.684 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 16:29:53.684 [main] PyToCFG - small
+[INFO ] 2021-01-24 16:29:53.684 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 16:29:53.684 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 16:29:53.684 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 16:31:26.943 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 16:31:26.947 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 16:31:27.166 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 4)))))))))))))))))))))   )) (stmt (compound_stmt (if_stmt if (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr shift_expr)))))))) <missing ':'> (suite (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr shift_expr)))))))))))))))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 2))))))))))))))))))) (annassign : test)))   ))                  (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1))))))))))))))))))))) 1)) 1)))) 1   b=1)
+[INFO ] 2021-01-24 16:31:27.173 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 16:31:27.187 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 16:31:27.194 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 16:31:27.195 [main] PyToCFG - 1
+[INFO ] 2021-01-24 16:31:27.196 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:31:27.196 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 16:31:27.196 [main] PyToCFG - a
+[INFO ] 2021-01-24 16:31:27.200 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:31:27.200 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 16:31:27.200 [main] PyToCFG - 4
+[INFO ] 2021-01-24 16:31:27.202 [main] PyToCFG - a
+[INFO ] 2021-01-24 16:31:27.203 [main] PyToCFG - 4
+[INFO ] 2021-01-24 16:31:27.204 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 16:31:27.206 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 16:31:27.207 [main] PyToCFG - small
+[INFO ] 2021-01-24 16:31:27.207 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 16:31:27.207 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 16:31:27.207 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 16:36:21.573 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 16:36:21.576 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 16:36:21.739 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 4)))))))))))))))))))))   )) (stmt (compound_stmt (if_stmt if (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr shift_expr)))))))) <missing ':'> (suite (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr shift_expr)))))))))))))))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 2))))))))))))))))))) (annassign : test)))   ))                  (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1))))))))))))))))))))) 1)) 1)))) 1   b=1)
+[INFO ] 2021-01-24 16:36:21.741 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 16:36:21.744 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 16:36:21.748 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 16:36:21.749 [main] PyToCFG - 1
+[INFO ] 2021-01-24 16:36:21.749 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:54:57.395 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 16:54:57.397 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 16:54:57.560 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 4)))))))))))))))))))))   )) (stmt (compound_stmt (if_stmt if (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr shift_expr)))))))) <missing ':'> (suite (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr shift_expr)))))))))))))))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 2))))))))))))))))))) (annassign : test)))   ))                  (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1))))))))))))))))))))) 1)) 1)))) 1   b=1)
+[INFO ] 2021-01-24 16:54:57.562 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 16:54:57.565 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 16:54:57.569 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 16:54:57.570 [main] PyToCFG - 1
+[INFO ] 2021-01-24 16:54:57.571 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:54:57.571 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 16:54:57.571 [main] PyToCFG - a
+[INFO ] 2021-01-24 16:54:57.573 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:54:57.573 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 16:54:57.573 [main] PyToCFG - 4
+[INFO ] 2021-01-24 16:54:57.575 [main] PyToCFG - a
+[INFO ] 2021-01-24 16:54:57.575 [main] PyToCFG - 4
+[INFO ] 2021-01-24 16:54:57.576 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 16:54:57.577 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 16:54:57.577 [main] PyToCFG - small
+[INFO ] 2021-01-24 16:54:57.577 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 16:54:57.577 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 16:54:57.577 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 16:56:13.433 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 16:56:13.435 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 16:56:13.634 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 33)))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 200)))))))))))))))))))))   )) (stmt (compound_stmt (if_stmt if (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))) (comp_op >) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1))))))))))))))))))))) 1)) 1)))) 1))))   b=1)
+[INFO ] 2021-01-24 16:56:13.640 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 16:56:13.646 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 16:56:13.653 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 16:56:13.654 [main] PyToCFG - 1
+[INFO ] 2021-01-24 16:56:13.655 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:56:13.655 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 16:56:13.655 [main] PyToCFG - a
+[INFO ] 2021-01-24 16:56:13.659 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:56:13.660 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 16:56:13.660 [main] PyToCFG - 33
+[INFO ] 2021-01-24 16:56:13.663 [main] PyToCFG - a
+[INFO ] 2021-01-24 16:56:13.663 [main] PyToCFG - 33
+[INFO ] 2021-01-24 16:56:13.665 [main] PyToCFG - a = 33
+[INFO ] 2021-01-24 16:56:13.667 [main] PyToCFG - a = 33
+[INFO ] 2021-01-24 16:56:13.668 [main] PyToCFG - small
+[INFO ] 2021-01-24 16:56:13.668 [main] PyToCFG - a = 33
+[INFO ] 2021-01-24 16:56:13.668 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 16:56:13.668 [main] PyToCFG - a = 33
+[INFO ] 2021-01-24 16:56:13.668 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 16:56:13.669 [main] PyToCFG - 1
+[INFO ] 2021-01-24 16:56:13.669 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:56:13.669 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 16:56:13.669 [main] PyToCFG - b
+[INFO ] 2021-01-24 16:56:13.670 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:56:13.670 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 16:56:13.670 [main] PyToCFG - 200
+[INFO ] 2021-01-24 16:56:13.670 [main] PyToCFG - b
+[INFO ] 2021-01-24 16:56:13.670 [main] PyToCFG - 200
+[INFO ] 2021-01-24 16:56:13.671 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 16:56:13.671 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 16:56:13.671 [main] PyToCFG - small
+[INFO ] 2021-01-24 16:56:13.672 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 16:56:13.672 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 16:56:13.672 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 16:56:13.673 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 16:56:13.673 [main] PyToCFG - 1
+[INFO ] 2021-01-24 16:56:13.674 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:56:13.674 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 16:56:13.674 [main] PyToCFG - b
+[INFO ] 2021-01-24 16:56:13.674 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:56:13.675 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 16:56:13.675 [main] PyToCFG - 200
+[INFO ] 2021-01-24 16:56:13.675 [main] PyToCFG - b
+[INFO ] 2021-01-24 16:56:13.676 [main] PyToCFG - 200
+[INFO ] 2021-01-24 16:56:13.676 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 16:56:13.676 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 16:56:13.676 [main] PyToCFG - small
+[INFO ] 2021-01-24 16:56:13.676 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 16:56:13.677 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 16:56:13.677 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 16:56:13.677 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:56:13.677 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 16:56:13.678 [main] PyToCFG - b
+[INFO ] 2021-01-24 16:56:13.678 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:56:13.678 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 16:56:13.679 [main] PyToCFG - a
+[INFO ] 2021-01-24 16:56:13.686 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 16:56:13.686 [main] PyToCFG - 1
+[INFO ] 2021-01-24 16:56:13.686 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:56:13.686 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 16:56:13.687 [main] PyToCFG - b
+[INFO ] 2021-01-24 16:56:13.687 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 16:56:13.687 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 16:56:13.687 [main] PyToCFG - 1
+[INFO ] 2021-01-24 16:56:13.688 [main] PyToCFG - b
+[INFO ] 2021-01-24 16:56:13.688 [main] PyToCFG - 1
+[INFO ] 2021-01-24 16:56:13.688 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 16:56:13.688 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 16:56:13.689 [main] PyToCFG - small
+[INFO ] 2021-01-24 16:56:13.689 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 16:56:13.689 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 16:56:13.689 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 16:56:13.689 [main] PyToCFG - test lenght
+[INFO ] 2021-01-24 16:56:13.690 [main] PyToCFG - 1
+[INFO ] 2021-01-24 16:56:13.742 [main] PyToCFG - Done
+[INFO ] 2021-01-24 16:56:13.749 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 107ms 255100ns]
+[INFO ] 2021-01-24 17:12:36.901 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:12:36.903 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:12:37.081 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 33)))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 200)))))))))))))))))))))   )) (stmt (compound_stmt (if_stmt if (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))) (comp_op >) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1))))))))))))))))))))) 1)) 1))))   a=1)
+[INFO ] 2021-01-24 17:12:37.087 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:12:37.090 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:12:37.093 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:12:37.094 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:12:37.094 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:12:37.094 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:12:37.095 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:12:37.097 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:12:37.097 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:12:37.097 [main] PyToCFG - 33
+[INFO ] 2021-01-24 17:12:37.098 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:12:37.099 [main] PyToCFG - 33
+[INFO ] 2021-01-24 17:12:37.099 [main] PyToCFG - a = 33
+[INFO ] 2021-01-24 17:12:37.101 [main] PyToCFG - a = 33
+[INFO ] 2021-01-24 17:12:37.101 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:12:37.101 [main] PyToCFG - a = 33
+[INFO ] 2021-01-24 17:12:37.101 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:12:37.102 [main] PyToCFG - a = 33
+[INFO ] 2021-01-24 17:12:37.102 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:12:37.102 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:12:37.102 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:12:37.102 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:12:37.102 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:12:37.102 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:12:37.103 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:12:37.103 [main] PyToCFG - 200
+[INFO ] 2021-01-24 17:12:37.103 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:12:37.103 [main] PyToCFG - 200
+[INFO ] 2021-01-24 17:12:37.103 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:12:37.103 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:12:37.103 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:12:37.103 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:12:37.103 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:12:37.103 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:12:37.104 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:12:37.104 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:12:37.105 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:12:37.105 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:12:37.105 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:12:37.105 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:12:37.105 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:12:37.105 [main] PyToCFG - 200
+[INFO ] 2021-01-24 17:12:37.105 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:12:37.106 [main] PyToCFG - 200
+[INFO ] 2021-01-24 17:12:37.106 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:12:37.106 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:12:37.106 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:12:37.106 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:12:37.106 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:12:37.106 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:12:37.107 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:12:37.107 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:12:37.107 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:12:37.107 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:12:37.107 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:12:37.107 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:12:37.111 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:12:37.111 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:12:37.112 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:12:37.112 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:12:37.112 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:12:37.113 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:12:37.113 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:12:37.113 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:12:37.113 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:12:37.114 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:12:37.114 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:12:37.114 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:12:37.114 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:12:37.114 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:12:37.115 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:12:37.115 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:12:37.116 [main] PyToCFG - test lenght
+[INFO ] 2021-01-24 17:12:37.116 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:12:37.117 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:12:37.117 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:12:37.117 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:12:37.117 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:12:37.117 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:12:37.118 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:12:37.118 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:12:37.118 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:12:37.118 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:12:37.119 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:12:37.119 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:12:37.119 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:12:37.119 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:12:37.119 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:12:37.119 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:12:37.120 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:12:37.165 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:12:37.171 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 82ms 44200ns]
+[INFO ] 2021-01-24 17:13:03.590 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:13:03.593 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:13:03.769 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 200)))))))))))))))))))))   )) (stmt (compound_stmt (if_stmt if (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))) (comp_op >) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1))))))))))))))))))))) 1)) 1))))   a=1)
+[INFO ] 2021-01-24 17:13:03.773 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:13:03.776 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:13:03.781 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:13:03.781 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:03.782 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:03.782 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:03.782 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:03.784 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:03.785 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:13:03.785 [main] PyToCFG - 200
+[INFO ] 2021-01-24 17:13:03.786 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:03.787 [main] PyToCFG - 200
+[INFO ] 2021-01-24 17:13:03.788 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:13:03.789 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:13:03.789 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:13:03.790 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:13:03.790 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:13:03.790 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:13:03.790 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:03.790 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:03.790 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:03.790 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:03.791 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:03.791 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:13:03.794 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:13:03.794 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:03.794 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:03.794 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:03.795 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:03.795 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:03.795 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:13:03.795 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:03.795 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:03.795 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:03.796 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:13:03.796 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:13:03.796 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:13:03.796 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:13:03.796 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:13:03.796 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:13:03.797 [main] PyToCFG - test lenght
+[INFO ] 2021-01-24 17:13:03.797 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:03.798 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:03.798 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:03.798 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:03.798 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:03.798 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:03.799 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:13:03.799 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:13:03.799 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:03.799 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:03.799 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:03.799 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:03.800 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:03.800 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:13:03.800 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:03.800 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:03.800 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:03.800 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:13:03.800 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:13:03.801 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:13:03.801 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:13:03.801 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:13:03.801 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:13:03.801 [main] PyToCFG - test lenght
+[INFO ] 2021-01-24 17:13:03.801 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:03.802 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:13:03.802 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:03.802 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:03.802 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:03.802 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:13:03.802 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:03.802 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:13:03.803 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:03.803 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:13:03.803 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:03.803 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:13:03.803 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:13:03.803 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:13:03.803 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:13:03.803 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:13:03.803 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:13:03.846 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:13:03.851 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 76ms 842400ns]
+[INFO ] 2021-01-24 17:13:54.472 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:13:54.475 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:13:54.642 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (compound_stmt (if_stmt if (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))) (comp_op >) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 200))))))))))))))))))))) 0)) 0)))) = 200)
+[INFO ] 2021-01-24 17:13:54.646 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:13:54.651 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:13:54.654 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:54.655 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:54.655 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:54.657 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:54.657 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:54.658 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:13:54.661 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:13:54.662 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:54.662 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:54.662 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:54.662 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:54.662 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:54.662 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:13:54.663 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:54.664 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:54.664 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:54.666 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:13:54.666 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:13:54.666 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:13:54.666 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:13:54.666 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:13:54.666 [main] PyToCFG - b = 1
+[INFO ] 2021-01-24 17:13:54.667 [main] PyToCFG - test lenght
+[INFO ] 2021-01-24 17:13:54.667 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:54.668 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:13:54.668 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:54.668 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:54.668 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:54.668 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:13:54.668 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:54.668 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:13:54.669 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:54.669 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:13:54.669 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:54.669 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:13:54.669 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:13:54.669 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:13:54.669 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:13:54.669 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:13:54.670 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:13:54.670 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:13:54.670 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:54.670 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:54.670 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:54.670 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:13:54.670 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:54.670 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:13:54.671 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:54.671 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:13:54.671 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:54.671 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:13:54.671 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:13:54.671 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:13:54.671 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:13:54.671 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:13:54.672 [main] PyToCFG - a = 1
+[INFO ] 2021-01-24 17:13:54.672 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:13:54.672 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:13:54.672 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:54.672 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:13:54.673 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:54.673 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:13:54.673 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:13:54.673 [main] PyToCFG - 200
+[INFO ] 2021-01-24 17:13:54.673 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:13:54.673 [main] PyToCFG - 200
+[INFO ] 2021-01-24 17:13:54.673 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:13:54.673 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:13:54.673 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:13:54.673 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:13:54.673 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:13:54.674 [main] PyToCFG - b = 200
+[INFO ] 2021-01-24 17:13:54.715 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:13:54.721 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 72ms 611100ns]
+[INFO ] 2021-01-24 17:15:26.864 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:15:26.866 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:15:27.042 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (compound_stmt (with_stmt with (with_item (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom Saved) (trailer ( (arglist (argument (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom cr)))))))))))))))))))) )))))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 2))))))))))))))))))))) 2)) 2)))) 2))))   a=2)
+[INFO ] 2021-01-24 17:15:27.046 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:15:27.049 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:15:27.053 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:15:27.053 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:15:27.054 [main] PyToCFG - Saved
+[INFO ] 2021-01-24 17:15:27.057 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:15:27.058 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:15:27.058 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:15:27.059 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:15:27.059 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:15:27.059 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:15:27.059 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:15:27.059 [main] PyToCFG - 2
+[INFO ] 2021-01-24 17:15:27.060 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:15:27.061 [main] PyToCFG - 2
+[INFO ] 2021-01-24 17:15:27.062 [main] PyToCFG - a = 2
+[INFO ] 2021-01-24 17:15:27.062 [main] PyToCFG - a = 2
+[INFO ] 2021-01-24 17:15:27.062 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:15:27.062 [main] PyToCFG - a = 2
+[INFO ] 2021-01-24 17:15:27.062 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:15:27.062 [main] PyToCFG - a = 2
+[INFO ] 2021-01-24 17:15:27.095 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:15:27.101 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 53ms 202200ns]
+[INFO ] 2021-01-24 17:28:44.510 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:28:44.512 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:28:44.715 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 0)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom print) (trailer ( (arglist (argument (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore)))))))))))))))))))) ))))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1))))))))))))))))))))))) 1)) 1)))) 1)))) e + 1)
+[INFO ] 2021-01-24 17:28:44.719 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:28:44.723 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:28:44.728 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:28:44.728 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:28:44.729 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:28:44.729 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:28:44.729 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:28:44.731 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:28:44.732 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:28:44.732 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:28:44.733 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:28:44.734 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:28:44.735 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:28:44.736 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:28:44.736 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:28:44.736 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:28:44.737 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:28:44.737 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:28:44.738 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:28:44.738 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:28:44.738 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:28:44.738 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:28:44.738 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:28:44.738 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:28:44.741 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:28:44.742 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:28:44.742 [main] PyToCFG - null
+[INFO ] 2021-01-24 17:28:44.742 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:28:44.742 [main] PyToCFG - null
+[INFO ] 2021-01-24 17:28:44.742 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:28:44.742 [main] PyToCFG - null
+[INFO ] 2021-01-24 17:28:44.742 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:28:44.742 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:28:44.743 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:28:44.743 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:28:44.743 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:28:44.744 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:28:44.744 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:28:44.744 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:28:44.744 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:28:44.745 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:28:44.745 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:28:44.745 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:28:44.751 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:28:44.751 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:28:44.751 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:28:44.752 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:28:44.752 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:28:44.752 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:28:44.752 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:29:54.393 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:29:54.397 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:29:54.561 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 0)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1))))))))))))))))))))))) 1)) 1)))) 1)))) e + 1)
+[INFO ] 2021-01-24 17:29:54.565 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:29:54.568 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:29:54.572 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:29:54.573 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:29:54.573 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:29:54.573 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:29:54.573 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:29:54.576 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:29:54.576 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:29:54.577 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:29:54.579 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:29:54.580 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:29:54.582 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:29:54.584 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:29:54.584 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:29:54.584 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:29:54.584 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:29:54.584 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:29:54.584 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:29:54.584 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:29:54.585 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:29:54.585 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:29:54.585 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:29:54.586 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:29:54.589 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:29:54.589 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:29:54.591 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:29:54.591 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:29:54.591 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:29:54.591 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:29:54.591 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:29:54.591 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:29:54.591 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:29:54.591 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:29:54.591 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:29:54.591 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:29:54.598 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:29:54.598 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:29:54.598 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:29:54.598 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:29:54.599 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:29:54.599 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:29:54.599 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:29:54.635 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:29:54.641 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 74ms 198400ns]
+[INFO ] 2021-01-24 17:30:37.440 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:30:37.443 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:30:37.630 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 0)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 6))))))))))))))))))))) 6)) 6)))) e = 6)
+[INFO ] 2021-01-24 17:30:37.637 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:30:37.643 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:30:37.649 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:30:37.650 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:30:37.650 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.651 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:30:37.651 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:30:37.653 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.653 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:30:37.653 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:30:37.655 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:30:37.655 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:30:37.656 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:30:37.658 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:30:37.658 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:30:37.658 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:30:37.658 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:30:37.658 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:30:37.658 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.658 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:30:37.659 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:30:37.659 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.659 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:30:37.659 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:30:37.662 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:30:37.662 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:30:37.662 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.662 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:30:37.662 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:30:37.663 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.663 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:30:37.663 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:30:37.663 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.663 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:30:37.663 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:30:37.664 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:30:37.670 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:30:37.671 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:30:37.671 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:30:37.671 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:30:37.672 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:30:37.672 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:30:37.672 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:30:37.673 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.674 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:30:37.674 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:30:37.674 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.674 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:30:37.674 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:30:37.675 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:30:37.675 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:30:37.675 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.675 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:30:37.675 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:30:37.675 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.676 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:30:37.676 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:30:37.676 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.676 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:30:37.676 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:30:37.676 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:30:37.679 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:30:37.680 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:30:37.680 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:30:37.680 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:30:37.680 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:30:37.680 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:30:37.680 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:30:37.681 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:30:37.681 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:30:37.681 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.681 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:30:37.681 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:30:37.681 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:30:37.681 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:30:37.681 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:30:37.682 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:30:37.682 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:30:37.682 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:30:37.682 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:30:37.682 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:30:37.682 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:30:37.682 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:30:37.682 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:30:37.721 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:30:37.726 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 88ms 919800ns]
+[INFO ] 2021-01-24 17:40:37.681 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:40:37.683 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:40:37.886 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 0)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 6))))))))))))))))))))) 6)) 6)))) e = 6)
+[INFO ] 2021-01-24 17:40:37.891 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:40:37.895 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:40:37.900 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:40:37.901 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:40:37.901 [main] PyToCFG - eccomi
+[INFO ] 2021-01-24 17:40:37.901 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.901 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:40:37.901 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:40:37.904 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.904 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:40:37.905 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:40:37.907 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:40:37.908 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:40:37.909 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:40:37.911 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:40:37.912 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:40:37.912 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:40:37.912 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:40:37.912 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:40:37.912 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.913 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:40:37.913 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:40:37.913 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.913 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:40:37.914 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:40:37.916 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:40:37.916 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:40:37.917 [main] PyToCFG - eccomi
+[INFO ] 2021-01-24 17:40:37.917 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.917 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:40:37.917 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:40:37.918 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.918 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:40:37.918 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:40:37.919 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.919 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:40:37.919 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:40:37.920 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:40:37.927 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:40:37.927 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:40:37.927 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:40:37.927 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:40:37.928 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:40:37.928 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:40:37.928 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:40:37.930 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.930 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:40:37.930 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:40:37.930 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.930 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:40:37.931 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:40:37.931 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:40:37.931 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:40:37.931 [main] PyToCFG - eccomi
+[INFO ] 2021-01-24 17:40:37.931 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.931 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:40:37.932 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:40:37.932 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.932 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:40:37.932 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:40:37.933 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.933 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:40:37.933 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:40:37.933 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:40:37.933 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:40:37.933 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:40:37.933 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:40:37.933 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:40:37.934 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:40:37.934 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:40:37.934 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:40:37.934 [main] PyToCFG - passo per di qui
+[INFO ] 2021-01-24 17:40:37.934 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:40:37.935 [main] PyToCFG - eccomi
+[INFO ] 2021-01-24 17:40:37.935 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.935 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:40:37.935 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:40:37.935 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:40:37.935 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:40:37.935 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:40:37.935 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:40:37.935 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:40:37.935 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:40:37.936 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:40:37.936 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:40:37.936 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:40:37.936 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:40:37.936 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:40:37.973 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:40:37.979 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 86ms 200300ns]
+[INFO ] 2021-01-24 17:42:44.352 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:42:44.355 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:42:44.559 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 0)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 6))))))))))))))))))))) 6)) 6)))) e = 6)
+[INFO ] 2021-01-24 17:42:44.564 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:42:44.567 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:42:44.573 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.573 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:42:44.574 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:42:44.577 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.577 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:42:44.577 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:42:44.578 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:42:44.579 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:42:44.579 [main] PyToCFG - qui
+[INFO ] 2021-01-24 17:42:44.580 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:42:44.581 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:42:44.581 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:42:44.582 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:42:44.582 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:42:44.582 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:42:44.582 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.582 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:42:44.582 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:42:44.582 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.582 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:42:44.583 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:42:44.585 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.585 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:42:44.585 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:42:44.586 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.587 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:42:44.587 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:42:44.587 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.587 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:42:44.587 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:42:44.587 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:42:44.594 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:42:44.594 [main] PyToCFG - qui
+[INFO ] 2021-01-24 17:42:44.594 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:42:44.595 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:42:44.595 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:42:44.595 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:42:44.595 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:42:44.595 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:42:44.596 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.597 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:42:44.597 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:42:44.597 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.597 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:42:44.597 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:42:44.597 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.598 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:42:44.598 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:42:44.598 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.598 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:42:44.598 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:42:44.598 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.598 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:42:44.599 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:42:44.599 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:42:44.599 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:42:44.599 [main] PyToCFG - qui
+[INFO ] 2021-01-24 17:42:44.599 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:42:44.599 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:42:44.599 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:42:44.600 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:42:44.600 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:42:44.600 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:42:44.600 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.600 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:42:44.600 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:42:44.601 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:42:44.601 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:42:44.601 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:42:44.601 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:42:44.601 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:42:44.601 [main] PyToCFG - qui
+[INFO ] 2021-01-24 17:42:44.601 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:42:44.601 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:42:44.601 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:42:44.601 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:42:44.601 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:42:44.601 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:42:44.638 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:42:44.645 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 78ms 601800ns]
+[INFO ] 2021-01-24 17:47:49.732 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:47:49.736 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:47:49.919 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 0)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 6))))))))))))))))))))) 6)) 6)))) e = 6)
+[INFO ] 2021-01-24 17:47:49.924 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:47:49.927 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:47:49.931 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.931 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:47:49.931 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:47:49.934 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.934 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:47:49.934 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:47:49.936 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:47:49.936 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:47:49.937 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:47:49.938 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:47:49.938 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:47:49.939 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:47:49.939 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:47:49.939 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:47:49.939 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.939 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:47:49.939 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:47:49.939 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.940 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:47:49.940 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:47:49.942 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.943 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:47:49.943 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:47:49.943 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.944 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:47:49.944 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:47:49.944 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.944 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:47:49.944 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:47:49.944 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:47:49.951 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:47:49.951 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:47:49.951 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:47:49.951 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:47:49.951 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:47:49.952 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:47:49.952 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:47:49.953 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.954 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:47:49.954 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:47:49.954 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.954 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:47:49.954 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:47:49.954 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.954 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:47:49.955 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:47:49.955 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.955 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:47:49.955 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:47:49.955 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.955 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:47:49.955 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:47:49.956 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:47:49.956 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:47:49.956 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:47:49.956 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:47:49.956 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:47:49.956 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:47:49.956 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:47:49.957 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:47:49.957 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.957 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:47:49.957 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:47:49.957 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:47:49.958 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:47:49.958 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:47:49.958 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:47:49.958 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:47:49.958 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:47:49.958 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:47:49.958 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:47:49.958 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:47:49.958 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:47:49.958 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:47:49.996 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:47:50.002 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 76ms 319100ns]
+[INFO ] 2021-01-24 17:48:13.376 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:48:13.379 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:48:13.554 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 0)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 6))))))))))))))))))))) 6)) 6)))) e = 6)
+[INFO ] 2021-01-24 17:48:13.559 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:48:13.562 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:48:13.566 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.566 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:48:13.567 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:48:13.569 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.570 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:48:13.570 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:48:13.572 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:48:13.572 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:48:13.573 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:48:13.574 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:48:13.575 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:48:13.575 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:48:13.575 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:48:13.575 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:48:13.575 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.575 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:48:13.575 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:48:13.576 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.576 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:48:13.576 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:48:13.578 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.579 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:48:13.579 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:48:13.579 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.579 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:48:13.580 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:48:13.580 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.580 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:48:13.580 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:48:13.580 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:48:13.614 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:48:13.614 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:48:13.614 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:48:13.614 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:48:13.615 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:48:13.615 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:48:13.615 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:48:13.617 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.617 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:48:13.617 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:48:13.618 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.618 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:48:13.618 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:48:13.618 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.618 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:48:13.618 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:48:13.619 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.619 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:48:13.619 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:48:13.619 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.619 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:48:13.619 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:48:13.619 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:48:13.620 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:48:13.620 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:48:13.620 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:48:13.620 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:48:13.621 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:48:13.621 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:48:13.623 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:48:13.625 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.625 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:48:13.625 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:48:13.625 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:48:13.625 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:48:13.625 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:48:13.625 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:48:13.625 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:48:13.625 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:48:13.625 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:48:13.625 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:48:13.626 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:48:13.626 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:48:13.626 [main] PyToCFG - contatore = 6
+[INFO ] 2021-01-24 17:48:13.690 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:48:13.696 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 134ms 879800ns]
+[INFO ] 2021-01-24 17:49:22.727 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:49:22.730 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:49:22.933 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 0)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 3)))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom x))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 56))))))))))))))))))))) \r\n)) \n)))) \n)))) <EOF>)
+[INFO ] 2021-01-24 17:49:22.937 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:49:22.942 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:49:22.946 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.946 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:49:22.947 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:49:22.949 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.950 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:49:22.950 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:49:22.951 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:49:22.951 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:49:22.952 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:49:22.953 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:49:22.954 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:49:22.954 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:49:22.954 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:49:22.954 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:49:22.954 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.954 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:49:22.955 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:49:22.955 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.955 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:49:22.955 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:49:22.957 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.958 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:49:22.958 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:49:22.958 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.958 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:49:22.958 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:49:22.959 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.959 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:49:22.959 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:49:22.959 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:49:22.966 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:49:22.966 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:49:22.966 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:49:22.966 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:49:22.966 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:49:22.966 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:49:22.966 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:49:22.966 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.966 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:49:22.967 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:49:22.967 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.967 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:49:22.967 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:49:22.967 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:49:22.967 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:49:22.967 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:49:22.967 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:49:22.967 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:49:22.967 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:49:22.967 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:49:22.968 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:49:22.968 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.968 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:49:22.969 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:49:22.969 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.969 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:49:22.969 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:49:22.969 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:49:22.969 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:49:22.969 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:49:22.969 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:49:22.969 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:49:22.969 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:49:22.970 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:49:22.970 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:49:22.970 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.970 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:49:22.970 [main] PyToCFG - x
+[INFO ] 2021-01-24 17:49:22.970 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:22.970 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:49:22.970 [main] PyToCFG - 56
+[INFO ] 2021-01-24 17:49:22.970 [main] PyToCFG - x
+[INFO ] 2021-01-24 17:49:22.970 [main] PyToCFG - 56
+[INFO ] 2021-01-24 17:49:22.970 [main] PyToCFG - x = 56
+[INFO ] 2021-01-24 17:49:22.971 [main] PyToCFG - x = 56
+[INFO ] 2021-01-24 17:49:22.971 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:49:22.971 [main] PyToCFG - x = 56
+[INFO ] 2021-01-24 17:49:22.971 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:49:22.971 [main] PyToCFG - x = 56
+[INFO ] 2021-01-24 17:49:23.007 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:49:23.013 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 74ms 6900ns]
+[INFO ] 2021-01-24 17:49:42.336 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:49:42.340 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:49:42.539 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 0)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 3))))))))))))))))))))) \r\n)) \n)))) \n)))) <EOF>)
+[INFO ] 2021-01-24 17:49:42.545 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:49:42.549 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:49:42.555 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:42.555 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:49:42.556 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:49:42.559 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:42.560 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:49:42.560 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:49:42.563 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:49:42.563 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:49:42.565 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:49:42.567 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:49:42.567 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:49:42.567 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:49:42.568 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:49:42.568 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:49:42.568 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:42.568 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:49:42.569 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:49:42.569 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:42.569 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:49:42.570 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:49:42.574 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:42.574 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:49:42.575 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:49:42.575 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:42.576 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:49:42.576 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:49:42.576 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:42.576 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:49:42.576 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:49:42.577 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:49:42.585 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:49:42.586 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:49:42.586 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:49:42.586 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:49:42.586 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:49:42.587 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:49:42.587 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:49:42.587 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:42.588 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:49:42.588 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:49:42.588 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:49:42.588 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:49:42.588 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:49:42.589 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:49:42.589 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:49:42.589 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:49:42.589 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:49:42.589 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:49:42.590 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:49:42.590 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:49:42.590 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:49:42.653 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:49:42.667 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 115ms 111700ns]
+[INFO ] 2021-01-24 17:50:20.325 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:50:20.328 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:50:20.568 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 0)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 3)))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 56))))))))))))))))))))) \r\n)) \n)))) <EOF>)
+[INFO ] 2021-01-24 17:50:20.573 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:50:20.578 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:50:20.584 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.585 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:20.586 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:20.589 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.589 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:20.590 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:50:20.592 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:20.592 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:50:20.593 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:50:20.595 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:50:20.596 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:20.596 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:50:20.596 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:20.596 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:50:20.596 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.597 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:20.597 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:20.597 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.597 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:20.597 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:50:20.602 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.602 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:20.603 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:20.603 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.604 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:20.604 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:20.604 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.605 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:20.605 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:50:20.606 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:20.616 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:50:20.616 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:20.617 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:20.617 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:20.617 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:20.617 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:20.617 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:20.618 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.618 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:20.618 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:20.618 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.618 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:20.618 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:50:20.619 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:20.619 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:50:20.619 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:20.619 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:20.619 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:20.620 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:20.620 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:20.620 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:20.622 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.622 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:20.623 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:20.623 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.623 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:20.624 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:50:20.624 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.625 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:20.625 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:20.625 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.625 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:20.626 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:20.626 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.626 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:20.626 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:50:20.626 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:20.626 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:50:20.626 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:20.626 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:20.627 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:20.627 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:20.627 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:20.627 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:20.627 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.627 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:20.627 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:20.627 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.627 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:20.628 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:50:20.628 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:20.628 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:50:20.628 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:20.629 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:20.629 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:20.629 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:20.629 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:20.629 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:20.630 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.630 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:20.630 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:20.631 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:20.632 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:20.632 [main] PyToCFG - 56
+[INFO ] 2021-01-24 17:50:20.632 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:20.632 [main] PyToCFG - 56
+[INFO ] 2021-01-24 17:50:20.632 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:50:20.633 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:50:20.633 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:20.633 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:50:20.633 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:20.633 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:50:20.673 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:50:20.679 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 104ms 679600ns]
+[INFO ] 2021-01-24 17:50:52.481 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:50:52.485 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:50:52.717 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 0)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 4)))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 3)))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 56))))))))))))))))))))) \r\n)) \n)))) <EOF>)
+[INFO ] 2021-01-24 17:50:52.725 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:50:52.728 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:50:52.733 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.733 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.734 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:52.737 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.737 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:52.738 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:50:52.740 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:52.740 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:50:52.742 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:50:52.743 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:50:52.744 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:52.744 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:50:52.744 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:52.744 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:50:52.744 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.744 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.744 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:52.745 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.745 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:52.745 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:50:52.747 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.748 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.748 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:52.749 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.749 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.749 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:52.749 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.750 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:52.750 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:50:52.750 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:52.761 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:50:52.761 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:52.761 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:52.762 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:52.762 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:52.762 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:52.762 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:52.762 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.762 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.763 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.763 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.763 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:52.763 [main] PyToCFG - 4
+[INFO ] 2021-01-24 17:50:52.763 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.764 [main] PyToCFG - 4
+[INFO ] 2021-01-24 17:50:52.764 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.765 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.765 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:52.765 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.765 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:52.766 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.766 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.766 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.766 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.767 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.767 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:52.767 [main] PyToCFG - 4
+[INFO ] 2021-01-24 17:50:52.767 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.769 [main] PyToCFG - 4
+[INFO ] 2021-01-24 17:50:52.770 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.770 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.770 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:52.770 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.770 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:52.770 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.770 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.771 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.771 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.771 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.771 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:52.771 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:50:52.771 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.771 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:50:52.771 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:52.771 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:52.771 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:52.771 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:52.772 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:52.772 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:52.773 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.773 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.773 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:52.774 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.774 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:52.774 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:50:52.775 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.775 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.775 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:52.775 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.775 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.775 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:52.775 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.776 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:52.776 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:50:52.776 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:50:52.776 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:50:52.776 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:52.776 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:52.777 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:52.778 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:52.778 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:52.778 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:50:52.778 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.778 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.778 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.778 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.779 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:52.779 [main] PyToCFG - 4
+[INFO ] 2021-01-24 17:50:52.779 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.779 [main] PyToCFG - 4
+[INFO ] 2021-01-24 17:50:52.779 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.779 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.779 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:52.779 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.779 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:52.779 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.779 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.780 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.780 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.780 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.780 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:52.780 [main] PyToCFG - 4
+[INFO ] 2021-01-24 17:50:52.780 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.780 [main] PyToCFG - 4
+[INFO ] 2021-01-24 17:50:52.781 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.781 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.781 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:52.781 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.781 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:52.782 [main] PyToCFG - a = 4
+[INFO ] 2021-01-24 17:50:52.782 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.782 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.782 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.782 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.783 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:52.783 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:50:52.783 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.783 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:50:52.783 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:52.783 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:52.783 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:52.783 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:52.783 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:52.783 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:50:52.784 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.784 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:50:52.784 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.784 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:50:52.784 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:50:52.785 [main] PyToCFG - 56
+[INFO ] 2021-01-24 17:50:52.785 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:50:52.785 [main] PyToCFG - 56
+[INFO ] 2021-01-24 17:50:52.785 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:50:52.786 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:50:52.786 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:50:52.787 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:50:52.787 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:50:52.788 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:50:52.829 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:50:52.835 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 110ms 807300ns]
+[INFO ] 2021-01-24 17:51:26.548 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:51:26.550 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:51:26.724 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 0)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 56))))))))))))))))))))) \r\n)) \n)))) <EOF>)
+[INFO ] 2021-01-24 17:51:26.729 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:51:26.732 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:51:26.736 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.736 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:51:26.736 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:26.738 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.739 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:51:26.739 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:51:26.740 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:26.740 [main] PyToCFG - 0
+[INFO ] 2021-01-24 17:51:26.741 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:51:26.743 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:51:26.743 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:51:26.743 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:51:26.743 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:51:26.743 [main] PyToCFG - contatore = 0
+[INFO ] 2021-01-24 17:51:26.744 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.744 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:51:26.744 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:26.744 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.744 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:51:26.744 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:51:26.747 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.747 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:51:26.747 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:26.747 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.748 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:51:26.748 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:26.748 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.748 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:51:26.748 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:51:26.748 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:26.754 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:51:26.754 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:51:26.754 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:51:26.755 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:51:26.755 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:51:26.755 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:51:26.755 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:51:26.757 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.757 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:51:26.757 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:26.757 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.757 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:51:26.757 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:51:26.758 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.758 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:51:26.758 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:26.758 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.758 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:51:26.758 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:26.759 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.759 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:51:26.759 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:51:26.759 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:26.760 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:51:26.760 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:51:26.760 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:51:26.760 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:51:26.760 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:51:26.760 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:51:26.761 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:51:26.761 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.761 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:51:26.761 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:51:26.761 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:26.761 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:51:26.762 [main] PyToCFG - 56
+[INFO ] 2021-01-24 17:51:26.762 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:51:26.762 [main] PyToCFG - 56
+[INFO ] 2021-01-24 17:51:26.762 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:51:26.762 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:51:26.762 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:51:26.762 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:51:26.762 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:51:26.762 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:51:26.800 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:51:26.806 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 75ms 52600ns]
+[INFO ] 2021-01-24 17:51:50.373 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:51:50.376 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:51:50.552 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 56))))))))))))))))))))) \r\n)) \n)))) <EOF>)
+[INFO ] 2021-01-24 17:51:50.557 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:51:50.560 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:51:50.566 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:50.566 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:51:50.567 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:50.569 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:50.569 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:51:50.569 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:51:50.573 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:50.573 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:51:50.573 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:50.574 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:50.574 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:51:50.575 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:50.575 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:50.575 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:51:50.575 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:51:50.575 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:51:50.581 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:51:50.582 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:51:50.582 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:51:50.583 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:51:50.583 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:51:50.583 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:51:50.583 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:51:50.584 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:50.584 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:51:50.584 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:51:50.585 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:51:50.585 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:51:50.585 [main] PyToCFG - 56
+[INFO ] 2021-01-24 17:51:50.585 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:51:50.585 [main] PyToCFG - 56
+[INFO ] 2021-01-24 17:51:50.585 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:51:50.585 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:51:50.585 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:51:50.585 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:51:50.586 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:51:50.586 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:51:50.620 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:51:50.626 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 68ms 253600ns]
+[INFO ] 2021-01-24 17:52:12.548 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:52:12.550 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:52:12.663 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 3)))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 6))))))))))))))))))))) \r\n)) \n)))) <EOF>)
+[INFO ] 2021-01-24 17:52:12.668 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:52:12.671 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:52:12.675 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:12.675 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:12.676 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:52:12.678 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:12.679 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:12.679 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:52:12.680 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:52:12.680 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:52:12.682 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:52:12.683 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:52:12.683 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:52:12.683 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:52:12.683 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:52:12.683 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:52:12.684 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:12.684 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:12.684 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:52:12.684 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:12.684 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:12.684 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:52:12.684 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:52:12.685 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:52:12.685 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:12.685 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:12.685 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:52:12.685 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:12.685 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:52:12.685 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:12.719 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:52:12.725 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 55ms 771700ns]
+[INFO ] 2021-01-24 17:52:27.146 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:52:27.149 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:52:27.297 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 3)))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 6)))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom c))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 3))))))))))))))))))))) \r\n)) \n)))) <EOF>)
+[INFO ] 2021-01-24 17:52:27.301 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:52:27.304 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:52:27.308 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:27.308 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:27.309 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:52:27.311 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:27.312 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:27.312 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:52:27.313 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:52:27.314 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:52:27.315 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:52:27.316 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:52:27.316 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:52:27.317 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:52:27.317 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:52:27.317 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:52:27.317 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:27.317 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:27.317 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:52:27.317 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:27.317 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:27.318 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:52:27.318 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:52:27.318 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:52:27.318 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:27.318 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:27.319 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:52:27.319 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:27.319 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:52:27.319 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:27.320 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:27.320 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:27.320 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:52:27.320 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:27.320 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:27.320 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:52:27.320 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:52:27.320 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:52:27.321 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:27.321 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:27.321 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:52:27.321 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:27.321 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:52:27.321 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:27.321 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:27.321 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:27.322 [main] PyToCFG - c
+[INFO ] 2021-01-24 17:52:27.322 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:27.322 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:27.322 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:52:27.322 [main] PyToCFG - c
+[INFO ] 2021-01-24 17:52:27.322 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:52:27.322 [main] PyToCFG - c = 3
+[INFO ] 2021-01-24 17:52:27.323 [main] PyToCFG - c = 3
+[INFO ] 2021-01-24 17:52:27.323 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:52:27.323 [main] PyToCFG - c = 3
+[INFO ] 2021-01-24 17:52:27.323 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:52:27.323 [main] PyToCFG - c = 3
+[INFO ] 2021-01-24 17:52:27.357 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:52:27.363 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 59ms 981300ns]
+[INFO ] 2021-01-24 17:52:57.628 [main] PyToCFG - PyToCFG setup...
+[INFO ] 2021-01-24 17:52:57.630 [main] PyToCFG - Reading file... src/test/resources/pyTest/py1.py
+[INFO ] 2021-01-24 17:52:57.817 [main] PyToCFG - (file_input \r\n (stmt (compound_stmt (funcdef def _repr_info (parameters ( (typedargslist (tfpdef self)) )) : (suite             (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 3)))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom b))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 6)))))))))))))))))))))   )) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom c))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 3)))))))))))))))))))))   )) (stmt (compound_stmt (while_stmt while (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))) (comp_op <=) (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 10)))))))))))))))))) : (suite                     (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom contatore))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (add (term (mul (factor (power (atom_expr (atom contatore)))))) + (arith_expr (minus (term (mul (factor (power (atom_expr (atom 1)))))))))))))))))))))))   ))  )))) (stmt (simple_stmt (small_stmt (expr_stmt (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom a))))))))))))))))))) = (testlist_star_expr (test (or_test (and_test (not_test (comparison (expr (xor_expr (and_expr (shift_expr (left_shift (arith_expr (minus (term (mul (factor (power (atom_expr (atom 56)))))))))))))))))))))  ))  ))))      )
+[INFO ] 2021-01-24 17:52:57.823 [main] PyToCFG - Parsing stmt lists... [start]
+[INFO ] 2021-01-24 17:52:57.826 [main] PyToCFG - Parsing stmt lists...: 1/1
+[INFO ] 2021-01-24 17:52:57.830 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.830 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:57.831 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:52:57.834 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.834 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:57.834 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:52:57.836 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:52:57.836 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:52:57.837 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:52:57.838 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:52:57.839 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:52:57.839 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:52:57.839 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:52:57.839 [main] PyToCFG - a = 3
+[INFO ] 2021-01-24 17:52:57.839 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.839 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:57.839 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:52:57.840 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.840 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:57.840 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:52:57.840 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:52:57.840 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:52:57.840 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:57.840 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:57.841 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:52:57.841 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:57.841 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:52:57.841 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:57.842 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.842 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:57.842 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:52:57.842 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.842 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:57.842 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:52:57.842 [main] PyToCFG - b
+[INFO ] 2021-01-24 17:52:57.843 [main] PyToCFG - 6
+[INFO ] 2021-01-24 17:52:57.843 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:57.843 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:57.843 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:52:57.843 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:57.843 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:52:57.843 [main] PyToCFG - b = 6
+[INFO ] 2021-01-24 17:52:57.844 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.844 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:57.844 [main] PyToCFG - c
+[INFO ] 2021-01-24 17:52:57.844 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.844 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:57.844 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:52:57.844 [main] PyToCFG - c
+[INFO ] 2021-01-24 17:52:57.845 [main] PyToCFG - 3
+[INFO ] 2021-01-24 17:52:57.845 [main] PyToCFG - c = 3
+[INFO ] 2021-01-24 17:52:57.845 [main] PyToCFG - c = 3
+[INFO ] 2021-01-24 17:52:57.845 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:52:57.845 [main] PyToCFG - c = 3
+[INFO ] 2021-01-24 17:52:57.845 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:52:57.845 [main] PyToCFG - c = 3
+[INFO ] 2021-01-24 17:52:57.846 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.846 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:57.846 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:52:57.846 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.846 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:57.847 [main] PyToCFG - 10
+[INFO ] 2021-01-24 17:52:57.850 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.850 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:57.850 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:52:57.851 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.851 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:57.851 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:52:57.851 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.852 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:57.852 [main] PyToCFG - 1
+[INFO ] 2021-01-24 17:52:57.852 [main] PyToCFG - contatore
+[INFO ] 2021-01-24 17:52:57.858 [main] PyToCFG - +(contatore, 1)
+[INFO ] 2021-01-24 17:52:57.858 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:52:57.858 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:52:57.858 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:52:57.858 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:52:57.859 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:52:57.859 [main] PyToCFG - contatore = +(contatore, 1)
+[INFO ] 2021-01-24 17:52:57.859 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.859 [main] PyToCFG - NAME:
+[INFO ] 2021-01-24 17:52:57.860 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:52:57.860 [main] PyToCFG - dentro il term
+[INFO ] 2021-01-24 17:52:57.860 [main] PyToCFG - NUMBER:
+[INFO ] 2021-01-24 17:52:57.860 [main] PyToCFG - 56
+[INFO ] 2021-01-24 17:52:57.860 [main] PyToCFG - a
+[INFO ] 2021-01-24 17:52:57.860 [main] PyToCFG - 56
+[INFO ] 2021-01-24 17:52:57.860 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:52:57.860 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:52:57.861 [main] PyToCFG - small
+[INFO ] 2021-01-24 17:52:57.861 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:52:57.861 [main] PyToCFG - sono in simple
+[INFO ] 2021-01-24 17:52:57.861 [main] PyToCFG - a = 56
+[INFO ] 2021-01-24 17:52:57.897 [main] PyToCFG - Done
+[INFO ] 2021-01-24 17:52:57.903 [main] PyToCFG - Parsing stmt lists... [stop] [1 Global stmt in 78ms 590500ns]

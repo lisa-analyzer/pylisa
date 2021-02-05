@@ -10,18 +10,28 @@ import it.unive.lisa.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.cfg.statement.BinaryNativeCall;
 import it.unive.pylisa.cfg.type.PyBoolType;
+/**
+ * A Python not function call (e1 != e2).
+ * 
+ * @author Nicolò Barbato
+ */
 
 public class PyNot2 extends BinaryNativeCall {
 
 	/**
-	 * Builds the logical not.
+	 * Builds a Python not expression at a given location in the program.
 	 * 
-	 * @param cfg        the {@link CFG} where this operation lies
-	 * @param sourceFile the source file name where this operation is defined
-	 * @param line       the line number where this operation is defined
-	 * @param col        the column where this operation is defined
-	 * @param expression the operand of this operation
+	 * @param cfg           the cfg that this expression belongs to
+	 * @param sourceFile    the source file where this expression happens. If
+	 *                      unknown, use {@code null}
+	 * @param line          the line number where this expression happens in the
+	 *                      source file. If unknown, use {@code -1}
+	 * @param col           the column where this expression happens in the source
+	 *                      file. If unknown, use {@code -1}
+	 * @param exp1		    left-hand side operand
+	 * @param exp2		    right-hand side operand
 	 */
+	
 	public PyNot2(CFG cfg, String sourceFile, int line, int col, Expression left, Expression right) {
 		super(cfg, sourceFile, line, col, "!=", PyBoolType.INSTANCE, left, right);
 	}

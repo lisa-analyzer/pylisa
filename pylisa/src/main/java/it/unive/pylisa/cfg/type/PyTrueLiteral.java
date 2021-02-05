@@ -1,4 +1,4 @@
-package it.unive.pylisa.cfg.expression.unary;
+package it.unive.pylisa.cfg.type;
 
 import it.unive.lisa.cfg.CFG;
 import it.unive.lisa.cfg.statement.Literal;
