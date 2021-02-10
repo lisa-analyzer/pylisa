@@ -156,9 +156,11 @@ import it.unive.pylisa.cfg.expression.binary.PyShiftLeft;
 import it.unive.pylisa.cfg.expression.binary.PyShiftRight;
 import it.unive.pylisa.cfg.expression.binary.PyXor;
 import it.unive.pylisa.cfg.expression.unary.PyNot;
+import it.unive.pylisa.cfg.type.PyFalseLiteral;
 import it.unive.pylisa.cfg.type.PyIntType;
 import it.unive.pylisa.cfg.type.PyStringLiteral;
 import it.unive.pylisa.cfg.type.PyStringType;
+import it.unive.pylisa.cfg.type.PyTrueLiteral;
 
 public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
@@ -597,13 +599,16 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitIf_stmt(If_stmtContext ctx) {
-
+		
+		// Visit if statement Boolean Guard
 		Statement booleanGuard = (Statement) visitTest(ctx.test(0));
 		currentCFG.addNode(booleanGuard);
 
+		//Created if exit node
 		NoOp ifExitNode = new NoOp(currentCFG);
 		currentCFG.addNode(ifExitNode);
 
+		//Visit if true block
 		Pair<Statement, Statement> trueBlock = (Pair<Statement, Statement>) visitSuite(ctx.suite(0));
 		
 		
@@ -613,25 +618,19 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		currentCFG.addNode(exitStatementTrueBranch);
 		currentCFG.addNode(entryStatementTrueBranch);
 		
-		
-		// if testLenght is >1 the context contains elif
-
 		currentCFG.addEdge(new TrueEdge(booleanGuard, entryStatementTrueBranch));
 		currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
-
-		
+	
 		int testLenght = ctx.test().size();
-		log.info("test lenght");
-		
-		log.info(testLenght);
 		
 		Statement lastBooleanGuardElif = booleanGuard;
-		//ho almeno un elif
+		
+		// if testLenght is >1 the context contains elif	
 		if(testLenght>1) {
-			// If statement without else but with elif
+
 				int i = 1;
-				// visit every elif
 				
+				// visit all the elif
 				while (i < testLenght) {
 					Statement booleanGuardElif = (Statement) visitTest(ctx.test(i));
 					currentCFG.addNode(booleanGuardElif);
@@ -650,8 +649,8 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 					i=i+1;
 				}
 		}
+				// If statement with else
 				if (ctx.ELSE() !=null) {
-					// If statement with else
 		
 					Pair<Statement, Statement> falseBlock = (Pair<Statement, Statement>) visitSuite(ctx.suite(ctx.suite().size()-1));
 					Statement entryStatementFalseBranch = falseBlock.getLeft();
@@ -662,11 +661,9 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 					currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, entryStatementFalseBranch));
 					currentCFG.addEdge(new SequentialEdge(exitStatementFalseBranch, ifExitNode));
 				}else {
-					// non esiste else quindi o termino if o termino elif
+					// If statement with no else
 					currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, ifExitNode));
 				}
-		
-
 
 		return (T) Pair.of(booleanGuard,ifExitNode);
 	}
@@ -851,9 +848,11 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitTest(TestContext ctx) {
+		//no if into the condition 
 		if (ctx.IF() == null) {
 			return visitOr_test(ctx.or_test(0));
 		} else {
+			//visit the if into the condition
 			Statement trueCase = (Statement) visitOr_test(ctx.or_test(0));
 			Statement booleanGuard = (Statement) visitOr_test(ctx.or_test(1));
 			Pair<Statement,Statement> falseCase = (Pair<Statement,Statement>) visitTest(ctx.test());
@@ -959,7 +958,6 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		int line = getLine(ctx);
 		int col = getCol(ctx);
 
-		// ho solo un expression
 		int nExpr = ctx.expr().size();
 		T result = null;
 		switch (nExpr) {
@@ -1035,14 +1033,17 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		int nXor = ctx.xor_expr().size();
 	
 		if (nXor == 1) {
+			//only one Xor
 			return visitXor_expr(ctx.xor_expr(0));
 		} else if (nXor == 2) {
+			//two Xor
 			return (T) new PyXor(currentCFG, "", line, col, (Expression) visitXor_expr(ctx.xor_expr(0)),
 					(Expression) visitXor_expr(ctx.xor_expr(1)));
-		} else {
+		} else { 
 			T temp = (T) new PyXor(currentCFG, "", line, col, (Expression) visitXor_expr(ctx.xor_expr(nXor - 2)),
 					(Expression) visitXor_expr(ctx.xor_expr(nXor - 1)));
 			nXor = nXor - 2;
+			// concatenate all the Xor expressions together
 			while (nXor > 0) {
 				temp = (T) new PyXor(currentCFG, "", line, col, (Expression) visitXor_expr(ctx.xor_expr(--nXor)),
 						(Expression) temp);
@@ -1068,6 +1069,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 			T temp = (T) new PyXor(currentCFG, "", line, col, (Expression) visitAnd_expr(ctx.and_expr(nAnd - 2)),
 					(Expression) visitAnd_expr(ctx.and_expr(nAnd - 1)));
 			nAnd = nAnd - 2;
+			// concatenate all the And expressions together
 			while (nAnd > 0) {
 				temp = (T) new PyXor(currentCFG, "", line, col, (Expression) visitAnd_expr(ctx.and_expr(--nAnd)),
 						(Expression) temp);
@@ -1091,6 +1093,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 			T temp = (T) new PyAnd(currentCFG, "", line, col, (Expression) visitShift_expr(ctx.shift_expr(nShift - 2)),
 					(Expression) visitShift_expr(ctx.shift_expr(nShift - 1)));
 			nShift = nShift - 2;
+			// concatenate all the Shift expressions together
 			while (nShift > 0) {
 				temp = (T) new PyAnd(currentCFG, "", line, col, (Expression) visitShift_expr(ctx.shift_expr(--nShift)),
 						(Expression) temp);
@@ -1127,6 +1130,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 	@Override
 	public T visitShift_expr(Shift_exprContext ctx) {
 		
+		//check if there is a right shift expression(>>) or a left shift expression(<<)
 		if(ctx.left_shift()!=null) {
 			return visitLeft_shift(ctx.left_shift());
 		}else if(ctx.right_shift()!=null){
@@ -1162,6 +1166,8 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitArith_expr(Arith_exprContext ctx) {
+		
+		//check if there is minus(-) or an add(+)
 		if(ctx.minus()!=null) {
 			return visitMinus(ctx.minus());
 		}
@@ -1234,7 +1240,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 	
 	@Override
 	public T visitTerm(TermContext ctx) {
-		log.info("dentro il term");
+		//check what's the operation in the context
 		if(ctx.mul()!=null) {
 			return visitMul(ctx.mul());
 		}
@@ -1255,7 +1261,6 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitFactor(FactorContext ctx) {
-		// TODO complete this method
 		if(ctx.power()!=null) {
 			return visitPower(ctx.power());
 		}
@@ -1284,18 +1289,19 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		int col = getCol(ctx);
 		
 		if (ctx.NAME() != null) {
-			// new variabile
-			log.info("NAME:");
-			log.info(ctx.NAME());
+			//crete a variable
 			return (T) new Variable(currentCFG, ctx.NAME().getText());
 		} else if (ctx.NUMBER() != null) {
-			// literal
-			log.info("NUMBER:");
-			log.info(ctx.NUMBER());
+			//create a literal int
 			return (T) new Literal(currentCFG, ctx.NUMBER().getText(), PyIntType.INSTANCE);
+		}else if (ctx.FALSE() != null) {
+			//create a literal false
+			return (T) new PyFalseLiteral(currentCFG, "",line,col);	
+		}else if (ctx.TRUE()!= null) {
+			//create a literal true
+			return (T) new PyTrueLiteral(currentCFG, "",line,col);	
 		} else if (ctx.STRING().size() > 0) {
-			log.info(ctx.STRING(0));
-			//TODO da sisttemare
+			//create a string
 			return (T) new PyStringLiteral(currentCFG,"", line, col, ctx.STRING(0).getText());
 		} else if(ctx.yield_expr()!=null) {
 			return visitYield_expr(ctx.yield_expr());
@@ -1303,8 +1309,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 			return visitTestlist_comp(ctx.testlist_comp());
 		} else if(ctx.dictorsetmaker()!=null) {
 			return visitDictorsetmaker(ctx.dictorsetmaker());
-		}
-		
+		}	
 		return super.visitAtom(ctx);
 	}
 

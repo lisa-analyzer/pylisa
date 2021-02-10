@@ -17,4 +17,5 @@ public class PyFalseLiteral extends Literal {
 	public PyFalseLiteral(CFG cfg, String sourceFile, int line, int col) {
 		super(cfg, sourceFile, line, col, false, BoolType.INSTANCE);
 	}
+
 }
