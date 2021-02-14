@@ -211,6 +211,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 	private CFG currentCFG;
 
 	public static void main(String[] args) throws IOException, AnalysisException {
+		//path of test file
 		String file = "src/test/resources/pyTest/py1.py";
 		PyToCFG translator = new PyToCFG(file);
 		LiSA lisa = new LiSA();
@@ -277,27 +278,14 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 			visitFuncdef(funcDecl);
 			try {
 				Writer w = new FileWriter("./output.txt");
-				currentCFG.dump(w, "Prova");
+				currentCFG.dump(w, "Try");
 				w.close();
-				log.info("Done");
 			} catch (IOException e) {
-				log.info("c'è stato un errore");
+				log.info("error with file");
 				e.printStackTrace();
 			}
 			
 		}
-
-//		
-//		// Visit of each FunctionDeclContext appearing in the source code
-//		// and creating the corresponding CFG object (we do this to handle CFG calls)
-//		for (FuncdefContext funcDef : IterationLogger.iterate(log, ctx., "Parsing function declarations...", "Function declarations")) 
-//			cfgs.add(new CFG(buildCFGDescriptor(funcDef)));
-//
-//		// Visit of each FunctionDeclContext populating the corresponding cfg
-//		for (FunctionDeclContext funcDecl : IterationLogger.iterate(log, ctx.functionDecl(), "Visiting function declarations...", "Function declarations")) {
-//			currentCFG = getCFGByName(funcDecl.IDENTIFIER().getText());
-//			visitFunctionDecl(funcDecl);			
-//		}
 
 		return null;
 
@@ -671,9 +659,11 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 	@Override
 	public T visitWhile_stmt(While_stmtContext ctx) {
 		
+		//create and add exit point of while
 		NoOp whileExitNode = new NoOp(currentCFG);
 		currentCFG.addNode(whileExitNode);
 		
+		//visit the condition of the while
 		Statement condition  = (Statement) visitTest(ctx.test());
 		currentCFG.addNode(condition);
 
@@ -682,6 +672,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		currentCFG.addEdge(new TrueEdge(condition, trueBlock.getLeft()));
 		currentCFG.addEdge(new SequentialEdge(trueBlock.getRight(), condition));
 		
+		//check if there's an else condition for the while
 		if(ctx.ELSE()!=null) {
 			Pair<Statement, Statement> falseBlock = (Pair<Statement, Statement>) visitSuite(ctx.suite(1));
 			currentCFG.addEdge(new FalseEdge(condition, falseBlock.getLeft()));
@@ -697,6 +688,7 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 	@Override
 	public T visitFor_stmt(For_stmtContext ctx) {
 		
+		//create and add exit point of for
 		NoOp forExitNode = new NoOp(currentCFG);
 		currentCFG.addNode(forExitNode);
 		
@@ -711,8 +703,8 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 		currentCFG.addEdge(new TrueEdge(testList.getRight(), body.getLeft()));
 		currentCFG.addEdge(new TrueEdge(exprlist.getLeft(), body.getRight()));
 		
+		//check if there's an else condition for the for statement
 		if(ctx.ELSE()!=null) {
-			
 			Pair<Statement, Statement> falseCond=(Pair<Statement, Statement>) visitSuite(ctx.suite(1));
 			currentCFG.addEdge(new FalseEdge(testList.getLeft(), falseCond.getLeft()));
 			currentCFG.addEdge(new SequentialEdge(falseCond.getRight(), forExitNode));
@@ -728,6 +720,8 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 
 	@Override
 	public T visitTry_stmt(Try_stmtContext ctx) {
+		//this method is commented because the type of edge required does not exist now
+		
 		/*
 		
 		NoOp TryExitNode = new NoOp(currentCFG);
@@ -814,11 +808,13 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 	@Override
 	public T visitSuite(SuiteContext ctx) {
 		if (ctx.simple_stmt() != null) {
+			//only one statement in the suite
 			Statement simple = (Statement)visitSimple_stmt(ctx.simple_stmt());
 			Pair<Statement, Statement> result = Pair.of(simple,simple);
 			
 			return (T)result;
 		} else {
+			//more than one statement
 			int nStatement = ctx.stmt().size();
 			if (nStatement == 1) {
 				Pair<Statement, Statement> stmt = (Pair<Statement, Statement>) visitStmt(ctx.stmt(0));
@@ -926,7 +922,6 @@ public class PyToCFG<T> extends Python3BaseVisitor<T> {
 			return (T) new PyAnd(currentCFG, "", line, col, (Expression) visitNot_test(ctx.not_test(0)),
 					(Expression) visitNot_test(ctx.not_test(1)));
 		} else {
-			// nNotTest= 5
 			T temp = (T) new PyAnd(currentCFG, "", line, col, (Expression) visitNot_test(ctx.not_test(nNotTest - 2)),
 					(Expression) visitNot_test(ctx.not_test(nNotTest - 1)));
 			nNotTest = nNotTest - 2;
