@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN" name="DefaultLoggingConf">
 	<Properties>
-        <Property name="basePath">C:\\Users\\Nicolò\\Desktop\\pylisa\\pylisa\\src\\test\\resources\\pyTest</Property>
+        <Property name="basePath">pylisa/src/test/resources/pyTest</Property>
     </Properties>
 	<Appenders>
 		<Console name="console">
