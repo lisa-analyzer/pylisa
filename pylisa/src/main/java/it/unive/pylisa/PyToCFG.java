@@ -16,6 +16,8 @@ import it.unive.pylisa.antlr.Python3Parser;
 import it.unive.pylisa.antlr.Python3Parser.*;
 import it.unive.pylisa.cfg.expression.binary.*;
 import it.unive.pylisa.cfg.expression.unary.PyNot;
+import it.unive.pylisa.cfg.statement.FromImport;
+import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.type.PyFalseLiteral;
 import it.unive.pylisa.cfg.type.PyIntType;
 import it.unive.pylisa.cfg.type.PyStringLiteral;
@@ -24,6 +26,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -358,12 +361,69 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitImport_name(Import_nameContext ctx) {
-		throw new UnsupportedStatementException();
+		Statement first = null;
+		Statement prev;
+		Statement last = null;
+		for(Dotted_as_nameContext name : ctx.dotted_as_names().dotted_as_name()) {
+			prev=last;
+			String importedLibrary = dottedNameToString(name.dotted_name());
+			String as = name.NAME() != null ? name.NAME().getSymbol().getText() : importedLibrary;
+			int line = getLine(name);
+			int col = getCol(name);
+			last = new Import(importedLibrary, as, currentCFG, this.getFilePath(), line, col);
+			currentCFG.addNode(last, false);
+			if(prev!=null)
+				currentCFG.addEdge(new SequentialEdge(prev, last));
+			else if(first==null)
+				first = last;
+		}
+		return Pair.of(first, last);
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitImport_from(Import_fromContext ctx) {
-		throw new UnsupportedStatementException();
+		String name;
+		if(ctx.dotted_name()!=null)
+			name = dottedNameToString(ctx.dotted_name());
+		else name = ".";
+		if(ctx.import_as_names()!=null) {
+			Statement first = null;
+			Statement prev;
+			Statement last = null;
+			for(Import_as_nameContext single_import: ctx.import_as_names().import_as_name()) {
+				prev=last;
+				String component = single_import.NAME(0).getSymbol().getText();
+				String asName = single_import.NAME(1) != null ? single_import.NAME(1).getSymbol().getText() : component;
+				int line = getLine(single_import);
+				int col = getCol(single_import);
+				last = new FromImport(name, component, asName, currentCFG, this.getFilePath(), line, col);
+				currentCFG.addNode(last, false);
+				if(prev!=null)
+					currentCFG.addEdge(new SequentialEdge(prev, last));
+				else if(first==null)
+					first = last;
+			}
+			return Pair.of(first, last);
+
+		}
+		else {
+			int line = getLine(ctx);
+			int col = getCol(ctx);
+			Statement result = new FromImport(name, "*", "*", currentCFG, this.getFilePath(), line, col);
+			return Pair.of(result, result);
+		}
+	}
+
+	private String dottedNameToString(Dotted_nameContext dotted_name) {
+		String result = "";
+		boolean first = true;
+		for(TerminalNode name : dotted_name.NAME()) {
+			if (first)
+				first = false;
+			else result += ".";
+			result += name.getSymbol().getText();
+		}
+		return result;
 	}
 
 	@Override
@@ -679,11 +739,11 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		for(T element : elements) {
 			Statement previous = result;
 			Pair<Statement, Statement> parsed = visitor.apply(element);
-			if(first==null)
-				first=result;
 			if(previous!=null)
 				currentCFG.addEdge(new SequentialEdge(previous, parsed.getLeft()));
 			result = parsed.getRight();
+			if(first==null)
+				first=result;
 		}
 		return Pair.of(first, result);
 	}
@@ -780,14 +840,14 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nAndTest == 1) {
 			return visitAnd_test(ctx.and_test(0));
 		} else if (nAndTest == 2) {
-			return createPairFromSingle(new PyOr(currentCFG, "", line, col, checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(0))),
+			return createPairFromSingle(new PyOr(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(0))),
 					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(1))),"or"));
 		} else {
-			Expression temp = new PyOr(currentCFG, "", line, col, checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 2))),
+			Expression temp = new PyOr(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 2))),
 					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 1))),"or");
 			nAndTest = nAndTest - 2;
 			while (nAndTest > 0) {
-				temp = new PyOr(currentCFG, "", line, col, checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(--nAndTest))),
+				temp = new PyOr(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(--nAndTest))),
 						temp,"or");
 			}
 			return createPairFromSingle(temp);
@@ -803,14 +863,14 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nNotTest == 1) {
 			return visitNot_test(ctx.not_test(0));
 		} else if (nNotTest == 2) {
-			return createPairFromSingle(new PyAnd(currentCFG, "", line, col,  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(0))),
+			return createPairFromSingle(new PyAnd(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(0))),
 					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(1)))));
 		} else {
-			Expression temp =  new PyAnd(currentCFG, "", line, col, checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 2))),
+			Expression temp =  new PyAnd(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 2))),
 					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 1))));
 			nNotTest = nNotTest - 2;
 			while (nNotTest > 0) {
-				temp = new PyAnd(currentCFG, "", line, col,  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(--nNotTest))),
+				temp = new PyAnd(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(--nNotTest))),
 						 temp);
 			}
 
@@ -824,7 +884,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		int col = getCol(ctx);
 
 		if (ctx.NOT() != null) {
-			return createPairFromSingle(new PyNot(currentCFG, "", line, col,  checkAndExtractSingleExpression(visitNot_test(ctx.not_test()))));
+			return createPairFromSingle(new PyNot(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitNot_test(ctx.not_test()))));
 		} else {
 			return visitComparison(ctx.comparison());
 		}
@@ -849,43 +909,43 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			Expression left =  checkAndExtractSingleExpression(visitExpr(ctx.expr(0)));
 			Expression right =  checkAndExtractSingleExpression(visitExpr(ctx.expr(1)));
 			if (operator.EQUALS() != null)
-				result = new PyEquals(currentCFG, "", line, col, left, right);
+				result = new PyEquals(currentCFG, this.getFilePath(), line, col, left, right);
 
 			// Python greater (>)
 			if (operator.GREATER_THAN() != null) {
-				result = new PyGreater(currentCFG, "", line, col, left, right);
+				result = new PyGreater(currentCFG, this.getFilePath(), line, col, left, right);
 			}
 			// Python greater equal (>=)
 			if (operator.GT_EQ() != null)
-				result = new PyEquals(currentCFG, "", line, col, left, right);
+				result = new PyEquals(currentCFG, this.getFilePath(), line, col, left, right);
 
 			// Python in (in)
 			if (operator.IN() != null)
-				result = new PyIn(currentCFG, "", line, col, left, right);
+				result = new PyIn(currentCFG, this.getFilePath(), line, col, left, right);
 
 			// Python is (is)
 			if (operator.IS() != null)
-				result = new PyIs(currentCFG, "", line, col, left, right);
+				result = new PyIs(currentCFG, this.getFilePath(), line, col, left, right);
 
 			// Python less (<)
 			if (operator.LESS_THAN() != null)
-				result = new PyLess(currentCFG, "", line, col, left, right);
+				result = new PyLess(currentCFG, this.getFilePath(), line, col, left, right);
 
 			// Python less equal (<=)
 			if (operator.LT_EQ() != null)
-				result = new PyLessEqual(currentCFG, "", line, col, left, right);
+				result = new PyLessEqual(currentCFG, this.getFilePath(), line, col, left, right);
 
 			// Python not (not)
 			if (operator.NOT() != null)
-				result =  new PyNot(currentCFG, "", line, col, left);
+				result =  new PyNot(currentCFG, this.getFilePath(), line, col, left);
 
 			// Python not equals (<>)
 			if (operator.NOT_EQ_1() != null)
-				result = new PyNot1(currentCFG, "", line, col, left, right);
+				result = new PyNot1(currentCFG, this.getFilePath(), line, col, left, right);
 
 			// Python not equals (!=)
 			if (operator.NOT_EQ_2() != null)
-				result = new PyNot2(currentCFG, "", line, col, left, right);
+				result = new PyNot2(currentCFG, this.getFilePath(), line, col, left, right);
 
 			break;
 		}
@@ -915,15 +975,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			return visitXor_expr(ctx.xor_expr(0));
 		} else if (nXor == 2) {
 			//two Xor
-			return createPairFromSingle(new PyXor(currentCFG, "", line, col,  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(0))),
+			return createPairFromSingle(new PyXor(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(0))),
 					checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(1)))));
 		} else {
-			Expression temp = new PyXor(currentCFG, "", line, col,  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(nXor - 2))),
+			Expression temp = new PyXor(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(nXor - 2))),
 					checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(nXor - 1))));
 			nXor = nXor - 2;
 			// concatenate all the Xor expressions together
 			while (nXor > 0) {
-				temp = new PyXor(currentCFG, "", line, col,  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(--nXor))),
+				temp = new PyXor(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(--nXor))),
 						 temp);
 			}
 			return createPairFromSingle(temp);
@@ -941,15 +1001,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nAnd == 1) {
 			return visitAnd_expr(ctx.and_expr(0));
 		} else if (nAnd == 2) {
-			return createPairFromSingle(new PyXor(currentCFG, "", line, col,  checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(0))),
+			return createPairFromSingle(new PyXor(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(0))),
 					checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(1)))));
 		} else {
-			Expression temp = new PyXor(currentCFG, "", line, col,  checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(nAnd - 2))),
+			Expression temp = new PyXor(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(nAnd - 2))),
 					checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(nAnd - 1))));
 			nAnd = nAnd - 2;
 			// concatenate all the And expressions together
 			while (nAnd > 0) {
-				temp = new PyXor(currentCFG, "", line, col, checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(--nAnd))),
+				temp = new PyXor(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(--nAnd))),
 						 temp);
 			}
 			return createPairFromSingle(temp);
@@ -965,15 +1025,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nShift == 1) {
 			return visitShift_expr(ctx.shift_expr(0));
 		} else if (nShift == 2) {
-			return createPairFromSingle(new PyAnd(currentCFG, "", line, col,  checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(0))),
+			return createPairFromSingle(new PyAnd(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(0))),
 					checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(1)))));
 		} else {
-			Expression temp = new PyAnd(currentCFG, "", line, col, checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(nShift - 2))),
+			Expression temp = new PyAnd(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(nShift - 2))),
 					checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(nShift - 1))));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new PyAnd(currentCFG, "", line, col, checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(--nShift))),
+				temp = new PyAnd(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(--nShift))),
 						 temp);
 			}
 			return createPairFromSingle(temp);
@@ -989,7 +1049,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.RIGHT_SHIFT()==null) {
 			return visitArith_expr(ctx.arith_expr());
 		} else  {
-			return createPairFromSingle(new PyShiftRight(currentCFG, "", line, col, checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())), checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr()))));
+			return createPairFromSingle(new PyShiftRight(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())), checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr()))));
 		}
 	}
 	
@@ -1001,7 +1061,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.LEFT_SHIFT()==null) {
 			return visitArith_expr(ctx.arith_expr());
 		} else  {
-			return createPairFromSingle(new PyShiftLeft(currentCFG, "", line, col, checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())), checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr()))));
+			return createPairFromSingle(new PyShiftLeft(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())), checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr()))));
 		}	
 	}
 	
@@ -1025,7 +1085,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.arith_expr()==null) {
 			return visitTerm(ctx.term());
 		} else  {
-			return createPairFromSingle(new PyMinus(currentCFG, "", line, col, checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
+			return createPairFromSingle(new PyMinus(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
 		}
 	}
 	
@@ -1037,7 +1097,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.arith_expr()==null) {
 			return visitTerm(ctx.term());
 		} else  {
-			return createPairFromSingle(new PyAdd(currentCFG, "", line, col, checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
+			return createPairFromSingle(new PyAdd(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
 		}
 		
 	}
@@ -1062,7 +1122,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyMul(currentCFG, "", line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new PyMul(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}	
 		
 	}
@@ -1074,7 +1134,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyMatMul(currentCFG, "", line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new PyMatMul(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}	
 		
 		
@@ -1087,7 +1147,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyDiv(currentCFG, "", line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new PyDiv(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}	
 
 		
@@ -1100,7 +1160,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyMod(currentCFG, "", line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new PyMod(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}
 		
 	}	
@@ -1112,7 +1172,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyFloorDiv(currentCFG, "", line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new PyFloorDiv(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}		
 	}
 	
@@ -1151,7 +1211,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		int col = getCol(ctx);
 		
 		if(ctx.POWER()!=null) {
-			return createPairFromSingle(new PyPower(currentCFG, "", line, col, checkAndExtractSingleExpression(visitAtom_expr(ctx.atom_expr())), checkAndExtractSingleExpression(visitFactor(ctx.factor()))));
+			return createPairFromSingle(new PyPower(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitAtom_expr(ctx.atom_expr())), checkAndExtractSingleExpression(visitFactor(ctx.factor()))));
 		}
 		else throw new UnsupportedStatementException();
 	}
@@ -1174,13 +1234,13 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			return createPairFromSingle(new Literal(currentCFG, ctx.NUMBER().getText(), PyIntType.INSTANCE));
 		}else if (ctx.FALSE() != null) {
 			//create a literal false
-			return createPairFromSingle(new PyFalseLiteral(currentCFG, "",line,col));
+			return createPairFromSingle(new PyFalseLiteral(currentCFG, this.getFilePath(),line,col));
 		}else if (ctx.TRUE()!= null) {
 			//create a literal true
-			return createPairFromSingle(new PyTrueLiteral(currentCFG, "",line,col));
+			return createPairFromSingle(new PyTrueLiteral(currentCFG, this.getFilePath(),line,col));
 		} else if (ctx.STRING().size() > 0) {
 			//create a string
-			return createPairFromSingle(new PyStringLiteral(currentCFG,"", line, col, ctx.STRING(0).getText()));
+			return createPairFromSingle(new PyStringLiteral(currentCFG,this.getFilePath(), line, col, ctx.STRING(0).getText()));
 		} else if(ctx.yield_expr()!=null) {
 			return visitYield_expr(ctx.yield_expr());
 		} else if (ctx.testlist_comp()!=null) {
