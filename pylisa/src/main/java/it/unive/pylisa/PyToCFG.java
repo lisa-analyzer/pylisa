@@ -25,6 +25,7 @@ import it.unive.pylisa.cfg.type.PyTrueLiteral;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -359,25 +360,36 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		}
 	}
 
-	@Override
-	public Pair<Statement, Statement> visitImport_name(Import_nameContext ctx) {
-		Statement first = null;
-		Statement prev;
-		Statement last = null;
-		for(Dotted_as_nameContext name : ctx.dotted_as_names().dotted_as_name()) {
-			prev=last;
-			String importedLibrary = dottedNameToString(name.dotted_name());
-			String as = name.NAME() != null ? name.NAME().getSymbol().getText() : importedLibrary;
-			int line = getLine(name);
-			int col = getCol(name);
-			last = new Import(importedLibrary, as, currentCFG, this.getFilePath(), line, col);
-			currentCFG.addNode(last, false);
-			if(prev!=null)
-				currentCFG.addEdge(new SequentialEdge(prev, last));
-			else if(first==null)
-				first = last;
+
+	/**
+	 * This method
+	 * @param ctx
+	 * @param defaultStatement
+	 * @param condition
+	 * @param getList
+	 * @param extractStatement
+	 * @param <T1>
+	 * @param <T2>
+	 * @return
+	 */
+	private <T1 extends RuleContext, T2> Pair<Statement, Statement> visitListOfContexts(T1 ctx, Statement defaultStatement, Function<T1, Boolean> condition, Function<T1, List<T2>> getList, Function<T2, Statement> extractStatement) {
+		if(condition.apply(ctx)) {
+			Statement first = null;
+			Statement prev;
+			Statement last = null;
+			for(T2 single: getList.apply(ctx)) {
+				prev=last;
+				last = extractStatement.apply(single);
+				currentCFG.addNode(last, false);
+				if(prev!=null)
+					currentCFG.addEdge(new SequentialEdge(prev, last));
+				else if(first==null)
+					first = last;
+			}
+			return Pair.of(first, last);
 		}
-		return Pair.of(first, last);
+		else
+			return Pair.of(defaultStatement, defaultStatement);
 	}
 
 	@Override
@@ -386,32 +398,37 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if(ctx.dotted_name()!=null)
 			name = dottedNameToString(ctx.dotted_name());
 		else name = ".";
-		if(ctx.import_as_names()!=null) {
-			Statement first = null;
-			Statement prev;
-			Statement last = null;
-			for(Import_as_nameContext single_import: ctx.import_as_names().import_as_name()) {
-				prev=last;
-				String component = single_import.NAME(0).getSymbol().getText();
-				String asName = single_import.NAME(1) != null ? single_import.NAME(1).getSymbol().getText() : component;
-				int line = getLine(single_import);
-				int col = getCol(single_import);
-				last = new FromImport(name, component, asName, currentCFG, this.getFilePath(), line, col);
-				currentCFG.addNode(last, false);
-				if(prev!=null)
-					currentCFG.addEdge(new SequentialEdge(prev, last));
-				else if(first==null)
-					first = last;
-			}
-			return Pair.of(first, last);
+		int line = getLine(ctx);
+		int col = getCol(ctx);
+		Statement def = new FromImport(name, "*", "*", currentCFG, this.getFilePath(), line, col);
 
-		}
-		else {
-			int line = getLine(ctx);
-			int col = getCol(ctx);
-			Statement result = new FromImport(name, "*", "*", currentCFG, this.getFilePath(), line, col);
-			return Pair.of(result, result);
-		}
+		return visitListOfContexts(ctx, def,
+				c -> c.import_as_names()!=null,
+				c -> c.import_as_names().import_as_name(),
+				s -> {
+					String component = s.NAME(0).getSymbol().getText();
+					String asName = s.NAME(1) != null ? s.NAME(1).getSymbol().getText() : component;
+					int l = getLine(s);
+					int c = getCol(s);
+					return new FromImport(name, component, asName, currentCFG, this.getFilePath(), l, c);
+				});
+	}
+
+	@Override
+	public Pair<Statement, Statement> visitImport_name(Import_nameContext ctx) {
+		return visitListOfContexts(
+				ctx,
+				null,
+				c -> true,
+				c -> c.dotted_as_names().dotted_as_name(),
+				c -> {
+					String importedLibrary = dottedNameToString(c.dotted_name());
+					String as = c.NAME() != null ? c.NAME().getSymbol().getText() : importedLibrary;
+					int line = getLine(c);
+					int col = getCol(c);
+					return new Import(importedLibrary, as, currentCFG, this.getFilePath(), line, col);
+				}
+		);
 	}
 
 	private String dottedNameToString(Dotted_nameContext dotted_name) {
