@@ -1,15 +1,12 @@
 package it.unive.pylisa.cfg.statement;
 
-import it.unive.lisa.cfg.CFG;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
+import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
 
 public class FromImport extends Import {
     private String component;
-    public FromImport(String importedLibrary, String component, String asName, CFG cfg, String sourceFile, int line, int col) {
-        super(importedLibrary, asName, cfg, sourceFile, line, col);
+    public FromImport(String importedLibrary, String component, String asName, CFG cfg, CodeLocation loc) {
+        super(importedLibrary, asName, cfg, loc);
         this.component = component;
     }
 

@@ -7,27 +7,23 @@ import it.unive.lisa.callgraph.CallGraph;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
+import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.UnsupportedStatementException;
 
-public class Import extends Statement {
+import java.util.Arrays;
+import java.util.List;
 
-    protected String importedLibrary, name;
+public class ListCreation extends Expression {
+    private List<Statement> values;
 
-    //import <importedLibrary> as <name>
-    public Import(String importedLibrary, String name, CFG cfg, CodeLocation loc) {
+    public ListCreation(List<Statement> values, CFG cfg, CodeLocation loc) {
         super(cfg, loc);
-        this.importedLibrary = importedLibrary;
-        this.name = name;
+
+        this.values = values;
     }
 
-    //import <importedLibrary>
-    public Import(String importedLibrary, CFG cfg, CodeLocation loc) {
-        this(importedLibrary, importedLibrary, cfg, loc);
-        this.importedLibrary = importedLibrary;
-        this.name = name;
-    }
     @Override
     public int setOffset(int i) {
         super.offset = i;
@@ -41,12 +37,11 @@ public class Import extends Statement {
 
     @Override
     public String toString() {
-        return "import "+importedLibrary+" as "+name;
+        return "["+ Arrays.toString(values.toArray())+"]";
     }
 
     @Override
     public <A extends AbstractState<A, H, V>, H extends HeapDomain<H>, V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState, CallGraph callGraph, StatementStore<A, H, V> expressions) throws SemanticException {
-        return entryState;
+        throw new SemanticException("Not yet supported");
     }
-
 }

@@ -2,22 +2,29 @@ package it.unive.pylisa;
 
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
-import it.unive.lisa.cfg.CFG;
-import it.unive.lisa.cfg.CFGDescriptor;
-import it.unive.lisa.cfg.Parameter;
-import it.unive.lisa.cfg.edge.FalseEdge;
-import it.unive.lisa.cfg.edge.SequentialEdge;
-import it.unive.lisa.cfg.edge.TrueEdge;
-import it.unive.lisa.cfg.statement.*;
+import it.unive.lisa.LiSAConfiguration;
+import it.unive.lisa.program.Program;
+import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.lisa.program.Unit;
+import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CFGDescriptor;
+import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.program.cfg.edge.FalseEdge;
+import it.unive.lisa.program.cfg.edge.SequentialEdge;
+import it.unive.lisa.program.cfg.edge.TrueEdge;
+import it.unive.lisa.program.cfg.statement.*;
 import it.unive.lisa.logging.IterationLogger;
 import it.unive.pylisa.antlr.Python3BaseVisitor;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
 import it.unive.pylisa.antlr.Python3Parser.*;
+import it.unive.pylisa.cfg.PythonUnit;
 import it.unive.pylisa.cfg.expression.binary.*;
 import it.unive.pylisa.cfg.expression.unary.PyNot;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
+import it.unive.pylisa.cfg.statement.ListCreation;
+import it.unive.pylisa.cfg.statement.TupleCreation;
 import it.unive.pylisa.cfg.type.PyFalseLiteral;
 import it.unive.pylisa.cfg.type.PyIntType;
 import it.unive.pylisa.cfg.type.PyStringLiteral;
@@ -50,6 +57,11 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	private final String filePath;
 
 	/**
+	 * The unit containing the whole program
+	 */
+	private final Unit unit;
+
+	/**
 	 * Collection of CFGs collected into the Python program at filePath.
 	 */
 	private final Collection<CFG> cfgs;
@@ -63,6 +75,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public PyToCFG(String filePath) {
 		this.cfgs = new HashSet<>();
 		this.filePath = filePath;
+		this.unit = new PythonUnit(new SourceCodeLocation(filePath, 0, 0), "main_file");
 	}
 
 	/**
@@ -92,12 +105,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		//path of test file
 		String file = args[0];
 		PyToCFG translator = new PyToCFG(file);
-		LiSA lisa = new LiSA();
+		LiSAConfiguration conf = new LiSAConfiguration();
+
 		Collection<CFG> cfgs = translator.toLiSACFG();
-		cfgs.forEach(lisa::addCFG);
-		lisa.setDumpCFGs(true);
-		lisa.setWorkdir("workdir");
-		lisa.run();
+		Program p = new Program();
+		cfgs.forEach(p::addCFG);
+		conf.setDumpCFGs(true);
+		conf.setWorkdir("workdir");
+		LiSA lisa = new LiSA(conf);
+		lisa.run(p);
 	}
 
 	/**
@@ -179,11 +195,12 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		return ctx.getStop().getCharPositionInLine();
 	}
 
+
 	private CFGDescriptor buildMainCFGDescriptor() {
 		String funcName = "main";
 		Parameter[] cfgArgs = new Parameter[] {};
 
-		return new CFGDescriptor(funcName, cfgArgs);
+		return new CFGDescriptor(unit, false, funcName, cfgArgs);
 	}
 
 	private CFGDescriptor buildCFGDescriptor(FuncdefContext funcDecl) {
@@ -191,7 +208,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 		Parameter[] cfgArgs = new Parameter[] {};
 
-		return new CFGDescriptor(funcName, cfgArgs);
+		return new CFGDescriptor(unit, false, funcName, cfgArgs);
 	}
 
 	@Override
@@ -221,7 +238,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitFuncdef(FuncdefContext ctx) {
-		throw new UnsupportedStatementException();
+		return visitSuite(ctx.suite());
 	}
 
 	@Override
@@ -251,7 +268,9 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitStmt(StmtContext ctx) {
-		throw new UnsupportedStatementException();
+		if(ctx.simple_stmt()!=null)
+			return visitSimple_stmt(ctx.simple_stmt());
+		else return visitCompound_stmt(ctx.compound_stmt());
 	}
 
 	@Override
@@ -362,15 +381,16 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 
 	/**
-	 * This method
-	 * @param ctx
-	 * @param defaultStatement
-	 * @param condition
-	 * @param getList
-	 * @param extractStatement
-	 * @param <T1>
-	 * @param <T2>
-	 * @return
+	 * This method transforms a single rule to a sequence of statements representing it
+	 *
+	 * @param ctx the context that internally contains a list of something, and that should be translated into a sequence of statements
+	 * @param defaultStatement the default statement to be returned if the list is empty
+	 * @param condition if false, the method returns the default statement, otherwise it processes the list
+	 * @param getList returns the list of the elements to be processed
+	 * @param extractStatement transforms an element into a statement representing it
+	 * @param <T1> the context to be processed
+	 * @param <T2> the elements to be transformed into statements
+	 * @return the first and last statement produced when transforming the context into statements
 	 */
 	private <T1 extends RuleContext, T2> Pair<Statement, Statement> visitListOfContexts(T1 ctx, Statement defaultStatement, Function<T1, Boolean> condition, Function<T1, List<T2>> getList, Function<T2, Statement> extractStatement) {
 		if(condition.apply(ctx)) {
@@ -400,7 +420,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		else name = ".";
 		int line = getLine(ctx);
 		int col = getCol(ctx);
-		Statement def = new FromImport(name, "*", "*", currentCFG, this.getFilePath(), line, col);
+		Statement def = new FromImport(name, "*", "*", currentCFG, new SourceCodeLocation(this.getFilePath(), line, col));
 
 		return visitListOfContexts(ctx, def,
 				c -> c.import_as_names()!=null,
@@ -410,7 +430,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 					String asName = s.NAME(1) != null ? s.NAME(1).getSymbol().getText() : component;
 					int l = getLine(s);
 					int c = getCol(s);
-					return new FromImport(name, component, asName, currentCFG, this.getFilePath(), l, c);
+					return new FromImport(name, component, asName, currentCFG, new SourceCodeLocation(this.getFilePath(), l, c));
 				});
 	}
 
@@ -426,7 +446,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 					String as = c.NAME() != null ? c.NAME().getSymbol().getText() : importedLibrary;
 					int line = getLine(c);
 					int col = getCol(c);
-					return new Import(importedLibrary, as, currentCFG, this.getFilePath(), line, col);
+					return new Import(importedLibrary, as, currentCFG, new SourceCodeLocation(this.getFilePath(), line, col));
 				}
 		);
 	}
@@ -493,7 +513,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			visitFuncdef(funcDecl);
 			try {
 				Writer w = new FileWriter("./output.txt");
-				currentCFG.dump(w, "Try");
+				currentCFG.dump(w, s -> "Try");
 				w.close();
 			} catch (IOException e) {
 				log.info("error with file");
@@ -857,14 +877,14 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nAndTest == 1) {
 			return visitAnd_test(ctx.and_test(0));
 		} else if (nAndTest == 2) {
-			return createPairFromSingle(new PyOr(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(0))),
+			return createPairFromSingle(new PyOr(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(0))),
 					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(1))),"or"));
 		} else {
-			Expression temp = new PyOr(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 2))),
+			Expression temp = new PyOr(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 2))),
 					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 1))),"or");
 			nAndTest = nAndTest - 2;
 			while (nAndTest > 0) {
-				temp = new PyOr(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(--nAndTest))),
+				temp = new PyOr(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(--nAndTest))),
 						temp,"or");
 			}
 			return createPairFromSingle(temp);
@@ -880,14 +900,14 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nNotTest == 1) {
 			return visitNot_test(ctx.not_test(0));
 		} else if (nNotTest == 2) {
-			return createPairFromSingle(new PyAnd(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(0))),
+			return createPairFromSingle(new PyAnd(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col),  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(0))),
 					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(1)))));
 		} else {
-			Expression temp =  new PyAnd(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 2))),
+			Expression temp =  new PyAnd(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 2))),
 					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 1))));
 			nNotTest = nNotTest - 2;
 			while (nNotTest > 0) {
-				temp = new PyAnd(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(--nNotTest))),
+				temp = new PyAnd(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col),  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(--nNotTest))),
 						 temp);
 			}
 
@@ -901,7 +921,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		int col = getCol(ctx);
 
 		if (ctx.NOT() != null) {
-			return createPairFromSingle(new PyNot(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitNot_test(ctx.not_test()))));
+			return createPairFromSingle(new PyNot(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col),  checkAndExtractSingleExpression(visitNot_test(ctx.not_test()))));
 		} else {
 			return visitComparison(ctx.comparison());
 		}
@@ -926,43 +946,43 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			Expression left =  checkAndExtractSingleExpression(visitExpr(ctx.expr(0)));
 			Expression right =  checkAndExtractSingleExpression(visitExpr(ctx.expr(1)));
 			if (operator.EQUALS() != null)
-				result = new PyEquals(currentCFG, this.getFilePath(), line, col, left, right);
+				result = new PyEquals(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), left, right);
 
 			// Python greater (>)
 			if (operator.GREATER_THAN() != null) {
-				result = new PyGreater(currentCFG, this.getFilePath(), line, col, left, right);
+				result = new PyGreater(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), left, right);
 			}
 			// Python greater equal (>=)
 			if (operator.GT_EQ() != null)
-				result = new PyEquals(currentCFG, this.getFilePath(), line, col, left, right);
+				result = new PyEquals(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), left, right);
 
 			// Python in (in)
 			if (operator.IN() != null)
-				result = new PyIn(currentCFG, this.getFilePath(), line, col, left, right);
+				result = new PyIn(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), left, right);
 
 			// Python is (is)
 			if (operator.IS() != null)
-				result = new PyIs(currentCFG, this.getFilePath(), line, col, left, right);
+				result = new PyIs(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), left, right);
 
 			// Python less (<)
 			if (operator.LESS_THAN() != null)
-				result = new PyLess(currentCFG, this.getFilePath(), line, col, left, right);
+				result = new PyLess(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), left, right);
 
 			// Python less equal (<=)
 			if (operator.LT_EQ() != null)
-				result = new PyLessEqual(currentCFG, this.getFilePath(), line, col, left, right);
+				result = new PyLessEqual(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), left, right);
 
 			// Python not (not)
 			if (operator.NOT() != null)
-				result =  new PyNot(currentCFG, this.getFilePath(), line, col, left);
+				result =  new PyNot(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), left);
 
 			// Python not equals (<>)
 			if (operator.NOT_EQ_1() != null)
-				result = new PyNot1(currentCFG, this.getFilePath(), line, col, left, right);
+				result = new PyNot1(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), left, right);
 
 			// Python not equals (!=)
 			if (operator.NOT_EQ_2() != null)
-				result = new PyNot2(currentCFG, this.getFilePath(), line, col, left, right);
+				result = new PyNot2(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), left, right);
 
 			break;
 		}
@@ -992,15 +1012,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			return visitXor_expr(ctx.xor_expr(0));
 		} else if (nXor == 2) {
 			//two Xor
-			return createPairFromSingle(new PyXor(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(0))),
+			return createPairFromSingle(new PyXor(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col),  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(0))),
 					checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(1)))));
 		} else {
-			Expression temp = new PyXor(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(nXor - 2))),
+			Expression temp = new PyXor(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col),  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(nXor - 2))),
 					checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(nXor - 1))));
 			nXor = nXor - 2;
 			// concatenate all the Xor expressions together
 			while (nXor > 0) {
-				temp = new PyXor(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(--nXor))),
+				temp = new PyXor(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col),  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(--nXor))),
 						 temp);
 			}
 			return createPairFromSingle(temp);
@@ -1018,15 +1038,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nAnd == 1) {
 			return visitAnd_expr(ctx.and_expr(0));
 		} else if (nAnd == 2) {
-			return createPairFromSingle(new PyXor(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(0))),
+			return createPairFromSingle(new PyXor(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col),  checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(0))),
 					checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(1)))));
 		} else {
-			Expression temp = new PyXor(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(nAnd - 2))),
+			Expression temp = new PyXor(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col),  checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(nAnd - 2))),
 					checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(nAnd - 1))));
 			nAnd = nAnd - 2;
 			// concatenate all the And expressions together
 			while (nAnd > 0) {
-				temp = new PyXor(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(--nAnd))),
+				temp = new PyXor(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(--nAnd))),
 						 temp);
 			}
 			return createPairFromSingle(temp);
@@ -1042,15 +1062,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nShift == 1) {
 			return visitShift_expr(ctx.shift_expr(0));
 		} else if (nShift == 2) {
-			return createPairFromSingle(new PyAnd(currentCFG, this.getFilePath(), line, col,  checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(0))),
+			return createPairFromSingle(new PyAnd(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col),  checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(0))),
 					checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(1)))));
 		} else {
-			Expression temp = new PyAnd(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(nShift - 2))),
+			Expression temp = new PyAnd(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(nShift - 2))),
 					checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(nShift - 1))));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new PyAnd(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(--nShift))),
+				temp = new PyAnd(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr(--nShift))),
 						 temp);
 			}
 			return createPairFromSingle(temp);
@@ -1066,7 +1086,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.RIGHT_SHIFT()==null) {
 			return visitArith_expr(ctx.arith_expr());
 		} else  {
-			return createPairFromSingle(new PyShiftRight(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())), checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr()))));
+			return createPairFromSingle(new PyShiftRight(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())), checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr()))));
 		}
 	}
 	
@@ -1078,7 +1098,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.LEFT_SHIFT()==null) {
 			return visitArith_expr(ctx.arith_expr());
 		} else  {
-			return createPairFromSingle(new PyShiftLeft(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())), checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr()))));
+			return createPairFromSingle(new PyShiftLeft(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())), checkAndExtractSingleExpression(visitShift_expr(ctx.shift_expr()))));
 		}	
 	}
 	
@@ -1102,7 +1122,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.arith_expr()==null) {
 			return visitTerm(ctx.term());
 		} else  {
-			return createPairFromSingle(new PyMinus(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
+			return createPairFromSingle(new PyMinus(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
 		}
 	}
 	
@@ -1114,7 +1134,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.arith_expr()==null) {
 			return visitTerm(ctx.term());
 		} else  {
-			return createPairFromSingle(new PyAdd(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
+			return createPairFromSingle(new PyAdd(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
 		}
 		
 	}
@@ -1139,7 +1159,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyMul(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new PyMul(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}	
 		
 	}
@@ -1151,7 +1171,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyMatMul(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new PyMatMul(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}	
 		
 		
@@ -1164,7 +1184,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyDiv(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new PyDiv(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}	
 
 		
@@ -1177,7 +1197,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyMod(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new PyMod(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}
 		
 	}	
@@ -1189,7 +1209,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyFloorDiv(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new PyFloorDiv(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}		
 	}
 	
@@ -1228,14 +1248,38 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		int col = getCol(ctx);
 		
 		if(ctx.POWER()!=null) {
-			return createPairFromSingle(new PyPower(currentCFG, this.getFilePath(), line, col, checkAndExtractSingleExpression(visitAtom_expr(ctx.atom_expr())), checkAndExtractSingleExpression(visitFactor(ctx.factor()))));
+			return createPairFromSingle(new PyPower(currentCFG, new SourceCodeLocation(this.getFilePath(), line, col), checkAndExtractSingleExpression(visitAtom_expr(ctx.atom_expr())), checkAndExtractSingleExpression(visitFactor(ctx.factor()))));
 		}
-		else throw new UnsupportedStatementException();
+		else return visitAtom_expr(ctx.atom_expr());
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitAtom_expr(Atom_exprContext ctx) {
-		return visitAtom(ctx.atom());
+		/*
+		atom_expr: (AWAIT)? atom trailer*;
+		atom: ('(' (yield_expr|testlist_comp)? ')' |
+			   '[' (testlist_comp)? ']' |
+			   '{' (dictorsetmaker)? '}' |
+			   NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False');
+		 */
+		if(ctx.AWAIT()!=null)
+			throw new UnsupportedStatementException("await is not supported");
+		if(ctx.trailer().size()>0) {
+			// trailer: '(' (arglist)? ')' | '[' subscriptlist ']' | '.' NAME;
+			Pair<Statement, Statement> leftSide = visitAtom(ctx.atom());
+			if(leftSide.getLeft()!=leftSide.getRight())
+				throw new UnsupportedStatementException("We support only single expressions for left handside expressions");
+			Statement access = leftSide.getLeft();
+			for(TrailerContext expr : ctx.trailer()) {
+				if (expr.NAME()!=null) {
+					String fieldAccess = expr.NAME().getSymbol().getText();
+					//new Access
+				}
+			}
+			//accesso con il punto
+			throw new UnsupportedStatementException();
+		}
+		else return visitAtom(ctx.atom());
 	}
 
 	@Override
@@ -1245,27 +1289,49 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		
 		if (ctx.NAME() != null) {
 			//crete a variable
-			return createPairFromSingle(new Variable(currentCFG, ctx.NAME().getText()));
+			return createPairFromSingle(new VariableRef(currentCFG, ctx.NAME().getText()));
 		} else if (ctx.NUMBER() != null) {
 			//create a literal int
 			return createPairFromSingle(new Literal(currentCFG, ctx.NUMBER().getText(), PyIntType.INSTANCE));
 		}else if (ctx.FALSE() != null) {
 			//create a literal false
-			return createPairFromSingle(new PyFalseLiteral(currentCFG, this.getFilePath(),line,col));
+			return createPairFromSingle(new PyFalseLiteral(currentCFG, new SourceCodeLocation(this.getFilePath(),line,col)));
 		}else if (ctx.TRUE()!= null) {
 			//create a literal true
-			return createPairFromSingle(new PyTrueLiteral(currentCFG, this.getFilePath(),line,col));
+			return createPairFromSingle(new PyTrueLiteral(currentCFG, new SourceCodeLocation(this.getFilePath(),line,col)));
 		} else if (ctx.STRING().size() > 0) {
 			//create a string
-			return createPairFromSingle(new PyStringLiteral(currentCFG,this.getFilePath(), line, col, ctx.STRING(0).getText()));
+			return createPairFromSingle(new PyStringLiteral(currentCFG,new SourceCodeLocation(this.getFilePath(), line, col), ctx.STRING(0).getText()));
 		} else if(ctx.yield_expr()!=null) {
 			return visitYield_expr(ctx.yield_expr());
-		} else if (ctx.testlist_comp()!=null) {
-			return visitTestlist_comp(ctx.testlist_comp());
-		} else if(ctx.dictorsetmaker()!=null) {
+		}else if(ctx.dictorsetmaker()!=null) {
 			return visitDictorsetmaker(ctx.dictorsetmaker());
+		} else if(ctx.OPEN_BRACK()!=null) {
+			List<Statement> sts = extractStatementsFromTestlist(ctx.testlist_comp());
+			ListCreation r = new ListCreation(sts, currentCFG, new SourceCodeLocation(this.getFilePath(), getLine(ctx), getCol(ctx)));
+			return Pair.of(r, r);
+		} else if(ctx.OPEN_PAREN()!=null) {
+			if(ctx.yield_expr()!=null)
+				throw new UnsupportedStatementException("yield expressions not supported");
+			List<Statement> sts = extractStatementsFromTestlist(ctx.testlist_comp());
+			TupleCreation r = new TupleCreation(sts, currentCFG, new SourceCodeLocation(this.getFilePath(), getLine(ctx), getCol(ctx)));
+			return Pair.of(r, r);
 		}
 		throw new UnsupportedStatementException();
+	}
+
+
+	private List<Statement> extractStatementsFromTestlist(Testlist_compContext ctx) {
+		List<Statement> result = new ArrayList<>();
+		if(ctx.testOrStar().size()==0)
+			return result;
+		for(TestOrStarContext e : ctx.testOrStar()) {
+			Pair<Statement, Statement> elem = visitTestOrStar(e);
+			if (elem.getLeft() != elem.getRight())
+				throw new UnsupportedStatementException("Only atomic statements are supported when initializing a list");
+			result.add(elem.getLeft());
+		}
+		return result;
 	}
 
 	@Override

@@ -1,8 +1,8 @@
 package it.unive.pylisa.cfg.type;
 
-import it.unive.lisa.cfg.CFG;
-import it.unive.lisa.cfg.statement.Literal;
-import it.unive.lisa.cfg.type.StringType;
+import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.statement.Literal;
+import it.unive.lisa.program.cfg.CodeLocation;
 
 
 public class PyStringLiteral  extends Literal {
@@ -16,7 +16,7 @@ public class PyStringLiteral  extends Literal {
 	 * @param col        the column where this literal is defined
 	 * @param value      the constant value represented by this literal
 	 */
-	public PyStringLiteral(CFG cfg, String sourceFile, int line, int col, String value) {
-		super(cfg, sourceFile, line, col, value, PyStringType.INSTANCE);
+	public PyStringLiteral(CFG cfg, CodeLocation loc, String value) {
+		super(cfg, loc, value, PyStringType.INSTANCE);
 	}
 }

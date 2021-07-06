@@ -22,7 +22,7 @@ version = '0.1'
 mainClassName = 'it.unive.pylisa.cli.CLI'
 
 dependencies {
-    implementation 'com.github.unive-ssv:lisa:0.1a2'
+    implementation 'com.github.unive-ssv:lisa:0.1a4'
     antlr 'org.antlr:antlr4:4.8-1'    
     testImplementation 'junit:junit:4.12'
 }

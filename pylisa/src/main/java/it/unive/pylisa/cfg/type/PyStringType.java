@@ -1,11 +1,12 @@
 package it.unive.pylisa.cfg.type;
 
-import it.unive.lisa.cfg.type.BooleanType;
-import it.unive.lisa.cfg.type.NumericType;
-import it.unive.lisa.cfg.type.StringType;
-import it.unive.lisa.cfg.type.Type;
 
-public class PyStringType implements StringType{
+import it.unive.lisa.type.StringType;
+import it.unive.lisa.type.Type;
+
+import java.util.Collection;
+
+public class PyStringType implements StringType {
 	/**
 	 * The unique singleton instance of this type.
 	 */
@@ -26,8 +27,10 @@ public class PyStringType implements StringType{
 		return null;
 	}
 
-	
+	@Override
+	public Collection<Type> allInstances() {
+		return null;
+	}
 
-	
-	
+
 }

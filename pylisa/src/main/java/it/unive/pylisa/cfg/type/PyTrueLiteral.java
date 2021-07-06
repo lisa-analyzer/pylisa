@@ -1,7 +1,8 @@
 package it.unive.pylisa.cfg.type;
 
-import it.unive.lisa.cfg.CFG;
-import it.unive.lisa.cfg.statement.Literal;
+import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.statement.Literal;
 import it.unive.lisa.symbolic.types.BoolType;
 
 public class PyTrueLiteral extends Literal {
@@ -14,7 +15,7 @@ public class PyTrueLiteral extends Literal {
 	 * @param line       the line number where this literal is defined
 	 * @param col        the column where this literal is defined
 	 */
-	public PyTrueLiteral(CFG cfg, String sourceFile, int line, int col) {
-		super(cfg, sourceFile, line, col, true, BoolType.INSTANCE);
+	public PyTrueLiteral(CFG cfg, CodeLocation loc) {
+		super(cfg, loc, true, BoolType.INSTANCE);
 	}
 }
