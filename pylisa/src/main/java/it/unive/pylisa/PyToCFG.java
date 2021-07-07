@@ -3,11 +3,14 @@ package it.unive.pylisa;
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CFGDescriptor;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
@@ -29,6 +32,7 @@ import it.unive.pylisa.cfg.type.PyFalseLiteral;
 import it.unive.pylisa.cfg.type.PyIntType;
 import it.unive.pylisa.cfg.type.PyStringLiteral;
 import it.unive.pylisa.cfg.type.PyTrueLiteral;
+import it.unive.pylisa.cfg.type.PyNoneLiteral;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -304,7 +308,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		else
 			return visitTestlistStarExpr(ctx);
 		log.info(assegnazione);
-		return Pair.of(assegnazione, assegnazione);
+		return createPairFromSingle(assegnazione);
 	}
 
 	@Override
@@ -342,6 +346,8 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitFlow_stmt(Flow_stmtContext ctx) {
+		if(ctx.return_stmt()!=null)
+			return visitReturn_stmt(ctx.return_stmt());
 		throw new UnsupportedStatementException();
 	}
 
@@ -357,7 +363,9 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitReturn_stmt(Return_stmtContext ctx) {
-		throw new UnsupportedStatementException();
+		if(ctx.testlist()==null)
+			return createPairFromSingle(new Ret(currentCFG, new SourceCodeLocation(this.getFilePath(), getLine(ctx), getCol(ctx))));
+		else return createPairFromSingle(new Return(currentCFG, new SourceCodeLocation(this.getFilePath(), getLine(ctx), getCol(ctx)), checkAndExtractSingleExpression(visitTestlist(ctx.testlist()))));
 	}
 
 	@Override
@@ -409,7 +417,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			return Pair.of(first, last);
 		}
 		else
-			return Pair.of(defaultStatement, defaultStatement);
+			return createPairFromSingle(defaultStatement);
 	}
 
 	@Override
@@ -760,7 +768,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			currentCFG.addEdge(new SequentialEdge(test, expr));
 			return Pair.of(test,expr);
 		}else {
-			return Pair.of(test,test);
+			return createPairFromSingle(test);
 		}
 		
 	}
@@ -1266,18 +1274,36 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			throw new UnsupportedStatementException("await is not supported");
 		if(ctx.trailer().size()>0) {
 			// trailer: '(' (arglist)? ')' | '[' subscriptlist ']' | '.' NAME;
-			Pair<Statement, Statement> leftSide = visitAtom(ctx.atom());
-			if(leftSide.getLeft()!=leftSide.getRight())
-				throw new UnsupportedStatementException("We support only single expressions for left handside expressions");
-			Statement access = leftSide.getLeft();
+			Expression access = checkAndExtractSingleExpression(visitAtom(ctx.atom()));
+			String last_name = access instanceof VariableRef ? ((VariableRef) access).getName() : null;
+			Expression previous_access = null;
 			for(TrailerContext expr : ctx.trailer()) {
+				Statement result;
 				if (expr.NAME()!=null) {
-					String fieldAccess = expr.NAME().getSymbol().getText();
-					//new Access
+					last_name = expr.NAME().getSymbol().getText();
+					Global fieldName = new Global(last_name);
+					previous_access = access;
+					access = new AccessUnitGlobal(currentCFG, new SourceCodeLocation(this.getFilePath(), this.getLine(expr), this.getCol(expr)), access, fieldName);
 				}
+				else if(expr.OPEN_PAREN()!=null) {
+					if(last_name==null)
+						throw new UnsupportedStatementException("When invoking a method we need to have always the name before the parentheses");
+					List<Expression> pars = new ArrayList<>();
+					boolean instance = access instanceof AccessUnitGlobal;
+					String method_name = last_name;
+					if(instance)
+						pars.add(previous_access);
+					if(expr.arglist()!=null)
+						for(ArgumentContext arg : expr.arglist().argument())
+							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
+
+					access = new UnresolvedCall(currentCFG, new SourceCodeLocation(this.getFilePath(), getLine(expr), getCol(expr)), UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES, instance, method_name, pars.toArray(new Expression[pars.size()]));
+					last_name = null;
+					previous_access = null;
+				}
+				else throw new UnsupportedStatementException();
 			}
-			//accesso con il punto
-			throw new UnsupportedStatementException();
+			return createPairFromSingle(access);
 		}
 		else return visitAtom(ctx.atom());
 	}
@@ -1299,7 +1325,11 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		}else if (ctx.TRUE()!= null) {
 			//create a literal true
 			return createPairFromSingle(new PyTrueLiteral(currentCFG, new SourceCodeLocation(this.getFilePath(),line,col)));
-		} else if (ctx.STRING().size() > 0) {
+		}else if (ctx.NONE() != null) {
+			//create a literal false
+			return createPairFromSingle(new PyNoneLiteral(currentCFG, new SourceCodeLocation(this.getFilePath(),line,col)));
+		}
+		else if (ctx.STRING().size() > 0) {
 			//create a string
 			return createPairFromSingle(new PyStringLiteral(currentCFG,new SourceCodeLocation(this.getFilePath(), line, col), ctx.STRING(0).getText()));
 		} else if(ctx.yield_expr()!=null) {
@@ -1309,13 +1339,13 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		} else if(ctx.OPEN_BRACK()!=null) {
 			List<Statement> sts = extractStatementsFromTestlist(ctx.testlist_comp());
 			ListCreation r = new ListCreation(sts, currentCFG, new SourceCodeLocation(this.getFilePath(), getLine(ctx), getCol(ctx)));
-			return Pair.of(r, r);
+			return createPairFromSingle(r);
 		} else if(ctx.OPEN_PAREN()!=null) {
 			if(ctx.yield_expr()!=null)
 				throw new UnsupportedStatementException("yield expressions not supported");
 			List<Statement> sts = extractStatementsFromTestlist(ctx.testlist_comp());
 			TupleCreation r = new TupleCreation(sts, currentCFG, new SourceCodeLocation(this.getFilePath(), getLine(ctx), getCol(ctx)));
-			return Pair.of(r, r);
+			return createPairFromSingle(r);
 		}
 		throw new UnsupportedStatementException();
 	}
@@ -1392,7 +1422,9 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitArgument(ArgumentContext ctx) {
-		throw new UnsupportedStatementException();
+		if(ctx.comp_for()!=null || ctx.ASSIGN()!=null || ctx.POWER()!=null || ctx.STAR()!=null || ctx.test().size()!=1)
+			throw new UnsupportedStatementException("We support only simple arguments in method calls");
+		return visitTest(ctx.test(0));
 	}
 
 	@Override
