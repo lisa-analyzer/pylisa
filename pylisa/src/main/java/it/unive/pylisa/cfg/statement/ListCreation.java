@@ -16,9 +16,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ListCreation extends Expression {
-    private List<Statement> values;
+    private List<Expression> values;
 
-    public ListCreation(List<Statement> values, CFG cfg, CodeLocation loc) {
+    public ListCreation(List<Expression> values, CFG cfg, CodeLocation loc) {
         super(cfg, loc);
 
         this.values = values;

@@ -1,6 +1,9 @@
 package it.unive.pylisa.cfg.statement;
 
-import it.unive.lisa.analysis.*;
+import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.callgraph.CallGraph;
@@ -10,14 +13,15 @@ import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
+import it.unive.pylisa.UnsupportedStatementException;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class TupleCreation extends Expression {
+public class SetCreation extends Expression {
     private List<Expression> values;
 
-    public TupleCreation(List<Expression> values, CFG cfg, CodeLocation loc) {
+    public SetCreation(List<Expression> values, CFG cfg, CodeLocation loc) {
         super(cfg, loc);
 
         this.values = values;
@@ -31,18 +35,16 @@ public class TupleCreation extends Expression {
 
     @Override
     public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
-        return false;
+        throw new UnsupportedStatementException();
     }
 
     @Override
     public String toString() {
-        return "("+ Arrays.toString(values.toArray())+")";
+        return "["+ Arrays.toString(values.toArray())+"]";
     }
 
     @Override
     public <A extends AbstractState<A, H, V>, H extends HeapDomain<H>, V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState, CallGraph callGraph, StatementStore<A, H, V> expressions) throws SemanticException {
         throw new SemanticException("Not yet supported");
     }
-
-
 }

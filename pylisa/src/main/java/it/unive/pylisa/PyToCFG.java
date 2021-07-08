@@ -24,10 +24,7 @@ import it.unive.pylisa.antlr.Python3Parser.*;
 import it.unive.pylisa.cfg.PythonUnit;
 import it.unive.pylisa.cfg.expression.binary.*;
 import it.unive.pylisa.cfg.expression.unary.PyNot;
-import it.unive.pylisa.cfg.statement.FromImport;
-import it.unive.pylisa.cfg.statement.Import;
-import it.unive.pylisa.cfg.statement.ListCreation;
-import it.unive.pylisa.cfg.statement.TupleCreation;
+import it.unive.pylisa.cfg.statement.*;
 import it.unive.pylisa.cfg.type.PyFalseLiteral;
 import it.unive.pylisa.cfg.type.PyIntType;
 import it.unive.pylisa.cfg.type.PyStringLiteral;
@@ -373,7 +370,12 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public Pair<Statement, Statement> visitReturn_stmt(Return_stmtContext ctx) {
 		if(ctx.testlist()==null)
 			return createPairFromSingle(new Ret(currentCFG, getLocation(ctx)));
-		else return createPairFromSingle(new Return(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTestlist(ctx.testlist()))));
+		else {
+			if(ctx.testlist().test().size()==1)
+				return createPairFromSingle(new Return(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTestlist(ctx.testlist()))));
+			else
+				return createPairFromSingle(new TupleCreation(extractExpressionsFromTestlist(ctx.testlist()), currentCFG, getLocation(ctx)));
+		}
 	}
 
 	@Override
@@ -683,7 +685,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		Pair<Statement, Statement> exprlist= visitExprlist(ctx.exprlist());
 		
 		Pair<Statement, Statement> testList= visitTestlist(ctx.testlist());
-		
 		currentCFG.addEdge(new SequentialEdge(exprlist.getRight(), testList.getLeft()));
 		
 		Pair<Statement, Statement> body= visitSuite(ctx.suite(0));
@@ -1346,30 +1347,33 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		}else if(ctx.dictorsetmaker()!=null) {
 			return visitDictorsetmaker(ctx.dictorsetmaker());
 		} else if(ctx.OPEN_BRACK()!=null) {
-			List<Statement> sts = extractStatementsFromTestlist(ctx.testlist_comp());
+			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
 			ListCreation r = new ListCreation(sts, currentCFG, getLocation(ctx));
 			return createPairFromSingle(r);
 		} else if(ctx.OPEN_PAREN()!=null) {
 			if(ctx.yield_expr()!=null)
 				throw new UnsupportedStatementException("yield expressions not supported");
-			List<Statement> sts = extractStatementsFromTestlist(ctx.testlist_comp());
+			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
 			TupleCreation r = new TupleCreation(sts, currentCFG, getLocation(ctx));
 			return createPairFromSingle(r);
 		}
 		throw new UnsupportedStatementException();
 	}
+	private List<Expression> extractExpressionsFromTestlist(TestlistContext ctx) {
+		List<Expression> result = new ArrayList<>();
+		if(ctx.test().size()==0)
+			return result;
+		for(TestContext e : ctx.test())
+			result.add(checkAndExtractSingleExpression(visitTest(e)));
+		return result;
+	}
 
-
-	private List<Statement> extractStatementsFromTestlist(Testlist_compContext ctx) {
-		List<Statement> result = new ArrayList<>();
+	private List<Expression> extractExpressionsFromTestlist_comp(Testlist_compContext ctx) {
+		List<Expression> result = new ArrayList<>();
 		if(ctx.testOrStar().size()==0)
 			return result;
-		for(TestOrStarContext e : ctx.testOrStar()) {
-			Pair<Statement, Statement> elem = visitTestOrStar(e);
-			if (elem.getLeft() != elem.getRight())
-				throw new UnsupportedStatementException("Only atomic statements are supported when initializing a list");
-			result.add(elem.getLeft());
-		}
+		for(TestOrStarContext e : ctx.testOrStar())
+			result.add(checkAndExtractSingleExpression(visitTestOrStar(e)));
 		return result;
 	}
 
@@ -1416,7 +1420,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitDictorsetmaker(DictorsetmakerContext ctx) {
-		throw new UnsupportedStatementException();
+		if(ctx.COLON().size()==0) {
+			List<Expression> values = new ArrayList<Expression>();
+			for(TestContext exp : ctx.test())
+				values.add(checkAndExtractSingleExpression(visitTest(exp)));
+			return createPairFromSingle(new SetCreation(values, currentCFG, getLocation(ctx)));
+		}
+		else {
+			throw new UnsupportedStatementException();
+		}
 	}
 
 	@Override
