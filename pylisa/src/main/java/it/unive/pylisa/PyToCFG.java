@@ -1318,6 +1318,16 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 					last_name = null;
 					previous_access = null;
 				}
+				else if(expr.OPEN_BRACK()!=null) {
+					previous_access = access;
+					last_name = null;
+					access = new PyArrayAccess(
+							access,
+							extractExpressionsFromSubscriptlist(expr.subscriptlist()),
+							currentCFG,
+							getLocation(expr)
+					);
+				}
 				else throw new UnsupportedStatementException();
 			}
 			return createPairFromSingle(access);
@@ -1375,6 +1385,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		return result;
 	}
 
+	private List<Expression> extractExpressionsFromSubscriptlist(SubscriptlistContext ctx) {
+		List<Expression> result = new ArrayList<>();
+		if(ctx.subscript().size()==0)
+			return result;
+		for(SubscriptContext e : ctx.subscript())
+			result.add(checkAndExtractSingleExpression(visitSubscript(e)));
+		return result;
+	}
+
 	private List<Expression> extractExpressionsFromTestlist_comp(Testlist_compContext ctx) {
 		List<Expression> result = new ArrayList<>();
 		if(ctx.testOrStar().size()==0)
@@ -1417,7 +1436,12 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitSubscript(SubscriptContext ctx) {
-		throw new UnsupportedStatementException();
+		if(ctx.COLON()!=null) {
+			Expression left = ctx.test1()==null ? null : checkAndExtractSingleExpression(visitTest(ctx.test1().test()));
+			Expression right = ctx.test2()==null ? null : checkAndExtractSingleExpression(visitTest(ctx.test2().test()));
+			return createPairFromSingle(new RangeValue(left, right, currentCFG, getLocation(ctx)));
+		}
+		else return visitTest(ctx.test());
 	}
 
 	@Override
@@ -1450,9 +1474,17 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitArgument(ArgumentContext ctx) {
-		if(ctx.comp_for()!=null || ctx.ASSIGN()!=null || ctx.POWER()!=null || ctx.STAR()!=null || ctx.test().size()!=1)
-			throw new UnsupportedStatementException("We support only simple arguments in method calls");
-		return visitTest(ctx.test(0));
+		if(ctx.ASSIGN()!=null) {
+			Statement target = checkAndExtractSingleStatement(visitTest(ctx.test(0)));
+			Statement expression = checkAndExtractSingleStatement(visitTest(ctx.test(1)));
+			if((! (target instanceof Expression)) || (! (expression instanceof Expression)))
+				throw new UnsupportedStatementException("Assignments require expression both in the left and in the right hand side");
+			return createPairFromSingle(new Assignment(currentCFG,  (Expression) target,  (Expression) expression));
+		}
+		else
+			if(ctx.comp_for()!=null || ctx.POWER()!=null || ctx.STAR()!=null || ctx.test().size()!=1)
+				throw new UnsupportedStatementException("We support only simple arguments in method calls");
+		else return visitTest(ctx.test(0));
 	}
 
 	@Override
