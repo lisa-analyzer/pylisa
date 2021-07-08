@@ -285,7 +285,11 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitSmall_stmt(Small_stmtContext ctx) {
-		return visitChildren(ctx);
+		Pair<Statement, Statement> result = visitChildren(ctx);
+		//Need to add the nodes since they might have been processed as expressions (thus not yet added to the CFG)
+		currentCFG.addNode(result.getLeft());
+		currentCFG.addNode(result.getRight());
+		return result;
 	}
 
 	@Override
@@ -685,6 +689,9 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		Pair<Statement, Statement> exprlist= visitExprlist(ctx.exprlist());
 		
 		Pair<Statement, Statement> testList= visitTestlist(ctx.testlist());
+		//FIXME: this translation of for loops is simply wrong
+		currentCFG.addNode(exprlist.getRight());
+		currentCFG.addNode(testList.getLeft());
 		currentCFG.addEdge(new SequentialEdge(exprlist.getRight(), testList.getLeft()));
 		
 		Pair<Statement, Statement> body= visitSuite(ctx.suite(0));
