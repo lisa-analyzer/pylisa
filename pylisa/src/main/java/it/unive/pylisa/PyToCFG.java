@@ -3,7 +3,6 @@ package it.unive.pylisa;
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
-import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
@@ -58,9 +57,14 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	private final String filePath;
 
 	/**
-	 * The unit containing the whole program
+	 * The unit currently under parsing
 	 */
-	private final Unit unit;
+	private Unit currentUnit;
+
+	/**
+	 * All the units completely processed so far
+	 */
+	private final Collection<Unit> parsedUnits = new ArrayList<>();
 
 	/**
 	 * Collection of CFGs collected into the Python program at filePath.
@@ -76,7 +80,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public PyToCFG(String filePath) {
 		this.cfgs = new HashSet<>();
 		this.filePath = filePath;
-		this.unit = new PythonUnit(new SourceCodeLocation(filePath, 0, 0), "main_file");
+		this.currentUnit = new PythonUnit(new SourceCodeLocation(filePath, 0, 0), "main_file");
 	}
 
 	/**
@@ -115,6 +119,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		conf.setWorkdir("workdir");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(p);
+		translator.parsedUnits.add(translator.currentUnit);
 	}
 
 	/**
@@ -205,7 +210,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		String funcName = "main";
 		Parameter[] cfgArgs = new Parameter[] {};
 
-		return new CFGDescriptor(unit, false, funcName, cfgArgs);
+		return new CFGDescriptor(currentUnit, false, funcName, cfgArgs);
 	}
 
 	private CFGDescriptor buildCFGDescriptor(FuncdefContext funcDecl) {
@@ -213,7 +218,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 		Parameter[] cfgArgs = new Parameter[] {};
 
-		return new CFGDescriptor(unit, false, funcName, cfgArgs);
+		return new CFGDescriptor(currentUnit, false, funcName, cfgArgs);
 	}
 
 	@Override
@@ -243,7 +248,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitFuncdef(FuncdefContext ctx) {
-		return visitSuite(ctx.suite());
+		throw new UnsupportedStatementException();
 	}
 
 	@Override
@@ -341,7 +346,20 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitDel_stmt(Del_stmtContext ctx) {
-		throw new UnsupportedStatementException();
+		if(ctx.exprlist().star_expr().size()>0)
+			throw new UnsupportedStatementException("We support only expressions withou * in del statements");
+
+		return createPairFromSingle(
+				new UnresolvedCall(
+						currentCFG,
+						getLocation(ctx),
+						UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
+						false,
+						"del",
+						extractExpressionsFromExprlist(ctx.exprlist()).toArray(new Expression[ctx.exprlist().expr().size()])
+				)
+		);
+
 	}
 
 	@Override
@@ -356,6 +374,19 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if(ctx.raise_stmt()!=null) {
 			log.warn("Exceptions are not yet supported. The raise statement at line "+getLine(ctx)+ " of file "+getFilePath()+" is unsoundly translated into a return; statement");
 			return createPairFromSingle(new Ret(currentCFG, getLocation(ctx)));
+		}
+		if(ctx.yield_stmt()!=null) {
+			List<Expression> l = extractExpressionsFromYieldArg(ctx.yield_stmt().yield_expr().yield_arg());
+			return createPairFromSingle(
+				new UnresolvedCall(
+					currentCFG,
+					getLocation(ctx),
+					UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
+					false,
+					"yield from",
+					l.toArray(new Expression[l.size()])
+				)
+			);
 		}
 		throw new UnsupportedStatementException();
 	}
@@ -522,26 +553,41 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitAssert_stmt(Assert_stmtContext ctx) {
-		throw new UnsupportedStatementException();
+		return createPairFromSingle(
+				new UnresolvedCall(
+						currentCFG,
+						getLocation(ctx),
+						UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
+						false,
+						"assert",
+						extractExpressionsFromListOfTests(ctx.test()).toArray(new Expression[ctx.test().size()])
+				)
+		);
+	}
+
+	private CFG parseMethod(FuncdefContext ctx) {
+		CFG oldCFG = currentCFG;
+		currentCFG = new CFG(buildCFGDescriptor(ctx));
+		cfgs.add(currentCFG);
+		visitSuite(ctx.suite());
+		try {
+			Writer w = new FileWriter("./output.txt");
+			currentCFG.dump(w, s -> "Try");
+			w.close();
+		} catch (IOException e) {
+			log.info("error with file");
+			e.printStackTrace();
+		}
+		CFG result = currentCFG;
+		currentCFG = oldCFG;
+		currentUnit.addCFG(result);
+		return result;
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitCompound_stmt(Compound_stmtContext ctx) {
 		if(ctx.funcdef()!=null) {
-			FuncdefContext funcDecl = ctx.funcdef();
-			CFG oldCFG = currentCFG;
-			currentCFG = new CFG(buildCFGDescriptor(funcDecl));
-			cfgs.add(currentCFG);
-			visitFuncdef(funcDecl);
-			try {
-				Writer w = new FileWriter("./output.txt");
-				currentCFG.dump(w, s -> "Try");
-				w.close();
-			} catch (IOException e) {
-				log.info("error with file");
-				e.printStackTrace();
-			}
-			currentCFG = oldCFG;
+			parseMethod(ctx.funcdef());
 			return null;
 		}
 		else if(ctx.if_stmt()!=null)
@@ -556,6 +602,8 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			return this.visitWith_stmt(ctx.with_stmt());
 		else if(ctx.if_stmt()!=null)
 			return this.visitIf_stmt(ctx.if_stmt());
+		else if(ctx.classdef()!=null)
+			return this.visitClassdef(ctx.classdef());
 		else throw new UnsupportedStatementException("Statement "+ctx+" not yet supported");
 	}
 
@@ -1377,10 +1425,32 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		throw new UnsupportedStatementException();
 	}
 	private List<Expression> extractExpressionsFromTestlist(TestlistContext ctx) {
+		return extractExpressionsFromListOfTests(ctx.test());
+	}
+
+	private List<Expression> extractExpressionsFromExprlist(ExprlistContext ctx) {
 		List<Expression> result = new ArrayList<>();
-		if(ctx.test().size()==0)
+		if(ctx.expr().size()==0)
 			return result;
-		for(TestContext e : ctx.test())
+		for(ExprContext e : ctx.expr())
+			result.add(checkAndExtractSingleExpression(visitExpr(e)));
+		return result;
+	}
+
+	private List<Expression> extractExpressionsFromYieldArg(Yield_argContext ctx) {
+		if(ctx.test()!=null) {
+			List<Expression> r = new ArrayList<>();
+			r.add(checkAndExtractSingleExpression(visitTest(ctx.test())));
+			return r;
+		}
+		else return extractExpressionsFromTestlist(ctx.testlist());
+	}
+
+	private List<Expression> extractExpressionsFromListOfTests(List<TestContext> l) {
+		List<Expression> result = new ArrayList<>();
+		if(l.size()==0)
+			return result;
+		for(TestContext e : l)
 			result.add(checkAndExtractSingleExpression(visitTest(e)));
 		return result;
 	}
@@ -1396,7 +1466,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	private List<Expression> extractExpressionsFromTestlist_comp(Testlist_compContext ctx) {
 		List<Expression> result = new ArrayList<>();
-		if(ctx.testOrStar().size()==0)
+		if(ctx==null || ctx.testOrStar()==null || ctx.testOrStar().size()==0)
 			return result;
 		for(TestOrStarContext e : ctx.testOrStar())
 			result.add(checkAndExtractSingleExpression(visitTestOrStar(e)));
@@ -1464,7 +1534,36 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitClassdef(ClassdefContext ctx) {
-		throw new UnsupportedStatementException();
+		Unit previous = this.currentUnit;
+		String name = ctx.NAME().getSymbol().getText();
+		this.currentUnit = new PythonUnit(getLocation(ctx), name);
+		parseClassBody(ctx.suite());
+		this.parsedUnits.add(this.currentUnit);
+		this.currentUnit = previous;
+		return null;
+	}
+
+	private void parseClassBody(SuiteContext ctx) {
+		if(ctx.simple_stmt()!=null)
+			throw new UnsupportedStatementException("Inside the body of a class we should have only field and method definitions");
+		for(StmtContext stmt : ctx.stmt()) {
+			if(stmt.simple_stmt()!=null)
+				throw new UnsupportedStatementException("Inside the body of a class we should have only field and method definitions");
+			if(stmt.compound_stmt().funcdef()!=null) {
+				parseMethod(stmt.compound_stmt().funcdef());
+			}
+			else if(stmt.compound_stmt().decorated()!=null) {
+				log.warn("Ignoring decorator "+stmt.compound_stmt().decorated().decorators().getText()+" at code location "+getLocation(stmt));
+				DecoratedContext c = stmt.compound_stmt().decorated();
+				if(c.funcdef()!=null)
+					parseMethod(c.funcdef());
+				else if(c.classdef()!=null)
+					this.visitClassdef(c.classdef());
+				else throw new UnsupportedStatementException("We support only decorated classes and methods");
+			}
+			else throw new UnsupportedStatementException("Inside the body of a class we should have only field and method definitions");
+		}
+
 	}
 
 	@Override
