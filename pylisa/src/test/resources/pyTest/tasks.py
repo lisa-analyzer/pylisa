@@ -21,7 +21,7 @@ from .coroutines import coroutine
 
 
 class Task(futures.Future):
-    """A coroutine wrapped in a Future."""
+    #"""A coroutine wrapped in a Future."""
 
     # An important invariant maintained while a Task not done:
     #

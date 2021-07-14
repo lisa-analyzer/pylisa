@@ -1421,9 +1421,28 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
 			TupleCreation r = new TupleCreation(sts, currentCFG, getLocation(ctx));
 			return createPairFromSingle(r);
+		} else if(ctx.OPEN_BRACE()!=null) {
+			List<Pair<Expression, Expression>> values = extractPairsFromDictorSet(ctx.dictorsetmaker());
+			DictionaryCreation r = new DictionaryCreation(values, currentCFG, getLocation(ctx));
+			return createPairFromSingle(r);
 		}
 		throw new UnsupportedStatementException();
 	}
+
+	private List<Pair<Expression, Expression>> extractPairsFromDictorSet(DictorsetmakerContext ctx) {
+		if(ctx==null)
+			return new ArrayList<>();
+		List<Pair<Expression, Expression>> result = new ArrayList<>();
+		if(ctx.test().size()!=2*ctx.COLON().size())
+			throw new UnsupportedStatementException("We support only initialization of dictonaries in the form of <key> : <value>");
+		for(int i = 0; i < ctx.COLON().size(); i++) {
+			Expression left = checkAndExtractSingleExpression(visitTest(ctx.test(2*i)));
+			Expression right = checkAndExtractSingleExpression(visitTest(ctx.test(2*i+1)));
+			result.add(Pair.of(left, right));
+		}
+		return result;
+	}
+
 	private List<Expression> extractExpressionsFromTestlist(TestlistContext ctx) {
 		return extractExpressionsFromListOfTests(ctx.test());
 	}
