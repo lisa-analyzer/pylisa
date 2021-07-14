@@ -1544,12 +1544,17 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	}
 
 	private void parseClassBody(SuiteContext ctx) {
+		List<Pair<VariableRef, Expression>> fields_init = new ArrayList<>();
 		if(ctx.simple_stmt()!=null)
 			throw new UnsupportedStatementException("Inside the body of a class we should have only field and method definitions");
 		for(StmtContext stmt : ctx.stmt()) {
-			if(stmt.simple_stmt()!=null)
-				throw new UnsupportedStatementException("Inside the body of a class we should have only field and method definitions");
-			if(stmt.compound_stmt().funcdef()!=null) {
+			if(stmt.simple_stmt()!=null) {
+				Pair<VariableRef, Expression> p = parseField(stmt.simple_stmt());
+				currentUnit.addGlobal(new Global(p.getLeft().getName()));
+				if(p.getRight()!=null)
+					fields_init.add(p);
+			}
+			else if(stmt.compound_stmt().funcdef()!=null) {
 				parseMethod(stmt.compound_stmt().funcdef());
 			}
 			else if(stmt.compound_stmt().decorated()!=null) {
@@ -1563,9 +1568,46 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			}
 			else throw new UnsupportedStatementException("Inside the body of a class we should have only field and method definitions");
 		}
+		dumpConstructor(fields_init, getLocation(ctx));
+	}
+
+	private void dumpConstructor(List<Pair<VariableRef, Expression>> fields_init, CodeLocation location) {
+		if(fields_init.size()>0) {
+			CFG oldCFG = currentCFG;
+			currentCFG = new CFG(new CFGDescriptor(currentUnit, true, "<init>"));
+			cfgs.add(currentCFG);
+			Statement previous = null;
+			for (Pair<VariableRef, Expression> init : fields_init) {
+				Statement f = new Assignment(currentCFG, init.getLeft().getLocation(), init.getLeft(), init.getRight());
+				currentCFG.addNode(f, previous==null);
+				if(previous!=null)
+					currentCFG.addEdge(new SequentialEdge(previous, f));
+				previous = f;
+			}
+			currentUnit.addCFG(currentCFG);
+			currentCFG = oldCFG;
+		}
 
 	}
 
+	private Pair<VariableRef, Expression>  parseField(Simple_stmtContext st) {
+		try {
+			Statement result = checkAndExtractSingleStatement(visitSimple_stmt(st));
+			if(result instanceof Assignment) {
+				Assignment ass = (Assignment) result;
+				Expression assigned = ass.getLeft();
+				Expression expr = ass.getRight();
+				if(assigned instanceof VariableRef)
+					return Pair.of((VariableRef) assigned, expr);
+			}
+			else if(result instanceof VariableRef)
+				return Pair.of((VariableRef) result, null);
+			throw new UnsupportedStatementException("Only variables or assignments of variable are supported as field declarations");
+		}
+		catch(UnsupportedStatementException e) {
+			throw new UnsupportedStatementException("Only variables or assignments of variable are supported as field declarations", e);
+		}
+	}
 	@Override
 	public Pair<Statement, Statement> visitArglist(ArglistContext ctx) {
 		throw new UnsupportedStatementException();
