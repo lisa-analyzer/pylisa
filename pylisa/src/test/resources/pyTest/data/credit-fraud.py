@@ -992,13 +992,18 @@ def plot_confusion_matrix(cm, classes,
     tick_marks = np.arange(len(classes))
     plt.xticks(tick_marks, classes, rotation=45)
     plt.yticks(tick_marks, classes)
-
-    fmt = '.2f' if normalize else 'd'
+    if normalize:
+        fmt = '.2f'
+    else:
+        fmt = 'd'
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        if cm[i, j] > thresh:
+            _color="white"
+        else:
+            _color = "black"
         plt.text(j, i, format(cm[i, j], fmt),
-                 horizontalalignment="center",
-                 color="white" if cm[i, j] > thresh else "black")
+                 horizontalalignment="center", color=_color)
 
     plt.tight_layout()
     plt.ylabel('True label')
