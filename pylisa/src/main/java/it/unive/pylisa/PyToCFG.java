@@ -362,7 +362,9 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitPass_stmt(Pass_stmtContext ctx) {
-		throw new UnsupportedStatementException();
+		Statement st = new NoOp(currentCFG, getLocation(ctx));
+		currentCFG.addNode(st);
+		return createPairFromSingle(st);
 	}
 
 	@Override
@@ -847,8 +849,17 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		for(T element : elements) {
 			Statement previous = result;
 			Pair<Statement, Statement> parsed = visitor.apply(element);
-			if(previous!=null)
+			try {
+				if (previous != null)
+					currentCFG.addEdge(new SequentialEdge(previous, parsed.getLeft()));
+			}
+			catch(UnsupportedOperationException e) {
+				//The node was not yet added. Since this method is called from different contexts,
+				//sometimes it parses expressions and those are not added as node to the CFG.
+				currentCFG.addNode(parsed.getLeft());
+				currentCFG.addNode(previous);
 				currentCFG.addEdge(new SequentialEdge(previous, parsed.getLeft()));
+			}
 			result = parsed.getRight();
 			if(first==null)
 				first=result;
@@ -909,6 +920,12 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			Statement booleanGuard = checkAndExtractSingleStatement(visitOr_test(ctx.or_test(1)));
 			Pair<Statement,Statement> falseCase = visitTest(ctx.test());
 			NoOp testExitNode = new NoOp(currentCFG);
+
+			currentCFG.addNode(booleanGuard);
+			currentCFG.addNode(trueCase);
+			currentCFG.addNode(falseCase.getLeft());
+			currentCFG.addNode(falseCase.getRight());
+			currentCFG.addNode(testExitNode);
 			
 			currentCFG.addEdge(new TrueEdge(booleanGuard, trueCase));
 			currentCFG.addEdge(new FalseEdge(booleanGuard, falseCase.getLeft()));
@@ -1637,8 +1654,9 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				throw new UnsupportedStatementException("Assignments require expression both in the left and in the right hand side");
 			return createPairFromSingle(new Assignment(currentCFG,  (Expression) target,  (Expression) expression));
 		}
-		else
-			if(ctx.comp_for()!=null || ctx.POWER()!=null || ctx.STAR()!=null || ctx.test().size()!=1)
+		else if(ctx.STAR()!=null)
+			return createPairFromSingle(new StarExpression(checkAndExtractSingleExpression(visitTest(ctx.test(0))), currentCFG, getLocation(ctx)));
+		else if(ctx.comp_for()!=null || ctx.POWER()!=null || ctx.test().size()!=1)
 				throw new UnsupportedStatementException("We support only simple arguments in method calls");
 		else return visitTest(ctx.test(0));
 	}
