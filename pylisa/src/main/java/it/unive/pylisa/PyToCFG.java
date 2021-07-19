@@ -39,6 +39,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.swing.plaf.nimbus.State;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -174,19 +175,18 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		Statement last_stmt = null;
 		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
 			Compound_stmtContext comp = stmt.compound_stmt();
-			if(comp!=null) {
-				visitCompound_stmt(comp);
-			}
-			else {
-				Simple_stmtContext single_stmt = stmt.simple_stmt();
-				Pair<Statement, Statement> visited_stmt = visitSimple_stmt(single_stmt);
+			Pair<Statement, Statement> visited_stmt;
+			if(comp!=null)
+				visited_stmt = visitCompound_stmt(comp);
+			else
+				visited_stmt = visitSimple_stmt(stmt.simple_stmt());
+			if(visited_stmt!=null) {
 				currentCFG.addNode(visited_stmt.getLeft(), last_stmt==null);
 				if(last_stmt!=null) {
 					currentCFG.addEdge(new SequentialEdge(last_stmt, visited_stmt.getLeft()));
 				}
 				last_stmt = visited_stmt.getRight();
 			}
-			
 		}
 
 		return null;
@@ -202,7 +202,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	}
 
 
-	public CodeLocation getLocation(ParserRuleContext ctx) {
+	public SourceCodeLocation getLocation(ParserRuleContext ctx) {
 		return new SourceCodeLocation(this.getFilePath(), getLine(ctx), getCol(ctx));
 	}
 
@@ -569,7 +569,8 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		CFG oldCFG = currentCFG;
 		currentCFG = new CFG(buildCFGDescriptor(ctx));
 		cfgs.add(currentCFG);
-		visitSuite(ctx.suite());
+		Pair<Statement, Statement> r = visitSuite(ctx.suite());
+		currentCFG.addNode(r.getLeft(), true);
 		try {
 			Writer w = new FileWriter("./output.txt");
 			currentCFG.dump(w, s -> "Try");
@@ -731,29 +732,93 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public Pair<Statement, Statement> visitFor_stmt(For_stmtContext ctx) {
 		
 		//create and add exit point of for
-		NoOp forExitNode = new NoOp(currentCFG);
-		currentCFG.addNode(forExitNode);
-		
-		Pair<Statement, Statement> exprlist= visitExprlist(ctx.exprlist());
-		
-		Pair<Statement, Statement> testList= visitTestlist(ctx.testlist());
-		//FIXME: this translation of for loops is simply wrong
-		currentCFG.addNode(exprlist.getRight());
-		currentCFG.addNode(testList.getLeft());
-		currentCFG.addEdge(new SequentialEdge(exprlist.getRight(), testList.getLeft()));
-		
+		NoOp exit = new NoOp(currentCFG);
+		currentCFG.addNode(exit);
+
+		List<Expression> exprs = extractExpressionsFromExprlist(ctx.exprlist());
+		Expression variable;
+		if(exprs.size()==1)
+			variable = exprs.get(0);
+		else variable = new Tuple(exprs, currentCFG, getLocation(ctx));
+		Expression collection= checkAndExtractSingleExpression(visitTestlist(ctx.testlist()));
+		Expression[] collection_pars = {collection};
+
+		VariableRef counter = new VariableRef(
+				currentCFG,
+				getLocation(ctx),
+				"__counter_location"+getLocation(ctx).getLine(), PyIntType.INSTANCE
+		);
+		Expression[] counter_pars = {counter};
+
+		//counter = 0;
+		Assignment counter_init = new Assignment(
+				currentCFG,
+				getLocation(ctx),
+				counter,
+				new Literal(currentCFG, "0", PyIntType.INSTANCE)
+		);
+		currentCFG.addNode(counter_init);
+
+		//counter < collection.size()
+		PyLess condition = new PyLess(
+				currentCFG,
+				getLocation(ctx),
+				counter,
+				new UnresolvedCall(
+						currentCFG,
+						getLocation(ctx),
+						UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
+						true,
+						"size",
+						collection_pars
+				)
+		);
+		currentCFG.addNode(condition);
+
+		//element = collection.at(counter)
+		Assignment element_assignment =  new Assignment(
+				currentCFG,
+				getLocation(ctx),
+				variable,
+				new UnresolvedCall(
+						currentCFG,
+						getLocation(ctx),
+						UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
+						true,
+						"at",
+						counter_pars
+				)
+		);
+		currentCFG.addNode(element_assignment);
+
+		//counter = counter + 1;
+		Assignment counter_increment = new Assignment(
+				currentCFG,
+				getLocation(ctx),
+				counter,
+				new PyAdd(
+						currentCFG,
+						getLocation(ctx),
+						counter,
+						new Literal(
+								currentCFG,
+								getLocation(ctx),
+								"1",
+								PyIntType.INSTANCE
+						)
+				)
+		);
+		currentCFG.addNode(counter_increment);
+
 		Pair<Statement, Statement> body= visitSuite(ctx.suite(0));
-		
-		currentCFG.addEdge(new TrueEdge(testList.getRight(), body.getLeft()));
-		currentCFG.addEdge(new TrueEdge(exprlist.getLeft(), body.getRight()));
-		
-		//check if there's an else condition for the for statement
-		if(ctx.ELSE()!=null) {
-			Pair<Statement, Statement> falseCond= visitSuite(ctx.suite(1));
-			currentCFG.addEdge(new FalseEdge(testList.getLeft(), falseCond.getLeft()));
-			currentCFG.addEdge(new SequentialEdge(falseCond.getRight(), forExitNode));
-		}
-		return Pair.of(exprlist.getLeft(), forExitNode);
+
+		currentCFG.addEdge(new SequentialEdge(counter_init, condition));
+		currentCFG.addEdge(new TrueEdge(condition, element_assignment));
+		currentCFG.addEdge(new SequentialEdge(element_assignment, body.getLeft()));
+		currentCFG.addEdge(new SequentialEdge(body.getRight(), counter_increment));
+		currentCFG.addEdge(new SequentialEdge(counter_increment, condition));
+		currentCFG.addEdge(new FalseEdge(condition, exit));
+		return Pair.of(counter_init, exit);
 	}
 
 	@Override
