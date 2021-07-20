@@ -1,5 +1,7 @@
 package it.unive.pylisa;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
@@ -37,6 +39,9 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,10 +49,8 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.plaf.nimbus.State;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.function.Function;
 
 public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
@@ -112,17 +115,58 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public static void main(String[] args) throws IOException, AnalysisException {
 		//path of test file
 		String file = args[0];
-		PyToCFG translator = new PyToCFG(file);
-		LiSAConfiguration conf = new LiSAConfiguration();
+		String extension = FilenameUtils.getExtension(file);
+		switch(extension) {
+			case "py":
+				PyToCFG translator = new PyToCFG(file);
+				LiSAConfiguration conf = new LiSAConfiguration();
 
-		Collection<CFG> cfgs = translator.toLiSACFG();
-		Program p = new Program();
-		cfgs.forEach(p::addCFG);
-		conf.setDumpCFGs(true);
-		conf.setWorkdir("workdir");
-		LiSA lisa = new LiSA(conf);
-		lisa.run(p);
-		translator.parsedUnits.add(translator.currentUnit);
+				Collection<CFG> cfgs = translator.toLiSACFG();
+				Program p = new Program();
+				cfgs.forEach(p::addCFG);
+				conf.setDumpCFGs(true);
+				conf.setWorkdir("workdir");
+				LiSA lisa = new LiSA(conf);
+				lisa.run(p);
+				translator.parsedUnits.add(translator.currentUnit);
+				break;
+			case "ipynb":
+				Gson gson = new Gson();
+				JsonReader reader = gson.newJsonReader(new FileReader(file));
+				Map<?, ?> map = gson.fromJson(reader, Map.class);
+				ArrayList<Map<?, ?>> cells = (ArrayList<Map<?, ?>>) map.get("cells");
+				List<String> code = new ArrayList<>();
+				for(Map<?, ?> l : cells) {
+					String type = (String) l.get("cell_type");
+					if(type.equals("code")) {
+						List<String> code_list = (List<String>) l.get("source");
+						code.add(transformToCode(code_list));
+					}
+				}
+				List<String> files = new ArrayList<>();
+				String tempDir = System.getProperty("java.io.tmpdir");
+				String rootFileName = Path.of(tempDir, FilenameUtils.getName(file)).toString();
+				int i = 0;
+				for(String c : code) {
+					String local_filename = rootFileName + "_" + i + ".py";
+					FileUtils.write(new File(local_filename), c);
+					files.add(local_filename);
+					i++;
+				}
+				for(String pyFile : files) {
+					String[] temp_args = {pyFile};
+					PyToCFG.main(temp_args);
+				}
+				break;
+			default: throw new UnsupportedStatementException("Files with extension "+extension+" are not supported");
+		}
+	}
+
+	private static String transformToCode(List<String> code_list) {
+		String result = "";
+		for(String s : code_list)
+			result += s +"\n";
+		return result;
 	}
 
 	/**

@@ -2,8 +2,8 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
-      <module name="pylisa.pylisa.main" target="11" />
-      <module name="pylisa.pylisa.test" target="11" />
+      <module name="pylisa.pylisa.main~1" target="11" />
+      <module name="pylisa.pylisa.test~1" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>
