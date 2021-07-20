@@ -663,7 +663,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 		//Created if exit node
 		NoOp ifExitNode = new NoOp(currentCFG);
-		currentCFG.addNodeIfNotPresent(ifExitNode);
 
 		//Visit if true block
 		Pair<Statement, Statement> trueBlock = visitSuite(ctx.suite(0));
@@ -673,7 +672,10 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		Statement entryStatementTrueBranch = trueBlock.getLeft();
 
 		currentCFG.addEdge(new TrueEdge(booleanGuard, entryStatementTrueBranch));
-		currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
+		if(! exitStatementTrueBranch.stopsExecution()) {
+			currentCFG.addNodeIfNotPresent(ifExitNode);
+			currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
+		}
 	
 		int testLenght = ctx.test().size();
 
@@ -696,7 +698,10 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 					Statement entryStatementTrueBranchElif = trueBlockElif.getLeft();
 
 					currentCFG.addEdge(new TrueEdge(booleanGuardElif, entryStatementTrueBranchElif));
-					currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranchElif, ifExitNode));
+					if(! exitStatementTrueBranchElif.stopsExecution()) {
+						currentCFG.addNodeIfNotPresent(ifExitNode);
+						currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranchElif, ifExitNode));
+					}
 					i=i+1;
 				}
 		}
@@ -708,10 +713,16 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 					Statement exitStatementFalseBranch = falseBlock.getRight();
 					
 					currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, entryStatementFalseBranch));
-					currentCFG.addEdge(new SequentialEdge(exitStatementFalseBranch, ifExitNode));
+					if(! exitStatementFalseBranch.stopsExecution()) {
+						currentCFG.addNodeIfNotPresent(ifExitNode);
+						currentCFG.addEdge(new SequentialEdge(exitStatementFalseBranch, ifExitNode));
+					}
 				}else {
 					// If statement with no else
-					currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, ifExitNode));
+					if(! lastBooleanGuardElif.stopsExecution()) {
+						currentCFG.addNodeIfNotPresent(ifExitNode);
+						currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, ifExitNode));
+					}
 				}
 
 		return  Pair.of(booleanGuard,ifExitNode);
@@ -942,7 +953,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			}
 			result = parsed.getRight();
 			if(first==null)
-				first=result;
+				first=parsed.getLeft();
 		}
 		return Pair.of(first, result);
 	}
@@ -992,9 +1003,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	@Override
 	public Pair<Statement, Statement> visitTest(TestContext ctx) {
 		//no if into the condition 
-		if (ctx.IF() == null) {
-			return visitOr_test(ctx.or_test(0));
-		} else {
+		if (ctx.IF() != null) {
 			//visit the if into the condition
 			Statement trueCase = checkAndExtractSingleStatement(visitOr_test(ctx.or_test(0)));
 			Statement booleanGuard = checkAndExtractSingleStatement(visitOr_test(ctx.or_test(1)));
@@ -1014,7 +1023,20 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 			return Pair.of(booleanGuard, testExitNode);
 		}
-
+		else if(ctx.lambdef()!=null) {
+			List<Expression> args = extractExpressionsFromVarArgList(ctx.lambdef().varargslist());
+			Expression body = checkAndExtractSingleExpression(visitTest(ctx.lambdef().test()));
+			return createPairFromSingle(
+					new LambdaExpression(
+						args,
+						body,
+						currentCFG,
+						getLocation(ctx)
+				)
+			);
+		}
+		else
+			return visitOr_test(ctx.or_test(0));
 	}
 
 	@Override
@@ -1547,6 +1569,11 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		for(ExprContext e : ctx.expr())
 			result.add(checkAndExtractSingleExpression(visitExpr(e)));
 		return result;
+	}
+
+
+	private List<Expression> extractExpressionsFromVarArgList(VarargslistContext ctx) {
+		return extractExpressionsFromListOfTests(ctx.test());
 	}
 
 	private List<Expression> extractExpressionsFromYieldArg(Yield_argContext ctx) {
