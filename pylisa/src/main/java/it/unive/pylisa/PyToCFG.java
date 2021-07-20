@@ -11,6 +11,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CFGDescriptor;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.edge.TrueEdge;
@@ -20,6 +21,7 @@ import it.unive.pylisa.antlr.Python3BaseVisitor;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
 import it.unive.pylisa.antlr.Python3Parser.*;
+import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.PythonUnit;
 import it.unive.pylisa.cfg.expression.binary.*;
 import it.unive.pylisa.cfg.expression.unary.PyNot;
@@ -105,7 +107,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	/**
 	 * Current CFG to parse
 	 */
-	private CFG currentCFG;
+	private PyCFG currentCFG;
 
 	public static void main(String[] args) throws IOException, AnalysisException {
 		//path of test file
@@ -170,7 +172,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitFile_input(File_inputContext ctx) {
-		currentCFG = new CFG(buildMainCFGDescriptor());
+		currentCFG = new PyCFG(buildMainCFGDescriptor());
 		cfgs.add(currentCFG);
 		Statement last_stmt = null;
 		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
@@ -181,10 +183,18 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			else
 				visited_stmt = visitSimple_stmt(stmt.simple_stmt());
 			if(visited_stmt!=null) {
-				currentCFG.addNode(visited_stmt.getLeft(), last_stmt==null);
-				if(last_stmt!=null) {
-					currentCFG.addEdge(new SequentialEdge(last_stmt, visited_stmt.getLeft()));
+				if(last_stmt==null) {
+					Collection<Edge> outedges = new HashSet<>();
+					for(Edge e : currentCFG.getEdges()) {
+						if(e.getSource().equals(visited_stmt.getLeft()))
+							outedges.add(e);
+					}
+					currentCFG.addNodeIfNotPresent(visited_stmt.getLeft(), true);
+					for(Edge e : outedges)
+						currentCFG.addEdge(e);
 				}
+				else
+					currentCFG.addEdge(new SequentialEdge(last_stmt, visited_stmt.getLeft()));
 				last_stmt = visited_stmt.getRight();
 			}
 		}
@@ -290,11 +300,26 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitSmall_stmt(Small_stmtContext ctx) {
-		Pair<Statement, Statement> result = visitChildren(ctx);
-		//Need to add the nodes since they might have been processed as expressions (thus not yet added to the CFG)
-		currentCFG.addNode(result.getLeft());
-		currentCFG.addNode(result.getRight());
-		return result;
+		if(ctx.expr_stmt()!=null)
+			return addToCFGAndReturn(visitExpr_stmt(ctx.expr_stmt()));
+		else if(ctx.del_stmt()!=null)
+			return visitDel_stmt(ctx.del_stmt());
+		else if(ctx.pass_stmt()!=null)
+			return visitPass_stmt(ctx.pass_stmt());
+		else if(ctx.import_stmt()!=null)
+			return visitImport_stmt(ctx.import_stmt());
+		else if(ctx.assert_stmt()!=null)
+			return visitAssert_stmt(ctx.assert_stmt());
+		else if(ctx.flow_stmt()!=null)
+			return visitFlow_stmt(ctx.flow_stmt());
+		else throw new UnsupportedStatementException("Simple statement not yet supported");
+	}
+
+	private Pair<Statement, Statement> addToCFGAndReturn(Pair<Statement, Statement> pair) {
+		currentCFG.addNodeIfNotPresent(pair.getLeft());
+		if(pair.getLeft()!=pair.getRight())
+			currentCFG.addNodeIfNotPresent(pair.getRight());
+		return pair;
 	}
 
 	@Override
@@ -313,7 +338,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				throw new UnsupportedStatementException("Assignments require expression both in the left and in the right hand side");
 			assegnazione = new Assignment(currentCFG,  (Expression) target,  (Expression) expression);
 			log.info(assegnazione);
-			currentCFG.addNode( assegnazione);
+			currentCFG.addNodeIfNotPresent( assegnazione);
 		}
 		else
 			return visitTestlistStarExpr(ctx);
@@ -346,24 +371,22 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public Pair<Statement, Statement> visitDel_stmt(Del_stmtContext ctx) {
 		if(ctx.exprlist().star_expr().size()>0)
 			throw new UnsupportedStatementException("We support only expressions withou * in del statements");
-
-		return createPairFromSingle(
-				new UnresolvedCall(
-						currentCFG,
-						getLocation(ctx),
-						UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
-						false,
-						"del",
-						extractExpressionsFromExprlist(ctx.exprlist()).toArray(new Expression[ctx.exprlist().expr().size()])
-				)
+		Statement result = new UnresolvedCall(
+				currentCFG,
+				getLocation(ctx),
+				UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
+				false,
+				"del",
+				extractExpressionsFromExprlist(ctx.exprlist()).toArray(new Expression[ctx.exprlist().expr().size()])
 		);
-
+		currentCFG.addNodeIfNotPresent(result);
+		return createPairFromSingle(result);
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitPass_stmt(Pass_stmtContext ctx) {
 		Statement st = new NoOp(currentCFG, getLocation(ctx));
-		currentCFG.addNode(st);
+		currentCFG.addNodeIfNotPresent(st);
 		return createPairFromSingle(st);
 	}
 
@@ -373,11 +396,11 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			return visitReturn_stmt(ctx.return_stmt());
 		if(ctx.raise_stmt()!=null) {
 			log.warn("Exceptions are not yet supported. The raise statement at line "+getLine(ctx)+ " of file "+getFilePath()+" is unsoundly translated into a return; statement");
-			return createPairFromSingle(new Ret(currentCFG, getLocation(ctx)));
+			return addToCFGAndReturn(createPairFromSingle(new Ret(currentCFG, getLocation(ctx))));
 		}
 		if(ctx.yield_stmt()!=null) {
 			List<Expression> l = extractExpressionsFromYieldArg(ctx.yield_stmt().yield_expr().yield_arg());
-			return createPairFromSingle(
+			return addToCFGAndReturn(createPairFromSingle(
 				new UnresolvedCall(
 					currentCFG,
 					getLocation(ctx),
@@ -385,7 +408,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 					false,
 					"yield from",
 					l.toArray(new Expression[l.size()])
-				)
+				))
 			);
 		}
 		throw new UnsupportedStatementException();
@@ -404,12 +427,12 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	@Override
 	public Pair<Statement, Statement> visitReturn_stmt(Return_stmtContext ctx) {
 		if(ctx.testlist()==null)
-			return createPairFromSingle(new Ret(currentCFG, getLocation(ctx)));
+			return addToCFGAndReturn(createPairFromSingle(new Ret(currentCFG, getLocation(ctx))));
 		else {
 			if(ctx.testlist().test().size()==1)
-				return createPairFromSingle(new Return(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTestlist(ctx.testlist()))));
+				return addToCFGAndReturn(createPairFromSingle(new Return(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTestlist(ctx.testlist())))));
 			else
-				return createPairFromSingle(new Tuple(extractExpressionsFromTestlist(ctx.testlist()), currentCFG, getLocation(ctx)));
+				return addToCFGAndReturn(createPairFromSingle(new Tuple(extractExpressionsFromTestlist(ctx.testlist()), currentCFG, getLocation(ctx))));
 		}
 	}
 
@@ -453,7 +476,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			for(T2 single: getList.apply(ctx)) {
 				prev=last;
 				last = extractStatement.apply(single);
-				currentCFG.addNode(last, false);
+				currentCFG.addNodeIfNotPresent(last, false);
 				if(prev!=null)
 					currentCFG.addEdge(new SequentialEdge(prev, last));
 				else if(first==null)
@@ -553,24 +576,26 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitAssert_stmt(Assert_stmtContext ctx) {
-		return createPairFromSingle(
-				new UnresolvedCall(
-						currentCFG,
-						getLocation(ctx),
-						UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
-						false,
-						"assert",
-						extractExpressionsFromListOfTests(ctx.test()).toArray(new Expression[ctx.test().size()])
+		return addToCFGAndReturn(
+				createPairFromSingle(
+					new UnresolvedCall(
+							currentCFG,
+							getLocation(ctx),
+							UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
+							false,
+							"assert",
+							extractExpressionsFromListOfTests(ctx.test()).toArray(new Expression[ctx.test().size()])
+					)
 				)
 		);
 	}
 
 	private CFG parseMethod(FuncdefContext ctx) {
-		CFG oldCFG = currentCFG;
-		currentCFG = new CFG(buildCFGDescriptor(ctx));
+		PyCFG oldCFG = currentCFG;
+		currentCFG = new PyCFG(buildCFGDescriptor(ctx));
 		cfgs.add(currentCFG);
 		Pair<Statement, Statement> r = visitSuite(ctx.suite());
-		currentCFG.addNode(r.getLeft(), true);
+		currentCFG.addNodeIfNotPresent(r.getLeft(), true);
 		try {
 			Writer w = new FileWriter("./output.txt");
 			currentCFG.dump(w, s -> "Try");
@@ -579,7 +604,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			log.info("error with file");
 			e.printStackTrace();
 		}
-		CFG result = currentCFG;
+		PyCFG result = currentCFG;
 		currentCFG = oldCFG;
 		currentUnit.addCFG(result);
 		return result;
@@ -634,11 +659,11 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public Pair<Statement, Statement> visitIf_stmt(If_stmtContext ctx) {
 
 		Statement booleanGuard =  checkAndExtractSingleStatement(visitTest(ctx.test(0)));
-		currentCFG.addNode(booleanGuard);
+		currentCFG.addNodeIfNotPresent(booleanGuard);
 
 		//Created if exit node
 		NoOp ifExitNode = new NoOp(currentCFG);
-		currentCFG.addNode(ifExitNode);
+		currentCFG.addNodeIfNotPresent(ifExitNode);
 
 		//Visit if true block
 		Pair<Statement, Statement> trueBlock = visitSuite(ctx.suite(0));
@@ -647,9 +672,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		Statement exitStatementTrueBranch = trueBlock.getRight();
 		Statement entryStatementTrueBranch = trueBlock.getLeft();
 
-		currentCFG.addNode(exitStatementTrueBranch);
-		currentCFG.addNode(entryStatementTrueBranch);
-		
 		currentCFG.addEdge(new TrueEdge(booleanGuard, entryStatementTrueBranch));
 		currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
 	
@@ -665,17 +687,14 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				// visit all the elif
 				while (i < testLenght) {
 					Statement booleanGuardElif = checkAndExtractSingleStatement(visitTest(ctx.test(i)));
-					currentCFG.addNode(booleanGuardElif);
+					currentCFG.addNodeIfNotPresent(booleanGuardElif);
 					currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, booleanGuardElif));
 					lastBooleanGuardElif = booleanGuardElif;
 					Pair<Statement, Statement> trueBlockElif = visitSuite(ctx.suite(i));
 
 					Statement exitStatementTrueBranchElif = trueBlockElif.getRight();
 					Statement entryStatementTrueBranchElif = trueBlockElif.getLeft();
-					
-					currentCFG.addNode(exitStatementTrueBranchElif);
-					currentCFG.addNode(entryStatementTrueBranchElif);
-					
+
 					currentCFG.addEdge(new TrueEdge(booleanGuardElif, entryStatementTrueBranchElif));
 					currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranchElif, ifExitNode));
 					i=i+1;
@@ -687,8 +706,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 					Pair<Statement, Statement> falseBlock = visitSuite(ctx.suite(ctx.suite().size()-1));
 					Statement entryStatementFalseBranch = falseBlock.getLeft();
 					Statement exitStatementFalseBranch = falseBlock.getRight();
-					currentCFG.addNode(entryStatementFalseBranch);
-					currentCFG.addNode(exitStatementFalseBranch);
 					
 					currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, entryStatementFalseBranch));
 					currentCFG.addEdge(new SequentialEdge(exitStatementFalseBranch, ifExitNode));
@@ -705,10 +722,10 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		
 		//create and add exit point of while
 		NoOp whileExitNode = new NoOp(currentCFG);
-		currentCFG.addNode(whileExitNode);
+		currentCFG.addNodeIfNotPresent(whileExitNode);
 
 		Statement condition  = checkAndExtractSingleStatement(visitTest(ctx.test()));
-		currentCFG.addNode(condition);
+		currentCFG.addNodeIfNotPresent(condition);
 
 		Pair<Statement, Statement> trueBlock = visitSuite(ctx.suite(0));
 		
@@ -733,7 +750,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		
 		//create and add exit point of for
 		NoOp exit = new NoOp(currentCFG);
-		currentCFG.addNode(exit);
+		currentCFG.addNodeIfNotPresent(exit);
 
 		List<Expression> exprs = extractExpressionsFromExprlist(ctx.exprlist());
 		Expression variable;
@@ -757,7 +774,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				counter,
 				new Literal(currentCFG, "0", PyIntType.INSTANCE)
 		);
-		currentCFG.addNode(counter_init);
+		currentCFG.addNodeIfNotPresent(counter_init);
 
 		//counter < collection.size()
 		PyLess condition = new PyLess(
@@ -773,7 +790,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 						collection_pars
 				)
 		);
-		currentCFG.addNode(condition);
+		currentCFG.addNodeIfNotPresent(condition);
 
 		//element = collection.at(counter)
 		Assignment element_assignment =  new Assignment(
@@ -789,7 +806,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 						counter_pars
 				)
 		);
-		currentCFG.addNode(element_assignment);
+		currentCFG.addNodeIfNotPresent(element_assignment);
 
 		//counter = counter + 1;
 		Assignment counter_increment = new Assignment(
@@ -808,7 +825,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 						)
 				)
 		);
-		currentCFG.addNode(counter_increment);
+		currentCFG.addNodeIfNotPresent(counter_increment);
 
 		Pair<Statement, Statement> body= visitSuite(ctx.suite(0));
 
@@ -828,7 +845,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		/*
 		
 		NoOp TryExitNode = new NoOp(currentCFG);
-		currentCFG.addNode(TryExitNode);
+		currentCFG.addNodeIfNotPresent(TryExitNode);
 		
 		Pair<Statement, Statement> tryBlock = (Pair<Statement, Statement>) visitSuite(ctx.suite(0));
 		
@@ -881,8 +898,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			prev=curr;
 		}
 		Pair<Statement, Statement> suite= visitSuite(ctx.suite());
-		currentCFG.addNode(suite.getLeft());
-		currentCFG.addNode(suite.getRight());
 		currentCFG.addEdge(new SequentialEdge(curr.getRight(),suite.getLeft()));
 		
 		return  Pair.of(withItem.getLeft(),suite.getRight());
@@ -891,10 +906,10 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	@Override
 	public Pair<Statement, Statement> visitWith_item(With_itemContext ctx) {
 		Statement test= checkAndExtractSingleStatement(visitTest(ctx.test()));
-		currentCFG.addNode(test);
+		currentCFG.addNodeIfNotPresent(test);
 		if(ctx.expr()!=null) {
 			Statement expr = checkAndExtractSingleStatement(visitExpr(ctx.expr()));
-			currentCFG.addNode(expr);
+			currentCFG.addNodeIfNotPresent(expr);
 			currentCFG.addEdge(new SequentialEdge(test, expr));
 			return Pair.of(test,expr);
 		}else {
@@ -921,8 +936,8 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			catch(UnsupportedOperationException e) {
 				//The node was not yet added. Since this method is called from different contexts,
 				//sometimes it parses expressions and those are not added as node to the CFG.
-				currentCFG.addNode(parsed.getLeft());
-				currentCFG.addNode(previous);
+				currentCFG.addNodeIfNotPresent(parsed.getLeft());
+				currentCFG.addNodeIfNotPresent(previous);
 				currentCFG.addEdge(new SequentialEdge(previous, parsed.getLeft()));
 			}
 			result = parsed.getRight();
@@ -986,11 +1001,11 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			Pair<Statement,Statement> falseCase = visitTest(ctx.test());
 			NoOp testExitNode = new NoOp(currentCFG);
 
-			currentCFG.addNode(booleanGuard);
-			currentCFG.addNode(trueCase);
-			currentCFG.addNode(falseCase.getLeft());
-			currentCFG.addNode(falseCase.getRight());
-			currentCFG.addNode(testExitNode);
+			currentCFG.addNodeIfNotPresent(booleanGuard);
+			currentCFG.addNodeIfNotPresent(trueCase);
+			currentCFG.addNodeIfNotPresent(falseCase.getLeft());
+			currentCFG.addNodeIfNotPresent(falseCase.getRight());
+			currentCFG.addNodeIfNotPresent(testExitNode);
 			
 			currentCFG.addEdge(new TrueEdge(booleanGuard, trueCase));
 			currentCFG.addEdge(new FalseEdge(booleanGuard, falseCase.getLeft()));
@@ -1670,13 +1685,13 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	private void dumpConstructor(List<Pair<VariableRef, Expression>> fields_init, CodeLocation location) {
 		if(fields_init.size()>0) {
-			CFG oldCFG = currentCFG;
-			currentCFG = new CFG(new CFGDescriptor(currentUnit, true, "<init>"));
+			PyCFG oldCFG = currentCFG;
+			currentCFG = new PyCFG(new CFGDescriptor(currentUnit, true, "<init>"));
 			cfgs.add(currentCFG);
 			Statement previous = null;
 			for (Pair<VariableRef, Expression> init : fields_init) {
 				Statement f = new Assignment(currentCFG, init.getLeft().getLocation(), init.getLeft(), init.getRight());
-				currentCFG.addNode(f, previous==null);
+				currentCFG.addNodeIfNotPresent(f, previous==null);
 				if(previous!=null)
 					currentCFG.addEdge(new SequentialEdge(previous, f));
 				previous = f;
