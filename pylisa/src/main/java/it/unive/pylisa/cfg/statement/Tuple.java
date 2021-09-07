@@ -4,7 +4,6 @@ import it.unive.lisa.analysis.*;
 import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.interprocedural.callgraph.CallGraph;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -16,7 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Tuple extends Expression {
-    private List<Expression> values;
+    private final List<Expression> values;
 
     public Tuple(List<Expression> values, CFG cfg, CodeLocation loc) {
         super(cfg, loc);

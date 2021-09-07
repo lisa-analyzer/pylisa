@@ -7,7 +7,6 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.interprocedural.callgraph.CallGraph;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -20,7 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class DictionaryCreation extends Expression {
-    private List<Pair<Expression, Expression>> values;
+    private final List<Pair<Expression, Expression>> values;
 
     public DictionaryCreation(List<Pair<Expression, Expression>> values, CFG cfg, CodeLocation loc) {
         super(cfg, loc);

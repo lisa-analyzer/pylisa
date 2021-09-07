@@ -7,7 +7,6 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.interprocedural.callgraph.CallGraph;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -19,8 +18,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class PyArrayAccess extends Expression {
-    private List<Expression> indexes;
-    private Expression receiver;
+    private final List<Expression> indexes;
+    private final Expression receiver;
 
     public PyArrayAccess(Expression receiver, List<Expression> indexes, CFG cfg, CodeLocation loc) {
         super(cfg, loc);

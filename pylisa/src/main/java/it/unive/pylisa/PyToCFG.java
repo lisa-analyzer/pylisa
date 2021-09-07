@@ -41,18 +41,17 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.swing.plaf.nimbus.State;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 
+@SuppressWarnings("CommentedOutCode")
 public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	private static final Logger log = LogManager.getLogger(PyToCFG.class);
@@ -70,6 +69,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	/**
 	 * All the units completely processed so far
 	 */
+	@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 	private final Collection<Unit> parsedUnits = new ArrayList<>();
 
 	/**
@@ -96,15 +96,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	 */
 	public String getFilePath() {
 		return filePath;
-	}
-
-	/**
-	 * Returns the parsed CFGs
-	 * 
-	 * @return the parsed CFGs
-	 */
-	public Collection<CFG> getCFGs() {
-		return cfgs;
 	}
 
 	/**
@@ -136,12 +127,12 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				Gson gson = new Gson();
 				JsonReader reader = gson.newJsonReader(new FileReader(file));
 				Map<?, ?> map = gson.fromJson(reader, Map.class);
-				ArrayList<Map<?, ?>> cells = (ArrayList<Map<?, ?>>) map.get("cells");
+				@SuppressWarnings("unchecked") ArrayList<Map<?, ?>> cells = (ArrayList<Map<?, ?>>) map.get("cells");
 				List<String> code = new ArrayList<>();
 				for(Map<?, ?> l : cells) {
 					String type = (String) l.get("cell_type");
 					if(type.equals("code")) {
-						List<String> code_list = (List<String>) l.get("source");
+						@SuppressWarnings("unchecked") List<String> code_list = (List<String>) l.get("source");
 						code.add(transformToCode(code_list));
 					}
 				}
@@ -151,7 +142,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				int i = 0;
 				for(String c : code) {
 					String local_filename = rootFileName + "_" + i + ".py";
-					FileUtils.write(new File(local_filename), c);
+					FileUtils.write(new File(local_filename), c, StandardCharsets.UTF_8);
 					files.add(local_filename);
 					i++;
 				}
@@ -165,10 +156,10 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	}
 
 	private static String transformToCode(List<String> code_list) {
-		String result = "";
+		StringBuilder result = new StringBuilder();
 		for(String s : code_list)
-			result += s +"\n";
-		return result;
+			result.append(s).append("\n");
+		return result.toString();
 	}
 
 	/**
@@ -453,7 +444,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 					UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
 					false,
 					"yield from",
-					l.toArray(new Expression[l.size()])
+					l.toArray(new Expression[0])
 				))
 			);
 		}
@@ -525,7 +516,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				currentCFG.addNodeIfNotPresent(last, false);
 				if(prev!=null)
 					currentCFG.addEdge(new SequentialEdge(prev, last));
-				else if(first==null)
+				if(first==null)
 					first = last;
 			}
 			return Pair.of(first, last);
@@ -550,8 +541,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				s -> {
 					String component = s.NAME(0).getSymbol().getText();
 					String asName = s.NAME(1) != null ? s.NAME(1).getSymbol().getText() : component;
-					int l = getLine(s);
-					int c = getCol(s);
 					return new FromImport(name, component, asName, currentCFG, getLocation(s));
 				});
 	}
@@ -566,23 +555,21 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				c -> {
 					String importedLibrary = dottedNameToString(c.dotted_name());
 					String as = c.NAME() != null ? c.NAME().getSymbol().getText() : importedLibrary;
-					int line = getLine(c);
-					int col = getCol(c);
 					return new Import(importedLibrary, as, currentCFG, getLocation(c));
 				}
 		);
 	}
 
 	private String dottedNameToString(Dotted_nameContext dotted_name) {
-		String result = "";
+		StringBuilder result = new StringBuilder();
 		boolean first = true;
 		for(TerminalNode name : dotted_name.NAME()) {
 			if (first)
 				first = false;
-			else result += ".";
-			result += name.getSymbol().getText();
+			else result.append(".");
+			result.append(name.getSymbol().getText());
 		}
-		return result;
+		return result.toString();
 	}
 
 	@Override
@@ -636,7 +623,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		);
 	}
 
-	private CFG parseMethod(FuncdefContext ctx) {
+	private void parseMethod(FuncdefContext ctx) {
 		PyCFG oldCFG = currentCFG;
 		currentCFG = new PyCFG(buildCFGDescriptor(ctx));
 		cfgs.add(currentCFG);
@@ -653,7 +640,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		PyCFG result = currentCFG;
 		currentCFG = oldCFG;
 		currentUnit.addCFG(result);
-		return result;
 	}
 
 	@Override
@@ -1504,7 +1490,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			String last_name = access instanceof VariableRef ? ((VariableRef) access).getName() : null;
 			Expression previous_access = null;
 			for(TrailerContext expr : ctx.trailer()) {
-				Statement result;
 				if (expr.NAME()!=null) {
 					last_name = expr.NAME().getSymbol().getText();
 					Global fieldName = new Global(getLocation(ctx), last_name);
@@ -1523,7 +1508,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 						for(ArgumentContext arg : expr.arglist().argument())
 							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
 
-					access = new UnresolvedCall(currentCFG, getLocation(expr), UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES, instance, method_name, pars.toArray(new Expression[pars.size()]));
+					access = new UnresolvedCall(currentCFG, getLocation(expr), UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES, instance, method_name, pars.toArray(new Expression[0]));
 					last_name = null;
 					previous_access = null;
 				}
@@ -1707,7 +1692,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	@Override
 	public Pair<Statement, Statement> visitDictorsetmaker(DictorsetmakerContext ctx) {
 		if(ctx.COLON().size()==0) {
-			List<Expression> values = new ArrayList<Expression>();
+			List<Expression> values = new ArrayList<>();
 			for(TestContext exp : ctx.test())
 				values.add(checkAndExtractSingleExpression(visitTest(exp)));
 			return createPairFromSingle(new SetCreation(values, currentCFG, getLocation(ctx)));
