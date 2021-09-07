@@ -86,7 +86,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public PyToCFG(String filePath) {
 		this.cfgs = new HashSet<>();
 		this.filePath = filePath;
-		this.currentUnit = new PythonUnit(new SourceCodeLocation(filePath, 0, 0), "main_file");
+		this.currentUnit = new PythonUnit("main_file");
 	}
 
 	/**
@@ -126,6 +126,8 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				cfgs.forEach(p::addCFG);
 				conf.setDumpCFGs(true);
 				conf.setWorkdir("workdir");
+				conf.setDumpTypeInference(true);
+				conf.setInferTypes(true);
 				LiSA lisa = new LiSA(conf);
 				lisa.run(p);
 				translator.parsedUnits.add(translator.currentUnit);
@@ -216,7 +218,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitFile_input(File_inputContext ctx) {
-		currentCFG = new PyCFG(buildMainCFGDescriptor());
+		currentCFG = new PyCFG(buildMainCFGDescriptor(getLocation(ctx)));
 		cfgs.add(currentCFG);
 		Statement last_stmt = null;
 		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
@@ -260,11 +262,11 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		return new SourceCodeLocation(this.getFilePath(), getLine(ctx), getCol(ctx));
 	}
 
-	private CFGDescriptor buildMainCFGDescriptor() {
+	private CFGDescriptor buildMainCFGDescriptor(SourceCodeLocation loc) {
 		String funcName = "main";
 		Parameter[] cfgArgs = new Parameter[] {};
 
-		return new CFGDescriptor(currentUnit, false, funcName, cfgArgs);
+		return new CFGDescriptor(loc, currentUnit, false, funcName, cfgArgs);
 	}
 
 	private CFGDescriptor buildCFGDescriptor(FuncdefContext funcDecl) {
@@ -272,7 +274,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 		Parameter[] cfgArgs = new Parameter[] {};
 
-		return new CFGDescriptor(currentUnit, false, funcName, cfgArgs);
+		return new CFGDescriptor(getLocation(funcDecl), currentUnit, false, funcName, cfgArgs);
 	}
 
 	@Override
@@ -380,7 +382,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			log.info(expression);
 			if((! (target instanceof Expression)) || (! (expression instanceof Expression)))
 				throw new UnsupportedStatementException("Assignments require expression both in the left and in the right hand side");
-			assegnazione = new Assignment(currentCFG,  (Expression) target,  (Expression) expression);
+			assegnazione = new Assignment(currentCFG, getLocation(ctx),  (Expression) target,  (Expression) expression);
 			log.info(assegnazione);
 			currentCFG.addNodeIfNotPresent( assegnazione);
 		}
@@ -706,7 +708,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		currentCFG.addNodeIfNotPresent(booleanGuard);
 
 		//Created if exit node
-		NoOp ifExitNode = new NoOp(currentCFG);
+		NoOp ifExitNode = new NoOp(currentCFG, getLocation(ctx));
 
 		//Visit if true block
 		Pair<Statement, Statement> trueBlock = visitSuite(ctx.suite(0));
@@ -776,7 +778,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public Pair<Statement, Statement> visitWhile_stmt(While_stmtContext ctx) {
 		
 		//create and add exit point of while
-		NoOp whileExitNode = new NoOp(currentCFG);
+		NoOp whileExitNode = new NoOp(currentCFG, getLocation(ctx));
 		currentCFG.addNodeIfNotPresent(whileExitNode);
 
 		Statement condition  = checkAndExtractSingleStatement(visitTest(ctx.test()));
@@ -804,7 +806,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public Pair<Statement, Statement> visitFor_stmt(For_stmtContext ctx) {
 		
 		//create and add exit point of for
-		NoOp exit = new NoOp(currentCFG);
+		NoOp exit = new NoOp(currentCFG, getLocation(ctx));
 		currentCFG.addNodeIfNotPresent(exit);
 
 		List<Expression> exprs = extractExpressionsFromExprlist(ctx.exprlist());
@@ -827,7 +829,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				currentCFG,
 				getLocation(ctx),
 				counter,
-				new Literal(currentCFG, "0", PyIntType.INSTANCE)
+				new Literal(currentCFG, getLocation(ctx), "0", PyIntType.INSTANCE)
 		);
 		currentCFG.addNodeIfNotPresent(counter_init);
 
@@ -1052,7 +1054,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			Statement trueCase = checkAndExtractSingleStatement(visitOr_test(ctx.or_test(0)));
 			Statement booleanGuard = checkAndExtractSingleStatement(visitOr_test(ctx.or_test(1)));
 			Pair<Statement,Statement> falseCase = visitTest(ctx.test());
-			NoOp testExitNode = new NoOp(currentCFG);
+			NoOp testExitNode = new NoOp(currentCFG, getLocation(ctx));
 
 			currentCFG.addNodeIfNotPresent(booleanGuard);
 			currentCFG.addNodeIfNotPresent(trueCase);
@@ -1505,15 +1507,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				Statement result;
 				if (expr.NAME()!=null) {
 					last_name = expr.NAME().getSymbol().getText();
-					Global fieldName = new Global(last_name);
+					Global fieldName = new Global(getLocation(ctx), last_name);
 					previous_access = access;
-					access = new AccessUnitGlobal(currentCFG, getLocation(expr), access, fieldName);
+					access = new AccessInstanceGlobal(currentCFG, getLocation(expr), access, fieldName);
 				}
 				else if(expr.OPEN_PAREN()!=null) {
 					if(last_name==null)
 						throw new UnsupportedStatementException("When invoking a method we need to have always the name before the parentheses");
 					List<Expression> pars = new ArrayList<>();
-					boolean instance = access instanceof AccessUnitGlobal;
+					boolean instance = access instanceof AccessInstanceGlobal;
 					String method_name = last_name;
 					if(instance)
 						pars.add(previous_access);
@@ -1549,10 +1551,10 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		
 		if (ctx.NAME() != null) {
 			//crete a variable
-			return createPairFromSingle(new VariableRef(currentCFG, ctx.NAME().getText()));
+			return createPairFromSingle(new VariableRef(currentCFG, getLocation(ctx), ctx.NAME().getText()));
 		} else if (ctx.NUMBER() != null) {
 			//create a literal int
-			return createPairFromSingle(new Literal(currentCFG, ctx.NUMBER().getText(), PyIntType.INSTANCE));
+			return createPairFromSingle(new Literal(currentCFG, getLocation(ctx), ctx.NUMBER().getText(), PyIntType.INSTANCE));
 		}else if (ctx.FALSE() != null) {
 			//create a literal false
 			return createPairFromSingle(new PyFalseLiteral(currentCFG, getLocation(ctx)));
@@ -1719,7 +1721,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public Pair<Statement, Statement> visitClassdef(ClassdefContext ctx) {
 		Unit previous = this.currentUnit;
 		String name = ctx.NAME().getSymbol().getText();
-		this.currentUnit = new PythonUnit(getLocation(ctx), name);
+		this.currentUnit = new PythonUnit(name);
 		parseClassBody(ctx.suite());
 		this.parsedUnits.add(this.currentUnit);
 		this.currentUnit = previous;
@@ -1733,7 +1735,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		for(StmtContext stmt : ctx.stmt()) {
 			if(stmt.simple_stmt()!=null) {
 				Pair<VariableRef, Expression> p = parseField(stmt.simple_stmt());
-				currentUnit.addGlobal(new Global(p.getLeft().getName()));
+				currentUnit.addGlobal(new Global(getLocation(ctx), p.getLeft().getName()));
 				if(p.getRight()!=null)
 					fields_init.add(p);
 			}
@@ -1757,7 +1759,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	private void dumpConstructor(List<Pair<VariableRef, Expression>> fields_init, CodeLocation location) {
 		if(fields_init.size()>0) {
 			PyCFG oldCFG = currentCFG;
-			currentCFG = new PyCFG(new CFGDescriptor(currentUnit, true, "<init>"));
+			currentCFG = new PyCFG(new CFGDescriptor(location, currentUnit, true, "<init>"));
 			cfgs.add(currentCFG);
 			Statement previous = null;
 			for (Pair<VariableRef, Expression> init : fields_init) {
@@ -1803,7 +1805,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			Statement expression = checkAndExtractSingleStatement(visitTest(ctx.test(1)));
 			if((! (target instanceof Expression)) || (! (expression instanceof Expression)))
 				throw new UnsupportedStatementException("Assignments require expression both in the left and in the right hand side");
-			return createPairFromSingle(new Assignment(currentCFG,  (Expression) target,  (Expression) expression));
+			return createPairFromSingle(new Assignment(currentCFG, getLocation(ctx),  (Expression) target,  (Expression) expression));
 		}
 		else if(ctx.STAR()!=null)
 			return createPairFromSingle(new StarExpression(checkAndExtractSingleExpression(visitTest(ctx.test(0))), currentCFG, getLocation(ctx)));
