@@ -5,6 +5,8 @@ import com.google.gson.stream.JsonReader;
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
+import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
@@ -19,6 +21,7 @@ import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.edge.TrueEdge;
 import it.unive.lisa.program.cfg.statement.*;
 import it.unive.lisa.logging.IterationLogger;
+import it.unive.pylisa.analysis.Dataframe;
 import it.unive.pylisa.antlr.Python3BaseVisitor;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
@@ -28,11 +31,7 @@ import it.unive.pylisa.cfg.PythonUnit;
 import it.unive.pylisa.cfg.expression.binary.*;
 import it.unive.pylisa.cfg.expression.unary.PyNot;
 import it.unive.pylisa.cfg.statement.*;
-import it.unive.pylisa.cfg.type.PyFalseLiteral;
-import it.unive.pylisa.cfg.type.PyIntType;
-import it.unive.pylisa.cfg.type.PyStringLiteral;
-import it.unive.pylisa.cfg.type.PyTrueLiteral;
-import it.unive.pylisa.cfg.type.PyNoneLiteral;
+import it.unive.pylisa.cfg.type.*;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -44,7 +43,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
+import static it.unive.lisa.LiSAFactory.getDefaultFor;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -119,6 +118,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				conf.setWorkdir("workdir");
 				conf.setDumpTypeInference(true);
 				conf.setInferTypes(true);
+				conf.setAbstractState(getDefaultFor(AbstractState.class, getDefaultFor(HeapDomain.class), new Dataframe("").top()));
 				LiSA lisa = new LiSA(conf);
 				lisa.run(p);
 				translator.parsedUnits.add(translator.currentUnit);
@@ -396,7 +396,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		List<Expression> elements = new ArrayList<>();
 		for(TestContext test : ctx.test())
 			elements.add(checkAndExtractSingleExpression(visitTest(test)));
-		return createPairFromSingle(new Tuple(elements, currentCFG, getLocation(ctx)));
+		return createPairFromSingle(new TupleCreation(elements, currentCFG, getLocation(ctx)));
 	}
 
 	@Override
@@ -469,7 +469,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			if(ctx.testlist().test().size()==1)
 				return addToCFGAndReturn(createPairFromSingle(new Return(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTestlist(ctx.testlist())))));
 			else
-				return addToCFGAndReturn(createPairFromSingle(new Tuple(extractExpressionsFromTestlist(ctx.testlist()), currentCFG, getLocation(ctx))));
+				return addToCFGAndReturn(createPairFromSingle(new TupleCreation(extractExpressionsFromTestlist(ctx.testlist()), currentCFG, getLocation(ctx))));
 		}
 	}
 
@@ -799,7 +799,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		Expression variable;
 		if(exprs.size()==1)
 			variable = exprs.get(0);
-		else variable = new Tuple(exprs, currentCFG, getLocation(ctx));
+		else variable = new TupleCreation(exprs, currentCFG, getLocation(ctx));
 		Expression collection= checkAndExtractSingleExpression(visitTestlist(ctx.testlist()));
 		Expression[] collection_pars = {collection};
 
@@ -1515,12 +1515,25 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				else if(expr.OPEN_BRACK()!=null) {
 					previous_access = access;
 					last_name = null;
-					access = new PyArrayAccess(
-							access,
-							extractExpressionsFromSubscriptlist(expr.subscriptlist()),
+					List<Expression> indexes = extractExpressionsFromSubscriptlist(expr.subscriptlist());
+					if(indexes.size()==1)
+						access = new PySingleArrayAccess(
 							currentCFG,
-							getLocation(expr)
-					);
+							getLocation(expr),
+							PyArrayType.INSTANCE,
+							access,
+							indexes.get(0)
+						);
+					else if(indexes.size()==2)
+						access = new PyDoubleArrayAccess(
+								currentCFG,
+								getLocation(expr),
+								PyArrayType.INSTANCE,
+								access,
+								indexes.get(0),
+								indexes.get(1)
+						);
+					else throw new UnsupportedStatementException("Only array accesses with up to 2 indexes are supported");
 				}
 				else throw new UnsupportedStatementException();
 			}
@@ -1565,7 +1578,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			if(ctx.yield_expr()!=null)
 				throw new UnsupportedStatementException("yield expressions not supported");
 			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
-			Tuple r = new Tuple(sts, currentCFG, getLocation(ctx));
+			TupleCreation r = new TupleCreation(sts, currentCFG, getLocation(ctx));
 			return createPairFromSingle(r);
 		} else if(ctx.OPEN_BRACE()!=null) {
 			List<Pair<Expression, Expression>> values = extractPairsFromDictorSet(ctx.dictorsetmaker());
