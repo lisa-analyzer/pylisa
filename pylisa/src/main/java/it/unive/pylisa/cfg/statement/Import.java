@@ -3,13 +3,29 @@ package it.unive.pylisa.cfg.statement;
 import it.unive.lisa.analysis.*;
 import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
+import it.unive.lisa.caches.Caches;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.cfg.edge.Edge;
+import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.type.Type;
+import it.unive.lisa.util.collections.externalSet.BitExternalSet;
+import it.unive.lisa.util.collections.externalSet.ExternalSet;
+import it.unive.lisa.util.collections.externalSet.ExternalSetCache;
+import it.unive.lisa.util.collections.externalSet.UniversalExternalSet;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.UnsupportedStatementException;
+import it.unive.pylisa.cfg.type.PyLibraryType;
+import it.unive.pylisa.symbolic.LibraryIdentifier;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Import extends Statement {
 
@@ -40,7 +56,10 @@ public class Import extends Statement {
     }
 
     @Override
-    public <A extends AbstractState<A, H, V>, H extends HeapDomain<H>, V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState, InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions) {
+    public <A extends AbstractState<A, H, V>, H extends HeapDomain<H>, V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState, InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions) throws SemanticException {
+        SymbolicExpression libexpr = new LibraryIdentifier(importedLibrary, this.getLocation());
+        Variable var = new Variable(Caches.types().mkSingletonSet(PyLibraryType.INSTANCE), name, this.getLocation());
+        entryState.assign(var, libexpr, this);
         return entryState;
     }
 
