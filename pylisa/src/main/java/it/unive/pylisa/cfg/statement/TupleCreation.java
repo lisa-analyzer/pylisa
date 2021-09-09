@@ -14,10 +14,10 @@ import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import java.util.Arrays;
 import java.util.List;
 
-public class Tuple extends Expression {
+public class TupleCreation extends Expression {
     private final List<Expression> values;
 
-    public Tuple(List<Expression> values, CFG cfg, CodeLocation loc) {
+    public TupleCreation(List<Expression> values, CFG cfg, CodeLocation loc) {
         super(cfg, loc);
 
         this.values = values;
