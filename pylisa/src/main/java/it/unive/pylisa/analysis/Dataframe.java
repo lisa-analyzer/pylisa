@@ -12,7 +12,7 @@ public class Dataframe extends BaseNonRelationalValueDomain<Dataframe> {
     private final String file;
     private static final Dataframe top = new Dataframe(null);
     private static final Dataframe bottom = new Dataframe(null);
-    private Dataframe(String s) {
+    public Dataframe(String s) {
         this.file=s;
     }
 
