@@ -5,6 +5,7 @@ import it.unive.lisa.type.StringType;
 import it.unive.lisa.type.Type;
 
 import java.util.Collection;
+import java.util.Set;
 
 public class PyStringType implements StringType {
 	/**
@@ -14,22 +15,25 @@ public class PyStringType implements StringType {
 
 	private PyStringType() {
 	}
-
+	@Override
+	public String toString() {
+		return "String";
+	}
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		// TODO Auto-generated method stub
-		return false;
+		return other instanceof PyStringType;
 	}
 
 	@Override
 	public Type commonSupertype(Type other) {
-		// TODO Auto-generated method stub
-		return null;
+		if(other==this)
+			return this;
+		else return PyTopType.INSTANCE;
 	}
 
 	@Override
 	public Collection<Type> allInstances() {
-		return null;
+		return Set.of(INSTANCE);
 	}
 
 

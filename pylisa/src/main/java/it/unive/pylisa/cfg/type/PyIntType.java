@@ -5,6 +5,7 @@ import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 
 import java.util.Collection;
+import java.util.Set;
 
 public class PyIntType implements NumericType {
 	/**
@@ -16,56 +17,54 @@ public class PyIntType implements NumericType {
 	}
 
 	@Override
+	public String toString() {
+		return "int";
+	}
+
+	@Override
 	public boolean canBeAssignedTo(Type other) {
-		// TODO Auto-generated method stub
-		return false;
+		return other instanceof NumericType;
 	}
 
 	@Override
 	public Type commonSupertype(Type other) {
-		// TODO Auto-generated method stub
-		return null;
+		if(other==this)
+			return this;
+		else return  PyTopType.INSTANCE;
 	}
 
 	@Override
 	public Collection<Type> allInstances() {
-		return null;
+		return Set.of(INSTANCE);
 	}
-
 	@Override
 	public boolean is8Bits() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean is16Bits() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean is32Bits() {
-		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	@Override
 	public boolean is64Bits() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean isUnsigned() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean isIntegral() {
-		return false;
+		return true;
 	}
-
 
 }

@@ -47,7 +47,7 @@ public class Import extends Statement {
 
     @Override
     public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
-        throw new UnsupportedStatementException();
+        return visitor.visit(tool, getCFG(), this);
     }
 
     @Override
@@ -59,8 +59,7 @@ public class Import extends Statement {
     public <A extends AbstractState<A, H, V>, H extends HeapDomain<H>, V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState, InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions) throws SemanticException {
         SymbolicExpression libexpr = new LibraryIdentifier(importedLibrary, this.getLocation());
         Variable var = new Variable(Caches.types().mkSingletonSet(PyLibraryType.INSTANCE), name, this.getLocation());
-        entryState.assign(var, libexpr, this);
-        return entryState;
+        return entryState.assign(var, libexpr, this);
     }
 
 }

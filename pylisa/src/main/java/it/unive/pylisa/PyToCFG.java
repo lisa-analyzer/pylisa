@@ -21,7 +21,7 @@ import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.edge.TrueEdge;
 import it.unive.lisa.program.cfg.statement.*;
 import it.unive.lisa.logging.IterationLogger;
-import it.unive.pylisa.analysis.Dataframe;
+import it.unive.pylisa.analysis.LibraryDomain;
 import it.unive.pylisa.antlr.Python3BaseVisitor;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
@@ -43,12 +43,14 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import static it.unive.lisa.LiSAFactory.getDefaultFor;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
+
+import static it.unive.lisa.LiSAFactory.getDefaultFor;
 
 @SuppressWarnings("CommentedOutCode")
 public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
@@ -118,7 +120,12 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				conf.setWorkdir("workdir");
 				conf.setDumpTypeInference(true);
 				conf.setInferTypes(true);
-				conf.setAbstractState(getDefaultFor(AbstractState.class, getDefaultFor(HeapDomain.class), new Dataframe("").top()));
+				conf.setDumpAnalysis(true);
+				p.registerType(PyListType.INSTANCE);
+				p.registerType(PyBoolType.INSTANCE);
+				p.registerType(PyLibraryType.INSTANCE);
+				p.registerType(PyStringType.INSTANCE);
+				conf.setAbstractState(getDefaultFor(AbstractState.class, getDefaultFor(HeapDomain.class), new LibraryDomain("").top()));
 				LiSA lisa = new LiSA(conf);
 				lisa.run(p);
 				translator.parsedUnits.add(translator.currentUnit);
@@ -1520,7 +1527,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 						access = new PySingleArrayAccess(
 							currentCFG,
 							getLocation(expr),
-							PyArrayType.INSTANCE,
+							PyListType.INSTANCE,
 							access,
 							indexes.get(0)
 						);
@@ -1528,7 +1535,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 						access = new PyDoubleArrayAccess(
 								currentCFG,
 								getLocation(expr),
-								PyArrayType.INSTANCE,
+								PyListType.INSTANCE,
 								access,
 								indexes.get(0),
 								indexes.get(1)
