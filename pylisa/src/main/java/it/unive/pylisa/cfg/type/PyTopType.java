@@ -8,40 +8,38 @@ import it.unive.lisa.type.Untyped;
 import java.util.Collection;
 import java.util.Set;
 
-public class PyBoolType implements BooleanType {
+public class PyTopType implements Type {
 	/**
 	 * The unique singleton instance of this type.
 	 */
-	public static final PyBoolType INSTANCE = new PyBoolType();
+	public static final PyTopType INSTANCE = new PyTopType();
 
-	private PyBoolType() {
+	private PyTopType() {
 	}
 
 	@Override
 	public String toString() {
-		return "bool";
+		return "T";
 	}
 
 	@Override
 	public boolean equals(Object other) {
-		return other instanceof BooleanType;
+		return other instanceof PyTopType;
 	}
 
 	@Override
 	public int hashCode() {
-		return BooleanType.class.getName().hashCode();
+		return PyTopType.class.getName().hashCode();
 	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		return other instanceof BooleanType|| other instanceof Untyped;
+		return other instanceof PyTopType|| other instanceof Untyped;
 	}
 
 	@Override
 	public Type commonSupertype(Type other) {
-		if(other==this)
-			return this;
-		else return PyTopType.INSTANCE;
+		return this;
 	}
 
 	@Override

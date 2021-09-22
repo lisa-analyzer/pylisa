@@ -58,7 +58,7 @@ public class Import extends Statement {
     @Override
     public <A extends AbstractState<A, H, V>, H extends HeapDomain<H>, V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState, InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions) throws SemanticException {
         SymbolicExpression libexpr = new LibraryIdentifier(importedLibrary, this.getLocation());
-        Variable var = new Variable(Caches.types().mkSingletonSet(PyLibraryType.INSTANCE), name, this.getLocation());
+        Variable var = new Variable(Caches.types().mkSingletonSet(new PyLibraryType(importedLibrary)), name, this.getLocation());
         return entryState.assign(var, libexpr, this);
     }
 

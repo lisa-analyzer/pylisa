@@ -3,6 +3,7 @@ package it.unive.pylisa.cfg.type;
 
 import it.unive.lisa.type.StringType;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 
 import java.util.Collection;
 import java.util.Set;
@@ -21,7 +22,7 @@ public class PyStringType implements StringType {
 	}
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		return other instanceof PyStringType;
+		return other instanceof PyStringType|| other instanceof Untyped;
 	}
 
 	@Override

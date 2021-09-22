@@ -16,6 +16,6 @@ public class LibraryIdentifier extends Constant {
      * @param location the code location of the statement that has generated
      */
     public LibraryIdentifier(String name, CodeLocation location) {
-        super(PyLibraryType.INSTANCE, name, location);
+        super(new PyLibraryType(name), name, location);
     }
 }

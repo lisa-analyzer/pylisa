@@ -3,6 +3,7 @@ package it.unive.pylisa.cfg.type;
 
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 
 import java.util.Collection;
 import java.util.Set;
@@ -23,7 +24,7 @@ public class PyIntType implements NumericType {
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		return other instanceof NumericType;
+		return other instanceof NumericType|| other instanceof Untyped;
 	}
 
 	@Override

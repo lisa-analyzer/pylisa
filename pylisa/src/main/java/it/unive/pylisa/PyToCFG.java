@@ -6,21 +6,25 @@ import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.heap.HeapDomain;
-import it.unive.lisa.program.Global;
-import it.unive.lisa.program.Program;
-import it.unive.lisa.program.SourceCodeLocation;
-import it.unive.lisa.program.Unit;
-import it.unive.lisa.program.cfg.CFG;
-import it.unive.lisa.program.cfg.CFGDescriptor;
-import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.analysis.lattices.ExpressionSet;
+import it.unive.lisa.analysis.value.ValueDomain;
+import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.impl.ContextBasedAnalysis;
+import it.unive.lisa.program.*;
+import it.unive.lisa.program.cfg.*;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.edge.TrueEdge;
 import it.unive.lisa.program.cfg.statement.*;
 import it.unive.lisa.logging.IterationLogger;
+import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.type.Type;
+import it.unive.lisa.type.UnitType;
+import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.analysis.LibraryDomain;
 import it.unive.pylisa.antlr.Python3BaseVisitor;
 import it.unive.pylisa.antlr.Python3Lexer;
@@ -87,7 +91,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public PyToCFG(String filePath) {
 		this.cfgs = new HashSet<>();
 		this.filePath = filePath;
-		this.currentUnit = new PythonUnit("main_file");
+		this.currentUnit = new PythonUnit(new SourceCodeLocation(filePath, 0, 0), "main_file", true);
 	}
 
 	/**
@@ -112,18 +116,30 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			case "py":
 				PyToCFG translator = new PyToCFG(file);
 				LiSAConfiguration conf = new LiSAConfiguration();
-
 				Collection<CFG> cfgs = translator.toLiSACFG();
 				Program p = new Program();
+
+				PythonUnit unit1 = getWarningsPythonUnit();
+				Type t = new PyLibraryType(unit1.getName());
+				translator.parsedUnits.add(unit1);
+				PyLibraryType.addUnit(unit1);
+
+
+				p.registerType(t);
+
 				cfgs.forEach(p::addCFG);
+				for(CFG cfg : cfgs)
+					if(cfg.getDescriptor().getName().equals("main"))
+						p.addEntryPoint(cfg);
 				conf.setDumpCFGs(true);
 				conf.setWorkdir("workdir");
 				conf.setDumpTypeInference(true);
 				conf.setInferTypes(true);
 				conf.setDumpAnalysis(true);
+				conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 				p.registerType(PyListType.INSTANCE);
 				p.registerType(PyBoolType.INSTANCE);
-				p.registerType(PyLibraryType.INSTANCE);
+				//p.registerType(new PyLibraryType(""));
 				p.registerType(PyStringType.INSTANCE);
 				conf.setAbstractState(getDefaultFor(AbstractState.class, getDefaultFor(HeapDomain.class), new LibraryDomain("").top()));
 				LiSA lisa = new LiSA(conf);
@@ -160,6 +176,21 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				break;
 			default: throw new UnsupportedStatementException("Files with extension "+extension+" are not supported");
 		}
+	}
+
+
+	private static PythonUnit getWarningsPythonUnit() {
+		PythonUnit unit1 = new PythonUnit(new SourceCodeLocation("warnings", 0, 0), "warnings", true);
+		NativeCFG cfg = new NativeCFG(
+				new CFGDescriptor(new SourceCodeLocation("warnings", 0, 0),
+						unit1,
+						true,
+						"filterwarnings",
+						new Parameter(new SourceCodeLocation("warnings", 0, 0), "arg1"),
+						new Parameter(new SourceCodeLocation("warnings", 0, 0), "arg2"))
+			, StupidConstruct.class);
+		unit1.addInstanceConstruct(cfg);
+		return unit1;
 	}
 
 	private static String transformToCode(List<String> code_list) {
@@ -1726,7 +1757,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public Pair<Statement, Statement> visitClassdef(ClassdefContext ctx) {
 		Unit previous = this.currentUnit;
 		String name = ctx.NAME().getSymbol().getText();
-		this.currentUnit = new PythonUnit(name);
+		this.currentUnit = new PythonUnit(new SourceCodeLocation(name, 0, 0), name, true);
 		parseClassBody(ctx.suite());
 		this.parsedUnits.add(this.currentUnit);
 		this.currentUnit = previous;
