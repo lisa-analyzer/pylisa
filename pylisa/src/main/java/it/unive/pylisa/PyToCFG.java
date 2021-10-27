@@ -6,13 +6,8 @@ import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.heap.HeapDomain;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
-import it.unive.lisa.analysis.value.ValueDomain;
-import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.interprocedural.impl.ContextBasedAnalysis;
+import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.program.*;
 import it.unive.lisa.program.cfg.*;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -21,11 +16,14 @@ import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.edge.TrueEdge;
 import it.unive.lisa.program.cfg.statement.*;
 import it.unive.lisa.logging.IterationLogger;
-import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
+import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
+import it.unive.lisa.program.cfg.statement.literal.Literal;
+import it.unive.lisa.program.cfg.statement.literal.UInt32Literal;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.UnitType;
-import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.analysis.LibraryDomain;
+import it.unive.pylisa.analysis.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.analysis.libraries.NoEffectMethod;
 import it.unive.pylisa.antlr.Python3BaseVisitor;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
@@ -118,15 +116,12 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				LiSAConfiguration conf = new LiSAConfiguration();
 				Collection<CFG> cfgs = translator.toLiSACFG();
 				Program p = new Program();
-
-				PythonUnit unit1 = getWarningsPythonUnit();
-				Type t = new PyLibraryType(unit1.getName());
-				translator.parsedUnits.add(unit1);
-				PyLibraryType.addUnit(unit1);
-
-
-				p.registerType(t);
-
+				for(CompilationUnit unit1 : LibrarySpecificationProvider.getLibraries()) {
+					Type t = new PyLibraryType(unit1.getName());
+					translator.parsedUnits.add(unit1);
+					PyLibraryType.addUnit(unit1);
+					p.registerType(t);
+				}
 				cfgs.forEach(p::addCFG);
 				for(CFG cfg : cfgs)
 					if(cfg.getDescriptor().getName().equals("main"))
@@ -179,19 +174,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	}
 
 
-	private static PythonUnit getWarningsPythonUnit() {
-		PythonUnit unit1 = new PythonUnit(new SourceCodeLocation("warnings", 0, 0), "warnings", true);
-		NativeCFG cfg = new NativeCFG(
-				new CFGDescriptor(new SourceCodeLocation("warnings", 0, 0),
-						unit1,
-						true,
-						"filterwarnings",
-						new Parameter(new SourceCodeLocation("warnings", 0, 0), "arg1"),
-						new Parameter(new SourceCodeLocation("warnings", 0, 0), "arg2"))
-			, StupidConstruct.class);
-		unit1.addInstanceConstruct(cfg);
-		return unit1;
-	}
 
 	private static String transformToCode(List<String> code_list) {
 		StringBuilder result = new StringBuilder();
@@ -853,7 +835,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				currentCFG,
 				getLocation(ctx),
 				counter,
-				new Literal(currentCFG, getLocation(ctx), "0", PyIntType.INSTANCE)
+				new UInt32Literal(currentCFG, getLocation(ctx), 0)
 		);
 		currentCFG.addNodeIfNotPresent(counter_init);
 
@@ -898,11 +880,10 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 						currentCFG,
 						getLocation(ctx),
 						counter,
-						new Literal(
+						new UInt32Literal(
 								currentCFG,
 								getLocation(ctx),
-								"1",
-								PyIntType.INSTANCE
+								1
 						)
 				)
 		);
@@ -1590,7 +1571,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			return createPairFromSingle(new VariableRef(currentCFG, getLocation(ctx), ctx.NAME().getText()));
 		} else if (ctx.NUMBER() != null) {
 			//create a literal int
-			return createPairFromSingle(new Literal(currentCFG, getLocation(ctx), ctx.NUMBER().getText(), PyIntType.INSTANCE));
+			return createPairFromSingle(new UInt32Literal(currentCFG, getLocation(ctx), Integer.parseInt(ctx.NUMBER().getText())));
 		}else if (ctx.FALSE() != null) {
 			//create a literal false
 			return createPairFromSingle(new PyFalseLiteral(currentCFG, getLocation(ctx)));

@@ -3,6 +3,7 @@ package it.unive.pylisa.cfg.type;
 
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
@@ -16,14 +17,14 @@ public class PyLibraryType implements UnitType {
 
 	private final static Set<Type> instances = new HashSet<>();
 
-	private final static Map<String, PythonUnit> units = new HashMap<>();
+	private final static Map<String, CompilationUnit> units = new HashMap<>();
 
 	public PyLibraryType(String name) {
 		this.name = name;
 		instances.add(this);
 	}
 
-	public static void addUnit(PythonUnit unit1) {
+	public static void addUnit(CompilationUnit unit1) {
 		units.put(unit1.getName(), unit1);
 	}
 

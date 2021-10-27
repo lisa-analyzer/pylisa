@@ -9,7 +9,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.program.cfg.statement.BinaryNativeCall;
+import it.unive.lisa.program.cfg.statement.call.BinaryNativeCall;
 import it.unive.pylisa.UnsupportedStatementException;
 import it.unive.pylisa.cfg.type.PyBoolType;
 

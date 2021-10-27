@@ -7,12 +7,12 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.statement.BinaryNativeCall;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.call.BinaryNativeCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.UnsupportedStatementException;
 
-public class PyAdd extends BinaryNativeCall  {
+public class PyAdd extends BinaryNativeCall {
 
 	public PyAdd(CFG cfg, CodeLocation loc, Expression left, Expression right) {
 		super(cfg, loc, "+", left, right);
