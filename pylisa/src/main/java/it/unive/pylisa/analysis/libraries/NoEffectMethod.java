@@ -31,14 +31,5 @@ public class NoEffectMethod extends NativeCall implements PluggableStatement {
         return entryState;
     }
 
-    public static class FilterWarningsNoEffectMethod extends NoEffectMethod {
-        public FilterWarningsNoEffectMethod(CFG cfg, CodeLocation location, String constructName, Expression... parameter) {
-            super(cfg, location, constructName, parameter);
-        }
-
-        public static NativeCall build(CFG cfg, CodeLocation location, Expression[] exprs) {
-            return new FilterWarningsNoEffectMethod(cfg, location, "filterWarnings", exprs);
-        }
-    }
 
 }

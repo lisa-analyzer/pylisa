@@ -1,4 +1,4 @@
-package it.unive.pylisa.analysis.libraries;
+package it.unive.pylisa.analysis.libraries.pandas;
 
 
 import it.unive.lisa.analysis.AbstractState;
@@ -19,10 +19,10 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyDataframeType;
 import it.unive.pylisa.symbolic.DataFrameConstant;
 
-public class ReturningFirstParameterExpressionNoSideEffectMethod extends BinaryNativeCall implements PluggableStatement {
+public class ReadCsv extends BinaryNativeCall implements PluggableStatement {
     private Statement st;
 
-    protected ReturningFirstParameterExpressionNoSideEffectMethod(CFG cfg, CodeLocation location, String constructName, Type staticType, Expression left, Expression right) {
+    protected ReadCsv(CFG cfg, CodeLocation location, String constructName, Type staticType, Expression left, Expression right) {
         super(cfg, location, constructName, staticType, left, right);
     }
 
@@ -36,16 +36,7 @@ public class ReturningFirstParameterExpressionNoSideEffectMethod extends BinaryN
         return rightState.smallStepSemantics(new DataFrameConstant(PyDataframeType.INSTANCE, rightExp, this.getLocation()), st);
     }
 
-
-    public static class ReadCsvNoEffectMethod extends ReturningFirstParameterExpressionNoSideEffectMethod {
-
-        protected ReadCsvNoEffectMethod(CFG cfg, CodeLocation location, String constructName, Type staticType, Expression left, Expression right) {
-            super(cfg, location, constructName, staticType, left, right);
-        }
-
-        public static NativeCall build(CFG cfg, CodeLocation location, Expression[] exprs) {
-            return new ReadCsvNoEffectMethod(cfg, location, "read_csv", PyDataframeType.INSTANCE, exprs[0], exprs[1]);
-        }
+    public static NativeCall build(CFG cfg, CodeLocation location, Expression[] exprs) {
+        return new ReadCsv(cfg, location, "read_csv", PyDataframeType.INSTANCE, exprs[0], exprs[1]);
     }
-
 }

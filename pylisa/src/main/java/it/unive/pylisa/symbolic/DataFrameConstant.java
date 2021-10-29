@@ -16,7 +16,12 @@ public class DataFrameConstant extends Constant {
      * @param value    the constant value
      * @param location the code location of the statement that has generated
      */
-    public DataFrameConstant(Type type, Object value, CodeLocation location) {
+    public DataFrameConstant(Type type, SymbolicExpression value, CodeLocation location) {
         super(type, value, location);
+    }
+
+    @Override
+    public SymbolicExpression getValue() {
+        return (SymbolicExpression) super.getValue();
     }
 }

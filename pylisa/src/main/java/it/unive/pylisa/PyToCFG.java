@@ -6,7 +6,11 @@ import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.combination.CartesianProduct;
+import it.unive.lisa.analysis.combination.ValueCartesianProduct;
 import it.unive.lisa.analysis.heap.HeapDomain;
+import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
+import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.program.*;
 import it.unive.lisa.program.cfg.*;
@@ -21,6 +25,7 @@ import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.Literal;
 import it.unive.lisa.program.cfg.statement.literal.UInt32Literal;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.analysis.DataframeTransformationDomain;
 import it.unive.pylisa.analysis.LibraryDomain;
 import it.unive.pylisa.analysis.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.analysis.libraries.NoEffectMethod;
@@ -136,7 +141,10 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				p.registerType(PyBoolType.INSTANCE);
 				//p.registerType(new PyLibraryType(""));
 				p.registerType(PyStringType.INSTANCE);
-				conf.setAbstractState(getDefaultFor(AbstractState.class, getDefaultFor(HeapDomain.class), new LibraryDomain("").top()));
+				ValueDomain domain = new ValueCartesianProduct<>(
+						new ValueEnvironment<LibraryDomain>(new LibraryDomain("").top()),
+						new ValueEnvironment<DataframeTransformationDomain>(new DataframeTransformationDomain(null)));
+				conf.setAbstractState(getDefaultFor(AbstractState.class, getDefaultFor(HeapDomain.class), domain));
 				LiSA lisa = new LiSA(conf);
 				lisa.run(p);
 				translator.parsedUnits.add(translator.currentUnit);

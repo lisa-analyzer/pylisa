@@ -5,6 +5,8 @@ import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFGDescriptor;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.Parameter;
+import it.unive.pylisa.analysis.libraries.pandas.ReadCsv;
+import it.unive.pylisa.analysis.libraries.warnings.FilterWarnings;
 import it.unive.pylisa.cfg.PythonUnit;
 
 import java.util.Collection;
@@ -28,7 +30,7 @@ public class LibrarySpecificationProvider {
                         "filterwarnings",
                         new Parameter(new SourceCodeLocation("warnings", 0, 0), "arg1"),
                         new Parameter(new SourceCodeLocation("warnings", 0, 0), "arg2"))
-                , NoEffectMethod.FilterWarningsNoEffectMethod.class);
+                , FilterWarnings.class);
         unit1.addInstanceConstruct(cfg);
         return unit1;
     }
@@ -42,7 +44,7 @@ public class LibrarySpecificationProvider {
                         "read_csv",
                         new Parameter(new SourceCodeLocation("pandas", 0, 0), "arg1"),
                         new Parameter(new SourceCodeLocation("pandas", 0, 0), "filepath_or_buffer"))
-                , ReturningFirstParameterExpressionNoSideEffectMethod.ReadCsvNoEffectMethod.class);
+                , ReadCsv.class);
         unit1.addInstanceConstruct(cfg);
         return unit1;
     }
