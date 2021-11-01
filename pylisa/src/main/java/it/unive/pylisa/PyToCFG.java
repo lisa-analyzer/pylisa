@@ -127,6 +127,8 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 					PyLibraryType.addUnit(unit1);
 					p.registerType(t);
 				}
+				LibrarySpecificationProvider.getAllStandardLibraryMethods(translator.currentUnit).forEach(p::addConstruct);
+
 				cfgs.forEach(p::addCFG);
 				for(CFG cfg : cfgs)
 					if(cfg.getDescriptor().getName().equals("main"))

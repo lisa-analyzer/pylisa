@@ -16,7 +16,6 @@ import it.unive.lisa.program.cfg.statement.call.BinaryNativeCall;
 import it.unive.lisa.program.cfg.statement.call.NativeCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
-import it.unive.pylisa.cfg.type.PyDataframeType;
 import it.unive.pylisa.symbolic.DataFrameConstant;
 
 public class ReadCsv extends BinaryNativeCall implements PluggableStatement {
