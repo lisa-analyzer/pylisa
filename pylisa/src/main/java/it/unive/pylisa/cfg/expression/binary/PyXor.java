@@ -10,14 +10,14 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.call.BinaryNativeCall;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.type.common.BoolType;
 import it.unive.pylisa.UnsupportedStatementException;
-import it.unive.pylisa.cfg.type.PyBoolType;
 
 
 public class PyXor extends BinaryNativeCall{
 
 	public PyXor(CFG cfg, CodeLocation loc, Expression left, Expression right) {
-		super(cfg, loc, "^", PyBoolType.INSTANCE, left, right);
+		super(cfg, loc, "^", BoolType.INSTANCE, left, right);
 	}
 
 

@@ -30,7 +30,7 @@ public class PyListType implements Type {
 	public Type commonSupertype(Type other) {
 		if(other==this)
 			return this;
-		else return  PyTopType.INSTANCE;
+		else return  Untyped.INSTANCE;
 	}
 
 	@Override

@@ -41,7 +41,7 @@ public class PyLibraryType implements UnitType {
 	public Type commonSupertype(Type other) {
 		if(other==this)
 			return this;
-		else return  PyTopType.INSTANCE;
+		else return  Untyped.INSTANCE;
 	}
 
 	@Override

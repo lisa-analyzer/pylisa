@@ -10,14 +10,14 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.program.cfg.statement.call.BinaryNativeCall;
+import it.unive.lisa.type.common.BoolType;
 import it.unive.pylisa.UnsupportedStatementException;
-import it.unive.pylisa.cfg.type.PyBoolType;
 
 public class PyIs  extends BinaryNativeCall{
 
 
 	public PyIs(CFG cfg, CodeLocation loc, Expression left, Expression right) {
-		super(cfg, loc, "is", PyBoolType.INSTANCE, left, right);
+		super(cfg, loc, "is", BoolType.INSTANCE, left, right);
 	}
 
 

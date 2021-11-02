@@ -9,6 +9,9 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.combination.CartesianProduct;
 import it.unive.lisa.analysis.combination.ValueCartesianProduct;
 import it.unive.lisa.analysis.heap.HeapDomain;
+import it.unive.lisa.analysis.heap.pointbased.AllocationSites;
+import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
+import it.unive.lisa.analysis.nonrelational.heap.HeapEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
@@ -21,10 +24,22 @@ import it.unive.lisa.program.cfg.edge.TrueEdge;
 import it.unive.lisa.program.cfg.statement.*;
 import it.unive.lisa.logging.IterationLogger;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
+import it.unive.lisa.program.cfg.statement.comparison.GreaterThan;
+import it.unive.lisa.program.cfg.statement.comparison.LessOrEqual;
+import it.unive.lisa.program.cfg.statement.comparison.LessThan;
+import it.unive.lisa.program.cfg.statement.comparison.NotEqual;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
-import it.unive.lisa.program.cfg.statement.literal.Literal;
-import it.unive.lisa.program.cfg.statement.literal.UInt32Literal;
+import it.unive.lisa.program.cfg.statement.literal.*;
+import it.unive.lisa.program.cfg.statement.logic.And;
+import it.unive.lisa.program.cfg.statement.logic.Not;
+import it.unive.lisa.program.cfg.statement.logic.Or;
+import it.unive.lisa.program.cfg.statement.numeric.*;
+import it.unive.lisa.program.cfg.statement.string.Equals;
+import it.unive.lisa.type.BooleanType;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.common.BoolType;
+import it.unive.lisa.type.common.Int32;
+import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.DataframeTransformationDomain;
 import it.unive.pylisa.analysis.LibraryDomain;
 import it.unive.pylisa.analysis.libraries.LibrarySpecificationProvider;
@@ -36,7 +51,6 @@ import it.unive.pylisa.antlr.Python3Parser.*;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.PythonUnit;
 import it.unive.pylisa.cfg.expression.binary.*;
-import it.unive.pylisa.cfg.expression.unary.PyNot;
 import it.unive.pylisa.cfg.statement.*;
 import it.unive.pylisa.cfg.type.*;
 import org.antlr.v4.runtime.CharStreams;
@@ -140,13 +154,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				conf.setDumpAnalysis(true);
 				conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 				p.registerType(PyListType.INSTANCE);
-				p.registerType(PyBoolType.INSTANCE);
+				p.registerType(BoolType.INSTANCE);
 				//p.registerType(new PyLibraryType(""));
-				p.registerType(PyStringType.INSTANCE);
+				p.registerType(StringType.INSTANCE);
 				ValueDomain domain = new ValueCartesianProduct<>(
 						new ValueEnvironment<LibraryDomain>(new LibraryDomain("").top()),
 						new ValueEnvironment<DataframeTransformationDomain>(new DataframeTransformationDomain(null)));
-				conf.setAbstractState(getDefaultFor(AbstractState.class, getDefaultFor(HeapDomain.class), domain));
+				PointBasedHeap heap = new PointBasedHeap();
+				conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain));
+				//conf.setAbstractState(getDefaultFor(AbstractState.class, getDefaultFor(HeapDomain.class), domain));
 				LiSA lisa = new LiSA(conf);
 				lisa.run(p);
 				translator.parsedUnits.add(translator.currentUnit);
@@ -836,7 +852,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		VariableRef counter = new VariableRef(
 				currentCFG,
 				getLocation(ctx),
-				"__counter_location"+getLocation(ctx).getLine(), PyIntType.INSTANCE
+				"__counter_location"+getLocation(ctx).getLine(), Int32.INSTANCE
 		);
 		Expression[] counter_pars = {counter};
 
@@ -850,7 +866,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		currentCFG.addNodeIfNotPresent(counter_init);
 
 		//counter < collection.size()
-		PyLess condition = new PyLess(
+		LessThan condition = new LessThan(
 				currentCFG,
 				getLocation(ctx),
 				counter,
@@ -886,7 +902,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				currentCFG,
 				getLocation(ctx),
 				counter,
-				new PyAdd(
+				new Addition(
 						currentCFG,
 						getLocation(ctx),
 						counter,
@@ -1128,15 +1144,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nAndTest == 1) {
 			return visitAnd_test(ctx.and_test(0));
 		} else if (nAndTest == 2) {
-			return createPairFromSingle(new PyOr(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(0))),
-					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(1))),"or"));
+			return createPairFromSingle(new Or(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(0))),
+					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(1)))));
 		} else {
-			Expression temp = new PyOr(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 2))),
-					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 1))),"or");
+			Expression temp = new Or(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 2))),
+					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 1))));
 			nAndTest = nAndTest - 2;
 			while (nAndTest > 0) {
-				temp = new PyOr(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(--nAndTest))),
-						temp,"or");
+				temp = new Or(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(--nAndTest))),
+						temp);
 			}
 			return createPairFromSingle(temp);
 		}
@@ -1151,14 +1167,14 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nNotTest == 1) {
 			return visitNot_test(ctx.not_test(0));
 		} else if (nNotTest == 2) {
-			return createPairFromSingle(new PyAnd(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(0))),
+			return createPairFromSingle(new And(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(0))),
 					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(1)))));
 		} else {
-			Expression temp =  new PyAnd(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 2))),
+			Expression temp =  new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 2))),
 					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 1))));
 			nNotTest = nNotTest - 2;
 			while (nNotTest > 0) {
-				temp = new PyAnd(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(--nNotTest))),
+				temp = new And(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(--nNotTest))),
 						 temp);
 			}
 
@@ -1172,7 +1188,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		
 
 		if (ctx.NOT() != null) {
-			return createPairFromSingle(new PyNot(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitNot_test(ctx.not_test()))));
+			return createPairFromSingle(new Not(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitNot_test(ctx.not_test()))));
 		} else {
 			return visitComparison(ctx.comparison());
 		}
@@ -1197,15 +1213,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			Expression left =  checkAndExtractSingleExpression(visitExpr(ctx.expr(0)));
 			Expression right =  checkAndExtractSingleExpression(visitExpr(ctx.expr(1)));
 			if (operator.EQUALS() != null)
-				result = new PyEquals(currentCFG, getLocation(ctx), left, right);
+				result = new Equals(currentCFG, getLocation(ctx), left, right);
 
 			// Python greater (>)
 			if (operator.GREATER_THAN() != null) {
-				result = new PyGreater(currentCFG, getLocation(ctx), left, right);
+				result = new GreaterThan(currentCFG, getLocation(ctx), left, right);
 			}
 			// Python greater equal (>=)
 			if (operator.GT_EQ() != null)
-				result = new PyEquals(currentCFG, getLocation(ctx), left, right);
+				result = new Equals(currentCFG, getLocation(ctx), left, right);
 
 			// Python in (in)
 			if (operator.IN() != null)
@@ -1217,23 +1233,23 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 			// Python less (<)
 			if (operator.LESS_THAN() != null)
-				result = new PyLess(currentCFG, getLocation(ctx), left, right);
+				result = new LessThan(currentCFG, getLocation(ctx), left, right);
 
 			// Python less equal (<=)
 			if (operator.LT_EQ() != null)
-				result = new PyLessEqual(currentCFG, getLocation(ctx), left, right);
+				result = new LessOrEqual(currentCFG, getLocation(ctx), left, right);
 
 			// Python not (not)
 			if (operator.NOT() != null)
-				result =  new PyNot(currentCFG, getLocation(ctx), left);
+				result =  new Not(currentCFG, getLocation(ctx), left);
 
 			// Python not equals (<>)
 			if (operator.NOT_EQ_1() != null)
-				result = new PyNot1(currentCFG, getLocation(ctx), left, right);
+				result = new NotEqual(currentCFG, getLocation(ctx), left, right);
 
 			// Python not equals (!=)
 			if (operator.NOT_EQ_2() != null)
-				result = new PyNot2(currentCFG, getLocation(ctx), left, right);
+				result = new NotEqual(currentCFG, getLocation(ctx), left, right);
 
 			break;
 		}
@@ -1306,15 +1322,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nShift == 1) {
 			return visitLeft_shift(ctx.left_shift(0));
 		} else if (nShift == 2) {
-			return createPairFromSingle(new PyAnd(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(0))),
+			return createPairFromSingle(new And(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(0))),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(1)))));
 		} else {
-			Expression temp = new PyAnd(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 2))),
+			Expression temp = new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 2))),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 1))));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new PyAnd(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(--nShift))),
+				temp = new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(--nShift))),
 						 temp);
 			}
 			return createPairFromSingle(temp);
@@ -1328,15 +1344,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nShift == 1) {
 			return visitRight_shift(ctx.right_shift());
 		} else if (nShift == 2) {
-			return createPairFromSingle(new PyAnd(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift())),
+			return createPairFromSingle(new And(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift())),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(0)))));
 		} else {
-			Expression temp = new PyAnd(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 3))),
+			Expression temp = new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 3))),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 2))));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new PyAnd(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(--nShift-1))),
+				temp = new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(--nShift-1))),
 						temp);
 			}
 			return createPairFromSingle(temp);
@@ -1349,15 +1365,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nShift == 1) {
 			return visitArith_expr(ctx.arith_expr());
 		} else if (nShift == 2) {
-			return createPairFromSingle(new PyAnd(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())),
+			return createPairFromSingle(new And(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())),
 					checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(0)))));
 		} else {
-			Expression temp = new PyAnd(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(nShift - 3))),
+			Expression temp = new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(nShift - 3))),
 					checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(nShift - 2))));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new PyAnd(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(--nShift-1))),
+				temp = new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(--nShift-1))),
 						temp);
 			}
 			return createPairFromSingle(temp);
@@ -1369,7 +1385,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.arith_expr()==null) {
 			return visitTerm(ctx.term());
 		} else  {
-			return createPairFromSingle(new PyMinus(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
+			return createPairFromSingle(new Subtraction(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
 		}
 	}
 	
@@ -1381,7 +1397,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.arith_expr()==null) {
 			return visitTerm(ctx.term());
 		} else  {
-			return createPairFromSingle(new PyAdd(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
+			return createPairFromSingle(new Addition(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
 		}
 		
 	}
@@ -1406,7 +1422,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyMul(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new Multiplication(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}	
 		
 	}
@@ -1431,7 +1447,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyDiv(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new Division(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}	
 
 		
@@ -1444,7 +1460,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (ctx.term()==null) {
 			return visitFactor(ctx.factor());
 		} else  {
-			return createPairFromSingle(new PyMod(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+			return createPairFromSingle(new Remainder(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}
 		
 	}	
@@ -1584,17 +1600,17 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			return createPairFromSingle(new UInt32Literal(currentCFG, getLocation(ctx), Integer.parseInt(ctx.NUMBER().getText())));
 		}else if (ctx.FALSE() != null) {
 			//create a literal false
-			return createPairFromSingle(new PyFalseLiteral(currentCFG, getLocation(ctx)));
+			return createPairFromSingle(new FalseLiteral(currentCFG, getLocation(ctx)));
 		}else if (ctx.TRUE()!= null) {
 			//create a literal true
-			return createPairFromSingle(new PyTrueLiteral(currentCFG, getLocation(ctx)));
+			return createPairFromSingle(new TrueLiteral(currentCFG, getLocation(ctx)));
 		}else if (ctx.NONE() != null) {
 			//create a literal false
-			return createPairFromSingle(new PyNoneLiteral(currentCFG, getLocation(ctx)));
+			return createPairFromSingle(new NullLiteral(currentCFG, getLocation(ctx)));
 		}
 		else if (ctx.STRING().size() > 0) {
 			//create a string
-			return createPairFromSingle(new PyStringLiteral(currentCFG,getLocation(ctx), ctx.STRING(0).getText()));
+			return createPairFromSingle(new StringLiteral(currentCFG,getLocation(ctx), ctx.STRING(0).getText()));
 		} else if(ctx.yield_expr()!=null) {
 			return visitYield_expr(ctx.yield_expr());
 		}else if(ctx.OPEN_BRACE()==null && ctx.dictorsetmaker()!=null) {

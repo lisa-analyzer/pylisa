@@ -10,13 +10,14 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.program.cfg.statement.call.BinaryNativeCall;
+import it.unive.lisa.type.BooleanType;
+import it.unive.lisa.type.common.BoolType;
 import it.unive.pylisa.UnsupportedStatementException;
-import it.unive.pylisa.cfg.type.PyBoolType;
 
 public class PyIn  extends BinaryNativeCall{
 
 	public PyIn(CFG cfg, CodeLocation loc, Expression left, Expression right) {
-		super(cfg, loc, "in", PyBoolType.INSTANCE, left, right);
+		super(cfg, loc, "in", BoolType.INSTANCE, left, right);
 	}
 
 	@Override
