@@ -626,6 +626,7 @@ fragment SPACES
 
 fragment COMMENT
  : '#' ~[\r\n\f]*
+ | '%' ~[\r\n\f]*
  ;
 
 fragment LINE_JOINING
