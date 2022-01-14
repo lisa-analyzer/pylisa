@@ -1,6 +1,12 @@
 package it.unive.pylisa.cfg.statement;
 
-import it.unive.lisa.analysis.*;
+import java.util.Arrays;
+import java.util.List;
+
+import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
@@ -11,9 +17,6 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.UnsupportedStatementException;
-
-import java.util.Arrays;
-import java.util.List;
 
 public class ListCreation extends Expression {
     private final List<Expression> values;

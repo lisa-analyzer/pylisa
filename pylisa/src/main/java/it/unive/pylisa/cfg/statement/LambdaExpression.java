@@ -1,5 +1,8 @@
 package it.unive.pylisa.cfg.statement;
 
+import java.util.Arrays;
+import java.util.List;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -13,9 +16,6 @@ import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
-
-import java.util.Arrays;
-import java.util.List;
 
 public class LambdaExpression extends Expression {
     private final List<Expression> arguments;

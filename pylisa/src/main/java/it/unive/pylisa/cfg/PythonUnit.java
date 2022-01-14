@@ -1,7 +1,6 @@
 package it.unive.pylisa.cfg;
 
 import it.unive.lisa.program.CompilationUnit;
-import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CodeLocation;
 
 public class PythonUnit extends CompilationUnit

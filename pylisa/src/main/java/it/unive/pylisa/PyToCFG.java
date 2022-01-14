@@ -1,58 +1,24 @@
 package it.unive.pylisa;
 
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-import it.unive.lisa.AnalysisException;
-import it.unive.lisa.LiSA;
-import it.unive.lisa.LiSAConfiguration;
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.combination.CartesianProduct;
-import it.unive.lisa.analysis.combination.ValueCartesianProduct;
-import it.unive.lisa.analysis.heap.HeapDomain;
-import it.unive.lisa.analysis.heap.pointbased.AllocationSites;
-import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
-import it.unive.lisa.analysis.nonrelational.heap.HeapEnvironment;
-import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.value.ValueDomain;
-import it.unive.lisa.interprocedural.ContextBasedAnalysis;
-import it.unive.lisa.program.*;
-import it.unive.lisa.program.cfg.*;
-import it.unive.lisa.program.cfg.edge.Edge;
-import it.unive.lisa.program.cfg.edge.FalseEdge;
-import it.unive.lisa.program.cfg.edge.SequentialEdge;
-import it.unive.lisa.program.cfg.edge.TrueEdge;
-import it.unive.lisa.program.cfg.statement.*;
-import it.unive.lisa.logging.IterationLogger;
-import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.cfg.statement.comparison.GreaterThan;
-import it.unive.lisa.program.cfg.statement.comparison.LessOrEqual;
-import it.unive.lisa.program.cfg.statement.comparison.LessThan;
-import it.unive.lisa.program.cfg.statement.comparison.NotEqual;
-import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
-import it.unive.lisa.program.cfg.statement.literal.*;
-import it.unive.lisa.program.cfg.statement.logic.And;
-import it.unive.lisa.program.cfg.statement.logic.Not;
-import it.unive.lisa.program.cfg.statement.logic.Or;
-import it.unive.lisa.program.cfg.statement.numeric.*;
-import it.unive.lisa.program.cfg.statement.string.Equals;
-import it.unive.lisa.type.BooleanType;
-import it.unive.lisa.type.Type;
-import it.unive.lisa.type.common.BoolType;
-import it.unive.lisa.type.common.Int32;
-import it.unive.lisa.type.common.StringType;
-import it.unive.pylisa.analysis.DataframeTransformationDomain;
-import it.unive.pylisa.analysis.LibraryDomain;
-import it.unive.pylisa.analysis.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.analysis.libraries.NoEffectMethod;
-import it.unive.pylisa.antlr.Python3BaseVisitor;
-import it.unive.pylisa.antlr.Python3Lexer;
-import it.unive.pylisa.antlr.Python3Parser;
-import it.unive.pylisa.antlr.Python3Parser.*;
-import it.unive.pylisa.cfg.PyCFG;
-import it.unive.pylisa.cfg.PythonUnit;
-import it.unive.pylisa.cfg.expression.binary.*;
-import it.unive.pylisa.cfg.statement.*;
-import it.unive.pylisa.cfg.type.*;
+import static it.unive.lisa.LiSAFactory.getDefaultFor;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -65,13 +31,186 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.function.Function;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 
-import static it.unive.lisa.LiSAFactory.getDefaultFor;
+import it.unive.lisa.AnalysisException;
+import it.unive.lisa.LiSA;
+import it.unive.lisa.LiSAConfiguration;
+import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.combination.ValueCartesianProduct;
+import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
+import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
+import it.unive.lisa.analysis.value.ValueDomain;
+import it.unive.lisa.interprocedural.ContextBasedAnalysis;
+import it.unive.lisa.logging.IterationLogger;
+import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Global;
+import it.unive.lisa.program.Program;
+import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.lisa.program.Unit;
+import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CFGDescriptor;
+import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.program.cfg.edge.Edge;
+import it.unive.lisa.program.cfg.edge.FalseEdge;
+import it.unive.lisa.program.cfg.edge.SequentialEdge;
+import it.unive.lisa.program.cfg.edge.TrueEdge;
+import it.unive.lisa.program.cfg.statement.Assignment;
+import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.NoOp;
+import it.unive.lisa.program.cfg.statement.Ret;
+import it.unive.lisa.program.cfg.statement.Return;
+import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
+import it.unive.lisa.program.cfg.statement.call.resolution.RuntimeTypesResolution;
+import it.unive.lisa.program.cfg.statement.comparison.GreaterThan;
+import it.unive.lisa.program.cfg.statement.comparison.LessOrEqual;
+import it.unive.lisa.program.cfg.statement.comparison.LessThan;
+import it.unive.lisa.program.cfg.statement.comparison.NotEqual;
+import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
+import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
+import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
+import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
+import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
+import it.unive.lisa.program.cfg.statement.literal.UInt32Literal;
+import it.unive.lisa.program.cfg.statement.logic.And;
+import it.unive.lisa.program.cfg.statement.logic.Not;
+import it.unive.lisa.program.cfg.statement.logic.Or;
+import it.unive.lisa.program.cfg.statement.numeric.Addition;
+import it.unive.lisa.program.cfg.statement.numeric.Division;
+import it.unive.lisa.program.cfg.statement.numeric.Multiplication;
+import it.unive.lisa.program.cfg.statement.numeric.Remainder;
+import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
+import it.unive.lisa.program.cfg.statement.string.Equals;
+import it.unive.lisa.type.Type;
+import it.unive.lisa.type.common.BoolType;
+import it.unive.lisa.type.common.Int32;
+import it.unive.lisa.type.common.StringType;
+import it.unive.pylisa.analysis.DataframeTransformationDomain;
+import it.unive.pylisa.analysis.LibraryDomain;
+import it.unive.pylisa.analysis.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.antlr.Python3BaseVisitor;
+import it.unive.pylisa.antlr.Python3Lexer;
+import it.unive.pylisa.antlr.Python3Parser;
+import it.unive.pylisa.antlr.Python3Parser.AddContext;
+import it.unive.pylisa.antlr.Python3Parser.And_exprContext;
+import it.unive.pylisa.antlr.Python3Parser.And_testContext;
+import it.unive.pylisa.antlr.Python3Parser.AnnassignContext;
+import it.unive.pylisa.antlr.Python3Parser.ArglistContext;
+import it.unive.pylisa.antlr.Python3Parser.ArgumentContext;
+import it.unive.pylisa.antlr.Python3Parser.Arith_exprContext;
+import it.unive.pylisa.antlr.Python3Parser.Assert_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.Async_funcdefContext;
+import it.unive.pylisa.antlr.Python3Parser.Async_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.AtomContext;
+import it.unive.pylisa.antlr.Python3Parser.Atom_exprContext;
+import it.unive.pylisa.antlr.Python3Parser.AugassignContext;
+import it.unive.pylisa.antlr.Python3Parser.Break_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.ClassdefContext;
+import it.unive.pylisa.antlr.Python3Parser.Comp_forContext;
+import it.unive.pylisa.antlr.Python3Parser.Comp_ifContext;
+import it.unive.pylisa.antlr.Python3Parser.Comp_iterContext;
+import it.unive.pylisa.antlr.Python3Parser.Comp_opContext;
+import it.unive.pylisa.antlr.Python3Parser.ComparisonContext;
+import it.unive.pylisa.antlr.Python3Parser.Compound_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.Continue_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.DecoratedContext;
+import it.unive.pylisa.antlr.Python3Parser.DecoratorContext;
+import it.unive.pylisa.antlr.Python3Parser.DecoratorsContext;
+import it.unive.pylisa.antlr.Python3Parser.Del_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.DictorsetmakerContext;
+import it.unive.pylisa.antlr.Python3Parser.DivContext;
+import it.unive.pylisa.antlr.Python3Parser.Dotted_as_nameContext;
+import it.unive.pylisa.antlr.Python3Parser.Dotted_as_namesContext;
+import it.unive.pylisa.antlr.Python3Parser.Dotted_nameContext;
+import it.unive.pylisa.antlr.Python3Parser.Encoding_declContext;
+import it.unive.pylisa.antlr.Python3Parser.Eval_inputContext;
+import it.unive.pylisa.antlr.Python3Parser.Except_clauseContext;
+import it.unive.pylisa.antlr.Python3Parser.ExprContext;
+import it.unive.pylisa.antlr.Python3Parser.Expr_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.ExprlistContext;
+import it.unive.pylisa.antlr.Python3Parser.FactorContext;
+import it.unive.pylisa.antlr.Python3Parser.File_inputContext;
+import it.unive.pylisa.antlr.Python3Parser.FloorDivContext;
+import it.unive.pylisa.antlr.Python3Parser.Flow_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.For_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.FuncdefContext;
+import it.unive.pylisa.antlr.Python3Parser.Global_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.If_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.Import_as_nameContext;
+import it.unive.pylisa.antlr.Python3Parser.Import_as_namesContext;
+import it.unive.pylisa.antlr.Python3Parser.Import_fromContext;
+import it.unive.pylisa.antlr.Python3Parser.Import_nameContext;
+import it.unive.pylisa.antlr.Python3Parser.Import_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.LambdefContext;
+import it.unive.pylisa.antlr.Python3Parser.Lambdef_nocondContext;
+import it.unive.pylisa.antlr.Python3Parser.Left_shiftContext;
+import it.unive.pylisa.antlr.Python3Parser.Mat_mulContext;
+import it.unive.pylisa.antlr.Python3Parser.MinusContext;
+import it.unive.pylisa.antlr.Python3Parser.ModContext;
+import it.unive.pylisa.antlr.Python3Parser.MulContext;
+import it.unive.pylisa.antlr.Python3Parser.Nonlocal_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.Not_testContext;
+import it.unive.pylisa.antlr.Python3Parser.Or_testContext;
+import it.unive.pylisa.antlr.Python3Parser.ParametersContext;
+import it.unive.pylisa.antlr.Python3Parser.Pass_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.PowerContext;
+import it.unive.pylisa.antlr.Python3Parser.Raise_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.Return_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.Right_shiftContext;
+import it.unive.pylisa.antlr.Python3Parser.Simple_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.Single_inputContext;
+import it.unive.pylisa.antlr.Python3Parser.SliceopContext;
+import it.unive.pylisa.antlr.Python3Parser.Small_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.Star_exprContext;
+import it.unive.pylisa.antlr.Python3Parser.StmtContext;
+import it.unive.pylisa.antlr.Python3Parser.SubscriptContext;
+import it.unive.pylisa.antlr.Python3Parser.SubscriptlistContext;
+import it.unive.pylisa.antlr.Python3Parser.SuiteContext;
+import it.unive.pylisa.antlr.Python3Parser.TermContext;
+import it.unive.pylisa.antlr.Python3Parser.TestContext;
+import it.unive.pylisa.antlr.Python3Parser.TestOrStarContext;
+import it.unive.pylisa.antlr.Python3Parser.Test_nocondContext;
+import it.unive.pylisa.antlr.Python3Parser.TestlistContext;
+import it.unive.pylisa.antlr.Python3Parser.Testlist_compContext;
+import it.unive.pylisa.antlr.Python3Parser.Testlist_star_exprContext;
+import it.unive.pylisa.antlr.Python3Parser.TfpdefContext;
+import it.unive.pylisa.antlr.Python3Parser.TrailerContext;
+import it.unive.pylisa.antlr.Python3Parser.Try_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.TypedargslistContext;
+import it.unive.pylisa.antlr.Python3Parser.VarargslistContext;
+import it.unive.pylisa.antlr.Python3Parser.VfpdefContext;
+import it.unive.pylisa.antlr.Python3Parser.While_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.With_itemContext;
+import it.unive.pylisa.antlr.Python3Parser.With_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.Xor_exprContext;
+import it.unive.pylisa.antlr.Python3Parser.Yield_argContext;
+import it.unive.pylisa.antlr.Python3Parser.Yield_exprContext;
+import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
+import it.unive.pylisa.cfg.PyCFG;
+import it.unive.pylisa.cfg.PythonUnit;
+import it.unive.pylisa.cfg.expression.binary.PyFloorDiv;
+import it.unive.pylisa.cfg.expression.binary.PyIn;
+import it.unive.pylisa.cfg.expression.binary.PyIs;
+import it.unive.pylisa.cfg.expression.binary.PyMatMul;
+import it.unive.pylisa.cfg.expression.binary.PyPower;
+import it.unive.pylisa.cfg.expression.binary.PyXor;
+import it.unive.pylisa.cfg.statement.DictionaryCreation;
+import it.unive.pylisa.cfg.statement.FromImport;
+import it.unive.pylisa.cfg.statement.Import;
+import it.unive.pylisa.cfg.statement.LambdaExpression;
+import it.unive.pylisa.cfg.statement.ListCreation;
+import it.unive.pylisa.cfg.statement.PyDoubleArrayAccess;
+import it.unive.pylisa.cfg.statement.PySingleArrayAccess;
+import it.unive.pylisa.cfg.statement.RangeValue;
+import it.unive.pylisa.cfg.statement.SetCreation;
+import it.unive.pylisa.cfg.statement.StarExpression;
+import it.unive.pylisa.cfg.statement.TupleCreation;
+import it.unive.pylisa.cfg.type.PyLibraryType;
+import it.unive.pylisa.cfg.type.PyListType;
 
 @SuppressWarnings("CommentedOutCode")
 public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
@@ -410,7 +549,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 		Statement assegnazione;
 		
-		// è un assegnazione
+		// ï¿½ un assegnazione
 		if (ctx.ASSIGN().size() > 0) {
 
 			Statement target = checkAndExtractSingleStatement(visitTestlist_star_expr(ctx.testlist_star_expr(0)));
@@ -457,7 +596,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		Statement result = new UnresolvedCall(
 				currentCFG,
 				getLocation(ctx),
-				UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
+				RuntimeTypesResolution.INSTANCE,
 				false,
 				"del",
 				extractExpressionsFromExprlist(ctx.exprlist()).toArray(new Expression[ctx.exprlist().expr().size()])
@@ -487,7 +626,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				new UnresolvedCall(
 					currentCFG,
 					getLocation(ctx),
-					UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
+					RuntimeTypesResolution.INSTANCE,
 					false,
 					"yield from",
 					l.toArray(new Expression[0])
@@ -660,7 +799,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 					new UnresolvedCall(
 							currentCFG,
 							getLocation(ctx),
-							UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
+							RuntimeTypesResolution.INSTANCE,
 							false,
 							"assert",
 							extractExpressionsFromListOfTests(ctx.test()).toArray(new Expression[ctx.test().size()])
@@ -873,7 +1012,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				new UnresolvedCall(
 						currentCFG,
 						getLocation(ctx),
-						UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
+						RuntimeTypesResolution.INSTANCE,
 						true,
 						"size",
 						collection_pars
@@ -889,7 +1028,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				new UnresolvedCall(
 						currentCFG,
 						getLocation(ctx),
-						UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES,
+						RuntimeTypesResolution.INSTANCE,
 						true,
 						"at",
 						counter_pars
@@ -1553,7 +1692,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 						for(ArgumentContext arg : expr.arglist().argument())
 							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
 
-					access = new UnresolvedCall(currentCFG, getLocation(expr), UnresolvedCall.ResolutionStrategy.DYNAMIC_TYPES, instance, method_name, pars.toArray(new Expression[0]));
+					access = new UnresolvedCall(currentCFG, getLocation(expr), RuntimeTypesResolution.INSTANCE, instance, method_name, pars.toArray(new Expression[0]));
 					last_name = null;
 					previous_access = null;
 				}

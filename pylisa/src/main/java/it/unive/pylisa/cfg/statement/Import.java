@@ -1,31 +1,22 @@
 package it.unive.pylisa.cfg.statement;
 
-import it.unive.lisa.analysis.*;
+import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.cfg.edge.Edge;
-import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Variable;
-import it.unive.lisa.type.Type;
-import it.unive.lisa.util.collections.externalSet.BitExternalSet;
-import it.unive.lisa.util.collections.externalSet.ExternalSet;
-import it.unive.lisa.util.collections.externalSet.ExternalSetCache;
-import it.unive.lisa.util.collections.externalSet.UniversalExternalSet;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
-import it.unive.pylisa.UnsupportedStatementException;
 import it.unive.pylisa.cfg.type.PyLibraryType;
 import it.unive.pylisa.symbolic.LibraryIdentifier;
-
-import java.util.HashSet;
-import java.util.Set;
 
 public class Import extends Statement {
 
