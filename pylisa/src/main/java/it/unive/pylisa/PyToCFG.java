@@ -2,8 +2,38 @@ package it.unive.pylisa;
 
 import static it.unive.lisa.LiSAFactory.getDefaultFor;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
@@ -11,7 +41,6 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.combination.ValueCartesianProduct;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.logging.IterationLogger;
 import it.unive.lisa.program.CompilationUnit;
@@ -181,33 +210,6 @@ import it.unive.pylisa.cfg.statement.StarExpression;
 import it.unive.pylisa.cfg.statement.TupleCreation;
 import it.unive.pylisa.cfg.type.PyLibraryType;
 import it.unive.pylisa.cfg.type.PyListType;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 @SuppressWarnings("CommentedOutCode")
 public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
@@ -293,9 +295,11 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			p.registerType(BoolType.INSTANCE);
 			// p.registerType(new PyLibraryType(""));
 			p.registerType(StringType.INSTANCE);
-			ValueDomain domain = new ValueCartesianProduct<>(
-					new ValueEnvironment<LibraryDomain>(new LibraryDomain("").top()),
-					new ValueEnvironment<DataframeTransformationDomain>(new DataframeTransformationDomain(null)));
+			ValueCartesianProduct<ValueEnvironment<LibraryDomain>,
+					ValueEnvironment<DataframeTransformationDomain>> domain = new ValueCartesianProduct<>(
+							new ValueEnvironment<LibraryDomain>(new LibraryDomain("").top()),
+							new ValueEnvironment<DataframeTransformationDomain>(
+									new DataframeTransformationDomain(null)));
 			PointBasedHeap heap = new PointBasedHeap();
 			conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain));
 			// conf.setAbstractState(getDefaultFor(AbstractState.class,
