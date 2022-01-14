@@ -1,8 +1,5 @@
 package it.unive.pylisa.cfg.statement;
 
-import java.util.Arrays;
-import java.util.List;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -16,38 +13,43 @@ import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
+import java.util.Arrays;
+import java.util.List;
 
 public class LambdaExpression extends Expression {
-    private final List<Expression> arguments;
-    private final Expression body;
+	private final List<Expression> arguments;
+	private final Expression body;
 
-    public LambdaExpression(List<Expression> arguments, Expression body, CFG cfg, CodeLocation loc) {
-        super(cfg, loc);
+	public LambdaExpression(List<Expression> arguments, Expression body, CFG cfg, CodeLocation loc) {
+		super(cfg, loc);
 
-        this.body = body;
-        this.arguments = arguments;
-    }
+		this.body = body;
+		this.arguments = arguments;
+	}
 
-    @Override
-    public int setOffset(int i) {
-        super.offset = i;
-        return i;
-    }
+	@Override
+	public int setOffset(int i) {
+		super.offset = i;
+		return i;
+	}
 
-    @Override
-    public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
-        return false;
-    }
+	@Override
+	public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
+		return false;
+	}
 
-    @Override
-    public String toString() {
-        return "lambda "+ Arrays.toString(arguments.toArray())+" . "+body;
-    }
+	@Override
+	public String toString() {
+		return "lambda " + Arrays.toString(arguments.toArray()) + " . " + body;
+	}
 
-    @Override
-    public <A extends AbstractState<A, H, V>, H extends HeapDomain<H>, V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState, InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions) throws SemanticException {
-        throw new SemanticException("Not yet supported");
-    }
-
+	@Override
+	public <A extends AbstractState<A, H, V>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState,
+					InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions)
+					throws SemanticException {
+		throw new SemanticException("Not yet supported");
+	}
 
 }

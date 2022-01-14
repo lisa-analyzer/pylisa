@@ -12,6 +12,7 @@ plugins {
     id 'application'
    	id 'antlr'
    	id 'eclipse'
+   	id "com.diffplug.spotless" version "6.2.0"
 }
 
 repositories {
@@ -41,4 +42,57 @@ generateGrammarSource {
     	}
    		project.delete fileTree('build/generated-src/antlr/main').include('*.*')
   	}
+}
+
+spotless {
+    enforceCheck = false
+    encoding 'UTF-8'
+    lineEndings 'UNIX'
+    java {
+        // tabs, no spaces
+        indentWithTabs()
+    
+        // keep imports clean 
+        importOrder() 
+        removeUnusedImports()
+    
+        // use the eclipse formatting with the one provided with the project
+        eclipse().configFile(new File(rootProject.projectDir, 'spotless-formatting.xml'))
+    
+        // ignore generated code
+        target project.fileTree(project.projectDir) {
+            include '**/*.java'
+            exclude '**/build/generated/**'
+            exclude '**/build/generated-src/**'
+            exclude '**/target/generated-sources/**'
+        }
+    }
+    antlr4 {
+        target 'src/*/antlr/**/*.g4'
+        antlr4Formatter() 
+    }
+}
+
+spotlessJava {
+	// declaring explicit dependencies
+	dependsOn 'compileJava', 'compileTestJava', 'processTestResources', 'spotlessAntlr4'
+}
+
+spotlessJavaCheck { 
+    finalizedBy 'spotlessErrorMessage'
+}
+
+spotlessAntlr4Check { 
+    finalizedBy 'spotlessErrorMessage'
+}
+
+task spotlessErrorMessage {
+    onlyIf {
+        spotlessJavaCheck.state.failure != null || spotlessAntlr4Check.state.failure != null
+    }
+    doLast {
+        logger.error('Spotless plugin thrown an error. This means that the code is not correctly formatted.')
+        logger.error('To reproduce locally, execute \'./gradlew spotlessCheck\'')
+        logger.error('To automatically fix all the problems, execute \'./gradlew spotlessApply\'')
+    }
 }

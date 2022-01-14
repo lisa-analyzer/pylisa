@@ -1,8 +1,5 @@
 package it.unive.pylisa.cfg.statement;
 
-import java.util.Arrays;
-import java.util.List;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -16,36 +13,41 @@ import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
+import java.util.Arrays;
+import java.util.List;
 
 public class TupleCreation extends Expression {
-    private final List<Expression> values;
+	private final List<Expression> values;
 
-    public TupleCreation(List<Expression> values, CFG cfg, CodeLocation loc) {
-        super(cfg, loc);
+	public TupleCreation(List<Expression> values, CFG cfg, CodeLocation loc) {
+		super(cfg, loc);
 
-        this.values = values;
-    }
+		this.values = values;
+	}
 
-    @Override
-    public int setOffset(int i) {
-        super.offset = i;
-        return i;
-    }
+	@Override
+	public int setOffset(int i) {
+		super.offset = i;
+		return i;
+	}
 
-    @Override
-    public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
-        return false;
-    }
+	@Override
+	public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
+		return false;
+	}
 
-    @Override
-    public String toString() {
-        return "("+ Arrays.toString(values.toArray())+")";
-    }
+	@Override
+	public String toString() {
+		return "(" + Arrays.toString(values.toArray()) + ")";
+	}
 
-    @Override
-    public <A extends AbstractState<A, H, V>, H extends HeapDomain<H>, V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState, InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions) throws SemanticException {
-        throw new SemanticException("Not yet supported");
-    }
-
+	@Override
+	public <A extends AbstractState<A, H, V>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState,
+					InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions)
+					throws SemanticException {
+		throw new SemanticException("Not yet supported");
+	}
 
 }

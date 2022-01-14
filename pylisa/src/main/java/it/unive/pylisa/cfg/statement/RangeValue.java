@@ -15,36 +15,39 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 
 public class RangeValue extends Expression {
-    private final Expression left;
-    private final Expression right;
+	private final Expression left;
+	private final Expression right;
 
-    public RangeValue(Expression left, Expression right, CFG cfg, CodeLocation loc) {
-        super(cfg, loc);
+	public RangeValue(Expression left, Expression right, CFG cfg, CodeLocation loc) {
+		super(cfg, loc);
 
-        this.left = left;
-        this.right = right;
-    }
+		this.left = left;
+		this.right = right;
+	}
 
-    @Override
-    public int setOffset(int i) {
-        super.offset = i;
-        return i;
-    }
+	@Override
+	public int setOffset(int i) {
+		super.offset = i;
+		return i;
+	}
 
-    @Override
-    public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
-        return false;
-    }
+	@Override
+	public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
+		return false;
+	}
 
-    @Override
-    public String toString() {
-        return (left!= null ? left.toString() : "") +":"+(right!= null ? right.toString() : "");
-    }
+	@Override
+	public String toString() {
+		return (left != null ? left.toString() : "") + ":" + (right != null ? right.toString() : "");
+	}
 
-    @Override
-    public <A extends AbstractState<A, H, V>, H extends HeapDomain<H>, V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState, InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions) throws SemanticException {
-        throw new SemanticException("Not yet supported");
-    }
-
+	@Override
+	public <A extends AbstractState<A, H, V>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState,
+					InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions)
+					throws SemanticException {
+		throw new SemanticException("Not yet supported");
+	}
 
 }

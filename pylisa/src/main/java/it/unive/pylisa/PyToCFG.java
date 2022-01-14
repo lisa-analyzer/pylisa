@@ -2,38 +2,8 @@ package it.unive.pylisa;
 
 import static it.unive.lisa.LiSAFactory.getDefaultFor;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
@@ -211,6 +181,33 @@ import it.unive.pylisa.cfg.statement.StarExpression;
 import it.unive.pylisa.cfg.statement.TupleCreation;
 import it.unive.pylisa.cfg.type.PyLibraryType;
 import it.unive.pylisa.cfg.type.PyListType;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @SuppressWarnings("CommentedOutCode")
 public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
@@ -265,84 +262,86 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	private PyCFG currentCFG;
 
 	public static void main(String[] args) throws IOException, AnalysisException {
-		//path of test file
+		// path of test file
 		String file = args[0];
 		String extension = FilenameUtils.getExtension(file);
-		switch(extension) {
-			case "py":
-				PyToCFG translator = new PyToCFG(file);
-				LiSAConfiguration conf = new LiSAConfiguration();
-				Collection<CFG> cfgs = translator.toLiSACFG();
-				Program p = new Program();
-				for(CompilationUnit unit1 : LibrarySpecificationProvider.getLibraries()) {
-					Type t = new PyLibraryType(unit1.getName());
-					translator.parsedUnits.add(unit1);
-					PyLibraryType.addUnit(unit1);
-					p.registerType(t);
-				}
-				LibrarySpecificationProvider.getAllStandardLibraryMethods(translator.currentUnit).forEach(p::addConstruct);
+		switch (extension) {
+		case "py":
+			PyToCFG translator = new PyToCFG(file);
+			LiSAConfiguration conf = new LiSAConfiguration();
+			Collection<CFG> cfgs = translator.toLiSACFG();
+			Program p = new Program();
+			for (CompilationUnit unit1 : LibrarySpecificationProvider.getLibraries()) {
+				Type t = new PyLibraryType(unit1.getName());
+				translator.parsedUnits.add(unit1);
+				PyLibraryType.addUnit(unit1);
+				p.registerType(t);
+			}
+			LibrarySpecificationProvider.getAllStandardLibraryMethods(translator.currentUnit).forEach(p::addConstruct);
 
-				cfgs.forEach(p::addCFG);
-				for(CFG cfg : cfgs)
-					if(cfg.getDescriptor().getName().equals("main"))
-						p.addEntryPoint(cfg);
-				conf.setDumpCFGs(true);
-				conf.setWorkdir("workdir");
-				conf.setDumpTypeInference(true);
-				conf.setInferTypes(true);
-				conf.setDumpAnalysis(true);
-				conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
-				p.registerType(PyListType.INSTANCE);
-				p.registerType(BoolType.INSTANCE);
-				//p.registerType(new PyLibraryType(""));
-				p.registerType(StringType.INSTANCE);
-				ValueDomain domain = new ValueCartesianProduct<>(
-						new ValueEnvironment<LibraryDomain>(new LibraryDomain("").top()),
-						new ValueEnvironment<DataframeTransformationDomain>(new DataframeTransformationDomain(null)));
-				PointBasedHeap heap = new PointBasedHeap();
-				conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain));
-				//conf.setAbstractState(getDefaultFor(AbstractState.class, getDefaultFor(HeapDomain.class), domain));
-				LiSA lisa = new LiSA(conf);
-				lisa.run(p);
-				translator.parsedUnits.add(translator.currentUnit);
-				break;
-			case "ipynb":
-				Gson gson = new Gson();
-				JsonReader reader = gson.newJsonReader(new FileReader(file));
-				Map<?, ?> map = gson.fromJson(reader, Map.class);
-				@SuppressWarnings("unchecked") ArrayList<Map<?, ?>> cells = (ArrayList<Map<?, ?>>) map.get("cells");
-				List<String> code = new ArrayList<>();
-				for(Map<?, ?> l : cells) {
-					String type = (String) l.get("cell_type");
-					if(type.equals("code")) {
-						@SuppressWarnings("unchecked") List<String> code_list = (List<String>) l.get("source");
-						code.add(transformToCode(code_list));
-					}
+			cfgs.forEach(p::addCFG);
+			for (CFG cfg : cfgs)
+				if (cfg.getDescriptor().getName().equals("main"))
+					p.addEntryPoint(cfg);
+			conf.setDumpCFGs(true);
+			conf.setWorkdir("workdir");
+			conf.setDumpTypeInference(true);
+			conf.setInferTypes(true);
+			conf.setDumpAnalysis(true);
+			conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
+			p.registerType(PyListType.INSTANCE);
+			p.registerType(BoolType.INSTANCE);
+			// p.registerType(new PyLibraryType(""));
+			p.registerType(StringType.INSTANCE);
+			ValueDomain domain = new ValueCartesianProduct<>(
+					new ValueEnvironment<LibraryDomain>(new LibraryDomain("").top()),
+					new ValueEnvironment<DataframeTransformationDomain>(new DataframeTransformationDomain(null)));
+			PointBasedHeap heap = new PointBasedHeap();
+			conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain));
+			// conf.setAbstractState(getDefaultFor(AbstractState.class,
+			// getDefaultFor(HeapDomain.class), domain));
+			LiSA lisa = new LiSA(conf);
+			lisa.run(p);
+			translator.parsedUnits.add(translator.currentUnit);
+			break;
+		case "ipynb":
+			Gson gson = new Gson();
+			JsonReader reader = gson.newJsonReader(new FileReader(file));
+			Map<?, ?> map = gson.fromJson(reader, Map.class);
+			@SuppressWarnings("unchecked")
+			ArrayList<Map<?, ?>> cells = (ArrayList<Map<?, ?>>) map.get("cells");
+			List<String> code = new ArrayList<>();
+			for (Map<?, ?> l : cells) {
+				String type = (String) l.get("cell_type");
+				if (type.equals("code")) {
+					@SuppressWarnings("unchecked")
+					List<String> code_list = (List<String>) l.get("source");
+					code.add(transformToCode(code_list));
 				}
-				List<String> files = new ArrayList<>();
-				String tempDir = System.getProperty("java.io.tmpdir");
-				String rootFileName = Path.of(tempDir, FilenameUtils.getName(file)).toString();
-				int i = 0;
-				for(String c : code) {
-					String local_filename = rootFileName + "_" + i + ".py";
-					FileUtils.write(new File(local_filename), c, StandardCharsets.UTF_8);
-					files.add(local_filename);
-					i++;
-				}
-				for(String pyFile : files) {
-					String[] temp_args = {pyFile};
-					PyToCFG.main(temp_args);
-				}
-				break;
-			default: throw new UnsupportedStatementException("Files with extension "+extension+" are not supported");
+			}
+			List<String> files = new ArrayList<>();
+			String tempDir = System.getProperty("java.io.tmpdir");
+			String rootFileName = Path.of(tempDir, FilenameUtils.getName(file)).toString();
+			int i = 0;
+			for (String c : code) {
+				String local_filename = rootFileName + "_" + i + ".py";
+				FileUtils.write(new File(local_filename), c, StandardCharsets.UTF_8);
+				files.add(local_filename);
+				i++;
+			}
+			for (String pyFile : files) {
+				String[] temp_args = { pyFile };
+				PyToCFG.main(temp_args);
+			}
+			break;
+		default:
+			throw new UnsupportedStatementException("Files with extension " + extension + " are not supported");
 		}
 	}
 
-
-
 	private static String transformToCode(List<String> code_list) {
 		StringBuilder result = new StringBuilder();
-		for(String s : code_list)
+		for (String s : code_list)
 			result.append(s).append("\n");
 		return result.toString();
 	}
@@ -351,7 +350,9 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	 * Returns the collection of @CFG in a Python program at filePath.
 	 * 
 	 * @return collection of @CFG in file
-	 * @throws IOException if {@code stream} to file cannot be written to or closed
+	 * 
+	 * @throws IOException if {@code stream} to file cannot be written to or
+	 *                         closed
 	 */
 
 	public Collection<CFG> toLiSACFG() throws IOException {
@@ -400,22 +401,21 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
 			Compound_stmtContext comp = stmt.compound_stmt();
 			Pair<Statement, Statement> visited_stmt;
-			if(comp!=null)
+			if (comp != null)
 				visited_stmt = visitCompound_stmt(comp);
 			else
 				visited_stmt = visitSimple_stmt(stmt.simple_stmt());
-			if(visited_stmt!=null) {
-				if(last_stmt==null) {
+			if (visited_stmt != null) {
+				if (last_stmt == null) {
 					Collection<Edge> outedges = new HashSet<>();
-					for(Edge e : currentCFG.getEdges()) {
-						if(e.getSource().equals(visited_stmt.getLeft()))
+					for (Edge e : currentCFG.getEdges()) {
+						if (e.getSource().equals(visited_stmt.getLeft()))
 							outedges.add(e);
 					}
 					currentCFG.addNodeIfNotPresent(visited_stmt.getLeft(), true);
-					for(Edge e : outedges)
+					for (Edge e : outedges)
 						currentCFG.addEdge(e);
-				}
-				else
+				} else
 					currentCFG.addEdge(new SequentialEdge(last_stmt, visited_stmt.getLeft()));
 				last_stmt = visited_stmt.getRight();
 			}
@@ -432,7 +432,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	private int getCol(ParserRuleContext ctx) {
 		return ctx.getStop().getCharPositionInLine();
 	}
-
 
 	public SourceCodeLocation getLocation(ParserRuleContext ctx) {
 		return new SourceCodeLocation(this.getFilePath(), getLine(ctx), getCol(ctx));
@@ -510,36 +509,38 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitStmt(StmtContext ctx) {
-		if(ctx.simple_stmt()!=null)
+		if (ctx.simple_stmt() != null)
 			return visitSimple_stmt(ctx.simple_stmt());
-		else return visitCompound_stmt(ctx.compound_stmt());
+		else
+			return visitCompound_stmt(ctx.compound_stmt());
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitSimple_stmt(Simple_stmtContext ctx) {
-			return visitListOfSmallStatements(ctx.small_stmt());
+		return visitListOfSmallStatements(ctx.small_stmt());
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitSmall_stmt(Small_stmtContext ctx) {
-		if(ctx.expr_stmt()!=null)
+		if (ctx.expr_stmt() != null)
 			return addToCFGAndReturn(visitExpr_stmt(ctx.expr_stmt()));
-		else if(ctx.del_stmt()!=null)
+		else if (ctx.del_stmt() != null)
 			return visitDel_stmt(ctx.del_stmt());
-		else if(ctx.pass_stmt()!=null)
+		else if (ctx.pass_stmt() != null)
 			return visitPass_stmt(ctx.pass_stmt());
-		else if(ctx.import_stmt()!=null)
+		else if (ctx.import_stmt() != null)
 			return visitImport_stmt(ctx.import_stmt());
-		else if(ctx.assert_stmt()!=null)
+		else if (ctx.assert_stmt() != null)
 			return visitAssert_stmt(ctx.assert_stmt());
-		else if(ctx.flow_stmt()!=null)
+		else if (ctx.flow_stmt() != null)
 			return visitFlow_stmt(ctx.flow_stmt());
-		else throw new UnsupportedStatementException("Simple statement not yet supported");
+		else
+			throw new UnsupportedStatementException("Simple statement not yet supported");
 	}
 
 	private Pair<Statement, Statement> addToCFGAndReturn(Pair<Statement, Statement> pair) {
 		currentCFG.addNodeIfNotPresent(pair.getLeft());
-		if(pair.getLeft()!=pair.getRight())
+		if (pair.getLeft() != pair.getRight())
 			currentCFG.addNodeIfNotPresent(pair.getRight());
 		return pair;
 	}
@@ -548,7 +549,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public Pair<Statement, Statement> visitExpr_stmt(Expr_stmtContext ctx) {
 
 		Statement assegnazione;
-		
+
 		// � un assegnazione
 		if (ctx.ASSIGN().size() > 0) {
 
@@ -556,13 +557,13 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			Statement expression = checkAndExtractSingleStatement(visitTestlist_star_expr(ctx.testlist_star_expr(1)));
 			log.info(target);
 			log.info(expression);
-			if((! (target instanceof Expression)) || (! (expression instanceof Expression)))
-				throw new UnsupportedStatementException("Assignments require expression both in the left and in the right hand side");
-			assegnazione = new Assignment(currentCFG, getLocation(ctx),  (Expression) target,  (Expression) expression);
+			if ((!(target instanceof Expression)) || (!(expression instanceof Expression)))
+				throw new UnsupportedStatementException(
+						"Assignments require expression both in the left and in the right hand side");
+			assegnazione = new Assignment(currentCFG, getLocation(ctx), (Expression) target, (Expression) expression);
 			log.info(assegnazione);
-			currentCFG.addNodeIfNotPresent( assegnazione);
-		}
-		else
+			currentCFG.addNodeIfNotPresent(assegnazione);
+		} else
 			return visitTestlistStarExpr(ctx);
 		log.info(assegnazione);
 		return createPairFromSingle(assegnazione);
@@ -575,11 +576,11 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitTestlist_star_expr(Testlist_star_exprContext ctx) {
-		if(ctx.test().size()==1) {
+		if (ctx.test().size() == 1) {
 			return createPairFromSingle(checkAndExtractSingleStatement(visitTest(ctx.test(0))));
 		}
 		List<Expression> elements = new ArrayList<>();
-		for(TestContext test : ctx.test())
+		for (TestContext test : ctx.test())
 			elements.add(checkAndExtractSingleExpression(visitTest(test)));
 		return createPairFromSingle(new TupleCreation(elements, currentCFG, getLocation(ctx)));
 	}
@@ -591,7 +592,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitDel_stmt(Del_stmtContext ctx) {
-		if(ctx.exprlist().star_expr().size()>0)
+		if (ctx.exprlist().star_expr().size() > 0)
 			throw new UnsupportedStatementException("We support only expressions withou * in del statements");
 		Statement result = new UnresolvedCall(
 				currentCFG,
@@ -599,8 +600,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 				RuntimeTypesResolution.INSTANCE,
 				false,
 				"del",
-				extractExpressionsFromExprlist(ctx.exprlist()).toArray(new Expression[ctx.exprlist().expr().size()])
-		);
+				extractExpressionsFromExprlist(ctx.exprlist()).toArray(new Expression[ctx.exprlist().expr().size()]));
 		currentCFG.addNodeIfNotPresent(result);
 		return createPairFromSingle(result);
 	}
@@ -614,24 +614,23 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitFlow_stmt(Flow_stmtContext ctx) {
-		if(ctx.return_stmt()!=null)
+		if (ctx.return_stmt() != null)
 			return visitReturn_stmt(ctx.return_stmt());
-		if(ctx.raise_stmt()!=null) {
-			log.warn("Exceptions are not yet supported. The raise statement at line "+getLine(ctx)+ " of file "+getFilePath()+" is unsoundly translated into a return; statement");
+		if (ctx.raise_stmt() != null) {
+			log.warn("Exceptions are not yet supported. The raise statement at line " + getLine(ctx) + " of file "
+					+ getFilePath() + " is unsoundly translated into a return; statement");
 			return addToCFGAndReturn(createPairFromSingle(new Ret(currentCFG, getLocation(ctx))));
 		}
-		if(ctx.yield_stmt()!=null) {
+		if (ctx.yield_stmt() != null) {
 			List<Expression> l = extractExpressionsFromYieldArg(ctx.yield_stmt().yield_expr().yield_arg());
 			return addToCFGAndReturn(createPairFromSingle(
-				new UnresolvedCall(
-					currentCFG,
-					getLocation(ctx),
-					RuntimeTypesResolution.INSTANCE,
-					false,
-					"yield from",
-					l.toArray(new Expression[0])
-				))
-			);
+					new UnresolvedCall(
+							currentCFG,
+							getLocation(ctx),
+							RuntimeTypesResolution.INSTANCE,
+							false,
+							"yield from",
+							l.toArray(new Expression[0]))));
 		}
 		throw new UnsupportedStatementException();
 	}
@@ -648,13 +647,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitReturn_stmt(Return_stmtContext ctx) {
-		if(ctx.testlist()==null)
+		if (ctx.testlist() == null)
 			return addToCFGAndReturn(createPairFromSingle(new Ret(currentCFG, getLocation(ctx))));
 		else {
-			if(ctx.testlist().test().size()==1)
-				return addToCFGAndReturn(createPairFromSingle(new Return(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTestlist(ctx.testlist())))));
+			if (ctx.testlist().test().size() == 1)
+				return addToCFGAndReturn(createPairFromSingle(new Return(currentCFG, getLocation(ctx),
+						checkAndExtractSingleExpression(visitTestlist(ctx.testlist())))));
 			else
-				return addToCFGAndReturn(createPairFromSingle(new TupleCreation(extractExpressionsFromTestlist(ctx.testlist()), currentCFG, getLocation(ctx))));
+				return addToCFGAndReturn(createPairFromSingle(new TupleCreation(
+						extractExpressionsFromTestlist(ctx.testlist()), currentCFG, getLocation(ctx))));
 		}
 	}
 
@@ -670,58 +671,66 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitImport_stmt(Import_stmtContext ctx) {
-		if(ctx.import_from()!=null) {
+		if (ctx.import_from() != null) {
 			return visitImport_from(ctx.import_from());
-		}else{
+		} else {
 			return visitImport_name(ctx.import_name());
 		}
 	}
 
-
 	/**
-	 * This method transforms a single rule to a sequence of statements representing it
+	 * This method transforms a single rule to a sequence of statements
+	 * representing it
 	 *
-	 * @param ctx the context that internally contains a list of something, and that should be translated into a sequence of statements
-	 * @param defaultStatement the default statement to be returned if the list is empty
-	 * @param condition if false, the method returns the default statement, otherwise it processes the list
-	 * @param getList returns the list of the elements to be processed
-	 * @param extractStatement transforms an element into a statement representing it
-	 * @param <T1> the context to be processed
-	 * @param <T2> the elements to be transformed into statements
-	 * @return the first and last statement produced when transforming the context into statements
+	 * @param ctx              the context that internally contains a list of
+	 *                             something, and that should be translated into
+	 *                             a sequence of statements
+	 * @param defaultStatement the default statement to be returned if the list
+	 *                             is empty
+	 * @param condition        if false, the method returns the default
+	 *                             statement, otherwise it processes the list
+	 * @param getList          returns the list of the elements to be processed
+	 * @param extractStatement transforms an element into a statement
+	 *                             representing it
+	 * @param <T1>             the context to be processed
+	 * @param <T2>             the elements to be transformed into statements
+	 * 
+	 * @return the first and last statement produced when transforming the
+	 *             context into statements
 	 */
-	private <T1 extends RuleContext, T2> Pair<Statement, Statement> visitListOfContexts(T1 ctx, Statement defaultStatement, Function<T1, Boolean> condition, Function<T1, List<T2>> getList, Function<T2, Statement> extractStatement) {
-		if(condition.apply(ctx)) {
+	private <T1 extends RuleContext, T2> Pair<Statement, Statement> visitListOfContexts(T1 ctx,
+			Statement defaultStatement, Function<T1, Boolean> condition, Function<T1, List<T2>> getList,
+			Function<T2, Statement> extractStatement) {
+		if (condition.apply(ctx)) {
 			Statement first = null;
 			Statement prev;
 			Statement last = null;
-			for(T2 single: getList.apply(ctx)) {
-				prev=last;
+			for (T2 single : getList.apply(ctx)) {
+				prev = last;
 				last = extractStatement.apply(single);
 				currentCFG.addNodeIfNotPresent(last, false);
-				if(prev!=null)
+				if (prev != null)
 					currentCFG.addEdge(new SequentialEdge(prev, last));
-				if(first==null)
+				if (first == null)
 					first = last;
 			}
 			return Pair.of(first, last);
-		}
-		else
+		} else
 			return createPairFromSingle(defaultStatement);
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitImport_from(Import_fromContext ctx) {
 		String name;
-		if(ctx.dotted_name()!=null)
+		if (ctx.dotted_name() != null)
 			name = dottedNameToString(ctx.dotted_name());
-		else name = ".";
-		
-		
+		else
+			name = ".";
+
 		Statement def = new FromImport(name, "*", "*", currentCFG, getLocation(ctx));
 
 		return visitListOfContexts(ctx, def,
-				c -> c.import_as_names()!=null,
+				c -> c.import_as_names() != null,
 				c -> c.import_as_names().import_as_name(),
 				s -> {
 					String component = s.NAME(0).getSymbol().getText();
@@ -741,17 +750,17 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 					String importedLibrary = dottedNameToString(c.dotted_name());
 					String as = c.NAME() != null ? c.NAME().getSymbol().getText() : importedLibrary;
 					return new Import(importedLibrary, as, currentCFG, getLocation(c));
-				}
-		);
+				});
 	}
 
 	private String dottedNameToString(Dotted_nameContext dotted_name) {
 		StringBuilder result = new StringBuilder();
 		boolean first = true;
-		for(TerminalNode name : dotted_name.NAME()) {
+		for (TerminalNode name : dotted_name.NAME()) {
 			if (first)
 				first = false;
-			else result.append(".");
+			else
+				result.append(".");
 			result.append(name.getSymbol().getText());
 		}
 		return result.toString();
@@ -796,16 +805,14 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public Pair<Statement, Statement> visitAssert_stmt(Assert_stmtContext ctx) {
 		return addToCFGAndReturn(
 				createPairFromSingle(
-					new UnresolvedCall(
-							currentCFG,
-							getLocation(ctx),
-							RuntimeTypesResolution.INSTANCE,
-							false,
-							"assert",
-							extractExpressionsFromListOfTests(ctx.test()).toArray(new Expression[ctx.test().size()])
-					)
-				)
-		);
+						new UnresolvedCall(
+								currentCFG,
+								getLocation(ctx),
+								RuntimeTypesResolution.INSTANCE,
+								false,
+								"assert",
+								extractExpressionsFromListOfTests(ctx.test())
+										.toArray(new Expression[ctx.test().size()]))));
 	}
 
 	private void parseMethod(FuncdefContext ctx) {
@@ -829,25 +836,25 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitCompound_stmt(Compound_stmtContext ctx) {
-		if(ctx.funcdef()!=null) {
+		if (ctx.funcdef() != null) {
 			parseMethod(ctx.funcdef());
 			return null;
-		}
-		else if(ctx.if_stmt()!=null)
+		} else if (ctx.if_stmt() != null)
 			return this.visitIf_stmt(ctx.if_stmt());
-		else if(ctx.while_stmt()!=null)
+		else if (ctx.while_stmt() != null)
 			return this.visitWhile_stmt(ctx.while_stmt());
-		else if(ctx.for_stmt()!=null)
+		else if (ctx.for_stmt() != null)
 			return this.visitFor_stmt(ctx.for_stmt());
-		else if(ctx.try_stmt()!=null)
+		else if (ctx.try_stmt() != null)
 			return this.visitTry_stmt(ctx.try_stmt());
-		else if(ctx.with_stmt()!=null)
+		else if (ctx.with_stmt() != null)
 			return this.visitWith_stmt(ctx.with_stmt());
-		else if(ctx.if_stmt()!=null)
+		else if (ctx.if_stmt() != null)
 			return this.visitIf_stmt(ctx.if_stmt());
-		else if(ctx.classdef()!=null)
+		else if (ctx.classdef() != null)
 			return this.visitClassdef(ctx.classdef());
-		else throw new UnsupportedStatementException("Statement "+ctx+" not yet supported");
+		else
+			throw new UnsupportedStatementException("Statement " + ctx + " not yet supported");
 	}
 
 	@Override
@@ -856,14 +863,14 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	}
 
 	private Statement checkAndExtractSingleStatement(Pair<Statement, Statement> parsed) {
-		if(parsed.getLeft()!=parsed.getRight())
+		if (parsed.getLeft() != parsed.getRight())
 			throw new UnsupportedStatementException("It is not supported to have multiple expressions here");
 		return parsed.getLeft();
 	}
 
 	private Expression checkAndExtractSingleExpression(Pair<Statement, Statement> parsed) {
 		Statement result = checkAndExtractSingleStatement(parsed);
-		if(! (result instanceof Expression))
+		if (!(result instanceof Expression))
 			throw new UnsupportedStatementException("An expression is expected here");
 		return (Expression) result;
 	}
@@ -875,136 +882,133 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	@Override
 	public Pair<Statement, Statement> visitIf_stmt(If_stmtContext ctx) {
 
-		Statement booleanGuard =  checkAndExtractSingleStatement(visitTest(ctx.test(0)));
+		Statement booleanGuard = checkAndExtractSingleStatement(visitTest(ctx.test(0)));
 		currentCFG.addNodeIfNotPresent(booleanGuard);
 
-		//Created if exit node
+		// Created if exit node
 		NoOp ifExitNode = new NoOp(currentCFG, getLocation(ctx));
 
-		//Visit if true block
+		// Visit if true block
 		Pair<Statement, Statement> trueBlock = visitSuite(ctx.suite(0));
-
 
 		Statement exitStatementTrueBranch = trueBlock.getRight();
 		Statement entryStatementTrueBranch = trueBlock.getLeft();
 
 		currentCFG.addEdge(new TrueEdge(booleanGuard, entryStatementTrueBranch));
-		if(! exitStatementTrueBranch.stopsExecution()) {
+		if (!exitStatementTrueBranch.stopsExecution()) {
 			currentCFG.addNodeIfNotPresent(ifExitNode);
 			currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranch, ifExitNode));
 		}
-	
+
 		int testLenght = ctx.test().size();
 
 		Statement lastBooleanGuardElif = booleanGuard;
-		
-		// if testLenght is >1 the context contains elif	
-		if(testLenght>1) {
 
-				int i = 1;
-				
-				// visit all the elif
-				while (i < testLenght) {
-					Statement booleanGuardElif = checkAndExtractSingleStatement(visitTest(ctx.test(i)));
-					currentCFG.addNodeIfNotPresent(booleanGuardElif);
-					currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, booleanGuardElif));
-					lastBooleanGuardElif = booleanGuardElif;
-					Pair<Statement, Statement> trueBlockElif = visitSuite(ctx.suite(i));
+		// if testLenght is >1 the context contains elif
+		if (testLenght > 1) {
 
-					Statement exitStatementTrueBranchElif = trueBlockElif.getRight();
-					Statement entryStatementTrueBranchElif = trueBlockElif.getLeft();
+			int i = 1;
 
-					currentCFG.addEdge(new TrueEdge(booleanGuardElif, entryStatementTrueBranchElif));
-					if(! exitStatementTrueBranchElif.stopsExecution()) {
-						currentCFG.addNodeIfNotPresent(ifExitNode);
-						currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranchElif, ifExitNode));
-					}
-					i=i+1;
+			// visit all the elif
+			while (i < testLenght) {
+				Statement booleanGuardElif = checkAndExtractSingleStatement(visitTest(ctx.test(i)));
+				currentCFG.addNodeIfNotPresent(booleanGuardElif);
+				currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, booleanGuardElif));
+				lastBooleanGuardElif = booleanGuardElif;
+				Pair<Statement, Statement> trueBlockElif = visitSuite(ctx.suite(i));
+
+				Statement exitStatementTrueBranchElif = trueBlockElif.getRight();
+				Statement entryStatementTrueBranchElif = trueBlockElif.getLeft();
+
+				currentCFG.addEdge(new TrueEdge(booleanGuardElif, entryStatementTrueBranchElif));
+				if (!exitStatementTrueBranchElif.stopsExecution()) {
+					currentCFG.addNodeIfNotPresent(ifExitNode);
+					currentCFG.addEdge(new SequentialEdge(exitStatementTrueBranchElif, ifExitNode));
 				}
+				i = i + 1;
+			}
 		}
-				// If statement with else
-				if (ctx.ELSE() !=null) {
-		
-					Pair<Statement, Statement> falseBlock = visitSuite(ctx.suite(ctx.suite().size()-1));
-					Statement entryStatementFalseBranch = falseBlock.getLeft();
-					Statement exitStatementFalseBranch = falseBlock.getRight();
-					
-					currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, entryStatementFalseBranch));
-					if(! exitStatementFalseBranch.stopsExecution()) {
-						currentCFG.addNodeIfNotPresent(ifExitNode);
-						currentCFG.addEdge(new SequentialEdge(exitStatementFalseBranch, ifExitNode));
-					}
-				}else {
-					// If statement with no else
-					if(! lastBooleanGuardElif.stopsExecution()) {
-						currentCFG.addNodeIfNotPresent(ifExitNode);
-						currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, ifExitNode));
-					}
-				}
+		// If statement with else
+		if (ctx.ELSE() != null) {
 
-		return  Pair.of(booleanGuard,ifExitNode);
+			Pair<Statement, Statement> falseBlock = visitSuite(ctx.suite(ctx.suite().size() - 1));
+			Statement entryStatementFalseBranch = falseBlock.getLeft();
+			Statement exitStatementFalseBranch = falseBlock.getRight();
+
+			currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, entryStatementFalseBranch));
+			if (!exitStatementFalseBranch.stopsExecution()) {
+				currentCFG.addNodeIfNotPresent(ifExitNode);
+				currentCFG.addEdge(new SequentialEdge(exitStatementFalseBranch, ifExitNode));
+			}
+		} else {
+			// If statement with no else
+			if (!lastBooleanGuardElif.stopsExecution()) {
+				currentCFG.addNodeIfNotPresent(ifExitNode);
+				currentCFG.addEdge(new FalseEdge(lastBooleanGuardElif, ifExitNode));
+			}
+		}
+
+		return Pair.of(booleanGuard, ifExitNode);
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitWhile_stmt(While_stmtContext ctx) {
-		
-		//create and add exit point of while
+
+		// create and add exit point of while
 		NoOp whileExitNode = new NoOp(currentCFG, getLocation(ctx));
 		currentCFG.addNodeIfNotPresent(whileExitNode);
 
-		Statement condition  = checkAndExtractSingleStatement(visitTest(ctx.test()));
+		Statement condition = checkAndExtractSingleStatement(visitTest(ctx.test()));
 		currentCFG.addNodeIfNotPresent(condition);
 
 		Pair<Statement, Statement> trueBlock = visitSuite(ctx.suite(0));
-		
+
 		currentCFG.addEdge(new TrueEdge(condition, trueBlock.getLeft()));
 		currentCFG.addEdge(new SequentialEdge(trueBlock.getRight(), condition));
-		
-		//check if there's an else condition for the while
-		if(ctx.ELSE()!=null) {
+
+		// check if there's an else condition for the while
+		if (ctx.ELSE() != null) {
 			Pair<Statement, Statement> falseBlock = visitSuite(ctx.suite(1));
 			currentCFG.addEdge(new FalseEdge(condition, falseBlock.getLeft()));
 			currentCFG.addEdge(new SequentialEdge(falseBlock.getRight(), whileExitNode));
-		}else {
+		} else {
 			currentCFG.addEdge(new FalseEdge(condition, whileExitNode));
 		}
-		
-		
-		return  Pair.of(condition, whileExitNode);
+
+		return Pair.of(condition, whileExitNode);
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitFor_stmt(For_stmtContext ctx) {
-		
-		//create and add exit point of for
+
+		// create and add exit point of for
 		NoOp exit = new NoOp(currentCFG, getLocation(ctx));
 		currentCFG.addNodeIfNotPresent(exit);
 
 		List<Expression> exprs = extractExpressionsFromExprlist(ctx.exprlist());
 		Expression variable;
-		if(exprs.size()==1)
+		if (exprs.size() == 1)
 			variable = exprs.get(0);
-		else variable = new TupleCreation(exprs, currentCFG, getLocation(ctx));
-		Expression collection= checkAndExtractSingleExpression(visitTestlist(ctx.testlist()));
-		Expression[] collection_pars = {collection};
+		else
+			variable = new TupleCreation(exprs, currentCFG, getLocation(ctx));
+		Expression collection = checkAndExtractSingleExpression(visitTestlist(ctx.testlist()));
+		Expression[] collection_pars = { collection };
 
 		VariableRef counter = new VariableRef(
 				currentCFG,
 				getLocation(ctx),
-				"__counter_location"+getLocation(ctx).getLine(), Int32.INSTANCE
-		);
-		Expression[] counter_pars = {counter};
+				"__counter_location" + getLocation(ctx).getLine(), Int32.INSTANCE);
+		Expression[] counter_pars = { counter };
 
-		//counter = 0;
+		// counter = 0;
 		Assignment counter_init = new Assignment(
 				currentCFG,
 				getLocation(ctx),
 				counter,
-				new UInt32Literal(currentCFG, getLocation(ctx), 0)
-		);
+				new UInt32Literal(currentCFG, getLocation(ctx), 0));
 		currentCFG.addNodeIfNotPresent(counter_init);
 
-		//counter < collection.size()
+		// counter < collection.size()
 		LessThan condition = new LessThan(
 				currentCFG,
 				getLocation(ctx),
@@ -1015,13 +1019,11 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 						RuntimeTypesResolution.INSTANCE,
 						true,
 						"size",
-						collection_pars
-				)
-		);
+						collection_pars));
 		currentCFG.addNodeIfNotPresent(condition);
 
-		//element = collection.at(counter)
-		Assignment element_assignment =  new Assignment(
+		// element = collection.at(counter)
+		Assignment element_assignment = new Assignment(
 				currentCFG,
 				getLocation(ctx),
 				variable,
@@ -1031,12 +1033,10 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 						RuntimeTypesResolution.INSTANCE,
 						true,
 						"at",
-						counter_pars
-				)
-		);
+						counter_pars));
 		currentCFG.addNodeIfNotPresent(element_assignment);
 
-		//counter = counter + 1;
+		// counter = counter + 1;
 		Assignment counter_increment = new Assignment(
 				currentCFG,
 				getLocation(ctx),
@@ -1048,13 +1048,10 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 						new UInt32Literal(
 								currentCFG,
 								getLocation(ctx),
-								1
-						)
-				)
-		);
+								1)));
 		currentCFG.addNodeIfNotPresent(counter_increment);
 
-		Pair<Statement, Statement> body= visitSuite(ctx.suite(0));
+		Pair<Statement, Statement> body = visitSuite(ctx.suite(0));
 
 		currentCFG.addEdge(new SequentialEdge(counter_init, condition));
 		currentCFG.addEdge(new TrueEdge(condition, element_assignment));
@@ -1067,82 +1064,73 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitTry_stmt(Try_stmtContext ctx) {
-		//this method is commented because the type of edge required does not exist now
-		
+		// this method is commented because the type of edge required does not
+		// exist now
+
 		/*
-		
-		NoOp TryExitNode = new NoOp(currentCFG);
-		currentCFG.addNodeIfNotPresent(TryExitNode);
-		
-		Pair<Statement, Statement> tryBlock = (Pair<Statement, Statement>) visitSuite(ctx.suite(0));
-		
-		int nException=ctx.except_clause().size();
-		
-		Pair<Statement, Statement> firstClauseException = (Pair<Statement, Statement>) visitExcept_clause(ctx.except_clause(0));
-		
-		Pair<Statement, Statement> firstSuiteException = (Pair<Statement, Statement>) visitSuite(ctx.suite(1));
-		
-		currentCFG.addEdge(new TrueEdge(tryBlock.getRight(), firstClauseException.getLeft()));
-		
-		currentCFG.addEdge(new SequentialEdge(firstClauseException.getRight(), firstSuiteException.getLeft()));
-		
-		Pair<Statement, Statement> lastClauseExc=firstClauseException;
-		Pair<Statement, Statement> lastSuiteExc=firstSuiteException;
-		
-		for(int i=2;i<=nException;i++) {
-			
-			Pair<Statement, Statement> currentClauseExc = (Pair<Statement, Statement>) visitSuite(ctx.suite(i));
-			Pair<Statement, Statement>  currentSuiteExc= (Pair<Statement, Statement>)  visitExcept_clause(ctx.except_clause(i-1));
-			
-			currentCFG.addEdge(new SequentialEdge(currentClauseExc.getRight(), currentSuiteExc.getLeft()));
-			currentCFG.addEdge(new SequentialEdge(lastSuiteExc.getRight(), currentClauseExc.getLeft()));
-			
-			lastSuiteExc=currentSuiteExc;
-			lastClauseExc=currentClauseExc;
-		}
-		
-		if(ctx.ELSE()!=null) {
-			int posElseSuite=1+nException;
-			Pair<Statement, Statement> elseBlock = (Pair<Statement, Statement>) visitSuite(ctx.suite(posElseSuite));
-			
-			currentCFG.addEdge(new SequentialEdge(lastSuiteExc.getRight(), currentClauseExc.getLeft()));
-		}
-		
-		*/
-		log.warn("Exceptions are not yet supported. The try block at line "+getLine(ctx)+" of file "+getFilePath()+" is unsoundly translated considering only the code in the try block");
+		 * NoOp TryExitNode = new NoOp(currentCFG);
+		 * currentCFG.addNodeIfNotPresent(TryExitNode); Pair<Statement,
+		 * Statement> tryBlock = (Pair<Statement, Statement>)
+		 * visitSuite(ctx.suite(0)); int nException=ctx.except_clause().size();
+		 * Pair<Statement, Statement> firstClauseException = (Pair<Statement,
+		 * Statement>) visitExcept_clause(ctx.except_clause(0)); Pair<Statement,
+		 * Statement> firstSuiteException = (Pair<Statement, Statement>)
+		 * visitSuite(ctx.suite(1)); currentCFG.addEdge(new
+		 * TrueEdge(tryBlock.getRight(), firstClauseException.getLeft()));
+		 * currentCFG.addEdge(new
+		 * SequentialEdge(firstClauseException.getRight(),
+		 * firstSuiteException.getLeft())); Pair<Statement, Statement>
+		 * lastClauseExc=firstClauseException; Pair<Statement, Statement>
+		 * lastSuiteExc=firstSuiteException; for(int i=2;i<=nException;i++) {
+		 * Pair<Statement, Statement> currentClauseExc = (Pair<Statement,
+		 * Statement>) visitSuite(ctx.suite(i)); Pair<Statement, Statement>
+		 * currentSuiteExc= (Pair<Statement, Statement>)
+		 * visitExcept_clause(ctx.except_clause(i-1)); currentCFG.addEdge(new
+		 * SequentialEdge(currentClauseExc.getRight(),
+		 * currentSuiteExc.getLeft())); currentCFG.addEdge(new
+		 * SequentialEdge(lastSuiteExc.getRight(), currentClauseExc.getLeft()));
+		 * lastSuiteExc=currentSuiteExc; lastClauseExc=currentClauseExc; }
+		 * if(ctx.ELSE()!=null) { int posElseSuite=1+nException; Pair<Statement,
+		 * Statement> elseBlock = (Pair<Statement, Statement>)
+		 * visitSuite(ctx.suite(posElseSuite)); currentCFG.addEdge(new
+		 * SequentialEdge(lastSuiteExc.getRight(), currentClauseExc.getLeft()));
+		 * }
+		 */
+		log.warn("Exceptions are not yet supported. The try block at line " + getLine(ctx) + " of file " + getFilePath()
+				+ " is unsoundly translated considering only the code in the try block");
 		return visitSuite(ctx.suite(0));
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitWith_stmt(With_stmtContext ctx) {
-		int withSize=ctx.with_item().size();
-		Pair<Statement, Statement> withItem=visitWith_item(ctx.with_item(0));
-		Pair<Statement, Statement> prev=withItem;
-		Pair<Statement, Statement> curr=withItem;
-		for(int i=1;i<withSize;i++) {
-			curr= visitWith_item(ctx.with_item(i));
+		int withSize = ctx.with_item().size();
+		Pair<Statement, Statement> withItem = visitWith_item(ctx.with_item(0));
+		Pair<Statement, Statement> prev = withItem;
+		Pair<Statement, Statement> curr = withItem;
+		for (int i = 1; i < withSize; i++) {
+			curr = visitWith_item(ctx.with_item(i));
 			currentCFG.addEdge(new SequentialEdge(prev.getRight(), curr.getLeft()));
-			prev=curr;
+			prev = curr;
 		}
-		Pair<Statement, Statement> suite= visitSuite(ctx.suite());
-		currentCFG.addEdge(new SequentialEdge(curr.getRight(),suite.getLeft()));
-		
-		return  Pair.of(withItem.getLeft(),suite.getRight());
+		Pair<Statement, Statement> suite = visitSuite(ctx.suite());
+		currentCFG.addEdge(new SequentialEdge(curr.getRight(), suite.getLeft()));
+
+		return Pair.of(withItem.getLeft(), suite.getRight());
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitWith_item(With_itemContext ctx) {
-		Statement test= checkAndExtractSingleStatement(visitTest(ctx.test()));
+		Statement test = checkAndExtractSingleStatement(visitTest(ctx.test()));
 		currentCFG.addNodeIfNotPresent(test);
-		if(ctx.expr()!=null) {
+		if (ctx.expr() != null) {
 			Statement expr = checkAndExtractSingleStatement(visitExpr(ctx.expr()));
 			currentCFG.addNodeIfNotPresent(expr);
 			currentCFG.addEdge(new SequentialEdge(test, expr));
-			return Pair.of(test,expr);
-		}else {
+			return Pair.of(test, expr);
+		} else {
 			return createPairFromSingle(test);
 		}
-		
+
 	}
 
 	@Override
@@ -1150,26 +1138,28 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		throw new UnsupportedStatementException();
 	}
 
-	private <T> Pair<Statement, Statement> visitListOf(List<T> elements, Function<T, Pair<Statement, Statement>> visitor) {
+	private <T> Pair<Statement, Statement> visitListOf(List<T> elements,
+			Function<T, Pair<Statement, Statement>> visitor) {
 		Statement result = null;
 		Statement first = null;
-		for(T element : elements) {
+		for (T element : elements) {
 			Statement previous = result;
 			Pair<Statement, Statement> parsed = visitor.apply(element);
 			try {
 				if (previous != null)
 					currentCFG.addEdge(new SequentialEdge(previous, parsed.getLeft()));
-			}
-			catch(UnsupportedOperationException e) {
-				//The node was not yet added. Since this method is called from different contexts,
-				//sometimes it parses expressions and those are not added as node to the CFG.
+			} catch (UnsupportedOperationException e) {
+				// The node was not yet added. Since this method is called from
+				// different contexts,
+				// sometimes it parses expressions and those are not added as
+				// node to the CFG.
 				currentCFG.addNodeIfNotPresent(parsed.getLeft());
 				currentCFG.addNodeIfNotPresent(previous);
 				currentCFG.addEdge(new SequentialEdge(previous, parsed.getLeft()));
 			}
 			result = parsed.getRight();
-			if(first==null)
-				first=parsed.getLeft();
+			if (first == null)
+				first = parsed.getLeft();
 		}
 		return Pair.of(first, result);
 	}
@@ -1178,34 +1168,33 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		return visitListOf(statements, this::visitStmt);
 	}
 
-
 	private Pair<Statement, Statement> visitListOfSmallStatements(List<Small_stmtContext> statements) {
 		return visitListOf(statements, this::visitSmall_stmt);
 	}
 
 	public Pair<Statement, Statement> visitTestlistStarExpr(Expr_stmtContext ctx) {
-		//for(Testlist_star_exprContext tstlist : ctx.testlist_star_expr())
-		//	visitTestlist_star_expr(tstlist);
+		// for(Testlist_star_exprContext tstlist : ctx.testlist_star_expr())
+		// visitTestlist_star_expr(tstlist);
 		return visitListOf(ctx.testlist_star_expr(), this::visitTestlist_star_expr);
 	}
-
 
 	@Override
 	public Pair<Statement, Statement> visitTestlist(TestlistContext ctx) {
 		return visitListOf(ctx.test(), this::visitTest);
 	}
+
 	@Override
 	public Pair<Statement, Statement> visitExprlist(ExprlistContext ctx) {
-		if(ctx.expr().size()>=1 && ctx.star_expr().size()>=1) {
-			Pair<Statement,Statement> expPair= visitListOf(ctx.expr(), this::visitExpr);
-			Pair<Statement,Statement> starExpPair = visitListOf(ctx.star_expr(), this::visitStar_expr);
+		if (ctx.expr().size() >= 1 && ctx.star_expr().size() >= 1) {
+			Pair<Statement, Statement> expPair = visitListOf(ctx.expr(), this::visitExpr);
+			Pair<Statement, Statement> starExpPair = visitListOf(ctx.star_expr(), this::visitStar_expr);
 			return Pair.of(expPair.getLeft(), starExpPair.getRight());
-		}
-		else if(ctx.expr().size()>=1)
+		} else if (ctx.expr().size() >= 1)
 			return visitListOf(ctx.expr(), this::visitExpr);
-		else if(ctx.star_expr().size()>=1)
+		else if (ctx.star_expr().size() >= 1)
 			return visitListOf(ctx.star_expr(), this::visitStar_expr);
-		else throw new UnsupportedStatementException("We need to have at least expressions or start expressions");
+		else
+			throw new UnsupportedStatementException("We need to have at least expressions or start expressions");
 	}
 
 	@Override
@@ -1218,12 +1207,12 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitTest(TestContext ctx) {
-		//no if into the condition 
+		// no if into the condition
 		if (ctx.IF() != null) {
-			//visit the if into the condition
+			// visit the if into the condition
 			Statement trueCase = checkAndExtractSingleStatement(visitOr_test(ctx.or_test(0)));
 			Statement booleanGuard = checkAndExtractSingleStatement(visitOr_test(ctx.or_test(1)));
-			Pair<Statement,Statement> falseCase = visitTest(ctx.test());
+			Pair<Statement, Statement> falseCase = visitTest(ctx.test());
 			NoOp testExitNode = new NoOp(currentCFG, getLocation(ctx));
 
 			currentCFG.addNodeIfNotPresent(booleanGuard);
@@ -1231,27 +1220,23 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 			currentCFG.addNodeIfNotPresent(falseCase.getLeft());
 			currentCFG.addNodeIfNotPresent(falseCase.getRight());
 			currentCFG.addNodeIfNotPresent(testExitNode);
-			
+
 			currentCFG.addEdge(new TrueEdge(booleanGuard, trueCase));
 			currentCFG.addEdge(new FalseEdge(booleanGuard, falseCase.getLeft()));
 			currentCFG.addEdge(new SequentialEdge(falseCase.getRight(), testExitNode));
 			currentCFG.addEdge(new SequentialEdge(trueCase, testExitNode));
 
 			return Pair.of(booleanGuard, testExitNode);
-		}
-		else if(ctx.lambdef()!=null) {
+		} else if (ctx.lambdef() != null) {
 			List<Expression> args = extractExpressionsFromVarArgList(ctx.lambdef().varargslist());
 			Expression body = checkAndExtractSingleExpression(visitTest(ctx.lambdef().test()));
 			return createPairFromSingle(
 					new LambdaExpression(
-						args,
-						body,
-						currentCFG,
-						getLocation(ctx)
-				)
-			);
-		}
-		else
+							args,
+							body,
+							currentCFG,
+							getLocation(ctx)));
+		} else
 			return visitOr_test(ctx.or_test(0));
 	}
 
@@ -1276,21 +1261,22 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitOr_test(Or_testContext ctx) {
-		
-		
 
 		int nAndTest = ctx.and_test().size();
 		if (nAndTest == 1) {
 			return visitAnd_test(ctx.and_test(0));
 		} else if (nAndTest == 2) {
-			return createPairFromSingle(new Or(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(0))),
+			return createPairFromSingle(new Or(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(0))),
 					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(1)))));
 		} else {
-			Expression temp = new Or(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 2))),
+			Expression temp = new Or(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 2))),
 					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 1))));
 			nAndTest = nAndTest - 2;
 			while (nAndTest > 0) {
-				temp = new Or(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(--nAndTest))),
+				temp = new Or(currentCFG, getLocation(ctx),
+						checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(--nAndTest))),
 						temp);
 			}
 			return createPairFromSingle(temp);
@@ -1299,22 +1285,23 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitAnd_test(And_testContext ctx) {
-		
-		
 
 		int nNotTest = ctx.not_test().size();
 		if (nNotTest == 1) {
 			return visitNot_test(ctx.not_test(0));
 		} else if (nNotTest == 2) {
-			return createPairFromSingle(new And(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(0))),
+			return createPairFromSingle(new And(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(0))),
 					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(1)))));
 		} else {
-			Expression temp =  new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 2))),
+			Expression temp = new And(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 2))),
 					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 1))));
 			nNotTest = nNotTest - 2;
 			while (nNotTest > 0) {
-				temp = new And(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitNot_test(ctx.not_test(--nNotTest))),
-						 temp);
+				temp = new And(currentCFG, getLocation(ctx),
+						checkAndExtractSingleExpression(visitNot_test(ctx.not_test(--nNotTest))),
+						temp);
 			}
 
 			return createPairFromSingle(temp);
@@ -1323,11 +1310,10 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitNot_test(Not_testContext ctx) {
-		
-		
 
 		if (ctx.NOT() != null) {
-			return createPairFromSingle(new Not(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitNot_test(ctx.not_test()))));
+			return createPairFromSingle(new Not(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitNot_test(ctx.not_test()))));
 		} else {
 			return visitComparison(ctx.comparison());
 		}
@@ -1336,9 +1322,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitComparison(ComparisonContext ctx) {
-
-		
-		
 
 		int nExpr = ctx.expr().size();
 		Expression result = null;
@@ -1349,8 +1332,8 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		case 2:
 
 			Comp_opContext operator = ctx.comp_op(0);
-			Expression left =  checkAndExtractSingleExpression(visitExpr(ctx.expr(0)));
-			Expression right =  checkAndExtractSingleExpression(visitExpr(ctx.expr(1)));
+			Expression left = checkAndExtractSingleExpression(visitExpr(ctx.expr(0)));
+			Expression right = checkAndExtractSingleExpression(visitExpr(ctx.expr(1)));
 			if (operator.EQUALS() != null)
 				result = new Equals(currentCFG, getLocation(ctx), left, right);
 
@@ -1380,7 +1363,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 			// Python not (not)
 			if (operator.NOT() != null)
-				result =  new Not(currentCFG, getLocation(ctx), left);
+				result = new Not(currentCFG, getLocation(ctx), left);
 
 			// Python not equals (<>)
 			if (operator.NOT_EQ_1() != null)
@@ -1410,46 +1393,50 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	public Pair<Statement, Statement> visitExpr(ExprContext ctx) {
 		int nXor = ctx.xor_expr().size();
 		if (nXor == 1) {
-			//only one Xor
+			// only one Xor
 			return visitXor_expr(ctx.xor_expr(0));
 		} else if (nXor == 2) {
-			//two Xor
-			return createPairFromSingle(new PyXor(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(0))),
+			// two Xor
+			return createPairFromSingle(new PyXor(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(0))),
 					checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(1)))));
 		} else {
-			Expression temp = new PyXor(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(nXor - 2))),
+			Expression temp = new PyXor(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(nXor - 2))),
 					checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(nXor - 1))));
 			nXor = nXor - 2;
 			// concatenate all the Xor expressions together
 			while (nXor > 0) {
-				temp = new PyXor(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(--nXor))),
-						 temp);
+				temp = new PyXor(currentCFG, getLocation(ctx),
+						checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(--nXor))),
+						temp);
 			}
 			return createPairFromSingle(temp);
 		}
-		
+
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitXor_expr(Xor_exprContext ctx) {
-		
-		
-	
+
 		int nAnd = ctx.and_expr().size();
-	
+
 		if (nAnd == 1) {
 			return visitAnd_expr(ctx.and_expr(0));
 		} else if (nAnd == 2) {
-			return createPairFromSingle(new PyXor(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(0))),
+			return createPairFromSingle(new PyXor(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(0))),
 					checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(1)))));
 		} else {
-			Expression temp = new PyXor(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(nAnd - 2))),
+			Expression temp = new PyXor(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(nAnd - 2))),
 					checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(nAnd - 1))));
 			nAnd = nAnd - 2;
 			// concatenate all the And expressions together
 			while (nAnd > 0) {
-				temp = new PyXor(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(--nAnd))),
-						 temp);
+				temp = new PyXor(currentCFG, getLocation(ctx),
+						checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(--nAnd))),
+						temp);
 			}
 			return createPairFromSingle(temp);
 		}
@@ -1461,37 +1448,42 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (nShift == 1) {
 			return visitLeft_shift(ctx.left_shift(0));
 		} else if (nShift == 2) {
-			return createPairFromSingle(new And(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(0))),
+			return createPairFromSingle(new And(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(0))),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(1)))));
 		} else {
-			Expression temp = new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 2))),
+			Expression temp = new And(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 2))),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 1))));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(--nShift))),
-						 temp);
+				temp = new And(currentCFG, getLocation(ctx),
+						checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(--nShift))),
+						temp);
 			}
 			return createPairFromSingle(temp);
 		}
 	}
 
-
 	@Override
 	public Pair<Statement, Statement> visitLeft_shift(Left_shiftContext ctx) {
-		int nShift = ctx.left_shift().size()+1;
+		int nShift = ctx.left_shift().size() + 1;
 		if (nShift == 1) {
 			return visitRight_shift(ctx.right_shift());
 		} else if (nShift == 2) {
-			return createPairFromSingle(new And(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift())),
+			return createPairFromSingle(new And(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift())),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(0)))));
 		} else {
-			Expression temp = new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 3))),
+			Expression temp = new And(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 3))),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 2))));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(--nShift-1))),
+				temp = new And(currentCFG, getLocation(ctx),
+						checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(--nShift - 1))),
 						temp);
 			}
 			return createPairFromSingle(temp);
@@ -1500,19 +1492,22 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitRight_shift(Right_shiftContext ctx) {
-		int nShift = ctx.right_shift().size()+1;
+		int nShift = ctx.right_shift().size() + 1;
 		if (nShift == 1) {
 			return visitArith_expr(ctx.arith_expr());
 		} else if (nShift == 2) {
-			return createPairFromSingle(new And(currentCFG, getLocation(ctx),  checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())),
+			return createPairFromSingle(new And(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())),
 					checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(0)))));
 		} else {
-			Expression temp = new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(nShift - 3))),
+			Expression temp = new And(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(nShift - 3))),
 					checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(nShift - 2))));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new And(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(--nShift-1))),
+				temp = new And(currentCFG, getLocation(ctx),
+						checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(--nShift - 1))),
 						temp);
 			}
 			return createPairFromSingle(temp);
@@ -1521,126 +1516,120 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitMinus(MinusContext ctx) {
-		if (ctx.arith_expr()==null) {
+		if (ctx.arith_expr() == null) {
 			return visitTerm(ctx.term());
-		} else  {
-			return createPairFromSingle(new Subtraction(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
+		} else {
+			return createPairFromSingle(new Subtraction(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitTerm(ctx.term())),
+					checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
 		}
 	}
-	
+
 	@Override
 	public Pair<Statement, Statement> visitAdd(AddContext ctx) {
-		
-		
-		
-		if (ctx.arith_expr()==null) {
+
+		if (ctx.arith_expr() == null) {
 			return visitTerm(ctx.term());
-		} else  {
-			return createPairFromSingle(new Addition(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTerm(ctx.term())), checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
+		} else {
+			return createPairFromSingle(
+					new Addition(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTerm(ctx.term())),
+							checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
 		}
-		
+
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitArith_expr(Arith_exprContext ctx) {
-		//check if there is minus(-) or an add(+)
-		if(ctx.minus()!=null) {
+		// check if there is minus(-) or an add(+)
+		if (ctx.minus() != null) {
 			return visitMinus(ctx.minus());
-		}
-		else if(ctx.add()!=null){
+		} else if (ctx.add() != null) {
 			return visitAdd(ctx.add());
-		}
-		else return visitTerm(ctx.term());
+		} else
+			return visitTerm(ctx.term());
 	}
-	
+
 	@Override
 	public Pair<Statement, Statement> visitMul(MulContext ctx) {
-		
-		
-		
-		if (ctx.term()==null) {
-			return visitFactor(ctx.factor());
-		} else  {
-			return createPairFromSingle(new Multiplication(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
-		}	
-		
-	}
-	
-	public Pair<Statement, Statement> visitMat_mul(Mat_mulContext ctx) {
-		
-		
-		
-		if (ctx.term()==null) {
-			return visitFactor(ctx.factor());
-		} else  {
-			return createPairFromSingle(new PyMatMul(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
-		}	
-		
-		
-	}
-	
-	public Pair<Statement, Statement> visitDiv(DivContext ctx) {
-		
-		
-		
-		if (ctx.term()==null) {
-			return visitFactor(ctx.factor());
-		} else  {
-			return createPairFromSingle(new Division(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
-		}	
 
-		
-	}
-	
-	public Pair<Statement, Statement> visitMod(ModContext ctx) {
-		
-		
-		
-		if (ctx.term()==null) {
+		if (ctx.term() == null) {
 			return visitFactor(ctx.factor());
-		} else  {
-			return createPairFromSingle(new Remainder(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+		} else {
+			return createPairFromSingle(new Multiplication(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitFactor(ctx.factor())),
+					checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}
-		
-	}	
-	
-	public Pair<Statement, Statement> visitFloorDiv(FloorDivContext ctx) {
-		
-		
-		
-		if (ctx.term()==null) {
-			return visitFactor(ctx.factor());
-		} else  {
-			return createPairFromSingle(new PyFloorDiv(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitFactor(ctx.factor())), checkAndExtractSingleExpression(visitTerm(ctx.term()))));
-		}		
+
 	}
-	
+
+	public Pair<Statement, Statement> visitMat_mul(Mat_mulContext ctx) {
+
+		if (ctx.term() == null) {
+			return visitFactor(ctx.factor());
+		} else {
+			return createPairFromSingle(new PyMatMul(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitFactor(ctx.factor())),
+					checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+		}
+
+	}
+
+	public Pair<Statement, Statement> visitDiv(DivContext ctx) {
+
+		if (ctx.term() == null) {
+			return visitFactor(ctx.factor());
+		} else {
+			return createPairFromSingle(new Division(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitFactor(ctx.factor())),
+					checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+		}
+
+	}
+
+	public Pair<Statement, Statement> visitMod(ModContext ctx) {
+
+		if (ctx.term() == null) {
+			return visitFactor(ctx.factor());
+		} else {
+			return createPairFromSingle(new Remainder(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitFactor(ctx.factor())),
+					checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+		}
+
+	}
+
+	public Pair<Statement, Statement> visitFloorDiv(FloorDivContext ctx) {
+
+		if (ctx.term() == null) {
+			return visitFactor(ctx.factor());
+		} else {
+			return createPairFromSingle(new PyFloorDiv(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitFactor(ctx.factor())),
+					checkAndExtractSingleExpression(visitTerm(ctx.term()))));
+		}
+	}
+
 	@Override
 	public Pair<Statement, Statement> visitTerm(TermContext ctx) {
-		//check what's the operation in the context
-		if(ctx.mul()!=null) {
+		// check what's the operation in the context
+		if (ctx.mul() != null) {
 			return visitMul(ctx.mul());
-		}
-		else if(ctx.mat_mul()!=null) {
+		} else if (ctx.mat_mul() != null) {
 			return visitMat_mul(ctx.mat_mul());
-		}
-		else if(ctx.div()!=null) {
+		} else if (ctx.div() != null) {
 			return visitDiv(ctx.div());
-		}
-		else if(ctx.mod()!=null) {
+		} else if (ctx.mod() != null) {
 			return visitMod(ctx.mod());
-		}	
-		else if(ctx.floorDiv()!=null) {
+		} else if (ctx.floorDiv() != null) {
 			return visitFloorDiv(ctx.floorDiv());
-		}
-		else if(ctx.factor()!=null)
+		} else if (ctx.factor() != null)
 			return visitFactor(ctx.factor());
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitFactor(FactorContext ctx) {
-		if(ctx.power()!=null) {
+		if (ctx.power() != null) {
 			return visitPower(ctx.power());
 		}
 		return super.visitFactor(ctx);
@@ -1648,123 +1637,120 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitPower(PowerContext ctx) {
-		
-		
-		
-		if(ctx.POWER()!=null) {
-			return createPairFromSingle(new PyPower(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitAtom_expr(ctx.atom_expr())), checkAndExtractSingleExpression(visitFactor(ctx.factor()))));
-		}
-		else return visitAtom_expr(ctx.atom_expr());
+
+		if (ctx.POWER() != null) {
+			return createPairFromSingle(new PyPower(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitAtom_expr(ctx.atom_expr())),
+					checkAndExtractSingleExpression(visitFactor(ctx.factor()))));
+		} else
+			return visitAtom_expr(ctx.atom_expr());
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitAtom_expr(Atom_exprContext ctx) {
 		/*
-		atom_expr: (AWAIT)? atom trailer*;
-		atom: ('(' (yield_expr|testlist_comp)? ')' |
-			   '[' (testlist_comp)? ']' |
-			   '{' (dictorsetmaker)? '}' |
-			   NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False');
+		 * atom_expr: (AWAIT)? atom trailer*; atom: ('('
+		 * (yield_expr|testlist_comp)? ')' | '[' (testlist_comp)? ']' | '{'
+		 * (dictorsetmaker)? '}' | NAME | NUMBER | STRING+ | '...' | 'None' |
+		 * 'True' | 'False');
 		 */
-		if(ctx.AWAIT()!=null)
+		if (ctx.AWAIT() != null)
 			throw new UnsupportedStatementException("await is not supported");
-		if(ctx.trailer().size()>0) {
+		if (ctx.trailer().size() > 0) {
 			// trailer: '(' (arglist)? ')' | '[' subscriptlist ']' | '.' NAME;
 			Expression access = checkAndExtractSingleExpression(visitAtom(ctx.atom()));
 			String last_name = access instanceof VariableRef ? ((VariableRef) access).getName() : null;
 			Expression previous_access = null;
-			for(TrailerContext expr : ctx.trailer()) {
-				if (expr.NAME()!=null) {
+			for (TrailerContext expr : ctx.trailer()) {
+				if (expr.NAME() != null) {
 					last_name = expr.NAME().getSymbol().getText();
 					Global fieldName = new Global(getLocation(ctx), last_name);
 					previous_access = access;
 					access = new AccessInstanceGlobal(currentCFG, getLocation(expr), access, fieldName);
-				}
-				else if(expr.OPEN_PAREN()!=null) {
-					if(last_name==null)
-						throw new UnsupportedStatementException("When invoking a method we need to have always the name before the parentheses");
+				} else if (expr.OPEN_PAREN() != null) {
+					if (last_name == null)
+						throw new UnsupportedStatementException(
+								"When invoking a method we need to have always the name before the parentheses");
 					List<Expression> pars = new ArrayList<>();
 					boolean instance = access instanceof AccessInstanceGlobal;
 					String method_name = last_name;
-					if(instance)
+					if (instance)
 						pars.add(previous_access);
-					if(expr.arglist()!=null)
-						for(ArgumentContext arg : expr.arglist().argument())
+					if (expr.arglist() != null)
+						for (ArgumentContext arg : expr.arglist().argument())
 							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
 
-					access = new UnresolvedCall(currentCFG, getLocation(expr), RuntimeTypesResolution.INSTANCE, instance, method_name, pars.toArray(new Expression[0]));
+					access = new UnresolvedCall(currentCFG, getLocation(expr), RuntimeTypesResolution.INSTANCE,
+							instance, method_name, pars.toArray(new Expression[0]));
 					last_name = null;
 					previous_access = null;
-				}
-				else if(expr.OPEN_BRACK()!=null) {
+				} else if (expr.OPEN_BRACK() != null) {
 					previous_access = access;
 					last_name = null;
 					List<Expression> indexes = extractExpressionsFromSubscriptlist(expr.subscriptlist());
-					if(indexes.size()==1)
+					if (indexes.size() == 1)
 						access = new PySingleArrayAccess(
-							currentCFG,
-							getLocation(expr),
-							PyListType.INSTANCE,
-							access,
-							indexes.get(0)
-						);
-					else if(indexes.size()==2)
+								currentCFG,
+								getLocation(expr),
+								PyListType.INSTANCE,
+								access,
+								indexes.get(0));
+					else if (indexes.size() == 2)
 						access = new PyDoubleArrayAccess(
 								currentCFG,
 								getLocation(expr),
 								PyListType.INSTANCE,
 								access,
 								indexes.get(0),
-								indexes.get(1)
-						);
-					else throw new UnsupportedStatementException("Only array accesses with up to 2 indexes are supported");
-				}
-				else throw new UnsupportedStatementException();
+								indexes.get(1));
+					else
+						throw new UnsupportedStatementException(
+								"Only array accesses with up to 2 indexes are supported");
+				} else
+					throw new UnsupportedStatementException();
 			}
 			return createPairFromSingle(access);
-		}
-		else return visitAtom(ctx.atom());
+		} else
+			return visitAtom(ctx.atom());
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitAtom(AtomContext ctx) {
-		
-		
-		
+
 		if (ctx.NAME() != null) {
-			//crete a variable
+			// crete a variable
 			return createPairFromSingle(new VariableRef(currentCFG, getLocation(ctx), ctx.NAME().getText()));
 		} else if (ctx.NUMBER() != null) {
-			//create a literal int
-			return createPairFromSingle(new UInt32Literal(currentCFG, getLocation(ctx), Integer.parseInt(ctx.NUMBER().getText())));
-		}else if (ctx.FALSE() != null) {
-			//create a literal false
+			// create a literal int
+			return createPairFromSingle(
+					new UInt32Literal(currentCFG, getLocation(ctx), Integer.parseInt(ctx.NUMBER().getText())));
+		} else if (ctx.FALSE() != null) {
+			// create a literal false
 			return createPairFromSingle(new FalseLiteral(currentCFG, getLocation(ctx)));
-		}else if (ctx.TRUE()!= null) {
-			//create a literal true
+		} else if (ctx.TRUE() != null) {
+			// create a literal true
 			return createPairFromSingle(new TrueLiteral(currentCFG, getLocation(ctx)));
-		}else if (ctx.NONE() != null) {
-			//create a literal false
+		} else if (ctx.NONE() != null) {
+			// create a literal false
 			return createPairFromSingle(new NullLiteral(currentCFG, getLocation(ctx)));
-		}
-		else if (ctx.STRING().size() > 0) {
-			//create a string
-			return createPairFromSingle(new StringLiteral(currentCFG,getLocation(ctx), ctx.STRING(0).getText()));
-		} else if(ctx.yield_expr()!=null) {
+		} else if (ctx.STRING().size() > 0) {
+			// create a string
+			return createPairFromSingle(new StringLiteral(currentCFG, getLocation(ctx), ctx.STRING(0).getText()));
+		} else if (ctx.yield_expr() != null) {
 			return visitYield_expr(ctx.yield_expr());
-		}else if(ctx.OPEN_BRACE()==null && ctx.dictorsetmaker()!=null) {
+		} else if (ctx.OPEN_BRACE() == null && ctx.dictorsetmaker() != null) {
 			return visitDictorsetmaker(ctx.dictorsetmaker());
-		} else if(ctx.OPEN_BRACK()!=null) {
+		} else if (ctx.OPEN_BRACK() != null) {
 			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
 			ListCreation r = new ListCreation(sts, currentCFG, getLocation(ctx));
 			return createPairFromSingle(r);
-		} else if(ctx.OPEN_PAREN()!=null) {
-			if(ctx.yield_expr()!=null)
+		} else if (ctx.OPEN_PAREN() != null) {
+			if (ctx.yield_expr() != null)
 				throw new UnsupportedStatementException("yield expressions not supported");
 			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
 			TupleCreation r = new TupleCreation(sts, currentCFG, getLocation(ctx));
 			return createPairFromSingle(r);
-		} else if(ctx.OPEN_BRACE()!=null) {
+		} else if (ctx.OPEN_BRACE() != null) {
 			List<Pair<Expression, Expression>> values = extractPairsFromDictorSet(ctx.dictorsetmaker());
 			DictionaryCreation r = new DictionaryCreation(values, currentCFG, getLocation(ctx));
 			return createPairFromSingle(r);
@@ -1773,14 +1759,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	}
 
 	private List<Pair<Expression, Expression>> extractPairsFromDictorSet(DictorsetmakerContext ctx) {
-		if(ctx==null)
+		if (ctx == null)
 			return new ArrayList<>();
 		List<Pair<Expression, Expression>> result = new ArrayList<>();
-		if(ctx.test().size()!=2*ctx.COLON().size())
-			throw new UnsupportedStatementException("We support only initialization of dictonaries in the form of <key> : <value>");
-		for(int i = 0; i < ctx.COLON().size(); i++) {
-			Expression left = checkAndExtractSingleExpression(visitTest(ctx.test(2*i)));
-			Expression right = checkAndExtractSingleExpression(visitTest(ctx.test(2*i+1)));
+		if (ctx.test().size() != 2 * ctx.COLON().size())
+			throw new UnsupportedStatementException(
+					"We support only initialization of dictonaries in the form of <key> : <value>");
+		for (int i = 0; i < ctx.COLON().size(); i++) {
+			Expression left = checkAndExtractSingleExpression(visitTest(ctx.test(2 * i)));
+			Expression right = checkAndExtractSingleExpression(visitTest(ctx.test(2 * i + 1)));
 			result.add(Pair.of(left, right));
 		}
 		return result;
@@ -1792,72 +1779,70 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	private List<Expression> extractExpressionsFromExprlist(ExprlistContext ctx) {
 		List<Expression> result = new ArrayList<>();
-		if(ctx.expr().size()==0)
+		if (ctx.expr().size() == 0)
 			return result;
-		for(ExprContext e : ctx.expr())
+		for (ExprContext e : ctx.expr())
 			result.add(checkAndExtractSingleExpression(visitExpr(e)));
 		return result;
 	}
-
 
 	private List<Expression> extractExpressionsFromVarArgList(VarargslistContext ctx) {
 		return extractExpressionsFromListOfTests(ctx.test());
 	}
 
 	private List<Expression> extractExpressionsFromYieldArg(Yield_argContext ctx) {
-		if(ctx.test()!=null) {
+		if (ctx.test() != null) {
 			List<Expression> r = new ArrayList<>();
 			r.add(checkAndExtractSingleExpression(visitTest(ctx.test())));
 			return r;
-		}
-		else return extractExpressionsFromTestlist(ctx.testlist());
+		} else
+			return extractExpressionsFromTestlist(ctx.testlist());
 	}
 
 	private List<Expression> extractExpressionsFromListOfTests(List<TestContext> l) {
 		List<Expression> result = new ArrayList<>();
-		if(l.size()==0)
+		if (l.size() == 0)
 			return result;
-		for(TestContext e : l)
+		for (TestContext e : l)
 			result.add(checkAndExtractSingleExpression(visitTest(e)));
 		return result;
 	}
 
 	private List<Expression> extractExpressionsFromSubscriptlist(SubscriptlistContext ctx) {
 		List<Expression> result = new ArrayList<>();
-		if(ctx.subscript().size()==0)
+		if (ctx.subscript().size() == 0)
 			return result;
-		for(SubscriptContext e : ctx.subscript())
+		for (SubscriptContext e : ctx.subscript())
 			result.add(checkAndExtractSingleExpression(visitSubscript(e)));
 		return result;
 	}
 
 	private List<Expression> extractExpressionsFromTestlist_comp(Testlist_compContext ctx) {
 		List<Expression> result = new ArrayList<>();
-		if(ctx==null || ctx.testOrStar()==null || ctx.testOrStar().size()==0)
+		if (ctx == null || ctx.testOrStar() == null || ctx.testOrStar().size() == 0)
 			return result;
-		for(TestOrStarContext e : ctx.testOrStar())
+		for (TestOrStarContext e : ctx.testOrStar())
 			result.add(checkAndExtractSingleExpression(visitTestOrStar(e)));
 		return result;
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitTestlist_comp(Testlist_compContext ctx) {
-		Pair<Statement,Statement> elem =visitTestOrStar(ctx.testOrStar(0));
-		Pair<Statement,Statement> prev;
-		Pair<Statement,Statement> current;
-		if(ctx.comp_for()!=null) {			
-			Pair<Statement,Statement> forClause= visitComp_for(ctx.comp_for());
+		Pair<Statement, Statement> elem = visitTestOrStar(ctx.testOrStar(0));
+		Pair<Statement, Statement> prev;
+		Pair<Statement, Statement> current;
+		if (ctx.comp_for() != null) {
+			Pair<Statement, Statement> forClause = visitComp_for(ctx.comp_for());
 			currentCFG.addEdge(new SequentialEdge(elem.getRight(), forClause.getLeft()));
-			int nTestOrStar=ctx.testOrStar().size();
-			prev=forClause;
-			for(int i=1; i<nTestOrStar;i++) {
-				current=visitTestOrStar(ctx.testOrStar(i));
+			int nTestOrStar = ctx.testOrStar().size();
+			prev = forClause;
+			for (int i = 1; i < nTestOrStar; i++) {
+				current = visitTestOrStar(ctx.testOrStar(i));
 				currentCFG.addEdge(new SequentialEdge(prev.getRight(), current.getLeft()));
-				prev=current;
+				prev = current;
 			}
 			return Pair.of(elem.getLeft(), prev.getRight());
-		}
-		else
+		} else
 			return elem;
 	}
 
@@ -1873,12 +1858,14 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitSubscript(SubscriptContext ctx) {
-		if(ctx.COLON()!=null) {
-			Expression left = ctx.test1()==null ? null : checkAndExtractSingleExpression(visitTest(ctx.test1().test()));
-			Expression right = ctx.test2()==null ? null : checkAndExtractSingleExpression(visitTest(ctx.test2().test()));
+		if (ctx.COLON() != null) {
+			Expression left = ctx.test1() == null ? null
+					: checkAndExtractSingleExpression(visitTest(ctx.test1().test()));
+			Expression right = ctx.test2() == null ? null
+					: checkAndExtractSingleExpression(visitTest(ctx.test2().test()));
 			return createPairFromSingle(new RangeValue(left, right, currentCFG, getLocation(ctx)));
-		}
-		else return visitTest(ctx.test());
+		} else
+			return visitTest(ctx.test());
 	}
 
 	@Override
@@ -1888,13 +1875,12 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitDictorsetmaker(DictorsetmakerContext ctx) {
-		if(ctx.COLON().size()==0) {
+		if (ctx.COLON().size() == 0) {
 			List<Expression> values = new ArrayList<>();
-			for(TestContext exp : ctx.test())
+			for (TestContext exp : ctx.test())
 				values.add(checkAndExtractSingleExpression(visitTest(exp)));
 			return createPairFromSingle(new SetCreation(values, currentCFG, getLocation(ctx)));
-		}
-		else {
+		} else {
 			throw new UnsupportedStatementException();
 		}
 	}
@@ -1912,42 +1898,44 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	private void parseClassBody(SuiteContext ctx) {
 		List<Pair<VariableRef, Expression>> fields_init = new ArrayList<>();
-		if(ctx.simple_stmt()!=null)
-			throw new UnsupportedStatementException("Inside the body of a class we should have only field and method definitions");
-		for(StmtContext stmt : ctx.stmt()) {
-			if(stmt.simple_stmt()!=null) {
+		if (ctx.simple_stmt() != null)
+			throw new UnsupportedStatementException(
+					"Inside the body of a class we should have only field and method definitions");
+		for (StmtContext stmt : ctx.stmt()) {
+			if (stmt.simple_stmt() != null) {
 				Pair<VariableRef, Expression> p = parseField(stmt.simple_stmt());
 				currentUnit.addGlobal(new Global(getLocation(ctx), p.getLeft().getName()));
-				if(p.getRight()!=null)
+				if (p.getRight() != null)
 					fields_init.add(p);
-			}
-			else if(stmt.compound_stmt().funcdef()!=null) {
+			} else if (stmt.compound_stmt().funcdef() != null) {
 				parseMethod(stmt.compound_stmt().funcdef());
-			}
-			else if(stmt.compound_stmt().decorated()!=null) {
-				log.warn("Ignoring decorator "+stmt.compound_stmt().decorated().decorators().getText()+" at code location "+getLocation(stmt));
+			} else if (stmt.compound_stmt().decorated() != null) {
+				log.warn("Ignoring decorator " + stmt.compound_stmt().decorated().decorators().getText()
+						+ " at code location " + getLocation(stmt));
 				DecoratedContext c = stmt.compound_stmt().decorated();
-				if(c.funcdef()!=null)
+				if (c.funcdef() != null)
 					parseMethod(c.funcdef());
-				else if(c.classdef()!=null)
+				else if (c.classdef() != null)
 					this.visitClassdef(c.classdef());
-				else throw new UnsupportedStatementException("We support only decorated classes and methods");
-			}
-			else throw new UnsupportedStatementException("Inside the body of a class we should have only field and method definitions");
+				else
+					throw new UnsupportedStatementException("We support only decorated classes and methods");
+			} else
+				throw new UnsupportedStatementException(
+						"Inside the body of a class we should have only field and method definitions");
 		}
 		dumpConstructor(fields_init, getLocation(ctx));
 	}
 
 	private void dumpConstructor(List<Pair<VariableRef, Expression>> fields_init, CodeLocation location) {
-		if(fields_init.size()>0) {
+		if (fields_init.size() > 0) {
 			PyCFG oldCFG = currentCFG;
 			currentCFG = new PyCFG(new CFGDescriptor(location, currentUnit, true, "<init>"));
 			cfgs.add(currentCFG);
 			Statement previous = null;
 			for (Pair<VariableRef, Expression> init : fields_init) {
 				Statement f = new Assignment(currentCFG, init.getLeft().getLocation(), init.getLeft(), init.getRight());
-				currentCFG.addNodeIfNotPresent(f, previous==null);
-				if(previous!=null)
+				currentCFG.addNodeIfNotPresent(f, previous == null);
+				if (previous != null)
 					currentCFG.addEdge(new SequentialEdge(previous, f));
 				previous = f;
 			}
@@ -1957,24 +1945,25 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	}
 
-	private Pair<VariableRef, Expression>  parseField(Simple_stmtContext st) {
+	private Pair<VariableRef, Expression> parseField(Simple_stmtContext st) {
 		try {
 			Statement result = checkAndExtractSingleStatement(visitSimple_stmt(st));
-			if(result instanceof Assignment) {
+			if (result instanceof Assignment) {
 				Assignment ass = (Assignment) result;
 				Expression assigned = ass.getLeft();
 				Expression expr = ass.getRight();
-				if(assigned instanceof VariableRef)
+				if (assigned instanceof VariableRef)
 					return Pair.of((VariableRef) assigned, expr);
-			}
-			else if(result instanceof VariableRef)
+			} else if (result instanceof VariableRef)
 				return Pair.of((VariableRef) result, null);
-			throw new UnsupportedStatementException("Only variables or assignments of variable are supported as field declarations");
-		}
-		catch(UnsupportedStatementException e) {
-			throw new UnsupportedStatementException("Only variables or assignments of variable are supported as field declarations", e);
+			throw new UnsupportedStatementException(
+					"Only variables or assignments of variable are supported as field declarations");
+		} catch (UnsupportedStatementException e) {
+			throw new UnsupportedStatementException(
+					"Only variables or assignments of variable are supported as field declarations", e);
 		}
 	}
+
 	@Override
 	public Pair<Statement, Statement> visitArglist(ArglistContext ctx) {
 		throw new UnsupportedStatementException();
@@ -1982,18 +1971,21 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitArgument(ArgumentContext ctx) {
-		if(ctx.ASSIGN()!=null) {
+		if (ctx.ASSIGN() != null) {
 			Statement target = checkAndExtractSingleStatement(visitTest(ctx.test(0)));
 			Statement expression = checkAndExtractSingleStatement(visitTest(ctx.test(1)));
-			if((! (target instanceof Expression)) || (! (expression instanceof Expression)))
-				throw new UnsupportedStatementException("Assignments require expression both in the left and in the right hand side");
-			return createPairFromSingle(new Assignment(currentCFG, getLocation(ctx),  (Expression) target,  (Expression) expression));
-		}
-		else if(ctx.STAR()!=null)
-			return createPairFromSingle(new StarExpression(checkAndExtractSingleExpression(visitTest(ctx.test(0))), currentCFG, getLocation(ctx)));
-		else if(ctx.comp_for()!=null || ctx.POWER()!=null || ctx.test().size()!=1)
-				throw new UnsupportedStatementException("We support only simple arguments in method calls");
-		else return visitTest(ctx.test(0));
+			if ((!(target instanceof Expression)) || (!(expression instanceof Expression)))
+				throw new UnsupportedStatementException(
+						"Assignments require expression both in the left and in the right hand side");
+			return createPairFromSingle(
+					new Assignment(currentCFG, getLocation(ctx), (Expression) target, (Expression) expression));
+		} else if (ctx.STAR() != null)
+			return createPairFromSingle(new StarExpression(checkAndExtractSingleExpression(visitTest(ctx.test(0))),
+					currentCFG, getLocation(ctx)));
+		else if (ctx.comp_for() != null || ctx.POWER() != null || ctx.test().size() != 1)
+			throw new UnsupportedStatementException("We support only simple arguments in method calls");
+		else
+			return visitTest(ctx.test(0));
 	}
 
 	@Override
