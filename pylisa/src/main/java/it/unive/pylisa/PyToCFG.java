@@ -88,7 +88,6 @@ import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.DataframeTransformationDomain;
 import it.unive.pylisa.analysis.LibraryDomain;
 import it.unive.pylisa.analysis.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.antlr.Python3BaseVisitor;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
 import it.unive.pylisa.antlr.Python3Parser.AddContext;
@@ -163,7 +162,7 @@ import it.unive.pylisa.antlr.Python3Parser.SliceopContext;
 import it.unive.pylisa.antlr.Python3Parser.Small_stmtContext;
 import it.unive.pylisa.antlr.Python3Parser.Star_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.StmtContext;
-import it.unive.pylisa.antlr.Python3Parser.SubscriptContext;
+import it.unive.pylisa.antlr.Python3Parser.Subscript_Context;
 import it.unive.pylisa.antlr.Python3Parser.SubscriptlistContext;
 import it.unive.pylisa.antlr.Python3Parser.SuiteContext;
 import it.unive.pylisa.antlr.Python3Parser.TermContext;
@@ -186,6 +185,7 @@ import it.unive.pylisa.antlr.Python3Parser.Xor_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_argContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
+import it.unive.pylisa.antlr.Python3ParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.PythonUnit;
 import it.unive.pylisa.cfg.expression.binary.PyFloorDiv;
@@ -208,7 +208,7 @@ import it.unive.pylisa.cfg.statement.TupleCreation;
 import it.unive.pylisa.cfg.type.PyLibraryType;
 import it.unive.pylisa.cfg.type.PyListType;
 
-public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
+public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>> {
 
 	private static final Logger log = LogManager.getLogger(PyToCFG.class);
 
@@ -1748,10 +1748,10 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	private List<Expression> extractExpressionsFromSubscriptlist(SubscriptlistContext ctx) {
 		List<Expression> result = new ArrayList<>();
-		if (ctx.subscript().size() == 0)
+		if (ctx.subscript_().size() == 0)
 			return result;
-		for (SubscriptContext e : ctx.subscript())
-			result.add(checkAndExtractSingleExpression(visitSubscript(e)));
+		for (Subscript_Context e : ctx.subscript_())
+			result.add(checkAndExtractSingleExpression(visitSubscript_(e)));
 		return result;
 	}
 
@@ -1795,7 +1795,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	}
 
 	@Override
-	public Pair<Statement, Statement> visitSubscript(SubscriptContext ctx) {
+	public Pair<Statement, Statement> visitSubscript_(Subscript_Context ctx) {
 		if (ctx.COLON() != null) {
 			Expression left = ctx.test1() == null ? null
 					: checkAndExtractSingleExpression(visitTest(ctx.test1().test()));
