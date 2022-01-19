@@ -4,12 +4,9 @@ import static it.unive.lisa.LiSAFactory.getDefaultFor;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -211,7 +208,6 @@ import it.unive.pylisa.cfg.statement.TupleCreation;
 import it.unive.pylisa.cfg.type.PyLibraryType;
 import it.unive.pylisa.cfg.type.PyListType;
 
-@SuppressWarnings("CommentedOutCode")
 public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	private static final Logger log = LogManager.getLogger(PyToCFG.class);
@@ -222,20 +218,19 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	private final String filePath;
 
 	/**
+	 * The LiSA program obtained from the Python program at filePath.
+	 */
+	private final Program program;
+
+	/**
 	 * The unit currently under parsing
 	 */
 	private Unit currentUnit;
 
 	/**
-	 * All the units completely processed so far
+	 * Current CFG to parse
 	 */
-	@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-	private final Collection<Unit> parsedUnits = new ArrayList<>();
-
-	/**
-	 * Collection of CFGs collected into the Python program at filePath.
-	 */
-	private final Collection<CFG> cfgs;
+	private PyCFG currentCFG;
 
 	/**
 	 * Builds an instance of @PyToCFG for a given Python program given at the
@@ -244,7 +239,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	 * @param filePath file path to a Python program.
 	 */
 	public PyToCFG(String filePath) {
-		this.cfgs = new HashSet<>();
+		this.program = new Program();
 		this.filePath = filePath;
 		this.currentUnit = new PythonUnit(new SourceCodeLocation(filePath, 0, 0), "main_file", true);
 	}
@@ -258,11 +253,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		return filePath;
 	}
 
-	/**
-	 * Current CFG to parse
-	 */
-	private PyCFG currentCFG;
-
 	public static void main(String[] args) throws IOException, AnalysisException {
 		// path of test file
 		String file = args[0];
@@ -270,43 +260,39 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		switch (extension) {
 		case "py":
 			PyToCFG translator = new PyToCFG(file);
-			LiSAConfiguration conf = new LiSAConfiguration();
-			Collection<CFG> cfgs = translator.toLiSACFG();
-			Program p = new Program();
-			for (CompilationUnit unit1 : LibrarySpecificationProvider.getLibraries()) {
-				Type t = new PyLibraryType(unit1.getName());
-				translator.parsedUnits.add(unit1);
-				PyLibraryType.addUnit(unit1);
-				p.registerType(t);
-			}
-			LibrarySpecificationProvider.getAllStandardLibraryMethods(translator.currentUnit).forEach(p::addConstruct);
+			Program program = translator.toLiSAProgram();
+			program.registerType(PyListType.INSTANCE);
+			program.registerType(BoolType.INSTANCE);
+			program.registerType(StringType.INSTANCE);
 
-			cfgs.forEach(p::addCFG);
-			for (CFG cfg : cfgs)
+			for (CompilationUnit lib : LibrarySpecificationProvider.getLibraries()) {
+				Type t = new PyLibraryType(lib.getName());
+				PyLibraryType.addUnit(lib);
+				program.registerType(t);
+			}
+			LibrarySpecificationProvider.getAllStandardLibraryMethods(program).forEach(program::addConstruct);
+
+			for (CFG cfg : program.getCFGs())
 				if (cfg.getDescriptor().getName().equals("main"))
-					p.addEntryPoint(cfg);
+					program.addEntryPoint(cfg);
+
+			LiSAConfiguration conf = new LiSAConfiguration();
 			conf.setDumpCFGs(true);
 			conf.setWorkdir("workdir");
 			conf.setDumpTypeInference(true);
 			conf.setInferTypes(true);
 			conf.setDumpAnalysis(true);
 			conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
-			p.registerType(PyListType.INSTANCE);
-			p.registerType(BoolType.INSTANCE);
-			// p.registerType(new PyLibraryType(""));
-			p.registerType(StringType.INSTANCE);
+
 			ValueCartesianProduct<ValueEnvironment<LibraryDomain>,
 					ValueEnvironment<DataframeTransformationDomain>> domain = new ValueCartesianProduct<>(
-							new ValueEnvironment<LibraryDomain>(new LibraryDomain("").top()),
-							new ValueEnvironment<DataframeTransformationDomain>(
-									new DataframeTransformationDomain(null)));
+							new ValueEnvironment<>(new LibraryDomain("").top()),
+							new ValueEnvironment<>(new DataframeTransformationDomain(null)));
 			PointBasedHeap heap = new PointBasedHeap();
 			conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain));
-			// conf.setAbstractState(getDefaultFor(AbstractState.class,
-			// getDefaultFor(HeapDomain.class), domain));
+
 			LiSA lisa = new LiSA(conf);
-			lisa.run(p);
-			translator.parsedUnits.add(translator.currentUnit);
+			lisa.run(program);
 			break;
 		case "ipynb":
 			Gson gson = new Gson();
@@ -359,28 +345,21 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	 *                         closed
 	 */
 
-	public Collection<CFG> toLiSACFG() throws IOException {
+	public Program toLiSAProgram() throws IOException {
 		log.info("PyToCFG setup...");
 		log.info("Reading file... " + filePath);
 
-		InputStream stream;
-		try {
-			stream = new FileInputStream(getFilePath());
-		} catch (FileNotFoundException e) {
-			System.err.println(filePath + " does not exist. Exiting.");
-			return new ArrayList<>();
-		}
+		InputStream stream = new FileInputStream(getFilePath());
 
 		Python3Lexer lexer = new Python3Lexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
 		Python3Parser parser = new Python3Parser(new CommonTokenStream(lexer));
 		ParseTree tree = parser.file_input();
 
-		log.info(tree.toStringTree(parser));
 		visit(tree);
 
 		stream.close();
 
-		return cfgs;
+		return program;
 	}
 
 	@Override
@@ -400,7 +379,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	@Override
 	public Pair<Statement, Statement> visitFile_input(File_inputContext ctx) {
 		currentCFG = new PyCFG(buildMainCFGDescriptor(getLocation(ctx)));
-		cfgs.add(currentCFG);
+		program.addCFG(currentCFG);
 		Statement last_stmt = null;
 		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
 			Compound_stmtContext comp = stmt.compound_stmt();
@@ -556,20 +535,15 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 		// � un assegnazione
 		if (ctx.ASSIGN().size() > 0) {
-
 			Statement target = checkAndExtractSingleStatement(visitTestlist_star_expr(ctx.testlist_star_expr(0)));
 			Statement expression = checkAndExtractSingleStatement(visitTestlist_star_expr(ctx.testlist_star_expr(1)));
-			log.info(target);
-			log.info(expression);
 			if ((!(target instanceof Expression)) || (!(expression instanceof Expression)))
 				throw new UnsupportedStatementException(
 						"Assignments require expression both in the left and in the right hand side");
 			assegnazione = new Assignment(currentCFG, getLocation(ctx), (Expression) target, (Expression) expression);
-			log.info(assegnazione);
 			currentCFG.addNodeIfNotPresent(assegnazione);
 		} else
 			return visitTestlistStarExpr(ctx);
-		log.info(assegnazione);
 		return createPairFromSingle(assegnazione);
 	}
 
@@ -822,17 +796,9 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 	private void parseMethod(FuncdefContext ctx) {
 		PyCFG oldCFG = currentCFG;
 		currentCFG = new PyCFG(buildCFGDescriptor(ctx));
-		cfgs.add(currentCFG);
+		program.addCFG(currentCFG);
 		Pair<Statement, Statement> r = visitSuite(ctx.suite());
 		currentCFG.addNodeIfNotPresent(r.getLeft(), true);
-		try {
-			Writer w = new FileWriter("./output.txt");
-			currentCFG.dump(w, s -> "Try");
-			w.close();
-		} catch (IOException e) {
-			log.info("error with file");
-			e.printStackTrace();
-		}
 		PyCFG result = currentCFG;
 		currentCFG = oldCFG;
 		currentUnit.addCFG(result);
@@ -1068,38 +1034,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 
 	@Override
 	public Pair<Statement, Statement> visitTry_stmt(Try_stmtContext ctx) {
-		// this method is commented because the type of edge required does not
-		// exist now
-
-		/*
-		 * NoOp TryExitNode = new NoOp(currentCFG);
-		 * currentCFG.addNodeIfNotPresent(TryExitNode); Pair<Statement,
-		 * Statement> tryBlock = (Pair<Statement, Statement>)
-		 * visitSuite(ctx.suite(0)); int nException=ctx.except_clause().size();
-		 * Pair<Statement, Statement> firstClauseException = (Pair<Statement,
-		 * Statement>) visitExcept_clause(ctx.except_clause(0)); Pair<Statement,
-		 * Statement> firstSuiteException = (Pair<Statement, Statement>)
-		 * visitSuite(ctx.suite(1)); currentCFG.addEdge(new
-		 * TrueEdge(tryBlock.getRight(), firstClauseException.getLeft()));
-		 * currentCFG.addEdge(new
-		 * SequentialEdge(firstClauseException.getRight(),
-		 * firstSuiteException.getLeft())); Pair<Statement, Statement>
-		 * lastClauseExc=firstClauseException; Pair<Statement, Statement>
-		 * lastSuiteExc=firstSuiteException; for(int i=2;i<=nException;i++) {
-		 * Pair<Statement, Statement> currentClauseExc = (Pair<Statement,
-		 * Statement>) visitSuite(ctx.suite(i)); Pair<Statement, Statement>
-		 * currentSuiteExc= (Pair<Statement, Statement>)
-		 * visitExcept_clause(ctx.except_clause(i-1)); currentCFG.addEdge(new
-		 * SequentialEdge(currentClauseExc.getRight(),
-		 * currentSuiteExc.getLeft())); currentCFG.addEdge(new
-		 * SequentialEdge(lastSuiteExc.getRight(), currentClauseExc.getLeft()));
-		 * lastSuiteExc=currentSuiteExc; lastClauseExc=currentClauseExc; }
-		 * if(ctx.ELSE()!=null) { int posElseSuite=1+nException; Pair<Statement,
-		 * Statement> elseBlock = (Pair<Statement, Statement>)
-		 * visitSuite(ctx.suite(posElseSuite)); currentCFG.addEdge(new
-		 * SequentialEdge(lastSuiteExc.getRight(), currentClauseExc.getLeft()));
-		 * }
-		 */
 		log.warn("Exceptions are not yet supported. The try block at line " + getLine(ctx) + " of file " + getFilePath()
 				+ " is unsoundly translated considering only the code in the try block");
 		return visitSuite(ctx.suite(0));
@@ -1895,7 +1829,6 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		String name = ctx.NAME().getSymbol().getText();
 		this.currentUnit = new PythonUnit(new SourceCodeLocation(name, 0, 0), name, true);
 		parseClassBody(ctx.suite());
-		this.parsedUnits.add(this.currentUnit);
 		this.currentUnit = previous;
 		return null;
 	}
@@ -1934,7 +1867,7 @@ public class PyToCFG extends Python3BaseVisitor<Pair<Statement, Statement>> {
 		if (fields_init.size() > 0) {
 			PyCFG oldCFG = currentCFG;
 			currentCFG = new PyCFG(new CFGDescriptor(location, currentUnit, true, "<init>"));
-			cfgs.add(currentCFG);
+			program.addCFG(currentCFG);
 			Statement previous = null;
 			for (Pair<VariableRef, Expression> init : fields_init) {
 				Statement f = new Assignment(currentCFG, init.getLeft().getLocation(), init.getLeft(), init.getRight());
