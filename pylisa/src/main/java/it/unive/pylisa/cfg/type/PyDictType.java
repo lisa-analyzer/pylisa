@@ -9,24 +9,24 @@ import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.analysis.libraries.LibrarySpecificationProvider;
 
-public class PyListType implements UnitType {
+public class PyDictType implements UnitType {
 
 	/**
 	 * The unique singleton instance of this type.
 	 */
-	public static final PyListType INSTANCE = new PyListType();
+	public static final PyDictType INSTANCE = new PyDictType();
 
-	private PyListType() {
+	private PyDictType() {
 	}
 
 	@Override
 	public String toString() {
-		return "list";
+		return "dict";
 	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		return other instanceof PyListType || other instanceof Untyped;
+		return other instanceof PyDictType || other instanceof Untyped;
 	}
 
 	@Override
@@ -44,6 +44,6 @@ public class PyListType implements UnitType {
 
 	@Override
 	public CompilationUnit getUnit() {
-		return LibrarySpecificationProvider.getLibraryUnit(LibrarySpecificationProvider.LIST);
+		return LibrarySpecificationProvider.getLibraryUnit(LibrarySpecificationProvider.DICT);
 	}
 }

@@ -271,7 +271,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			program.registerType(Float32.INSTANCE);
 			program.registerType(NullType.INSTANCE);
 
-			for (CompilationUnit lib : LibrarySpecificationProvider.getLibraries()) {
+			for (CompilationUnit lib : LibrarySpecificationProvider.getLibraryUnits()) {
 				Type t = new PyLibraryType(lib.getName());
 				PyLibraryType.addUnit(lib);
 				program.registerType(t);

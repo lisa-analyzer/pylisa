@@ -1,7 +1,9 @@
 package it.unive.pylisa.analysis.libraries;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import it.unive.lisa.program.CompilationUnit;
@@ -17,48 +19,84 @@ import it.unive.pylisa.cfg.PythonUnit;
 import it.unive.pylisa.cfg.type.PyLibraryType;
 
 public class LibrarySpecificationProvider {
-	public static Collection<CompilationUnit> getLibraries() {
-		Set<CompilationUnit> result = new HashSet<>();
-		result.add(LibrarySpecificationProvider.getPandasPythonUnit());
-		result.add(LibrarySpecificationProvider.getWarningsPythonUnit());
-		return result;
+	public static final String SET = "set";
+	public static final String DICT = "dict";
+	public static final String LIST = "list";
+	public static final String WARNINGS = "warnings";
+	public static final String PANDAS = "pandas";
+
+	private static final SourceCodeLocation PANDAS_LOC = new SourceCodeLocation(PANDAS, 0, 0);
+	private static final SourceCodeLocation WARNINGS_LOC = new SourceCodeLocation(WARNINGS, 0, 0);
+	private static final SourceCodeLocation STDLIB_LOC = new SourceCodeLocation("standard_library", 0, 0);
+
+	private static final Map<String, CompilationUnit> LIBS = new HashMap<>();
+
+	static {
+		LIBS.put(PANDAS, getPandasPythonUnit());
+		LIBS.put(WARNINGS, getWarningsPythonUnit());
+		LIBS.put(LIST, getListPythonUnit());
+		LIBS.put(DICT, getDictPythonUnit());
+		LIBS.put(SET, getSetPythonUnit());
+	}
+
+	public static Collection<CompilationUnit> getLibraryUnits() {
+		return LIBS.values();
+	}
+
+	public static CompilationUnit getLibraryUnit(String name) {
+		return LIBS.get(name);
 	}
 
 	public static Collection<NativeCFG> getAllStandardLibraryMethods(Program program) {
 		Set<NativeCFG> result = new HashSet<>();
 		result.add(new NativeCFG(
-				new CFGDescriptor(new SourceCodeLocation("standard_library", 0, 0),
+				new CFGDescriptor(STDLIB_LOC,
 						program,
 						false,
 						"print",
-						new Parameter(new SourceCodeLocation("standard_library", 0, 0), "arg1")),
+						new Parameter(STDLIB_LOC, "arg1")),
 				Print.class));
 		return result;
 	}
 
+	private static PythonUnit getListPythonUnit() {
+		PythonUnit unit1 = new PythonUnit(STDLIB_LOC, "List", true);
+		return unit1;
+	}
+
+	private static PythonUnit getDictPythonUnit() {
+		PythonUnit unit1 = new PythonUnit(STDLIB_LOC, "Dict", true);
+		return unit1;
+	}
+
+	private static PythonUnit getSetPythonUnit() {
+		PythonUnit unit1 = new PythonUnit(STDLIB_LOC, "Set", true);
+		return unit1;
+	}
+
 	private static PythonUnit getWarningsPythonUnit() {
-		PythonUnit unit1 = new PythonUnit(new SourceCodeLocation("warnings", 0, 0), "warnings", true);
+		PythonUnit unit1 = new PythonUnit(WARNINGS_LOC, WARNINGS, true);
 		NativeCFG cfg = new NativeCFG(
-				new CFGDescriptor(new SourceCodeLocation("warnings", 0, 0),
+				new CFGDescriptor(WARNINGS_LOC,
 						unit1,
 						true,
 						"filterwarnings",
-						new Parameter(new SourceCodeLocation("warnings", 0, 0), "arg1", new PyLibraryType("warnings")),
-						new Parameter(new SourceCodeLocation("warnings", 0, 0), "arg2")),
+						new Parameter(WARNINGS_LOC, "arg1", new PyLibraryType(WARNINGS)),
+						new Parameter(WARNINGS_LOC, "arg2")),
 				FilterWarnings.class);
 		unit1.addInstanceConstruct(cfg);
 		return unit1;
 	}
 
 	private static PythonUnit getPandasPythonUnit() {
-		PythonUnit unit1 = new PythonUnit(new SourceCodeLocation("pandas", 0, 0), "pandas", true);
+		PythonUnit unit1 = new PythonUnit(PANDAS_LOC, PANDAS, true);
 		unit1.addInstanceConstruct(new NativeCFG(
-				new CFGDescriptor(new SourceCodeLocation("pandas", 0, 0),
+				new CFGDescriptor(PANDAS_LOC,
 						unit1,
 						true,
 						"read_csv",
-						new Parameter(new SourceCodeLocation("pandas", 0, 0), "arg1", new PyLibraryType("pandas")),
-						new Parameter(new SourceCodeLocation("pandas", 0, 0), "filepath_or_buffer")),
+						new Parameter(PANDAS_LOC, "arg1", new PyLibraryType(PANDAS)),
+						new Parameter(PANDAS_LOC, "filepath_or_buffer")),
 				ReadCsv.class));
 		return unit1;
 	}

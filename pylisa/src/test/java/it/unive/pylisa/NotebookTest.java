@@ -12,7 +12,7 @@ import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.combination.ValueCartesianProduct;
-import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
+import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.program.CompilationUnit;
@@ -52,7 +52,7 @@ public abstract class NotebookTest {
 				ValueEnvironment<DataframeTransformationDomain>> domain = new ValueCartesianProduct<>(
 						new ValueEnvironment<>(new LibraryDomain("").top()),
 						new ValueEnvironment<>(new DataframeTransformationDomain(null)));
-		PointBasedHeap heap = new PointBasedHeap();
+		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap();
 		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain));
 		return conf;
 	}
@@ -62,7 +62,7 @@ public abstract class NotebookTest {
 		program.registerType(BoolType.INSTANCE);
 		program.registerType(StringType.INSTANCE);
 
-		for (CompilationUnit lib : LibrarySpecificationProvider.getLibraries()) {
+		for (CompilationUnit lib : LibrarySpecificationProvider.getLibraryUnits()) {
 			PyLibraryType.addUnit(lib);
 			program.registerType(new PyLibraryType(lib.getName()));
 		}
