@@ -3,3 +3,9 @@
 
 # Ignore Gradle build output directory
 build
+
+# throwaway folder for testing and running analyses
+workdir
+
+# gradle configuration for accessing the snapshot of lisa
+gradle.properties

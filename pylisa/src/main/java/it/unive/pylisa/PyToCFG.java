@@ -68,10 +68,11 @@ import it.unive.lisa.program.cfg.statement.comparison.LessThan;
 import it.unive.lisa.program.cfg.statement.comparison.NotEqual;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
+import it.unive.lisa.program.cfg.statement.literal.Float32Literal;
+import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
-import it.unive.lisa.program.cfg.statement.literal.UInt32Literal;
 import it.unive.lisa.program.cfg.statement.logic.And;
 import it.unive.lisa.program.cfg.statement.logic.Not;
 import it.unive.lisa.program.cfg.statement.logic.Or;
@@ -81,8 +82,10 @@ import it.unive.lisa.program.cfg.statement.numeric.Multiplication;
 import it.unive.lisa.program.cfg.statement.numeric.Remainder;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
 import it.unive.lisa.program.cfg.statement.string.Equals;
+import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.common.BoolType;
+import it.unive.lisa.type.common.Float32;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.DataframeTransformationDomain;
@@ -264,6 +267,9 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			program.registerType(PyListType.INSTANCE);
 			program.registerType(BoolType.INSTANCE);
 			program.registerType(StringType.INSTANCE);
+			program.registerType(Int32.INSTANCE);
+			program.registerType(Float32.INSTANCE);
+			program.registerType(NullType.INSTANCE);
 
 			for (CompilationUnit lib : LibrarySpecificationProvider.getLibraries()) {
 				Type t = new PyLibraryType(lib.getName());
@@ -975,7 +981,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 				currentCFG,
 				getLocation(ctx),
 				counter,
-				new UInt32Literal(currentCFG, getLocation(ctx), 0));
+				new Int32Literal(currentCFG, getLocation(ctx), 0));
 		currentCFG.addNodeIfNotPresent(counter_init);
 
 		// counter < collection.size()
@@ -1015,7 +1021,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 						currentCFG,
 						getLocation(ctx),
 						counter,
-						new UInt32Literal(
+						new Int32Literal(
 								currentCFG,
 								getLocation(ctx),
 								1)));
@@ -1659,9 +1665,19 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			// crete a variable
 			return createPairFromSingle(new VariableRef(currentCFG, getLocation(ctx), ctx.NAME().getText()));
 		} else if (ctx.NUMBER() != null) {
-			// create a literal int
+			String text = ctx.NUMBER().getText().toLowerCase();
+			if (text.contains("j"))
+				// complex number
+				throw new UnsupportedStatementException("complex numbeer are not supported (at " + getLocation(ctx) + ")");
+			
+			if (text.contains("e") || text.contains("."))
+				// floating point
+				return createPairFromSingle(
+						new Float32Literal(currentCFG, getLocation(ctx), Float.parseFloat(text)));
+				
+			// integer
 			return createPairFromSingle(
-					new UInt32Literal(currentCFG, getLocation(ctx), Integer.parseInt(ctx.NUMBER().getText())));
+					new Int32Literal(currentCFG, getLocation(ctx), Integer.parseInt(text)));
 		} else if (ctx.FALSE() != null) {
 			// create a literal false
 			return createPairFromSingle(new FalseLiteral(currentCFG, getLocation(ctx)));

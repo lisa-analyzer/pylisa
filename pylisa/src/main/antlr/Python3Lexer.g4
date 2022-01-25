@@ -351,6 +351,7 @@ fragment SPACES
 
 fragment COMMENT
  : '#' ~[\r\n\f]*
+ | '%' NAME ~ [\r\n\f]*
  ;
 
 fragment LINE_JOINING
