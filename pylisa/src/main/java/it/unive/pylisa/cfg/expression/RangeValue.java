@@ -12,7 +12,6 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.TernaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.UnsupportedStatementException;
 
 public class RangeValue extends TernaryExpression {
 
@@ -31,6 +30,6 @@ public class RangeValue extends TernaryExpression {
 					SymbolicExpression right,
 					StatementStore<A, H, V> expressions)
 					throws SemanticException {
-		throw new UnsupportedStatementException(this);
+		return state.top(); // TODO
 	}
 }

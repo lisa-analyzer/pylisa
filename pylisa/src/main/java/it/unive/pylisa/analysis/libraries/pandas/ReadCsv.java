@@ -44,13 +44,10 @@ public class ReadCsv extends BinaryExpression implements PluggableStatement {
 		AnalysisState<A, H, V> afterAlloc = state.smallStepSemantics(
 				new HeapAllocation(Caches.types().mkSingletonSet(PyDataframeType.INSTANCE), this.getLocation()), st);
 		DataFrameConstant constant = new DataFrameConstant(PyDataframeType.INSTANCE, right, this.getLocation());
-		AnalysisState<A, H, V> assigned = null;
-		for (SymbolicExpression exp : afterAlloc.getComputedExpressions()) {
-			if (assigned == null)
-				assigned = afterAlloc.assign(exp, constant, st);
-			else
-				assigned = assigned.lub(afterAlloc.assign(exp, constant, st));
-		}
+		AnalysisState<A, H, V> assigned = state.bottom();
+		for (SymbolicExpression exp : afterAlloc.getComputedExpressions())
+			assigned = assigned.lub(afterAlloc.assign(exp, constant, st));
+
 		return new AnalysisState<A, H, V>(assigned.getState(), afterAlloc.getComputedExpressions());
 	}
 }

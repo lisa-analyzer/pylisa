@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -49,10 +50,9 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CFGDescriptor;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.program.cfg.VariableTableEntry;
 import it.unive.lisa.program.cfg.edge.Edge;
-import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
-import it.unive.lisa.program.cfg.edge.TrueEdge;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NoOp;
@@ -61,7 +61,9 @@ import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.cfg.statement.call.resolution.RuntimeTypesResolution;
+import it.unive.lisa.program.cfg.statement.call.assignment.PythonLikeAssigningStrategy;
+import it.unive.lisa.program.cfg.statement.call.resolution.RuntimeTypesMatchingStrategy;
+import it.unive.lisa.program.cfg.statement.call.traversal.SingleInheritanceTraversalStrategy;
 import it.unive.lisa.program.cfg.statement.comparison.GreaterThan;
 import it.unive.lisa.program.cfg.statement.comparison.LessOrEqual;
 import it.unive.lisa.program.cfg.statement.comparison.LessThan;
@@ -189,9 +191,13 @@ import it.unive.pylisa.antlr.Python3Parser.Yield_argContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
 import it.unive.pylisa.antlr.Python3ParserBaseVisitor;
+import it.unive.pylisa.cfg.FalseEdge;
 import it.unive.pylisa.cfg.PyCFG;
+import it.unive.pylisa.cfg.PythonLikeMatchingStrategy;
 import it.unive.pylisa.cfg.PythonUnit;
+import it.unive.pylisa.cfg.TrueEdge;
 import it.unive.pylisa.cfg.expression.DictionaryCreation;
+import it.unive.pylisa.cfg.expression.Empty;
 import it.unive.pylisa.cfg.expression.LambdaExpression;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.PyAssign;
@@ -213,6 +219,12 @@ import it.unive.pylisa.cfg.type.PyLibraryType;
 import it.unive.pylisa.cfg.type.PyListType;
 
 public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>> {
+
+	// TODO this is not right, but its fine for now
+	private static final SingleInheritanceTraversalStrategy TRAVERSAL_STRATEGY = SingleInheritanceTraversalStrategy.INSTANCE;
+	private static final PythonLikeMatchingStrategy MATCHING_STRATEGY = new PythonLikeMatchingStrategy(
+			RuntimeTypesMatchingStrategy.INSTANCE);
+	private static final PythonLikeAssigningStrategy ASSIGN_STRATEGY = PythonLikeAssigningStrategy.INSTANCE;
 
 	private static final Logger log = LogManager.getLogger(PyToCFG.class);
 
@@ -411,8 +423,34 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			}
 		}
 
+		addRetNodesToCurrentCFG();
 		return null;
+	}
 
+	private void addRetNodesToCurrentCFG() {
+		if (currentCFG.getAllExitpoints().isEmpty()) {
+			Ret ret = new Ret(currentCFG, currentCFG.getDescriptor().getLocation());
+			if (currentCFG.getNodesCount() == 0) {
+				// empty method, so the ret is also the entrypoint
+				currentCFG.addNode(ret, true);
+			} else {
+				// every non-throwing instruction that does not have a follower
+				// is ending the method
+				Collection<Statement> preExits = new LinkedList<>();
+				for (Statement st : currentCFG.getNodes())
+					if (!st.stopsExecution() && currentCFG.followersOf(st).isEmpty())
+						preExits.add(st);
+				currentCFG.addNode(ret);
+				for (Statement st : preExits)
+					currentCFG.addEdge(new SequentialEdge(st, ret));
+
+				for (VariableTableEntry entry : currentCFG.getDescriptor().getVariables())
+					if (preExits.contains(entry.getScopeEnd()))
+						entry.setScopeEnd(ret);
+			}
+		}
+
+		currentCFG.simplify();
 	}
 
 	private int getLine(ParserRuleContext ctx) {
@@ -469,7 +507,16 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 
 	@Override
 	public Pair<Statement, Statement> visitFuncdef(FuncdefContext ctx) {
-		throw new UnsupportedStatementException();
+		PyCFG oldCFG = currentCFG;
+		currentCFG = new PyCFG(buildCFGDescriptor(ctx));
+		program.addCFG(currentCFG);
+		Pair<Statement, Statement> r = visitSuite(ctx.suite());
+		currentCFG.addNodeIfNotPresent(r.getLeft(), true);
+		addRetNodesToCurrentCFG();
+		PyCFG result = currentCFG;
+		currentCFG = oldCFG;
+		currentUnit.addCFG(result);
+		return null;
 	}
 
 	@Override
@@ -579,8 +626,11 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 		Statement result = new UnresolvedCall(
 				currentCFG,
 				getLocation(ctx),
-				RuntimeTypesResolution.INSTANCE,
+				ASSIGN_STRATEGY,
+				MATCHING_STRATEGY,
+				TRAVERSAL_STRATEGY,
 				false,
+				Program.PROGRAM_NAME,
 				"del",
 				extractExpressionsFromExprlist(ctx.exprlist()).toArray(new Expression[ctx.exprlist().expr().size()]));
 		currentCFG.addNodeIfNotPresent(result);
@@ -609,8 +659,11 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 					new UnresolvedCall(
 							currentCFG,
 							getLocation(ctx),
-							RuntimeTypesResolution.INSTANCE,
+							ASSIGN_STRATEGY,
+							MATCHING_STRATEGY,
+							TRAVERSAL_STRATEGY,
 							false,
+							Program.PROGRAM_NAME,
 							"yield from",
 							l.toArray(new Expression[0]))));
 		}
@@ -791,29 +844,20 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 						new UnresolvedCall(
 								currentCFG,
 								getLocation(ctx),
-								RuntimeTypesResolution.INSTANCE,
+								ASSIGN_STRATEGY,
+								MATCHING_STRATEGY,
+								TRAVERSAL_STRATEGY,
 								false,
 								"assert",
+								Program.PROGRAM_NAME,
 								extractExpressionsFromListOfTests(ctx.test())
 										.toArray(new Expression[ctx.test().size()]))));
-	}
-
-	private void parseMethod(FuncdefContext ctx) {
-		PyCFG oldCFG = currentCFG;
-		currentCFG = new PyCFG(buildCFGDescriptor(ctx));
-		program.addCFG(currentCFG);
-		Pair<Statement, Statement> r = visitSuite(ctx.suite());
-		currentCFG.addNodeIfNotPresent(r.getLeft(), true);
-		PyCFG result = currentCFG;
-		currentCFG = oldCFG;
-		currentUnit.addCFG(result);
 	}
 
 	@Override
 	public Pair<Statement, Statement> visitCompound_stmt(Compound_stmtContext ctx) {
 		if (ctx.funcdef() != null) {
-			parseMethod(ctx.funcdef());
-			return null;
+			return this.visitFuncdef(ctx.funcdef());
 		} else if (ctx.if_stmt() != null)
 			return this.visitIf_stmt(ctx.if_stmt());
 		else if (ctx.while_stmt() != null)
@@ -991,8 +1035,11 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 				new UnresolvedCall(
 						currentCFG,
 						getLocation(ctx),
-						RuntimeTypesResolution.INSTANCE,
+						ASSIGN_STRATEGY,
+						MATCHING_STRATEGY,
+						TRAVERSAL_STRATEGY,
 						true,
+						null,
 						"size",
 						collection_pars));
 		currentCFG.addNodeIfNotPresent(condition);
@@ -1005,8 +1052,11 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 				new UnresolvedCall(
 						currentCFG,
 						getLocation(ctx),
-						RuntimeTypesResolution.INSTANCE,
+						ASSIGN_STRATEGY,
+						MATCHING_STRATEGY,
+						TRAVERSAL_STRATEGY,
 						true,
+						null,
 						"at",
 						counter_pars));
 		currentCFG.addNodeIfNotPresent(element_assignment);
@@ -1623,8 +1673,16 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 						for (ArgumentContext arg : expr.arglist().argument())
 							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
 
-					access = new UnresolvedCall(currentCFG, getLocation(expr), RuntimeTypesResolution.INSTANCE,
-							instance, method_name, pars.toArray(new Expression[0]));
+					access = new UnresolvedCall(
+							currentCFG, 
+							getLocation(expr), 
+							ASSIGN_STRATEGY,
+							MATCHING_STRATEGY,
+							TRAVERSAL_STRATEGY,
+							instance, 
+							null, 
+							method_name, 
+							pars.toArray(new Expression[0]));
 					last_name = null;
 					previous_access = null;
 				} else if (expr.OPEN_BRACK() != null) {
@@ -1815,14 +1873,14 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 	@Override
 	public Pair<Statement, Statement> visitSubscript_(Subscript_Context ctx) {
 		if (ctx.COLON() != null) {
-			Expression left = ctx.test1() == null ? null
+			SourceCodeLocation loc = getLocation(ctx);
+			Expression left = ctx.test1() == null ? new Empty(currentCFG, loc)
 					: checkAndExtractSingleExpression(visitTest(ctx.test1().test()));
-			Expression middle = ctx.test2() == null ? null
+			Expression middle = ctx.test2() == null ? new Empty(currentCFG, loc)
 					: checkAndExtractSingleExpression(visitTest(ctx.test2().test()));
-			Expression right = ctx.sliceop() == null ? null
-					: checkAndExtractSingleExpression(
-							ctx.sliceop().test() == null ? null : visitTest(ctx.sliceop().test()));
-			return createPairFromSingle(new RangeValue(currentCFG, getLocation(ctx), left, middle, right));
+			Expression right = ctx.sliceop() == null || ctx.sliceop().test() == null ? new Empty(currentCFG, loc)
+					: checkAndExtractSingleExpression(visitTest(ctx.sliceop().test()));
+			return createPairFromSingle(new RangeValue(currentCFG, loc, left, middle, right));
 		} else
 			return visitTest(ctx.test());
 	}
@@ -1867,13 +1925,13 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 				if (p.getRight() != null)
 					fields_init.add(p);
 			} else if (stmt.compound_stmt().funcdef() != null) {
-				parseMethod(stmt.compound_stmt().funcdef());
+				this.visitFuncdef(stmt.compound_stmt().funcdef());
 			} else if (stmt.compound_stmt().decorated() != null) {
 				log.warn("Ignoring decorator " + stmt.compound_stmt().decorated().decorators().getText()
 						+ " at code location " + getLocation(stmt));
 				DecoratedContext c = stmt.compound_stmt().decorated();
 				if (c.funcdef() != null)
-					parseMethod(c.funcdef());
+					this.visitFuncdef(c.funcdef());
 				else if (c.classdef() != null)
 					this.visitClassdef(c.classdef());
 				else
