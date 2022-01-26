@@ -3,9 +3,16 @@ package it.unive.pylisa.analysis.libraries;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.lisa.program.annotations.Annotations;
+import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CFGDescriptor;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.program.cfg.statement.Ret;
+import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
+import it.unive.lisa.type.common.Int32;
+import it.unive.pylisa.analysis.libraries.pandas.Head;
+import it.unive.pylisa.analysis.libraries.pandas.PyDataframeType;
 import it.unive.pylisa.analysis.libraries.pandas.ReadCsv;
 import it.unive.pylisa.analysis.libraries.standardLibrary.Print;
 import it.unive.pylisa.analysis.libraries.warnings.FilterWarnings;
@@ -96,14 +103,27 @@ public class LibrarySpecificationProvider {
 
 	private static PythonUnit getPandasPythonUnit() {
 		PythonUnit unit1 = new PythonUnit(PANDAS_LOC, PANDAS, true);
+		CFG init = new CFG(new CFGDescriptor(PANDAS_LOC, unit1, false, "init"));
+		init.addNode(new Ret(init, PANDAS_LOC), true);
+		unit1.addCFG(init);
 		unit1.addInstanceConstruct(new NativeCFG(
 				new CFGDescriptor(PANDAS_LOC,
 						unit1,
 						true,
-						"read_csv",
+						"read_csv", 
+						PyDataframeType.INSTANCE,
 						new Parameter(PANDAS_LOC, "arg1", new PyLibraryType(PANDAS)),
 						new Parameter(PANDAS_LOC, "filepath_or_buffer")),
 				ReadCsv.class));
+		unit1.addInstanceConstruct(new NativeCFG(
+				new CFGDescriptor(PANDAS_LOC,
+						unit1,
+						true,
+						"head", 
+						PyDataframeType.INSTANCE,
+						new Parameter(PANDAS_LOC, "this", PyDataframeType.INSTANCE),
+						new Parameter(PANDAS_LOC, "n", Int32.INSTANCE, new Int32Literal(init, PANDAS_LOC, 5), new Annotations())),
+				Head.class));
 		return unit1;
 	}
 }

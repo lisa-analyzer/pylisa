@@ -11,6 +11,7 @@ import it.unive.lisa.analysis.combination.ValueCartesianProduct;
 import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
+import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
@@ -45,6 +46,7 @@ public abstract class NotebookTest {
 		conf.setInferTypes(true);
 		conf.setDumpAnalysis(true);
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
+		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
 
 		ValueCartesianProduct<ValueEnvironment<LibraryDomain>,
 				ValueEnvironment<DataframeTransformationDomain>> domain = new ValueCartesianProduct<>(

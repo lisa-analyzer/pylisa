@@ -52,7 +52,9 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.VariableTableEntry;
 import it.unive.lisa.program.cfg.edge.Edge;
+import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
+import it.unive.lisa.program.cfg.edge.TrueEdge;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NoOp;
@@ -62,6 +64,7 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.call.assignment.PythonLikeAssigningStrategy;
+import it.unive.lisa.program.cfg.statement.call.resolution.PythonLikeMatchingStrategy;
 import it.unive.lisa.program.cfg.statement.call.resolution.RuntimeTypesMatchingStrategy;
 import it.unive.lisa.program.cfg.statement.call.traversal.SingleInheritanceTraversalStrategy;
 import it.unive.lisa.program.cfg.statement.comparison.GreaterThan;
@@ -191,11 +194,8 @@ import it.unive.pylisa.antlr.Python3Parser.Yield_argContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
 import it.unive.pylisa.antlr.Python3ParserBaseVisitor;
-import it.unive.pylisa.cfg.FalseEdge;
 import it.unive.pylisa.cfg.PyCFG;
-import it.unive.pylisa.cfg.PythonLikeMatchingStrategy;
 import it.unive.pylisa.cfg.PythonUnit;
-import it.unive.pylisa.cfg.TrueEdge;
 import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import it.unive.pylisa.cfg.expression.Empty;
 import it.unive.pylisa.cfg.expression.LambdaExpression;
@@ -1682,7 +1682,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 							instance, 
 							null, 
 							method_name, 
-							pars.toArray(new Expression[0]));
+							pars.toArray(Expression[]::new));
 					last_name = null;
 					previous_access = null;
 				} else if (expr.OPEN_BRACK() != null) {
