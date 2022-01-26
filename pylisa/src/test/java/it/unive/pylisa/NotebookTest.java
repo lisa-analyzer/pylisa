@@ -2,10 +2,6 @@ package it.unive.pylisa;
 
 import static it.unive.lisa.LiSAFactory.getDefaultFor;
 
-import java.io.IOException;
-
-import org.apache.commons.io.FilenameUtils;
-
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
@@ -25,6 +21,8 @@ import it.unive.pylisa.analysis.LibraryDomain;
 import it.unive.pylisa.analysis.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.cfg.type.PyLibraryType;
 import it.unive.pylisa.cfg.type.PyListType;
+import java.io.IOException;
+import org.apache.commons.io.FilenameUtils;
 
 public abstract class NotebookTest {
 
@@ -66,7 +64,7 @@ public abstract class NotebookTest {
 			PyLibraryType.addUnit(lib);
 			program.registerType(new PyLibraryType(lib.getName()));
 		}
-		
+
 		LibrarySpecificationProvider.getAllStandardLibraryMethods(program).forEach(program::addConstruct);
 
 		for (CFG cfg : program.getCFGs())

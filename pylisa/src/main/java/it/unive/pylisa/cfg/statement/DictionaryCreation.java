@@ -1,10 +1,5 @@
 package it.unive.pylisa.cfg.statement;
 
-import java.util.Arrays;
-import java.util.List;
-
-import org.apache.commons.lang3.tuple.Pair;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -28,6 +23,9 @@ import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.cfg.type.PyDictType;
+import java.util.Arrays;
+import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class DictionaryCreation extends Expression {
 
@@ -61,7 +59,7 @@ public class DictionaryCreation extends Expression {
 			V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> state,
 					InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions)
 					throws SemanticException {
-		
+
 		AnalysisState<A, H, V> result = state.bottom();
 		ExternalSet<Type> type = Caches.types().mkSingletonSet(PyDictType.INSTANCE);
 		ExternalSet<Type> untyped = Caches.types().mkSingletonSet(Untyped.INSTANCE);
@@ -79,7 +77,7 @@ public class DictionaryCreation extends Expression {
 			for (Pair<Expression, Expression> pair : values) {
 				AnalysisState<A, H, V> key = pair.getLeft().semantics(assign, interprocedural, expressions);
 				AnalysisState<A, H, V> value = pair.getRight().semantics(key, interprocedural, expressions);
-				
+
 				AnalysisState<A, H, V> fieldResult = state.bottom();
 				for (SymbolicExpression field : key.getComputedExpressions()) {
 					AccessChild fieldAcc = new AccessChild(untyped, deref, field, getLocation());
@@ -91,7 +89,7 @@ public class DictionaryCreation extends Expression {
 				}
 				assign = assign.lub(fieldResult);
 			}
-			
+
 			// we leave the reference on the stack
 			result = result.lub(assign.smallStepSemantics(ref, this));
 		}

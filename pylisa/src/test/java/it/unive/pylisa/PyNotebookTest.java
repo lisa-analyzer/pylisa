@@ -1,13 +1,11 @@
 package it.unive.pylisa;
 
+import it.unive.lisa.AnalysisException;
 import java.io.IOException;
-
 import org.junit.Test;
 
-import it.unive.lisa.AnalysisException;
-
 public class PyNotebookTest extends NotebookTest {
-	
+
 	private void runTest(String file) throws IOException, AnalysisException {
 		perform(getClass().getClassLoader().getResource(file).getFile(), "py");
 	}

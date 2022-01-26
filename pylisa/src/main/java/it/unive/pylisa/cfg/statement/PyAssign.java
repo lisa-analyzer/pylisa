@@ -1,8 +1,5 @@
 package it.unive.pylisa.cfg.statement;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -26,6 +23,8 @@ import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyTupleType;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PyAssign extends Assignment {
 
@@ -45,7 +44,7 @@ public class PyAssign extends Assignment {
 		List<Expression> vars = ((TupleCreation) getLeft()).getValues();
 		List<ExpressionSet<SymbolicExpression>> ids = vars.stream()
 				.map(v -> expressions.getState(v).getComputedExpressions()).collect(Collectors.toList());
-		
+
 		// assign to each variable the element on the tuple on the right
 		ExternalSet<Type> type = Caches.types().mkSingletonSet(PyTupleType.INSTANCE);
 		ExternalSet<Type> untyped = Caches.types().mkSingletonSet(Untyped.INSTANCE);
@@ -59,17 +58,18 @@ public class PyAssign extends Assignment {
 
 		for (int i = 0; i < ids.size(); i++) {
 			ExpressionSet<SymbolicExpression> id = ids.get(i);
-			
-			AccessChild fieldAcc = new AccessChild(untyped, deref, new Constant(Int32.INSTANCE, i, getLocation()), getLocation());
+
+			AccessChild fieldAcc = new AccessChild(untyped, deref, new Constant(Int32.INSTANCE, i, getLocation()),
+					getLocation());
 			AnalysisState<A, H, V> fieldState = assign.smallStepSemantics(fieldAcc, this);
-			
+
 			AnalysisState<A, H, V> fieldResult = state.bottom();
 			for (SymbolicExpression single : id)
 				for (SymbolicExpression lenId : fieldState.getComputedExpressions())
 					fieldResult = fieldResult.lub(fieldState.assign(single, lenId, this));
 			assign = assign.lub(fieldResult);
 		}
-		
+
 		// we leave the reference on the stack
 		return assign.smallStepSemantics(ref, this);
 	}

@@ -1,8 +1,5 @@
 package it.unive.pylisa.cfg.statement;
 
-import java.util.Arrays;
-import java.util.List;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -29,6 +26,8 @@ import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.UnsupportedStatementException;
 import it.unive.pylisa.cfg.type.PyListType;
+import java.util.Arrays;
+import java.util.List;
 
 public class ListCreation extends Expression {
 	private final List<Expression> values;
@@ -61,7 +60,7 @@ public class ListCreation extends Expression {
 			V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> state,
 					InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions)
 					throws SemanticException {
-		
+
 		AnalysisState<A, H, V> result = state.bottom();
 		ExternalSet<Type> type = Caches.types().mkSingletonSet(PyListType.INSTANCE);
 		ExternalSet<Type> untyped = Caches.types().mkSingletonSet(Untyped.INSTANCE);
@@ -79,9 +78,10 @@ public class ListCreation extends Expression {
 			for (int i = 0; i < values.size(); i++) {
 				Expression pair = values.get(i);
 				AnalysisState<A, H, V> value = pair.semantics(assign, interprocedural, expressions);
-				
+
 				AnalysisState<A, H, V> fieldResult = state.bottom();
-				AccessChild fieldAcc = new AccessChild(untyped, deref, new Constant(Int32.INSTANCE, i, getLocation()), getLocation());
+				AccessChild fieldAcc = new AccessChild(untyped, deref, new Constant(Int32.INSTANCE, i, getLocation()),
+						getLocation());
 				for (SymbolicExpression init : value.getComputedExpressions()) {
 					AnalysisState<A, H, V> fieldState = value.smallStepSemantics(fieldAcc, this);
 					for (SymbolicExpression lenId : fieldState.getComputedExpressions())
@@ -89,7 +89,7 @@ public class ListCreation extends Expression {
 				}
 				assign = assign.lub(fieldResult);
 			}
-			
+
 			// we leave the reference on the stack
 			result = result.lub(assign.smallStepSemantics(ref, this));
 		}
