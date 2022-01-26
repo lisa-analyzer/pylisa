@@ -1,4 +1,4 @@
-package it.unive.pylisa.cfg.statement;
+package it.unive.pylisa.cfg.expression;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -24,9 +24,14 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 	}
 
 	@Override
-	protected <A extends AbstractState<A, H, V>, H extends HeapDomain<H>, V extends ValueDomain<V>> AnalysisState<A, H,
-			V> ternarySemantics(InterproceduralAnalysis<A, H, V> interprocedural, AnalysisState<A, H, V> state,
-					SymbolicExpression left, SymbolicExpression middle, SymbolicExpression right,
+	protected <A extends AbstractState<A, H, V>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>> AnalysisState<A, H, V> ternarySemantics(
+					InterproceduralAnalysis<A, H, V> interprocedural,
+					AnalysisState<A, H, V> state,
+					SymbolicExpression left,
+					SymbolicExpression middle,
+					SymbolicExpression right,
 					StatementStore<A, H, V> expressions)
 					throws SemanticException {
 		HeapDereference deref = new HeapDereference(getRuntimeTypes(), left, getLocation());

@@ -1,4 +1,4 @@
-package it.unive.pylisa.cfg.statement;
+package it.unive.pylisa.cfg.expression;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -23,6 +23,8 @@ import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyTupleType;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,16 +35,21 @@ public class PyAssign extends Assignment {
 	}
 
 	@Override
-	protected <A extends AbstractState<A, H, V>, H extends HeapDomain<H>, V extends ValueDomain<V>> AnalysisState<A, H,
-			V> binarySemantics(InterproceduralAnalysis<A, H, V> interprocedural, AnalysisState<A, H, V> state,
-					SymbolicExpression left, SymbolicExpression right, StatementStore<A, H, V> expressions)
+	protected <A extends AbstractState<A, H, V>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>> AnalysisState<A, H, V> binarySemantics(
+					InterproceduralAnalysis<A, H, V> interprocedural,
+					AnalysisState<A, H, V> state,
+					SymbolicExpression left,
+					SymbolicExpression right,
+					StatementStore<A, H, V> expressions)
 					throws SemanticException {
 		if (!(getLeft() instanceof TupleCreation))
 			return super.binarySemantics(interprocedural, state, left, right, expressions);
 
 		// get the variables being assigned
-		List<Expression> vars = ((TupleCreation) getLeft()).getValues();
-		List<ExpressionSet<SymbolicExpression>> ids = vars.stream()
+		Expression[] vars = ((TupleCreation) getLeft()).getSubExpressions();
+		List<ExpressionSet<SymbolicExpression>> ids = Arrays.stream(vars)
 				.map(v -> expressions.getState(v).getComputedExpressions()).collect(Collectors.toList());
 
 		// assign to each variable the element on the tuple on the right

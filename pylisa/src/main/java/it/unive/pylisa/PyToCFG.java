@@ -2,8 +2,35 @@ package it.unive.pylisa;
 
 import static it.unive.lisa.LiSAFactory.getDefaultFor;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
@@ -164,50 +191,26 @@ import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
 import it.unive.pylisa.antlr.Python3ParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.PythonUnit;
-import it.unive.pylisa.cfg.expression.binary.PyFloorDiv;
-import it.unive.pylisa.cfg.expression.binary.PyIn;
-import it.unive.pylisa.cfg.expression.binary.PyIs;
-import it.unive.pylisa.cfg.expression.binary.PyMatMul;
-import it.unive.pylisa.cfg.expression.binary.PyPower;
-import it.unive.pylisa.cfg.expression.binary.PyXor;
-import it.unive.pylisa.cfg.statement.DictionaryCreation;
+import it.unive.pylisa.cfg.expression.DictionaryCreation;
+import it.unive.pylisa.cfg.expression.LambdaExpression;
+import it.unive.pylisa.cfg.expression.ListCreation;
+import it.unive.pylisa.cfg.expression.PyAssign;
+import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
+import it.unive.pylisa.cfg.expression.PyFloorDiv;
+import it.unive.pylisa.cfg.expression.PyIn;
+import it.unive.pylisa.cfg.expression.PyIs;
+import it.unive.pylisa.cfg.expression.PyMatMul;
+import it.unive.pylisa.cfg.expression.PyPower;
+import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
+import it.unive.pylisa.cfg.expression.PyXor;
+import it.unive.pylisa.cfg.expression.RangeValue;
+import it.unive.pylisa.cfg.expression.SetCreation;
+import it.unive.pylisa.cfg.expression.StarExpression;
+import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
-import it.unive.pylisa.cfg.statement.LambdaExpression;
-import it.unive.pylisa.cfg.statement.ListCreation;
-import it.unive.pylisa.cfg.statement.PyAssign;
-import it.unive.pylisa.cfg.statement.PyDoubleArrayAccess;
-import it.unive.pylisa.cfg.statement.PySingleArrayAccess;
-import it.unive.pylisa.cfg.statement.RangeValue;
-import it.unive.pylisa.cfg.statement.SetCreation;
-import it.unive.pylisa.cfg.statement.StarExpression;
-import it.unive.pylisa.cfg.statement.TupleCreation;
 import it.unive.pylisa.cfg.type.PyLibraryType;
 import it.unive.pylisa.cfg.type.PyListType;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>> {
 
@@ -329,7 +332,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			}
 			break;
 		default:
-			throw new UnsupportedStatementException("Files with extension " + extension + " are not supported");
+			throw new IOException("Files with extension " + extension + " are not supported");
 		}
 	}
 
@@ -560,7 +563,8 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 		List<Expression> elements = new ArrayList<>();
 		for (TestContext test : ctx.test())
 			elements.add(checkAndExtractSingleExpression(visitTest(test)));
-		return createPairFromSingle(new TupleCreation(elements, currentCFG, getLocation(ctx)));
+		return createPairFromSingle(
+				new TupleCreation(currentCFG, getLocation(ctx), elements.toArray(Expression[]::new)));
 	}
 
 	@Override
@@ -633,7 +637,8 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 						checkAndExtractSingleExpression(visitTestlist(ctx.testlist())))));
 			else
 				return addToCFGAndReturn(createPairFromSingle(new TupleCreation(
-						extractExpressionsFromTestlist(ctx.testlist()), currentCFG, getLocation(ctx))));
+						currentCFG, getLocation(ctx),
+						extractExpressionsFromTestlist(ctx.testlist()).toArray(Expression[]::new))));
 		}
 	}
 
@@ -960,7 +965,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 		if (exprs.size() == 1)
 			variable = exprs.get(0);
 		else
-			variable = new TupleCreation(exprs, currentCFG, getLocation(ctx));
+			variable = new TupleCreation(currentCFG, getLocation(ctx), exprs.toArray(Expression[]::new));
 		Expression collection = checkAndExtractSingleExpression(visitTestlist(ctx.testlist()));
 		Expression[] collection_pars = { collection };
 
@@ -1086,7 +1091,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			try {
 				if (previous != null)
 					currentCFG.addEdge(new SequentialEdge(previous, parsed.getLeft()));
-			} catch (UnsupportedOperationException e) {
+			} catch (UnsupportedStatementException e) {
 				// The node was not yet added. Since this method is called from
 				// different contexts,
 				// sometimes it parses expressions and those are not added as
@@ -1691,17 +1696,19 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			return visitDictorsetmaker(ctx.dictorsetmaker());
 		} else if (ctx.OPEN_BRACK() != null) {
 			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
-			ListCreation r = new ListCreation(sts, currentCFG, getLocation(ctx));
+			ListCreation r = new ListCreation(currentCFG, getLocation(ctx), sts.toArray(Expression[]::new));
 			return createPairFromSingle(r);
 		} else if (ctx.OPEN_PAREN() != null) {
 			if (ctx.yield_expr() != null)
 				throw new UnsupportedStatementException("yield expressions not supported");
 			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
-			TupleCreation r = new TupleCreation(sts, currentCFG, getLocation(ctx));
+			TupleCreation r = new TupleCreation(currentCFG, getLocation(ctx), sts.toArray(Expression[]::new));
 			return createPairFromSingle(r);
 		} else if (ctx.OPEN_BRACE() != null) {
 			List<Pair<Expression, Expression>> values = extractPairsFromDictorSet(ctx.dictorsetmaker());
-			DictionaryCreation r = new DictionaryCreation(values, currentCFG, getLocation(ctx));
+			@SuppressWarnings("unchecked")
+			DictionaryCreation r = new DictionaryCreation(currentCFG, getLocation(ctx),
+					values.toArray(Pair[]::new));
 			return createPairFromSingle(r);
 		}
 		throw new UnsupportedStatementException();
@@ -1810,9 +1817,12 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 		if (ctx.COLON() != null) {
 			Expression left = ctx.test1() == null ? null
 					: checkAndExtractSingleExpression(visitTest(ctx.test1().test()));
-			Expression right = ctx.test2() == null ? null
+			Expression middle = ctx.test2() == null ? null
 					: checkAndExtractSingleExpression(visitTest(ctx.test2().test()));
-			return createPairFromSingle(new RangeValue(left, right, currentCFG, getLocation(ctx)));
+			Expression right = ctx.sliceop() == null ? null
+					: checkAndExtractSingleExpression(
+							ctx.sliceop().test() == null ? null : visitTest(ctx.sliceop().test()));
+			return createPairFromSingle(new RangeValue(currentCFG, getLocation(ctx), left, middle, right));
 		} else
 			return visitTest(ctx.test());
 	}
@@ -1828,7 +1838,8 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			List<Expression> values = new ArrayList<>();
 			for (TestContext exp : ctx.test())
 				values.add(checkAndExtractSingleExpression(visitTest(exp)));
-			return createPairFromSingle(new SetCreation(values, currentCFG, getLocation(ctx)));
+			return createPairFromSingle(
+					new SetCreation(currentCFG, getLocation(ctx), values.toArray(Expression[]::new)));
 		} else {
 			throw new UnsupportedStatementException();
 		}
@@ -1894,22 +1905,17 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 	}
 
 	private Pair<VariableRef, Expression> parseField(Simple_stmtContext st) {
-		try {
-			Statement result = checkAndExtractSingleStatement(visitSimple_stmt(st));
-			if (result instanceof Assignment) {
-				Assignment ass = (Assignment) result;
-				Expression assigned = ass.getLeft();
-				Expression expr = ass.getRight();
-				if (assigned instanceof VariableRef)
-					return Pair.of((VariableRef) assigned, expr);
-			} else if (result instanceof VariableRef)
-				return Pair.of((VariableRef) result, null);
-			throw new UnsupportedStatementException(
-					"Only variables or assignments of variable are supported as field declarations");
-		} catch (UnsupportedStatementException e) {
-			throw new UnsupportedStatementException(
-					"Only variables or assignments of variable are supported as field declarations", e);
-		}
+		Statement result = checkAndExtractSingleStatement(visitSimple_stmt(st));
+		if (result instanceof Assignment) {
+			Assignment ass = (Assignment) result;
+			Expression assigned = ass.getLeft();
+			Expression expr = ass.getRight();
+			if (assigned instanceof VariableRef)
+				return Pair.of((VariableRef) assigned, expr);
+		} else if (result instanceof VariableRef)
+			return Pair.of((VariableRef) result, null);
+		throw new UnsupportedStatementException(
+				"Only variables or assignments of variable are supported as field declarations");
 	}
 
 	@Override
@@ -1922,8 +1928,8 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 		if (ctx.ASSIGN() != null) {
 			return createPairFromSingle(createAssign(visitTest(ctx.test(0)), visitTest(ctx.test(1)), getLocation(ctx)));
 		} else if (ctx.STAR() != null)
-			return createPairFromSingle(new StarExpression(checkAndExtractSingleExpression(visitTest(ctx.test(0))),
-					currentCFG, getLocation(ctx)));
+			return createPairFromSingle(new StarExpression(currentCFG, getLocation(ctx),
+					checkAndExtractSingleExpression(visitTest(ctx.test(0)))));
 		else if (ctx.comp_for() != null || ctx.POWER() != null || ctx.test().size() != 1)
 			throw new UnsupportedStatementException("We support only simple arguments in method calls");
 		else
