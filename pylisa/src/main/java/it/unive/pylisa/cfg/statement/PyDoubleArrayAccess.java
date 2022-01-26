@@ -12,6 +12,8 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.TernaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.AccessChild;
+import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.type.Type;
 
 public class PyDoubleArrayAccess extends TernaryExpression {
@@ -27,6 +29,15 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 					SymbolicExpression left, SymbolicExpression middle, SymbolicExpression right,
 					StatementStore<A, H, V> expressions)
 					throws SemanticException {
-		throw new SemanticException("Not yer supported");
+		HeapDereference deref = new HeapDereference(getRuntimeTypes(), left, getLocation());
+		AccessChild access = new AccessChild(getRuntimeTypes(), deref, middle, getLocation());
+		AnalysisState<A, H, V> tmp = state.smallStepSemantics(access, this);
+		AnalysisState<A, H, V> result = state.bottom();
+		for (SymbolicExpression expr : tmp.getComputedExpressions()) {
+			deref = new HeapDereference(getRuntimeTypes(), expr, getLocation());
+			access = new AccessChild(getRuntimeTypes(), deref, right, getLocation());
+			result = result.lub(tmp.smallStepSemantics(access, this));
+		}
+		return result;
 	}
 }

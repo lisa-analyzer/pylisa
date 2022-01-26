@@ -202,6 +202,7 @@ import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.LambdaExpression;
 import it.unive.pylisa.cfg.statement.ListCreation;
+import it.unive.pylisa.cfg.statement.PyAssign;
 import it.unive.pylisa.cfg.statement.PyDoubleArrayAccess;
 import it.unive.pylisa.cfg.statement.PySingleArrayAccess;
 import it.unive.pylisa.cfg.statement.RangeValue;
@@ -541,12 +542,8 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 
 		// � un assegnazione
 		if (ctx.ASSIGN().size() > 0) {
-			Statement target = checkAndExtractSingleStatement(visitTestlist_star_expr(ctx.testlist_star_expr(0)));
-			Statement expression = checkAndExtractSingleStatement(visitTestlist_star_expr(ctx.testlist_star_expr(1)));
-			if ((!(target instanceof Expression)) || (!(expression instanceof Expression)))
-				throw new UnsupportedStatementException(
-						"Assignments require expression both in the left and in the right hand side");
-			assegnazione = new Assignment(currentCFG, getLocation(ctx), (Expression) target, (Expression) expression);
+			assegnazione = createAssign(visitTestlist_star_expr(ctx.testlist_star_expr(0)),
+					visitTestlist_star_expr(ctx.testlist_star_expr(1)), getLocation(ctx));
 			currentCFG.addNodeIfNotPresent(assegnazione);
 		} else
 			return visitTestlistStarExpr(ctx);
@@ -1668,13 +1665,14 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			String text = ctx.NUMBER().getText().toLowerCase();
 			if (text.contains("j"))
 				// complex number
-				throw new UnsupportedStatementException("complex numbeer are not supported (at " + getLocation(ctx) + ")");
-			
+				throw new UnsupportedStatementException(
+						"complex numbeer are not supported (at " + getLocation(ctx) + ")");
+
 			if (text.contains("e") || text.contains("."))
 				// floating point
 				return createPairFromSingle(
 						new Float32Literal(currentCFG, getLocation(ctx), Float.parseFloat(text)));
-				
+
 			// integer
 			return createPairFromSingle(
 					new Int32Literal(currentCFG, getLocation(ctx), Integer.parseInt(text)));
@@ -1925,13 +1923,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 	@Override
 	public Pair<Statement, Statement> visitArgument(ArgumentContext ctx) {
 		if (ctx.ASSIGN() != null) {
-			Statement target = checkAndExtractSingleStatement(visitTest(ctx.test(0)));
-			Statement expression = checkAndExtractSingleStatement(visitTest(ctx.test(1)));
-			if ((!(target instanceof Expression)) || (!(expression instanceof Expression)))
-				throw new UnsupportedStatementException(
-						"Assignments require expression both in the left and in the right hand side");
-			return createPairFromSingle(
-					new Assignment(currentCFG, getLocation(ctx), (Expression) target, (Expression) expression));
+			return createPairFromSingle(createAssign(visitTest(ctx.test(0)), visitTest(ctx.test(1)), getLocation(ctx)));
 		} else if (ctx.STAR() != null)
 			return createPairFromSingle(new StarExpression(checkAndExtractSingleExpression(visitTest(ctx.test(0))),
 					currentCFG, getLocation(ctx)));
@@ -1939,6 +1931,16 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			throw new UnsupportedStatementException("We support only simple arguments in method calls");
 		else
 			return visitTest(ctx.test(0));
+	}
+
+	private PyAssign createAssign(Pair<Statement, Statement> left, Pair<Statement, Statement> right,
+			CodeLocation loc) {
+		Statement target = checkAndExtractSingleStatement(left);
+		Statement expression = checkAndExtractSingleStatement(right);
+		if ((!(target instanceof Expression)) || (!(expression instanceof Expression)))
+			throw new UnsupportedStatementException(
+					"Assignments require expression both in the left and in the right hand side");
+		return new PyAssign(currentCFG, loc, (Expression) target, (Expression) expression);
 	}
 
 	@Override

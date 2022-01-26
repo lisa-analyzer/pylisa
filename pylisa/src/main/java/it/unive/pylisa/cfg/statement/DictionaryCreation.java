@@ -78,7 +78,7 @@ public class DictionaryCreation extends Expression {
 
 			for (Pair<Expression, Expression> pair : values) {
 				AnalysisState<A, H, V> key = pair.getLeft().semantics(assign, interprocedural, expressions);
-				AnalysisState<A, H, V> value = pair.getLeft().semantics(key, interprocedural, expressions);
+				AnalysisState<A, H, V> value = pair.getRight().semantics(key, interprocedural, expressions);
 				
 				AnalysisState<A, H, V> fieldResult = state.bottom();
 				for (SymbolicExpression field : key.getComputedExpressions()) {

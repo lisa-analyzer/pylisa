@@ -12,6 +12,8 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.AccessChild;
+import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.type.Type;
 
 public class PySingleArrayAccess extends BinaryExpression {
@@ -25,6 +27,7 @@ public class PySingleArrayAccess extends BinaryExpression {
 			V> binarySemantics(InterproceduralAnalysis<A, H, V> interprocedural, AnalysisState<A, H, V> state,
 					SymbolicExpression left, SymbolicExpression right, StatementStore<A, H, V> expressions)
 					throws SemanticException {
-		throw new SemanticException("Not yet supported");
+		HeapDereference deref = new HeapDereference(getRuntimeTypes(), left, getLocation());
+		return state.smallStepSemantics(new AccessChild(getRuntimeTypes(), deref, right, getLocation()), this);
 	}
 }

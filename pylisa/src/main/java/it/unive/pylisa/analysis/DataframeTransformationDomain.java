@@ -1,5 +1,6 @@
 package it.unive.pylisa.analysis;
 
+import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
@@ -88,6 +89,10 @@ public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<
 
 	@Override
 	public DomainRepresentation representation() {
+		if (isTop())
+			return Lattice.TOP_REPR;
+		if (isBottom())
+			return Lattice.BOTTOM_REPR;
 		return new StringRepresentation(Arrays.toString(transformations.toArray()));
 	}
 

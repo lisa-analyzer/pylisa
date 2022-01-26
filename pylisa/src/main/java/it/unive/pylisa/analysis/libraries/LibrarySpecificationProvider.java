@@ -22,6 +22,7 @@ public class LibrarySpecificationProvider {
 	public static final String SET = "set";
 	public static final String DICT = "dict";
 	public static final String LIST = "list";
+	public static final String TUPLE = "tuple";
 	public static final String WARNINGS = "warnings";
 	public static final String PANDAS = "pandas";
 
@@ -37,6 +38,7 @@ public class LibrarySpecificationProvider {
 		LIBS.put(LIST, getListPythonUnit());
 		LIBS.put(DICT, getDictPythonUnit());
 		LIBS.put(SET, getSetPythonUnit());
+		LIBS.put(TUPLE, getTuplePythonUnit());
 	}
 
 	public static Collection<CompilationUnit> getLibraryUnits() {
@@ -71,6 +73,11 @@ public class LibrarySpecificationProvider {
 
 	private static PythonUnit getSetPythonUnit() {
 		PythonUnit unit1 = new PythonUnit(STDLIB_LOC, "Set", true);
+		return unit1;
+	}
+
+	private static PythonUnit getTuplePythonUnit() {
+		PythonUnit unit1 = new PythonUnit(STDLIB_LOC, "Tuple", true);
 		return unit1;
 	}
 
