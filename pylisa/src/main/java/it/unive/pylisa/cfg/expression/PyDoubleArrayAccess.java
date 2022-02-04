@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
+import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
@@ -15,6 +16,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 
 public class PyDoubleArrayAccess extends TernaryExpression {
 
@@ -24,23 +26,24 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 	}
 
 	@Override
-	protected <A extends AbstractState<A, H, V>,
+	protected <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
-			V extends ValueDomain<V>> AnalysisState<A, H, V> ternarySemantics(
-					InterproceduralAnalysis<A, H, V> interprocedural,
-					AnalysisState<A, H, V> state,
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> ternarySemantics(
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					AnalysisState<A, H, V, T> state,
 					SymbolicExpression left,
 					SymbolicExpression middle,
 					SymbolicExpression right,
-					StatementStore<A, H, V> expressions)
+					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		HeapDereference deref = new HeapDereference(getRuntimeTypes(), left, getLocation());
-		AccessChild access = new AccessChild(getRuntimeTypes(), deref, middle, getLocation());
-		AnalysisState<A, H, V> tmp = state.smallStepSemantics(access, this);
-		AnalysisState<A, H, V> result = state.bottom();
+		HeapDereference deref = new HeapDereference(getStaticType(), left, getLocation());
+		AccessChild access = new AccessChild(Untyped.INSTANCE, deref, middle, getLocation());
+		AnalysisState<A, H, V, T> tmp = state.smallStepSemantics(access, this);
+		AnalysisState<A, H, V, T> result = state.bottom();
 		for (SymbolicExpression expr : tmp.getComputedExpressions()) {
-			deref = new HeapDereference(getRuntimeTypes(), expr, getLocation());
-			access = new AccessChild(getRuntimeTypes(), deref, right, getLocation());
+			deref = new HeapDereference(Untyped.INSTANCE, expr, getLocation());
+			access = new AccessChild(Untyped.INSTANCE, deref, right, getLocation());
 			result = result.lub(tmp.smallStepSemantics(access, this));
 		}
 		return result;

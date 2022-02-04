@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
+import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
@@ -15,6 +16,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 
 public class PySingleArrayAccess extends BinaryExpression {
 
@@ -23,16 +25,16 @@ public class PySingleArrayAccess extends BinaryExpression {
 	}
 
 	@Override
-	protected <A extends AbstractState<A, H, V>,
+	protected <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
-			V extends ValueDomain<V>> AnalysisState<A, H, V> binarySemantics(
-					InterproceduralAnalysis<A, H, V> interprocedural,
-					AnalysisState<A, H, V> state,
+			V extends ValueDomain<V>, T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					AnalysisState<A, H, V, T> state,
 					SymbolicExpression left,
 					SymbolicExpression right,
-					StatementStore<A, H, V> expressions)
+					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		HeapDereference deref = new HeapDereference(getRuntimeTypes(), left, getLocation());
-		return state.smallStepSemantics(new AccessChild(getRuntimeTypes(), deref, right, getLocation()), this);
+		HeapDereference deref = new HeapDereference(getStaticType(), left, getLocation());
+		return state.smallStepSemantics(new AccessChild(Untyped.INSTANCE, deref, right, getLocation()), this);
 	}
 }

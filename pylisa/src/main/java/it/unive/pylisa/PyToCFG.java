@@ -38,6 +38,9 @@ import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.combination.ValueCartesianProduct;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
+import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
+
+import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.logging.IterationLogger;
@@ -63,6 +66,7 @@ import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
+import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.assignment.PythonLikeAssigningStrategy;
 import it.unive.lisa.program.cfg.statement.call.resolution.PythonLikeMatchingStrategy;
 import it.unive.lisa.program.cfg.statement.call.resolution.RuntimeTypesMatchingStrategy;
@@ -299,7 +303,6 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			conf.setDumpCFGs(true);
 			conf.setWorkdir("workdir");
 			conf.setDumpTypeInference(true);
-			conf.setInferTypes(true);
 			conf.setDumpAnalysis(true);
 			conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 
@@ -308,7 +311,8 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 							new ValueEnvironment<>(new LibraryDomain("").top()),
 							new ValueEnvironment<>(new DataframeTransformationDomain(null)));
 			PointBasedHeap heap = new PointBasedHeap();
-			conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain));
+			TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
+			conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain, type));
 
 			LiSA lisa = new LiSA(conf);
 			lisa.run(program);
@@ -321,8 +325,8 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			ArrayList<Map<?, ?>> cells = (ArrayList<Map<?, ?>>) map.get("cells");
 			List<String> code = new ArrayList<>();
 			for (Map<?, ?> l : cells) {
-				String type = (String) l.get("cell_type");
-				if (type.equals("code")) {
+				String ctype = (String) l.get("cell_type");
+				if (ctype.equals("code")) {
 					@SuppressWarnings("unchecked")
 					List<String> code_list = (List<String>) l.get("source");
 					code.add(transformToCode(code_list));
@@ -629,7 +633,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 				ASSIGN_STRATEGY,
 				MATCHING_STRATEGY,
 				TRAVERSAL_STRATEGY,
-				false,
+				CallType.STATIC,
 				Program.PROGRAM_NAME,
 				"del",
 				extractExpressionsFromExprlist(ctx.exprlist()).toArray(new Expression[ctx.exprlist().expr().size()]));
@@ -662,7 +666,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 							ASSIGN_STRATEGY,
 							MATCHING_STRATEGY,
 							TRAVERSAL_STRATEGY,
-							false,
+							CallType.STATIC,
 							Program.PROGRAM_NAME,
 							"yield from",
 							l.toArray(new Expression[0]))));
@@ -847,7 +851,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 								ASSIGN_STRATEGY,
 								MATCHING_STRATEGY,
 								TRAVERSAL_STRATEGY,
-								false,
+								CallType.STATIC,
 								"assert",
 								Program.PROGRAM_NAME,
 								extractExpressionsFromListOfTests(ctx.test())
@@ -1038,7 +1042,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 						ASSIGN_STRATEGY,
 						MATCHING_STRATEGY,
 						TRAVERSAL_STRATEGY,
-						true,
+						CallType.INSTANCE,
 						null,
 						"size",
 						collection_pars));
@@ -1055,7 +1059,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 						ASSIGN_STRATEGY,
 						MATCHING_STRATEGY,
 						TRAVERSAL_STRATEGY,
-						true,
+						CallType.INSTANCE,
 						null,
 						"at",
 						counter_pars));
@@ -1665,8 +1669,8 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 						throw new UnsupportedStatementException(
 								"When invoking a method we need to have always the name before the parentheses");
 					List<Expression> pars = new ArrayList<>();
-					boolean instance = access instanceof AccessInstanceGlobal;
 					String method_name = last_name;
+					boolean instance = access instanceof AccessInstanceGlobal;
 					if (instance)
 						pars.add(previous_access);
 					if (expr.arglist() != null)
@@ -1674,14 +1678,14 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
 
 					access = new UnresolvedCall(
-							currentCFG, 
-							getLocation(expr), 
+							currentCFG,
+							getLocation(expr),
 							ASSIGN_STRATEGY,
 							MATCHING_STRATEGY,
 							TRAVERSAL_STRATEGY,
-							instance, 
-							null, 
-							method_name, 
+							instance ? CallType.UNKNOWN : CallType.STATIC,
+							null,
+							method_name,
 							pars.toArray(Expression[]::new));
 					last_name = null;
 					previous_access = null;

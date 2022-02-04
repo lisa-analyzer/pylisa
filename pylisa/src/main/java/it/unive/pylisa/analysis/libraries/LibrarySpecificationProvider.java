@@ -1,5 +1,11 @@
 package it.unive.pylisa.analysis.libraries;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
@@ -18,11 +24,6 @@ import it.unive.pylisa.analysis.libraries.standardLibrary.Print;
 import it.unive.pylisa.analysis.libraries.warnings.FilterWarnings;
 import it.unive.pylisa.cfg.PythonUnit;
 import it.unive.pylisa.cfg.type.PyLibraryType;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 public class LibrarySpecificationProvider {
 	public static final String SET = "set";

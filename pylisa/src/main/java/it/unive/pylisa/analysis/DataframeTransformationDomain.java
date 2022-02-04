@@ -1,5 +1,10 @@
 package it.unive.pylisa.analysis;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -9,10 +14,6 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.pylisa.symbolic.DataFrameConstant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
 
 public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<DataframeTransformationDomain> {
 	private final List<DataframeSingleTransformation> transformations;

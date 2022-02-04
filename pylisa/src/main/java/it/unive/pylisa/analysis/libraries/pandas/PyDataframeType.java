@@ -1,5 +1,8 @@
 package it.unive.pylisa.analysis.libraries.pandas;
 
+import java.util.Collection;
+import java.util.Set;
+
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFGDescriptor;
@@ -9,8 +12,6 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.PythonUnit;
-import java.util.Collection;
-import java.util.Set;
 
 public class PyDataframeType implements UnitType {
 	/**

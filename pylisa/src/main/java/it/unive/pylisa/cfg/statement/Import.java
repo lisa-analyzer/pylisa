@@ -5,8 +5,8 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
+import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
-import it.unive.lisa.caches.Caches;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -47,14 +47,14 @@ public class Import extends Statement {
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V>,
+	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
-			V extends ValueDomain<V>> AnalysisState<A, H, V> semantics(AnalysisState<A, H, V> entryState,
-					InterproceduralAnalysis<A, H, V> interprocedural, StatementStore<A, H, V> expressions)
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> semantics(AnalysisState<A, H, V, T> entryState,
+					InterproceduralAnalysis<A, H, V, T> interprocedural, StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		SymbolicExpression libexpr = new LibraryIdentifier(importedLibrary, this.getLocation());
-		Variable var = new Variable(Caches.types().mkSingletonSet(new PyLibraryType(importedLibrary)), name,
-				this.getLocation());
+		Variable var = new Variable(new PyLibraryType(importedLibrary), name, this.getLocation());
 		return entryState.assign(var, libexpr, this);
 	}
 

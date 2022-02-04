@@ -1,5 +1,7 @@
 package it.unive.pylisa.analysis;
 
+import java.util.Objects;
+
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -8,7 +10,6 @@ import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.pylisa.symbolic.LibraryIdentifier;
-import java.util.Objects;
 
 public class LibraryDomain extends BaseNonRelationalValueDomain<LibraryDomain> {
 

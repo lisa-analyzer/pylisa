@@ -1,13 +1,14 @@
 package it.unive.pylisa.analysis;
 
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.Set;
+
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Set;
 
 public abstract class DataframeSingleTransformation
 		extends BaseNonRelationalValueDomain<DataframeSingleTransformation> {

@@ -8,8 +8,8 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
+import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
-import it.unive.lisa.caches.Caches;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -20,9 +20,7 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
-import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyDictType;
 
 public class DictionaryCreation extends NaryExpression {
@@ -43,37 +41,36 @@ public class DictionaryCreation extends NaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V>,
+	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
-			V extends ValueDomain<V>> AnalysisState<A, H, V> expressionSemantics(
-					InterproceduralAnalysis<A, H, V> interprocedural,
-					AnalysisState<A, H, V> state,
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> expressionSemantics(
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					AnalysisState<A, H, V, T> state,
 					ExpressionSet<SymbolicExpression>[] params,
-					StatementStore<A, H, V> expressions)
+					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		AnalysisState<A, H, V> result = state.bottom();
-		ExternalSet<Type> type = Caches.types().mkSingletonSet(PyDictType.INSTANCE);
-		ExternalSet<Type> untyped = Caches.types().mkSingletonSet(Untyped.INSTANCE);
+		AnalysisState<A, H, V, T> result = state.bottom();
 
 		// allocate the heap region
-		HeapAllocation alloc = new HeapAllocation(type, getLocation());
-		AnalysisState<A, H, V> sem = state.smallStepSemantics(alloc, this);
+		HeapAllocation alloc = new HeapAllocation(PyDictType.INSTANCE, getLocation());
+		AnalysisState<A, H, V, T> sem = state.smallStepSemantics(alloc, this);
 
 		// assign the pairs
-		AnalysisState<A, H, V> assign = sem;
+		AnalysisState<A, H, V, T> assign = sem;
 		for (SymbolicExpression loc : sem.getComputedExpressions()) {
-			HeapReference ref = new HeapReference(type, loc, getLocation());
-			HeapDereference deref = new HeapDereference(type, ref, getLocation());
+			HeapReference ref = new HeapReference(PyDictType.INSTANCE, loc, getLocation());
+			HeapDereference deref = new HeapDereference(PyDictType.INSTANCE, ref, getLocation());
 
 			for (int i = 0; i < params.length; i += 2) {
 				ExpressionSet<SymbolicExpression> key = params[i];
 				ExpressionSet<SymbolicExpression> value = params[i + 1];
 
-				AnalysisState<A, H, V> fieldResult = state.bottom();
+				AnalysisState<A, H, V, T> fieldResult = state.bottom();
 				for (SymbolicExpression field : key) {
-					AccessChild fieldAcc = new AccessChild(untyped, deref, field, getLocation());
+					AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref, field, getLocation());
 					for (SymbolicExpression init : value) {
-						AnalysisState<A, H, V> fieldState = assign.smallStepSemantics(fieldAcc, this);
+						AnalysisState<A, H, V, T> fieldState = assign.smallStepSemantics(fieldAcc, this);
 						for (SymbolicExpression lenId : fieldState.getComputedExpressions())
 							fieldResult = fieldResult.lub(fieldState.assign(lenId, init, this));
 					}
