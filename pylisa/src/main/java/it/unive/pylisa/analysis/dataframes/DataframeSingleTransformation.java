@@ -1,4 +1,4 @@
-package it.unive.pylisa.analysis;
+package it.unive.pylisa.analysis.dataframes;
 
 import java.util.Arrays;
 import java.util.Objects;

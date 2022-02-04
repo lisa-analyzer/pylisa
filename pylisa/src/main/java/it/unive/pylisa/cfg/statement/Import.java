@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
+import it.unive.lisa.analysis.symbols.QualifierSymbol;
 import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
@@ -12,11 +13,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
-import it.unive.pylisa.cfg.type.PyLibraryType;
-import it.unive.pylisa.symbolic.LibraryIdentifier;
 
 public class Import extends Statement {
 
@@ -43,19 +40,55 @@ public class Import extends Statement {
 
 	@Override
 	public String toString() {
+		if (name == null)
+			return "import " + importedLibrary;
 		return "import " + importedLibrary + " as " + name;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((importedLibrary == null) ? 0 : importedLibrary.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Import other = (Import) obj;
+		if (importedLibrary == null) {
+			if (other.importedLibrary != null)
+				return false;
+		} else if (!importedLibrary.equals(other.importedLibrary))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		return true;
 	}
 
 	@Override
 	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> semantics(AnalysisState<A, H, V, T> entryState,
-					InterproceduralAnalysis<A, H, V, T> interprocedural, StatementStore<A, H, V, T> expressions)
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> semantics(
+					AnalysisState<A, H, V, T> entryState,
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		SymbolicExpression libexpr = new LibraryIdentifier(importedLibrary, this.getLocation());
-		Variable var = new Variable(new PyLibraryType(importedLibrary), name, this.getLocation());
-		return entryState.assign(var, libexpr, this);
+		if (name == null)
+			return entryState;
+
+		return entryState.alias(new QualifierSymbol(importedLibrary), new QualifierSymbol(name));
 	}
 
 }

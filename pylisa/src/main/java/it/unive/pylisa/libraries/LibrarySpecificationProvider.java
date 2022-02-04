@@ -1,4 +1,4 @@
-package it.unive.pylisa.analysis.libraries;
+package it.unive.pylisa.libraries;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -17,13 +17,12 @@ import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.type.common.Int32;
-import it.unive.pylisa.analysis.libraries.pandas.Head;
-import it.unive.pylisa.analysis.libraries.pandas.PyDataframeType;
-import it.unive.pylisa.analysis.libraries.pandas.ReadCsv;
-import it.unive.pylisa.analysis.libraries.standardLibrary.Print;
-import it.unive.pylisa.analysis.libraries.warnings.FilterWarnings;
 import it.unive.pylisa.cfg.PythonUnit;
-import it.unive.pylisa.cfg.type.PyLibraryType;
+import it.unive.pylisa.libraries.pandas.Head;
+import it.unive.pylisa.libraries.pandas.PyDataframeType;
+import it.unive.pylisa.libraries.pandas.ReadCsv;
+import it.unive.pylisa.libraries.standardLibrary.Print;
+import it.unive.pylisa.libraries.warnings.FilterWarnings;
 
 public class LibrarySpecificationProvider {
 	public static final String SET = "set";
@@ -95,8 +94,7 @@ public class LibrarySpecificationProvider {
 						unit1,
 						true,
 						"filterwarnings",
-						new Parameter(WARNINGS_LOC, "arg1", new PyLibraryType(WARNINGS)),
-						new Parameter(WARNINGS_LOC, "arg2")),
+						new Parameter(WARNINGS_LOC, "arg1")),
 				FilterWarnings.class);
 		unit1.addInstanceConstruct(cfg);
 		return unit1;
@@ -111,19 +109,19 @@ public class LibrarySpecificationProvider {
 				new CFGDescriptor(PANDAS_LOC,
 						unit1,
 						true,
-						"read_csv", 
+						"read_csv",
 						PyDataframeType.INSTANCE,
-						new Parameter(PANDAS_LOC, "arg1", new PyLibraryType(PANDAS)),
 						new Parameter(PANDAS_LOC, "filepath_or_buffer")),
 				ReadCsv.class));
 		unit1.addInstanceConstruct(new NativeCFG(
 				new CFGDescriptor(PANDAS_LOC,
 						unit1,
 						true,
-						"head", 
+						"head",
 						PyDataframeType.INSTANCE,
 						new Parameter(PANDAS_LOC, "this", PyDataframeType.INSTANCE),
-						new Parameter(PANDAS_LOC, "n", Int32.INSTANCE, new Int32Literal(init, PANDAS_LOC, 5), new Annotations())),
+						new Parameter(PANDAS_LOC, "n", Int32.INSTANCE, new Int32Literal(init, PANDAS_LOC, 5),
+								new Annotations())),
 				Head.class));
 		return unit1;
 	}

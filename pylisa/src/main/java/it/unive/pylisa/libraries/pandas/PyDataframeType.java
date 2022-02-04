@@ -1,4 +1,4 @@
-package it.unive.pylisa.analysis.libraries.pandas;
+package it.unive.pylisa.libraries.pandas;
 
 import java.util.Collection;
 import java.util.Set;

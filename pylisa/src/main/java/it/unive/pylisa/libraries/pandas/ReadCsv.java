@@ -1,4 +1,4 @@
-package it.unive.pylisa.analysis.libraries.pandas;
+package it.unive.pylisa.libraries.pandas;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;

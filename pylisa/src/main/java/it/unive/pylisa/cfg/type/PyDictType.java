@@ -7,7 +7,7 @@ import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
-import it.unive.pylisa.analysis.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class PyDictType implements UnitType {
 

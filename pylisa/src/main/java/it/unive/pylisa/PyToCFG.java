@@ -36,12 +36,10 @@ import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.combination.ValueCartesianProduct;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
-
-import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
+import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.logging.IterationLogger;
 import it.unive.lisa.program.CompilationUnit;
@@ -65,8 +63,8 @@ import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
-import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
+import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.call.assignment.PythonLikeAssigningStrategy;
 import it.unive.lisa.program.cfg.statement.call.resolution.PythonLikeMatchingStrategy;
 import it.unive.lisa.program.cfg.statement.call.resolution.RuntimeTypesMatchingStrategy;
@@ -97,9 +95,7 @@ import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Float32;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
-import it.unive.pylisa.analysis.DataframeTransformationDomain;
-import it.unive.pylisa.analysis.LibraryDomain;
-import it.unive.pylisa.analysis.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.analysis.dataframes.DataframeTransformationDomain;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
 import it.unive.pylisa.antlr.Python3Parser.AddContext;
@@ -221,6 +217,7 @@ import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.type.PyLibraryType;
 import it.unive.pylisa.cfg.type.PyListType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>> {
 
@@ -306,10 +303,8 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			conf.setDumpAnalysis(true);
 			conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 
-			ValueCartesianProduct<ValueEnvironment<LibraryDomain>,
-					ValueEnvironment<DataframeTransformationDomain>> domain = new ValueCartesianProduct<>(
-							new ValueEnvironment<>(new LibraryDomain("").top()),
-							new ValueEnvironment<>(new DataframeTransformationDomain(null)));
+			ValueEnvironment<DataframeTransformationDomain> domain = new ValueEnvironment<>(
+					new DataframeTransformationDomain(null));
 			PointBasedHeap heap = new PointBasedHeap();
 			TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 			conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain, type));
