@@ -38,7 +38,6 @@ import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
-import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.logging.IterationLogger;
@@ -90,7 +89,6 @@ import it.unive.lisa.program.cfg.statement.numeric.Remainder;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
 import it.unive.lisa.program.cfg.statement.string.Equals;
 import it.unive.lisa.type.NullType;
-import it.unive.lisa.type.Type;
 import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Float32;
 import it.unive.lisa.type.common.Int32;
@@ -278,23 +276,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 		case "py":
 			PyToCFG translator = new PyToCFG(file);
 			Program program = translator.toLiSAProgram();
-			program.registerType(PyListType.INSTANCE);
-			program.registerType(BoolType.INSTANCE);
-			program.registerType(StringType.INSTANCE);
-			program.registerType(Int32.INSTANCE);
-			program.registerType(Float32.INSTANCE);
-			program.registerType(NullType.INSTANCE);
-
-			for (CompilationUnit lib : LibrarySpecificationProvider.getLibraryUnits()) {
-				Type t = new PyLibraryType(lib.getName());
-				PyLibraryType.addUnit(lib);
-				program.registerType(t);
-			}
-			LibrarySpecificationProvider.getAllStandardLibraryMethods(program).forEach(program::addConstruct);
-
-			for (CFG cfg : program.getCFGs())
-				if (cfg.getDescriptor().getName().equals("main"))
-					program.addEntryPoint(cfg);
+			setupProgram(program);
 
 			LiSAConfiguration conf = new LiSAConfiguration();
 			conf.setDumpCFGs(true);
@@ -303,8 +285,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			conf.setDumpAnalysis(true);
 			conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 
-			ValueEnvironment<DataframeTransformationDomain> domain = new ValueEnvironment<>(
-					new DataframeTransformationDomain(null));
+			DataframeTransformationDomain domain = new DataframeTransformationDomain();
 			PointBasedHeap heap = new PointBasedHeap();
 			TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 			conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain, type));
@@ -2033,4 +2014,24 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 		throw new UnsupportedStatementException();
 	}
 
+	public static void setupProgram(Program program) {
+		program.registerType(PyListType.INSTANCE);
+		program.registerType(BoolType.INSTANCE);
+		program.registerType(StringType.INSTANCE);
+		program.registerType(Int32.INSTANCE);
+		program.registerType(Float32.INSTANCE);
+		program.registerType(NullType.INSTANCE);
+
+		for (CompilationUnit lib : LibrarySpecificationProvider.getLibraryUnits()) {
+			PyLibraryType.addUnit(lib);
+			program.addCompilationUnit(lib);
+			program.registerType(new PyLibraryType(lib.getName()));
+		}
+
+		LibrarySpecificationProvider.getAllStandardLibraryMethods(program).forEach(program::addConstruct);
+
+		for (CFG cfg : program.getCFGs())
+			if (cfg.getDescriptor().getName().equals("main"))
+				program.addEntryPoint(cfg);
+	}
 }

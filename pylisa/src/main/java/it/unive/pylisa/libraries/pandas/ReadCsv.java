@@ -10,21 +10,22 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapAllocation;
+import it.unive.lisa.symbolic.heap.HeapReference;
+import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
-import it.unive.pylisa.symbolic.DataFrameConstant;
+import it.unive.pylisa.symbolic.ReadDataframe;
 
-public class ReadCsv extends BinaryExpression implements PluggableStatement {
+public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	private Statement st;
 
-	protected ReadCsv(CFG cfg, CodeLocation location, String constructName, Type staticType, Expression left,
-			Expression right) {
-		super(cfg, location, constructName, staticType, left, right);
+	protected ReadCsv(CFG cfg, CodeLocation location, String constructName, Type staticType, Expression arg) {
+		super(cfg, location, constructName, staticType, arg);
 	}
 
 	@Override
@@ -33,25 +34,37 @@ public class ReadCsv extends BinaryExpression implements PluggableStatement {
 	}
 
 	public static ReadCsv build(CFG cfg, CodeLocation location, Expression[] exprs) {
-		return new ReadCsv(cfg, location, "read_csv", PyDataframeType.INSTANCE, exprs[0], exprs[1]);
+		return new ReadCsv(cfg, location, "read_csv", PyDataframeType.INSTANCE, exprs[0]);
 	}
 
 	@Override
 	protected <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(
 					InterproceduralAnalysis<A, H, V, T> interprocedural,
 					AnalysisState<A, H, V, T> state,
-					SymbolicExpression left, SymbolicExpression right, StatementStore<A, H, V, T> expressions)
+					SymbolicExpression arg,
+					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		HeapAllocation alloc = new HeapAllocation(PyDataframeType.INSTANCE, this.getLocation());
-		AnalysisState<A, H, V, T> afterAlloc = state.smallStepSemantics(alloc, st);
-		DataFrameConstant constant = new DataFrameConstant(PyDataframeType.INSTANCE, right, this.getLocation());
+		CodeLocation location = getLocation();
 		AnalysisState<A, H, V, T> assigned = state.bottom();
-		for (SymbolicExpression exp : afterAlloc.getComputedExpressions())
-			assigned = assigned.lub(afterAlloc.assign(exp, constant, st));
 
-		return new AnalysisState<A, H, V, T>(assigned.getState(), afterAlloc.getComputedExpressions());
+		HeapAllocation allocation = new HeapAllocation(PyDataframeType.INSTANCE, location);
+		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, st);
+
+		UnaryExpression read = new UnaryExpression(PyDataframeType.INSTANCE, arg, ReadDataframe.INSTANCE, location);
+		ReferenceType df_star = new ReferenceType(PyDataframeType.INSTANCE);
+
+		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
+			HeapReference ref = new HeapReference(df_star, loc, location);
+			AnalysisState<A, H, V, T> tmp = state.bottom();
+			AnalysisState<A, H, V, T> readState = allocated.smallStepSemantics(read, st);
+			for (SymbolicExpression df : readState.getComputedExpressions()) 
+				tmp = tmp.lub(readState.assign(loc, df, st));
+			assigned = tmp.smallStepSemantics(ref, st);
+		}
+
+		return assigned;
 	}
 }

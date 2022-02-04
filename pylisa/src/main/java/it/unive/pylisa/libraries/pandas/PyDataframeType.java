@@ -24,7 +24,7 @@ public class PyDataframeType implements UnitType {
 
 	@Override
 	public String toString() {
-		return "T";
+		return "DataFrame";
 	}
 
 	@Override
