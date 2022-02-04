@@ -17,7 +17,7 @@ import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.program.Program;
-import it.unive.pylisa.analysis.dataframes.DataframeTransformationDomain;
+import it.unive.pylisa.analysis.dataframes.DataframeDomain;
 
 public abstract class NotebookTest {
 
@@ -40,7 +40,7 @@ public abstract class NotebookTest {
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
 
-		DataframeTransformationDomain domain = new DataframeTransformationDomain();
+		DataframeDomain domain = new DataframeDomain();
 		PointBasedHeap heap = new PointBasedHeap();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain, type));

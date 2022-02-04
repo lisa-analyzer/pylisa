@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
@@ -133,8 +134,13 @@ public class StringPropagation extends BaseNonRelationalValueDomain<StringPropag
 
 	@Override
 	public boolean tracksIdentifiers(Identifier id) {
-		return id.hasRuntimeTypes()
-				? id.getRuntimeTypes().anyMatch(Type::isStringType)
-				: id.getStaticType().isStringType() || id.getStaticType().isUntyped();
+		return canProcess(id);
+	}
+	
+	@Override
+	public boolean canProcess(SymbolicExpression expression) {
+		return expression.hasRuntimeTypes()
+				? expression.getRuntimeTypes().anyMatch(Type::isStringType)
+				: expression.getStaticType().isStringType() || expression.getStaticType().isUntyped();
 	}
 }
