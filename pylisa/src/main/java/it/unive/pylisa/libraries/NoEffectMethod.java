@@ -18,6 +18,8 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 
 public class NoEffectMethod extends NaryExpression implements PluggableStatement {
+	
+	protected Statement st;
 
 	public NoEffectMethod(CFG cfg, CodeLocation location, String constructName, Expression... parameter) {
 		super(cfg, location, constructName, parameter);
@@ -25,6 +27,7 @@ public class NoEffectMethod extends NaryExpression implements PluggableStatement
 
 	@Override
 	final public void setOriginatingStatement(Statement st) {
+		this.st = st;
 	}
 
 	@Override

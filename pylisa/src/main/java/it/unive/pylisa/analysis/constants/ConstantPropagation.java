@@ -26,11 +26,11 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		this(null, true);
 	}
 
-	private ConstantPropagation(String constant) {
+	private ConstantPropagation(Object constant) {
 		this(constant, false);
 	}
 
-	private ConstantPropagation(String constant, boolean isTop) {
+	private ConstantPropagation(Object constant, boolean isTop) {
 		this.constant = constant;
 		this.isTop = isTop;
 	}
@@ -115,10 +115,14 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		return true;
 	}
 
+	private boolean isAccepted(Type t) {
+		return t.isNumericType() || t.isStringType();
+	}
+
 	@Override
 	protected ConstantPropagation evalNonNullConstant(Constant constant, ProgramPoint pp) throws SemanticException {
-		if (constant.getStaticType().isStringType())
-			return new ConstantPropagation(constant.getValue().toString());
+		if (isAccepted(constant.getStaticType()))
+			return new ConstantPropagation(constant.getValue());
 		return super.evalNonNullConstant(constant, pp);
 	}
 
@@ -126,11 +130,11 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 	public boolean tracksIdentifiers(Identifier id) {
 		return canProcess(id);
 	}
-	
+
 	@Override
 	public boolean canProcess(SymbolicExpression expression) {
 		return expression.hasRuntimeTypes()
-				? expression.getRuntimeTypes().anyMatch(Type::isStringType)
-				: expression.getStaticType().isStringType() || expression.getStaticType().isUntyped();
+				? expression.getRuntimeTypes().anyMatch(this::isAccepted)
+				: isAccepted(expression.getStaticType());
 	}
 }

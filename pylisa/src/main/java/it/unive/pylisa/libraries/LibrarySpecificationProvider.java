@@ -33,6 +33,7 @@ public class LibrarySpecificationProvider {
 	public static final String TUPLE = "tuple";
 	public static final String WARNINGS = "warnings";
 	public static final String PANDAS = "pandas";
+	public static final String PANDAS_DF = "pandas.DataFrame";
 
 	private static final SourceCodeLocation PANDAS_LOC = new SourceCodeLocation(PANDAS, 0, 0);
 	private static final SourceCodeLocation WARNINGS_LOC = new SourceCodeLocation(WARNINGS, 0, 0);
@@ -42,6 +43,7 @@ public class LibrarySpecificationProvider {
 
 	static {
 		LIBS.put(PANDAS, getPandasPythonUnit());
+		LIBS.put(PANDAS_DF, getPandasDFPythonUnit());
 		LIBS.put(WARNINGS, getWarningsPythonUnit());
 		LIBS.put(LIST, getListPythonUnit());
 		LIBS.put(DICT, getDictPythonUnit());
@@ -104,9 +106,6 @@ public class LibrarySpecificationProvider {
 
 	private static PythonUnit getPandasPythonUnit() {
 		PythonUnit unit1 = new PythonUnit(PANDAS_LOC, PANDAS, true);
-		CFG init = new CFG(new CFGDescriptor(PANDAS_LOC, unit1, false, "init"));
-		init.addNode(new Ret(init, PANDAS_LOC), true);
-		unit1.addCFG(init);
 		unit1.addInstanceConstruct(new NativeCFG(
 				new CFGDescriptor(PANDAS_LOC,
 						unit1,
@@ -115,6 +114,17 @@ public class LibrarySpecificationProvider {
 						PyDataframeType.INSTANCE,
 						new Parameter(PANDAS_LOC, "filepath_or_buffer", StringType.INSTANCE)),
 				ReadCsv.class));
+		return unit1;
+	}
+
+	private static PythonUnit getPandasDFPythonUnit() {
+		PythonUnit unit1 = new PythonUnit(PANDAS_LOC, PANDAS_DF, true);
+		
+		// cfg for plugging default values evaluation
+		CFG init = new CFG(new CFGDescriptor(PANDAS_LOC, unit1, false, "init"));
+		init.addNode(new Ret(init, PANDAS_LOC), true);
+		unit1.addCFG(init);
+		
 		unit1.addInstanceConstruct(new NativeCFG(
 				new CFGDescriptor(PANDAS_LOC,
 						unit1,
@@ -125,6 +135,7 @@ public class LibrarySpecificationProvider {
 						new Parameter(PANDAS_LOC, "n", Int32.INSTANCE, new Int32Literal(init, PANDAS_LOC, 5),
 								new Annotations())),
 				Head.class));
+		
 		return unit1;
 	}
 }

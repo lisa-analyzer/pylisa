@@ -12,7 +12,6 @@ import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
-import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
@@ -42,7 +41,7 @@ public abstract class NotebookTest {
 
 		DataframeDomain domain = new DataframeDomain();
 		PointBasedHeap heap = new PointBasedHeap();
-		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
+		InferredTypes type = new InferredTypes();
 		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain, type));
 		return conf;
 	}

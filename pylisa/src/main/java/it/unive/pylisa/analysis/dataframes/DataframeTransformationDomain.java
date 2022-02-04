@@ -2,6 +2,7 @@ package it.unive.pylisa.analysis.dataframes;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import it.unive.lisa.analysis.Lattice;
@@ -9,15 +10,10 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
-import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
-import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
-import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformations.DataframeTransformation;
-import it.unive.pylisa.analysis.dataframes.transformations.ReadFile;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
-import it.unive.pylisa.symbolic.ReadDataframe;
 
 public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<DataframeTransformationDomain> {
 
@@ -35,25 +31,24 @@ public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<
 		this(Collections.emptyList(), isTop);
 	}
 
-	private DataframeTransformationDomain(DataframeTransformation transformation) {
+	DataframeTransformationDomain(DataframeTransformation transformation) {
 		this(Collections.singletonList(transformation), false);
+	}
+
+	DataframeTransformationDomain(DataframeTransformationDomain source, DataframeTransformation transformation) {
+		this(append(source.transformations, transformation), false);
+	}
+
+	private static List<DataframeTransformation> append(List<DataframeTransformation> source,
+			DataframeTransformation transformation) {
+		List<DataframeTransformation> copy = new LinkedList<>(source);
+		copy.add(transformation);
+		return copy;
 	}
 
 	private DataframeTransformationDomain(List<DataframeTransformation> transformations, boolean isTop) {
 		this.transformations = transformations;
 		this.isTop = isTop;
-	}
-
-	public DataframeTransformationDomain reducedEvalUnary(
-			UnaryOperator operator,
-			DataframeTransformationDomain argAsDF,
-			ConstantPropagation argAsString,
-			ProgramPoint pp) throws SemanticException {
-		if (operator == ReadDataframe.INSTANCE) {
-			if (!argAsString.isBottom() && !argAsString.isTop())
-				return new DataframeTransformationDomain(new ReadFile(argAsString.getConstantAs(String.class)));
-		}
-		return top();
 	}
 
 	@Override
