@@ -1,4 +1,4 @@
-package it.unive.pylisa.analysis.string;
+package it.unive.pylisa.analysis.constants;
 
 import java.util.Objects;
 
@@ -11,34 +11,36 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
-import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
-import it.unive.lisa.symbolic.value.operator.binary.StringConcat;
 import it.unive.lisa.type.Type;
 
-public class StringPropagation extends BaseNonRelationalValueDomain<StringPropagation> {
+public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation> {
 
-	private static final StringPropagation TOP = new StringPropagation(null, true);
-	private static final StringPropagation BOTTOM = new StringPropagation(null, false);
+	private static final ConstantPropagation TOP = new ConstantPropagation(null, true);
+	private static final ConstantPropagation BOTTOM = new ConstantPropagation(null, false);
 
-	private final String constant;
+	private final Object constant;
 
 	private final boolean isTop;
 
-	public StringPropagation() {
+	public ConstantPropagation() {
 		this(null, true);
 	}
 
-	private StringPropagation(String constant) {
+	private ConstantPropagation(String constant) {
 		this(constant, false);
 	}
 
-	private StringPropagation(String constant, boolean isTop) {
+	private ConstantPropagation(String constant, boolean isTop) {
 		this.constant = constant;
 		this.isTop = isTop;
 	}
 
-	public String getConstant() {
+	public Object getConstant() {
 		return constant;
+	}
+
+	public <T> T getConstantAs(Class<T> type) {
+		return type.cast(constant);
 	}
 
 	@Override
@@ -51,7 +53,7 @@ public class StringPropagation extends BaseNonRelationalValueDomain<StringPropag
 	}
 
 	@Override
-	public StringPropagation top() {
+	public ConstantPropagation top() {
 		return TOP;
 	}
 
@@ -61,7 +63,7 @@ public class StringPropagation extends BaseNonRelationalValueDomain<StringPropag
 	}
 
 	@Override
-	public StringPropagation bottom() {
+	public ConstantPropagation bottom() {
 		return BOTTOM;
 	}
 
@@ -71,17 +73,17 @@ public class StringPropagation extends BaseNonRelationalValueDomain<StringPropag
 	}
 
 	@Override
-	protected StringPropagation lubAux(StringPropagation other) throws SemanticException {
+	protected ConstantPropagation lubAux(ConstantPropagation other) throws SemanticException {
 		return Objects.equals(constant, other.constant) ? this : top();
 	}
 
 	@Override
-	protected StringPropagation wideningAux(StringPropagation other) throws SemanticException {
+	protected ConstantPropagation wideningAux(ConstantPropagation other) throws SemanticException {
 		return lubAux(other);
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(StringPropagation other) throws SemanticException {
+	protected boolean lessOrEqualAux(ConstantPropagation other) throws SemanticException {
 		return Objects.equals(constant, other.constant);
 	}
 
@@ -102,7 +104,7 @@ public class StringPropagation extends BaseNonRelationalValueDomain<StringPropag
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		StringPropagation other = (StringPropagation) obj;
+		ConstantPropagation other = (ConstantPropagation) obj;
 		if (constant == null) {
 			if (other.constant != null)
 				return false;
@@ -114,22 +116,10 @@ public class StringPropagation extends BaseNonRelationalValueDomain<StringPropag
 	}
 
 	@Override
-	protected StringPropagation evalNonNullConstant(Constant constant, ProgramPoint pp) throws SemanticException {
+	protected ConstantPropagation evalNonNullConstant(Constant constant, ProgramPoint pp) throws SemanticException {
 		if (constant.getStaticType().isStringType())
-			return new StringPropagation(constant.getValue().toString());
+			return new ConstantPropagation(constant.getValue().toString());
 		return super.evalNonNullConstant(constant, pp);
-	}
-
-	@Override
-	protected StringPropagation evalBinaryExpression(BinaryOperator operator, StringPropagation left,
-			StringPropagation right, ProgramPoint pp) throws SemanticException {
-		if (operator instanceof StringConcat) {
-			if (left.isTop() || right.isTop())
-				return top();
-			return new StringPropagation(left.constant + right.constant);
-		}
-
-		return super.evalBinaryExpression(operator, left, right, pp);
 	}
 
 	@Override

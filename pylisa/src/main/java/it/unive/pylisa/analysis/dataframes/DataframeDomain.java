@@ -9,35 +9,35 @@ import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.pylisa.analysis.NonRelationalValueCartesianProduct;
-import it.unive.pylisa.analysis.string.StringPropagation;
+import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.symbolic.ReadDataframe;
 
 public class DataframeDomain extends
-		NonRelationalValueCartesianProduct<DataframeTransformationDomain, StringPropagation> {
+		NonRelationalValueCartesianProduct<DataframeTransformationDomain, ConstantPropagation> {
 
 	public DataframeDomain() {
-		this(new DataframeTransformationDomain().top(), new StringPropagation().top());
+		this(new DataframeTransformationDomain().top(), new ConstantPropagation().top());
 	}
 
-	public DataframeDomain(DataframeTransformationDomain left, StringPropagation right) {
+	public DataframeDomain(DataframeTransformationDomain left, ConstantPropagation right) {
 		super(left, right);
 	}
 
 	@Override
-	protected DataframeDomain mk(DataframeTransformationDomain left, StringPropagation right) {
+	protected DataframeDomain mk(DataframeTransformationDomain left, ConstantPropagation right) {
 		return new DataframeDomain(left, right);
 	}
 
 	@Override
-	public NonRelationalValueCartesianProduct<DataframeTransformationDomain, StringPropagation> eval(
+	public NonRelationalValueCartesianProduct<DataframeTransformationDomain, ConstantPropagation> eval(
 			ValueExpression expression,
 			ValueEnvironment<
-					NonRelationalValueCartesianProduct<DataframeTransformationDomain, StringPropagation>> environment,
+					NonRelationalValueCartesianProduct<DataframeTransformationDomain, ConstantPropagation>> environment,
 			ProgramPoint pp) throws SemanticException {
 		ValueEnvironment<DataframeTransformationDomain> lenv = new ValueEnvironment<>(left);
-		ValueEnvironment<StringPropagation> renv = new ValueEnvironment<>(right);
+		ValueEnvironment<ConstantPropagation> renv = new ValueEnvironment<>(right);
 		for (Entry<Identifier, NonRelationalValueCartesianProduct<DataframeTransformationDomain,
-				StringPropagation>> entry : environment) {
+				ConstantPropagation>> entry : environment) {
 			lenv.putState(entry.getKey(), entry.getValue().left);
 			renv.putState(entry.getKey(), entry.getValue().right);
 		}
@@ -45,7 +45,7 @@ public class DataframeDomain extends
 		if (expression instanceof UnaryExpression) {
 			UnaryExpression unary = (UnaryExpression) expression;
 			if (unary.getOperator() instanceof ReadDataframe) {
-				StringPropagation filename = right.eval((ValueExpression) unary.getExpression(), renv, pp);
+				ConstantPropagation filename = right.eval((ValueExpression) unary.getExpression(), renv, pp);
 				DataframeTransformationDomain df = left.reducedEvalUnary(unary.getOperator(), left.bottom(),
 						filename, pp);
 				return new DataframeDomain(df, right.bottom());

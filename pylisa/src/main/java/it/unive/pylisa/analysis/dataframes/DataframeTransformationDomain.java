@@ -13,9 +13,9 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
+import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformations.DataframeTransformation;
 import it.unive.pylisa.analysis.dataframes.transformations.ReadFile;
-import it.unive.pylisa.analysis.string.StringPropagation;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
 import it.unive.pylisa.symbolic.ReadDataframe;
 
@@ -47,11 +47,11 @@ public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<
 	public DataframeTransformationDomain reducedEvalUnary(
 			UnaryOperator operator,
 			DataframeTransformationDomain argAsDF,
-			StringPropagation argAsString,
+			ConstantPropagation argAsString,
 			ProgramPoint pp) throws SemanticException {
 		if (operator == ReadDataframe.INSTANCE) {
 			if (!argAsString.isBottom() && !argAsString.isTop())
-				return new DataframeTransformationDomain(new ReadFile(argAsString.getConstant()));
+				return new DataframeTransformationDomain(new ReadFile(argAsString.getConstantAs(String.class)));
 		}
 		return top();
 	}
