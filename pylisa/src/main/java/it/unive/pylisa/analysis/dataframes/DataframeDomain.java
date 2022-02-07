@@ -14,8 +14,7 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.pylisa.analysis.NonRelationalValueCartesianProduct;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
-import it.unive.pylisa.analysis.dataframes.transformations.ReadFile;
-import it.unive.pylisa.analysis.dataframes.transformations.Stats;
+import it.unive.pylisa.analysis.dataframes.transformations.BaseTransformation;
 import it.unive.pylisa.symbolic.ProjectRows;
 import it.unive.pylisa.symbolic.ReadDataframe;
 import it.unive.pylisa.symbolic.Statistics;
@@ -54,15 +53,16 @@ public class DataframeDomain extends
 					return new DataframeDomain(left.top(), right.bottom());
 
 				DataframeTransformationDomain df = new DataframeTransformationDomain(
-						new ReadFile(filename.getConstantAs(String.class)));
+						new BaseTransformation("file", filename.getConstantAs(String.class)));
 				return new DataframeDomain(df, right.bottom());
 			} else if (unary.getOperator() == Statistics.INSTANCE) {
 				ValueExpression v = (ValueExpression) unary.getExpression();
 				if (v instanceof MemoryPointer)
 					v = ((MemoryPointer) v).getReferencedLocation();
 				DataframeTransformationDomain df = left.eval(v, lenv, pp);
-				
-				DataframeTransformationDomain stat = new DataframeTransformationDomain(df, Stats.INSTANCE);
+
+				DataframeTransformationDomain stat = new DataframeTransformationDomain(df,
+						new BaseTransformation("stats"));
 				return new DataframeDomain(stat, right.bottom());
 			}
 		}
@@ -81,8 +81,8 @@ public class DataframeDomain extends
 					return new DataframeDomain(left.top(), right.bottom());
 
 				DataframeTransformationDomain pr = new DataframeTransformationDomain(df,
-						new it.unive.pylisa.analysis.dataframes.transformations.ProjectRows(
-								start.getConstantAs(Integer.class), end.getConstantAs(Integer.class)));
+						new BaseTransformation("project_rows", start.getConstantAs(Integer.class),
+								end.getConstantAs(Integer.class)));
 
 				return new DataframeDomain(pr, right.bottom());
 			}
