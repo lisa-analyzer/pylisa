@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.TernaryExpression;
@@ -18,6 +19,7 @@ import it.unive.pylisa.analysis.dataframes.transformations.BaseTransformation;
 import it.unive.pylisa.symbolic.ProjectRows;
 import it.unive.pylisa.symbolic.ReadDataframe;
 import it.unive.pylisa.symbolic.Statistics;
+import it.unive.pylisa.symbolic.StructuralInfo;
 
 public class DataframeDomain extends
 		NonRelationalValueCartesianProduct<DataframeDomain, DataframeTransformationDomain, ConstantPropagation> {
@@ -56,24 +58,20 @@ public class DataframeDomain extends
 						new BaseTransformation("file", filename.getConstantAs(String.class)));
 				return new DataframeDomain(df, right.bottom());
 			} else if (unary.getOperator() == Statistics.INSTANCE) {
-				ValueExpression v = (ValueExpression) unary.getExpression();
-				if (v instanceof MemoryPointer)
-					v = ((MemoryPointer) v).getReferencedLocation();
-				DataframeTransformationDomain df = left.eval(v, lenv, pp);
-
+				DataframeTransformationDomain df = extractDataFrame(unary.getExpression(), lenv, pp);
 				DataframeTransformationDomain stat = new DataframeTransformationDomain(df,
 						new BaseTransformation("stats"));
 				return new DataframeDomain(stat, right.bottom());
+			} else if (unary.getOperator() == StructuralInfo.INSTANCE) {
+				DataframeTransformationDomain df = extractDataFrame(unary.getExpression(), lenv, pp);
+				DataframeTransformationDomain info = new DataframeTransformationDomain(df,
+						new BaseTransformation("info"));
+				return new DataframeDomain(info, right.bottom());
 			}
-		}
-
-		if (expression instanceof TernaryExpression) {
+		} else if (expression instanceof TernaryExpression) {
 			TernaryExpression ternary = (TernaryExpression) expression;
 			if (ternary.getOperator() == ProjectRows.INSTANCE) {
-				ValueExpression v = (ValueExpression) ternary.getLeft();
-				if (v instanceof MemoryPointer)
-					v = ((MemoryPointer) v).getReferencedLocation();
-				DataframeTransformationDomain df = left.eval(v, lenv, pp);
+				DataframeTransformationDomain df = extractDataFrame(ternary.getLeft(), lenv, pp);
 				ConstantPropagation start = right.eval((ValueExpression) ternary.getMiddle(), renv, pp);
 				ConstantPropagation end = right.eval((ValueExpression) ternary.getRight(), renv, pp);
 
@@ -89,6 +87,14 @@ public class DataframeDomain extends
 		}
 
 		return super.eval(expression, environment, pp);
+	}
+
+	private DataframeTransformationDomain extractDataFrame(SymbolicExpression expr,
+			ValueEnvironment<DataframeTransformationDomain> env, ProgramPoint pp) throws SemanticException {
+		ValueExpression v = (ValueExpression) expr;
+		if (v instanceof MemoryPointer)
+			v = ((MemoryPointer) v).getReferencedLocation();
+		return left.eval(v, env, pp);
 	}
 
 	private boolean topOrBottom(Lattice<?> l) {
