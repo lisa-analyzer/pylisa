@@ -13,8 +13,10 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.TernaryExpression;
+import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.pylisa.symbolic.ProjectRows;
+import it.unive.pylisa.symbolic.Statistics;
 
 public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwareDataframeDomain> {
 
@@ -47,7 +49,19 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 			throws SemanticException {
 		ValueEnvironment<DataframeDomain> sss = env.bottom();
 
-		if (expression instanceof TernaryExpression) {
+		if (expression instanceof UnaryExpression) {
+			UnaryExpression unary = (UnaryExpression) expression;
+			if (unary.getOperator() == Statistics.INSTANCE) {
+				ValueExpression v = (ValueExpression) unary.getExpression();
+				if (v instanceof MemoryPointer)
+					v = ((MemoryPointer) v).getReferencedLocation();
+				DataframeTransformationDomain df = env.smallStepSemantics(v, pp).getValueOnStack().left;
+
+				if (!df.isTop() && !df.isBottom())
+					for (Identifier key : keysOf(df))
+						sss = sss.lub(env.assign(key, expression, pp));
+			}
+		} else if (expression instanceof TernaryExpression) {
 			TernaryExpression ternary = (TernaryExpression) expression;
 			if (ternary.getOperator() == ProjectRows.INSTANCE) {
 				ValueExpression v = (ValueExpression) ternary.getLeft();
@@ -59,7 +73,6 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 					for (Identifier key : keysOf(df))
 						sss = sss.lub(env.assign(key, expression, pp));
 			}
-
 		}
 
 		return sss;
@@ -125,7 +138,7 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 	public SideEffectAwareDataframeDomain top() {
 		return new SideEffectAwareDataframeDomain(env.top());
 	}
-	
+
 	@Override
 	public boolean isTop() {
 		return env.isTop();
@@ -165,7 +178,7 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 			return false;
 		return true;
 	}
-	
+
 	@Override
 	public String toString() {
 		return representation().toString();

@@ -19,6 +19,7 @@ import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.cfg.PythonUnit;
+import it.unive.pylisa.libraries.pandas.Describe;
 import it.unive.pylisa.libraries.pandas.Head;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
@@ -134,6 +135,15 @@ public class LibrarySpecificationProvider {
 						new Parameter(PANDAS_LOC, "n", Int32.INSTANCE, new Int32Literal(init, PANDAS_LOC, 5),
 								new Annotations())),
 				Head.class));
+		
+		unit1.addInstanceConstruct(new NativeCFG(
+				new CFGDescriptor(PANDAS_LOC,
+						unit1,
+						true,
+						"describe",
+						PyDataframeType.INSTANCE,
+						new Parameter(PANDAS_LOC, "this", PyDataframeType.REFERENCE)),
+				Describe.class));
 		
 		return unit1;
 	}

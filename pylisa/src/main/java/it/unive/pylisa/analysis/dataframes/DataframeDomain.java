@@ -15,8 +15,10 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.pylisa.analysis.NonRelationalValueCartesianProduct;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformations.ReadFile;
+import it.unive.pylisa.analysis.dataframes.transformations.Stats;
 import it.unive.pylisa.symbolic.ProjectRows;
 import it.unive.pylisa.symbolic.ReadDataframe;
+import it.unive.pylisa.symbolic.Statistics;
 
 public class DataframeDomain extends
 		NonRelationalValueCartesianProduct<DataframeDomain, DataframeTransformationDomain, ConstantPropagation> {
@@ -54,6 +56,14 @@ public class DataframeDomain extends
 				DataframeTransformationDomain df = new DataframeTransformationDomain(
 						new ReadFile(filename.getConstantAs(String.class)));
 				return new DataframeDomain(df, right.bottom());
+			} else if (unary.getOperator() == Statistics.INSTANCE) {
+				ValueExpression v = (ValueExpression) unary.getExpression();
+				if (v instanceof MemoryPointer)
+					v = ((MemoryPointer) v).getReferencedLocation();
+				DataframeTransformationDomain df = left.eval(v, lenv, pp);
+				
+				DataframeTransformationDomain stat = new DataframeTransformationDomain(df, Stats.INSTANCE);
+				return new DataframeDomain(stat, right.bottom());
 			}
 		}
 
