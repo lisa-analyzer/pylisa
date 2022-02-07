@@ -17,6 +17,10 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.collections.externalSet.ExternalSet;
+import it.unive.pylisa.libraries.pandas.PyDataframeType;
+import it.unive.pylisa.libraries.pandas.PySeriesType;
+import it.unive.pylisa.symbolic.ColumnAccess;
 
 public class PySingleArrayAccess extends BinaryExpression {
 
@@ -27,14 +31,39 @@ public class PySingleArrayAccess extends BinaryExpression {
 	@Override
 	protected <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
-			V extends ValueDomain<V>, T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
 					InterproceduralAnalysis<A, H, V, T> interprocedural,
 					AnalysisState<A, H, V, T> state,
 					SymbolicExpression left,
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		HeapDereference deref = new HeapDereference(getStaticType(), left, getLocation());
-		return state.smallStepSemantics(new AccessChild(Untyped.INSTANCE, deref, right, getLocation()), this);
+		AnalysisState<A, H, V, T> result = state;
+
+		if (left.getRuntimeTypes().anyMatch(t -> t.equals(PyDataframeType.INSTANCE))) {
+			it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
+					PySeriesType.INSTANCE, left, right, ColumnAccess.INSTANCE, getLocation());
+			result = result.smallStepSemantics(col, this);
+		}
+
+		Type dynamic = null;
+		for (Type t : left.getRuntimeTypes())
+			if (t.isPointerType()) {
+				ExternalSet<Type> inner = t.asPointerType().getInnerTypes();
+
+				Type tmp = inner.isEmpty() ? Untyped.INSTANCE
+						: inner.reduce(inner.first(), (r, tt) -> r.commonSupertype(tt));
+				if (dynamic == null)
+					dynamic = tmp;
+				else
+					dynamic = dynamic.commonSupertype(tmp);
+			}
+		if (dynamic == null)
+			dynamic = Untyped.INSTANCE;
+
+		HeapDereference deref = new HeapDereference(dynamic, left, getLocation());
+		AccessChild access = new AccessChild(getStaticType(), deref, right, getLocation());
+		return result.smallStepSemantics(access, this);
 	}
 }

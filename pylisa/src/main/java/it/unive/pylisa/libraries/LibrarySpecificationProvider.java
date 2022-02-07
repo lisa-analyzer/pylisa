@@ -38,6 +38,7 @@ public class LibrarySpecificationProvider {
 	public static final String WARNINGS = "warnings";
 	public static final String PANDAS = "pandas";
 	public static final String PANDAS_DF = "pandas.DataFrame";
+	public static final String PANDAS_SERIES = "pandas.Series";
 
 	private static final SourceCodeLocation PANDAS_LOC = new SourceCodeLocation(PANDAS, 0, 0);
 	private static final SourceCodeLocation WARNINGS_LOC = new SourceCodeLocation(WARNINGS, 0, 0);
@@ -48,6 +49,7 @@ public class LibrarySpecificationProvider {
 	static {
 		LIBS.put(PANDAS, getPandasPythonUnit());
 		LIBS.put(PANDAS_DF, getPandasDFPythonUnit());
+		LIBS.put(PANDAS_SERIES, getPandasSeriesPythonUnit());
 		LIBS.put(WARNINGS, getWarningsPythonUnit());
 		LIBS.put(LIST, getListPythonUnit());
 		LIBS.put(DICT, getDictPythonUnit());
@@ -169,6 +171,12 @@ public class LibrarySpecificationProvider {
 						PyDataframeType.INSTANCE,
 						new Parameter(PANDAS_LOC, "this", PyDataframeType.REFERENCE)),
 				Info.class));
+		
+		return unit1;
+	}
+
+	private static PythonUnit getPandasSeriesPythonUnit() {
+		PythonUnit unit1 = new PythonUnit(PANDAS_LOC, PANDAS_SERIES, true);
 		
 		return unit1;
 	}

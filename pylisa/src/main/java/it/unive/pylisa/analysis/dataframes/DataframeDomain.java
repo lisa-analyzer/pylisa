@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
+import it.unive.lisa.analysis.representation.PairRepresentation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
@@ -117,6 +118,6 @@ public class DataframeDomain extends
 
 	@Override
 	public DomainRepresentation representation() {
-		return left.representation();
+		return new PairRepresentation(left.representation(), right.representation());
 	}
 }

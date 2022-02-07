@@ -19,7 +19,7 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
 import it.unive.pylisa.symbolic.SetOption;
 import it.unive.pylisa.symbolic.SetOptionAux;
-import it.unive.pylisa.symbolic.SideEffectOperator;
+import it.unive.pylisa.symbolic.DataframeOperatorWithSideEffects;
 
 public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwareDataframeDomain> {
 
@@ -67,16 +67,16 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 		ValueExpression dfVar = null;
 		if (expression instanceof UnaryExpression) {
 			UnaryExpression unary = (UnaryExpression) expression;
-			if (unary.getOperator() instanceof SideEffectOperator)
-				dfVar = (ValueExpression) ((SideEffectOperator) unary.getOperator()).getDataFrame(unary);
+			if (unary.getOperator() instanceof DataframeOperatorWithSideEffects)
+				dfVar = (ValueExpression) ((DataframeOperatorWithSideEffects) unary.getOperator()).getDataFrame(unary);
 		} else if (expression instanceof BinaryExpression) {
 			BinaryExpression binary = (BinaryExpression) expression;
-			if (binary.getOperator() instanceof SideEffectOperator)
-				dfVar = (ValueExpression) ((SideEffectOperator) binary.getOperator()).getDataFrame(binary);
+			if (binary.getOperator() instanceof DataframeOperatorWithSideEffects)
+				dfVar = (ValueExpression) ((DataframeOperatorWithSideEffects) binary.getOperator()).getDataFrame(binary);
 		} else if (expression instanceof TernaryExpression) {
 			TernaryExpression ternary = (TernaryExpression) expression;
-			if (ternary.getOperator() instanceof SideEffectOperator)
-				dfVar = (ValueExpression) ((SideEffectOperator) ternary.getOperator()).getDataFrame(ternary);
+			if (ternary.getOperator() instanceof DataframeOperatorWithSideEffects)
+				dfVar = (ValueExpression) ((DataframeOperatorWithSideEffects) ternary.getOperator()).getDataFrame(ternary);
 		}
 
 		ValueEnvironment<DataframeDomain> sss = env.bottom();

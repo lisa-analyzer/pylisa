@@ -8,7 +8,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
 
-public class Statistics implements UnaryOperator, SideEffectOperator {
+public class Statistics implements UnaryOperator, DataframeOperatorWithSideEffects {
 
 	public static final Statistics INSTANCE = new Statistics();
 

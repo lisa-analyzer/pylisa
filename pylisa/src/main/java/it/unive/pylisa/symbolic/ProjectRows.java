@@ -8,7 +8,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
 
-public class ProjectRows implements TernaryOperator, SideEffectOperator {
+public class ProjectRows implements TernaryOperator, DataframeOperatorWithSideEffects {
 
 	public static final ProjectRows INSTANCE = new ProjectRows();
 

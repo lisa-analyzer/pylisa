@@ -8,7 +8,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
 
-public class SetOptionAux implements TernaryOperator, SideEffectOperator {
+public class SetOptionAux implements TernaryOperator, DataframeOperatorWithSideEffects {
 
 	public static final SetOptionAux INSTANCE = new SetOptionAux();
 

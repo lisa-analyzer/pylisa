@@ -8,7 +8,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
 
-public class StructuralInfo implements UnaryOperator, SideEffectOperator {
+public class StructuralInfo implements UnaryOperator, DataframeOperatorWithSideEffects {
 
 	public static final StructuralInfo INSTANCE = new StructuralInfo();
 
