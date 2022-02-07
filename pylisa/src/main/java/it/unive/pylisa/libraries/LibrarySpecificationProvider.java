@@ -26,6 +26,7 @@ import it.unive.pylisa.libraries.pandas.Head;
 import it.unive.pylisa.libraries.pandas.Info;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
+import it.unive.pylisa.libraries.pandas.SetOption;
 import it.unive.pylisa.libraries.standardLibrary.Print;
 import it.unive.pylisa.libraries.warnings.FilterWarnings;
 
@@ -117,6 +118,17 @@ public class LibrarySpecificationProvider {
 						PyDataframeType.INSTANCE,
 						new Parameter(PANDAS_LOC, "filepath_or_buffer", StringType.INSTANCE)),
 				ReadCsv.class));
+		
+		unit1.addConstruct(new NativeCFG(
+				new CFGDescriptor(PANDAS_LOC,
+						unit1,
+						false,
+						"set_option",
+						VoidType.INSTANCE,
+						new Parameter(PANDAS_LOC, "key", StringType.INSTANCE),
+						new Parameter(PANDAS_LOC, "value", Untyped.INSTANCE)
+						),
+				SetOption.class));
 		
 		return unit1;
 	}

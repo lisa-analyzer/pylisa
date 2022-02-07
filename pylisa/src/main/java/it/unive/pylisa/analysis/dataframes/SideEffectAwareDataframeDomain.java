@@ -16,6 +16,9 @@ import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
+import it.unive.pylisa.libraries.pandas.PyDataframeType;
+import it.unive.pylisa.symbolic.SetOption;
+import it.unive.pylisa.symbolic.SetOptionAux;
 import it.unive.pylisa.symbolic.SideEffectOperator;
 
 public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwareDataframeDomain> {
@@ -39,6 +42,19 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 	@Override
 	public SideEffectAwareDataframeDomain smallStepSemantics(ValueExpression expression, ProgramPoint pp)
 			throws SemanticException {
+		if (expression instanceof BinaryExpression) {
+			BinaryExpression binary = (BinaryExpression) expression;
+			if (binary.getOperator() == SetOption.INSTANCE) {
+				SideEffectAwareDataframeDomain sss = bottom();
+				for (Identifier key : allKeys()) {
+					TernaryExpression aux = new TernaryExpression(PyDataframeType.INSTANCE, key,
+							binary.getLeft(), binary.getRight(), SetOptionAux.INSTANCE, pp.getLocation());
+					sss = sss.lub(smallStepSemantics(aux, pp));
+				}
+				return sss;
+			}
+		}
+
 		ValueEnvironment<DataframeDomain> sss = sideEffect(expression, pp);
 		if (!sss.isBottom())
 			return new SideEffectAwareDataframeDomain(sss);
@@ -82,6 +98,14 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 		Set<Identifier> keys = new HashSet<>();
 		for (Entry<Identifier, DataframeDomain> entry : env)
 			if (entry.getValue().left.equals(df))
+				keys.add(entry.getKey());
+		return keys;
+	}
+
+	private Set<Identifier> allKeys() {
+		Set<Identifier> keys = new HashSet<>();
+		for (Entry<Identifier, DataframeDomain> entry : env)
+			if (entry.getKey().getRuntimeTypes().anyMatch(t -> t.equals(PyDataframeType.INSTANCE)))
 				keys.add(entry.getKey());
 		return keys;
 	}

@@ -18,6 +18,7 @@ import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformations.BaseTransformation;
 import it.unive.pylisa.symbolic.ProjectRows;
 import it.unive.pylisa.symbolic.ReadDataframe;
+import it.unive.pylisa.symbolic.SetOptionAux;
 import it.unive.pylisa.symbolic.Statistics;
 import it.unive.pylisa.symbolic.StructuralInfo;
 
@@ -81,6 +82,19 @@ public class DataframeDomain extends
 				DataframeTransformationDomain pr = new DataframeTransformationDomain(df,
 						new BaseTransformation("project_rows", start.getConstantAs(Integer.class),
 								end.getConstantAs(Integer.class)));
+
+				return new DataframeDomain(pr, right.bottom());
+			} else if (ternary.getOperator() == SetOptionAux.INSTANCE) {
+				DataframeTransformationDomain df = extractDataFrame(ternary.getLeft(), lenv, pp);
+				ConstantPropagation key = right.eval((ValueExpression) ternary.getMiddle(), renv, pp);
+				ConstantPropagation value = right.eval((ValueExpression) ternary.getRight(), renv, pp);
+
+				if (topOrBottom(df) || topOrBottom(key) || topOrBottom(value))
+					return new DataframeDomain(left.top(), right.bottom());
+
+				DataframeTransformationDomain pr = new DataframeTransformationDomain(df,
+						new BaseTransformation("set_opt", key.getConstantAs(String.class),
+								value.getConstant()));
 
 				return new DataframeDomain(pr, right.bottom());
 			}
