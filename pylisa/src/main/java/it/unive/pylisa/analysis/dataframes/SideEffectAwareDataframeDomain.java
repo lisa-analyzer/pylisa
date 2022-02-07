@@ -10,13 +10,13 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.pylisa.symbolic.ProjectRows;
-import it.unive.pylisa.symbolic.Statistics;
+import it.unive.pylisa.symbolic.SideEffectOperator;
 
 public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwareDataframeDomain> {
 
@@ -47,33 +47,33 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 
 	private ValueEnvironment<DataframeDomain> sideEffect(ValueExpression expression, ProgramPoint pp)
 			throws SemanticException {
-		ValueEnvironment<DataframeDomain> sss = env.bottom();
 
+		ValueExpression dfVar = null;
 		if (expression instanceof UnaryExpression) {
 			UnaryExpression unary = (UnaryExpression) expression;
-			if (unary.getOperator() == Statistics.INSTANCE) {
-				ValueExpression v = (ValueExpression) unary.getExpression();
-				if (v instanceof MemoryPointer)
-					v = ((MemoryPointer) v).getReferencedLocation();
-				DataframeTransformationDomain df = env.smallStepSemantics(v, pp).getValueOnStack().left;
-
-				if (!df.isTop() && !df.isBottom())
-					for (Identifier key : keysOf(df))
-						sss = sss.lub(env.assign(key, expression, pp));
-			}
+			if (unary.getOperator() instanceof SideEffectOperator)
+				dfVar = (ValueExpression) ((SideEffectOperator) unary.getOperator()).getDataFrame(unary);
+		} else if (expression instanceof BinaryExpression) {
+			BinaryExpression binary = (BinaryExpression) expression;
+			if (binary.getOperator() instanceof SideEffectOperator)
+				dfVar = (ValueExpression) ((SideEffectOperator) binary.getOperator()).getDataFrame(binary);
 		} else if (expression instanceof TernaryExpression) {
 			TernaryExpression ternary = (TernaryExpression) expression;
-			if (ternary.getOperator() == ProjectRows.INSTANCE) {
-				ValueExpression v = (ValueExpression) ternary.getLeft();
-				if (v instanceof MemoryPointer)
-					v = ((MemoryPointer) v).getReferencedLocation();
-				DataframeTransformationDomain df = env.smallStepSemantics(v, pp).getValueOnStack().left;
-
-				if (!df.isTop() && !df.isBottom())
-					for (Identifier key : keysOf(df))
-						sss = sss.lub(env.assign(key, expression, pp));
-			}
+			if (ternary.getOperator() instanceof SideEffectOperator)
+				dfVar = (ValueExpression) ((SideEffectOperator) ternary.getOperator()).getDataFrame(ternary);
 		}
+
+		ValueEnvironment<DataframeDomain> sss = env.bottom();
+		if (dfVar == null)
+			return sss;
+
+		if (dfVar instanceof MemoryPointer)
+			dfVar = ((MemoryPointer) dfVar).getReferencedLocation();
+		DataframeTransformationDomain df = env.smallStepSemantics(dfVar, pp).getValueOnStack().left;
+
+		if (!df.isTop() && !df.isBottom())
+			for (Identifier key : keysOf(df))
+				sss = sss.lub(env.assign(key, expression, pp));
 
 		return sss;
 	}
