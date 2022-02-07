@@ -4,6 +4,9 @@
 # Ignore Gradle build output directory
 build
 
+# Ignore Gradle target output directory
+target
+
 # throwaway folder for testing and running analyses
 workdir
 
