@@ -19,7 +19,7 @@ import it.unive.pylisa.symbolic.ProjectRows;
 import it.unive.pylisa.symbolic.ReadDataframe;
 
 public class DataframeDomain extends
-		NonRelationalValueCartesianProduct<DataframeTransformationDomain, ConstantPropagation> {
+		NonRelationalValueCartesianProduct<DataframeDomain, DataframeTransformationDomain, ConstantPropagation> {
 
 	public DataframeDomain() {
 		this(new DataframeTransformationDomain().top(), new ConstantPropagation().top());
@@ -35,15 +35,11 @@ public class DataframeDomain extends
 	}
 
 	@Override
-	public NonRelationalValueCartesianProduct<DataframeTransformationDomain, ConstantPropagation> eval(
-			ValueExpression expression,
-			ValueEnvironment<
-					NonRelationalValueCartesianProduct<DataframeTransformationDomain, ConstantPropagation>> environment,
+	public DataframeDomain eval(ValueExpression expression, ValueEnvironment<DataframeDomain> environment,
 			ProgramPoint pp) throws SemanticException {
 		ValueEnvironment<DataframeTransformationDomain> lenv = new ValueEnvironment<>(left);
 		ValueEnvironment<ConstantPropagation> renv = new ValueEnvironment<>(right);
-		for (Entry<Identifier, NonRelationalValueCartesianProduct<DataframeTransformationDomain,
-				ConstantPropagation>> entry : environment) {
+		for (Entry<Identifier, DataframeDomain> entry : environment) {
 			lenv = lenv.putState(entry.getKey(), entry.getValue().left);
 			renv = renv.putState(entry.getKey(), entry.getValue().right);
 		}

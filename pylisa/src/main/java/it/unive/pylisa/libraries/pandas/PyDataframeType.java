@@ -4,16 +4,17 @@ import java.util.Collection;
 import java.util.Set;
 
 import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class PyDataframeType implements UnitType {
-	/**
-	 * The unique singleton instance of this type.
-	 */
+
 	public static final PyDataframeType INSTANCE = new PyDataframeType();
+
+	public static final ReferenceType REFERENCE = new ReferenceType(INSTANCE);
 
 	private PyDataframeType() {
 	}

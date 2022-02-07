@@ -17,7 +17,6 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
-import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.symbolic.ReadDataframe;
 
@@ -54,10 +53,9 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, st);
 
 		UnaryExpression read = new UnaryExpression(PyDataframeType.INSTANCE, arg, ReadDataframe.INSTANCE, location);
-		ReferenceType df_star = new ReferenceType(PyDataframeType.INSTANCE);
 
 		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
-			HeapReference ref = new HeapReference(df_star, loc, location);
+			HeapReference ref = new HeapReference(PyDataframeType.REFERENCE, loc, location);
 			AnalysisState<A, H, V, T> tmp = state.bottom();
 			AnalysisState<A, H, V, T> readState = allocated.smallStepSemantics(read, st);
 			for (SymbolicExpression df : readState.getComputedExpressions()) 

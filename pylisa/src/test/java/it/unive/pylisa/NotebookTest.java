@@ -11,12 +11,13 @@ import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.program.Program;
-import it.unive.pylisa.analysis.dataframes.DataframeDomain;
+import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
 
 public abstract class NotebookTest {
 
@@ -39,8 +40,8 @@ public abstract class NotebookTest {
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
 
-		DataframeDomain domain = new DataframeDomain();
-		PointBasedHeap heap = new PointBasedHeap();
+		SideEffectAwareDataframeDomain domain = new SideEffectAwareDataframeDomain();
+		PointBasedHeap heap = new FieldSensitivePointBasedHeap();
 		InferredTypes type = new InferredTypes();
 		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain, type));
 		return conf;

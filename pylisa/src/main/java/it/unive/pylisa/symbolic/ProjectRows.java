@@ -20,7 +20,7 @@ public class ProjectRows implements TernaryOperator {
 
 	@Override
 	public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> middle, ExternalSet<Type> right) {
-		if (left.noneMatch(t -> t.equals(PyDataframeType.INSTANCE)))
+		if (left.noneMatch(t -> t.equals(PyDataframeType.REFERENCE)))
 			return Caches.types().mkEmptySet();
 		if (middle.noneMatch(Type::isNumericType))
 			return Caches.types().mkEmptySet();

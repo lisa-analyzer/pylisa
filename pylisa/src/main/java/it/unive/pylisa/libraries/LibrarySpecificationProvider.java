@@ -16,7 +16,6 @@ import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
-import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.cfg.PythonUnit;
@@ -131,7 +130,7 @@ public class LibrarySpecificationProvider {
 						true,
 						"head",
 						PyDataframeType.INSTANCE,
-						new Parameter(PANDAS_LOC, "this", new ReferenceType(PyDataframeType.INSTANCE)),
+						new Parameter(PANDAS_LOC, "this", PyDataframeType.REFERENCE),
 						new Parameter(PANDAS_LOC, "n", Int32.INSTANCE, new Int32Literal(init, PANDAS_LOC, 5),
 								new Annotations())),
 				Head.class));
