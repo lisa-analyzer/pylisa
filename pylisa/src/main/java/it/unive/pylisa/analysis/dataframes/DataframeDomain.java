@@ -118,6 +118,16 @@ public class DataframeDomain extends
 
 	@Override
 	public DomainRepresentation representation() {
+		if (left.isTop() && right.isTop())
+			return Lattice.TOP_REPR;
+		
+		if (left.isBottom() && right.isBottom())
+			return Lattice.BOTTOM_REPR;
+		
+		if (topOrBottom(left) && !topOrBottom(right))
+			return right.representation();
+		if (!topOrBottom(left) && topOrBottom(right))
+			return left.representation();
 		return new PairRepresentation(left.representation(), right.representation());
 	}
 }
