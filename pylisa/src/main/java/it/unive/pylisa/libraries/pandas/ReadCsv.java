@@ -33,7 +33,7 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 	}
 
 	public static ReadCsv build(CFG cfg, CodeLocation location, Expression[] exprs) {
-		return new ReadCsv(cfg, location, "read_csv", PyDataframeType.INSTANCE, exprs[0]);
+		return new ReadCsv(cfg, location, "read_csv", PandasDataframeType.INSTANCE, exprs[0]);
 	}
 
 	@Override
@@ -49,13 +49,13 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 		CodeLocation location = getLocation();
 		AnalysisState<A, H, V, T> assigned = state.bottom();
 
-		HeapAllocation allocation = new HeapAllocation(PyDataframeType.INSTANCE, location);
+		HeapAllocation allocation = new HeapAllocation(PandasDataframeType.INSTANCE, location);
 		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, st);
 
-		UnaryExpression read = new UnaryExpression(PyDataframeType.INSTANCE, arg, ReadDataframe.INSTANCE, location);
+		UnaryExpression read = new UnaryExpression(PandasDataframeType.INSTANCE, arg, ReadDataframe.INSTANCE, location);
 
 		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
-			HeapReference ref = new HeapReference(PyDataframeType.REFERENCE, loc, location);
+			HeapReference ref = new HeapReference(PandasDataframeType.REFERENCE, loc, location);
 			AnalysisState<A, H, V, T> tmp = state.bottom();
 			AnalysisState<A, H, V, T> readState = allocated.smallStepSemantics(read, st);
 			for (SymbolicExpression df : readState.getComputedExpressions()) 

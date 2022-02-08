@@ -7,7 +7,7 @@ import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.VoidType;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
-import it.unive.pylisa.libraries.pandas.PyDataframeType;
+import it.unive.pylisa.libraries.pandas.PandasDataframeType;
 
 public class ColumnAccess implements BinaryOperator, DataframeOperatorWithSideEffects {
 
@@ -23,7 +23,7 @@ public class ColumnAccess implements BinaryOperator, DataframeOperatorWithSideEf
 
 	@Override
 	public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> right) {
-		if (left.noneMatch(t -> t.equals(PyDataframeType.REFERENCE)))
+		if (left.noneMatch(t -> t.equals(PandasDataframeType.REFERENCE)))
 			return Caches.types().mkEmptySet();
 		if (right.noneMatch(Type::isStringType))
 			return Caches.types().mkEmptySet();

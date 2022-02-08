@@ -45,10 +45,10 @@ public class Info extends it.unive.lisa.program.cfg.statement.UnaryExpression im
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		UnaryExpression info = new UnaryExpression(PyDataframeType.INSTANCE, expr, StructuralInfo.INSTANCE,
+		UnaryExpression info = new UnaryExpression(PandasDataframeType.INSTANCE, expr, StructuralInfo.INSTANCE,
 				getLocation());
 		AnalysisState<A, H, V, T> infoState = state.smallStepSemantics(info, st);
-		HeapReference ref = new HeapReference(PyDataframeType.REFERENCE, expr, getLocation());
+		HeapReference ref = new HeapReference(PandasDataframeType.REFERENCE, expr, getLocation());
 		return infoState.smallStepSemantics(ref, st);
 	}
 }

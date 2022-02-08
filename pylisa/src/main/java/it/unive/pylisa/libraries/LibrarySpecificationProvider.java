@@ -24,8 +24,8 @@ import it.unive.pylisa.cfg.PythonUnit;
 import it.unive.pylisa.libraries.pandas.Describe;
 import it.unive.pylisa.libraries.pandas.Head;
 import it.unive.pylisa.libraries.pandas.Info;
-import it.unive.pylisa.libraries.pandas.PyDataframeType;
-import it.unive.pylisa.libraries.pandas.PySeriesType;
+import it.unive.pylisa.libraries.pandas.PandasDataframeType;
+import it.unive.pylisa.libraries.pandas.PandasSeriesType;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
 import it.unive.pylisa.libraries.pandas.SetOption;
 import it.unive.pylisa.libraries.standardLibrary.Print;
@@ -118,7 +118,7 @@ public class LibrarySpecificationProvider {
 						unit1,
 						false,
 						"read_csv",
-						PyDataframeType.INSTANCE,
+						PandasDataframeType.INSTANCE,
 						new Parameter(PANDAS_LOC, "filepath_or_buffer", StringType.INSTANCE)),
 				ReadCsv.class));
 		
@@ -138,8 +138,8 @@ public class LibrarySpecificationProvider {
 						unit1,
 						false,
 						"to_datetime",
-						PySeriesType.INSTANCE,
-						new Parameter(PANDAS_LOC, "arg", PySeriesType.INSTANCE)
+						PandasSeriesType.INSTANCE,
+						new Parameter(PANDAS_LOC, "arg", PandasSeriesType.INSTANCE)
 						),
 				NoEffectMethod.class));
 		
@@ -159,8 +159,8 @@ public class LibrarySpecificationProvider {
 						unit1,
 						true,
 						"head",
-						PyDataframeType.INSTANCE,
-						new Parameter(PANDAS_LOC, "this", PyDataframeType.REFERENCE),
+						PandasDataframeType.INSTANCE,
+						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE),
 						new Parameter(PANDAS_LOC, "n", Int32.INSTANCE, new Int32Literal(init, PANDAS_LOC, 5),
 								new Annotations())),
 				Head.class));
@@ -170,8 +170,8 @@ public class LibrarySpecificationProvider {
 						unit1,
 						true,
 						"describe",
-						PyDataframeType.INSTANCE,
-						new Parameter(PANDAS_LOC, "this", PyDataframeType.REFERENCE)),
+						PandasDataframeType.INSTANCE,
+						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE)),
 				Describe.class));
 		
 		unit1.addInstanceConstruct(new NativeCFG(
@@ -179,8 +179,8 @@ public class LibrarySpecificationProvider {
 						unit1,
 						true,
 						"info",
-						PyDataframeType.INSTANCE,
-						new Parameter(PANDAS_LOC, "this", PyDataframeType.REFERENCE)),
+						PandasDataframeType.INSTANCE,
+						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE)),
 				Info.class));
 		
 		return unit1;

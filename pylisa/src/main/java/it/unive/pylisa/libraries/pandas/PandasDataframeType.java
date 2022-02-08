@@ -10,13 +10,13 @@ import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class PyDataframeType implements UnitType {
+public class PandasDataframeType implements UnitType {
 
-	public static final PyDataframeType INSTANCE = new PyDataframeType();
+	public static final PandasDataframeType INSTANCE = new PandasDataframeType();
 
 	public static final ReferenceType REFERENCE = new ReferenceType(INSTANCE);
 
-	private PyDataframeType() {
+	private PandasDataframeType() {
 	}
 
 	@Override
@@ -26,17 +26,17 @@ public class PyDataframeType implements UnitType {
 
 	@Override
 	public boolean equals(Object other) {
-		return other instanceof PyDataframeType;
+		return other instanceof PandasDataframeType;
 	}
 
 	@Override
 	public int hashCode() {
-		return PyDataframeType.class.getName().hashCode();
+		return PandasDataframeType.class.getName().hashCode();
 	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		return other instanceof PyDataframeType || other instanceof Untyped;
+		return other instanceof PandasDataframeType || other instanceof Untyped;
 	}
 
 	@Override

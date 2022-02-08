@@ -16,7 +16,7 @@ import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.pylisa.libraries.pandas.PyDataframeType;
+import it.unive.pylisa.libraries.pandas.PandasDataframeType;
 import it.unive.pylisa.symbolic.operators.DataframeOperatorWithSideEffects;
 import it.unive.pylisa.symbolic.operators.SetOption;
 import it.unive.pylisa.symbolic.operators.SetOptionAux;
@@ -47,7 +47,7 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 			if (binary.getOperator() == SetOption.INSTANCE) {
 				SideEffectAwareDataframeDomain sss = bottom();
 				for (Identifier key : allKeys()) {
-					TernaryExpression aux = new TernaryExpression(PyDataframeType.INSTANCE, key,
+					TernaryExpression aux = new TernaryExpression(PandasDataframeType.INSTANCE, key,
 							binary.getLeft(), binary.getRight(), SetOptionAux.INSTANCE, pp.getLocation());
 					sss = sss.lub(smallStepSemantics(aux, pp));
 				}
@@ -109,7 +109,7 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 	private Set<Identifier> allKeys() {
 		Set<Identifier> keys = new HashSet<>();
 		for (Entry<Identifier, DataframeDomain> entry : env)
-			if (entry.getKey().getRuntimeTypes().anyMatch(t -> t.equals(PyDataframeType.INSTANCE)))
+			if (entry.getKey().getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
 				keys.add(entry.getKey());
 		return keys;
 	}

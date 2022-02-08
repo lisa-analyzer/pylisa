@@ -10,13 +10,13 @@ import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class PySeriesType implements UnitType {
+public class PandasSeriesType implements UnitType {
 
-	public static final PySeriesType INSTANCE = new PySeriesType();
+	public static final PandasSeriesType INSTANCE = new PandasSeriesType();
 
 	public static final ReferenceType REFERENCE = new ReferenceType(INSTANCE);
 
-	private PySeriesType() {
+	private PandasSeriesType() {
 	}
 
 	@Override
@@ -26,17 +26,17 @@ public class PySeriesType implements UnitType {
 
 	@Override
 	public boolean equals(Object other) {
-		return other instanceof PySeriesType;
+		return other instanceof PandasSeriesType;
 	}
 
 	@Override
 	public int hashCode() {
-		return PySeriesType.class.getName().hashCode();
+		return PandasSeriesType.class.getName().hashCode();
 	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		return other instanceof PySeriesType || other instanceof Untyped;
+		return other instanceof PandasSeriesType || other instanceof Untyped;
 	}
 
 	@Override

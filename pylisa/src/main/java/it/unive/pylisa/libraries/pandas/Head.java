@@ -55,10 +55,10 @@ public class Head extends BinaryExpression implements PluggableStatement {
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		Constant start = new Constant(Int32.INSTANCE, 0, getLocation());
-		TernaryExpression head = new TernaryExpression(PyDataframeType.INSTANCE, left, start, right,
+		TernaryExpression head = new TernaryExpression(PandasDataframeType.INSTANCE, left, start, right,
 				ProjectRows.INSTANCE, getLocation());
 		AnalysisState<A, H, V, T> headState = state.smallStepSemantics(head, st);
-		HeapReference ref = new HeapReference(PyDataframeType.REFERENCE, left, getLocation());
+		HeapReference ref = new HeapReference(PandasDataframeType.REFERENCE, left, getLocation());
 		return headState.smallStepSemantics(ref, st);
 	}
 }

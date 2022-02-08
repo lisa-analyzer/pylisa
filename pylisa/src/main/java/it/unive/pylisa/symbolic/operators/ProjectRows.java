@@ -6,7 +6,7 @@ import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
-import it.unive.pylisa.libraries.pandas.PyDataframeType;
+import it.unive.pylisa.libraries.pandas.PandasDataframeType;
 
 public class ProjectRows implements TernaryOperator, DataframeOperatorWithSideEffects {
 
@@ -22,13 +22,13 @@ public class ProjectRows implements TernaryOperator, DataframeOperatorWithSideEf
 
 	@Override
 	public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> middle, ExternalSet<Type> right) {
-		if (left.noneMatch(t -> t.equals(PyDataframeType.REFERENCE)))
+		if (left.noneMatch(t -> t.equals(PandasDataframeType.REFERENCE)))
 			return Caches.types().mkEmptySet();
 		if (middle.noneMatch(Type::isNumericType))
 			return Caches.types().mkEmptySet();
 		if (right.noneMatch(Type::isNumericType))
 			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(PyDataframeType.INSTANCE);
+		return Caches.types().mkSingletonSet(PandasDataframeType.INSTANCE);
 	}
 	
 	@Override
