@@ -28,6 +28,7 @@ import it.unive.pylisa.libraries.pandas.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.PandasSeriesType;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
 import it.unive.pylisa.libraries.pandas.SetOption;
+import it.unive.pylisa.libraries.pandas.ToDatetime;
 import it.unive.pylisa.libraries.standardLibrary.Print;
 import it.unive.pylisa.libraries.warnings.FilterWarnings;
 
@@ -118,7 +119,7 @@ public class LibrarySpecificationProvider {
 						unit1,
 						false,
 						"read_csv",
-						PandasDataframeType.INSTANCE,
+						PandasDataframeType.REFERENCE,
 						new Parameter(PANDAS_LOC, "filepath_or_buffer", StringType.INSTANCE)),
 				ReadCsv.class));
 		
@@ -138,10 +139,10 @@ public class LibrarySpecificationProvider {
 						unit1,
 						false,
 						"to_datetime",
-						PandasSeriesType.INSTANCE,
-						new Parameter(PANDAS_LOC, "arg", PandasSeriesType.INSTANCE)
+						PandasSeriesType.REFERENCE,
+						new Parameter(PANDAS_LOC, "arg", PandasSeriesType.REFERENCE)
 						),
-				NoEffectMethod.class));
+				ToDatetime.class));
 		
 		return unit1;
 	}
@@ -159,7 +160,7 @@ public class LibrarySpecificationProvider {
 						unit1,
 						true,
 						"head",
-						PandasDataframeType.INSTANCE,
+						PandasDataframeType.REFERENCE,
 						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE),
 						new Parameter(PANDAS_LOC, "n", Int32.INSTANCE, new Int32Literal(init, PANDAS_LOC, 5),
 								new Annotations())),
@@ -170,7 +171,7 @@ public class LibrarySpecificationProvider {
 						unit1,
 						true,
 						"describe",
-						PandasDataframeType.INSTANCE,
+						PandasDataframeType.REFERENCE,
 						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE)),
 				Describe.class));
 		
@@ -179,7 +180,7 @@ public class LibrarySpecificationProvider {
 						unit1,
 						true,
 						"info",
-						PandasDataframeType.INSTANCE,
+						PandasDataframeType.REFERENCE,
 						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE)),
 				Info.class));
 		

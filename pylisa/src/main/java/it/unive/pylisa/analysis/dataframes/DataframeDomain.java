@@ -24,6 +24,7 @@ import it.unive.pylisa.symbolic.operators.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.SetOptionAux;
 import it.unive.pylisa.symbolic.operators.Statistics;
 import it.unive.pylisa.symbolic.operators.StructuralInfo;
+import it.unive.pylisa.symbolic.operators.TypeConversion;
 
 public class DataframeDomain extends
 		NonRelationalValueCartesianProduct<DataframeDomain, DataframeTransformationDomain, ConstantPropagation> {
@@ -91,6 +92,11 @@ public class DataframeDomain extends
 			DataframeTransformationDomain info = new DataframeTransformationDomain(df,
 					new BaseTransformation("info"));
 			return new DataframeDomain(info, right.bottom());
+		} else if (unary.getOperator() instanceof TypeConversion) {
+			DataframeTransformationDomain df = extractDataFrame(unary.getExpression(), lenv, pp);
+			DataframeTransformationDomain conv = new DataframeTransformationDomain(df,
+					new BaseTransformation("conv", ((TypeConversion) unary.getOperator()).getType()));
+			return new DataframeDomain(conv, right.bottom());
 		} else
 			return bottom();
 	}
