@@ -88,14 +88,17 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 		if (dfVar instanceof MemoryPointer)
 			dfVar = ((MemoryPointer) dfVar).getReferencedLocation();
 		DataframeTransformationDomain df = env.smallStepSemantics(dfVar, pp).getValueOnStack().left;
-		DataframeDomain stack = env.smallStepSemantics(expression, pp).getValueOnStack();
+		sss = env.smallStepSemantics(expression, pp);
+		DataframeDomain stack = sss.getValueOnStack();
 		DataframeDomain newValue = new DataframeDomain(stack.left, stack.right.bottom());
 
+		ValueEnvironment<DataframeDomain> result = sss.bottom();
 		if (!df.isTop() && !df.isBottom())
 			for (Identifier key : keysOf(df))
-				sss = sss.lub(env.putState(key, newValue));
+				result = result.lub(sss.putState(key, newValue));
 
-		return sss;
+		// this is to have the right value on the stack
+		return result;
 	}
 
 	private Set<Identifier> keysOf(DataframeTransformationDomain df) {
