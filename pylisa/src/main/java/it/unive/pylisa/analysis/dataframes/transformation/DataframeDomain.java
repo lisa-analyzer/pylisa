@@ -1,4 +1,4 @@
-package it.unive.pylisa.analysis.dataframes;
+package it.unive.pylisa.analysis.dataframes.transformation;
 
 import java.util.Map.Entry;
 
@@ -17,7 +17,7 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.pylisa.analysis.NonRelationalValueCartesianProduct;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
-import it.unive.pylisa.analysis.dataframes.transformations.BaseTransformation;
+import it.unive.pylisa.analysis.dataframes.transformation.transformations.BaseTransformation;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;

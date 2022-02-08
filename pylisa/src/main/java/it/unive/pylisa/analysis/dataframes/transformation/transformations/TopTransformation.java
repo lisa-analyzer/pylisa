@@ -1,4 +1,4 @@
-package it.unive.pylisa.analysis.dataframes.transformations;
+package it.unive.pylisa.analysis.dataframes.transformation.transformations;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;

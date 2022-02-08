@@ -1,4 +1,4 @@
-package it.unive.pylisa.analysis.dataframes;
+package it.unive.pylisa.analysis.dataframes.transformation;
 
 import java.util.Arrays;
 
@@ -9,7 +9,7 @@ import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
-import it.unive.pylisa.analysis.dataframes.transformations.DataframeTransformation;
+import it.unive.pylisa.analysis.dataframes.transformation.transformations.DataframeTransformation;
 import it.unive.pylisa.libraries.pandas.types.PandasType;
 
 public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<DataframeTransformationDomain> {

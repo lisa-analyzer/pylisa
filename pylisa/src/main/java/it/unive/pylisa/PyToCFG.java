@@ -94,7 +94,7 @@ import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Float32;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
-import it.unive.pylisa.analysis.dataframes.DataframeTransformationDomain;
+import it.unive.pylisa.analysis.dataframes.transformation.DataframeTransformationDomain;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
 import it.unive.pylisa.antlr.Python3Parser.AddContext;

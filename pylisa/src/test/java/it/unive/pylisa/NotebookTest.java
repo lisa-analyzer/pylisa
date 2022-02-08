@@ -14,25 +14,27 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.types.InferredTypes;
+import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.program.Program;
-import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
 
 public abstract class NotebookTest {
 
-	protected void perform(String file, String kind) throws IOException, AnalysisException {
+	protected <V extends ValueDomain<V>> void perform(String file, String kind, V value)
+			throws IOException, AnalysisException {
 		PyToCFG translator = new PyToCFG(file);
 
 		Program program = translator.toLiSAProgram();
 		PyToCFG.setupProgram(program);
 
-		LiSAConfiguration conf = buildConfig("notebooks/" + kind + "/" + FilenameUtils.getBaseName(file));
+		LiSAConfiguration conf = buildConfig("notebooks/" + kind + "/" + FilenameUtils.getBaseName(file), value);
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
 	}
 
-	private LiSAConfiguration buildConfig(String subPath) throws AnalysisSetupException {
+	private <V extends ValueDomain<V>> LiSAConfiguration buildConfig(String subPath, V value)
+			throws AnalysisSetupException {
 		LiSAConfiguration conf = new LiSAConfiguration();
 		conf.setWorkdir("workdir/" + subPath);
 		conf.setDumpTypeInference(true);
@@ -40,10 +42,9 @@ public abstract class NotebookTest {
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
 
-		SideEffectAwareDataframeDomain domain = new SideEffectAwareDataframeDomain();
 		PointBasedHeap heap = new FieldSensitivePointBasedHeap();
 		InferredTypes type = new InferredTypes();
-		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain, type));
+		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, value, type));
 		return conf;
 	}
 }
