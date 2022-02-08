@@ -72,11 +72,13 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 		} else if (expression instanceof BinaryExpression) {
 			BinaryExpression binary = (BinaryExpression) expression;
 			if (binary.getOperator() instanceof DataframeOperatorWithSideEffects)
-				dfVar = (ValueExpression) ((DataframeOperatorWithSideEffects) binary.getOperator()).getDataFrame(binary);
+				dfVar = (ValueExpression) ((DataframeOperatorWithSideEffects) binary.getOperator())
+						.getDataFrame(binary);
 		} else if (expression instanceof TernaryExpression) {
 			TernaryExpression ternary = (TernaryExpression) expression;
 			if (ternary.getOperator() instanceof DataframeOperatorWithSideEffects)
-				dfVar = (ValueExpression) ((DataframeOperatorWithSideEffects) ternary.getOperator()).getDataFrame(ternary);
+				dfVar = (ValueExpression) ((DataframeOperatorWithSideEffects) ternary.getOperator())
+						.getDataFrame(ternary);
 		}
 
 		ValueEnvironment<DataframeDomain> sss = env.bottom();
@@ -86,10 +88,12 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 		if (dfVar instanceof MemoryPointer)
 			dfVar = ((MemoryPointer) dfVar).getReferencedLocation();
 		DataframeTransformationDomain df = env.smallStepSemantics(dfVar, pp).getValueOnStack().left;
+		DataframeDomain stack = env.smallStepSemantics(expression, pp).getValueOnStack();
+		DataframeDomain newValue = new DataframeDomain(stack.left, stack.right.bottom());
 
 		if (!df.isTop() && !df.isBottom())
 			for (Identifier key : keysOf(df))
-				sss = sss.lub(env.assign(key, expression, pp));
+				sss = sss.lub(env.putState(key, newValue));
 
 		return sss;
 	}
