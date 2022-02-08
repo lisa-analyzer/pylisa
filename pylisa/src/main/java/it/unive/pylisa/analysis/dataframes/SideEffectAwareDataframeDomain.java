@@ -1,4 +1,4 @@
-package it.unive.pylisa.analysis.dataframes.transformation;
+package it.unive.pylisa.analysis.dataframes;
 
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -6,6 +6,7 @@ import java.util.Set;
 
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.nonrelational.value.NonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.value.ValueDomain;
@@ -21,31 +22,33 @@ import it.unive.pylisa.symbolic.operators.DataframeOperatorWithSideEffects;
 import it.unive.pylisa.symbolic.operators.SetOption;
 import it.unive.pylisa.symbolic.operators.SetOptionAux;
 
-public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwareDataframeDomain> {
+public class SideEffectAwareDataframeDomain<T extends NonRelationalValueDomain<T> & DataframeAwareDomain<T, D>,
+		D extends NonRelationalValueDomain<D>>
+		implements ValueDomain<SideEffectAwareDataframeDomain<T, D>> {
 
-	private final ValueEnvironment<DataframeDomain> env;
+	private final ValueEnvironment<T> env;
 
-	public SideEffectAwareDataframeDomain() {
-		this(new ValueEnvironment<>(new DataframeDomain()).top());
+	public SideEffectAwareDataframeDomain(T singleton) {
+		this(new ValueEnvironment<>(singleton));
 	}
 
-	private SideEffectAwareDataframeDomain(ValueEnvironment<DataframeDomain> env) {
+	private SideEffectAwareDataframeDomain(ValueEnvironment<T> env) {
 		this.env = env;
 	}
 
 	@Override
-	public SideEffectAwareDataframeDomain assign(Identifier id, ValueExpression expression, ProgramPoint pp)
+	public SideEffectAwareDataframeDomain<T, D> assign(Identifier id, ValueExpression expression, ProgramPoint pp)
 			throws SemanticException {
-		return new SideEffectAwareDataframeDomain(env.assign(id, expression, pp));
+		return new SideEffectAwareDataframeDomain<>(env.assign(id, expression, pp));
 	}
 
 	@Override
-	public SideEffectAwareDataframeDomain smallStepSemantics(ValueExpression expression, ProgramPoint pp)
+	public SideEffectAwareDataframeDomain<T, D> smallStepSemantics(ValueExpression expression, ProgramPoint pp)
 			throws SemanticException {
 		if (expression instanceof BinaryExpression) {
 			BinaryExpression binary = (BinaryExpression) expression;
 			if (binary.getOperator() == SetOption.INSTANCE) {
-				SideEffectAwareDataframeDomain sss = bottom();
+				SideEffectAwareDataframeDomain<T, D> sss = bottom();
 				for (Identifier key : allKeys()) {
 					TernaryExpression aux = new TernaryExpression(PandasDataframeType.INSTANCE, key,
 							binary.getLeft(), binary.getRight(), SetOptionAux.INSTANCE, pp.getLocation());
@@ -55,13 +58,13 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 			}
 		}
 
-		ValueEnvironment<DataframeDomain> sss = sideEffect(expression, pp);
+		ValueEnvironment<T> sss = sideEffect(expression, pp);
 		if (!sss.isBottom())
-			return new SideEffectAwareDataframeDomain(sss);
-		return new SideEffectAwareDataframeDomain(env.smallStepSemantics(expression, pp));
+			return new SideEffectAwareDataframeDomain<>(sss);
+		return new SideEffectAwareDataframeDomain<>(env.smallStepSemantics(expression, pp));
 	}
 
-	private ValueEnvironment<DataframeDomain> sideEffect(ValueExpression expression, ProgramPoint pp)
+	private ValueEnvironment<T> sideEffect(ValueExpression expression, ProgramPoint pp)
 			throws SemanticException {
 
 		ValueExpression dfVar = null;
@@ -83,16 +86,17 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 
 		if (dfVar instanceof MemoryPointer)
 			dfVar = ((MemoryPointer) dfVar).getReferencedLocation();
-		ValueEnvironment<DataframeDomain> sss = env.bottom();
+		ValueEnvironment<T> sss = env.bottom();
 		if (dfVar == null || !env.getKeys().contains(dfVar))
 			return sss;
 
-		DataframeTransformationDomain df = env.smallStepSemantics(dfVar, pp).getValueOnStack().left;
 		sss = env.smallStepSemantics(expression, pp);
-		DataframeDomain stack = sss.getValueOnStack();
-		DataframeDomain newValue = new DataframeDomain(stack.left, stack.right.bottom());
+		T singleton = sss.getValueOnStack();
+		D stack = singleton.getDataFrame();
+		T newValue = singleton.createDataframe(stack);
 
-		ValueEnvironment<DataframeDomain> result = sss.bottom();
+		ValueEnvironment<T> result = sss.bottom();
+		D df = env.smallStepSemantics(dfVar, pp).getValueOnStack().getDataFrame();
 		if (!df.isTop() && !df.isBottom())
 			for (Identifier key : keysOf(df))
 				result = result.lub(sss.putState(key, newValue));
@@ -101,33 +105,34 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 		return result;
 	}
 
-	private Set<Identifier> keysOf(DataframeTransformationDomain df) {
+	private Set<Identifier> keysOf(D df) {
 		Set<Identifier> keys = new HashSet<>();
-		for (Entry<Identifier, DataframeDomain> entry : env)
-			if (entry.getValue().left.equals(df))
+		for (Entry<Identifier, T> entry : env)
+			if (entry.getValue().sameDataFrame(df))
 				keys.add(entry.getKey());
 		return keys;
 	}
 
 	private Set<Identifier> allKeys() {
 		Set<Identifier> keys = new HashSet<>();
-		for (Entry<Identifier, DataframeDomain> entry : env)
+		for (Entry<Identifier, T> entry : env)
 			if (entry.getKey().getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
 				keys.add(entry.getKey());
 		return keys;
 	}
 
 	@Override
-	public SideEffectAwareDataframeDomain assume(ValueExpression expression, ProgramPoint pp) throws SemanticException {
-		ValueEnvironment<DataframeDomain> sss = sideEffect(expression, pp);
+	public SideEffectAwareDataframeDomain<T, D> assume(ValueExpression expression, ProgramPoint pp)
+			throws SemanticException {
+		ValueEnvironment<T> sss = sideEffect(expression, pp);
 		if (!sss.isBottom())
-			return new SideEffectAwareDataframeDomain(env.assume(expression, pp));
-		return new SideEffectAwareDataframeDomain(env.assume(expression, pp));
+			return new SideEffectAwareDataframeDomain<>(env.assume(expression, pp));
+		return new SideEffectAwareDataframeDomain<>(env.assume(expression, pp));
 	}
 
 	@Override
-	public SideEffectAwareDataframeDomain forgetIdentifier(Identifier id) throws SemanticException {
-		return new SideEffectAwareDataframeDomain(env.forgetIdentifier(id));
+	public SideEffectAwareDataframeDomain<T, D> forgetIdentifier(Identifier id) throws SemanticException {
+		return new SideEffectAwareDataframeDomain<>(env.forgetIdentifier(id));
 	}
 
 	@Override
@@ -136,13 +141,13 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 	}
 
 	@Override
-	public SideEffectAwareDataframeDomain pushScope(ScopeToken token) throws SemanticException {
-		return new SideEffectAwareDataframeDomain(env.pushScope(token));
+	public SideEffectAwareDataframeDomain<T, D> pushScope(ScopeToken token) throws SemanticException {
+		return new SideEffectAwareDataframeDomain<>(env.pushScope(token));
 	}
 
 	@Override
-	public SideEffectAwareDataframeDomain popScope(ScopeToken token) throws SemanticException {
-		return new SideEffectAwareDataframeDomain(env.popScope(token));
+	public SideEffectAwareDataframeDomain<T, D> popScope(ScopeToken token) throws SemanticException {
+		return new SideEffectAwareDataframeDomain<>(env.popScope(token));
 	}
 
 	@Override
@@ -151,23 +156,25 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 	}
 
 	@Override
-	public SideEffectAwareDataframeDomain lub(SideEffectAwareDataframeDomain other) throws SemanticException {
-		return new SideEffectAwareDataframeDomain(env.lub(other.env));
+	public SideEffectAwareDataframeDomain<T, D> lub(SideEffectAwareDataframeDomain<T, D> other)
+			throws SemanticException {
+		return new SideEffectAwareDataframeDomain<>(env.lub(other.env));
 	}
 
 	@Override
-	public SideEffectAwareDataframeDomain widening(SideEffectAwareDataframeDomain other) throws SemanticException {
-		return new SideEffectAwareDataframeDomain(env.widening(other.env));
+	public SideEffectAwareDataframeDomain<T, D> widening(SideEffectAwareDataframeDomain<T, D> other)
+			throws SemanticException {
+		return new SideEffectAwareDataframeDomain<>(env.widening(other.env));
 	}
 
 	@Override
-	public boolean lessOrEqual(SideEffectAwareDataframeDomain other) throws SemanticException {
+	public boolean lessOrEqual(SideEffectAwareDataframeDomain<T, D> other) throws SemanticException {
 		return env.lessOrEqual(other.env);
 	}
 
 	@Override
-	public SideEffectAwareDataframeDomain top() {
-		return new SideEffectAwareDataframeDomain(env.top());
+	public SideEffectAwareDataframeDomain<T, D> top() {
+		return new SideEffectAwareDataframeDomain<>(env.top());
 	}
 
 	@Override
@@ -176,8 +183,8 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 	}
 
 	@Override
-	public SideEffectAwareDataframeDomain bottom() {
-		return new SideEffectAwareDataframeDomain(env.bottom());
+	public SideEffectAwareDataframeDomain<T, D> bottom() {
+		return new SideEffectAwareDataframeDomain<>(env.bottom());
 	}
 
 	@Override
@@ -201,7 +208,7 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		SideEffectAwareDataframeDomain other = (SideEffectAwareDataframeDomain) obj;
+		SideEffectAwareDataframeDomain<?, ?> other = (SideEffectAwareDataframeDomain<?, ?>) obj;
 		if (env == null) {
 			if (other.env != null)
 				return false;

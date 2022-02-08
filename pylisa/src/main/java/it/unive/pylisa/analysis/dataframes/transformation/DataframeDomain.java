@@ -17,6 +17,7 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.pylisa.analysis.NonRelationalValueCartesianProduct;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
+import it.unive.pylisa.analysis.dataframes.DataframeAwareDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.transformations.BaseTransformation;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
@@ -27,7 +28,8 @@ import it.unive.pylisa.symbolic.operators.StructuralInfo;
 import it.unive.pylisa.symbolic.operators.TypeConversion;
 
 public class DataframeDomain extends
-		NonRelationalValueCartesianProduct<DataframeDomain, DataframeTransformationDomain, ConstantPropagation> {
+		NonRelationalValueCartesianProduct<DataframeDomain, DataframeTransformationDomain, ConstantPropagation>
+		implements DataframeAwareDomain<DataframeDomain, DataframeTransformationDomain> {
 
 	public DataframeDomain() {
 		this(new DataframeTransformationDomain().top(), new ConstantPropagation().top());
@@ -174,5 +176,20 @@ public class DataframeDomain extends
 		if (!topOrBottom(left) && topOrBottom(right))
 			return left.representation();
 		return new PairRepresentation(left.representation(), right.representation());
+	}
+
+	@Override
+	public DataframeTransformationDomain getDataFrame() {
+		return left;
+	}
+
+	@Override
+	public boolean sameDataFrame(DataframeTransformationDomain other) {
+		return left.equals(other);
+	}
+
+	@Override
+	public DataframeDomain createDataframe(DataframeTransformationDomain value) {
+		return new DataframeDomain(value, right.bottom());
 	}
 }

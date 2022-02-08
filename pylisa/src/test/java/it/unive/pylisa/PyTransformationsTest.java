@@ -1,16 +1,17 @@
 package it.unive.pylisa;
 
-import it.unive.lisa.AnalysisException;
-import it.unive.pylisa.analysis.dataframes.transformation.SideEffectAwareDataframeDomain;
-
 import java.io.IOException;
+
 import org.junit.Test;
+
+import it.unive.lisa.AnalysisException;
+import it.unive.pylisa.analysis.dataframes.transformation.DataframeDomain;
 
 public class PyTransformationsTest extends NotebookTest {
 
 	private void runTest(String file) throws IOException, AnalysisException {
 		perform(getClass().getClassLoader().getResource(file).getFile(), "py-transformations",
-				new SideEffectAwareDataframeDomain());
+				new DataframeDomain());
 	}
 
 	@Test
