@@ -25,6 +25,7 @@ import it.unive.pylisa.libraries.pandas.Describe;
 import it.unive.pylisa.libraries.pandas.Head;
 import it.unive.pylisa.libraries.pandas.Info;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
+import it.unive.pylisa.libraries.pandas.PySeriesType;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
 import it.unive.pylisa.libraries.pandas.SetOption;
 import it.unive.pylisa.libraries.standardLibrary.Print;
@@ -131,6 +132,16 @@ public class LibrarySpecificationProvider {
 						new Parameter(PANDAS_LOC, "value", Untyped.INSTANCE)
 						),
 				SetOption.class));
+		
+		unit1.addConstruct(new NativeCFG(
+				new CFGDescriptor(PANDAS_LOC,
+						unit1,
+						false,
+						"to_datetime",
+						PySeriesType.INSTANCE,
+						new Parameter(PANDAS_LOC, "arg", PySeriesType.INSTANCE)
+						),
+				NoEffectMethod.class));
 		
 		return unit1;
 	}

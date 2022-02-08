@@ -36,11 +36,11 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 	}
 
 	public Object getConstant() {
-		return constant;
+		return constant.getValue();
 	}
 
 	public <T> T getConstantAs(Class<T> type) {
-		return type.cast(constant);
+		return type.cast(getConstant());
 	}
 
 	@Override

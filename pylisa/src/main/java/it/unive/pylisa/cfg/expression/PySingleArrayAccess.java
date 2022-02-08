@@ -40,30 +40,32 @@ public class PySingleArrayAccess extends BinaryExpression {
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		AnalysisState<A, H, V, T> result = state;
-
-		if (left.getRuntimeTypes().anyMatch(t -> t.equals(PyDataframeType.INSTANCE))) {
-			it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
-					PySeriesType.INSTANCE, left, right, ColumnAccess.INSTANCE, getLocation());
-			result = result.smallStepSemantics(col, this);
-		}
-
-		Type dynamic = null;
+		Type dereferencedType = null;
+		Type childType = getStaticType();
 		for (Type t : left.getRuntimeTypes())
 			if (t.isPointerType()) {
 				ExternalSet<Type> inner = t.asPointerType().getInnerTypes();
-
+				
 				Type tmp = inner.isEmpty() ? Untyped.INSTANCE
 						: inner.reduce(inner.first(), (r, tt) -> r.commonSupertype(tt));
-				if (dynamic == null)
-					dynamic = tmp;
+				if (dereferencedType == null)
+					dereferencedType = tmp;
 				else
-					dynamic = dynamic.commonSupertype(tmp);
+					dereferencedType = dereferencedType.commonSupertype(tmp);
 			}
-		if (dynamic == null)
-			dynamic = Untyped.INSTANCE;
+		if (dereferencedType == null)
+			dereferencedType = Untyped.INSTANCE;
 
-		HeapDereference deref = new HeapDereference(dynamic, left, getLocation());
-		AccessChild access = new AccessChild(getStaticType(), deref, right, getLocation());
+
+		if (left.getRuntimeTypes().anyMatch(t -> t.equals(PyDataframeType.REFERENCE))) {
+			it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
+					PySeriesType.INSTANCE, left, right, ColumnAccess.INSTANCE, getLocation());
+			result = result.smallStepSemantics(col, this);
+			childType = PySeriesType.REFERENCE;
+		}
+		
+		HeapDereference deref = new HeapDereference(dereferencedType, left, getLocation());
+		AccessChild access = new AccessChild(childType, deref, right, getLocation());
 		return result.smallStepSemantics(access, this);
 	}
 }

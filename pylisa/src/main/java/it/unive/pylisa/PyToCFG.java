@@ -89,6 +89,7 @@ import it.unive.lisa.program.cfg.statement.numeric.Remainder;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
 import it.unive.lisa.program.cfg.statement.string.Equals;
 import it.unive.lisa.type.NullType;
+import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Float32;
 import it.unive.lisa.type.common.Int32;
@@ -1673,14 +1674,14 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 						access = new PySingleArrayAccess(
 								currentCFG,
 								getLocation(expr),
-								PyListType.INSTANCE,
+								Untyped.INSTANCE,
 								access,
 								indexes.get(0));
 					else if (indexes.size() == 2)
 						access = new PyDoubleArrayAccess(
 								currentCFG,
 								getLocation(expr),
-								PyListType.INSTANCE,
+								Untyped.INSTANCE,
 								access,
 								indexes.get(0),
 								indexes.get(1));
