@@ -6,7 +6,7 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
-import it.unive.pylisa.libraries.pandas.PandasDataframeType;
+import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 
 public class StructuralInfo implements UnaryOperator, DataframeOperatorWithSideEffects {
 
@@ -24,7 +24,7 @@ public class StructuralInfo implements UnaryOperator, DataframeOperatorWithSideE
 	public ExternalSet<Type> typeInference(ExternalSet<Type> arg) {
 		if (arg.noneMatch(t -> t.equals(PandasDataframeType.REFERENCE)))
 			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(PandasDataframeType.INSTANCE);
+		return Caches.types().mkSingletonSet(PandasDataframeType.REFERENCE);
 	}
 
 	@Override

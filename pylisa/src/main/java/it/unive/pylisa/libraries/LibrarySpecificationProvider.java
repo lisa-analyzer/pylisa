@@ -24,11 +24,11 @@ import it.unive.pylisa.cfg.PythonUnit;
 import it.unive.pylisa.libraries.pandas.Describe;
 import it.unive.pylisa.libraries.pandas.Head;
 import it.unive.pylisa.libraries.pandas.Info;
-import it.unive.pylisa.libraries.pandas.PandasDataframeType;
-import it.unive.pylisa.libraries.pandas.PandasSeriesType;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
 import it.unive.pylisa.libraries.pandas.SetOption;
 import it.unive.pylisa.libraries.pandas.ToDatetime;
+import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.libraries.standardLibrary.Print;
 import it.unive.pylisa.libraries.warnings.FilterWarnings;
 

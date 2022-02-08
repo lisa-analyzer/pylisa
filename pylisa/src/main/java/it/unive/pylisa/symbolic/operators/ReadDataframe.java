@@ -4,7 +4,7 @@ import it.unive.lisa.caches.Caches;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
-import it.unive.pylisa.libraries.pandas.PandasDataframeType;
+import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 
 public class ReadDataframe implements UnaryOperator {
 

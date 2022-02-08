@@ -16,7 +16,7 @@ import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.pylisa.libraries.pandas.PandasDataframeType;
+import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.symbolic.operators.DataframeOperatorWithSideEffects;
 import it.unive.pylisa.symbolic.operators.SetOption;
 import it.unive.pylisa.symbolic.operators.SetOptionAux;
@@ -81,12 +81,12 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 						.getDataFrame(ternary);
 		}
 
-		ValueEnvironment<DataframeDomain> sss = env.bottom();
-		if (dfVar == null)
-			return sss;
-
 		if (dfVar instanceof MemoryPointer)
 			dfVar = ((MemoryPointer) dfVar).getReferencedLocation();
+		ValueEnvironment<DataframeDomain> sss = env.bottom();
+		if (dfVar == null || !env.getKeys().contains(dfVar))
+			return sss;
+
 		DataframeTransformationDomain df = env.smallStepSemantics(dfVar, pp).getValueOnStack().left;
 		sss = env.smallStepSemantics(expression, pp);
 		DataframeDomain stack = sss.getValueOnStack();

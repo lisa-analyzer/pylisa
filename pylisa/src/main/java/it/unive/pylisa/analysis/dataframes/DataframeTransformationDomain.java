@@ -10,8 +10,7 @@ import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.pylisa.analysis.dataframes.transformations.DataframeTransformation;
-import it.unive.pylisa.libraries.pandas.PandasDataframeType;
-import it.unive.pylisa.libraries.pandas.PandasSeriesType;
+import it.unive.pylisa.libraries.pandas.types.PandasType;
 
 public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<DataframeTransformationDomain> {
 
@@ -129,10 +128,7 @@ public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<
 	@Override
 	public boolean canProcess(SymbolicExpression expression) {
 		return expression.hasRuntimeTypes()
-				? expression.getRuntimeTypes()
-						.anyMatch(t -> t.equals(PandasDataframeType.INSTANCE) || t.equals(PandasSeriesType.INSTANCE))
-				: expression.getStaticType().equals(PandasDataframeType.INSTANCE)
-						|| expression.getStaticType().equals(PandasSeriesType.INSTANCE)
-						|| expression.getStaticType().isUntyped();
+				? expression.getRuntimeTypes().anyMatch(PandasType.class::isInstance)
+				: expression.getStaticType() instanceof PandasType || expression.getStaticType().isUntyped();
 	}
 }

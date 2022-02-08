@@ -15,6 +15,7 @@ import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.symbolic.operators.StructuralInfo;
 
 public class Info extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
@@ -44,7 +45,7 @@ public class Info extends it.unive.lisa.program.cfg.statement.UnaryExpression im
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		UnaryExpression info = new UnaryExpression(PandasDataframeType.INSTANCE, expr, StructuralInfo.INSTANCE,
+		UnaryExpression info = new UnaryExpression(PandasDataframeType.REFERENCE, expr, StructuralInfo.INSTANCE,
 				getLocation());
 		return state.smallStepSemantics(info, st);
 	}

@@ -15,6 +15,7 @@ import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.operators.TypeConversion;
 
 public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
@@ -44,7 +45,7 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		UnaryExpression conv = new UnaryExpression(PandasSeriesType.INSTANCE, expr, new TypeConversion("datetime"),
+		UnaryExpression conv = new UnaryExpression(PandasSeriesType.REFERENCE, expr, new TypeConversion("datetime"),
 				getLocation());
 		return state.smallStepSemantics(conv, st);
 	}

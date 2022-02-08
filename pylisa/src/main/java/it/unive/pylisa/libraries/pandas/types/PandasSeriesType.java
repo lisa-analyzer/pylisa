@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.pandas;
+package it.unive.pylisa.libraries.pandas.types;
 
 import java.util.Collection;
 import java.util.Set;
@@ -10,33 +10,33 @@ import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class PandasDataframeType implements UnitType {
+public class PandasSeriesType implements UnitType, PandasType {
 
-	public static final PandasDataframeType INSTANCE = new PandasDataframeType();
+	public static final PandasSeriesType INSTANCE = new PandasSeriesType();
 
 	public static final ReferenceType REFERENCE = new ReferenceType(INSTANCE);
 
-	private PandasDataframeType() {
+	private PandasSeriesType() {
 	}
 
 	@Override
 	public String toString() {
-		return "pandas.DataFrame";
+		return "pandas.Series";
 	}
 
 	@Override
 	public boolean equals(Object other) {
-		return other instanceof PandasDataframeType;
+		return other instanceof PandasSeriesType;
 	}
 
 	@Override
 	public int hashCode() {
-		return PandasDataframeType.class.getName().hashCode();
+		return PandasSeriesType.class.getName().hashCode();
 	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		return other instanceof PandasDataframeType || other instanceof Untyped;
+		return other instanceof PandasSeriesType || other instanceof Untyped;
 	}
 
 	@Override

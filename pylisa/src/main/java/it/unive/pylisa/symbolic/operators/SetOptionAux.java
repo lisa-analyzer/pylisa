@@ -6,7 +6,7 @@ import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
-import it.unive.pylisa.libraries.pandas.PandasDataframeType;
+import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 
 public class SetOptionAux implements TernaryOperator, DataframeOperatorWithSideEffects {
 
@@ -26,7 +26,7 @@ public class SetOptionAux implements TernaryOperator, DataframeOperatorWithSideE
 			return Caches.types().mkEmptySet();
 		if (middle.noneMatch(Type::isStringType))
 			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(PandasDataframeType.INSTANCE);
+		return Caches.types().mkSingletonSet(PandasDataframeType.REFERENCE);
 	}
 
 	@Override

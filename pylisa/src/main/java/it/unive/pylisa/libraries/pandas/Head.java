@@ -19,6 +19,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.type.common.Int32;
+import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 
 public class Head extends BinaryExpression implements PluggableStatement {
@@ -54,7 +55,7 @@ public class Head extends BinaryExpression implements PluggableStatement {
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		Constant start = new Constant(Int32.INSTANCE, 0, getLocation());
-		TernaryExpression head = new TernaryExpression(PandasDataframeType.INSTANCE, left, start, right,
+		TernaryExpression head = new TernaryExpression(PandasDataframeType.REFERENCE, left, start, right,
 				ProjectRows.INSTANCE, getLocation());
 		return state.smallStepSemantics(head, st);
 	}

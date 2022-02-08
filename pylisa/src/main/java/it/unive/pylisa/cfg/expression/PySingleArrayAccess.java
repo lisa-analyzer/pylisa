@@ -18,8 +18,8 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
-import it.unive.pylisa.libraries.pandas.PandasDataframeType;
-import it.unive.pylisa.libraries.pandas.PandasSeriesType;
+import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
 
 public class PySingleArrayAccess extends BinaryExpression {
