@@ -1,4 +1,4 @@
-package it.unive.pylisa.symbolic;
+package it.unive.pylisa.symbolic.operators;
 
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;

@@ -16,7 +16,7 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
-import it.unive.pylisa.symbolic.Statistics;
+import it.unive.pylisa.symbolic.operators.Statistics;
 
 public class Describe extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 

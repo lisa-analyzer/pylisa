@@ -18,7 +18,7 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 	private static final ConstantPropagation TOP = new ConstantPropagation(null, true);
 	private static final ConstantPropagation BOTTOM = new ConstantPropagation(null, false);
 
-	private final Object constant;
+	private final Constant constant;
 
 	private final boolean isTop;
 
@@ -26,11 +26,11 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		this(null, true);
 	}
 
-	private ConstantPropagation(Object constant) {
+	private ConstantPropagation(Constant constant) {
 		this(constant, false);
 	}
 
-	private ConstantPropagation(Object constant, boolean isTop) {
+	private ConstantPropagation(Constant constant, boolean isTop) {
 		this.constant = constant;
 		this.isTop = isTop;
 	}
@@ -122,7 +122,7 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 	@Override
 	protected ConstantPropagation evalNonNullConstant(Constant constant, ProgramPoint pp) throws SemanticException {
 		if (isAccepted(constant.getStaticType()))
-			return new ConstantPropagation(constant.getValue());
+			return new ConstantPropagation(constant);
 		return super.evalNonNullConstant(constant, pp);
 	}
 

@@ -20,7 +20,7 @@ import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.type.common.Int32;
-import it.unive.pylisa.symbolic.ProjectRows;
+import it.unive.pylisa.symbolic.operators.ProjectRows;
 
 public class Head extends BinaryExpression implements PluggableStatement {
 

@@ -20,7 +20,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
 import it.unive.pylisa.libraries.pandas.PySeriesType;
-import it.unive.pylisa.symbolic.ColumnAccess;
+import it.unive.pylisa.symbolic.operators.ColumnAccess;
 
 public class PySingleArrayAccess extends BinaryExpression {
 

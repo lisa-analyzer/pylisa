@@ -17,9 +17,9 @@ import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
-import it.unive.pylisa.symbolic.SetOption;
-import it.unive.pylisa.symbolic.SetOptionAux;
-import it.unive.pylisa.symbolic.DataframeOperatorWithSideEffects;
+import it.unive.pylisa.symbolic.operators.DataframeOperatorWithSideEffects;
+import it.unive.pylisa.symbolic.operators.SetOption;
+import it.unive.pylisa.symbolic.operators.SetOptionAux;
 
 public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwareDataframeDomain> {
 

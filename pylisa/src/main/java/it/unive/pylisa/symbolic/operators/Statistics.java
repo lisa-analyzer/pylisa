@@ -1,4 +1,4 @@
-package it.unive.pylisa.symbolic;
+package it.unive.pylisa.symbolic.operators;
 
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -8,16 +8,16 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.libraries.pandas.PyDataframeType;
 
-public class StructuralInfo implements UnaryOperator, DataframeOperatorWithSideEffects {
+public class Statistics implements UnaryOperator, DataframeOperatorWithSideEffects {
 
-	public static final StructuralInfo INSTANCE = new StructuralInfo();
+	public static final Statistics INSTANCE = new Statistics();
 
-	private StructuralInfo() {
+	private Statistics() {
 	}
 
 	@Override
 	public String toString() {
-		return "struc_info";
+		return "stats";
 	}
 
 	@Override

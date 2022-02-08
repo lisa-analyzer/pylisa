@@ -17,11 +17,11 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.pylisa.analysis.NonRelationalValueCartesianProduct;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformations.BaseTransformation;
-import it.unive.pylisa.symbolic.ProjectRows;
-import it.unive.pylisa.symbolic.ReadDataframe;
-import it.unive.pylisa.symbolic.SetOptionAux;
-import it.unive.pylisa.symbolic.Statistics;
-import it.unive.pylisa.symbolic.StructuralInfo;
+import it.unive.pylisa.symbolic.operators.ProjectRows;
+import it.unive.pylisa.symbolic.operators.ReadDataframe;
+import it.unive.pylisa.symbolic.operators.SetOptionAux;
+import it.unive.pylisa.symbolic.operators.Statistics;
+import it.unive.pylisa.symbolic.operators.StructuralInfo;
 
 public class DataframeDomain extends
 		NonRelationalValueCartesianProduct<DataframeDomain, DataframeTransformationDomain, ConstantPropagation> {

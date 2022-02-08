@@ -48,7 +48,7 @@ public class SetOption extends it.unive.lisa.program.cfg.statement.BinaryExpress
 		CodeLocation location = getLocation();
 
 		BinaryExpression bin = new BinaryExpression(VoidType.INSTANCE, left, right,
-				it.unive.pylisa.symbolic.SetOption.INSTANCE, location);
+				it.unive.pylisa.symbolic.operators.SetOption.INSTANCE, location);
 		AnalysisState<A, H, V, T> binState = state.smallStepSemantics(bin, st);
 		// the skip is to cleanup the expression on the stack
 		return binState.smallStepSemantics(new Skip(location), st);
