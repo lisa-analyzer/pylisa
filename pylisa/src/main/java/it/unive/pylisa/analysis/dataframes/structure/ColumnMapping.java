@@ -19,6 +19,10 @@ public class ColumnMapping extends FunctionalLattice<ColumnMapping, Integer, Col
 		this(other.lattice, copy(other.function));
 	}
 
+	public ColumnMapping(Map<Integer, ColumnSet> map) {
+		this(new ColumnSet(), map);
+	}
+
 	private static Map<Integer, ColumnSet> copy(Map<Integer, ColumnSet> function) {
 		Map<Integer, ColumnSet> result = new HashMap<>(function.size());
 		for (Entry<Integer, ColumnSet> entry : function.entrySet())

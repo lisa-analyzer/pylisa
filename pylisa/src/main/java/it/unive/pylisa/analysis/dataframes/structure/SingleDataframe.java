@@ -1,5 +1,8 @@
 package it.unive.pylisa.analysis.dataframes.structure;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -8,7 +11,6 @@ import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.pylisa.libraries.pandas.types.PandasType;
-import java.util.HashSet;
 
 public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDataframe> {
 
@@ -214,20 +216,18 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 	}
 
 	public SingleDataframe addColumn(String name, boolean definite) {
-		ColumnSet copy;
+		Set<String> copy;
 		if (definite)
-			copy = new ColumnSet(names);
+			copy = new HashSet<>(names.elements() == null ? new HashSet<>() : names.elements());
 		else
-			copy = new ColumnSet(possibleNames);
+			copy = new HashSet<>(possibleNames.elements() == null ? new HashSet<>() : possibleNames.elements());
 
-		if (copy.elements() == null)
-			copy = new ColumnSet(new HashSet<>());
-		copy.elements().add(name);
+		copy.add(name);
 
 		if (definite)
-			return new SingleDataframe(name, copy, possibleNames, mapping, rows);
+			return new SingleDataframe(file, new ColumnSet(copy), possibleNames, mapping, rows);
 		else
-			return new SingleDataframe(name, names, copy, mapping, rows);
+			return new SingleDataframe(file, names, new ColumnSet(copy), mapping, rows);
 	}
 
 	public SingleDataframe accessRows(int low, int high) throws SemanticException {
