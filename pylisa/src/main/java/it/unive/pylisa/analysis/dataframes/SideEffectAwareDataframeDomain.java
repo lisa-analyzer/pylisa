@@ -1,9 +1,5 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.util.HashSet;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.NonRelationalValueDomain;
@@ -13,7 +9,6 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Identifier;
-import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
@@ -21,6 +16,9 @@ import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.symbolic.operators.DataframeOperatorWithSideEffects;
 import it.unive.pylisa.symbolic.operators.SetOption;
 import it.unive.pylisa.symbolic.operators.SetOptionAux;
+import java.util.HashSet;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class SideEffectAwareDataframeDomain<T extends NonRelationalValueDomain<T> & DataframeAwareDomain<T, D>,
 		D extends NonRelationalValueDomain<D>>
@@ -84,8 +82,8 @@ public class SideEffectAwareDataframeDomain<T extends NonRelationalValueDomain<T
 						.getDataFrame(ternary);
 		}
 
-		if (dfVar instanceof MemoryPointer)
-			dfVar = ((MemoryPointer) dfVar).getReferencedLocation();
+//		if (dfVar instanceof MemoryPointer)
+//			dfVar = ((MemoryPointer) dfVar).getReferencedLocation();
 		ValueEnvironment<T> sss = env.bottom();
 		if (dfVar == null || !env.getKeys().contains(dfVar))
 			return sss;

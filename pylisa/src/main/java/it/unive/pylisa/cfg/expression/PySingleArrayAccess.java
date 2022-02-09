@@ -45,7 +45,7 @@ public class PySingleArrayAccess extends BinaryExpression {
 		for (Type t : left.getRuntimeTypes())
 			if (t.isPointerType()) {
 				ExternalSet<Type> inner = t.asPointerType().getInnerTypes();
-				
+
 				Type tmp = inner.isEmpty() ? Untyped.INSTANCE
 						: inner.reduce(inner.first(), (r, tt) -> r.commonSupertype(tt));
 				if (dereferencedType == null)
@@ -56,14 +56,13 @@ public class PySingleArrayAccess extends BinaryExpression {
 		if (dereferencedType == null)
 			dereferencedType = Untyped.INSTANCE;
 
-
 		if (left.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.REFERENCE))) {
 			it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
 					PandasSeriesType.INSTANCE, left, right, ColumnAccess.INSTANCE, getLocation());
 			result = result.smallStepSemantics(col, this);
 			childType = PandasSeriesType.REFERENCE;
 		}
-		
+
 		HeapDereference deref = new HeapDereference(dereferencedType, left, getLocation());
 		AccessChild access = new AccessChild(childType, deref, right, getLocation());
 		return result.smallStepSemantics(access, this);

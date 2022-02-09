@@ -29,7 +29,7 @@ public class ColumnAccess implements BinaryOperator, DataframeOperatorWithSideEf
 			return Caches.types().mkEmptySet();
 		return Caches.types().mkSingletonSet(PandasSeriesType.REFERENCE);
 	}
-	
+
 	@Override
 	public SymbolicExpression getDataFrame(SymbolicExpression container) {
 		return ((BinaryExpression) container).getLeft();

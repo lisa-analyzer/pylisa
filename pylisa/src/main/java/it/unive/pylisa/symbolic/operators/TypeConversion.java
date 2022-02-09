@@ -11,7 +11,7 @@ import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 public class TypeConversion implements UnaryOperator, DataframeOperatorWithSideEffects {
 
 	private final String type;
-	
+
 	public TypeConversion(String type) {
 		this.type = type;
 	}
@@ -19,7 +19,7 @@ public class TypeConversion implements UnaryOperator, DataframeOperatorWithSideE
 	public String getType() {
 		return type;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "convert(" + type + ")";

@@ -16,6 +16,7 @@ import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.type.common.Int32;
@@ -55,8 +56,10 @@ public class Head extends BinaryExpression implements PluggableStatement {
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		Constant start = new Constant(Int32.INSTANCE, 0, getLocation());
-		TernaryExpression head = new TernaryExpression(PandasDataframeType.REFERENCE, left, start, right,
+		HeapDereference deref = new HeapDereference(PandasDataframeType.INSTANCE, left, getLocation());
+		TernaryExpression head = new TernaryExpression(PandasDataframeType.INSTANCE, deref, start, right,
 				ProjectRows.INSTANCE, getLocation());
-		return state.smallStepSemantics(head, st);
+		AnalysisState<A, H, V, T> hState = state.smallStepSemantics(head, st);
+		return hState.smallStepSemantics(left, st);
 	}
 }

@@ -1,11 +1,9 @@
 package it.unive.pylisa;
 
-import java.io.IOException;
-
-import org.junit.Test;
-
 import it.unive.lisa.AnalysisException;
 import it.unive.pylisa.analysis.dataframes.structure.DataframeStructureDomain;
+import java.io.IOException;
+import org.junit.Test;
 
 public class PyStructureTest extends NotebookTest {
 

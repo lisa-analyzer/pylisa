@@ -1,7 +1,5 @@
 package it.unive.pylisa.analysis.dataframes.transformation;
 
-import java.util.Map.Entry;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
@@ -26,6 +24,7 @@ import it.unive.pylisa.symbolic.operators.SetOptionAux;
 import it.unive.pylisa.symbolic.operators.Statistics;
 import it.unive.pylisa.symbolic.operators.StructuralInfo;
 import it.unive.pylisa.symbolic.operators.TypeConversion;
+import java.util.Map.Entry;
 
 public class DataframeDomain extends
 		NonRelationalValueCartesianProduct<DataframeDomain, DataframeTransformationDomain, ConstantPropagation>

@@ -40,8 +40,6 @@ public class BaseTransformation extends DataframeTransformation {
 		return true;
 	}
 
-
-
 	@Override
 	public String toString() {
 		if (parameters.length == 0)

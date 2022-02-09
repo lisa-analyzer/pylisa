@@ -1,13 +1,12 @@
 package it.unive.pylisa.cfg.type;
 
-import java.util.Collection;
-import java.util.Set;
-
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import java.util.Collection;
+import java.util.Set;
 
 public class PyTupleType implements UnitType {
 

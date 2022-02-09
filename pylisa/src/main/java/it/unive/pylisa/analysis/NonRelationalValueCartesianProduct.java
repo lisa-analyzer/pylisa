@@ -1,7 +1,5 @@
 package it.unive.pylisa.analysis;
 
-import java.util.Map.Entry;
-
 import it.unive.lisa.analysis.SemanticDomain.Satisfiability;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -13,6 +11,7 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.ValueExpression;
+import java.util.Map.Entry;
 
 @SuppressWarnings("unchecked")
 public class NonRelationalValueCartesianProduct<T extends NonRelationalValueCartesianProduct<T, T1, T2>,

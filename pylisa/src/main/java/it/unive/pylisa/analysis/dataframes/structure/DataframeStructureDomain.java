@@ -1,7 +1,5 @@
 package it.unive.pylisa.analysis.dataframes.structure;
 
-import java.util.Map.Entry;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
@@ -19,7 +17,9 @@ import it.unive.pylisa.analysis.NonRelationalValueCartesianProduct;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.DataframeAwareDomain;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
+import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
+import java.util.Map.Entry;
 
 public class DataframeStructureDomain extends
 		NonRelationalValueCartesianProduct<DataframeStructureDomain, SingleDataframe, ConstantPropagation>
@@ -90,7 +90,7 @@ public class DataframeStructureDomain extends
 			if (topOrBottom(df) || topOrBottom(col))
 				return new DataframeStructureDomain(left.top(), right.bottom());
 
-			SingleDataframe ca = new SingleDataframe(df).addColumn(col.getConstantAs(String.class), true);
+			SingleDataframe ca = df.addColumn(col.getConstantAs(String.class), true);
 			return new DataframeStructureDomain(ca, right.bottom());
 		} else
 			return bottom();
@@ -98,21 +98,18 @@ public class DataframeStructureDomain extends
 
 	private DataframeStructureDomain reducedTernary(ProgramPoint pp, ValueEnvironment<SingleDataframe> lenv,
 			ValueEnvironment<ConstantPropagation> renv, TernaryExpression ternary) throws SemanticException {
-//		if (ternary.getOperator() == ProjectRows.INSTANCE) {
-//			SingleDataframe df = extractDataFrame(ternary.getLeft(), lenv, pp);
-//			ConstantPropagation start = right.eval((ValueExpression) ternary.getMiddle(), renv, pp);
-//			ConstantPropagation end = right.eval((ValueExpression) ternary.getRight(), renv, pp);
-//
-//			if (topOrBottom(df) || topOrBottom(start) || topOrBottom(end))
-//				return new DataframeStructureDomain(left.top(), right.bottom());
-//
-//			SingleDataframe pr = new SingleDataframe(df,
-//					new BaseTransformation("project_rows", start.getConstantAs(Integer.class),
-//							end.getConstantAs(Integer.class)));
-//
-//			return new DataframeStructureDomain(pr, right.bottom());
-//		} else
-		return bottom();
+		if (ternary.getOperator() == ProjectRows.INSTANCE) {
+			SingleDataframe df = extractDataFrame(ternary.getLeft(), lenv, pp);
+			ConstantPropagation start = right.eval((ValueExpression) ternary.getMiddle(), renv, pp);
+			ConstantPropagation end = right.eval((ValueExpression) ternary.getRight(), renv, pp);
+
+			if (topOrBottom(df) || topOrBottom(start) || topOrBottom(end))
+				return new DataframeStructureDomain(left.top(), right.bottom());
+
+			SingleDataframe pr = df.accessRows(start.getConstantAs(Integer.class), end.getConstantAs(Integer.class));
+			return new DataframeStructureDomain(pr, right.bottom());
+		} else
+			return bottom();
 	}
 
 	private SingleDataframe extractDataFrame(SymbolicExpression expr,

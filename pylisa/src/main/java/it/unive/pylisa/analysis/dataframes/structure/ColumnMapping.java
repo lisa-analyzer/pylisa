@@ -1,14 +1,13 @@
 package it.unive.pylisa.analysis.dataframes.structure;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.lattices.FunctionalLattice;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.MapRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class ColumnMapping extends FunctionalLattice<ColumnMapping, Integer, ColumnSet> {
 

@@ -1,9 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -25,6 +21,9 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.cfg.type.PyTupleType;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PyAssign extends Assignment {
 
@@ -35,7 +34,8 @@ public class PyAssign extends Assignment {
 	@Override
 	protected <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
-			V extends ValueDomain<V>, T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
 					InterproceduralAnalysis<A, H, V, T> interprocedural,
 					AnalysisState<A, H, V, T> state,
 					SymbolicExpression left,
@@ -58,7 +58,8 @@ public class PyAssign extends Assignment {
 		for (int i = 0; i < ids.size(); i++) {
 			ExpressionSet<SymbolicExpression> id = ids.get(i);
 
-			AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32.INSTANCE, i, getLocation()),
+			AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref,
+					new Constant(Int32.INSTANCE, i, getLocation()),
 					getLocation());
 			AnalysisState<A, H, V, T> fieldState = assign.smallStepSemantics(fieldAcc, this);
 

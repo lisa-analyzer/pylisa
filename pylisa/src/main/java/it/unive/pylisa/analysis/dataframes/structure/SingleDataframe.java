@@ -3,10 +3,12 @@ package it.unive.pylisa.analysis.dataframes.structure;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
+import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.pylisa.libraries.pandas.types.PandasType;
+import java.util.HashSet;
 
 public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDataframe> {
 
@@ -14,25 +16,23 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 	private final ColumnSet names;
 	private final ColumnSet possibleNames;
 	private final ColumnMapping mapping;
+	private final Interval rows;
 
 	public SingleDataframe() {
 		this((String) null);
 	}
 
 	public SingleDataframe(String file) {
-		this(file, new ColumnSet(), new ColumnSet(), new ColumnMapping());
+		this(file, new ColumnSet(), new ColumnSet(), new ColumnMapping(), new Interval().top());
 	}
 
-	public SingleDataframe(SingleDataframe other) {
-		this(other.file, new ColumnSet(other.names.elements()), new ColumnSet(other.possibleNames.elements()),
-				new ColumnMapping(other.mapping));
-	}
-
-	private SingleDataframe(String file, ColumnSet names, ColumnSet possibleNames, ColumnMapping mapping) {
+	private SingleDataframe(String file, ColumnSet names, ColumnSet possibleNames, ColumnMapping mapping,
+			Interval rows) {
 		this.file = file;
 		this.names = names;
 		this.possibleNames = possibleNames;
 		this.mapping = mapping;
+		this.rows = rows;
 	}
 
 	@Override
@@ -41,7 +41,8 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 				null,
 				names.top(),
 				possibleNames.top(),
-				mapping.top());
+				mapping.top(),
+				rows.top());
 	}
 
 	@Override
@@ -49,7 +50,8 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 		return file == null
 				&& names.isTop()
 				&& possibleNames.isTop()
-				&& mapping.isTop();
+				&& mapping.isTop()
+				&& rows.isTop();
 	}
 
 	@Override
@@ -58,7 +60,8 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 				null,
 				names.bottom(),
 				possibleNames.bottom(),
-				mapping.bottom());
+				mapping.bottom(),
+				rows.bottom());
 	}
 
 	@Override
@@ -66,7 +69,8 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 		return file == null
 				&& names.isBottom()
 				&& possibleNames.isBottom()
-				&& mapping.isBottom();
+				&& mapping.isBottom()
+				&& rows.isBottom();
 	}
 
 	@Override
@@ -77,7 +81,8 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 				file,
 				names.lub(other.names),
 				possibleNames.lub(other.possibleNames),
-				mapping.lub(other.mapping));
+				mapping.lub(other.mapping),
+				rows.lub(other.rows));
 	}
 
 	@Override
@@ -88,7 +93,8 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 				file,
 				names.widening(other.names),
 				possibleNames.widening(other.possibleNames),
-				mapping.widening(other.mapping));
+				mapping.widening(other.mapping),
+				rows.widening(other.rows));
 	}
 
 	@Override
@@ -96,7 +102,8 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 		return file.equals(other.file)
 				&& names.lessOrEqual(other.names)
 				&& possibleNames.lessOrEqual(other.possibleNames)
-				&& mapping.lessOrEqual(other.mapping);
+				&& mapping.lessOrEqual(other.mapping)
+				&& rows.lessOrEqual(other.rows);
 	}
 
 	@Override
@@ -107,6 +114,7 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 		result = prime * result + ((mapping == null) ? 0 : mapping.hashCode());
 		result = prime * result + ((names == null) ? 0 : names.hashCode());
 		result = prime * result + ((possibleNames == null) ? 0 : possibleNames.hashCode());
+		result = prime * result + ((rows == null) ? 0 : rows.hashCode());
 		return result;
 	}
 
@@ -138,6 +146,11 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 			if (other.possibleNames != null)
 				return false;
 		} else if (!possibleNames.equals(other.possibleNames))
+			return false;
+		if (rows == null) {
+			if (other.rows != null)
+				return false;
+		} else if (!rows.equals(rows))
 			return false;
 		return true;
 	}
@@ -180,7 +193,7 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 		@Override
 		public String toString() {
 			return "file: " + file + ", cols: " + names.representation() + ", mapping: " + mapping.representation()
-					+ ", possible cols: " + possibleNames.representation();
+					+ ", possible cols: " + possibleNames.representation() + ", rows: " + rows.representation();
 		}
 
 		private SingleDataframe getEnclosingInstance() {
@@ -201,10 +214,24 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 	}
 
 	public SingleDataframe addColumn(String name, boolean definite) {
+		ColumnSet copy;
 		if (definite)
-			names.elements().add(name);
+			copy = new ColumnSet(names);
 		else
-			possibleNames.elements().add(name);
-		return this;
+			copy = new ColumnSet(possibleNames);
+
+		if (copy.elements() == null)
+			copy = new ColumnSet(new HashSet<>());
+		copy.elements().add(name);
+
+		if (definite)
+			return new SingleDataframe(name, copy, possibleNames, mapping, rows);
+		else
+			return new SingleDataframe(name, names, copy, mapping, rows);
+	}
+
+	public SingleDataframe accessRows(int low, int high) throws SemanticException {
+		Interval lub = rows.lub(new Interval(low, high));
+		return new SingleDataframe(file, names, possibleNames, mapping, lub);
 	}
 }

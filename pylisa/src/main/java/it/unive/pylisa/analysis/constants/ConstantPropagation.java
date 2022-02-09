@@ -1,7 +1,5 @@
 package it.unive.pylisa.analysis.constants;
 
-import java.util.Objects;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -12,6 +10,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.Type;
+import java.util.Objects;
 
 public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation> {
 

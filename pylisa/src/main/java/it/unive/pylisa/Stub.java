@@ -1,12 +1,11 @@
 package it.unive.pylisa;
 
-import java.util.Collection;
-import java.util.HashSet;
-
 import it.unive.lisa.checks.warnings.Warning;
 import it.unive.lisa.checks.warnings.WarningWithLocation;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CodeLocation;
+import java.util.Collection;
+import java.util.HashSet;
 
 public class Stub {
 	public static Collection<Warning> analyze(String filePath) {

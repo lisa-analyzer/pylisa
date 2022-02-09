@@ -1,7 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -22,6 +20,7 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyDictType;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class DictionaryCreation extends NaryExpression {
 

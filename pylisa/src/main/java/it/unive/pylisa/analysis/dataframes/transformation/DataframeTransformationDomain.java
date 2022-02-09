@@ -1,7 +1,5 @@
 package it.unive.pylisa.analysis.dataframes.transformation;
 
-import java.util.Arrays;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -11,6 +9,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.pylisa.analysis.dataframes.transformation.transformations.DataframeTransformation;
 import it.unive.pylisa.libraries.pandas.types.PandasType;
+import java.util.Arrays;
 
 public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<DataframeTransformationDomain> {
 

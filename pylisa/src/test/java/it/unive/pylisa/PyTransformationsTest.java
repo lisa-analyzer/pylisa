@@ -1,11 +1,9 @@
 package it.unive.pylisa;
 
-import java.io.IOException;
-
-import org.junit.Test;
-
 import it.unive.lisa.AnalysisException;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeDomain;
+import java.io.IOException;
+import org.junit.Test;
 
 public class PyTransformationsTest extends NotebookTest {
 

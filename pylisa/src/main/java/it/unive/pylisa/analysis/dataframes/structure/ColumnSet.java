@@ -1,13 +1,12 @@
 package it.unive.pylisa.analysis.dataframes.structure;
 
-import java.util.Collections;
-import java.util.Set;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.lattices.InverseSetLattice;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.SetRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
+import java.util.Collections;
+import java.util.Set;
 
 public class ColumnSet extends InverseSetLattice<ColumnSet, String> {
 

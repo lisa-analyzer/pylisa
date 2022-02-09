@@ -59,7 +59,7 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 			HeapReference ref = new HeapReference(PandasDataframeType.REFERENCE, loc, location);
 			AnalysisState<A, H, V, T> tmp = state.bottom();
 			AnalysisState<A, H, V, T> readState = allocated.smallStepSemantics(read, st);
-			for (SymbolicExpression df : readState.getComputedExpressions()) 
+			for (SymbolicExpression df : readState.getComputedExpressions())
 				tmp = tmp.lub(readState.assign(loc, df, st));
 			assigned = tmp.smallStepSemantics(ref, st);
 		}
