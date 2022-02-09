@@ -24,7 +24,7 @@ import it.unive.pylisa.symbolic.operators.ReadDataframe;
 public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	private Statement st;
 
-	protected ReadCsv(CFG cfg, CodeLocation location, String constructName, Type staticType, Expression arg) {
+	public ReadCsv(CFG cfg, CodeLocation location, String constructName, Type staticType, Expression arg) {
 		super(cfg, location, constructName, staticType, arg);
 	}
 

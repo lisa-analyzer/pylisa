@@ -30,7 +30,7 @@ public class SideEffectAwareDataframeDomain<T extends NonRelationalValueDomain<T
 		this(new ValueEnvironment<>(singleton));
 	}
 
-	private SideEffectAwareDataframeDomain(ValueEnvironment<T> env) {
+	public SideEffectAwareDataframeDomain(ValueEnvironment<T> env) {
 		this.env = env;
 	}
 	
