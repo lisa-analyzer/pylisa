@@ -25,7 +25,7 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 	}
 
 	public SingleDataframe(String file) {
-		this(file, new ColumnSet(), new ColumnSet(), new ColumnMapping(), new Interval().top());
+		this(file, new ColumnSet(), new ColumnSet(), new ColumnMapping().top(), new Interval().top());
 	}
 
 	public SingleDataframe(String file, ColumnSet names, ColumnSet possibleNames, ColumnMapping mapping,
