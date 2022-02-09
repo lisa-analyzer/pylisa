@@ -1,4 +1,4 @@
-package it.unive.pylisa;
+package it.unive.pylisa.notebooks;
 
 import it.unive.lisa.AnalysisException;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeDomain;

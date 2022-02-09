@@ -1,6 +1,10 @@
-package it.unive.pylisa;
+package it.unive.pylisa.notebooks;
 
 import static it.unive.lisa.LiSAFactory.getDefaultFor;
+
+import java.io.IOException;
+
+import org.apache.commons.io.FilenameUtils;
 
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
@@ -14,10 +18,9 @@ import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.program.Program;
+import it.unive.pylisa.PyToCFG;
 import it.unive.pylisa.analysis.dataframes.DataframeAwareDomain;
 import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
-import java.io.IOException;
-import org.apache.commons.io.FilenameUtils;
 
 public abstract class NotebookTest {
 
