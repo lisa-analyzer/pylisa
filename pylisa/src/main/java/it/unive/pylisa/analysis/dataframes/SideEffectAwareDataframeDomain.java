@@ -33,6 +33,10 @@ public class SideEffectAwareDataframeDomain<T extends NonRelationalValueDomain<T
 	private SideEffectAwareDataframeDomain(ValueEnvironment<T> env) {
 		this.env = env;
 	}
+	
+	public ValueEnvironment<T> getEnv() {
+		return env;
+	}
 
 	@Override
 	public SideEffectAwareDataframeDomain<T, D> assign(Identifier id, ValueExpression expression, ProgramPoint pp)
