@@ -152,7 +152,7 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 		if (rows == null) {
 			if (other.rows != null)
 				return false;
-		} else if (!rows.equals(rows))
+		} else if (!rows.equals(other.rows))
 			return false;
 		return true;
 	}
@@ -194,8 +194,16 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 
 		@Override
 		public String toString() {
-			return "file: " + file + ", cols: " + names.representation() + ", mapping: " + mapping.representation()
-					+ ", possible cols: " + possibleNames.representation() + ", rows: " + rows.representation();
+			String res = "file: " + (file == null ? Lattice.TOP_STRING : file);
+			if (!names.isTop() && !names.isBottom())
+				res += ", cols: " + names.representation();
+			if (!possibleNames.isTop() && !possibleNames.isBottom())
+				res += ", possible cols: " + possibleNames.representation();
+			if (!mapping.isTop() && !mapping.isBottom())
+				res += ", mapping: " + mapping.representation();
+			if (!rows.isTop() && !rows.isBottom())
+				res += ", rows: " + rows.representation();
+			return res;
 		}
 
 		private SingleDataframe getEnclosingInstance() {
@@ -231,7 +239,9 @@ public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDatafram
 	}
 
 	public SingleDataframe accessRows(int low, int high) throws SemanticException {
-		Interval lub = rows.lub(new Interval(low, high));
-		return new SingleDataframe(file, names, possibleNames, mapping, lub);
+		Interval i = new Interval(low, high);
+		if (rows.isTop())
+			return new SingleDataframe(file, names, possibleNames, mapping, i);
+		return new SingleDataframe(file, names, possibleNames, mapping, rows.lub(i));
 	}
 }

@@ -119,7 +119,7 @@ public class NotebookStructureDomainTest {
 
 		sss = base.smallStepSemantics(ternary, fake);
 		stack = sss.getEnv().getValueOnStack().left;
-		expected = new SingleDataframe(fname, df2Set, df2PSet, df2Map, new Interval(0, 10));
+		expected = new SingleDataframe(fname, df2Set, df2PSet, df2Map, new Interval(0, 38));
 
 		assertEquals(expected, stack);
 	}
