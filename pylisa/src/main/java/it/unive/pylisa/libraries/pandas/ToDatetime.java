@@ -14,6 +14,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.operators.TypeConversion;
@@ -45,8 +46,15 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		UnaryExpression conv = new UnaryExpression(PandasSeriesType.REFERENCE, expr, new TypeConversion("datetime"),
+		HeapDereference deref = new HeapDereference(PandasSeriesType.INSTANCE, expr, getLocation());
+		UnaryExpression conv = new UnaryExpression(PandasSeriesType.INSTANCE, expr, new TypeConversion("datetime"),
 				getLocation());
-		return state.smallStepSemantics(conv, st);
+		AnalysisState<A, H, V, T> cState = state.smallStepSemantics(conv, st);
+		AnalysisState<A, H, V, T> result = cState.bottom();
+		for (SymbolicExpression converted : cState.getComputedExpressions())
+			result = result.lub(cState.smallStepSemantics(converted, st));
+		return cState;
+		// TODO todatetiem effectively creates a new dataframe, we
+		// should implement that as a semantic
 	}
 }

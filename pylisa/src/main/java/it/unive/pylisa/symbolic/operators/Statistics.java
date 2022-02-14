@@ -22,9 +22,9 @@ public class Statistics implements UnaryOperator, DataframeOperatorWithSideEffec
 
 	@Override
 	public ExternalSet<Type> typeInference(ExternalSet<Type> arg) {
-		if (arg.noneMatch(t -> t.equals(PandasDataframeType.REFERENCE)))
+		if (arg.noneMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
 			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(PandasDataframeType.REFERENCE);
+		return Caches.types().mkSingletonSet(PandasDataframeType.INSTANCE);
 	}
 
 	@Override

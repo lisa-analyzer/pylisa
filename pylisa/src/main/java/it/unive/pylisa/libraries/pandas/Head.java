@@ -61,5 +61,7 @@ public class Head extends BinaryExpression implements PluggableStatement {
 				ProjectRows.INSTANCE, getLocation());
 		AnalysisState<A, H, V, T> hState = state.smallStepSemantics(head, st);
 		return hState.smallStepSemantics(left, st);
+		// TODO head effectively creates a new dataframe, we should implement
+		// that as a semantic
 	}
 }

@@ -177,7 +177,7 @@ public class LibrarySpecificationProvider {
 						unit1,
 						true,
 						"info",
-						PandasDataframeType.REFERENCE,
+						VoidType.INSTANCE,
 						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE)),
 				Info.class));
 

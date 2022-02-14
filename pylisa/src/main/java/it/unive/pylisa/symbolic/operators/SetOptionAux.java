@@ -22,11 +22,11 @@ public class SetOptionAux implements TernaryOperator, DataframeOperatorWithSideE
 
 	@Override
 	public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> middle, ExternalSet<Type> right) {
-		if (left.noneMatch(t -> t.equals(PandasDataframeType.REFERENCE)))
+		if (left.noneMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
 			return Caches.types().mkEmptySet();
 		if (middle.noneMatch(Type::isStringType))
 			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(PandasDataframeType.REFERENCE);
+		return Caches.types().mkSingletonSet(PandasDataframeType.INSTANCE);
 	}
 
 	@Override

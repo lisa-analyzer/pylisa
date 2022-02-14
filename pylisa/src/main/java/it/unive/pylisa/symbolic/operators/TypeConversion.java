@@ -27,9 +27,9 @@ public class TypeConversion implements UnaryOperator, DataframeOperatorWithSideE
 
 	@Override
 	public ExternalSet<Type> typeInference(ExternalSet<Type> argument) {
-		if (argument.noneMatch(t -> t.equals(PandasSeriesType.REFERENCE)))
+		if (argument.noneMatch(t -> t.equals(PandasSeriesType.INSTANCE)))
 			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(PandasSeriesType.REFERENCE);
+		return Caches.types().mkSingletonSet(PandasSeriesType.INSTANCE);
 	}
 
 	@Override

@@ -23,11 +23,11 @@ public class ColumnAccess implements BinaryOperator, DataframeOperatorWithSideEf
 
 	@Override
 	public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> right) {
-		if (left.noneMatch(t -> t.equals(PandasDataframeType.REFERENCE)))
+		if (left.noneMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
 			return Caches.types().mkEmptySet();
 		if (right.noneMatch(Type::isStringType))
 			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(PandasSeriesType.REFERENCE);
+		return Caches.types().mkSingletonSet(PandasSeriesType.INSTANCE);
 	}
 
 	@Override
