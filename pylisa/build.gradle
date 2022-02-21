@@ -45,6 +45,17 @@ generateGrammarSource {
   	}
 }
 
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+javadoc {
+	if(JavaVersion.current().isJava9Compatible()) {
+        options.addBooleanOption('html5', true)
+    }
+}
+
 spotless {
     enforceCheck = false
     encoding 'UTF-8'
