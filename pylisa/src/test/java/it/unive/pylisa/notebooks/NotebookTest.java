@@ -18,7 +18,7 @@ import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.program.Program;
-import it.unive.pylisa.PyToCFG;
+import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.dataframes.DataframeAwareDomain;
 import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
 
@@ -27,10 +27,9 @@ public abstract class NotebookTest {
 	protected <T extends NonRelationalValueDomain<T> & DataframeAwareDomain<T, D>,
 			D extends NonRelationalValueDomain<D>> void perform(String file, String kind, T value)
 					throws IOException, AnalysisException {
-		PyToCFG translator = new PyToCFG(file);
+		PyFrontend translator = new PyFrontend(file, kind.equals("ipynb"));
 
 		Program program = translator.toLiSAProgram();
-		PyToCFG.setupProgram(program);
 
 		LiSAConfiguration conf = buildConfig("notebooks/" + kind + "/" + FilenameUtils.getBaseName(file), value);
 		LiSA lisa = new LiSA(conf);

@@ -2,8 +2,35 @@ package it.unive.pylisa;
 
 import static it.unive.lisa.LiSAFactory.getDefaultFor;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
@@ -189,33 +216,8 @@ import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.type.PyLibraryType;
 import it.unive.pylisa.cfg.type.PyListType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>> {
+public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Statement>> {
 
 	// TODO this is not right, but its fine for now
 	private static final SingleInheritanceTraversalStrategy TRAVERSAL_STRATEGY = SingleInheritanceTraversalStrategy.INSTANCE;
@@ -223,7 +225,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 			RuntimeTypesMatchingStrategy.INSTANCE);
 	private static final PythonLikeAssigningStrategy ASSIGN_STRATEGY = PythonLikeAssigningStrategy.INSTANCE;
 
-	private static final Logger log = LogManager.getLogger(PyToCFG.class);
+	private static final Logger log = LogManager.getLogger(PyFrontend.class);
 
 	/**
 	 * Python program file path.
@@ -246,15 +248,22 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 	private PyCFG currentCFG;
 
 	/**
+	 * Whether or not {@link #filePath} points to a Jupyter notebook file
+	 */
+	private final boolean notebook;
+
+	/**
 	 * Builds an instance of @PyToCFG for a given Python program given at the
 	 * location filePath.
 	 *
 	 * @param filePath file path to a Python program.
 	 */
-	public PyToCFG(String filePath) {
+	public PyFrontend(String filePath, boolean notebook) {
 		this.program = new Program();
 		this.filePath = filePath;
-		this.currentUnit = new PythonUnit(new SourceCodeLocation(filePath, 0, 0), "main_file", true);
+		this.notebook = notebook;
+		this.currentUnit = new PythonUnit(new SourceCodeLocation(filePath, 0, 0),
+				FilenameUtils.removeExtension(filePath), true);
 	}
 
 	/**
@@ -267,63 +276,25 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 	}
 
 	public static void main(String[] args) throws IOException, AnalysisException {
-		// path of test file
 		String file = args[0];
 		String extension = FilenameUtils.getExtension(file);
-		switch (extension) {
-		case "py":
-			PyToCFG translator = new PyToCFG(file);
-			Program program = translator.toLiSAProgram();
-			setupProgram(program);
+		PyFrontend translator = new PyFrontend(file, extension.equals("ipynb"));
+		Program program = translator.toLiSAProgram();
 
-			LiSAConfiguration conf = new LiSAConfiguration();
-			conf.setDumpCFGs(true);
-			conf.setWorkdir("workdir");
-			conf.setDumpTypeInference(true);
-			conf.setDumpAnalysis(true);
-			conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
+		LiSAConfiguration conf = new LiSAConfiguration();
+		conf.setDumpCFGs(true);
+		conf.setWorkdir("workdir");
+		conf.setDumpTypeInference(true);
+		conf.setDumpAnalysis(true);
+		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 
-			DataframeTransformationDomain domain = new DataframeTransformationDomain();
-			PointBasedHeap heap = new PointBasedHeap();
-			TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
-			conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain, type));
+		DataframeTransformationDomain domain = new DataframeTransformationDomain();
+		PointBasedHeap heap = new PointBasedHeap();
+		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
+		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain, type));
 
-			LiSA lisa = new LiSA(conf);
-			lisa.run(program);
-			break;
-		case "ipynb":
-			Gson gson = new Gson();
-			JsonReader reader = gson.newJsonReader(new FileReader(file));
-			Map<?, ?> map = gson.fromJson(reader, Map.class);
-			@SuppressWarnings("unchecked")
-			ArrayList<Map<?, ?>> cells = (ArrayList<Map<?, ?>>) map.get("cells");
-			List<String> code = new ArrayList<>();
-			for (Map<?, ?> l : cells) {
-				String ctype = (String) l.get("cell_type");
-				if (ctype.equals("code")) {
-					@SuppressWarnings("unchecked")
-					List<String> code_list = (List<String>) l.get("source");
-					code.add(transformToCode(code_list));
-				}
-			}
-			List<String> files = new ArrayList<>();
-			String tempDir = System.getProperty("java.io.tmpdir");
-			String rootFileName = Path.of(tempDir, FilenameUtils.getName(file)).toString();
-			int i = 0;
-			for (String c : code) {
-				String local_filename = rootFileName + "_" + i + ".py";
-				FileUtils.write(new File(local_filename), c, StandardCharsets.UTF_8);
-				files.add(local_filename);
-				i++;
-			}
-			for (String pyFile : files) {
-				String[] temp_args = { pyFile };
-				PyToCFG.main(temp_args);
-			}
-			break;
-		default:
-			throw new IOException("Files with extension " + extension + " are not supported");
-		}
+		LiSA lisa = new LiSA(conf);
+		lisa.run(program);
 	}
 
 	private static String transformToCode(List<String> code_list) {
@@ -338,7 +309,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 	 * 
 	 * @return collection of @CFG in file
 	 * 
-	 * @throws IOException if {@code stream} to file cannot be written to or
+	 * @throws IOException if {@code stream} to file cannot be read from or
 	 *                         closed
 	 */
 
@@ -346,17 +317,43 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 		log.info("PyToCFG setup...");
 		log.info("Reading file... " + filePath);
 
-		InputStream stream = new FileInputStream(getFilePath());
+		Python3Lexer lexer = null;
+		try (InputStream stream = mkStream();) {
+			lexer = new Python3Lexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			throw new IOException("Unable to parse '" + filePath + "'", e);
+		}
 
-		Python3Lexer lexer = new Python3Lexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
 		Python3Parser parser = new Python3Parser(new CommonTokenStream(lexer));
 		ParseTree tree = parser.file_input();
 
 		visit(tree);
 
-		stream.close();
+		setupProgram(program);
 
 		return program;
+	}
+
+	private InputStream mkStream() throws FileNotFoundException {
+		if (!this.notebook)
+			return new FileInputStream(getFilePath());
+
+		Gson gson = new Gson();
+		JsonReader reader = gson.newJsonReader(new FileReader(filePath));
+		Map<?, ?> map = gson.fromJson(reader, Map.class);
+		@SuppressWarnings("unchecked")
+		ArrayList<Map<?, ?>> cells = (ArrayList<Map<?, ?>>) map.get("cells");
+		StringBuilder code = new StringBuilder();
+		for (Map<?, ?> l : cells) {
+			String ctype = (String) l.get("cell_type");
+			if (ctype.equals("code")) {
+				@SuppressWarnings("unchecked")
+				List<String> code_list = (List<String>) l.get("source");
+				code.append(transformToCode(code_list)).append("\n");
+			}
+		}
+
+		return new ByteArrayInputStream(code.toString().getBytes());
 	}
 
 	@Override
@@ -2012,7 +2009,7 @@ public class PyToCFG extends Python3ParserBaseVisitor<Pair<Statement, Statement>
 		throw new UnsupportedStatementException();
 	}
 
-	public static void setupProgram(Program program) {
+	private static void setupProgram(Program program) {
 		program.registerType(PyListType.INSTANCE);
 		program.registerType(BoolType.INSTANCE);
 		program.registerType(StringType.INSTANCE);
