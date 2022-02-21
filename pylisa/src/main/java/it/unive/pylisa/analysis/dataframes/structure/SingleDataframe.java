@@ -1,8 +1,5 @@
 package it.unive.pylisa.analysis.dataframes.structure;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -11,6 +8,8 @@ import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.pylisa.libraries.pandas.types.PandasType;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SingleDataframe extends BaseNonRelationalValueDomain<SingleDataframe> {
 

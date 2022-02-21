@@ -2,12 +2,6 @@ package it.unive.pylisa.notebooks.structure;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import org.junit.Test;
-
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.numeric.Interval;
@@ -32,6 +26,10 @@ import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import org.junit.Test;
 
 public class NotebookStructureDomainTest {
 
