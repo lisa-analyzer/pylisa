@@ -66,7 +66,7 @@ import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Float32;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
-import it.unive.pylisa.analysis.dataframes.transformation.DataframeTransformationDomain;
+import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
 import it.unive.pylisa.antlr.Python3Parser.AddContext;
@@ -285,7 +285,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 		conf.setDumpAnalysis(true);
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 
-		DataframeTransformationDomain domain = new DataframeTransformationDomain();
+		DataframeGraphDomain domain = new DataframeGraphDomain();
 		PointBasedHeap heap = new PointBasedHeap();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain, type));

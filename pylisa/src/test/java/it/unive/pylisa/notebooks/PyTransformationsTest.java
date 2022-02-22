@@ -1,7 +1,8 @@
 package it.unive.pylisa.notebooks;
 
 import it.unive.lisa.AnalysisException;
-import it.unive.pylisa.analysis.dataframes.transformation.DataframeDomain;
+import it.unive.pylisa.analysis.dataframes.DataframeDomain;
+
 import java.io.IOException;
 import org.junit.Test;
 

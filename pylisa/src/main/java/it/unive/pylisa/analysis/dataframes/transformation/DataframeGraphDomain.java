@@ -7,61 +7,61 @@ import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
-import it.unive.pylisa.analysis.dataframes.transformation.transformations.DataframeTransformation;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.libraries.pandas.types.PandasType;
 import java.util.Arrays;
 
-public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<DataframeTransformationDomain> {
+public class DataframeGraphDomain extends BaseNonRelationalValueDomain<DataframeGraphDomain> {
 
-	private static final DataframeTransformation[] NO_TRANSFORMATIONS = new DataframeTransformation[0];
+	private static final DataframeOperation[] NO_TRANSFORMATIONS = new DataframeOperation[0];
 
-	private static final DataframeTransformationDomain BOTTOM = new DataframeTransformationDomain(false);
-	private static final DataframeTransformationDomain TOP = new DataframeTransformationDomain(true);
+	private static final DataframeGraphDomain BOTTOM = new DataframeGraphDomain(false);
+	private static final DataframeGraphDomain TOP = new DataframeGraphDomain(true);
 
-	private final DataframeTransformation[] transformations;
+	private final DataframeOperation[] transformations;
 	private final boolean isTop;
 
-	public DataframeTransformationDomain() {
+	public DataframeGraphDomain() {
 		this(NO_TRANSFORMATIONS, true);
 	}
 
-	private DataframeTransformationDomain(boolean isTop) {
+	private DataframeGraphDomain(boolean isTop) {
 		this(NO_TRANSFORMATIONS, isTop);
 	}
 
-	DataframeTransformationDomain(DataframeTransformation transformation) {
-		this(new DataframeTransformation[] { transformation }, false);
+	DataframeGraphDomain(DataframeOperation transformation) {
+		this(new DataframeOperation[] { transformation }, false);
 	}
 
-	DataframeTransformationDomain(DataframeTransformationDomain source, DataframeTransformation transformation) {
+	DataframeGraphDomain(DataframeGraphDomain source, DataframeOperation transformation) {
 		this(append(source.transformations, transformation), false);
 	}
 
-	private static DataframeTransformation[] append(DataframeTransformation[] source,
-			DataframeTransformation transformation) {
-		DataframeTransformation[] copy = new DataframeTransformation[source.length + 1];
+	private static DataframeOperation[] append(DataframeOperation[] source,
+			DataframeOperation transformation) {
+		DataframeOperation[] copy = new DataframeOperation[source.length + 1];
 		System.arraycopy(source, 0, copy, 0, source.length);
 		copy[source.length] = transformation;
 		return copy;
 	}
 
-	private DataframeTransformationDomain(DataframeTransformation[] transformations, boolean isTop) {
+	private DataframeGraphDomain(DataframeOperation[] transformations, boolean isTop) {
 		this.transformations = transformations;
 		this.isTop = isTop;
 	}
 
 	@Override
-	protected DataframeTransformationDomain lubAux(DataframeTransformationDomain other) throws SemanticException {
+	protected DataframeGraphDomain lubAux(DataframeGraphDomain other) throws SemanticException {
 		return equals(other) ? this : top();
 	}
 
 	@Override
-	protected DataframeTransformationDomain wideningAux(DataframeTransformationDomain other) throws SemanticException {
+	protected DataframeGraphDomain wideningAux(DataframeGraphDomain other) throws SemanticException {
 		return lubAux(other);
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(DataframeTransformationDomain other) throws SemanticException {
+	protected boolean lessOrEqualAux(DataframeGraphDomain other) throws SemanticException {
 		return equals(other);
 	}
 
@@ -82,7 +82,7 @@ public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		DataframeTransformationDomain other = (DataframeTransformationDomain) obj;
+		DataframeGraphDomain other = (DataframeGraphDomain) obj;
 		if (isTop != other.isTop)
 			return false;
 		if (!Arrays.equals(transformations, other.transformations))
@@ -100,7 +100,7 @@ public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<
 	}
 
 	@Override
-	public DataframeTransformationDomain top() {
+	public DataframeGraphDomain top() {
 		return TOP;
 	}
 
@@ -110,7 +110,7 @@ public class DataframeTransformationDomain extends BaseNonRelationalValueDomain<
 	}
 
 	@Override
-	public DataframeTransformationDomain bottom() {
+	public DataframeGraphDomain bottom() {
 		return BOTTOM;
 	}
 
