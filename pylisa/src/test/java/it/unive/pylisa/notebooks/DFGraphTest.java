@@ -17,8 +17,10 @@ import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.dataframes.DFOrConstant;
 import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.pylisa.symbolic.operators.FilterNull;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 
 public class DFGraphTest {
@@ -70,6 +72,18 @@ public class DFGraphTest {
 		SideEffectAwareDataframeDomain sss = base.smallStepSemantics(unary, fake);
 		DataframeGraphDomain stack = sss.getEnv().getValueOnStack().df();
 		DataframeGraphDomain expected = new DataframeGraphDomain(new ReadFromFile(fname));
+
+		assertEquals(expected, stack);
+	}
+
+	@Test
+	public void testFilterNullRows() throws SemanticException {
+		Constant filename = new Constant(StringType.INSTANCE, fname, SyntheticLocation.INSTANCE);
+		UnaryExpression unary = new UnaryExpression(PandasDataframeType.INSTANCE, df1, FilterNull.INSTANCE,
+				SyntheticLocation.INSTANCE);
+		SideEffectAwareDataframeDomain sss = base.smallStepSemantics(unary, fake);
+		DataframeGraphDomain stack = sss.getEnv().getValueOnStack().df();
+		DataframeGraphDomain expected = new DataframeGraphDomain(base.getEnv().getState(df1).df(), new FilterNullRows());
 
 		assertEquals(expected, stack);
 	}

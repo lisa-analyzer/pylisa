@@ -36,7 +36,7 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 		this(append(NO_TRANSFORMATIONS, transformation), false);
 	}
 
-	DataframeGraphDomain(DataframeGraphDomain source, DataframeOperation transformation) throws SemanticException {
+	public DataframeGraphDomain(DataframeGraphDomain source, DataframeOperation transformation) throws SemanticException {
 		this(append(source.transformations, transformation), false);
 	}
 

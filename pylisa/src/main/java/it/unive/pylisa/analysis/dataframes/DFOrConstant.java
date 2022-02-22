@@ -15,7 +15,10 @@ import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
+import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
+import it.unive.pylisa.symbolic.operators.FilterNull;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 
 public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
@@ -214,7 +217,15 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 //			DataframeGraphDomain conv = new DataframeGraphDomain(df,
 //					new BaseOperation("conv", ((TypeConversion) operator).getType()));
 //			return new DFOrConstant(conv);
-		} else
+		} else if (operator == FilterNull.INSTANCE) {
+			DataframeGraphDomain df = arg.graph;
+			if (topOrBottom(df))
+				return new DFOrConstant(graph.top());
+
+			DataframeGraphDomain dfNew = new DataframeGraphDomain(df, new FilterNullRows());
+			return new DFOrConstant(dfNew);
+		}
+		else
 			return TOP;
 	}
 
