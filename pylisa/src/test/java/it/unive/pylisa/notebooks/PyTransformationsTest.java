@@ -1,16 +1,15 @@
 package it.unive.pylisa.notebooks;
 
-import it.unive.lisa.AnalysisException;
-import it.unive.pylisa.analysis.dataframes.DataframeDomain;
-
 import java.io.IOException;
+
 import org.junit.Test;
+
+import it.unive.lisa.AnalysisException;
 
 public class PyTransformationsTest extends NotebookTest {
 
 	private void runTest(String file) throws IOException, AnalysisException {
-		perform(getClass().getClassLoader().getResource(file).getFile(), "py-transformations",
-				new DataframeDomain());
+		perform(getClass().getClassLoader().getResource(file).getFile(), "py");
 	}
 
 	@Test
