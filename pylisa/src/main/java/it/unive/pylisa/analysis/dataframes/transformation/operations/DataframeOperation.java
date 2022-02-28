@@ -49,9 +49,9 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 		return getClass() == other.getClass() ? lessOrEqualSameOperation(other) : false;
 	}
 
-	protected abstract boolean lessOrEqualSameOperation(DataframeOperation other);
+	protected abstract boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException;
 
-	protected abstract DataframeOperation lubSameOperation(DataframeOperation other);
+	protected abstract DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException;
 
 	@Override
 	public int setOffset(int offset) {

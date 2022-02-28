@@ -71,11 +71,11 @@ public class DataframeGraph extends Graph<DataframeGraph, DataframeOperation, Si
 
 			Set<String> outs = new TreeSet<>();
 			for (SimpleEdge out : entry.getValue().getOutgoing())
-				outs.add(out.toString());
+				outs.add(out.getDestination().toString());
 
 			res.append(StringUtils.join(outs, ", "));
 			res.append("]\n");
 		}
-		return res.toString();
+		return res.toString().trim();
 	}
 }

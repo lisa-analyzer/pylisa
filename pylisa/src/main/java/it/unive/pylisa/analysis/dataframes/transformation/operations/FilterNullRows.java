@@ -1,7 +1,5 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
-import it.unive.lisa.analysis.Lattice;
-
 public class FilterNullRows extends DataframeOperation {
 
 	public FilterNullRows() {

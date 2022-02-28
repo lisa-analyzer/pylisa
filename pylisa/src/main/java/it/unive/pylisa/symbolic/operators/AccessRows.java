@@ -6,16 +6,16 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 
-public class ProjectRows implements TernaryOperator {
+public class AccessRows implements TernaryOperator {
 
-	public static final ProjectRows INSTANCE = new ProjectRows();
+	public static final AccessRows INSTANCE = new AccessRows();
 
-	private ProjectRows() {
+	private AccessRows() {
 	}
 
 	@Override
 	public String toString() {
-		return "head";
+		return "rows->";
 	}
 
 	@Override

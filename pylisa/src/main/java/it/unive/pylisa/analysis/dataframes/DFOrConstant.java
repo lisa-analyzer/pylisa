@@ -4,6 +4,7 @@ import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
+import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -15,10 +16,13 @@ import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
-import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.RowAccess;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.RowProjection;
+import it.unive.pylisa.symbolic.operators.AccessRows;
 import it.unive.pylisa.symbolic.operators.FilterNull;
+import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 
 public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
@@ -224,8 +228,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 			DataframeGraphDomain dfNew = new DataframeGraphDomain(df, new FilterNullRows());
 			return new DFOrConstant(dfNew);
-		}
-		else
+		} else
 			return TOP;
 	}
 
@@ -243,25 +246,25 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 //
 //			return new DFOrConstant(ca);
 //		} else
-			return TOP;
+		return TOP;
 	}
 
 	@Override
 	protected DFOrConstant evalTernaryExpression(TernaryOperator operator, DFOrConstant left, DFOrConstant middle,
 			DFOrConstant right, ProgramPoint pp) throws SemanticException {
-//		if (operator == ProjectRows.INSTANCE) {
-//			DataframeGraphDomain df = left.graph;
-//			ConstantPropagation start = middle.constant;
-//			ConstantPropagation end = right.constant;
-//
-//			if (topOrBottom(df) || topOrBottom(start) || topOrBottom(end))
-//				return new DFOrConstant(left.top());
-//
-//			DataframeGraphDomain pr = new DataframeGraphDomain(df,
-//					new BaseOperation("project_rows", start.as(Integer.class),
-//							end.as(Integer.class)));
-//
-//			return new DFOrConstant(pr);
+		if (operator == ProjectRows.INSTANCE || operator == AccessRows.INSTANCE) {
+			DataframeGraphDomain df = left.graph;
+			ConstantPropagation start = middle.constant;
+			ConstantPropagation end = right.constant;
+
+			if (topOrBottom(df) || topOrBottom(start) || topOrBottom(end))
+				return new DFOrConstant(graph.top());
+
+			Interval rows = new Interval(start.as(Integer.class), end.as(Integer.class));
+			DataframeGraphDomain pr = new DataframeGraphDomain(df,
+					operator == ProjectRows.INSTANCE ? new RowProjection(rows) : new RowAccess(rows));
+
+			return new DFOrConstant(pr);
 //		} else if (operator == SetOptionAux.INSTANCE) {
 //			DataframeGraphDomain df = left.graph;
 //			ConstantPropagation key = middle.constant;
@@ -275,7 +278,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 //							value.getConstant()));
 //
 //			return new DFOrConstant(pr);
-//		} else
+		} else
 			return TOP;
 	}
 }
