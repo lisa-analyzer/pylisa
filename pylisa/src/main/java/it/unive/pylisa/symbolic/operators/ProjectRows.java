@@ -1,12 +1,14 @@
 package it.unive.pylisa.symbolic.operators;
 
 import it.unive.lisa.caches.Caches;
+import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 
-public class ProjectRows implements TernaryOperator {
+public class ProjectRows implements TernaryOperator, DataframeOperatorWithSideEffects {
 
 	public static final ProjectRows INSTANCE = new ProjectRows();
 
@@ -27,5 +29,10 @@ public class ProjectRows implements TernaryOperator {
 		if (right.noneMatch(Type::isNumericType))
 			return Caches.types().mkEmptySet();
 		return Caches.types().mkSingletonSet(PandasDataframeType.INSTANCE);
+	}
+
+	@Override
+	public SymbolicExpression getDataFrame(SymbolicExpression container) {
+		return ((TernaryExpression) container).getLeft();
 	}
 }

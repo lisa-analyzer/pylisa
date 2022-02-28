@@ -68,27 +68,27 @@ public class Head extends BinaryExpression implements PluggableStatement {
 		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, st);
 		AnalysisState<A, H, V, T> copy = state.bottom();
 		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
-			// the new dataframe will have its rows projected
-			TernaryExpression projection = new TernaryExpression(PandasDataframeType.INSTANCE, derefLeft, start, right,
-					ProjectRows.INSTANCE, location);
-			AnalysisState<A, H, V, T> projectedState = allocated.smallStepSemantics(projection, st);
-			for (SymbolicExpression projected : projectedState.getComputedExpressions())
-				copy = copy.lub(projectedState.assign(loc, projected, st));
+			// copy the dataframe
+			AnalysisState<A, H, V, T> assigned = allocated.assign(loc, derefLeft, st);
+			for (SymbolicExpression id : assigned.getComputedExpressions()) {
+				// the new dataframe will have its rows projected
+				TernaryExpression projection = new TernaryExpression(PandasDataframeType.INSTANCE, id, start, right,
+						ProjectRows.INSTANCE, location);
+				copy = copy.lub(assigned.smallStepSemantics(projection, st));
+			}
 		}
 
 		// the receiver will have its rows accessed instead
 		TernaryExpression access = new TernaryExpression(PandasDataframeType.INSTANCE, derefLeft, start, right,
 				AccessRows.INSTANCE, location);
 		AnalysisState<A, H, V, T> accessState = copy.smallStepSemantics(access, st);
-		AnalysisState<A, H, V, T> assigned = state.bottom();
-		for (SymbolicExpression accessed : accessState.getComputedExpressions())
-			assigned = assigned.lub(accessState.assign(derefLeft, accessed, st));
 
 		// we leave a reference to the fresh dataframe on the stack
 		AnalysisState<A, H, V, T> result = state.bottom();
 		for (SymbolicExpression loc : allocated.getComputedExpressions())
 			result = result.lub(
-					assigned.smallStepSemantics(new HeapReference(PandasDataframeType.REFERENCE, loc, location), st));
+					accessState.smallStepSemantics(new HeapReference(PandasDataframeType.REFERENCE, loc, location),
+							st));
 		return result;
 	}
 }

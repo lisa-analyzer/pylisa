@@ -1,5 +1,6 @@
 package it.unive.pylisa.analysis.dataframes.transformation.graph;
 
+import java.util.Collections;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
@@ -9,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import it.unive.lisa.outputs.DotGraph;
 import it.unive.lisa.util.datastructures.graph.Graph;
+import it.unive.lisa.util.datastructures.graph.AdjacencyMatrix;
 import it.unive.lisa.util.datastructures.graph.AdjacencyMatrix.NodeEdges;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 
@@ -20,6 +22,10 @@ public class DataframeGraph extends Graph<DataframeGraph, DataframeOperation, Si
 
 	public DataframeGraph(DataframeGraph other) {
 		super(other);
+	}
+
+	public DataframeGraph(AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> matrix) {
+		super(Collections.emptySet(), matrix);
 	}
 
 	@Override

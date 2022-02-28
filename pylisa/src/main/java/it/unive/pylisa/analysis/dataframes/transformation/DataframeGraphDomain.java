@@ -9,6 +9,9 @@ import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.util.collections.workset.FIFOWorkingSet;
+import it.unive.lisa.util.collections.workset.WorkingSet;
+import it.unive.lisa.util.datastructures.graph.AdjacencyMatrix;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
@@ -36,7 +39,8 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 		this(append(NO_TRANSFORMATIONS, transformation), false);
 	}
 
-	public DataframeGraphDomain(DataframeGraphDomain source, DataframeOperation transformation) throws SemanticException {
+	public DataframeGraphDomain(DataframeGraphDomain source, DataframeOperation transformation)
+			throws SemanticException {
 		this(append(source.transformations, transformation), false);
 	}
 
@@ -64,7 +68,45 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 
 	@Override
 	protected DataframeGraphDomain lubAux(DataframeGraphDomain other) throws SemanticException {
-		return equals(other) ? this : top();
+		AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> tm = transformations.getAdjacencyMatrix();
+		AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> om = other.transformations.getAdjacencyMatrix();
+		if (!check(tm, om))
+			return top();
+
+		// this is a sequential list: we can just visit it
+
+		WorkingSet<DataframeOperation> tws = FIFOWorkingSet.mk();
+		WorkingSet<DataframeOperation> ows = FIFOWorkingSet.mk();
+
+		tws.push(tm.getEntries().iterator().next());
+		ows.push(om.getEntries().iterator().next());
+
+		DataframeOperation t, o, r, pr = null;
+		AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> rm = new AdjacencyMatrix<>();
+		while (!tws.isEmpty() || !ows.isEmpty()) {
+			t = tws.isEmpty() ? DataframeOperation.BOTTOM : tws.peek();
+			o = ows.isEmpty() ? DataframeOperation.BOTTOM : ows.peek();
+			r = t.lub(o);
+
+			rm.addNode(r);
+			if (pr != null)
+				rm.addEdge(new SimpleEdge(pr, r));
+
+			pr = r;
+			if (!tws.isEmpty()) {
+				tws.pop();
+				if (!tm.followersOf(t).isEmpty())
+					tws.push(tm.followersOf(t).iterator().next());
+			}
+
+			if (!ows.isEmpty()) {
+				ows.pop();
+				if (!om.followersOf(o).isEmpty())
+					ows.push(om.followersOf(o).iterator().next());
+			}
+		}
+
+		return new DataframeGraphDomain(new DataframeGraph(rm), false);
 	}
 
 	@Override
@@ -74,7 +116,58 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 
 	@Override
 	protected boolean lessOrEqualAux(DataframeGraphDomain other) throws SemanticException {
-		return equals(other);
+		AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> tm = transformations.getAdjacencyMatrix();
+		AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> om = other.transformations.getAdjacencyMatrix();
+		if (!check(tm, om))
+			return false;
+
+		// this is a sequential list: we can just visit it
+
+		WorkingSet<DataframeOperation> tws = FIFOWorkingSet.mk();
+		WorkingSet<DataframeOperation> ows = FIFOWorkingSet.mk();
+
+		tws.push(tm.getEntries().iterator().next());
+		ows.push(om.getEntries().iterator().next());
+
+		DataframeOperation t, o;
+		while (!tws.isEmpty() || !ows.isEmpty()) {
+			t = tws.isEmpty() ? DataframeOperation.BOTTOM : tws.peek();
+			o = ows.isEmpty() ? DataframeOperation.BOTTOM : ows.peek();
+			if (!t.lessOrEqual(o))
+				return false;
+
+			if (!tws.isEmpty()) {
+				tws.pop();
+				if (!tm.followersOf(t).isEmpty())
+					tws.push(tm.followersOf(t).iterator().next());
+			}
+
+			if (!ows.isEmpty()) {
+				ows.pop();
+				if (!om.followersOf(o).isEmpty())
+					ows.push(om.followersOf(o).iterator().next());
+			}
+		}
+
+		return true;
+	}
+
+	private boolean check(AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> tm,
+			AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> om) {
+		if (tm.getEntries().size() != 1 || om.getEntries().size() != 1)
+			return false;
+		if (tm.getExits().size() != 1 || om.getExits().size() != 1)
+			return false;
+
+		for (DataframeOperation op : tm.getNodes())
+			if (tm.getOutgoingEdges(op).size() > 1)
+				return false;
+
+		for (DataframeOperation op : om.getNodes())
+			if (om.getOutgoingEdges(op).size() > 1)
+				return false;
+
+		return true;
 	}
 
 	@Override

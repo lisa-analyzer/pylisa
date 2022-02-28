@@ -10,9 +10,9 @@ import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
 public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 		implements Node<DataframeOperation, SimpleEdge, DataframeGraph> {
 
-	private static final DataframeOperation TOP = new TopOperation();
+	public static final DataframeOperation TOP = new TopOperation();
 
-	private static final DataframeOperation BOTTOM = new BottomOpeartion();
+	public static final DataframeOperation BOTTOM = new BottomOpeartion();
 
 	@Override
 	public final DataframeOperation top() {

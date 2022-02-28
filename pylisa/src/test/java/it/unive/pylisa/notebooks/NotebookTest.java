@@ -18,7 +18,7 @@ import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.PyFrontend;
-import it.unive.pylisa.analysis.dataframes.DFOrConstant;
+import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
 
 public abstract class NotebookTest {
 
@@ -44,7 +44,7 @@ public abstract class NotebookTest {
 
 		PointBasedHeap heap = new FieldSensitivePointBasedHeap();
 		InferredTypes type = new InferredTypes();
-		DFOrConstant df = new DFOrConstant();
+		SideEffectAwareDataframeDomain df = new SideEffectAwareDataframeDomain();
 		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, df, type));
 		return conf;
 	}

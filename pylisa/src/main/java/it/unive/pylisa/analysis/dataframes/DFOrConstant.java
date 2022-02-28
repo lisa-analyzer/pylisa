@@ -90,7 +90,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 		// dataframes or constants
 		if (graph.isBottom() != other.graph.isBottom())
 			return TOP;
-		if (constant.isBottom() != !other.constant.isBottom())
+		if (constant.isBottom() != other.constant.isBottom())
 			return TOP;
 
 		// they cannot be both bottom, otherwise this would be bottom

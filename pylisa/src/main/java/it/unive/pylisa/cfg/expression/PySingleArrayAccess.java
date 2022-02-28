@@ -61,14 +61,8 @@ public class PySingleArrayAccess extends BinaryExpression {
 		if (left.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.REFERENCE))) {
 			it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
 					PandasSeriesType.INSTANCE, deref, right, ColumnAccess.INSTANCE, getLocation());
-
-			AnalysisState<A, H, V, T> accessState = result.smallStepSemantics(col, this);
-			AnalysisState<A, H, V, T> assigned = state.bottom();
-			for (SymbolicExpression accessed : accessState.getComputedExpressions())
-				assigned = assigned.lub(accessState.assign(deref, accessed, this));
-
+			result = result.smallStepSemantics(col, this);
 			childType = PandasSeriesType.REFERENCE;
-			result = assigned;
 		}
 
 		AccessChild access = new AccessChild(childType, deref, right, getLocation());
