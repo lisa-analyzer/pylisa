@@ -27,7 +27,7 @@ public class DFGraphTest {
 
 	private final ProgramPoint fake;
 
-	private final Variable df1, df2;
+	private final Variable df1;//, df2;
 
 	private final SideEffectAwareDataframeDomain base;
 
@@ -50,7 +50,7 @@ public class DFGraphTest {
 		};
 
 		df1 = new Variable(PandasDataframeType.INSTANCE, "df1", SyntheticLocation.INSTANCE);
-		df2 = new Variable(PandasDataframeType.INSTANCE, "df2", SyntheticLocation.INSTANCE);
+//		df2 = new Variable(PandasDataframeType.INSTANCE, "df2", SyntheticLocation.INSTANCE);
 
 		fname = "foo.csv";
 
@@ -78,12 +78,12 @@ public class DFGraphTest {
 
 	@Test
 	public void testFilterNullRows() throws SemanticException {
-		Constant filename = new Constant(StringType.INSTANCE, fname, SyntheticLocation.INSTANCE);
 		UnaryExpression unary = new UnaryExpression(PandasDataframeType.INSTANCE, df1, FilterNull.INSTANCE,
 				SyntheticLocation.INSTANCE);
 		SideEffectAwareDataframeDomain sss = base.smallStepSemantics(unary, fake);
 		DataframeGraphDomain stack = sss.getEnv().getValueOnStack().df();
-		DataframeGraphDomain expected = new DataframeGraphDomain(base.getEnv().getState(df1).df(), new FilterNullRows());
+		DataframeGraphDomain expected = new DataframeGraphDomain(base.getEnv().getState(df1).df(),
+				new FilterNullRows());
 
 		assertEquals(expected, stack);
 	}

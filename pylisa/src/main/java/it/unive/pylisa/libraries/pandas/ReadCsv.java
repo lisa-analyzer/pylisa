@@ -17,15 +17,14 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
-import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 
 public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	private Statement st;
 
-	public ReadCsv(CFG cfg, CodeLocation location, String constructName, Type staticType, Expression arg) {
-		super(cfg, location, constructName, staticType, arg);
+	public ReadCsv(CFG cfg, CodeLocation location, Expression arg) {
+		super(cfg, location, "read_csv", PandasDataframeType.INSTANCE, arg);
 	}
 
 	@Override
@@ -34,7 +33,7 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 	}
 
 	public static ReadCsv build(CFG cfg, CodeLocation location, Expression[] exprs) {
-		return new ReadCsv(cfg, location, "read_csv", PandasDataframeType.INSTANCE, exprs[0]);
+		return new ReadCsv(cfg, location, exprs[0]);
 	}
 
 	@Override
