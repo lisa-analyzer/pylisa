@@ -8,32 +8,28 @@ import it.unive.lisa.AnalysisException;
 
 public class PyTransformationsTest extends NotebookTest {
 
-	private void runTest(String file) throws IOException, AnalysisException {
-		perform(getClass().getClassLoader().getResource(file).getFile(), "py");
-	}
-
 	@Test
 	public void testCovid19() throws IOException, AnalysisException {
-		runTest("pyTest/data/covid-19.py");
+		perform("dataframes-tests/covid-19.py");
 	}
 
 	@Test
 	public void testCreditFraud() throws IOException, AnalysisException {
-		runTest("pyTest/data/credit-fraud.py");
+		perform("dataframes-tests/credit-fraud.py");
 	}
 
 	@Test
 	public void testDataExploration() throws IOException, AnalysisException {
-		runTest("pyTest/data/data-exploration.py");
+		perform("dataframes-tests/data-exploration.py");
 	}
 
 	@Test
 	public void testGuide() throws IOException, AnalysisException {
-		runTest("pyTest/data/guide.py");
+		perform("dataframes-tests/guide.py");
 	}
 
 	@Test
 	public void testTitanic() throws IOException, AnalysisException {
-		runTest("pyTest/data/titanic.py");
+		perform("dataframes-tests/titanic.py");
 	}
 }

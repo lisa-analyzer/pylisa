@@ -22,8 +22,9 @@ import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
 
 public abstract class NotebookTest {
 
-	protected void perform(String file, String kind) throws IOException, AnalysisException {
-		PyFrontend translator = new PyFrontend(file, FilenameUtils.getExtension(file).equals("ipynb"));
+	protected void perform(String file) throws IOException, AnalysisException {
+		String kind = FilenameUtils.getExtension(file);
+		PyFrontend translator = new PyFrontend(file, kind.equals("ipynb"));
 
 		Program program = translator.toLiSAProgram();
 
