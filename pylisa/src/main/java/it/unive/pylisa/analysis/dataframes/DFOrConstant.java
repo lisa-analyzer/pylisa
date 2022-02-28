@@ -16,11 +16,14 @@ import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
+import it.unive.pylisa.analysis.dataframes.transformation.Names;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.ColAccess;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.RowAccess;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.RowProjection;
 import it.unive.pylisa.symbolic.operators.AccessRows;
+import it.unive.pylisa.symbolic.operators.ColumnAccess;
 import it.unive.pylisa.symbolic.operators.FilterNull;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
@@ -227,18 +230,17 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 	@Override
 	protected DFOrConstant evalBinaryExpression(BinaryOperator operator, DFOrConstant left, DFOrConstant right,
 			ProgramPoint pp) throws SemanticException {
-//		if (operator == ColumnAccess.INSTANCE) {
-//			DataframeGraphDomain df = left.graph;
-//			ConstantPropagation col = right.constant;
-//			if (topOrBottom(df) || topOrBottom(col))
-//				return new DFOrConstant(graph.top());
-//
-//			DataframeGraphDomain ca = new DataframeGraphDomain(df,
-//					new BaseOperation("col_access", col.as(String.class)));
-//
-//			return new DFOrConstant(ca);
-//		} else
-		return TOP;
+		if (operator == ColumnAccess.INSTANCE) {
+			DataframeGraphDomain df = left.graph;
+			ConstantPropagation col = right.constant;
+			if (topOrBottom(df) || topOrBottom(col))
+				return new DFOrConstant(graph.top());
+
+			DataframeGraphDomain ca = new DataframeGraphDomain(df, new ColAccess(new Names(col.as(String.class))));
+
+			return new DFOrConstant(ca);
+		} else
+			return TOP;
 	}
 
 	@Override
