@@ -1,15 +1,13 @@
 package it.unive.pylisa.symbolic.operators;
 
 import it.unive.lisa.caches.Caches;
-import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 
-public class ColumnAccess implements BinaryOperator, DataframeOperatorWithSideEffects {
+public class ColumnAccess implements BinaryOperator {
 
 	public static final ColumnAccess INSTANCE = new ColumnAccess();
 
@@ -28,10 +26,5 @@ public class ColumnAccess implements BinaryOperator, DataframeOperatorWithSideEf
 		if (right.noneMatch(Type::isStringType))
 			return Caches.types().mkEmptySet();
 		return Caches.types().mkSingletonSet(PandasSeriesType.INSTANCE);
-	}
-
-	@Override
-	public SymbolicExpression getDataFrame(SymbolicExpression container) {
-		return ((BinaryExpression) container).getLeft();
 	}
 }

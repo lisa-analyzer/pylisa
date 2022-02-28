@@ -1,5 +1,11 @@
 package it.unive.pylisa.libraries;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
@@ -10,26 +16,16 @@ import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
-import it.unive.lisa.type.Untyped;
-import it.unive.lisa.type.VoidType;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.cfg.PythonUnit;
-import it.unive.pylisa.libraries.pandas.Describe;
 import it.unive.pylisa.libraries.pandas.Head;
-import it.unive.pylisa.libraries.pandas.Info;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
-import it.unive.pylisa.libraries.pandas.SetOption;
 import it.unive.pylisa.libraries.pandas.ToDatetime;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.libraries.standardLibrary.Print;
 import it.unive.pylisa.libraries.warnings.FilterWarnings;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 public class LibrarySpecificationProvider {
 	public static final String SET = "set";
@@ -126,16 +122,6 @@ public class LibrarySpecificationProvider {
 				new CFGDescriptor(PANDAS_LOC,
 						unit1,
 						false,
-						"set_option",
-						VoidType.INSTANCE,
-						new Parameter(PANDAS_LOC, "key", StringType.INSTANCE),
-						new Parameter(PANDAS_LOC, "value", Untyped.INSTANCE)),
-				SetOption.class));
-
-		unit1.addConstruct(new NativeCFG(
-				new CFGDescriptor(PANDAS_LOC,
-						unit1,
-						false,
 						"to_datetime",
 						PandasSeriesType.REFERENCE,
 						new Parameter(PANDAS_LOC, "arg", PandasSeriesType.REFERENCE)),
@@ -162,24 +148,6 @@ public class LibrarySpecificationProvider {
 						new Parameter(PANDAS_LOC, "n", Int32.INSTANCE, new Int32Literal(init, PANDAS_LOC, 5),
 								new Annotations())),
 				Head.class));
-
-		unit1.addInstanceConstruct(new NativeCFG(
-				new CFGDescriptor(PANDAS_LOC,
-						unit1,
-						true,
-						"describe",
-						PandasDataframeType.REFERENCE,
-						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE)),
-				Describe.class));
-
-		unit1.addInstanceConstruct(new NativeCFG(
-				new CFGDescriptor(PANDAS_LOC,
-						unit1,
-						true,
-						"info",
-						VoidType.INSTANCE,
-						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE)),
-				Info.class));
 
 		return unit1;
 	}

@@ -23,23 +23,23 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
-import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.AccessRows;
+import it.unive.pylisa.symbolic.operators.ProjectRows;
 
 public class Head extends BinaryExpression implements PluggableStatement {
 
 	private Statement st;
 
-	public Head(CFG cfg, CodeLocation location, String constructName, Expression dataframe, Expression n) {
-		super(cfg, location, constructName, dataframe, n);
+	public Head(CFG cfg, CodeLocation location, Expression dataframe, Expression n) {
+		super(cfg, location, "head", PandasDataframeType.REFERENCE, dataframe, n);
 	}
 
 	public static Head build(CFG cfg, CodeLocation location, Expression[] exprs) {
 		if (exprs.length == 2)
-			return new Head(cfg, location, "head", exprs[0], exprs[1]);
+			return new Head(cfg, location, exprs[0], exprs[1]);
 		else
 			// 5 is the default from pandas
-			return new Head(cfg, location, "head", exprs[0], new Int32Literal(cfg, location, 5));
+			return new Head(cfg, location, exprs[0], new Int32Literal(cfg, location, 5));
 	}
 
 	@Override
@@ -85,7 +85,7 @@ public class Head extends BinaryExpression implements PluggableStatement {
 			assigned = assigned.lub(accessState.assign(derefLeft, accessed, st));
 
 		// we leave a reference to the fresh dataframe on the stack
-		AnalysisState<A, H, V, T> result = state.bottom(); 
+		AnalysisState<A, H, V, T> result = state.bottom();
 		for (SymbolicExpression loc : allocated.getComputedExpressions())
 			result = result.lub(
 					assigned.smallStepSemantics(new HeapReference(PandasDataframeType.REFERENCE, loc, location), st));

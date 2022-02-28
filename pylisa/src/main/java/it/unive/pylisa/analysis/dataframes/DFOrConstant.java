@@ -208,14 +208,6 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 			DataframeGraphDomain df = new DataframeGraphDomain(new ReadFromFile(filename.as(String.class)));
 			return new DFOrConstant(df);
-//		} else if (operator == Statistics.INSTANCE) {
-//			DataframeGraphDomain df = arg.graph;
-//			DataframeGraphDomain stat = new DataframeGraphDomain(df, new BaseOperation("stats"));
-//			return new DFOrConstant(stat);
-//		} else if (operator == StructuralInfo.INSTANCE) {
-//			DataframeGraphDomain df = arg.graph;
-//			DataframeGraphDomain info = new DataframeGraphDomain(df, new BaseOperation("info"));
-//			return new DFOrConstant(info);
 //		} else if (operator instanceof TypeConversion) {
 //			DataframeGraphDomain df = arg.graph;
 //			DataframeGraphDomain conv = new DataframeGraphDomain(df,
@@ -265,19 +257,6 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 					operator == ProjectRows.INSTANCE ? new RowProjection(rows) : new RowAccess(rows));
 
 			return new DFOrConstant(pr);
-//		} else if (operator == SetOptionAux.INSTANCE) {
-//			DataframeGraphDomain df = left.graph;
-//			ConstantPropagation key = middle.constant;
-//			ConstantPropagation value = right.constant;
-//
-//			if (topOrBottom(df) || topOrBottom(key) || topOrBottom(value))
-//				return new DFOrConstant(left.top());
-//
-//			DataframeGraphDomain pr = new DataframeGraphDomain(df,
-//					new BaseOperation("set_opt", key.as(String.class),
-//							value.getConstant()));
-//
-//			return new DFOrConstant(pr);
 		} else
 			return TOP;
 	}
