@@ -18,9 +18,14 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.cfg.type.PyTupleType;
+import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
+import it.unive.pylisa.symbolic.operators.WriteColumn;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,11 +47,20 @@ public class PyAssign extends Assignment {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		if (!(getLeft() instanceof TupleCreation))
+		if (left instanceof AccessChild && left.getStaticType().equals(PandasSeriesType.REFERENCE)) {
+			HeapDereference container = (HeapDereference) ((AccessChild) left).getContainer();
+			if (container.getStaticType().equals(PandasDataframeType.INSTANCE)) {
+				state = state.smallStepSemantics(new UnaryExpression(PandasDataframeType.INSTANCE, container,
+						WriteColumn.INSTANCE, getLocation()), this);
+			}
+		}
+
+		Expression lefthand = getLeft();
+		if (!(lefthand instanceof TupleCreation))
 			return super.binarySemantics(interprocedural, state, left, right, expressions);
 
 		// get the variables being assigned
-		Expression[] vars = ((TupleCreation) getLeft()).getSubExpressions();
+		Expression[] vars = ((TupleCreation) lefthand).getSubExpressions();
 		List<ExpressionSet<SymbolicExpression>> ids = Arrays.stream(vars)
 				.map(v -> expressions.getState(v).getComputedExpressions()).collect(Collectors.toList());
 

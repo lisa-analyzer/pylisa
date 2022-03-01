@@ -24,6 +24,7 @@ import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
+import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ColAccess;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
@@ -40,6 +41,7 @@ import it.unive.pylisa.symbolic.operators.Drop;
 import it.unive.pylisa.symbolic.operators.FilterNull;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
+import it.unive.pylisa.symbolic.operators.WriteColumn;
 
 public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
@@ -225,6 +227,16 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeGraphDomain df = new DataframeGraphDomain(
 					new ReadFromFile(pp.getLocation(), filename.as(String.class)));
 			return new DFOrConstant(df);
+		} else if (operator instanceof WriteColumn) {
+			DataframeGraphDomain df = arg.graph;
+			if (topOrBottom(df))
+				return new DFOrConstant(graph.top());
+
+			DataframeGraph original = df.getTransformations();
+			DataframeGraph g = new DataframeGraph(original);
+			g.changeLastAccessToWrite();
+			DataframeGraphDomain dfNew = new DataframeGraphDomain(g);
+			return new DFOrConstant(dfNew);
 //		} else if (operator instanceof TypeConversion) {
 //			DataframeGraphDomain df = arg.graph;
 //			DataframeGraphDomain conv = new DataframeGraphDomain(df,

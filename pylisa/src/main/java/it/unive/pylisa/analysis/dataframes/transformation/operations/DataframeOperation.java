@@ -16,6 +16,10 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 	protected DataframeOperation(CodeLocation where) {
 		this.where = where;
 	}
+	
+	public CodeLocation getWhere() {
+		return where;
+	}
 
 	@Override
 	public final DataframeOperation top() {

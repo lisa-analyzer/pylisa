@@ -11,6 +11,10 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
+import it.unive.lisa.util.collections.workset.LIFOWorkingSet;
+import it.unive.lisa.util.collections.workset.VisitOnceWorkingSet;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.ColAccess;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.ColWrite;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 
 public class DataframeGraph {
@@ -79,6 +83,17 @@ public class DataframeGraph {
 		matrix.putIfAbsent(node, new Edges());
 	}
 
+	public void removeNode(DataframeOperation node) {
+		if (!containsNode(node))
+			return;
+
+		Edges edges = matrix.get(node);
+		Set<SimpleEdge> union = new HashSet<>(edges.ingoing);
+		union.addAll(edges.outgoing);
+		union.forEach(this::removeEdge);
+		matrix.remove(node);
+	}
+
 	public final Collection<DataframeOperation> getNodes() {
 		return matrix.keySet();
 	}
@@ -96,6 +111,14 @@ public class DataframeGraph {
 
 		matrix.get(e.getSource()).outgoing.add(e);
 		matrix.get(e.getDestination()).ingoing.add(e);
+	}
+
+	public void removeEdge(SimpleEdge e) {
+		if (!matrix.containsKey(e.getSource()) || !matrix.containsKey(e.getDestination()))
+			return;
+
+		matrix.get(e.getSource()).outgoing.remove(e);
+		matrix.get(e.getDestination()).ingoing.remove(e);
 	}
 
 	public final Collection<SimpleEdge> getIngoingEdges(DataframeOperation node) {
@@ -128,6 +151,19 @@ public class DataframeGraph {
 			throw new IllegalArgumentException("'" + node + "' is not in the graph");
 
 		return matrix.get(node).ingoing.stream().map(SimpleEdge::getSource).collect(Collectors.toSet());
+	}
+
+	public boolean containsNode(DataframeOperation node) {
+		return matrix.containsKey(node);
+	}
+
+	public boolean containsEdge(SimpleEdge edge) {
+		for (Edges edges : matrix.values())
+			for (SimpleEdge e : edges.outgoing)
+				if (e == edge || e.equals(edge))
+					return true;
+
+		return false;
 	}
 
 	public static class Edges {
@@ -196,6 +232,25 @@ public class DataframeGraph {
 		@Override
 		public String toString() {
 			return "ins: " + ingoing + ", outs: " + outgoing;
+		}
+	}
+
+	public void changeLastAccessToWrite() {
+		VisitOnceWorkingSet<DataframeOperation> ws = VisitOnceWorkingSet.mk(LIFOWorkingSet.mk());
+		getExits().forEach(ws::push);
+
+		while (!ws.isEmpty()) {
+			DataframeOperation current = ws.pop();
+			Collection<DataframeOperation> preds = predecessorsOf(current);
+			if (current instanceof ColAccess) {
+				Collection<DataframeOperation> follows = followersOf(current);
+				removeNode(current);
+				ColWrite write = new ColWrite(current.getWhere(), ((ColAccess) current).getCols());
+				addNode(write);
+				preds.forEach(p -> addEdge(new SimpleEdge(p, write)));
+				follows.forEach(f -> addEdge(new SimpleEdge(write, f)));
+			} else
+				preds.forEach(ws::push);
 		}
 	}
 }

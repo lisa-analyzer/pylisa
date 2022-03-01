@@ -4,29 +4,25 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
 
-public class ColAccess extends DataframeOperation {
+public class ColWrite extends DataframeOperation {
 
 	private final Names cols;
 
-	public ColAccess(CodeLocation where, Names cols) {
+	public ColWrite(CodeLocation where, Names cols) {
 		super(where);
 		this.cols = cols;
 	}
 
-	public Names getCols() {
-		return cols;
-	}
-
 	@Override
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
-		ColAccess o = (ColAccess) other;
+		ColWrite o = (ColWrite) other;
 		return cols.lessOrEqual(o.cols);
 	}
 
 	@Override
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
-		ColAccess o = (ColAccess) other;
-		return new ColAccess(loc(other), cols.lub(o.cols));
+		ColWrite o = (ColWrite) other;
+		return new ColWrite(loc(other), cols.lub(o.cols));
 	}
 
 	@Override
@@ -45,7 +41,7 @@ public class ColAccess extends DataframeOperation {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		ColAccess other = (ColAccess) obj;
+		ColWrite other = (ColWrite) obj;
 		if (cols == null) {
 			if (other.cols != null)
 				return false;
@@ -56,6 +52,6 @@ public class ColAccess extends DataframeOperation {
 
 	@Override
 	public String toString() {
-		return "access_cols" + cols;
+		return "write_cols" + cols;
 	}
 }

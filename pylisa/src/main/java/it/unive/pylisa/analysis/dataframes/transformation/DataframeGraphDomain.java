@@ -51,6 +51,11 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 		return this.transformations;
 	}
 
+	public DataframeGraphDomain(DataframeGraph source, DataframeOperation transformation)
+			throws SemanticException {
+		this(append(source, transformation), false);
+	}
+
 	private static DataframeGraph append(DataframeGraph source, DataframeOperation transformation)
 			throws SemanticException {
 		if (source.getNodesCount() == 0) {
@@ -68,9 +73,17 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 		return copy;
 	}
 
+	public DataframeGraphDomain(DataframeGraph transformations) {
+		this(transformations, false);
+	}
+
 	private DataframeGraphDomain(DataframeGraph transformations, boolean isTop) {
 		this.transformations = transformations;
 		this.isTop = isTop;
+	}
+
+	public DataframeGraph getTransformations() {
+		return transformations;
 	}
 
 	@Override
