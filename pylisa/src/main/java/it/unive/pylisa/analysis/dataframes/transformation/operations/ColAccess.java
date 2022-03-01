@@ -1,13 +1,15 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
 
 public class ColAccess extends DataframeOperation {
 
 	private final Names rows;
 
-	public ColAccess(Names rows) {
+	public ColAccess(CodeLocation where, Names rows) {
+		super(where);
 		this.rows = rows;
 	}
 
@@ -20,13 +22,13 @@ public class ColAccess extends DataframeOperation {
 	@Override
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
 		ColAccess o = (ColAccess) other;
-		return new ColAccess(rows.lub(o.rows));
+		return new ColAccess(loc(other), rows.lub(o.rows));
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		int result = 1;
+		int result = super.hashCode();
 		result = prime * result + ((rows == null) ? 0 : rows.hashCode());
 		return result;
 	}
@@ -35,7 +37,7 @@ public class ColAccess extends DataframeOperation {
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (obj == null)
+		if (!super.equals(obj))
 			return false;
 		if (getClass() != obj.getClass())
 			return false;

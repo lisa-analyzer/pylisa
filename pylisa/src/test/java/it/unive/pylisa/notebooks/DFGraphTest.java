@@ -62,7 +62,7 @@ public class DFGraphTest {
 
 			@Override
 			public CodeLocation getLocation() {
-				return null;
+				return SyntheticLocation.INSTANCE;
 			}
 
 			@Override
@@ -76,7 +76,7 @@ public class DFGraphTest {
 
 		fname = "foo.csv";
 
-		DataframeGraphDomain elem = new DataframeGraphDomain(new ReadFromFile(fname));
+		DataframeGraphDomain elem = new DataframeGraphDomain(new ReadFromFile(fake.getLocation(), fname));
 		DFOrConstant state = new DFOrConstant(elem);
 		ValueEnvironment<DFOrConstant> env = singleton.putState(df1, state);
 //		TODO build a more elaborate element here
@@ -93,7 +93,7 @@ public class DFGraphTest {
 				SyntheticLocation.INSTANCE);
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(unary, fake);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
-		DataframeGraphDomain expected = new DataframeGraphDomain(new ReadFromFile(fname));
+		DataframeGraphDomain expected = new DataframeGraphDomain(new ReadFromFile(fake.getLocation(), fname));
 
 		assertEquals(expected, stack);
 	}
@@ -105,7 +105,7 @@ public class DFGraphTest {
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(unary, fake);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
 		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df1).df(),
-				new FilterNullRows());
+				new FilterNullRows(fake.getLocation()));
 
 		assertEquals(expected, stack);
 	}
@@ -121,7 +121,7 @@ public class DFGraphTest {
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(ternary, fake);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
 		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df1).df(),
-				new RowAccess(new Interval(0, 100)));
+				new RowAccess(fake.getLocation(), new Interval(0, 100)));
 
 		assertEquals(expected, stack);
 	}
@@ -231,7 +231,7 @@ public class DFGraphTest {
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(ternary, fake);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
 		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df1).df(),
-				new RowProjection(new Interval(0, 100)));
+				new RowProjection(fake.getLocation(), new Interval(0, 100)));
 
 		assertEquals(expected, stack);
 	}

@@ -2,12 +2,14 @@ package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.numeric.Interval;
+import it.unive.lisa.program.cfg.CodeLocation;
 
 public class RowProjection extends DataframeOperation {
 
 	private final Interval rows;
 
-	public RowProjection(Interval rows) {
+	public RowProjection(CodeLocation where, Interval rows) {
+		super(where);
 		this.rows = rows;
 	}
 
@@ -20,13 +22,13 @@ public class RowProjection extends DataframeOperation {
 	@Override
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
 		RowProjection o = (RowProjection) other;
-		return new RowProjection(rows.lub(o.rows));
+		return new RowProjection(loc(other), rows.lub(o.rows));
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		int result = 1;
+		int result = super.hashCode();
 		result = prime * result + ((rows == null) ? 0 : rows.hashCode());
 		return result;
 	}
@@ -35,7 +37,7 @@ public class RowProjection extends DataframeOperation {
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (obj == null)
+		if (!super.equals(obj))
 			return false;
 		if (getClass() != obj.getClass())
 			return false;

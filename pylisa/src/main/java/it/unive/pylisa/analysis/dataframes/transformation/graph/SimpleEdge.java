@@ -1,10 +1,8 @@
 package it.unive.pylisa.analysis.dataframes.transformation.graph;
 
-import it.unive.lisa.util.datastructures.graph.Edge;
-import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 
-public class SimpleEdge implements Edge<DataframeOperation, SimpleEdge, DataframeGraph> {
+public class SimpleEdge {
 
 	private final DataframeOperation source, destination;
 
@@ -24,29 +22,12 @@ public class SimpleEdge implements Edge<DataframeOperation, SimpleEdge, Datafram
 		this.edgeIndex = edgeIndex;
 	}
 
-	@Override
 	public DataframeOperation getSource() {
 		return source;
 	}
 
-	@Override
 	public DataframeOperation getDestination() {
 		return destination;
-	}
-
-	@Override
-	public boolean canBeSimplified() {
-		return false;
-	}
-
-	@Override
-	public SimpleEdge newInstance(DataframeOperation source, DataframeOperation destination) {
-		return new SimpleEdge(source, destination);
-	}
-
-	@Override
-	public <V> boolean accept(GraphVisitor<DataframeGraph, DataframeOperation, SimpleEdge, V> visitor, V tool) {
-		return visitor.visit(tool, null, this);
 	}
 
 	@Override

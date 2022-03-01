@@ -222,7 +222,8 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			if (topOrBottom(filename))
 				return new DFOrConstant(graph.top());
 
-			DataframeGraphDomain df = new DataframeGraphDomain(new ReadFromFile(filename.as(String.class)));
+			DataframeGraphDomain df = new DataframeGraphDomain(
+					new ReadFromFile(pp.getLocation(), filename.as(String.class)));
 			return new DFOrConstant(df);
 //		} else if (operator instanceof TypeConversion) {
 //			DataframeGraphDomain df = arg.graph;
@@ -234,7 +235,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			if (topOrBottom(df))
 				return new DFOrConstant(graph.top());
 
-			DataframeGraphDomain dfNew = new DataframeGraphDomain(df, new FilterNullRows());
+			DataframeGraphDomain dfNew = new DataframeGraphDomain(df, new FilterNullRows(pp.getLocation()));
 			return new DFOrConstant(dfNew);
 		} else
 			return TOP;
@@ -249,7 +250,8 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			if (topOrBottom(df) || topOrBottom(col))
 				return new DFOrConstant(graph.top());
 
-			DataframeGraphDomain ca = new DataframeGraphDomain(df, new ColAccess(new Names(col.as(String.class))));
+			DataframeGraphDomain ca = new DataframeGraphDomain(df,
+					new ColAccess(pp.getLocation(), new Names(col.as(String.class))));
 
 			return new DFOrConstant(ca);
 		} else if (operator == Drop.INSTANCE) {
@@ -323,7 +325,8 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 			Interval rows = new Interval(start.as(Integer.class), end.as(Integer.class));
 			DataframeGraphDomain pr = new DataframeGraphDomain(df,
-					operator == ProjectRows.INSTANCE ? new RowProjection(rows) : new RowAccess(rows));
+					operator == ProjectRows.INSTANCE ? new RowProjection(pp.getLocation(), rows)
+							: new RowAccess(pp.getLocation(), rows));
 
 			return new DFOrConstant(pr);
 		} else

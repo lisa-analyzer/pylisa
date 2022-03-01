@@ -1,8 +1,11 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
+import it.unive.lisa.program.cfg.CodeLocation;
+
 public class FilterNullRows extends DataframeOperation {
 
-	public FilterNullRows() {
+	public FilterNullRows(CodeLocation where) {
+		super(where);
 	}
 
 	@Override
@@ -12,19 +15,21 @@ public class FilterNullRows extends DataframeOperation {
 
 	@Override
 	protected DataframeOperation lubSameOperation(DataframeOperation other) {
-		return lessOrEqualSameOperation(other) ? other : top();
+		return lessOrEqualSameOperation(other)
+				? (where.equals(other.where) ? this : new FilterNullRows(loc(other)))
+				: top();
 	}
 
 	@Override
 	public int hashCode() {
-		return this.getClass().hashCode();
+		return super.hashCode();
 	}
 
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (obj == null)
+		if (!super.equals(obj))
 			return false;
 		if (getClass() != obj.getClass())
 			return false;

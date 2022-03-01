@@ -11,7 +11,6 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.util.collections.workset.FIFOWorkingSet;
 import it.unive.lisa.util.collections.workset.WorkingSet;
-import it.unive.lisa.util.datastructures.graph.AdjacencyMatrix;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
@@ -56,11 +55,11 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 			throws SemanticException {
 		if (source.getNodesCount() == 0) {
 			DataframeGraph graph = new DataframeGraph();
-			graph.addNode(transformation, true);
+			graph.addNode(transformation);
 			return graph;
 		}
 
-		Collection<DataframeOperation> exits = source.getAdjacencyMatrix().getExits();
+		Collection<DataframeOperation> exits = source.getExits();
 		if (exits.size() != 1)
 			throw new SemanticException("Appending an operation to a graph with more than one leaf");
 		DataframeGraph copy = new DataframeGraph(source);
@@ -76,8 +75,8 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 
 	@Override
 	protected DataframeGraphDomain lubAux(DataframeGraphDomain other) throws SemanticException {
-		AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> tm = transformations.getAdjacencyMatrix();
-		AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> om = other.transformations.getAdjacencyMatrix();
+		DataframeGraph tm = transformations;
+		DataframeGraph om = other.transformations;
 		if (!check(tm, om))
 			return top();
 
@@ -90,7 +89,7 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 		ows.push(om.getEntries().iterator().next());
 
 		DataframeOperation t, o, r, pr = null;
-		AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> rm = new AdjacencyMatrix<>();
+		DataframeGraph rm = new DataframeGraph();
 		while (!tws.isEmpty() || !ows.isEmpty()) {
 			t = tws.isEmpty() ? DataframeOperation.BOTTOM : tws.peek();
 			o = ows.isEmpty() ? DataframeOperation.BOTTOM : ows.peek();
@@ -124,8 +123,8 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 
 	@Override
 	protected boolean lessOrEqualAux(DataframeGraphDomain other) throws SemanticException {
-		AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> tm = transformations.getAdjacencyMatrix();
-		AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> om = other.transformations.getAdjacencyMatrix();
+		DataframeGraph tm = transformations;
+		DataframeGraph om = other.transformations;
 		if (!check(tm, om))
 			return false;
 
@@ -160,8 +159,7 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 		return true;
 	}
 
-	private boolean check(AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> tm,
-			AdjacencyMatrix<DataframeOperation, SimpleEdge, DataframeGraph> om) {
+	private boolean check(DataframeGraph tm, DataframeGraph om) {
 		if (tm.getEntries().size() != 1 || om.getEntries().size() != 1)
 			return false;
 		if (tm.getExits().size() != 1 || om.getExits().size() != 1)

@@ -2,11 +2,17 @@ package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.program.SyntheticLocation;
+import it.unive.lisa.program.cfg.CodeLocation;
 
 public class TopOperation extends DataframeOperation {
 
-	TopOperation() {
-		// this is just to limit the creation of instances of this class
+	public TopOperation() {
+		super(SyntheticLocation.INSTANCE);
+	}
+
+	public TopOperation(CodeLocation where) {
+		super(where);
 	}
 
 	@Override
@@ -16,7 +22,7 @@ public class TopOperation extends DataframeOperation {
 
 	@Override
 	protected DataframeOperation lubAux(DataframeOperation other) throws SemanticException {
-		return this;
+		return where.equals(other.where) ? this : DataframeOperation.TOP;
 	}
 
 	@Override
@@ -26,12 +32,18 @@ public class TopOperation extends DataframeOperation {
 
 	@Override
 	public int hashCode() {
-		return getClass().hashCode();
+		return super.hashCode();
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		return getClass() == obj.getClass();
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		return true;
 	}
 
 	@Override

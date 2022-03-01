@@ -1,6 +1,7 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
 import it.unive.lisa.analysis.Lattice;
+import it.unive.lisa.program.cfg.CodeLocation;
 
 public class ReadFromFile extends DataframeOperation {
 
@@ -9,7 +10,8 @@ public class ReadFromFile extends DataframeOperation {
 	 */
 	private final String file;
 
-	public ReadFromFile(String file) {
+	public ReadFromFile(CodeLocation where, String file) {
+		super(where);
 		this.file = file;
 	}
 
@@ -26,13 +28,27 @@ public class ReadFromFile extends DataframeOperation {
 
 	@Override
 	protected DataframeOperation lubSameOperation(DataframeOperation other) {
-		return lessOrEqualSameOperation(other) ? other : top();
+		return lessOrEqualSameOperation(other)
+				? (where.equals(other.where) ? this : new ReadFromFile(loc(other), file(other)))
+				: top();
+	}
+
+	private String file(DataframeOperation other) {
+		ReadFromFile o = (ReadFromFile) other;
+		if (file == null)
+			return null;
+		else if (o.file == null)
+			return null;
+		else if (!file.equals(o.file))
+			return null;
+		else
+			return file;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		int result = 1;
+		int result = super.hashCode();
 		result = prime * result + ((file == null) ? 0 : file.hashCode());
 		return result;
 	}
@@ -41,7 +57,7 @@ public class ReadFromFile extends DataframeOperation {
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (obj == null)
+		if (!super.equals(obj))
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
