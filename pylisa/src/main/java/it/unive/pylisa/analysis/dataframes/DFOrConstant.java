@@ -1,7 +1,11 @@
 package it.unive.pylisa.analysis.dataframes;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.numeric.Interval;
@@ -18,12 +22,14 @@ import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ColAccess;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.RowAccess;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.RowProjection;
 import it.unive.pylisa.symbolic.operators.AccessRows;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
+import it.unive.pylisa.symbolic.operators.Drop;
 import it.unive.pylisa.symbolic.operators.FilterNull;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
@@ -239,7 +245,32 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeGraphDomain ca = new DataframeGraphDomain(df, new ColAccess(new Names(col.as(String.class))));
 
 			return new DFOrConstant(ca);
-		} else
+		} else if (operator == Drop.INSTANCE) {
+			DataframeGraphDomain df = left.graph;
+			ConstantPropagation cols = right.constant;
+			if (topOrBottom(df) || topOrBottom(cols))
+				return new DFOrConstant(graph.top());
+
+			if (!(cols.getConstant() instanceof ExpressionSet<?>[]))
+				// check whether the cols constant is indeed what we expect for a constant list
+				return new DFOrConstant(graph.top());
+
+			ExpressionSet<Constant>[] cs = (ExpressionSet<Constant>[]) cols.getConstant();
+			Set<String> accessedCols = new HashSet<>();
+
+			for (ExpressionSet<Constant> c : cs) {
+				for (Constant colName : c) {
+					if (!(colName.getValue() instanceof String))
+						return new DFOrConstant(graph.top());
+					accessedCols.add((String) colName.getValue());
+				}
+			}
+
+			DataframeGraphDomain ca = new DataframeGraphDomain(df, new DropColumns(accessedCols));
+
+			return new DFOrConstant(ca);
+		}
+		else
 			return TOP;
 	}
 

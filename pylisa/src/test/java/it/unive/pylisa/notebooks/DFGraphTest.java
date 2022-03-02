@@ -2,15 +2,20 @@ package it.unive.pylisa.notebooks;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.junit.Test;
 
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
@@ -19,12 +24,15 @@ import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.dataframes.DFOrConstant;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.RowAccess;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.RowProjection;
+import it.unive.pylisa.cfg.type.PyListType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.symbolic.operators.AccessRows;
+import it.unive.pylisa.symbolic.operators.Drop;
 import it.unive.pylisa.symbolic.operators.FilterNull;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
@@ -106,6 +114,32 @@ public class DFGraphTest {
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
 		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df1).df(),
 				new RowAccess(new Interval(0, 100)));
+
+		assertEquals(expected, stack);
+	}
+
+	@Test
+	public void testDropColumns() throws SemanticException {
+
+		ExpressionSet<Constant>[] cols = (ExpressionSet<Constant>[]) new ExpressionSet[2];
+		cols[0] = new ExpressionSet<>(new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE));
+		cols[1] = new ExpressionSet<>(new Constant(StringType.INSTANCE, "col2", SyntheticLocation.INSTANCE));
+
+		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, 
+				df1, 
+				new Constant(PyListType.INSTANCE, 
+					cols, 
+					SyntheticLocation.INSTANCE), 
+				Drop.INSTANCE, SyntheticLocation.INSTANCE);
+
+		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(bin, fake);
+		DataframeGraphDomain stack = sss.getValueOnStack().df();
+
+		Set<String> colsShouldHaveAccessed = new HashSet<>();
+		colsShouldHaveAccessed.add("col1");
+		colsShouldHaveAccessed.add("col2");
+
+		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df1).df(), new DropColumns(colsShouldHaveAccessed));
 
 		assertEquals(expected, stack);
 	}
