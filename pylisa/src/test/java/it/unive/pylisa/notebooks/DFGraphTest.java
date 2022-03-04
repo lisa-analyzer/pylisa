@@ -5,6 +5,8 @@ import static org.junit.Assert.assertEquals;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JacksonInject.Value;
+
 import org.junit.Test;
 
 import it.unive.lisa.analysis.SemanticException;
@@ -24,6 +26,10 @@ import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.dataframes.DFOrConstant;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
+import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
+import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
@@ -32,6 +38,7 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.RowProjecti
 import it.unive.pylisa.cfg.type.PyListType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.symbolic.operators.AccessRows;
+import it.unive.pylisa.symbolic.operators.ConcatCols;
 import it.unive.pylisa.symbolic.operators.Drop;
 import it.unive.pylisa.symbolic.operators.FilterNull;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
@@ -140,6 +147,40 @@ public class DFGraphTest {
 		colsShouldHaveAccessed.add("col2");
 
 		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df1).df(), new DropColumns(colsShouldHaveAccessed));
+
+		assertEquals(expected, stack);
+	}
+
+	@Test
+	public void testConcatCols() throws SemanticException {
+		Variable df2 = new Variable(PandasDataframeType.INSTANCE, "df2", SyntheticLocation.INSTANCE);
+		String fname2 = "foo1.csv";
+
+		DataframeGraphDomain df2GraphDomain = new DataframeGraphDomain(new ReadFromFile(fname2));
+		df2GraphDomain = new DataframeGraphDomain(df2GraphDomain, new DropColumns(new HashSet<>()));
+
+		ValueEnvironment<DFOrConstant> valEnv = base.putState(df2, new DFOrConstant(df2GraphDomain));
+		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df1, df2, ConcatCols.INSTANCE, SyntheticLocation.INSTANCE);
+		
+		valEnv.smallStepSemantics(bin, fake);
+
+		DataframeGraph concatGraph = new DataframeGraph();
+		DataframeOperation rff1 = new ReadFromFile(fname);
+		DataframeOperation rff2 = new ReadFromFile(fname2);
+		DataframeOperation drop = new DropColumns(new HashSet<>());
+		DataframeOperation concat = new Concat(Concat.Axis.CONCAT_COLS);
+
+		concatGraph.addNode(rff1);
+		concatGraph.addNode(rff2);
+		concatGraph.addNode(drop);
+		concatGraph.addNode(concat);
+
+		concatGraph.addEdge(new SimpleEdge(rff1, concat));
+		concatGraph.addEdge(new SimpleEdge(rff2, drop));
+		concatGraph.addEdge(new SimpleEdge(drop, concat));
+
+		DataframeGraphDomain expected = new DataframeGraphDomain(concatGraph);
+		DataframeGraphDomain stack = valEnv.getValueOnStack().df();
 
 		assertEquals(expected, stack);
 	}
