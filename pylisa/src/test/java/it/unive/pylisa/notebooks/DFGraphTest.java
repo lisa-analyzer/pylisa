@@ -162,7 +162,7 @@ public class DFGraphTest {
 		ValueEnvironment<DFOrConstant> valEnv = base.putState(df2, new DFOrConstant(df2GraphDomain));
 		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df1, df2, ConcatCols.INSTANCE, SyntheticLocation.INSTANCE);
 		
-		valEnv.smallStepSemantics(bin, fake);
+		ValueEnvironment<DFOrConstant> sss = valEnv.smallStepSemantics(bin, fake);
 
 		DataframeGraph concatGraph = new DataframeGraph();
 		DataframeOperation rff1 = new ReadFromFile(fname);
@@ -180,7 +180,7 @@ public class DFGraphTest {
 		concatGraph.addEdge(new SimpleEdge(drop, concat));
 
 		DataframeGraphDomain expected = new DataframeGraphDomain(concatGraph);
-		DataframeGraphDomain stack = valEnv.getValueOnStack().df();
+		DataframeGraphDomain stack = sss.getValueOnStack().df();
 
 		assertEquals(expected, stack);
 	}

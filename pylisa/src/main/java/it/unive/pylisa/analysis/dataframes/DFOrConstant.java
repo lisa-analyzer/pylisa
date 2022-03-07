@@ -279,8 +279,8 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeGraphDomain df1 = left.graph;
 			DataframeGraphDomain df2 = right.graph;
 
-			if (df1.isBottom() && df2.isBottom())
-				return new DFOrConstant(graph.bottom());
+			if (df1.isBottom() || df2.isBottom())
+				return new DFOrConstant(graph.top());
 			
 			if (df1.isTop() || df2.isTop())
 				return new DFOrConstant(graph.top());
