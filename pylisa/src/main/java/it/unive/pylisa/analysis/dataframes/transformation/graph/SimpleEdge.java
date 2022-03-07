@@ -8,9 +8,20 @@ public class SimpleEdge implements Edge<DataframeOperation, SimpleEdge, Datafram
 
 	private final DataframeOperation source, destination;
 
+	// when we have a concatenation, the order of the concatenation matters so we add
+	// an optional index to each edge
+	private int edgeIndex;
+
 	public SimpleEdge(DataframeOperation source, DataframeOperation destination) {
 		this.source = source;
 		this.destination = destination;
+		this.edgeIndex = -1;
+	}
+
+	public SimpleEdge(DataframeOperation source, DataframeOperation destination, int edgeIndex) {
+		this.source = source;
+		this.destination = destination;
+		this.edgeIndex = edgeIndex;
 	}
 
 	@Override
@@ -66,11 +77,15 @@ public class SimpleEdge implements Edge<DataframeOperation, SimpleEdge, Datafram
 				return false;
 		} else if (!source.equals(other.source))
 			return false;
+		if (this.edgeIndex != other.edgeIndex)
+			return false;
 		return true;
 	}
 
 	@Override
 	public String toString() {
+		if (edgeIndex != -1)
+			return source + " (" + Integer.toString(this.edgeIndex) + ")" + "-> " + destination;
 		return source + " -> " + destination;
 	}
 }

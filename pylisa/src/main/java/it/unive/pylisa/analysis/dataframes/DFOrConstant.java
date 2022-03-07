@@ -35,6 +35,7 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.RowProjecti
 import it.unive.pylisa.symbolic.operators.AccessRows;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
 import it.unive.pylisa.symbolic.operators.ConcatCols;
+import it.unive.pylisa.symbolic.operators.ConcatRows;
 import it.unive.pylisa.symbolic.operators.Drop;
 import it.unive.pylisa.symbolic.operators.FilterNull;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
@@ -275,7 +276,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeGraphDomain ca = new DataframeGraphDomain(df, new DropColumns(accessedCols));
 
 			return new DFOrConstant(ca);
-		} else if (operator == ConcatCols.INSTANCE) {
+		} else if (operator == ConcatCols.INSTANCE || operator == ConcatRows.INSTANCE) {
 			DataframeGraphDomain df1 = left.graph;
 			DataframeGraphDomain df2 = right.graph;
 
@@ -299,10 +300,10 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			concatGraph.getAdjacencyMatrix().mergeWith(df1.getTransformations().getAdjacencyMatrix());
 			concatGraph.getAdjacencyMatrix().mergeWith(df2.getTransformations().getAdjacencyMatrix());
 
-			DataframeOperation concatNode = new Concat(Concat.Axis.CONCAT_COLS);
+			DataframeOperation concatNode = new Concat(operator == ConcatCols.INSTANCE ? Concat.Axis.CONCAT_COLS : Concat.Axis.CONCAT_ROWS);
 			concatGraph.addNode(concatNode);
-			concatGraph.addEdge(new SimpleEdge(exit1, concatNode));
-			concatGraph.addEdge(new SimpleEdge(exit2, concatNode));
+			concatGraph.addEdge(new SimpleEdge(exit1, concatNode, 0));
+			concatGraph.addEdge(new SimpleEdge(exit2, concatNode, 1));
 
 			return new DFOrConstant(new DataframeGraphDomain(concatGraph));
 		} else

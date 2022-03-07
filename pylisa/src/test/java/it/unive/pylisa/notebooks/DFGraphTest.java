@@ -39,6 +39,7 @@ import it.unive.pylisa.cfg.type.PyListType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.symbolic.operators.AccessRows;
 import it.unive.pylisa.symbolic.operators.ConcatCols;
+import it.unive.pylisa.symbolic.operators.ConcatRows;
 import it.unive.pylisa.symbolic.operators.Drop;
 import it.unive.pylisa.symbolic.operators.FilterNull;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
@@ -175,9 +176,43 @@ public class DFGraphTest {
 		concatGraph.addNode(drop);
 		concatGraph.addNode(concat);
 
-		concatGraph.addEdge(new SimpleEdge(rff1, concat));
+		concatGraph.addEdge(new SimpleEdge(rff1, concat, 0));
 		concatGraph.addEdge(new SimpleEdge(rff2, drop));
-		concatGraph.addEdge(new SimpleEdge(drop, concat));
+		concatGraph.addEdge(new SimpleEdge(drop, concat, 1));
+
+		DataframeGraphDomain expected = new DataframeGraphDomain(concatGraph);
+		DataframeGraphDomain stack = sss.getValueOnStack().df();
+
+		assertEquals(expected, stack);
+	}
+
+	@Test
+	public void testConcatRows() throws SemanticException {
+		Variable df2 = new Variable(PandasDataframeType.INSTANCE, "df2", SyntheticLocation.INSTANCE);
+		String fname2 = "foo1.csv";
+
+		DataframeGraphDomain df2GraphDomain = new DataframeGraphDomain(new ReadFromFile(fname2));
+		df2GraphDomain = new DataframeGraphDomain(df2GraphDomain, new DropColumns(new HashSet<>()));
+
+		ValueEnvironment<DFOrConstant> valEnv = base.putState(df2, new DFOrConstant(df2GraphDomain));
+		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df1, df2, ConcatRows.INSTANCE, SyntheticLocation.INSTANCE);
+		
+		ValueEnvironment<DFOrConstant> sss = valEnv.smallStepSemantics(bin, fake);
+
+		DataframeGraph concatGraph = new DataframeGraph();
+		DataframeOperation rff1 = new ReadFromFile(fname);
+		DataframeOperation rff2 = new ReadFromFile(fname2);
+		DataframeOperation drop = new DropColumns(new HashSet<>());
+		DataframeOperation concat = new Concat(Concat.Axis.CONCAT_ROWS);
+
+		concatGraph.addNode(rff1);
+		concatGraph.addNode(rff2);
+		concatGraph.addNode(drop);
+		concatGraph.addNode(concat);
+
+		concatGraph.addEdge(new SimpleEdge(rff1, concat, 0));
+		concatGraph.addEdge(new SimpleEdge(rff2, drop));
+		concatGraph.addEdge(new SimpleEdge(drop, concat, 1));
 
 		DataframeGraphDomain expected = new DataframeGraphDomain(concatGraph);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
