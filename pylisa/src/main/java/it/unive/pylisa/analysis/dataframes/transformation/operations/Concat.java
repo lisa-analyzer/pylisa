@@ -1,72 +1,74 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.program.cfg.CodeLocation;
 
 public class Concat extends DataframeOperation {
 
-    // we can concatenate along rows or columns
-    public static enum Axis {
-        CONCAT_ROWS,
-        CONCAT_COLS,
-        TOP
-    }
+	// we can concatenate along rows or columns
+	public static enum Axis {
+		CONCAT_ROWS,
+		CONCAT_COLS,
+		TOP
+	}
 
-    private final Axis axis;
+	private final Axis axis;
 
-    public Concat(Axis axis) {
-        this.axis = axis;
-    }
+	public Concat(CodeLocation where, Axis axis) {
+		super(where);
+		this.axis = axis;
+	}
 
-    @Override
-    protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
-        Concat o = (Concat) other;
-        if (o.axis != this.axis) {
-            return false;
-        }
+	@Override
+	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+		Concat o = (Concat) other;
+		if (o.axis != this.axis) {
+			return false;
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    @Override
-    protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
-        Concat o = (Concat) other;
-        if (o.axis != this.axis) {
-            return new Concat(Axis.TOP);
-        }
+	@Override
+	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+		Concat o = (Concat) other;
+		if (o.axis != this.axis) {
+			return new Concat(loc(other), Axis.TOP);
+		}
 
-        return new Concat(this.axis);
-    }
+		return new Concat(loc(other), this.axis);
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
 		Concat other = (Concat) obj;
-        return this.axis == other.axis;
-    }
+		return this.axis == other.axis;
+	}
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
+	@Override
+	public int hashCode() {
+		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((axis == null) ? 0 : axis.hashCode());
 		return result;
-    }
+	}
 
-    @Override
-    public String toString() {
-        if (this.axis == Axis.CONCAT_COLS) {
-            return "concat_cols";
-        } else if (this.axis == Axis.CONCAT_ROWS) {
-            return "concat_rows";
-        } else if (this.axis == Axis.TOP) {
-            return "concat_TOP";
-        }
-        return "concat";
-    }
-    
+	@Override
+	public String toString() {
+		if (this.axis == Axis.CONCAT_COLS) {
+			return "concat_cols";
+		} else if (this.axis == Axis.CONCAT_ROWS) {
+			return "concat_rows";
+		} else if (this.axis == Axis.TOP) {
+			return "concat_TOP";
+		}
+		return "concat";
+	}
+
 }

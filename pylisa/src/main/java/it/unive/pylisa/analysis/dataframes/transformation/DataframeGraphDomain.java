@@ -43,14 +43,6 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 		this(append(source.transformations, transformation), false);
 	}
 
-	public DataframeGraphDomain(DataframeGraph graph) {
-		this(graph, false);
-	}
-
-	public DataframeGraph getTransformations() {
-		return this.transformations;
-	}
-
 	public DataframeGraphDomain(DataframeGraph source, DataframeOperation transformation)
 			throws SemanticException {
 		this(append(source, transformation), false);

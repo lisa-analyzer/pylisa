@@ -24,7 +24,6 @@ import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
-import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ColAccess;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
@@ -273,9 +272,11 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				return new DFOrConstant(graph.top());
 
 			if (!(cols.getConstant() instanceof ExpressionSet<?>[]))
-				// check whether the cols constant is indeed what we expect for a constant list
+				// check whether the cols constant is indeed what we expect for
+				// a constant list
 				return new DFOrConstant(graph.top());
 
+			@SuppressWarnings("unchecked")
 			ExpressionSet<Constant>[] cs = (ExpressionSet<Constant>[]) cols.getConstant();
 			Set<String> accessedCols = new HashSet<>();
 
@@ -287,7 +288,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				}
 			}
 
-			DataframeGraphDomain ca = new DataframeGraphDomain(df, new DropColumns(accessedCols));
+			DataframeGraphDomain ca = new DataframeGraphDomain(df, new DropColumns(pp.getLocation(), accessedCols));
 
 			return new DFOrConstant(ca);
 		} else if (operator == ConcatCols.INSTANCE || operator == ConcatRows.INSTANCE) {
@@ -296,12 +297,12 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 			if (df1.isBottom() || df2.isBottom())
 				return new DFOrConstant(graph.top());
-			
+
 			if (df1.isTop() || df2.isTop())
 				return new DFOrConstant(graph.top());
 
-			Collection<DataframeOperation> exit1c = df1.getTransformations().getAdjacencyMatrix().getExits();
-			Collection<DataframeOperation> exit2c = df2.getTransformations().getAdjacencyMatrix().getExits();
+			Collection<DataframeOperation> exit1c = df1.getTransformations().getExits();
+			Collection<DataframeOperation> exit2c = df2.getTransformations().getExits();
 
 			if (exit1c.size() != 1 || exit2c.size() != 1) {
 				return new DFOrConstant(graph.top());
@@ -311,10 +312,11 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeOperation exit2 = exit2c.iterator().next();
 
 			DataframeGraph concatGraph = new DataframeGraph();
-			concatGraph.getAdjacencyMatrix().mergeWith(df1.getTransformations().getAdjacencyMatrix());
-			concatGraph.getAdjacencyMatrix().mergeWith(df2.getTransformations().getAdjacencyMatrix());
+			concatGraph.mergeWith(df1.getTransformations());
+			concatGraph.mergeWith(df2.getTransformations());
 
-			DataframeOperation concatNode = new Concat(operator == ConcatCols.INSTANCE ? Concat.Axis.CONCAT_COLS : Concat.Axis.CONCAT_ROWS);
+			DataframeOperation concatNode = new Concat(pp.getLocation(),
+					operator == ConcatCols.INSTANCE ? Concat.Axis.CONCAT_COLS : Concat.Axis.CONCAT_ROWS);
 			concatGraph.addNode(concatNode);
 			concatGraph.addEdge(new SimpleEdge(exit1, concatNode, 0));
 			concatGraph.addEdge(new SimpleEdge(exit2, concatNode, 1));

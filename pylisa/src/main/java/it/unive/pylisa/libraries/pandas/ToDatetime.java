@@ -47,7 +47,7 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		HeapDereference deref = new HeapDereference(PandasSeriesType.INSTANCE, expr, getLocation());
-		UnaryExpression conv = new UnaryExpression(PandasSeriesType.INSTANCE, expr, new TypeConversion("datetime"),
+		UnaryExpression conv = new UnaryExpression(PandasSeriesType.INSTANCE, deref, new TypeConversion("datetime"),
 				getLocation());
 		AnalysisState<A, H, V, T> cState = state.smallStepSemantics(conv, st);
 		AnalysisState<A, H, V, T> result = cState.bottom();

@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -166,6 +167,13 @@ public class DataframeGraph {
 		return false;
 	}
 
+	public final Collection<SimpleEdge> getEdges() {
+		return matrix.values().stream()
+				.flatMap(c -> Stream.concat(c.ingoing.stream(), c.outgoing.stream()))
+				.distinct()
+				.collect(Collectors.toSet());
+	}
+
 	public static class Edges {
 		private final Set<SimpleEdge> ingoing;
 		private final Set<SimpleEdge> outgoing;
@@ -252,5 +260,13 @@ public class DataframeGraph {
 			} else
 				preds.forEach(ws::push);
 		}
+	}
+
+	public void mergeWith(DataframeGraph other) {
+		for (DataframeOperation node : other.getNodes())
+			addNode(node);
+
+		for (SimpleEdge edge : other.getEdges())
+			addEdge(edge);
 	}
 }

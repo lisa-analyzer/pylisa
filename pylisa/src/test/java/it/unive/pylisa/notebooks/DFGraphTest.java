@@ -5,8 +5,6 @@ import static org.junit.Assert.assertEquals;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JacksonInject.Value;
-
 import org.junit.Test;
 
 import it.unive.lisa.analysis.SemanticException;
@@ -129,15 +127,16 @@ public class DFGraphTest {
 	@Test
 	public void testDropColumns() throws SemanticException {
 
+		@SuppressWarnings("unchecked")
 		ExpressionSet<Constant>[] cols = (ExpressionSet<Constant>[]) new ExpressionSet[2];
 		cols[0] = new ExpressionSet<>(new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE));
 		cols[1] = new ExpressionSet<>(new Constant(StringType.INSTANCE, "col2", SyntheticLocation.INSTANCE));
 
-		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, 
-				df1, 
-				new Constant(PyListType.INSTANCE, 
-					cols, 
-					SyntheticLocation.INSTANCE), 
+		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE,
+				df1,
+				new Constant(PyListType.INSTANCE,
+						cols,
+						SyntheticLocation.INSTANCE),
 				Drop.INSTANCE, SyntheticLocation.INSTANCE);
 
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(bin, fake);
@@ -147,7 +146,8 @@ public class DFGraphTest {
 		colsShouldHaveAccessed.add("col1");
 		colsShouldHaveAccessed.add("col2");
 
-		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df1).df(), new DropColumns(colsShouldHaveAccessed));
+		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df1).df(),
+				new DropColumns(fake.getLocation(), colsShouldHaveAccessed));
 
 		assertEquals(expected, stack);
 	}
@@ -157,19 +157,20 @@ public class DFGraphTest {
 		Variable df2 = new Variable(PandasDataframeType.INSTANCE, "df2", SyntheticLocation.INSTANCE);
 		String fname2 = "foo1.csv";
 
-		DataframeGraphDomain df2GraphDomain = new DataframeGraphDomain(new ReadFromFile(fname2));
-		df2GraphDomain = new DataframeGraphDomain(df2GraphDomain, new DropColumns(new HashSet<>()));
+		DataframeGraphDomain df2GraphDomain = new DataframeGraphDomain(new ReadFromFile(fake.getLocation(), fname2));
+		df2GraphDomain = new DataframeGraphDomain(df2GraphDomain, new DropColumns(fake.getLocation(), new HashSet<>()));
 
 		ValueEnvironment<DFOrConstant> valEnv = base.putState(df2, new DFOrConstant(df2GraphDomain));
-		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df1, df2, ConcatCols.INSTANCE, SyntheticLocation.INSTANCE);
-		
+		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df1, df2, ConcatCols.INSTANCE,
+				SyntheticLocation.INSTANCE);
+
 		ValueEnvironment<DFOrConstant> sss = valEnv.smallStepSemantics(bin, fake);
 
 		DataframeGraph concatGraph = new DataframeGraph();
-		DataframeOperation rff1 = new ReadFromFile(fname);
-		DataframeOperation rff2 = new ReadFromFile(fname2);
-		DataframeOperation drop = new DropColumns(new HashSet<>());
-		DataframeOperation concat = new Concat(Concat.Axis.CONCAT_COLS);
+		DataframeOperation rff1 = new ReadFromFile(fake.getLocation(), fname);
+		DataframeOperation rff2 = new ReadFromFile(fake.getLocation(), fname2);
+		DataframeOperation drop = new DropColumns(fake.getLocation(), new HashSet<>());
+		DataframeOperation concat = new Concat(fake.getLocation(), Concat.Axis.CONCAT_COLS);
 
 		concatGraph.addNode(rff1);
 		concatGraph.addNode(rff2);
@@ -191,19 +192,20 @@ public class DFGraphTest {
 		Variable df2 = new Variable(PandasDataframeType.INSTANCE, "df2", SyntheticLocation.INSTANCE);
 		String fname2 = "foo1.csv";
 
-		DataframeGraphDomain df2GraphDomain = new DataframeGraphDomain(new ReadFromFile(fname2));
-		df2GraphDomain = new DataframeGraphDomain(df2GraphDomain, new DropColumns(new HashSet<>()));
+		DataframeGraphDomain df2GraphDomain = new DataframeGraphDomain(new ReadFromFile(fake.getLocation(), fname2));
+		df2GraphDomain = new DataframeGraphDomain(df2GraphDomain, new DropColumns(fake.getLocation(), new HashSet<>()));
 
 		ValueEnvironment<DFOrConstant> valEnv = base.putState(df2, new DFOrConstant(df2GraphDomain));
-		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df1, df2, ConcatRows.INSTANCE, SyntheticLocation.INSTANCE);
-		
+		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df1, df2, ConcatRows.INSTANCE,
+				SyntheticLocation.INSTANCE);
+
 		ValueEnvironment<DFOrConstant> sss = valEnv.smallStepSemantics(bin, fake);
 
 		DataframeGraph concatGraph = new DataframeGraph();
-		DataframeOperation rff1 = new ReadFromFile(fname);
-		DataframeOperation rff2 = new ReadFromFile(fname2);
-		DataframeOperation drop = new DropColumns(new HashSet<>());
-		DataframeOperation concat = new Concat(Concat.Axis.CONCAT_ROWS);
+		DataframeOperation rff1 = new ReadFromFile(fake.getLocation(), fname);
+		DataframeOperation rff2 = new ReadFromFile(fake.getLocation(), fname2);
+		DataframeOperation drop = new DropColumns(fake.getLocation(), new HashSet<>());
+		DataframeOperation concat = new Concat(fake.getLocation(), Concat.Axis.CONCAT_ROWS);
 
 		concatGraph.addNode(rff1);
 		concatGraph.addNode(rff2);
