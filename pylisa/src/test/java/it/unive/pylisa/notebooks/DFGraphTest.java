@@ -24,6 +24,7 @@ import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.dataframes.DFOrConstant;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
+import it.unive.pylisa.analysis.dataframes.transformation.graph.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
@@ -177,9 +178,9 @@ public class DFGraphTest {
 		concatGraph.addNode(drop);
 		concatGraph.addNode(concat);
 
-		concatGraph.addEdge(new SimpleEdge(rff1, concat, 0));
+		concatGraph.addEdge(new ConcatEdge(rff1, concat, 0));
 		concatGraph.addEdge(new SimpleEdge(rff2, drop));
-		concatGraph.addEdge(new SimpleEdge(drop, concat, 1));
+		concatGraph.addEdge(new ConcatEdge(drop, concat, 1));
 
 		DataframeGraphDomain expected = new DataframeGraphDomain(concatGraph);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
@@ -212,9 +213,9 @@ public class DFGraphTest {
 		concatGraph.addNode(drop);
 		concatGraph.addNode(concat);
 
-		concatGraph.addEdge(new SimpleEdge(rff1, concat, 0));
+		concatGraph.addEdge(new ConcatEdge(rff1, concat, 0));
 		concatGraph.addEdge(new SimpleEdge(rff2, drop));
-		concatGraph.addEdge(new SimpleEdge(drop, concat, 1));
+		concatGraph.addEdge(new ConcatEdge(drop, concat, 1));
 
 		DataframeGraphDomain expected = new DataframeGraphDomain(concatGraph);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();

@@ -1,5 +1,9 @@
 package it.unive.pylisa.cfg.expression;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -17,18 +21,14 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
+import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.cfg.type.PyTupleType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.operators.WriteColumn;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class PyAssign extends Assignment {
 
@@ -47,10 +47,10 @@ public class PyAssign extends Assignment {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		if (left instanceof AccessChild && left.getStaticType().equals(PandasSeriesType.REFERENCE)) {
+		if (left instanceof AccessChild && left.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE))) {
 			HeapDereference container = (HeapDereference) ((AccessChild) left).getContainer();
-			if (container.getStaticType().equals(PandasDataframeType.INSTANCE)) {
-				state = state.smallStepSemantics(new UnaryExpression(PandasDataframeType.INSTANCE, container,
+			if (container.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
+				return state.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, container, right,
 						WriteColumn.INSTANCE, getLocation()), this);
 			}
 		}

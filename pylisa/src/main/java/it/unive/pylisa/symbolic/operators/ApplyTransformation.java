@@ -6,15 +6,21 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 
-public class TypeConversion implements UnaryOperator {
+public class ApplyTransformation implements UnaryOperator {
 
-	private final String type;
+	public enum Kind {
+		UNKNOWN,
+		BOTTOM,
+		TO_DATETIME,
+	}
 
-	public TypeConversion(String type) {
+	private final Kind type;
+
+	public ApplyTransformation(Kind type) {
 		this.type = type;
 	}
 
-	public String getType() {
+	public Kind getKind() {
 		return type;
 	}
 
