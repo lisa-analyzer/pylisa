@@ -1,0 +1,72 @@
+package it.unive.pylisa.analysis.dataframes.transformation.operations;
+
+import it.unive.lisa.analysis.SemanticException;
+
+public class Concat extends DataframeOperation {
+
+    // we can concatenate along rows or columns
+    public static enum Axis {
+        CONCAT_ROWS,
+        CONCAT_COLS,
+        TOP
+    }
+
+    private final Axis axis;
+
+    public Concat(Axis axis) {
+        this.axis = axis;
+    }
+
+    @Override
+    protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+        Concat o = (Concat) other;
+        if (o.axis != this.axis) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+        Concat o = (Concat) other;
+        if (o.axis != this.axis) {
+            return new Concat(Axis.TOP);
+        }
+
+        return new Concat(this.axis);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Concat other = (Concat) obj;
+        return this.axis == other.axis;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+		int result = 1;
+		result = prime * result + ((axis == null) ? 0 : axis.hashCode());
+		return result;
+    }
+
+    @Override
+    public String toString() {
+        if (this.axis == Axis.CONCAT_COLS) {
+            return "concat_cols";
+        } else if (this.axis == Axis.CONCAT_ROWS) {
+            return "concat_rows";
+        } else if (this.axis == Axis.TOP) {
+            return "concat_TOP";
+        }
+        return "concat";
+    }
+    
+}
