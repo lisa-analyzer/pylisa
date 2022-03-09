@@ -26,7 +26,7 @@ public class ConstantPropagation extends BaseLattice<ConstantPropagation> {
 		this(null, true);
 	}
 
-	private ConstantPropagation(Constant constant) {
+	public ConstantPropagation(Constant constant) {
 		this(constant, false);
 	}
 

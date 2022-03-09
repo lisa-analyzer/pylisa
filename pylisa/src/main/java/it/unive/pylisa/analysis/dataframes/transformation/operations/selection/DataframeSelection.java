@@ -1,82 +1,145 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations.selection;
 
-public class DataframeSelection {
-    private RowSelection rowSelection;
-    private ColumnSelection columnSelection;
+import it.unive.lisa.analysis.Lattice;
+import it.unive.lisa.analysis.SemanticException;
 
-    private boolean allRows;
-    private boolean allColumns;
+public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelection<C>>
+		extends Selection<DataframeSelection<R, C>> {
 
-    public DataframeSelection(RowSelection rowSelection, ColumnSelection columnSelection) {
-        this.rowSelection = rowSelection;
-        this.columnSelection = columnSelection;
+	private final R rowSelection;
+	private final C columnSelection;
+	private final boolean isTop;
 
-        this.allRows = false;
-        this.allColumns = false;
-    }
+	public DataframeSelection(R rowSelection, C columnSelection) {
+		this(rowSelection, columnSelection, false);
+	}
 
-    public DataframeSelection(RowSelection rowSelection) {
-        this.rowSelection = rowSelection;
+	public DataframeSelection(R rowSelection) {
+		this(rowSelection, null, false);
+	}
 
-        this.allRows = false;
-        this.allColumns = true;
-    }
+	public DataframeSelection(C columnSelection) {
+		this(null, columnSelection, false);
+	}
 
-    public DataframeSelection(ColumnSelection columnSelection) {
-        this.columnSelection = columnSelection;
+	public DataframeSelection(boolean isTop) {
+		this(null, null, isTop);
+	}
 
-        this.allRows = true;
-        this.allColumns = false;
-    }
+	public DataframeSelection(R rowSelection, C columnSelection, boolean isTop) {
+		this.rowSelection = rowSelection;
+		this.columnSelection = columnSelection;
+		this.isTop = isTop;
+	}
 
-    /**
-     * @return RowSelection return the rowSelection
-     */
-    public RowSelection getRowSelection() {
-        return rowSelection;
-    }
+	public R getRowSelection() {
+		return rowSelection;
+	}
 
-    /**
-     * @return ColumnSelection return the columnSelection
-     */
-    public ColumnSelection getColumnSelection() {
-        return columnSelection;
-    }
+	public C getColumnSelection() {
+		return columnSelection;
+	}
 
-    /**
-     * @return boolean return the allRows
-     */
-    public boolean isAllRows() {
-        return allRows;
-    }
+	public boolean isAllRows() {
+		return rowSelection == null;
+	}
 
-    /**
-     * @return boolean return the allColumns
-     */
-    public boolean isAllColumns() {
-        return allColumns;
-    }
+	public boolean isAllColumns() {
+		return columnSelection == null;
+	}
 
-    private boolean sameColumns(DataframeSelection other) {
-        if (allColumns && other.allColumns)
-            return true;
-        return columnSelection.equals(other.columnSelection);
-    }
+	@Override
+	public DataframeSelection<R, C> top() {
+		return new DataframeSelection<>(true);
+	}
 
-    private boolean sameRows(DataframeSelection other) {
-        if (allRows && other.allRows)
-            return true;
-        return rowSelection.equals(other.rowSelection);
-    }
+	@Override
+	public boolean isTop() {
+		return rowSelection == null && columnSelection == null && isTop;
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof DataframeSelection))
-            return false;
-        
-        DataframeSelection o = (DataframeSelection) obj;
+	@Override
+	public DataframeSelection<R, C> bottom() {
+		return new DataframeSelection<>(false);
+	}
 
-        return sameColumns(o) && sameRows(o);
-    }
+	@Override
+	public boolean isBottom() {
+		return rowSelection == null && columnSelection == null && !isTop;
+	}
 
+	@Override
+	protected DataframeSelection<R, C> lubAux(DataframeSelection<R, C> other) throws SemanticException {
+		return new DataframeSelection<>(nullSafe(rowSelection, other.rowSelection, Lattice::lub),
+				nullSafe(columnSelection, other.columnSelection, Lattice::lub));
+	}
+
+	@Override
+	protected DataframeSelection<R, C> wideningAux(DataframeSelection<R, C> other) throws SemanticException {
+		return new DataframeSelection<>(nullSafe(rowSelection, other.rowSelection, Lattice::widening),
+				nullSafe(columnSelection, other.columnSelection, Lattice::widening));
+	}
+
+	@Override
+	protected boolean lessOrEqualAux(DataframeSelection<R, C> other) throws SemanticException {
+		if (nullSafe(rowSelection, other.rowSelection, Lattice::lub) == null)
+			return false;
+
+		if (nullSafe(columnSelection, other.columnSelection, Lattice::lub) == null)
+			return false;
+
+		return rowSelection.lessOrEqual(other.rowSelection) && columnSelection.lessOrEqual(other.columnSelection);
+	}
+
+	@FunctionalInterface
+	public interface BiSemanticFunction<T, U, R> {
+		R apply(T t, U u) throws SemanticException;
+	}
+
+	private static <L extends Lattice<L>> L nullSafe(L left, L right, BiSemanticFunction<L, L, L> func)
+			throws SemanticException {
+		if (left == null)
+			return null;
+
+		if (right == null)
+			return null;
+
+		return func.apply(left, right);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		DataframeSelection<?, ?> other = (DataframeSelection<?, ?>) obj;
+		if (columnSelection == null) {
+			if (other.columnSelection != null)
+				return false;
+		} else if (!columnSelection.equals(other.columnSelection))
+			return false;
+		if (rowSelection == null) {
+			if (other.rowSelection != null)
+				return false;
+		} else if (!rowSelection.equals(other.rowSelection))
+			return false;
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((columnSelection == null) ? 0 : columnSelection.hashCode());
+		result = prime * result + ((rowSelection == null) ? 0 : rowSelection.hashCode());
+		return result;
+	}
+
+	@Override
+	public String toString() {
+		return "{" + rowSelection + ", " + columnSelection + "}";
+	}
 }

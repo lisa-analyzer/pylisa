@@ -1,4 +1,4 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations.selection;
 
-public interface RowSelection {
+public abstract class RowSelection<R extends RowSelection<R>> extends Selection<R> {
 }

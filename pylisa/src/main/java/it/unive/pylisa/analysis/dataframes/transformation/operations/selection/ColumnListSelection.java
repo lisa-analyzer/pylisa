@@ -2,45 +2,88 @@ package it.unive.pylisa.analysis.dataframes.transformation.operations.selection;
 
 import java.util.Set;
 
-public class ColumnListSelection extends Selection implements ColumnSelection {
-    private Set<String> columns;
-    private boolean allCols;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.pylisa.analysis.dataframes.transformation.Names;
 
-    public ColumnListSelection(Set<String> columns) {
-        this.columns = columns;
-        this.allCols = false;
-    }
+public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 
-    public ColumnListSelection(Set<String> columns, boolean allCols) {
-        this.columns = columns;
-        this.allCols = allCols;
-    }
+	private static final ColumnListSelection TOP = new ColumnListSelection(new Names().top());
+	private static final ColumnListSelection BOTTOM = new ColumnListSelection(new Names().bottom());
 
-    /**
-     * @return Set<String> return the columns
-     */
-    public Set<String> getColumns() {
-        return columns;
-    }
+	private final Names columns;
 
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof ColumnListSelection))
-            return false;
-        
-        ColumnListSelection o = (ColumnListSelection) obj;
+	public ColumnListSelection(Set<String> columns) {
+		this(new Names(columns));
+	}
 
-        if (allCols && o.isAllCols())
-            return true;
+	public ColumnListSelection(Names columns) {
+		this.columns = columns;
+	}
 
-        return this.columns.equals(o.getColumns());
-    }
+	public ColumnListSelection(boolean allCols) {
+		this(allCols ? new Names().top() : new Names().bottom());
+	}
 
-    /**
-     * @return boolean return if allCols set
-     */
-    public boolean isAllCols() {
-        return allCols;
-    }
+	public Names getColumns() {
+		return columns;
+	}
 
+	public boolean isAllCols() {
+		return columns.isTop();
+	}
+
+	@Override
+	public ColumnListSelection top() {
+		return TOP;
+	}
+
+	@Override
+	public ColumnListSelection bottom() {
+		return BOTTOM;
+	}
+
+	@Override
+	protected ColumnListSelection lubAux(ColumnListSelection other) throws SemanticException {
+		return new ColumnListSelection(columns.lub(other.columns));
+	}
+
+	@Override
+	protected ColumnListSelection wideningAux(ColumnListSelection other) throws SemanticException {
+		return new ColumnListSelection(columns.widening(other.columns));
+	}
+
+	@Override
+	protected boolean lessOrEqualAux(ColumnListSelection other) throws SemanticException {
+		return columns.lessOrEqual(other.columns);
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((columns == null) ? 0 : columns.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ColumnListSelection other = (ColumnListSelection) obj;
+		if (columns == null) {
+			if (other.columns != null)
+				return false;
+		} else if (!columns.equals(other.columns))
+			return false;
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		return columns.toString();
+	}
 }
