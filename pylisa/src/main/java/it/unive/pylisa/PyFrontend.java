@@ -184,6 +184,12 @@ import it.unive.pylisa.cfg.expression.RangeValue;
 import it.unive.pylisa.cfg.expression.SetCreation;
 import it.unive.pylisa.cfg.expression.StarExpression;
 import it.unive.pylisa.cfg.expression.TupleCreation;
+import it.unive.pylisa.cfg.expression.comparison.PyEquals;
+import it.unive.pylisa.cfg.expression.comparison.PyGreaterOrEqual;
+import it.unive.pylisa.cfg.expression.comparison.PyGreaterThan;
+import it.unive.pylisa.cfg.expression.comparison.PyLessOrEqual;
+import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
+import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.type.PyLibraryType;
@@ -1300,15 +1306,15 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 			Expression left = checkAndExtractSingleExpression(visitExpr(ctx.expr(0)));
 			Expression right = checkAndExtractSingleExpression(visitExpr(ctx.expr(1)));
 			if (operator.EQUALS() != null)
-				result = new Equals(currentCFG, getLocation(ctx), left, right);
+				result = new PyEquals(currentCFG, getLocation(ctx), left, right);
 
 			// Python greater (>)
 			if (operator.GREATER_THAN() != null) {
-				result = new GreaterThan(currentCFG, getLocation(ctx), left, right);
+				result = new PyGreaterThan(currentCFG, getLocation(ctx), left, right);
 			}
 			// Python greater equal (>=)
 			if (operator.GT_EQ() != null)
-				result = new Equals(currentCFG, getLocation(ctx), left, right);
+				result = new PyGreaterOrEqual(currentCFG, getLocation(ctx), left, right);
 
 			// Python in (in)
 			if (operator.IN() != null)
@@ -1320,11 +1326,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 
 			// Python less (<)
 			if (operator.LESS_THAN() != null)
-				result = new LessThan(currentCFG, getLocation(ctx), left, right);
+				result = new PyLessThan(currentCFG, getLocation(ctx), left, right);
 
 			// Python less equal (<=)
 			if (operator.LT_EQ() != null)
-				result = new LessOrEqual(currentCFG, getLocation(ctx), left, right);
+				result = new PyLessOrEqual(currentCFG, getLocation(ctx), left, right);
 
 			// Python not (not)
 			if (operator.NOT() != null)
@@ -1332,13 +1338,15 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 
 			// Python not equals (<>)
 			if (operator.NOT_EQ_1() != null)
-				result = new NotEqual(currentCFG, getLocation(ctx), left, right);
+				result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
 
 			// Python not equals (!=)
 			if (operator.NOT_EQ_2() != null)
-				result = new NotEqual(currentCFG, getLocation(ctx), left, right);
+				result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
 
 			break;
+		default:
+			throw new UnsupportedStatementException();
 		}
 
 		return createPairFromSingle(result);
