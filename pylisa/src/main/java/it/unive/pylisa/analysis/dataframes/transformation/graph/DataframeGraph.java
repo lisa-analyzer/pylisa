@@ -12,10 +12,6 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
-import it.unive.lisa.util.collections.workset.LIFOWorkingSet;
-import it.unive.lisa.util.collections.workset.VisitOnceWorkingSet;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.ColAccess;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.ColWrite;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 
 public class DataframeGraph {
@@ -71,7 +67,7 @@ public class DataframeGraph {
 			res.append(entry.getKey()).append(" -> [");
 
 			Set<String> outs = new TreeSet<>();
-			for (SimpleEdge out : entry.getValue().getOutgoing())
+			for (DataframeEdge out : entry.getValue().getOutgoing())
 				outs.add(out.getDestination().toString());
 
 			res.append(StringUtils.join(outs, ", "));
@@ -89,7 +85,7 @@ public class DataframeGraph {
 			return;
 
 		Edges edges = matrix.get(node);
-		Set<SimpleEdge> union = new HashSet<>(edges.ingoing);
+		Set<DataframeEdge> union = new HashSet<>(edges.ingoing);
 		union.addAll(edges.outgoing);
 		union.forEach(this::removeEdge);
 		matrix.remove(node);
@@ -103,7 +99,7 @@ public class DataframeGraph {
 		return getNodes().size();
 	}
 
-	public void addEdge(SimpleEdge e) {
+	public void addEdge(DataframeEdge e) {
 		if (!matrix.containsKey(e.getSource()))
 			throw new UnsupportedOperationException("The source node is not in the graph");
 
@@ -114,7 +110,7 @@ public class DataframeGraph {
 		matrix.get(e.getDestination()).ingoing.add(e);
 	}
 
-	public void removeEdge(SimpleEdge e) {
+	public void removeEdge(DataframeEdge e) {
 		if (!matrix.containsKey(e.getSource()) || !matrix.containsKey(e.getDestination()))
 			return;
 
@@ -122,11 +118,11 @@ public class DataframeGraph {
 		matrix.get(e.getDestination()).ingoing.remove(e);
 	}
 
-	public final Collection<SimpleEdge> getIngoingEdges(DataframeOperation node) {
+	public final Collection<DataframeEdge> getIngoingEdges(DataframeOperation node) {
 		return matrix.get(node).ingoing;
 	}
 
-	public final Collection<SimpleEdge> getOutgoingEdges(DataframeOperation node) {
+	public final Collection<DataframeEdge> getOutgoingEdges(DataframeOperation node) {
 		return matrix.get(node).outgoing;
 	}
 
@@ -144,14 +140,14 @@ public class DataframeGraph {
 		if (!matrix.containsKey(node))
 			throw new IllegalArgumentException("'" + node + "' is not in the graph");
 
-		return matrix.get(node).outgoing.stream().map(SimpleEdge::getDestination).collect(Collectors.toSet());
+		return matrix.get(node).outgoing.stream().map(DataframeEdge::getDestination).collect(Collectors.toSet());
 	}
 
 	public final Collection<DataframeOperation> predecessorsOf(DataframeOperation node) {
 		if (!matrix.containsKey(node))
 			throw new IllegalArgumentException("'" + node + "' is not in the graph");
 
-		return matrix.get(node).ingoing.stream().map(SimpleEdge::getSource).collect(Collectors.toSet());
+		return matrix.get(node).ingoing.stream().map(DataframeEdge::getSource).collect(Collectors.toSet());
 	}
 
 	public boolean containsNode(DataframeOperation node) {
@@ -160,14 +156,14 @@ public class DataframeGraph {
 
 	public boolean containsEdge(SimpleEdge edge) {
 		for (Edges edges : matrix.values())
-			for (SimpleEdge e : edges.outgoing)
+			for (DataframeEdge e : edges.outgoing)
 				if (e == edge || e.equals(edge))
 					return true;
 
 		return false;
 	}
 
-	public final Collection<SimpleEdge> getEdges() {
+	public final Collection<DataframeEdge> getEdges() {
 		return matrix.values().stream()
 				.flatMap(c -> Stream.concat(c.ingoing.stream(), c.outgoing.stream()))
 				.distinct()
@@ -175,8 +171,8 @@ public class DataframeGraph {
 	}
 
 	public static class Edges {
-		private final Set<SimpleEdge> ingoing;
-		private final Set<SimpleEdge> outgoing;
+		private final Set<DataframeEdge> ingoing;
+		private final Set<DataframeEdge> outgoing;
 
 		private Edges() {
 			ingoing = new HashSet<>();
@@ -193,7 +189,7 @@ public class DataframeGraph {
 		 * 
 		 * @return the set of ingoing edges
 		 */
-		public Set<SimpleEdge> getIngoing() {
+		public Set<DataframeEdge> getIngoing() {
 			return ingoing;
 		}
 
@@ -202,7 +198,7 @@ public class DataframeGraph {
 		 * 
 		 * @return the set of outgoing edges
 		 */
-		public Set<SimpleEdge> getOutgoing() {
+		public Set<DataframeEdge> getOutgoing() {
 			return outgoing;
 		}
 
@@ -243,30 +239,24 @@ public class DataframeGraph {
 		}
 	}
 
-	public void changeLastAccessToWrite() {
-		VisitOnceWorkingSet<DataframeOperation> ws = VisitOnceWorkingSet.mk(LIFOWorkingSet.mk());
-		getExits().forEach(ws::push);
-
-		while (!ws.isEmpty()) {
-			DataframeOperation current = ws.pop();
-			Collection<DataframeOperation> preds = predecessorsOf(current);
-			if (current instanceof ColAccess) {
-				Collection<DataframeOperation> follows = followersOf(current);
-				removeNode(current);
-				ColWrite write = new ColWrite(current.getWhere(), ((ColAccess) current).getCols());
-				addNode(write);
-				preds.forEach(p -> addEdge(new SimpleEdge(p, write)));
-				follows.forEach(f -> addEdge(new SimpleEdge(write, f)));
-			} else
-				preds.forEach(ws::push);
-		}
-	}
-
 	public void mergeWith(DataframeGraph other) {
 		for (DataframeOperation node : other.getNodes())
 			addNode(node);
 
-		for (SimpleEdge edge : other.getEdges())
+		for (DataframeEdge edge : other.getEdges())
 			addEdge(edge);
+	}
+
+	public DataframeOperation getLeaf() {
+		Collection<DataframeOperation> exits = getExits();
+		if (exits.size() != 1)
+			throw new IllegalStateException("Dataframe graphs should always have a unique exit point (leaf)");
+		return exits.iterator().next();
+	}
+
+	public DataframeGraph prefix() {
+		DataframeGraph copy = new DataframeGraph(this);
+		copy.removeNode(copy.getLeaf());
+		return copy;
 	}
 }

@@ -14,10 +14,13 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
-import it.unive.pylisa.symbolic.operators.TypeConversion;
+import it.unive.pylisa.symbolic.operators.ApplyTransformation;
 
 public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 
@@ -46,15 +49,31 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		HeapDereference deref = new HeapDereference(PandasSeriesType.INSTANCE, expr, getLocation());
-		UnaryExpression conv = new UnaryExpression(PandasSeriesType.INSTANCE, deref, new TypeConversion("datetime"),
-				getLocation());
-		AnalysisState<A, H, V, T> cState = state.smallStepSemantics(conv, st);
-		AnalysisState<A, H, V, T> result = cState.bottom();
-		for (SymbolicExpression converted : cState.getComputedExpressions())
-			result = result.lub(cState.smallStepSemantics(converted, st));
-		return cState;
-		// TODO todatetiem effectively creates a new dataframe, we
-		// should implement that as a semantic
+		CodeLocation location = getLocation();
+		HeapDereference deref = new HeapDereference(PandasSeriesType.INSTANCE, expr, getLocation()); // TODO problem: this dereferences the column, not the dataframe!!
+		AnalysisState<A, H, V, T> result = state.bottom();
+
+		// we allocate the copy of the receiver that will contain the converted
+		// portion
+		HeapAllocation allocation = new HeapAllocation(PandasSeriesType.INSTANCE, location);
+		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, st);
+		AnalysisState<A, H, V, T> copy = state.bottom();
+		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
+			// copy the dataframe
+			AnalysisState<A, H, V, T> assigned = allocated.assign(loc, deref, st);
+			for (SymbolicExpression id : assigned.getComputedExpressions()) {
+				// the new dataframe will receive the conversion
+				UnaryExpression transform = new UnaryExpression(PandasSeriesType.INSTANCE, id,
+						new ApplyTransformation(ApplyTransformation.Kind.TO_DATETIME),
+						location);
+				copy = copy.lub(assigned.smallStepSemantics(transform, st));
+			}
+
+			// we leave a reference to the fresh dataframe on the stack
+			HeapReference ref = new HeapReference(PandasDataframeType.REFERENCE, loc, location);
+			result = result.lub(copy.smallStepSemantics(ref, st));
+		}
+
+		return result;
 	}
 }

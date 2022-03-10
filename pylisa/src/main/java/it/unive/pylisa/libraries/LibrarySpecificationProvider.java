@@ -16,6 +16,8 @@ import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
+import it.unive.lisa.type.Untyped;
+import it.unive.lisa.type.VoidType;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.cfg.PythonUnit;
@@ -129,6 +131,16 @@ public class LibrarySpecificationProvider {
 				new CFGDescriptor(PANDAS_LOC,
 						unit1,
 						false,
+						"set_option",
+						VoidType.INSTANCE,
+						new Parameter(PANDAS_LOC, "key", StringType.INSTANCE),
+						new Parameter(PANDAS_LOC, "value", Untyped.INSTANCE)),
+				NoEffectMethod.class));
+
+		unit1.addConstruct(new NativeCFG(
+				new CFGDescriptor(PANDAS_LOC,
+						unit1,
+						false,
 						"to_datetime",
 						PandasSeriesType.REFERENCE,
 						new Parameter(PANDAS_LOC, "arg", PandasSeriesType.REFERENCE)),
@@ -155,6 +167,24 @@ public class LibrarySpecificationProvider {
 						new Parameter(PANDAS_LOC, "n", Int32.INSTANCE, new Int32Literal(init, PANDAS_LOC, 5),
 								new Annotations())),
 				Head.class));
+
+		unit1.addInstanceConstruct(new NativeCFG(
+				new CFGDescriptor(PANDAS_LOC,
+						unit1,
+						true,
+						"describe",
+						PandasDataframeType.REFERENCE,
+						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE)),
+				NoEffectMethod.class));
+
+		unit1.addInstanceConstruct(new NativeCFG(
+				new CFGDescriptor(PANDAS_LOC,
+						unit1,
+						true,
+						"info",
+						VoidType.INSTANCE,
+						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE)),
+				NoEffectMethod.class));
 
 		return unit1;
 	}

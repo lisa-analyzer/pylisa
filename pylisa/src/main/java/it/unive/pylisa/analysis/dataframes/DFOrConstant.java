@@ -1,6 +1,5 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,9 +21,11 @@ import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
+import it.unive.pylisa.analysis.dataframes.transformation.graph.AssignEdge;
+import it.unive.pylisa.analysis.dataframes.transformation.graph.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.ColAccess;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.AssignDataframe;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
@@ -32,7 +33,12 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullR
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.RowAccess;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.RowProjection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.SelectionOperation;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.Transform;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
 import it.unive.pylisa.symbolic.operators.AccessRows;
+import it.unive.pylisa.symbolic.operators.ApplyTransformation;
+import it.unive.pylisa.symbolic.operators.ApplyTransformation.Kind;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
 import it.unive.pylisa.symbolic.operators.ConcatCols;
 import it.unive.pylisa.symbolic.operators.ConcatRows;
@@ -43,6 +49,8 @@ import it.unive.pylisa.symbolic.operators.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.WriteColumn;
 
 public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
+
+	private static final DFOrConstant TOP_GRAPH = new DFOrConstant(new DataframeGraphDomain().top());
 
 	private static final DFOrConstant TOP = new DFOrConstant();
 
@@ -221,30 +229,26 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 		if (operator == ReadDataframe.INSTANCE) {
 			ConstantPropagation filename = arg.constant;
 			if (topOrBottom(filename))
-				return new DFOrConstant(graph.top());
+				return TOP_GRAPH;
 
 			DataframeGraphDomain df = new DataframeGraphDomain(
 					new ReadFromFile(pp.getLocation(), filename.as(String.class)));
 			return new DFOrConstant(df);
-		} else if (operator instanceof WriteColumn) {
+		} else if (operator instanceof ApplyTransformation) {
 			DataframeGraphDomain df = arg.graph;
-			if (topOrBottom(df))
-				return new DFOrConstant(graph.top());
+			Kind kind = ((ApplyTransformation) operator).getKind();
+			DataframeOperation leaf = df.getTransformations().getLeaf();
+			if (!(leaf instanceof SelectionOperation<?>))
+				return TOP_GRAPH;
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			Transform t = new Transform(pp.getLocation(), kind, ((SelectionOperation<?>) leaf).getSelection());
 
-			DataframeGraph original = df.getTransformations();
-			DataframeGraph g = new DataframeGraph(original);
-			g.changeLastAccessToWrite();
-			DataframeGraphDomain dfNew = new DataframeGraphDomain(g);
-			return new DFOrConstant(dfNew);
-//		} else if (operator instanceof TypeConversion) {
-//			DataframeGraphDomain df = arg.graph;
-//			DataframeGraphDomain conv = new DataframeGraphDomain(df,
-//					new BaseOperation("conv", ((TypeConversion) operator).getType()));
-//			return new DFOrConstant(conv);
+			DataframeGraphDomain conv = new DataframeGraphDomain(df.getTransformations().prefix(), t);
+			return new DFOrConstant(conv);
 		} else if (operator == FilterNull.INSTANCE) {
 			DataframeGraphDomain df = arg.graph;
 			if (topOrBottom(df))
-				return new DFOrConstant(graph.top());
+				return TOP_GRAPH;
 
 			DataframeGraphDomain dfNew = new DataframeGraphDomain(df, new FilterNullRows(pp.getLocation()));
 			return new DFOrConstant(dfNew);
@@ -259,22 +263,23 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeGraphDomain df = left.graph;
 			ConstantPropagation col = right.constant;
 			if (topOrBottom(df) || topOrBottom(col))
-				return new DFOrConstant(graph.top());
+				return TOP_GRAPH;
 
 			DataframeGraphDomain ca = new DataframeGraphDomain(df,
-					new ColAccess(pp.getLocation(), new Names(col.as(String.class))));
+					new SelectionOperation<>(pp.getLocation(),
+							new ColumnListSelection(new Names(col.as(String.class)))));
 
 			return new DFOrConstant(ca);
 		} else if (operator == Drop.INSTANCE) {
 			DataframeGraphDomain df = left.graph;
 			ConstantPropagation cols = right.constant;
 			if (topOrBottom(df) || topOrBottom(cols))
-				return new DFOrConstant(graph.top());
+				return TOP_GRAPH;
 
 			if (!(cols.getConstant() instanceof ExpressionSet<?>[]))
 				// check whether the cols constant is indeed what we expect for
 				// a constant list
-				return new DFOrConstant(graph.top());
+				return TOP_GRAPH;
 
 			@SuppressWarnings("unchecked")
 			ExpressionSet<Constant>[] cs = (ExpressionSet<Constant>[]) cols.getConstant();
@@ -283,7 +288,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			for (ExpressionSet<Constant> c : cs) {
 				for (Constant colName : c) {
 					if (!(colName.getValue() instanceof String))
-						return new DFOrConstant(graph.top());
+						return TOP_GRAPH;
 					accessedCols.add((String) colName.getValue());
 				}
 			}
@@ -295,21 +300,19 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeGraphDomain df1 = left.graph;
 			DataframeGraphDomain df2 = right.graph;
 
-			if (df1.isBottom() || df2.isBottom())
-				return new DFOrConstant(graph.top());
+			if (topOrBottom(df1) || topOrBottom(df2))
+				return TOP_GRAPH;
 
-			if (df1.isTop() || df2.isTop())
-				return new DFOrConstant(graph.top());
+			DataframeOperation exit1 = null;
+			DataframeOperation exit2 = null;
 
-			Collection<DataframeOperation> exit1c = df1.getTransformations().getExits();
-			Collection<DataframeOperation> exit2c = df2.getTransformations().getExits();
-
-			if (exit1c.size() != 1 || exit2c.size() != 1) {
-				return new DFOrConstant(graph.top());
+			try {
+				exit1 = df1.getTransformations().getLeaf();
+				exit2 = df2.getTransformations().getLeaf();
+			} catch (IllegalStateException e) {
+				// at least one has more than one leaf
+				return TOP_GRAPH;
 			}
-
-			DataframeOperation exit1 = exit1c.iterator().next();
-			DataframeOperation exit2 = exit2c.iterator().next();
 
 			DataframeGraph concatGraph = new DataframeGraph();
 			concatGraph.mergeWith(df1.getTransformations());
@@ -318,10 +321,37 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeOperation concatNode = new Concat(pp.getLocation(),
 					operator == ConcatCols.INSTANCE ? Concat.Axis.CONCAT_COLS : Concat.Axis.CONCAT_ROWS);
 			concatGraph.addNode(concatNode);
-			concatGraph.addEdge(new SimpleEdge(exit1, concatNode, 0));
-			concatGraph.addEdge(new SimpleEdge(exit2, concatNode, 1));
+			concatGraph.addEdge(new ConcatEdge(exit1, concatNode, 0));
+			concatGraph.addEdge(new ConcatEdge(exit2, concatNode, 1));
 
 			return new DFOrConstant(new DataframeGraphDomain(concatGraph));
+		} else if (operator instanceof WriteColumn) {
+			DataframeGraphDomain df1 = left.graph;
+			DataframeGraphDomain df2 = right.graph;
+
+			if (topOrBottom(df1) || topOrBottom(df2))
+				return TOP_GRAPH;
+
+			DataframeGraph original = df1.getTransformations();
+			DataframeOperation access = original.getLeaf();
+			if (!(access instanceof SelectionOperation<?>))
+				return TOP_GRAPH;
+
+			DataframeGraph prefix = original.prefix();
+
+			DataframeGraph result = new DataframeGraph(prefix);
+			result.mergeWith(df2.getTransformations());
+
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			AssignDataframe assign = new AssignDataframe(pp.getLocation(),
+					((SelectionOperation<?>) access).getSelection());
+
+			result.addNode(assign);
+			result.addEdge(new SimpleEdge(prefix.getLeaf(), assign));
+			result.addEdge(new AssignEdge(df2.getTransformations().getLeaf(), assign));
+
+			DataframeGraphDomain dfNew = new DataframeGraphDomain(result);
+			return new DFOrConstant(dfNew);
 		} else
 			return TOP;
 	}
@@ -335,7 +365,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			ConstantPropagation end = right.constant;
 
 			if (topOrBottom(df) || topOrBottom(start) || topOrBottom(end))
-				return new DFOrConstant(graph.top());
+				return TOP_GRAPH;
 
 			Interval rows = new Interval(start.as(Integer.class), end.as(Integer.class));
 			DataframeGraphDomain pr = new DataframeGraphDomain(df,

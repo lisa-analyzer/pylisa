@@ -21,8 +21,12 @@ public class NoEffectMethod extends NaryExpression implements PluggableStatement
 
 	protected Statement st;
 
-	public NoEffectMethod(CFG cfg, CodeLocation location, String constructName, Expression... parameter) {
-		super(cfg, location, constructName, parameter);
+	public NoEffectMethod(CFG cfg, CodeLocation location, String constructName, Expression... parameters) {
+		super(cfg, location, constructName, parameters);
+	}
+
+	public static NoEffectMethod build(CFG cfg, CodeLocation location, Expression[] exprs) {
+		return new NoEffectMethod(cfg, location, "unknown", exprs);
 	}
 
 	@Override
