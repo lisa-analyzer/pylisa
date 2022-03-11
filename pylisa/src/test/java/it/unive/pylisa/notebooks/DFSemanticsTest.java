@@ -31,9 +31,10 @@ import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.pylisa.analysis.dataframes.DFOrConstant;
 import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.AccessOperation;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.RowAccess;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.RowProjection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
 import it.unive.pylisa.libraries.pandas.Head;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
@@ -114,10 +115,10 @@ public class DFSemanticsTest {
 	public void testHead() throws SemanticException, AnalysisSetupException {
 		SourceCodeLocation headloc = new SourceCodeLocation("head", 0, 0);
 
-		DataframeGraphDomain elem1 = new DataframeGraphDomain(baseGraph, new RowAccess(headloc, new Interval(0, 5)));
+		DataframeGraphDomain elem1 = new DataframeGraphDomain(baseGraph, new AccessOperation<>(headloc, new NumberSlice(0, 5)));
 		DFOrConstant df1 = new DFOrConstant(elem1);
 		DataframeGraphDomain elem2 = new DataframeGraphDomain(baseGraph,
-				new RowProjection(headloc, new Interval(0, 5)));
+				new ProjectionOperation<>(headloc, new NumberSlice(0, 5)));
 		DFOrConstant df2 = new DFOrConstant(elem2);
 
 		AllocationSite headsite = new AllocationSite(PandasDataframeType.INSTANCE, headloc.getCodeLocation(), null,

@@ -3,34 +3,36 @@ package it.unive.pylisa.analysis.dataframes.transformation.operations;
 import java.util.HashSet;
 import java.util.Set;
 
+import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
 
 public class DropColumns extends DataframeOperation {
-	private Set<String> columns;
+	private ColumnListSelection columns;
 
-	public DropColumns(CodeLocation where, Set<String> columns) {
+	public DropColumns(CodeLocation where, ColumnListSelection columns) {
 		super(where);
 		this.columns = columns;
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) {
+	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
 		DropColumns o = (DropColumns) other;
 		if (this.columns == null)
 			return o.columns == null;
 		else if (o.columns == null)
-			return true;
-		return o.columns.equals(this.columns);
+			return false;
+		return columns.lessOrEqual(o.columns);
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) {
+	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
 		DropColumns o = (DropColumns) other;
-		HashSet<String> newColumns = new HashSet<>();
+		ColumnListSelection newColumns = new ColumnListSelection(new HashSet<>());
 		if (this.columns != null)
-			newColumns.addAll(this.columns);
+			newColumns = newColumns.lub(this.columns);
 		if (o.columns != null)
-			newColumns.addAll(o.columns);
+			newColumns = newColumns.lub(o.columns);
 		return new DropColumns(loc(other), newColumns);
 	}
 
@@ -61,7 +63,7 @@ public class DropColumns extends DataframeOperation {
 
 	@Override
 	public String toString() {
-		return "drop_columns(" + String.join(",", columns) + ")";
+		return "drop_columns(" + columns.toString() + ")";
 	}
 
 }

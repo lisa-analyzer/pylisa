@@ -34,11 +34,10 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns
 import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.RowAccess;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.RowProjection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.SelectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Transform;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
 import it.unive.pylisa.symbolic.operators.AccessRows;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation.Kind;
@@ -297,7 +296,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				}
 			}
 
-			DataframeGraphDomain ca = new DataframeGraphDomain(df, new DropColumns(pp.getLocation(), accessedCols));
+			DataframeGraphDomain ca = new DataframeGraphDomain(df, new DropColumns(pp.getLocation(), new ColumnListSelection(accessedCols)));
 
 			return new DFOrConstant(ca);
 		} else if (operator == ConcatCols.INSTANCE || operator == ConcatRows.INSTANCE) {
@@ -399,10 +398,10 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			if (topOrBottom(df) || topOrBottom(start) || topOrBottom(end))
 				return TOP_GRAPH;
 
-			Interval rows = new Interval(start.as(Integer.class), end.as(Integer.class));
+			NumberSlice slice = new NumberSlice(start.as(Integer.class), end.as(Integer.class));
 			DataframeGraphDomain pr = new DataframeGraphDomain(df,
-					operator == ProjectRows.INSTANCE ? new RowProjection(pp.getLocation(), rows)
-							: new RowAccess(pp.getLocation(), rows));
+					operator == ProjectRows.INSTANCE ? new ProjectionOperation<NumberSlice>(pp.getLocation(), slice)
+							: new AccessOperation<NumberSlice>(pp.getLocation(), slice));
 
 			return new DFOrConstant(pr);
 		} else

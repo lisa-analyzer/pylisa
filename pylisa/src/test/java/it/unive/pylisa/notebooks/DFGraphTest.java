@@ -27,13 +27,15 @@ import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.AccessOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.RowAccess;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.RowProjection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
 import it.unive.pylisa.cfg.type.PyListType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.symbolic.operators.AccessRows;
@@ -120,7 +122,7 @@ public class DFGraphTest {
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(ternary, fake);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
 		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df1).df(),
-				new RowAccess(fake.getLocation(), new Interval(0, 100)));
+				new AccessOperation<NumberSlice>(fake.getLocation(), new NumberSlice(0, 100)));
 
 		assertEquals(expected, stack);
 	}
@@ -148,7 +150,7 @@ public class DFGraphTest {
 		colsShouldHaveAccessed.add("col2");
 
 		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df1).df(),
-				new DropColumns(fake.getLocation(), colsShouldHaveAccessed));
+				new DropColumns(fake.getLocation(), new ColumnListSelection(colsShouldHaveAccessed)));
 
 		assertEquals(expected, stack);
 	}
@@ -159,7 +161,7 @@ public class DFGraphTest {
 		String fname2 = "foo1.csv";
 
 		DataframeGraphDomain df2GraphDomain = new DataframeGraphDomain(new ReadFromFile(fake.getLocation(), fname2));
-		df2GraphDomain = new DataframeGraphDomain(df2GraphDomain, new DropColumns(fake.getLocation(), new HashSet<>()));
+		df2GraphDomain = new DataframeGraphDomain(df2GraphDomain, new DropColumns(fake.getLocation(), new ColumnListSelection(new HashSet<>())));
 
 		ValueEnvironment<DFOrConstant> valEnv = base.putState(df2, new DFOrConstant(df2GraphDomain));
 		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df1, df2, ConcatCols.INSTANCE,
@@ -170,7 +172,7 @@ public class DFGraphTest {
 		DataframeGraph concatGraph = new DataframeGraph();
 		DataframeOperation rff1 = new ReadFromFile(fake.getLocation(), fname);
 		DataframeOperation rff2 = new ReadFromFile(fake.getLocation(), fname2);
-		DataframeOperation drop = new DropColumns(fake.getLocation(), new HashSet<>());
+		DataframeOperation drop = new DropColumns(fake.getLocation(), new ColumnListSelection(new HashSet<>()));
 		DataframeOperation concat = new Concat(fake.getLocation(), Concat.Axis.CONCAT_COLS);
 
 		concatGraph.addNode(rff1);
@@ -194,7 +196,7 @@ public class DFGraphTest {
 		String fname2 = "foo1.csv";
 
 		DataframeGraphDomain df2GraphDomain = new DataframeGraphDomain(new ReadFromFile(fake.getLocation(), fname2));
-		df2GraphDomain = new DataframeGraphDomain(df2GraphDomain, new DropColumns(fake.getLocation(), new HashSet<>()));
+		df2GraphDomain = new DataframeGraphDomain(df2GraphDomain, new DropColumns(fake.getLocation(), new ColumnListSelection(new HashSet<>())));
 
 		ValueEnvironment<DFOrConstant> valEnv = base.putState(df2, new DFOrConstant(df2GraphDomain));
 		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df1, df2, ConcatRows.INSTANCE,
@@ -205,7 +207,7 @@ public class DFGraphTest {
 		DataframeGraph concatGraph = new DataframeGraph();
 		DataframeOperation rff1 = new ReadFromFile(fake.getLocation(), fname);
 		DataframeOperation rff2 = new ReadFromFile(fake.getLocation(), fname2);
-		DataframeOperation drop = new DropColumns(fake.getLocation(), new HashSet<>());
+		DataframeOperation drop = new DropColumns(fake.getLocation(), new ColumnListSelection(new HashSet<>()));
 		DataframeOperation concat = new Concat(fake.getLocation(), Concat.Axis.CONCAT_ROWS);
 
 		concatGraph.addNode(rff1);
@@ -234,7 +236,7 @@ public class DFGraphTest {
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(ternary, fake);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
 		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df1).df(),
-				new RowProjection(fake.getLocation(), new Interval(0, 100)));
+				new ProjectionOperation<NumberSlice>(fake.getLocation(), new NumberSlice(0, 100)));
 
 		assertEquals(expected, stack);
 	}
