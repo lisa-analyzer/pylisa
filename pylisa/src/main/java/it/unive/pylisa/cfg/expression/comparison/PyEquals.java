@@ -13,7 +13,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.string.Equals;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.symbolic.operators.DataframeColumnComparison;
+import it.unive.pylisa.symbolic.operators.ComparisonOperator;
 
 public class PyEquals extends Equals {
 
@@ -27,7 +27,7 @@ public class PyEquals extends Equals {
             SymbolicExpression left, SymbolicExpression right, StatementStore<A, H, V, T> expressions)
             throws SemanticException {
         
-        AnalysisState<A, H, V, T> pandasSeriesSemantics = PandasSeriesComparisonSemantics.pandasSeriesBinarySemantics(interprocedural, state, left, right, expressions, this, getLocation(), DataframeColumnComparison.Operator.EQ);
+        AnalysisState<A, H, V, T> pandasSeriesSemantics = PandasSeriesComparisonSemantics.pandasSeriesBinarySemantics(interprocedural, state, left, right, expressions, this, getLocation(), ComparisonOperator.EQ);
         if (pandasSeriesSemantics != null)
             return pandasSeriesSemantics;
 

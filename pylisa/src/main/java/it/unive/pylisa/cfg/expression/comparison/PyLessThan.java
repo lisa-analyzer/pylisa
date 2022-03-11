@@ -13,7 +13,8 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.comparison.LessThan;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.symbolic.operators.DataframeColumnComparison;
+import it.unive.pylisa.symbolic.operators.ComparisonOperator;
+import it.unive.pylisa.symbolic.operators.PandasSeriesComparison;
 
 public class PyLessThan extends LessThan {
 
@@ -26,7 +27,7 @@ public class PyLessThan extends LessThan {
             InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state,
             SymbolicExpression left, SymbolicExpression right, StatementStore<A, H, V, T> expressions)
             throws SemanticException {
-        AnalysisState<A, H, V, T> pandasSeriesSemantics = PandasSeriesComparisonSemantics.pandasSeriesBinarySemantics(interprocedural, state, left, right, expressions, this, getLocation(), DataframeColumnComparison.Operator.LT);
+        AnalysisState<A, H, V, T> pandasSeriesSemantics = PandasSeriesComparisonSemantics.pandasSeriesBinarySemantics(interprocedural, state, left, right, expressions, this, getLocation(), ComparisonOperator.LT);
         if (pandasSeriesSemantics != null)
             return pandasSeriesSemantics;
 

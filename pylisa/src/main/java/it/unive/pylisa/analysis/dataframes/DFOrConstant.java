@@ -25,11 +25,14 @@ import it.unive.pylisa.analysis.dataframes.transformation.graph.AssignEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.AccessOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.AssignDataframe;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.BooleanComparison;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.RowAccess;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.RowProjection;
@@ -44,6 +47,7 @@ import it.unive.pylisa.symbolic.operators.ConcatCols;
 import it.unive.pylisa.symbolic.operators.ConcatRows;
 import it.unive.pylisa.symbolic.operators.Drop;
 import it.unive.pylisa.symbolic.operators.FilterNull;
+import it.unive.pylisa.symbolic.operators.PandasSeriesComparison;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.WriteColumn;
@@ -352,6 +356,34 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 			DataframeGraphDomain dfNew = new DataframeGraphDomain(result);
 			return new DFOrConstant(dfNew);
+		} else if (operator instanceof PandasSeriesComparison) {
+			DataframeGraphDomain df1 = left.graph;
+			ConstantPropagation value = right.constant;
+			
+			if (topOrBottom(df1) || topOrBottom(value))
+				return TOP_GRAPH;
+
+			DataframeGraph original = df1.getTransformations();
+			DataframeOperation leaf = original.getLeaf();
+			// we check if we had previously accessed a part of the dataframe which we want to compare
+			if (!(leaf instanceof AccessOperation<?>))
+				return TOP_GRAPH;
+
+			AccessOperation<?> projection = (AccessOperation<?>) leaf;
+
+			// we remove the access node and replace with a comparison node
+			DataframeGraph prefix = original.prefix();
+
+			DataframeGraph result = new DataframeGraph(prefix);
+
+			PandasSeriesComparison seriesCompOp = (PandasSeriesComparison) operator;
+
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			BooleanComparison boolComp = new BooleanComparison(pp.getLocation(), projection.getSelection(), seriesCompOp.getOp(), value);
+			result.addNode(boolComp);
+
+			result.addEdge(new SimpleEdge(result.getLeaf(), boolComp));
+			return new DFOrConstant(new DataframeGraphDomain(result));
 		} else
 			return TOP;
 	}
