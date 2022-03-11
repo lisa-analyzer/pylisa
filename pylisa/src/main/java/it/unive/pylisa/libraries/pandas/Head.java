@@ -1,10 +1,14 @@
 package it.unive.pylisa.libraries.pandas;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
+import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
@@ -20,7 +24,9 @@ import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.TernaryExpression;
+import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.symbolic.operators.AccessRows;
@@ -75,7 +81,20 @@ public class Head extends BinaryExpression implements PluggableStatement {
 				TernaryExpression projection = new TernaryExpression(PandasDataframeType.INSTANCE, id, start, right,
 						ProjectRows.INSTANCE, location);
 				copy = copy.lub(assigned.smallStepSemantics(projection, st));
+
+				Set<Identifier> rewritten = new HashSet<>();
+				@SuppressWarnings("unchecked")
+				ExpressionSet<
+						ValueExpression> tmp = assigned.getState().getDomainInstance(HeapDomain.class).rewrite(id, st);
+				tmp.elements()
+						.stream()
+						.filter(Identifier.class::isInstance)
+						.map(Identifier.class::cast)
+						.forEach(rewritten::add);
+
+				getMetaVariables().addAll(rewritten);
 			}
+
 		}
 
 		// the receiver will have its rows accessed instead

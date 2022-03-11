@@ -1,10 +1,14 @@
 package it.unive.pylisa.libraries.pandas;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
+import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
@@ -17,7 +21,9 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapReference;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
@@ -68,6 +74,18 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 						new ApplyTransformation(ApplyTransformation.Kind.TO_DATETIME),
 						location);
 				copy = copy.lub(assigned.smallStepSemantics(transform, st));
+				
+				Set<Identifier> rewritten = new HashSet<>();
+				@SuppressWarnings("unchecked")
+				ExpressionSet<
+						ValueExpression> tmp = assigned.getState().getDomainInstance(HeapDomain.class).rewrite(id, st);
+				tmp.elements()
+						.stream()
+						.filter(Identifier.class::isInstance)
+						.map(Identifier.class::cast)
+						.forEach(rewritten::add);
+
+				getMetaVariables().addAll(rewritten);
 			}
 
 			// we leave a reference to the fresh dataframe on the stack
