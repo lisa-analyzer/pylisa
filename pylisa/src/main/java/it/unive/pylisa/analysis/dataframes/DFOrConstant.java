@@ -269,7 +269,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				return TOP_GRAPH;
 
 			DataframeGraphDomain ca = new DataframeGraphDomain(df,
-					new SelectionOperation<>(pp.getLocation(),
+					new ProjectionOperation<>(pp.getLocation(),
 							new ColumnListSelection(new Names(col.as(String.class)))));
 
 			return new DFOrConstant(ca);
@@ -364,24 +364,24 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 			DataframeGraph original = df1.getTransformations();
 			DataframeOperation leaf = original.getLeaf();
-			// we check if we had previously accessed a part of the dataframe which we want to compare
-			if (!(leaf instanceof AccessOperation<?>))
+			// we check if we had previously projected a part of the dataframe which we want to compare
+			if (!(leaf instanceof ProjectionOperation<?>))
 				return TOP_GRAPH;
 
-			AccessOperation<?> projection = (AccessOperation<?>) leaf;
+			ProjectionOperation<?> projection = (ProjectionOperation<?>) leaf;
 
 			// we remove the access node and replace with a comparison node
 			DataframeGraph prefix = original.prefix();
-
 			DataframeGraph result = new DataframeGraph(prefix);
-
 			PandasSeriesComparison seriesCompOp = (PandasSeriesComparison) operator;
 
 			@SuppressWarnings({ "rawtypes", "unchecked" })
 			BooleanComparison boolComp = new BooleanComparison(pp.getLocation(), projection.getSelection(), seriesCompOp.getOp(), value);
-			result.addNode(boolComp);
 
-			result.addEdge(new SimpleEdge(result.getLeaf(), boolComp));
+			DataframeOperation prevLeaf = result.getLeaf();
+			result.addNode(boolComp);
+			result.addEdge(new SimpleEdge(prevLeaf, boolComp));
+			
 			return new DFOrConstant(new DataframeGraphDomain(result));
 		} else
 			return TOP;

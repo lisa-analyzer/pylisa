@@ -71,7 +71,7 @@ public class BooleanComparison<S extends Selection<S>> extends DataframeOperatio
 
     @Override
     public String toString() {
-        return op.toString() + " " + value.toString();
+        return selection.toString() + " " + op.toString() + " " + value.toString();
     }
 
     @Override

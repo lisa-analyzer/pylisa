@@ -23,11 +23,13 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.dataframes.DFOrConstant;
+import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.AccessOperation;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.BooleanComparison;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
@@ -38,11 +40,15 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.C
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
 import it.unive.pylisa.cfg.type.PyListType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.operators.AccessRows;
+import it.unive.pylisa.symbolic.operators.ColumnAccess;
+import it.unive.pylisa.symbolic.operators.ComparisonOperator;
 import it.unive.pylisa.symbolic.operators.ConcatCols;
 import it.unive.pylisa.symbolic.operators.ConcatRows;
 import it.unive.pylisa.symbolic.operators.Drop;
 import it.unive.pylisa.symbolic.operators.FilterNull;
+import it.unive.pylisa.symbolic.operators.PandasSeriesComparison;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 
@@ -241,4 +247,30 @@ public class DFGraphTest {
 		assertEquals(expected, stack);
 	}
 
+	@Test
+	public void testSeriesComparison() throws SemanticException {
+		Set<String> cols = new HashSet<>();
+		cols.add("col1");
+
+		DataframeGraph initialGraph = new DataframeGraph();
+		DataframeOperation read = new ReadFromFile(SyntheticLocation.INSTANCE, fname);
+		DataframeOperation projection = new ProjectionOperation<>(SyntheticLocation.INSTANCE, new ColumnListSelection(cols));
+		initialGraph.addNode(read);
+		initialGraph.addNode(projection);
+		initialGraph.addEdge(new SimpleEdge(read, projection));
+		ValueEnvironment<DFOrConstant> valEnv = base.putState(df1, new DFOrConstant(new DataframeGraphDomain(initialGraph)));
+
+		BinaryExpression comparison = new BinaryExpression(PandasSeriesType.INSTANCE, df1, new Constant(Int32.INSTANCE, 5, SyntheticLocation.INSTANCE), new PandasSeriesComparison(ComparisonOperator.GEQ), SyntheticLocation.INSTANCE);
+		valEnv = valEnv.smallStepSemantics(comparison, fake);
+
+		DataframeGraph expectedGraph = initialGraph.prefix();
+		DataframeOperation boolComp = new BooleanComparison<ColumnListSelection>(SyntheticLocation.INSTANCE, new ColumnListSelection(cols), ComparisonOperator.GEQ, new ConstantPropagation(new Constant(Int32.INSTANCE, 5, SyntheticLocation.INSTANCE)));
+		expectedGraph.addNode(boolComp);
+		expectedGraph.addEdge(new SimpleEdge(read, boolComp));
+
+		DataframeGraphDomain expected = new DataframeGraphDomain(expectedGraph);
+		DataframeGraphDomain stack = valEnv.getValueOnStack().df();
+
+		assertEquals(expected, stack);
+	}
 }
