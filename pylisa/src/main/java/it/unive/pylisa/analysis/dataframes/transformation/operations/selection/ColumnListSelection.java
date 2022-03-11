@@ -12,12 +12,12 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 
 	private final Names columns;
 
-	public ColumnListSelection(Set<String> columns) {
-		this(new Names(columns));
-	}
-
 	public ColumnListSelection(Names columns) {
 		this.columns = columns;
+	}
+
+	public ColumnListSelection(Set<String> columns) {
+		this(new Names(columns));
 	}
 
 	public ColumnListSelection(boolean allCols) {

@@ -51,7 +51,9 @@ public abstract class DataframeEdge {
 	}
 
 	@Override
-	public String toString() {
-		return source + " -> " + destination;
+	public final String toString() {
+		return source + " " + getEdgeSymbol() + " " + destination;
 	}
+
+	public abstract String getEdgeSymbol();
 }
