@@ -9,7 +9,7 @@ public class AssignEdge extends DataframeEdge {
 	}
 
 	@Override
-	public String toString() {
-		return getSource() + " -A-> " + getDestination();
+	public String getEdgeSymbol() {
+		return "-A->";
 	}
 }

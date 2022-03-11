@@ -64,11 +64,11 @@ public class DataframeGraph {
 			if (entry.getValue().ingoing.isEmpty())
 				res.append("*");
 
-			res.append(entry.getKey()).append(" -> [");
+			res.append(entry.getKey()).append(": [");
 
 			Set<String> outs = new TreeSet<>();
 			for (DataframeEdge out : entry.getValue().getOutgoing())
-				outs.add(out.getDestination().toString());
+				outs.add(out.getEdgeSymbol() + " " + out.getDestination().toString());
 
 			res.append(StringUtils.join(outs, ", "));
 			res.append("]\n");

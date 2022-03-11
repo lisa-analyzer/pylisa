@@ -44,6 +44,7 @@ import it.unive.pylisa.symbolic.operators.ConcatCols;
 import it.unive.pylisa.symbolic.operators.ConcatRows;
 import it.unive.pylisa.symbolic.operators.Drop;
 import it.unive.pylisa.symbolic.operators.FilterNull;
+import it.unive.pylisa.symbolic.operators.PopSelection;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.WriteColumn;
@@ -252,6 +253,13 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 			DataframeGraphDomain dfNew = new DataframeGraphDomain(df, new FilterNullRows(pp.getLocation()));
 			return new DFOrConstant(dfNew);
+		} else if (operator instanceof PopSelection) {
+			DataframeGraphDomain df = arg.graph;
+			DataframeOperation leaf = df.getTransformations().getLeaf();
+			if (!(leaf instanceof SelectionOperation<?>))
+				return TOP_GRAPH;
+			DataframeGraphDomain popped = new DataframeGraphDomain(df.getTransformations().prefix());
+			return new DFOrConstant(popped);
 		} else
 			return TOP;
 	}

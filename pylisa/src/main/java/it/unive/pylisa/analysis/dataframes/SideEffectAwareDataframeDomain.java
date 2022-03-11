@@ -2,6 +2,7 @@ package it.unive.pylisa.analysis.dataframes;
 
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.heap.pointbased.AllocationSite;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.value.ValueDomain;
@@ -33,6 +34,14 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 	@Override
 	public SideEffectAwareDataframeDomain assign(Identifier id, ValueExpression expression, ProgramPoint pp)
 			throws SemanticException {
+		if (!env.getKeys().contains(id) && id instanceof AllocationSite) {
+			// TODO this is very fragile and only works with the current state
+			// of the field sensitive program point based heap
+			AllocationSite as = (AllocationSite) id;
+			if (as.getName().endsWith("]")) 
+				id = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(), as.getCodeLocation());
+		}
+		
 		return new SideEffectAwareDataframeDomain(env.assign(id, expression, pp));
 	}
 
@@ -66,10 +75,21 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 		}
 
 		ValueEnvironment<DFOrConstant> sss = env.bottom();
-		if (dfVar == null || !env.getKeys().contains(dfVar))
+		if (dfVar == null || !(dfVar instanceof Identifier))
 			return sss;
 
-		// thanks to the previous check, dfVar is for sure an identifier
+		if (!env.getKeys().contains(dfVar) && dfVar instanceof AllocationSite) {
+			// TODO this is very fragile and only works with the current state
+			// of the field sensitive program point based heap
+			AllocationSite as = (AllocationSite) dfVar;
+			if (as.getName().endsWith("]"))
+				dfVar = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(), as.getCodeLocation());
+			else
+				return sss;
+			
+			if (!env.getKeys().contains(dfVar))
+				return sss;
+		}
 
 		sss = env.smallStepSemantics(expression, pp);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
