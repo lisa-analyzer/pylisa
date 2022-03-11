@@ -9,11 +9,11 @@ import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyListType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 
-public class Drop implements BinaryOperator, DataframeOperatorWithSideEffects {
+public class DropCols implements BinaryOperator, DataframeOperatorWithSideEffects {
 
-    public static final Drop INSTANCE = new Drop();
+    public static final DropCols INSTANCE = new DropCols();
 
-    private Drop() {}
+    private DropCols() {}
 
     @Override
     public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> right) {

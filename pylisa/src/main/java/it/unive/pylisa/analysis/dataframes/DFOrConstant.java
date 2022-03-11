@@ -42,7 +42,7 @@ import it.unive.pylisa.symbolic.operators.ApplyTransformation.Kind;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
 import it.unive.pylisa.symbolic.operators.ConcatCols;
 import it.unive.pylisa.symbolic.operators.ConcatRows;
-import it.unive.pylisa.symbolic.operators.Drop;
+import it.unive.pylisa.symbolic.operators.DropCols;
 import it.unive.pylisa.symbolic.operators.FilterNull;
 import it.unive.pylisa.symbolic.operators.PopSelection;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
@@ -278,7 +278,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 							new ColumnListSelection(new Names(col.as(String.class)))));
 
 			return new DFOrConstant(ca);
-		} else if (operator == Drop.INSTANCE) {
+		} else if (operator == DropCols.INSTANCE) {
 			DataframeGraphDomain df = left.graph;
 			ConstantPropagation cols = right.constant;
 			if (topOrBottom(df) || topOrBottom(cols))
@@ -301,7 +301,8 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				}
 			}
 
-			DataframeGraphDomain ca = new DataframeGraphDomain(df, new DropColumns(pp.getLocation(), accessedCols));
+			DataframeGraphDomain ca = new DataframeGraphDomain(df,
+					new DropColumns(pp.getLocation(), new Names(accessedCols)));
 
 			return new DFOrConstant(ca);
 		} else if (operator == ConcatCols.INSTANCE || operator == ConcatRows.INSTANCE) {
