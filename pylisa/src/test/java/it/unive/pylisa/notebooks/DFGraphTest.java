@@ -248,7 +248,7 @@ public class DFGraphTest {
 	}
 
 	@Test
-	public void testSeriesComparison() throws SemanticException {
+	public void testPandasSeriesComparison() throws SemanticException {
 		Set<String> cols = new HashSet<>();
 		cols.add("col1");
 
