@@ -23,10 +23,12 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.dataframes.DFOrConstant;
 import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
+import it.unive.pylisa.analysis.dataframes.constants.SliceConstant;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.AssignEdge;
@@ -47,6 +49,7 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.Transform;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
 import it.unive.pylisa.cfg.type.PyListType;
+import it.unive.pylisa.cfg.type.PySliceType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.operators.AccessRows;
@@ -62,6 +65,7 @@ import it.unive.pylisa.symbolic.operators.PandasSeriesComparison;
 import it.unive.pylisa.symbolic.operators.PopSelection;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
+import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.WriteColumn;
 
 public class DFGraphTest {
@@ -378,5 +382,55 @@ public class DFGraphTest {
 		DataframeGraphDomain stack = valEnv.getValueOnStack().df();
 
 		assertEquals(expected, stack);
+	}
+
+	@Test
+	public void testSliceCreation() throws SemanticException {
+		Variable start, skip;
+
+		start = new Variable(Int32.INSTANCE, "start", SyntheticLocation.INSTANCE);
+		skip = new Variable(Int32.INSTANCE, "skip", SyntheticLocation.INSTANCE);
+
+		DFOrConstant startState = new DFOrConstant(new ConstantPropagation(new Constant(Int32.INSTANCE, 42, SyntheticLocation.INSTANCE)));
+		DFOrConstant skipState = new DFOrConstant(new ConstantPropagation(new Constant(Int32.INSTANCE, 2, SyntheticLocation.INSTANCE)));
+		ValueEnvironment<DFOrConstant> env = base.putState(start, startState);
+		env = env.putState(skip, skipState);
+
+		TernaryExpression slice1 = new TernaryExpression(
+			PySliceType.INSTANCE, 
+			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
+			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
+			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
+			SliceCreation.INSTANCE, 
+			SyntheticLocation.INSTANCE
+		);
+
+		Constant slice1Constant = new SliceConstant(null, null, null, SyntheticLocation.INSTANCE);
+		ValueEnvironment<DFOrConstant> sss = env.smallStepSemantics(slice1, fake);
+		assertEquals(new ConstantPropagation(slice1Constant), sss.getValueOnStack().constant());
+
+		TernaryExpression slice2 = new TernaryExpression(
+			PySliceType.INSTANCE, 
+			start,
+			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
+			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
+			SliceCreation.INSTANCE, 
+			SyntheticLocation.INSTANCE
+		);
+		Constant slice2Constant = new SliceConstant(42, null, null, SyntheticLocation.INSTANCE);
+		sss = env.smallStepSemantics(slice2, fake);
+		assertEquals(new ConstantPropagation(slice2Constant), sss.getValueOnStack().constant());
+
+		TernaryExpression slice3 = new TernaryExpression(
+			PySliceType.INSTANCE, 
+			start,
+			new Constant(Int32.INSTANCE, 54, SyntheticLocation.INSTANCE), 
+			skip, 
+			SliceCreation.INSTANCE, 
+			SyntheticLocation.INSTANCE
+		);
+		Constant slice3Constant = new SliceConstant(42, 54, 2, SyntheticLocation.INSTANCE);
+		sss = env.smallStepSemantics(slice3, fake);
+		assertEquals(new ConstantPropagation(slice3Constant), sss.getValueOnStack().constant());
 	}
 }

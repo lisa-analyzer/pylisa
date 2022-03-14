@@ -19,6 +19,7 @@ import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
+import it.unive.pylisa.analysis.dataframes.constants.SliceConstant;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.AssignEdge;
@@ -50,11 +51,13 @@ import it.unive.pylisa.symbolic.operators.PandasSeriesComparison;
 import it.unive.pylisa.symbolic.operators.PopSelection;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
+import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.WriteColumn;
 
 public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 	private static final DFOrConstant TOP_GRAPH = new DFOrConstant(new DataframeGraphDomain().top());
+	private static final DFOrConstant TOP_CONSTANT = new DFOrConstant(new ConstantPropagation().top());
 
 	private static final DFOrConstant TOP = new DFOrConstant();
 
@@ -412,6 +415,17 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 							: new AccessOperation<NumberSlice>(pp.getLocation(), slice));
 
 			return new DFOrConstant(pr);
+		} else if (operator instanceof SliceCreation) {
+			if (left.constant.isBottom() || middle.constant.isBottom() || right.constant.isBottom()) {
+				return TOP_CONSTANT;
+			}
+
+			Integer start = !left.constant.isTop() ? left.constant.as(Integer.class) : null;
+			Integer end = !middle.constant.isTop() ? middle.constant.as(Integer.class) : null;
+			Integer skip = !right.constant.isTop() ? right.constant.as(Integer.class) : null;
+
+
+			return new DFOrConstant(new ConstantPropagation(new SliceConstant(start, end, skip, pp.getLocation())));
 		} else
 			return TOP;
 	}
