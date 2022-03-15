@@ -62,6 +62,7 @@ import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
+import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.call.assignment.PythonLikeAssigningStrategy;
 import it.unive.lisa.program.cfg.statement.call.resolution.PythonLikeMatchingStrategy;
@@ -1652,6 +1653,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 						for (ArgumentContext arg : expr.arglist().argument())
 							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
 
+					pars = convertAssignmentsToByNameParameters(pars);
 					access = new UnresolvedCall(
 							currentCFG,
 							getLocation(expr),
@@ -1692,6 +1694,17 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 			return createPairFromSingle(access);
 		} else
 			return visitAtom(ctx.atom());
+	}
+
+	private List<Expression> convertAssignmentsToByNameParameters(List<Expression> pars) {
+		List<Expression> converted = new ArrayList<>(pars.size());
+		for (Expression e : pars)
+			if (!(e instanceof Assignment))
+				converted.add(e);
+			else
+				converted.add(new NamedParameterExpression(e.getCFG(), e.getLocation(),
+						((Assignment) e).getLeft().toString(), ((Assignment) e).getRight()));
+		return converted;
 	}
 
 	@Override

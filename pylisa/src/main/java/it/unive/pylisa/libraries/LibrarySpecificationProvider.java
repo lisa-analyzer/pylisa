@@ -15,12 +15,15 @@ import it.unive.lisa.program.cfg.CFGDescriptor;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Ret;
+import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.VoidType;
+import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.cfg.PythonUnit;
+import it.unive.pylisa.libraries.pandas.DropNA;
 import it.unive.pylisa.libraries.pandas.Head;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
 import it.unive.pylisa.libraries.pandas.ToDatetime;
@@ -185,6 +188,19 @@ public class LibrarySpecificationProvider {
 						VoidType.INSTANCE,
 						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE)),
 				NoEffectMethod.class));
+
+		unit1.addInstanceConstruct(new NativeCFG(
+				new CFGDescriptor(PANDAS_LOC,
+						unit1,
+						true,
+						"dropna",
+						Untyped.INSTANCE,
+						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE),
+						new Parameter(PANDAS_LOC, "axis", Int32.INSTANCE, new Int32Literal(init, PANDAS_LOC, 0),
+								new Annotations()),
+						new Parameter(PANDAS_LOC, "inplace", BoolType.INSTANCE, new FalseLiteral(init, PANDAS_LOC),
+								new Annotations())),
+				DropNA.class));
 
 		return unit1;
 	}

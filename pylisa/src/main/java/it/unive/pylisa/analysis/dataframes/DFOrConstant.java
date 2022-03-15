@@ -31,7 +31,7 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.BooleanComp
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullAxis;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.SelectionOperation;
@@ -251,12 +251,13 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 			DataframeGraphDomain conv = new DataframeGraphDomain(df.getTransformations().prefix(), t);
 			return new DFOrConstant(conv);
-		} else if (operator == FilterNull.INSTANCE) {
+		} else if (operator instanceof FilterNull) {
 			DataframeGraphDomain df = arg.graph;
 			if (topOrBottom(df))
 				return TOP_GRAPH;
 
-			DataframeGraphDomain dfNew = new DataframeGraphDomain(df, new FilterNullRows(pp.getLocation()));
+			DataframeGraphDomain dfNew = new DataframeGraphDomain(df,
+					new FilterNullAxis(pp.getLocation(), ((FilterNull) operator).getAxis()));
 			return new DFOrConstant(dfNew);
 		} else if (operator instanceof PopSelection) {
 			DataframeGraphDomain df = arg.graph;
@@ -306,7 +307,8 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				}
 			}
 
-			DataframeGraphDomain ca = new DataframeGraphDomain(df, new DropColumns(pp.getLocation(), new ColumnListSelection(accessedCols)));
+			DataframeGraphDomain ca = new DataframeGraphDomain(df,
+					new DropColumns(pp.getLocation(), new ColumnListSelection(accessedCols)));
 
 			return new DFOrConstant(ca);
 		} else if (operator == ConcatCols.INSTANCE || operator == ConcatRows.INSTANCE) {
@@ -368,13 +370,14 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 		} else if (operator instanceof PandasSeriesComparison) {
 			DataframeGraphDomain df1 = left.graph;
 			ConstantPropagation value = right.constant;
-			
+
 			if (topOrBottom(df1) || topOrBottom(value))
 				return TOP_GRAPH;
 
 			DataframeGraph original = df1.getTransformations();
 			DataframeOperation leaf = original.getLeaf();
-			// we check if we had previously projected a part of the dataframe which we want to compare
+			// we check if we had previously projected a part of the dataframe
+			// which we want to compare
 			if (!(leaf instanceof ProjectionOperation<?>))
 				return TOP_GRAPH;
 
@@ -386,7 +389,8 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			PandasSeriesComparison seriesCompOp = (PandasSeriesComparison) operator;
 
 			@SuppressWarnings({ "rawtypes", "unchecked" })
-			BooleanComparison boolComp = new BooleanComparison(pp.getLocation(), projection.getSelection(), seriesCompOp.getOp(), value);
+			BooleanComparison boolComp = new BooleanComparison(pp.getLocation(), projection.getSelection(),
+					seriesCompOp.getOp(), value);
 
 			DataframeOperation prevLeaf = result.getLeaf();
 			result.addNode(boolComp);
@@ -422,7 +426,6 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			Integer start = !left.constant.isTop() ? left.constant.as(Integer.class) : null;
 			Integer end = !middle.constant.isTop() ? middle.constant.as(Integer.class) : null;
 			Integer skip = !right.constant.isTop() ? right.constant.as(Integer.class) : null;
-
 
 			return new DFOrConstant(new ConstantPropagation(new SliceConstant(start, end, skip, pp.getLocation())));
 		} else
