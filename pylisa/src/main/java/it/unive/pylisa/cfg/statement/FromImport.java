@@ -11,6 +11,7 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.symbolic.value.Skip;
 
 public class FromImport extends Import {
 	private final String component;
@@ -59,6 +60,8 @@ public class FromImport extends Import {
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> semantics(AnalysisState<A, H, V, T> entryState,
 					InterproceduralAnalysis<A, H, V, T> interprocedural, StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
+		entryState = entryState.smallStepSemantics(new Skip(getLocation()), this);
+		
 		if (name == null)
 			return entryState.alias(new QualifiedNameSymbol(importedLibrary, component),
 					new QualifiedNameSymbol(null, name));
