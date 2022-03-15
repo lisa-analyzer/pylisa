@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.pandas;
+package it.unive.pylisa.libraries.geopandas;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -23,16 +23,16 @@ import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
 import it.unive.pylisa.symbolic.operators.PopSelection;
 
-public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
+public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 
 	private Statement st;
 
-	public ToDatetime(CFG cfg, CodeLocation location, String constructName, Expression series) {
-		super(cfg, location, constructName, series);
+	public Geocode(CFG cfg, CodeLocation location, Expression dataframe) {
+		super(cfg, location, "geocode", PandasDataframeType.REFERENCE, dataframe);
 	}
 
-	public static ToDatetime build(CFG cfg, CodeLocation location, Expression[] exprs) {
-		return new ToDatetime(cfg, location, "to_datetime", exprs[0]);
+	public static Geocode build(CFG cfg, CodeLocation location, Expression[] exprs) {
+		return new Geocode(cfg, location, exprs[0]);
 	}
 
 	@Override
@@ -52,20 +52,17 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 					throws SemanticException {
 		CodeLocation location = getLocation();
 		AnalysisState<A, H, V, T> result = state.bottom();
+		SymbolicExpression dataframe = ((AccessChild) expr).getContainer();
 
-		// we allocate the copy of the receiver that will contain the converted
-		// portion
 		HeapAllocation allocation = new HeapAllocation(PandasDataframeType.INSTANCE, location);
 		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, st);
 		AnalysisState<A, H, V, T> copy = state.bottom();
-		SymbolicExpression dataframe = ((AccessChild) expr).getContainer();
 		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
 			// copy the dataframe
 			AnalysisState<A, H, V, T> assigned = allocated.assign(loc, dataframe, st);
 			for (SymbolicExpression id : assigned.getComputedExpressions()) {
-				// the new dataframe will receive the conversion
 				UnaryExpression transform = new UnaryExpression(PandasSeriesType.INSTANCE, id,
-						new ApplyTransformation(ApplyTransformation.Kind.TO_DATETIME),
+						new ApplyTransformation(ApplyTransformation.Kind.TO_GEOCODE),
 						location);
 				copy = copy.lub(assigned.smallStepSemantics(transform, st));
 			}

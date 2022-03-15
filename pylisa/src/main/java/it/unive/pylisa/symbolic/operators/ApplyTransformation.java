@@ -14,6 +14,7 @@ public class ApplyTransformation implements UnaryOperator, DataframeOperatorWith
 		UNKNOWN,
 		BOTTOM,
 		TO_DATETIME,
+		TO_GEOCODE,
 	}
 
 	private final Kind type;

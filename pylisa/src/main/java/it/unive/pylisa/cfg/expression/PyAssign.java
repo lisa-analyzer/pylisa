@@ -48,10 +48,19 @@ public class PyAssign extends Assignment {
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		if (left instanceof AccessChild && left.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE))) {
-			HeapDereference container = (HeapDereference) ((AccessChild) left).getContainer();
-			if (container.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
-				return state.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, container, right,
-						WriteColumn.INSTANCE, getLocation()), this);
+			HeapDereference container_left = (HeapDereference) ((AccessChild) left).getContainer();
+			SymbolicExpression r = right;
+			if (container_left.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
+				if (right instanceof AccessChild
+						&& right.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE))) {
+					HeapDereference container_right = (HeapDereference) ((AccessChild) right).getContainer();
+					if (container_right.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
+						r = container_right;
+				}
+
+				return state
+						.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, container_left, r,
+								WriteColumn.INSTANCE, getLocation()), this);
 			}
 		}
 

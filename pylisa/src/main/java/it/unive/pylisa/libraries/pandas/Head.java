@@ -75,7 +75,6 @@ public class Head extends BinaryExpression implements PluggableStatement {
 				TernaryExpression projection = new TernaryExpression(PandasDataframeType.INSTANCE, id, start, right,
 						ProjectRows.INSTANCE, location);
 				copy = copy.lub(assigned.smallStepSemantics(projection, st));
-				getMetaVariables().addAll(PandasUtil.cleanUp(id, assigned, st));
 			}
 
 		}

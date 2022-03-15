@@ -17,12 +17,14 @@ import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
+import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.VoidType;
 import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.cfg.PythonUnit;
+import it.unive.pylisa.libraries.geopandas.Geocode;
 import it.unive.pylisa.libraries.pandas.DropNA;
 import it.unive.pylisa.libraries.pandas.Head;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
@@ -42,8 +44,11 @@ public class LibrarySpecificationProvider {
 	public static final String PANDAS = "pandas";
 	public static final String PANDAS_DF = "pandas.DataFrame";
 	public static final String PANDAS_SERIES = "pandas.Series";
+	public static final String GEOPANDAS = "geopandas";
+	public static final String GEOPANDAS_TOOLS = "geopandas.tools";
 
 	private static final SourceCodeLocation PANDAS_LOC = new SourceCodeLocation(PANDAS, 0, 0);
+	private static final SourceCodeLocation GEOPANDAS_LOC = new SourceCodeLocation(GEOPANDAS, 0, 0);
 	private static final SourceCodeLocation WARNINGS_LOC = new SourceCodeLocation(WARNINGS, 0, 0);
 	private static final SourceCodeLocation STDLIB_LOC = new SourceCodeLocation("standard_library", 0, 0);
 
@@ -59,6 +64,7 @@ public class LibrarySpecificationProvider {
 		LIBS.put(SET, getSetPythonUnit());
 		LIBS.put(TUPLE, getTuplePythonUnit());
 		LIBS.put(SLICE, getSlicePythonUnit());
+		LIBS.put(GEOPANDAS_TOOLS, getGeopandasToolsPythonUnit());
 	}
 
 	public static Collection<CompilationUnit> getLibraryUnits() {
@@ -207,6 +213,28 @@ public class LibrarySpecificationProvider {
 
 	private static PythonUnit getPandasSeriesPythonUnit() {
 		PythonUnit unit1 = new PythonUnit(PANDAS_LOC, PANDAS_SERIES, true);
+
+		return unit1;
+	}
+
+	private static PythonUnit getGeopandasToolsPythonUnit() {
+		PythonUnit unit1 = new PythonUnit(GEOPANDAS_LOC, GEOPANDAS_TOOLS, true);
+
+		// cfg for plugging default values evaluation
+		CFG init = new CFG(new CFGDescriptor(GEOPANDAS_LOC, unit1, false, "init"));
+		init.addNode(new Ret(init, GEOPANDAS_LOC), true);
+		unit1.addCFG(init);
+
+		unit1.addConstruct(new NativeCFG(
+				new CFGDescriptor(GEOPANDAS_LOC,
+						unit1,
+						false,
+						"geocode",
+						PandasDataframeType.REFERENCE,
+						new Parameter(GEOPANDAS_LOC, "strings", PandasSeriesType.REFERENCE),
+						new Parameter(GEOPANDAS_LOC, "provider", StringType.INSTANCE,
+								new StringLiteral(init, GEOPANDAS_LOC, "default"), new Annotations())),
+				Geocode.class));
 
 		return unit1;
 	}
