@@ -14,13 +14,11 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.comparison.GreaterThan;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.symbolic.operators.ComparisonOperator;
-import it.unive.pylisa.symbolic.operators.PandasSeriesComparison;
 
 public class PyGreaterThan extends GreaterThan {
 
     public PyGreaterThan(CFG cfg, CodeLocation location, Expression left, Expression right) {
         super(cfg, location, left, right);
-        //TODO Auto-generated constructor stub
     }
     
     @Override

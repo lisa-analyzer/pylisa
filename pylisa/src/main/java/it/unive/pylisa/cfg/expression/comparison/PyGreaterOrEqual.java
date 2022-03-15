@@ -14,7 +14,6 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.comparison.GreaterOrEqual;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.symbolic.operators.ComparisonOperator;
-import it.unive.pylisa.symbolic.operators.PandasSeriesComparison;
 
 public class PyGreaterOrEqual extends GreaterOrEqual {
 

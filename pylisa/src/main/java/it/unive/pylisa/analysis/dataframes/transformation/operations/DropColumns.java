@@ -1,7 +1,6 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
 import java.util.HashSet;
-import java.util.Set;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;

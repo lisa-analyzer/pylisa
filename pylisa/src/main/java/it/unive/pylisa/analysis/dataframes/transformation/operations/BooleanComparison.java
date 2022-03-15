@@ -7,6 +7,7 @@ import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.Selection;
 import it.unive.pylisa.symbolic.operators.ComparisonOperator;
 
+@SuppressWarnings("unchecked")
 public class BooleanComparison<S extends Selection<S>> extends DataframeOperation {
 
     private S selection;
@@ -20,7 +21,7 @@ public class BooleanComparison<S extends Selection<S>> extends DataframeOperatio
         this.value = value;
     }
 
-    @Override
+	@Override
     protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
         BooleanComparison<?> o = (BooleanComparison<?>) other;
         if (this.equals(o))

@@ -2,8 +2,35 @@ package it.unive.pylisa;
 
 import static it.unive.lisa.LiSAFactory.getDefaultFor;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
@@ -40,10 +67,7 @@ import it.unive.lisa.program.cfg.statement.call.assignment.PythonLikeAssigningSt
 import it.unive.lisa.program.cfg.statement.call.resolution.PythonLikeMatchingStrategy;
 import it.unive.lisa.program.cfg.statement.call.resolution.RuntimeTypesMatchingStrategy;
 import it.unive.lisa.program.cfg.statement.call.traversal.SingleInheritanceTraversalStrategy;
-import it.unive.lisa.program.cfg.statement.comparison.GreaterThan;
-import it.unive.lisa.program.cfg.statement.comparison.LessOrEqual;
 import it.unive.lisa.program.cfg.statement.comparison.LessThan;
-import it.unive.lisa.program.cfg.statement.comparison.NotEqual;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
 import it.unive.lisa.program.cfg.statement.literal.Float32Literal;
@@ -59,7 +83,6 @@ import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.cfg.statement.numeric.Multiplication;
 import it.unive.lisa.program.cfg.statement.numeric.Remainder;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
-import it.unive.lisa.program.cfg.statement.string.Equals;
 import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.BoolType;
@@ -195,30 +218,6 @@ import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.type.PyLibraryType;
 import it.unive.pylisa.cfg.type.PyListType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Statement>> {
 

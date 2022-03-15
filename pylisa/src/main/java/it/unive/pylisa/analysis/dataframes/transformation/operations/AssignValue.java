@@ -6,7 +6,7 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.D
 
 public class AssignValue extends DataframeOperation {
 
-	private DataframeSelection selection;
+	private DataframeSelection<?, ?> selection;
 	private int value;
 
 	public AssignValue(CodeLocation where) {
