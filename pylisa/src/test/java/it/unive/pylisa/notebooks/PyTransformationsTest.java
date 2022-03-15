@@ -29,6 +29,11 @@ public class PyTransformationsTest extends NotebookTest {
 	}
 
 	@Test
+	public void testGuideSmall() throws IOException, AnalysisException {
+		perform("dataframes-tests/guide-small.py");
+	}
+
+	@Test
 	public void testTitanic() throws IOException, AnalysisException {
 		perform("dataframes-tests/titanic.py");
 	}

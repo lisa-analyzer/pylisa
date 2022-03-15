@@ -13,6 +13,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 
 public class Import extends Statement {
@@ -85,6 +86,8 @@ public class Import extends Statement {
 					InterproceduralAnalysis<A, H, V, T> interprocedural,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
+		entryState = entryState.smallStepSemantics(new Skip(getLocation()), this);
+
 		if (name == null)
 			return entryState;
 
