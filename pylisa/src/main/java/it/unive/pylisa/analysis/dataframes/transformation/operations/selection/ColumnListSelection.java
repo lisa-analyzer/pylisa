@@ -1,5 +1,7 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations.selection;
 
+import java.util.Set;
+
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
 
@@ -12,6 +14,10 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 
 	public ColumnListSelection(Names columns) {
 		this.columns = columns;
+	}
+
+	public ColumnListSelection(Set<String> columns) {
+		this(new Names(columns));
 	}
 
 	public ColumnListSelection(boolean allCols) {

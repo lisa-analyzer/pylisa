@@ -7,37 +7,27 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
+import it.unive.pylisa.symbolic.operators.ComparisonOperator;
 
 public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelection> {
 
 	private static final AtomicBooleanSelection TOP = new AtomicBooleanSelection(new ConstantPropagation().top(),
-			Operator.UNKNOWN,
+			ComparisonOperator.TOP,
 			new ConstantPropagation().top());
 	private static final AtomicBooleanSelection BOTTOM = new AtomicBooleanSelection(new ConstantPropagation().bottom(),
-			Operator.BOTTOM, new ConstantPropagation().bottom());
-
-	public static enum Operator {
-		UNKNOWN,
-		BOTTOM,
-		EQ,
-		NE,
-		LE,
-		GE,
-		GT,
-		LT
-	}
+			ComparisonOperator.BOT, new ConstantPropagation().bottom());
 
 	private final ConstantPropagation colName;
-	private final Operator op;
+	private final ComparisonOperator op;
 	private final ConstantPropagation val;
 
-	public AtomicBooleanSelection(String colName, Operator op, Object val) {
+	public AtomicBooleanSelection(String colName, ComparisonOperator op, Object val) {
 		this.colName = new ConstantPropagation(new Constant(StringType.INSTANCE, colName, SyntheticLocation.INSTANCE));
 		this.op = op;
 		this.val = new ConstantPropagation(new Constant(Untyped.INSTANCE, val, SyntheticLocation.INSTANCE));
 	}
 
-	public AtomicBooleanSelection(ConstantPropagation colName, Operator op, ConstantPropagation val) {
+	public AtomicBooleanSelection(ConstantPropagation colName, ComparisonOperator op, ConstantPropagation val) {
 		this.colName = colName;
 		this.op = op;
 		this.val = val;
@@ -47,7 +37,7 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 		return colName;
 	}
 
-	public Operator getOp() {
+	public ComparisonOperator getOp() {
 		return op;
 	}
 

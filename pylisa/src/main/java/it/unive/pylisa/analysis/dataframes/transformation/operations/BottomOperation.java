@@ -5,13 +5,13 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CodeLocation;
 
-public class BottomOpeartion extends DataframeOperation {
+public class BottomOperation extends DataframeOperation {
 
-	public BottomOpeartion() {
+	public BottomOperation() {
 		super(SyntheticLocation.INSTANCE);
 	}
 
-	public BottomOpeartion(CodeLocation where) {
+	public BottomOperation(CodeLocation where) {
 		super(where);
 	}
 

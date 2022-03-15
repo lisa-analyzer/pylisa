@@ -1,14 +1,15 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
+import java.util.HashSet;
+
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.pylisa.analysis.dataframes.transformation.Names;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
 
 public class DropColumns extends DataframeOperation {
+	private ColumnListSelection columns;
 
-	private final Names columns;
-
-	public DropColumns(CodeLocation where, Names columns) {
+	public DropColumns(CodeLocation where, ColumnListSelection columns) {
 		super(where);
 		this.columns = columns;
 	}
@@ -16,13 +17,22 @@ public class DropColumns extends DataframeOperation {
 	@Override
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
 		DropColumns o = (DropColumns) other;
+		if (this.columns == null)
+			return o.columns == null;
+		else if (o.columns == null)
+			return false;
 		return columns.lessOrEqual(o.columns);
 	}
 
 	@Override
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
 		DropColumns o = (DropColumns) other;
-		return new DropColumns(loc(other), columns.lub(o.columns));
+		ColumnListSelection newColumns = new ColumnListSelection(new HashSet<>());
+		if (this.columns != null)
+			newColumns = newColumns.lub(this.columns);
+		if (o.columns != null)
+			newColumns = newColumns.lub(o.columns);
+		return new DropColumns(loc(other), newColumns);
 	}
 
 	@Override
@@ -52,7 +62,7 @@ public class DropColumns extends DataframeOperation {
 
 	@Override
 	public String toString() {
-		return "drop_columns(" + columns + ")";
+		return "drop_columns(" + columns.toString() + ")";
 	}
 
 }

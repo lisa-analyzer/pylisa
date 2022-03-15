@@ -14,7 +14,6 @@ import org.reflections.scanners.SubTypesScanner;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -24,39 +23,49 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.dataframes.DFOrConstant;
+import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
+import it.unive.pylisa.analysis.dataframes.constants.SliceConstant;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.AssignEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.AccessOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.AssignDataframe;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.BooleanComparison;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.RowAccess;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.RowProjection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.SelectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Transform;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
 import it.unive.pylisa.cfg.type.PyListType;
+import it.unive.pylisa.cfg.type.PySliceType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.operators.AccessRows;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation.Kind;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
+import it.unive.pylisa.symbolic.operators.ComparisonOperator;
 import it.unive.pylisa.symbolic.operators.ConcatCols;
 import it.unive.pylisa.symbolic.operators.ConcatRows;
 import it.unive.pylisa.symbolic.operators.DropCols;
 import it.unive.pylisa.symbolic.operators.FilterNull;
+import it.unive.pylisa.symbolic.operators.PandasSeriesComparison;
 import it.unive.pylisa.symbolic.operators.PopSelection;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
+import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.WriteColumn;
 
 public class DFGraphTest {
@@ -175,7 +184,7 @@ public class DFGraphTest {
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(ternary, fake);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
 		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df_foo).df(),
-				new RowAccess(fake.getLocation(), new Interval(0, 100)));
+				new AccessOperation<>(fake.getLocation(), new NumberSlice(0, 100)));
 
 		assertEquals(expected, stack);
 	}
@@ -203,7 +212,7 @@ public class DFGraphTest {
 		colsShouldHaveAccessed.add("col2");
 
 		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df_foo).df(),
-				new DropColumns(fake.getLocation(), new Names(colsShouldHaveAccessed)));
+				new DropColumns(fake.getLocation(), new ColumnListSelection(new Names(colsShouldHaveAccessed))));
 
 		assertEquals(expected, stack);
 	}
@@ -212,7 +221,7 @@ public class DFGraphTest {
 	public void testConcatCols() throws SemanticException {
 		DataframeGraphDomain df2GraphDomain = new DataframeGraphDomain(
 				base.getState(df_bar).df(),
-				new DropColumns(fake.getLocation(), new Names("foo")));
+				new DropColumns(fake.getLocation(), new ColumnListSelection(new Names("foo"))));
 
 		ValueEnvironment<DFOrConstant> valEnv = base.putState(df_bar, new DFOrConstant(df2GraphDomain));
 		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df_foo, df_bar, ConcatCols.INSTANCE,
@@ -242,7 +251,7 @@ public class DFGraphTest {
 	public void testConcatRows() throws SemanticException {
 		DataframeGraphDomain df2GraphDomain = new DataframeGraphDomain(
 				base.getState(df_bar).df(),
-				new DropColumns(fake.getLocation(), new Names("foo")));
+				new DropColumns(fake.getLocation(), new ColumnListSelection(new Names("foo"))));
 
 		ValueEnvironment<DFOrConstant> valEnv = base.putState(df_bar, new DFOrConstant(df2GraphDomain));
 		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df_foo, df_bar, ConcatRows.INSTANCE,
@@ -279,7 +288,7 @@ public class DFGraphTest {
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(ternary, fake);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
 		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df_foo).df(),
-				new RowProjection(fake.getLocation(), new Interval(0, 100)));
+				new ProjectionOperation<>(fake.getLocation(), new NumberSlice(0, 100)));
 
 		assertEquals(expected, stack);
 	}
@@ -348,4 +357,80 @@ public class DFGraphTest {
 		assertEquals(expected, stack);
 	}
 
+	@Test
+	public void testPandasSeriesComparison() throws SemanticException {
+		Set<String> cols = new HashSet<>();
+		cols.add("col1");
+
+		DataframeGraph initialGraph = new DataframeGraph();
+		DataframeOperation read = new ReadFromFile(SyntheticLocation.INSTANCE, "foo1.csv");
+		DataframeOperation projection = new ProjectionOperation<>(SyntheticLocation.INSTANCE, new ColumnListSelection(cols));
+		initialGraph.addNode(read);
+		initialGraph.addNode(projection);
+		initialGraph.addEdge(new SimpleEdge(read, projection));
+		ValueEnvironment<DFOrConstant> valEnv = base.putState(df_foo, new DFOrConstant(new DataframeGraphDomain(initialGraph)));
+
+		BinaryExpression comparison = new BinaryExpression(PandasSeriesType.INSTANCE, df_foo, new Constant(Int32.INSTANCE, 5, SyntheticLocation.INSTANCE), new PandasSeriesComparison(ComparisonOperator.GEQ), SyntheticLocation.INSTANCE);
+		valEnv = valEnv.smallStepSemantics(comparison, fake);
+
+		DataframeGraph expectedGraph = initialGraph.prefix();
+		DataframeOperation boolComp = new BooleanComparison<>(SyntheticLocation.INSTANCE, new ColumnListSelection(cols), ComparisonOperator.GEQ, new ConstantPropagation(new Constant(Int32.INSTANCE, 5, SyntheticLocation.INSTANCE)));
+		expectedGraph.addNode(boolComp);
+		expectedGraph.addEdge(new SimpleEdge(read, boolComp));
+
+		DataframeGraphDomain expected = new DataframeGraphDomain(expectedGraph);
+		DataframeGraphDomain stack = valEnv.getValueOnStack().df();
+
+		assertEquals(expected, stack);
+	}
+
+	@Test
+	public void testSliceCreation() throws SemanticException {
+		Variable start, skip;
+
+		start = new Variable(Int32.INSTANCE, "start", SyntheticLocation.INSTANCE);
+		skip = new Variable(Int32.INSTANCE, "skip", SyntheticLocation.INSTANCE);
+
+		DFOrConstant startState = new DFOrConstant(new ConstantPropagation(new Constant(Int32.INSTANCE, 42, SyntheticLocation.INSTANCE)));
+		DFOrConstant skipState = new DFOrConstant(new ConstantPropagation(new Constant(Int32.INSTANCE, 2, SyntheticLocation.INSTANCE)));
+		ValueEnvironment<DFOrConstant> env = base.putState(start, startState);
+		env = env.putState(skip, skipState);
+
+		TernaryExpression slice1 = new TernaryExpression(
+			PySliceType.INSTANCE, 
+			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
+			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
+			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
+			SliceCreation.INSTANCE, 
+			SyntheticLocation.INSTANCE
+		);
+
+		Constant slice1Constant = new SliceConstant(null, null, null, SyntheticLocation.INSTANCE);
+		ValueEnvironment<DFOrConstant> sss = env.smallStepSemantics(slice1, fake);
+		assertEquals(new ConstantPropagation(slice1Constant), sss.getValueOnStack().constant());
+
+		TernaryExpression slice2 = new TernaryExpression(
+			PySliceType.INSTANCE, 
+			start,
+			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
+			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
+			SliceCreation.INSTANCE, 
+			SyntheticLocation.INSTANCE
+		);
+		Constant slice2Constant = new SliceConstant(42, null, null, SyntheticLocation.INSTANCE);
+		sss = env.smallStepSemantics(slice2, fake);
+		assertEquals(new ConstantPropagation(slice2Constant), sss.getValueOnStack().constant());
+
+		TernaryExpression slice3 = new TernaryExpression(
+			PySliceType.INSTANCE, 
+			start,
+			new Constant(Int32.INSTANCE, 54, SyntheticLocation.INSTANCE), 
+			skip, 
+			SliceCreation.INSTANCE, 
+			SyntheticLocation.INSTANCE
+		);
+		Constant slice3Constant = new SliceConstant(42, 54, 2, SyntheticLocation.INSTANCE);
+		sss = env.smallStepSemantics(slice3, fake);
+		assertEquals(new ConstantPropagation(slice3Constant), sss.getValueOnStack().constant());
+	}
 }

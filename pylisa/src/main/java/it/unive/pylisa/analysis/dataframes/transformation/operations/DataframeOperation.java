@@ -9,7 +9,7 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 
 	public static final DataframeOperation TOP = new TopOperation();
 
-	public static final DataframeOperation BOTTOM = new BottomOpeartion();
+	public static final DataframeOperation BOTTOM = new BottomOperation();
 
 	protected final CodeLocation where;
 

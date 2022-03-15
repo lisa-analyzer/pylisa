@@ -35,6 +35,7 @@ public class LibrarySpecificationProvider {
 	public static final String LIST = "list";
 	public static final String TUPLE = "tuple";
 	public static final String WARNINGS = "warnings";
+	public static final String SLICE = "slice";
 	public static final String PANDAS = "pandas";
 	public static final String PANDAS_DF = "pandas.DataFrame";
 	public static final String PANDAS_SERIES = "pandas.Series";
@@ -54,6 +55,7 @@ public class LibrarySpecificationProvider {
 		LIBS.put(DICT, getDictPythonUnit());
 		LIBS.put(SET, getSetPythonUnit());
 		LIBS.put(TUPLE, getTuplePythonUnit());
+		LIBS.put(SLICE, getSlicePythonUnit());
 	}
 
 	public static Collection<CompilationUnit> getLibraryUnits() {
@@ -106,6 +108,11 @@ public class LibrarySpecificationProvider {
 						new Parameter(WARNINGS_LOC, "arg1")),
 				FilterWarnings.class);
 		unit1.addInstanceConstruct(cfg);
+		return unit1;
+	}
+
+	private static PythonUnit getSlicePythonUnit() {
+		PythonUnit unit1 = new PythonUnit(STDLIB_LOC, "slice", true);
 		return unit1;
 	}
 

@@ -13,6 +13,8 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.TernaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.pylisa.cfg.type.PySliceType;
+import it.unive.pylisa.symbolic.operators.SliceCreation;
 
 public class RangeValue extends TernaryExpression {
 
@@ -32,6 +34,11 @@ public class RangeValue extends TernaryExpression {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		return state.top(); // TODO
+		return state.smallStepSemantics(
+			new it.unive.lisa.symbolic.value.TernaryExpression(
+				PySliceType.INSTANCE, left, middle, right, SliceCreation.INSTANCE, getLocation()
+			), 
+			this
+		);
 	}
 }

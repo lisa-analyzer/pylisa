@@ -12,6 +12,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyListType;
+import it.unive.pylisa.cfg.type.PySliceType;
 
 public class ConstantPropagation extends BaseLattice<ConstantPropagation> {
 
@@ -131,7 +132,7 @@ public class ConstantPropagation extends BaseLattice<ConstantPropagation> {
 	}
 
 	private static boolean isAccepted(Type t) {
-		return t.isNumericType() || t.isStringType() || t instanceof PyListType;
+		return t.isNumericType() || t.isStringType() || t instanceof PyListType || t instanceof PySliceType;
 	}
 
 	@Override
