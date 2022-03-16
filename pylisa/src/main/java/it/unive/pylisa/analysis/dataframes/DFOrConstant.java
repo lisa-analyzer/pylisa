@@ -242,12 +242,16 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			return new DFOrConstant(df);
 		} else if (operator instanceof ApplyTransformation) {
 			DataframeGraphDomain df = arg.graph;
-			Kind kind = ((ApplyTransformation) operator).getKind();
+			ApplyTransformation op = (ApplyTransformation) operator;
+			Kind kind = op.getKind();
 			DataframeOperation leaf = df.getTransformations().getLeaf();
 			if (!(leaf instanceof SelectionOperation<?>))
 				return TOP_GRAPH;
 			@SuppressWarnings({ "rawtypes", "unchecked" })
-			Transform t = new Transform(pp.getLocation(), kind, ((SelectionOperation<?>) leaf).getSelection());
+			Transform t = op.getArg().isPresent()
+					? new Transform(pp.getLocation(), kind, ((SelectionOperation<?>) leaf).getSelection(),
+							op.getArg().get())
+					: new Transform(pp.getLocation(), kind, ((SelectionOperation<?>) leaf).getSelection());
 
 			DataframeGraphDomain conv = new DataframeGraphDomain(df.getTransformations().prefix(), t);
 			return new DFOrConstant(conv);

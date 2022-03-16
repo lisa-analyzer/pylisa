@@ -1,5 +1,7 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
+import java.util.Optional;
+
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.Selection;
@@ -9,11 +11,17 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 
 	private final Kind type;
 	private final S selection;
+	private final Optional<Object> arg;
 
 	public Transform(CodeLocation where, Kind type, S selection) {
+		this(where, type, selection, null);
+	}
+
+	public Transform(CodeLocation where, Kind type, S selection, Object arg) {
 		super(where);
 		this.type = type;
 		this.selection = selection;
+		this.arg = Optional.ofNullable(arg);
 	}
 
 	public Kind getType() {
@@ -24,12 +32,17 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 		return selection;
 	}
 
+	public Optional<Object> getArg() {
+		return arg;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((selection == null) ? 0 : selection.hashCode());
 		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		result = prime * result + ((arg == null) ? 0 : arg.hashCode());
 		return result;
 	}
 
@@ -49,19 +62,27 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 			return false;
 		if (type != other.type)
 			return false;
+		if (arg == null) {
+			if (other.arg != null)
+				return false;
+		} else if (!arg.equals(other.arg))
+			return false;
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return type + "(" + selection + ")";
+		if (arg.isEmpty())
+			return type + "(" + selection + ")";
+		else
+			return type + "(" + selection + ", " + arg.get() + ")";
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
 		Transform<?> o = (Transform<?>) other;
-		if (type != o.type || selection.getClass() != o.selection.getClass())
+		if (type != o.type || selection.getClass() != o.selection.getClass() || !arg.equals(o.arg))
 			return false;
 		return selection.lessOrEqual((S) o.selection);
 	}
@@ -72,6 +93,6 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 		Transform<?> o = (Transform<?>) other;
 		if (type != o.type || selection.getClass() != o.selection.getClass())
 			return top();
-		return new Transform<>(loc(other), type, selection.lub((S) o.selection));
+		return new Transform<>(loc(other), type, selection.lub((S) o.selection), arg.equals(o.arg) ? arg : null);
 	}
 }

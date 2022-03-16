@@ -1,5 +1,7 @@
 package it.unive.pylisa.symbolic.operators;
 
+import java.util.Optional;
+
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
@@ -15,21 +17,36 @@ public class ApplyTransformation implements UnaryOperator, DataframeOperatorWith
 		BOTTOM,
 		TO_DATETIME,
 		TO_GEOCODE,
+		LAMBDA,
 	}
 
 	private final Kind type;
 
+	private final Optional<Object> arg;
+
 	public ApplyTransformation(Kind type) {
+		this(type, null);
+	}
+
+	public ApplyTransformation(Kind type, Object arg) {
 		this.type = type;
+		this.arg = Optional.ofNullable(arg);
 	}
 
 	public Kind getKind() {
 		return type;
 	}
 
+	public Optional<Object> getArg() {
+		return arg;
+	}
+
 	@Override
 	public String toString() {
-		return "convert(" + type + ")";
+		if (arg.isEmpty())
+			return "apply(" + type + ")";
+		else
+			return "apply(" + type + ", " + arg.get() + ")";
 	}
 
 	@Override
@@ -42,5 +59,33 @@ public class ApplyTransformation implements UnaryOperator, DataframeOperatorWith
 	@Override
 	public SymbolicExpression getDataFrame(SymbolicExpression container) {
 		return ((UnaryExpression) container).getExpression();
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((arg == null) ? 0 : arg.hashCode());
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ApplyTransformation other = (ApplyTransformation) obj;
+		if (arg == null) {
+			if (other.arg != null)
+				return false;
+		} else if (!arg.equals(other.arg))
+			return false;
+		if (type != other.type)
+			return false;
+		return true;
 	}
 }

@@ -24,7 +24,9 @@ import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.cfg.PythonUnit;
+import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.geopandas.Geocode;
+import it.unive.pylisa.libraries.pandas.Apply;
 import it.unive.pylisa.libraries.pandas.DropNA;
 import it.unive.pylisa.libraries.pandas.Head;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
@@ -208,11 +210,31 @@ public class LibrarySpecificationProvider {
 								new Annotations())),
 				DropNA.class));
 
+		unit1.addInstanceConstruct(new NativeCFG(
+				new CFGDescriptor(PANDAS_LOC,
+						unit1,
+						true,
+						"apply",
+						Untyped.INSTANCE,
+						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE),
+						new Parameter(PANDAS_LOC, "function", PyLambdaType.INSTANCE)),
+				Apply.class));
+
 		return unit1;
 	}
 
 	private static PythonUnit getPandasSeriesPythonUnit() {
 		PythonUnit unit1 = new PythonUnit(PANDAS_LOC, PANDAS_SERIES, true);
+
+		unit1.addInstanceConstruct(new NativeCFG(
+				new CFGDescriptor(PANDAS_LOC,
+						unit1,
+						true,
+						"apply",
+						Untyped.INSTANCE,
+						new Parameter(PANDAS_LOC, "this", PandasSeriesType.REFERENCE),
+						new Parameter(PANDAS_LOC, "function", PyLambdaType.INSTANCE)),
+				Apply.class));
 
 		return unit1;
 	}
