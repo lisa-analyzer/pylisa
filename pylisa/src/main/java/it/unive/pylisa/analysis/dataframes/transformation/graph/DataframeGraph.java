@@ -1,5 +1,7 @@
 package it.unive.pylisa.analysis.dataframes.transformation.graph;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,6 +14,7 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
+import it.unive.pylisa.analysis.dataframes.transformation.DotDFGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 
 public class DataframeGraph {
@@ -258,5 +261,20 @@ public class DataframeGraph {
 		DataframeGraph copy = new DataframeGraph(this);
 		copy.removeNode(copy.getLeaf());
 		return copy;
+	}
+
+	public DataframeEdge getEdgeConnecting(DataframeOperation source, DataframeOperation destination) {
+		if (!matrix.containsKey(source))
+			return null;
+
+		for (DataframeEdge e : matrix.get(source).outgoing)
+			if (e.getDestination().equals(destination))
+				return e;
+
+		return null;
+	}
+
+	public void dump(Writer writer) throws IOException {
+		new DotDFGraph(this).dumpDot(writer);
 	}
 }

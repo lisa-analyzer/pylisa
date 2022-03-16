@@ -19,6 +19,7 @@ import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
+import it.unive.pylisa.checks.DataframeDumper;
 
 public abstract class NotebookTest {
 
@@ -41,6 +42,7 @@ public abstract class NotebookTest {
 		conf.setJsonOutput(true);
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
+		conf.addSemanticCheck(new DataframeDumper(conf));
 
 		PointBasedHeap heap = new FieldSensitivePointBasedHeap();
 		InferredTypes type = new InferredTypes();
