@@ -1,7 +1,5 @@
 package it.unive.pylisa.analysis.dataframes.transformation;
 
-import java.util.Collection;
-
 import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
@@ -56,12 +54,9 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 			return graph;
 		}
 
-		Collection<DataframeOperation> exits = source.getExits();
-		if (exits.size() != 1)
-			throw new SemanticException("Appending an operation to a graph with more than one leaf");
 		DataframeGraph copy = new DataframeGraph(source);
 		copy.addNode(transformation);
-		copy.addEdge(new SimpleEdge(exits.iterator().next(), transformation));
+		copy.addEdge(new SimpleEdge(source.getLeaf(), transformation));
 		return copy;
 	}
 

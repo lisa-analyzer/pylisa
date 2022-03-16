@@ -5,8 +5,12 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.S
 
 public class ProjectionOperation<S extends Selection<S>> extends SelectionOperation<S> {
 
-    public ProjectionOperation(CodeLocation where, S selection) {
-        super(where, selection);
-    }
-    
+	public ProjectionOperation(CodeLocation where, S selection) {
+		super(where, selection);
+	}
+
+	@Override
+	public String toString() {
+		return "project:" + getSelection();
+	}
 }

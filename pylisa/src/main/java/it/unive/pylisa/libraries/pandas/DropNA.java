@@ -19,7 +19,6 @@ import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
@@ -92,14 +91,8 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		ExpressionSet<SymbolicExpression> targets = new ExpressionSet<>(deref);
 
 		if (!inplace) {
-			HeapAllocation allocation = new HeapAllocation(PandasDataframeType.INSTANCE, location);
-			AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, st);
-			for (SymbolicExpression loc : allocated.getComputedExpressions()) {
-				// copy the dataframe
-				AnalysisState<A, H, V, T> assigned = allocated.assign(loc, deref, st);
-				base = assigned;
-				targets = assigned.getComputedExpressions();
-			}
+			base = PandasSemantics.copyDataframe(base, deref, st);
+			targets = base.getComputedExpressions();
 		}
 
 		AnalysisState<A, H, V, T> filtered = state.bottom();
