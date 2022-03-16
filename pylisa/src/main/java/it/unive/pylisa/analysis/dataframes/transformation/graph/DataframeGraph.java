@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,19 +65,25 @@ public class DataframeGraph {
 	@Override
 	public String toString() {
 		StringBuilder res = new StringBuilder();
+
+		SortedMap<String, Set<String>> aux = new TreeMap<>();
 		for (Entry<DataframeOperation, Edges> entry : matrix.entrySet()) {
-			if (entry.getValue().ingoing.isEmpty())
-				res.append("*");
-
-			res.append(entry.getKey()).append(": [");
-
 			Set<String> outs = new TreeSet<>();
 			for (DataframeEdge out : entry.getValue().getOutgoing())
 				outs.add(out.getEdgeSymbol() + " " + out.getDestination().toString());
 
-			res.append(StringUtils.join(outs, ", "));
+			if (entry.getValue().ingoing.isEmpty())
+				aux.put("*" + entry.getKey().toString(), outs);
+			else
+				aux.put(entry.getKey().toString(), outs);
+		}
+
+		for (Entry<String, Set<String>> entry : aux.entrySet()) {
+			res.append(entry.getKey()).append(": [");
+			res.append(StringUtils.join(entry.getValue(), ", "));
 			res.append("]\n");
 		}
+
 		return res.toString().trim();
 	}
 

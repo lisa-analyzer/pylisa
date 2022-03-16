@@ -30,7 +30,7 @@ public class PyTransformationsTest extends NotebookTest {
 
 	@Test
 	public void testGuideSmall() throws IOException, AnalysisException {
-		perform("dataframes-tests/guide-small.py");
+		performAndCheck("dataframes-tests/guide-small.py");
 	}
 
 	@Test

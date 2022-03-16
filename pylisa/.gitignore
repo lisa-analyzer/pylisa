@@ -8,7 +8,7 @@ build
 target
 
 # throwaway folder for testing and running analyses
-workdir
+*workdir
 
 # gradle configuration for accessing the snapshot of lisa
 gradle.properties
