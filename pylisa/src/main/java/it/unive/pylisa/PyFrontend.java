@@ -62,6 +62,7 @@ import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
+import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.call.assignment.PythonLikeAssigningStrategy;
 import it.unive.lisa.program.cfg.statement.call.resolution.PythonLikeMatchingStrategy;
@@ -220,7 +221,7 @@ import it.unive.pylisa.cfg.type.PyLibraryType;
 import it.unive.pylisa.cfg.type.PyListType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Statement>> {
+public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 	// TODO this is not right, but its fine for now
 	private static final SingleInheritanceTraversalStrategy TRAVERSAL_STRATEGY = SingleInheritanceTraversalStrategy.INSTANCE;
@@ -518,8 +519,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 	}
 
 	@Override
-	public Pair<Statement, Statement> visitVfpdef(VfpdefContext ctx) {
-		throw new UnsupportedStatementException();
+	public String visitVfpdef(VfpdefContext ctx) {
+		return ctx.NAME().getText();
 	}
 
 	@Override
@@ -1199,7 +1200,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 
 			return Pair.of(booleanGuard, testExitNode);
 		} else if (ctx.lambdef() != null) {
-			List<Expression> args = extractExpressionsFromVarArgList(ctx.lambdef().varargslist());
+			List<Expression> args = extractNamesFromVarArgList(ctx.lambdef().varargslist());
 			Expression body = checkAndExtractSingleExpression(visitTest(ctx.lambdef().test()));
 			return createPairFromSingle(
 					new LambdaExpression(
@@ -1209,6 +1210,16 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 							getLocation(ctx)));
 		} else
 			return visitOr_test(ctx.or_test(0));
+	}
+
+	private List<Expression> extractNamesFromVarArgList(VarargslistContext varargslist) {
+		List<VfpdefContext> names = varargslist.vfpdef();
+		List<Expression> result = new ArrayList<>();
+		if (names.size() == 0)
+			return result;
+		for (VfpdefContext e : names)
+			result.add(new VariableRef(currentCFG, getLocation(e), visitVfpdef(e)));
+		return result;
 	}
 
 	@Override
@@ -1350,12 +1361,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 		}
 
 		return createPairFromSingle(result);
-	}
-
-	@Override
-	public Pair<Statement, Statement> visitComp_op(Comp_opContext ctx) {
-
-		return super.visitComp_op(ctx);
 	}
 
 	@Override
@@ -1601,11 +1606,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Pair<Statement, Statement> visitFactor(FactorContext ctx) {
 		if (ctx.power() != null) {
 			return visitPower(ctx.power());
 		}
-		return super.visitFactor(ctx);
+		return (Pair<Statement, Statement>) super.visitFactor(ctx);
 	}
 
 	@Override
@@ -1653,6 +1659,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 						for (ArgumentContext arg : expr.arglist().argument())
 							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
 
+					pars = convertAssignmentsToByNameParameters(pars);
 					access = new UnresolvedCall(
 							currentCFG,
 							getLocation(expr),
@@ -1693,6 +1700,17 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 			return createPairFromSingle(access);
 		} else
 			return visitAtom(ctx.atom());
+	}
+
+	private List<Expression> convertAssignmentsToByNameParameters(List<Expression> pars) {
+		List<Expression> converted = new ArrayList<>(pars.size());
+		for (Expression e : pars)
+			if (!(e instanceof Assignment))
+				converted.add(e);
+			else
+				converted.add(new NamedParameterExpression(e.getCFG(), e.getLocation(),
+						((Assignment) e).getLeft().toString(), ((Assignment) e).getRight()));
+		return converted;
 	}
 
 	@Override
@@ -1780,10 +1798,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 		return result;
 	}
 
-	private List<Expression> extractExpressionsFromVarArgList(VarargslistContext ctx) {
-		return extractExpressionsFromListOfTests(ctx.test());
-	}
-
 	private List<Expression> extractExpressionsFromYieldArg(Yield_argContext ctx) {
 		if (ctx.test() != null) {
 			List<Expression> r = new ArrayList<>();
@@ -1811,18 +1825,20 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 		return result;
 	}
 
+	@SuppressWarnings("unchecked")
 	private List<Expression> extractExpressionsFromTestlist_comp(Testlist_compContext ctx) {
 		List<Expression> result = new ArrayList<>();
 		if (ctx == null || ctx.testOrStar() == null || ctx.testOrStar().size() == 0)
 			return result;
 		for (TestOrStarContext e : ctx.testOrStar())
-			result.add(checkAndExtractSingleExpression(visitTestOrStar(e)));
+			result.add(checkAndExtractSingleExpression((Pair<Statement, Statement>) visitTestOrStar(e)));
 		return result;
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Pair<Statement, Statement> visitTestlist_comp(Testlist_compContext ctx) {
-		Pair<Statement, Statement> elem = visitTestOrStar(ctx.testOrStar(0));
+		Pair<Statement, Statement> elem = (Pair<Statement, Statement>) visitTestOrStar(ctx.testOrStar(0));
 		Pair<Statement, Statement> prev;
 		Pair<Statement, Statement> current;
 		if (ctx.comp_for() != null) {
@@ -1831,7 +1847,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Pair<Statement, Stateme
 			int nTestOrStar = ctx.testOrStar().size();
 			prev = forClause;
 			for (int i = 1; i < nTestOrStar; i++) {
-				current = visitTestOrStar(ctx.testOrStar(i));
+				current = (Pair<Statement, Statement>) visitTestOrStar(ctx.testOrStar(i));
 				currentCFG.addEdge(new SequentialEdge(prev.getRight(), current.getLeft()));
 				prev = current;
 			}

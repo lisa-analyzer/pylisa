@@ -1,8 +1,15 @@
 package it.unive.pylisa.notebooks;
 
 import static it.unive.lisa.LiSAFactory.getDefaultFor;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -16,11 +23,20 @@ import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
+import it.unive.lisa.outputs.JsonReport;
+import it.unive.lisa.outputs.compare.JsonReportComparer;
 import it.unive.lisa.program.Program;
+import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
+import it.unive.pylisa.checks.DataframeDumper;
 
 public abstract class NotebookTest {
+
+	private static String getWorkdir(String file) {
+		String kind = FilenameUtils.getExtension(file);
+		return "notebook-tests-workdir/" + kind + "/" + FilenameUtils.getBaseName(file);
+	}
 
 	protected void perform(String file) throws IOException, AnalysisException {
 		String kind = FilenameUtils.getExtension(file);
@@ -28,24 +44,55 @@ public abstract class NotebookTest {
 
 		Program program = translator.toLiSAProgram();
 
-		LiSAConfiguration conf = buildConfig("notebooks/" + kind + "/" + FilenameUtils.getBaseName(file));
+		LiSAConfiguration conf = buildConfig(getWorkdir(file));
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
 	}
 
-	private LiSAConfiguration buildConfig(String subPath) throws AnalysisSetupException {
+	private LiSAConfiguration buildConfig(String workdir) throws AnalysisSetupException {
 		LiSAConfiguration conf = new LiSAConfiguration();
-		conf.setWorkdir("workdir/" + subPath);
+		conf.setWorkdir(workdir);
 		conf.setDumpTypeInference(true);
 		conf.setDumpAnalysis(true);
 		conf.setJsonOutput(true);
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
+		conf.addSemanticCheck(new DataframeDumper(conf));
 
 		PointBasedHeap heap = new FieldSensitivePointBasedHeap();
 		InferredTypes type = new InferredTypes();
 		SideEffectAwareDataframeDomain df = new SideEffectAwareDataframeDomain();
 		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, df, type));
 		return conf;
+	}
+
+	protected void performAndCheck(String file) throws IOException, AnalysisException {
+		String workdir = getWorkdir(file);
+		try {
+			FileManager.forceDeleteFolder(workdir);
+		} catch (IOException e) {
+			e.printStackTrace(System.err);
+			fail("Cannot delete working directory '" + workdir + "': " + e.getMessage());
+		}
+
+		perform(file);
+
+		Path expectedPath = Paths.get(workdir.replace("workdir", "expected"));
+		Path actualPath = Paths.get(workdir);
+
+		File expFile = Paths.get(expectedPath.toString(), "report.json").toFile();
+		File actFile = Paths.get(actualPath.toString(), "report.json").toFile();
+		try (FileReader l = new FileReader(expFile); FileReader r = new FileReader(actFile)) {
+			JsonReport expected = JsonReport.read(l);
+			JsonReport actual = JsonReport.read(r);
+			assertTrue("Results are different",
+					JsonReportComparer.compare(expected, actual, expectedPath.toFile(), actualPath.toFile()));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace(System.err);
+			fail("Unable to find report file");
+		} catch (IOException e) {
+			e.printStackTrace(System.err);
+			fail("Unable to compare reports");
+		}
 	}
 }

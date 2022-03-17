@@ -16,7 +16,6 @@ import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
@@ -62,35 +61,26 @@ public class Head extends BinaryExpression implements PluggableStatement {
 		HeapDereference derefLeft = new HeapDereference(PandasDataframeType.INSTANCE, left, location);
 		Constant start = new Constant(Int32.INSTANCE, 0, location);
 
-		// we allocate the copy of the receiver that will have only the given
-		// rows
-		HeapAllocation allocation = new HeapAllocation(PandasDataframeType.INSTANCE, location);
-		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, st);
-		AnalysisState<A, H, V, T> copy = state.bottom();
-		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
-			// copy the dataframe
-			AnalysisState<A, H, V, T> assigned = allocated.assign(loc, derefLeft, st);
-			for (SymbolicExpression id : assigned.getComputedExpressions()) {
-				// the new dataframe will have its rows projected
-				TernaryExpression projection = new TernaryExpression(PandasDataframeType.INSTANCE, id, start, right,
-						ProjectRows.INSTANCE, location);
-				copy = copy.lub(assigned.smallStepSemantics(projection, st));
-				getMetaVariables().addAll(PandasUtil.cleanUp(id, assigned, st));
-			}
-
-		}
+		// we allocate the copy that will have only the given rows
+		AnalysisState<A, H, V, T> copied = PandasSemantics.copyDataframe(state, derefLeft, st);
 
 		// the receiver will have its rows accessed instead
 		TernaryExpression access = new TernaryExpression(PandasDataframeType.INSTANCE, derefLeft, start, right,
 				AccessRows.INSTANCE, location);
-		AnalysisState<A, H, V, T> accessState = copy.smallStepSemantics(access, st);
+		AnalysisState<A, H, V, T> accessed = copied.smallStepSemantics(access, st);
 
-		// we leave a reference to the fresh dataframe on the stack
 		AnalysisState<A, H, V, T> result = state.bottom();
-		for (SymbolicExpression loc : allocated.getComputedExpressions())
-			result = result.lub(
-					accessState.smallStepSemantics(new HeapReference(PandasDataframeType.REFERENCE, loc, location),
-							st));
+		for (SymbolicExpression id : copied.getComputedExpressions()) {
+			// the new dataframe will have its rows projected
+			TernaryExpression projection = new TernaryExpression(PandasDataframeType.INSTANCE, id, start, right,
+					ProjectRows.INSTANCE, location);
+			AnalysisState<A, H, V, T> tmp = accessed.smallStepSemantics(projection, st);
+
+			// we leave a reference to the fresh dataframe on the stack
+			HeapReference ref = new HeapReference(PandasDataframeType.REFERENCE, id, location);
+			result = result.lub(tmp.smallStepSemantics(ref, st));
+		}
+
 		return result;
 	}
 }

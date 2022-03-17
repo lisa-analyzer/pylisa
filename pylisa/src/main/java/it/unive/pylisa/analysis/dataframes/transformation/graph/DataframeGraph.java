@@ -1,17 +1,22 @@
 package it.unive.pylisa.analysis.dataframes.transformation.graph;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
+import it.unive.pylisa.analysis.dataframes.transformation.DotDFGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 
 public class DataframeGraph {
@@ -60,19 +65,25 @@ public class DataframeGraph {
 	@Override
 	public String toString() {
 		StringBuilder res = new StringBuilder();
+
+		SortedMap<String, Set<String>> aux = new TreeMap<>();
 		for (Entry<DataframeOperation, Edges> entry : matrix.entrySet()) {
-			if (entry.getValue().ingoing.isEmpty())
-				res.append("*");
-
-			res.append(entry.getKey()).append(": [");
-
 			Set<String> outs = new TreeSet<>();
 			for (DataframeEdge out : entry.getValue().getOutgoing())
 				outs.add(out.getEdgeSymbol() + " " + out.getDestination().toString());
 
-			res.append(StringUtils.join(outs, ", "));
+			if (entry.getValue().ingoing.isEmpty())
+				aux.put("*" + entry.getKey().toString(), outs);
+			else
+				aux.put(entry.getKey().toString(), outs);
+		}
+
+		for (Entry<String, Set<String>> entry : aux.entrySet()) {
+			res.append(entry.getKey()).append(": [");
+			res.append(StringUtils.join(entry.getValue(), ", "));
 			res.append("]\n");
 		}
+
 		return res.toString().trim();
 	}
 
@@ -258,5 +269,20 @@ public class DataframeGraph {
 		DataframeGraph copy = new DataframeGraph(this);
 		copy.removeNode(copy.getLeaf());
 		return copy;
+	}
+
+	public DataframeEdge getEdgeConnecting(DataframeOperation source, DataframeOperation destination) {
+		if (!matrix.containsKey(source))
+			return null;
+
+		for (DataframeEdge e : matrix.get(source).outgoing)
+			if (e.getDestination().equals(destination))
+				return e;
+
+		return null;
+	}
+
+	public void dump(Writer writer) throws IOException {
+		new DotDFGraph(this).dumpDot(writer);
 	}
 }

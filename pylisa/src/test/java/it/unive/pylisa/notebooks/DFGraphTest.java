@@ -42,7 +42,7 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.BooleanComp
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullRows;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullAxis;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.SelectionOperation;
@@ -60,6 +60,7 @@ import it.unive.pylisa.symbolic.operators.AccessRows;
 import it.unive.pylisa.symbolic.operators.AccessRowsColumns;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation.Kind;
+import it.unive.pylisa.symbolic.operators.FilterNull.Axis;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
 import it.unive.pylisa.symbolic.operators.ComparisonOperator;
 import it.unive.pylisa.symbolic.operators.ConcatCols;
@@ -169,12 +170,12 @@ public class DFGraphTest {
 
 	@Test
 	public void testFilterNull() throws SemanticException {
-		UnaryExpression unary = new UnaryExpression(PandasDataframeType.INSTANCE, df_foo, FilterNull.INSTANCE,
+		UnaryExpression unary = new UnaryExpression(PandasDataframeType.INSTANCE, df_foo, new FilterNull(Axis.ROWS),
 				SyntheticLocation.INSTANCE);
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(unary, fake);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
 		DataframeGraphDomain expected = new DataframeGraphDomain(base.getState(df_foo).df(),
-				new FilterNullRows(fake.getLocation()));
+				new FilterNullAxis(fake.getLocation(), Axis.ROWS));
 
 		assertEquals(expected, stack);
 	}
@@ -370,13 +371,17 @@ public class DFGraphTest {
 
 		DataframeGraph initialGraph = new DataframeGraph();
 		DataframeOperation read = new ReadFromFile(SyntheticLocation.INSTANCE, "foo1.csv");
-		DataframeOperation projection = new ProjectionOperation<>(SyntheticLocation.INSTANCE, new ColumnListSelection(cols));
+		DataframeOperation projection = new ProjectionOperation<>(SyntheticLocation.INSTANCE,
+				new ColumnListSelection(cols));
 		initialGraph.addNode(read);
 		initialGraph.addNode(projection);
 		initialGraph.addEdge(new SimpleEdge(read, projection));
-		ValueEnvironment<DFOrConstant> valEnv = base.putState(df_foo, new DFOrConstant(new DataframeGraphDomain(initialGraph)));
+		ValueEnvironment<
+				DFOrConstant> valEnv = base.putState(df_foo, new DFOrConstant(new DataframeGraphDomain(initialGraph)));
 
-		BinaryExpression comparison = new BinaryExpression(PandasSeriesType.INSTANCE, df_foo, new Constant(Int32.INSTANCE, 5, SyntheticLocation.INSTANCE), new PandasSeriesComparison(ComparisonOperator.GEQ), SyntheticLocation.INSTANCE);
+		BinaryExpression comparison = new BinaryExpression(PandasSeriesType.INSTANCE, df_foo,
+				new Constant(Int32.INSTANCE, 5, SyntheticLocation.INSTANCE),
+				new PandasSeriesComparison(ComparisonOperator.GEQ), SyntheticLocation.INSTANCE);
 		valEnv = valEnv.smallStepSemantics(comparison, fake);
 
 		DataframeGraph expectedGraph = initialGraph.prefix();
@@ -482,44 +487,43 @@ public class DFGraphTest {
 		start = new Variable(Int32.INSTANCE, "start", SyntheticLocation.INSTANCE);
 		skip = new Variable(Int32.INSTANCE, "skip", SyntheticLocation.INSTANCE);
 
-		DFOrConstant startState = new DFOrConstant(new ConstantPropagation(new Constant(Int32.INSTANCE, 42, SyntheticLocation.INSTANCE)));
-		DFOrConstant skipState = new DFOrConstant(new ConstantPropagation(new Constant(Int32.INSTANCE, 2, SyntheticLocation.INSTANCE)));
+		DFOrConstant startState = new DFOrConstant(
+				new ConstantPropagation(new Constant(Int32.INSTANCE, 42, SyntheticLocation.INSTANCE)));
+		DFOrConstant skipState = new DFOrConstant(
+				new ConstantPropagation(new Constant(Int32.INSTANCE, 2, SyntheticLocation.INSTANCE)));
 		ValueEnvironment<DFOrConstant> env = base.putState(start, startState);
 		env = env.putState(skip, skipState);
 
 		TernaryExpression slice1 = new TernaryExpression(
-			PySliceType.INSTANCE, 
-			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
-			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
-			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
-			SliceCreation.INSTANCE, 
-			SyntheticLocation.INSTANCE
-		);
+				PySliceType.INSTANCE,
+				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
+				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
+				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
+				SliceCreation.INSTANCE,
+				SyntheticLocation.INSTANCE);
 
 		Constant slice1Constant = new SliceConstant(null, null, null, SyntheticLocation.INSTANCE);
 		ValueEnvironment<DFOrConstant> sss = env.smallStepSemantics(slice1, fake);
 		assertEquals(new ConstantPropagation(slice1Constant), sss.getValueOnStack().constant());
 
 		TernaryExpression slice2 = new TernaryExpression(
-			PySliceType.INSTANCE, 
-			start,
-			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
-			new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE), 
-			SliceCreation.INSTANCE, 
-			SyntheticLocation.INSTANCE
-		);
+				PySliceType.INSTANCE,
+				start,
+				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
+				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
+				SliceCreation.INSTANCE,
+				SyntheticLocation.INSTANCE);
 		Constant slice2Constant = new SliceConstant(42, null, null, SyntheticLocation.INSTANCE);
 		sss = env.smallStepSemantics(slice2, fake);
 		assertEquals(new ConstantPropagation(slice2Constant), sss.getValueOnStack().constant());
 
 		TernaryExpression slice3 = new TernaryExpression(
-			PySliceType.INSTANCE, 
-			start,
-			new Constant(Int32.INSTANCE, 54, SyntheticLocation.INSTANCE), 
-			skip, 
-			SliceCreation.INSTANCE, 
-			SyntheticLocation.INSTANCE
-		);
+				PySliceType.INSTANCE,
+				start,
+				new Constant(Int32.INSTANCE, 54, SyntheticLocation.INSTANCE),
+				skip,
+				SliceCreation.INSTANCE,
+				SyntheticLocation.INSTANCE);
 		Constant slice3Constant = new SliceConstant(42, 54, 2, SyntheticLocation.INSTANCE);
 		sss = env.smallStepSemantics(slice3, fake);
 		assertEquals(new ConstantPropagation(slice3Constant), sss.getValueOnStack().constant());

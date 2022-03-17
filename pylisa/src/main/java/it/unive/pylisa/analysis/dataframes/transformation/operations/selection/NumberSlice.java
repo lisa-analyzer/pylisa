@@ -81,7 +81,17 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 
 	@Override
 	public String toString() {
-		return "[" + beginIndex + ":" + endIndex + ":" + skip + "]";
+		String res = "[";
+		if (!beginIndex.isBottom())
+			res += beginIndex;
+		res += ":";
+		if (!endIndex.isBottom())
+			res += endIndex;
+		res += ":";
+		if (!skip.isBottom())
+			res += skip;
+		res += "]";
+		return res;
 	}
 
 	@Override

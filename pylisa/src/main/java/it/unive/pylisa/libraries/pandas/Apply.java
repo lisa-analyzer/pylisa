@@ -10,22 +10,23 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
 
-public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
+public class Apply extends BinaryExpression implements PluggableStatement {
 
 	private Statement st;
 
-	public ToDatetime(CFG cfg, CodeLocation location, String constructName, Expression series) {
-		super(cfg, location, constructName, series);
+	public Apply(CFG cfg, CodeLocation location, Expression dataframe, Expression lambda) {
+		super(cfg, location, "apply", dataframe.getStaticType(), dataframe, lambda);
 	}
 
-	public static ToDatetime build(CFG cfg, CodeLocation location, Expression[] exprs) {
-		return new ToDatetime(cfg, location, "to_datetime", exprs[0]);
+	public static Apply build(CFG cfg, CodeLocation location, Expression[] exprs) {
+		return new Apply(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
@@ -37,13 +38,14 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 	protected <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
 					InterproceduralAnalysis<A, H, V, T> interprocedural,
 					AnalysisState<A, H, V, T> state,
-					SymbolicExpression expr,
+					SymbolicExpression left,
+					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		ApplyTransformation op = new ApplyTransformation(ApplyTransformation.Kind.TO_DATETIME);
-		return PandasSemantics.transform(state, expr, st, op);
+		ApplyTransformation op = new ApplyTransformation(ApplyTransformation.Kind.LAMBDA, right);
+		return PandasSemantics.transform(state, left, st, op);
 	}
 }
