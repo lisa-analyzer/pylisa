@@ -29,6 +29,7 @@ import it.unive.pylisa.cfg.type.PyTupleType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.operators.WriteColumn;
+import it.unive.pylisa.symbolic.operators.WriteSelection;
 
 public class PyAssign extends Assignment {
 
@@ -47,11 +48,26 @@ public class PyAssign extends Assignment {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		if (left instanceof AccessChild && left.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE))) {
-			HeapDereference container = (HeapDereference) ((AccessChild) left).getContainer();
-			if (container.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
-				return state.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, container, right,
-						WriteColumn.INSTANCE, getLocation()), this);
+		if (left instanceof AccessChild && 
+			left.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE) || t.equals(PandasDataframeType.REFERENCE))) {
+
+			SymbolicExpression container = ((AccessChild) left).getContainer();
+			if (container instanceof HeapDereference) {
+				HeapDereference dfDereference = (HeapDereference) container;
+				if (dfDereference.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
+					return state.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, dfDereference, right,
+							WriteColumn.INSTANCE, getLocation()), this);
+				}
+			} else if (container instanceof AccessChild) {
+				// double array access
+				SymbolicExpression secondContainer = ((AccessChild) container).getContainer();
+				if (secondContainer instanceof HeapDereference) {
+					HeapDereference dfDereference = (HeapDereference) container;
+					if (dfDereference.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
+						return state.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, 
+								dfDereference, right, WriteSelection.INSTANCE, getLocation()), this);
+					}
+				}
 			}
 		}
 

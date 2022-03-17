@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
+import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -27,6 +28,7 @@ import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.AccessOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.AssignDataframe;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.AssignValue;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.BooleanComparison;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
@@ -35,10 +37,16 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullR
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.SelectionOperation;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.TopOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Transform;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.AtomicBooleanSelection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.BooleanSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnSelection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
 import it.unive.pylisa.symbolic.operators.AccessRows;
+import it.unive.pylisa.symbolic.operators.AccessRowsColumns;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation.Kind;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
@@ -52,6 +60,7 @@ import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.WriteColumn;
+import it.unive.pylisa.symbolic.operators.WriteSelection;
 
 public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
@@ -365,6 +374,31 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 			DataframeGraphDomain dfNew = new DataframeGraphDomain(result);
 			return new DFOrConstant(dfNew);
+		} else if (operator instanceof WriteSelection) {
+			DataframeGraphDomain df = left.graph;
+			DataframeOperation leaf = df.getTransformations().getLeaf();
+			if (!(leaf instanceof AccessOperation))
+				return TOP_GRAPH;
+
+			AccessOperation<?> access = (AccessOperation<?>) leaf;
+			DataframeGraph resultGraph = df.getTransformations().prefix();
+
+			DataframeOperation nodeToAdd = new TopOperation(pp.getLocation());
+
+			// right can be either constant or df
+			if (topOrBottom(right))
+				return TOP_GRAPH;
+
+			if (!topOrBottom(right.constant)) {
+				DataframeSelection selection = (DataframeSelection) access.getSelection();
+				nodeToAdd = new AssignValue<>(pp.getLocation(), selection, right.constant);
+			} else if (!topOrBottom(right.graph)) {
+				// to deal with
+				return TOP_GRAPH;
+			}
+			
+			DataframeGraphDomain resultGraphDomain = new DataframeGraphDomain(resultGraph, nodeToAdd);
+			return new DFOrConstant(resultGraphDomain);
 		} else if (operator instanceof PandasSeriesComparison) {
 			DataframeGraphDomain df1 = left.graph;
 			ConstantPropagation value = right.constant;
@@ -385,8 +419,11 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeGraph result = new DataframeGraph(prefix);
 			PandasSeriesComparison seriesCompOp = (PandasSeriesComparison) operator;
 
-			@SuppressWarnings({ "rawtypes", "unchecked" })
-			BooleanComparison boolComp = new BooleanComparison(pp.getLocation(), projection.getSelection(), seriesCompOp.getOp(), value);
+			if (!(projection.getSelection() instanceof ColumnListSelection))
+				return TOP_GRAPH;
+
+			AtomicBooleanSelection booleanSelection = new AtomicBooleanSelection((ColumnListSelection) projection.getSelection(), seriesCompOp.getOp(), value);
+			BooleanComparison<AtomicBooleanSelection> boolComp = new BooleanComparison<>(pp.getLocation(), booleanSelection);
 
 			DataframeOperation prevLeaf = result.getLeaf();
 			result.addNode(boolComp);
@@ -414,6 +451,77 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 							: new AccessOperation<NumberSlice>(pp.getLocation(), slice));
 
 			return new DFOrConstant(pr);
+		} else if (operator instanceof AccessRowsColumns) {
+			// left[middle, right]
+			// df[row_slice | column_comparison, columns]
+			DataframeGraphDomain df = left.graph;
+			DataframeGraph resultGraph = df.getTransformations();
+
+			DataframeSelection selection = new DataframeSelection<>(true);
+
+			// right is a list of strings so we will handle that first
+			ConstantPropagation cols = right.constant;
+			if (topOrBottom(df) || topOrBottom(cols))
+				return TOP_GRAPH;
+
+			if (!(cols.getConstant() instanceof ExpressionSet<?>[]))
+				// check whether the cols constant is indeed what we expect for
+				// a constant list
+				return TOP_GRAPH;
+
+			@SuppressWarnings("unchecked")
+			ExpressionSet<Constant>[] cs = (ExpressionSet<Constant>[]) cols.getConstant();
+			Set<String> accessedCols = new HashSet<>();
+
+			for (ExpressionSet<Constant> c : cs) {
+				for (Constant colName : c) {
+					if (!(colName.getValue() instanceof String))
+						return TOP_GRAPH;
+					accessedCols.add((String) colName.getValue());
+				}
+			}
+
+			ColumnListSelection colsSelection = new ColumnListSelection(accessedCols);
+
+			// middle can be either a slice or a series comparison 
+			if (topOrBottom(middle))
+				return TOP_GRAPH;
+
+			if (!topOrBottom(middle.constant)) {
+				// middle is a slice
+				SliceConstant.Slice rowSlice = middle.constant.as(SliceConstant.Slice.class);
+
+				NumberSlice numberSlice = new NumberSlice(
+					rowSlice.getStart() == null ? 
+						new Interval().bottom() : 
+						new Interval(rowSlice.getStart(), rowSlice.getStart()), 
+					rowSlice.getEnd() == null ?
+						new Interval().bottom() :
+						new Interval(rowSlice.getEnd(), rowSlice.getEnd()),
+					rowSlice.getSkip() == null ?
+						new Interval().bottom() :
+						new Interval(rowSlice.getSkip(), rowSlice.getSkip()));
+
+				selection = new DataframeSelection(numberSlice, colsSelection);
+			} else if (!topOrBottom(middle.graph)) {
+				DataframeGraph middleGraph = middle.graph.getTransformations();
+				if (!middleGraph.prefix().equals(df.getTransformations().prefix()))
+					// df.loc[df["col"] < 5, ["col2", "col3"]]
+					// we want to check we are selecting with cols of the same dataframe
+					return TOP_GRAPH;
+				resultGraph = middleGraph.prefix();
+
+				DataframeOperation leaf = middleGraph.getLeaf();
+				if (!(leaf instanceof BooleanComparison))
+					return TOP_GRAPH;
+				BooleanComparison<?> colCompare = (BooleanComparison<?>) leaf;
+				
+				resultGraph = middleGraph.prefix();
+				selection = new DataframeSelection(colCompare.getSelection(), colsSelection);
+			}
+
+			DataframeOperation access = new AccessOperation<>(pp.getLocation(), selection);
+			return new DFOrConstant(new DataframeGraphDomain(resultGraph, access));
 		} else if (operator instanceof SliceCreation) {
 			if (left.constant.isBottom() || middle.constant.isBottom() || right.constant.isBottom()) {
 				return TOP_CONSTANT;

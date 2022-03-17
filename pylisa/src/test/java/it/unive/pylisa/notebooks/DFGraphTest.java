@@ -37,6 +37,7 @@ import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.AccessOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.AssignDataframe;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.AssignValue;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.BooleanComparison;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
@@ -46,13 +47,17 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionO
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.SelectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Transform;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.AtomicBooleanSelection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.BooleanSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
 import it.unive.pylisa.cfg.type.PyListType;
 import it.unive.pylisa.cfg.type.PySliceType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.operators.AccessRows;
+import it.unive.pylisa.symbolic.operators.AccessRowsColumns;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation.Kind;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
@@ -67,6 +72,7 @@ import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.WriteColumn;
+import it.unive.pylisa.symbolic.operators.WriteSelection;
 
 public class DFGraphTest {
 
@@ -374,7 +380,8 @@ public class DFGraphTest {
 		valEnv = valEnv.smallStepSemantics(comparison, fake);
 
 		DataframeGraph expectedGraph = initialGraph.prefix();
-		DataframeOperation boolComp = new BooleanComparison<>(SyntheticLocation.INSTANCE, new ColumnListSelection(cols), ComparisonOperator.GEQ, new ConstantPropagation(new Constant(Int32.INSTANCE, 5, SyntheticLocation.INSTANCE)));
+		AtomicBooleanSelection selection = new AtomicBooleanSelection(new ColumnListSelection(cols), ComparisonOperator.GEQ, new ConstantPropagation(new Constant(Int32.INSTANCE, 5, SyntheticLocation.INSTANCE)));
+		DataframeOperation boolComp = new BooleanComparison<>(SyntheticLocation.INSTANCE, selection);
 		expectedGraph.addNode(boolComp);
 		expectedGraph.addEdge(new SimpleEdge(read, boolComp));
 
@@ -382,6 +389,90 @@ public class DFGraphTest {
 		DataframeGraphDomain stack = valEnv.getValueOnStack().df();
 
 		assertEquals(expected, stack);
+	}
+
+	@Test
+	public void testAccessRowsColumns() throws SemanticException {
+		// Part 1: access test with boolean condition on columns
+		DataframeGraph df1Graph = new DataframeGraph();
+		df1Graph = DataframeGraphDomain.append(df1Graph, new ReadFromFile(SyntheticLocation.INSTANCE, "foo.csv"));
+		df1Graph = DataframeGraphDomain.append(df1Graph, new ProjectionOperation<ColumnListSelection>(SyntheticLocation.INSTANCE, new ColumnListSelection(new Names("col1"))));
+
+		Variable df1 = new Variable(PandasDataframeType.INSTANCE, "df1", SyntheticLocation.INSTANCE);
+		ValueEnvironment<DFOrConstant> env = base.putState(df1, new DFOrConstant(new DataframeGraphDomain(df1Graph)));
+
+		ValueEnvironment<DFOrConstant> sss = env.smallStepSemantics(
+			new BinaryExpression(PandasSeriesType.INSTANCE, df1, new Constant(Int32.INSTANCE, 5, SyntheticLocation.INSTANCE), 
+			new PandasSeriesComparison(ComparisonOperator.NEQ), 
+			SyntheticLocation.INSTANCE), 
+			fake
+		);
+
+		env = base.putState(df1, new DFOrConstant(new DataframeGraphDomain(df1Graph.prefix(), new AccessOperation<>(SyntheticLocation.INSTANCE, new ColumnListSelection(new Names("col1"))))));
+		Variable df2 = new Variable(PandasSeriesType.INSTANCE, "df2", SyntheticLocation.INSTANCE);
+		DFOrConstant stack = sss.getValueOnStack();
+		env = env.putState(df2, sss.getValueOnStack());
+
+		@SuppressWarnings("unchecked")
+		ExpressionSet<Constant>[] cols = (ExpressionSet<Constant>[]) new ExpressionSet[1];
+		cols[0] = new ExpressionSet<>(new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE));
+
+		sss = env.smallStepSemantics(
+			new TernaryExpression(
+				PandasDataframeType.INSTANCE, df1, df2, 
+				new Constant(PyListType.INSTANCE, cols, SyntheticLocation.INSTANCE),
+			AccessRowsColumns.INSTANCE, SyntheticLocation.INSTANCE), fake);
+
+		ColumnListSelection expectedColumns = new ColumnListSelection(new Names("col1"));
+		AtomicBooleanSelection expectedRows = new AtomicBooleanSelection(new ColumnListSelection(new Names("col1")), ComparisonOperator.NEQ, new ConstantPropagation(new Constant(Int32.INSTANCE, 5, SyntheticLocation.INSTANCE)));
+		DataframeSelection<AtomicBooleanSelection, ColumnListSelection> expectedSelection = new DataframeSelection<AtomicBooleanSelection,ColumnListSelection>(expectedRows, expectedColumns);
+		DataframeGraph expected = DataframeGraphDomain.append(df1Graph.prefix(), new AccessOperation<>(SyntheticLocation.INSTANCE, expectedSelection));
+
+		assertEquals(expected, sss.getValueOnStack().df().getTransformations());
+
+		// Part 2: access test with row slice
+		df1Graph = new DataframeGraph();
+		df1Graph = DataframeGraphDomain.append(df1Graph, new ReadFromFile(SyntheticLocation.INSTANCE, "foo.csv"));
+
+		env = base.putState(df1, new DFOrConstant(new DataframeGraphDomain(df1Graph)));
+
+		sss = env.smallStepSemantics(
+			new TernaryExpression(PandasDataframeType.INSTANCE, df1, 
+				new SliceConstant(0, 2, null, SyntheticLocation.INSTANCE), 
+				new Constant(PyListType.INSTANCE, cols, SyntheticLocation.INSTANCE), 
+			AccessRowsColumns.INSTANCE, SyntheticLocation.INSTANCE), fake
+		);
+
+		DataframeSelection<NumberSlice, ColumnListSelection> expectedSelection1 = new DataframeSelection<NumberSlice,ColumnListSelection>(new NumberSlice(0, 2), expectedColumns);
+		expected = DataframeGraphDomain.append(df1Graph, new AccessOperation<>(SyntheticLocation.INSTANCE, expectedSelection1));
+
+		assertEquals(expected, sss.getValueOnStack().df().getTransformations());
+	}
+
+	@Test
+	public void testWriteSelection() throws SemanticException {
+		// Part 1: write selection with a constant value
+		Variable df1 = new Variable(PandasDataframeType.INSTANCE, "df1", SyntheticLocation.INSTANCE);
+		DataframeGraph df1Graph = new DataframeGraph();
+		df1Graph = DataframeGraphDomain.append(df1Graph, new ReadFromFile(SyntheticLocation.INSTANCE, "foo1.csv"));
+		DataframeSelection<?, ?> selection = new DataframeSelection<>(new NumberSlice(25, 56), new ColumnListSelection(new Names("col1")));
+		df1Graph = DataframeGraphDomain.append(df1Graph, new AccessOperation<>(SyntheticLocation.INSTANCE, selection));
+
+		ValueEnvironment<DFOrConstant> env = base.putState(df1, new DFOrConstant(new DataframeGraphDomain(df1Graph)));
+
+		ValueEnvironment<DFOrConstant> sss = env.smallStepSemantics(
+			new BinaryExpression(PandasDataframeType.INSTANCE, df1, 
+				new Constant(StringType.INSTANCE, "hula-hoops", SyntheticLocation.INSTANCE), 
+			WriteSelection.INSTANCE, SyntheticLocation.INSTANCE), fake
+		);
+
+		DataframeGraph expected = DataframeGraphDomain.append(
+			df1Graph.prefix(), new AssignValue<>(SyntheticLocation.INSTANCE, selection, 
+				new ConstantPropagation(new Constant(StringType.INSTANCE, "hula-hoops", SyntheticLocation.INSTANCE))
+			)
+		);
+
+		assertEquals(expected, sss.getValueOnStack().df().getTransformations());		
 	}
 
 	@Test

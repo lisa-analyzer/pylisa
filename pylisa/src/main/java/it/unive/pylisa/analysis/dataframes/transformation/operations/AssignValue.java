@@ -2,21 +2,28 @@ package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.DataframeSelection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.RowSelection;
 
-public class AssignValue extends DataframeOperation {
+public class AssignValue<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
 
-	private DataframeSelection<?, ?> selection;
-	private int value;
+	private DataframeSelection<R, C> selection;
+	private ConstantPropagation value;
 
-	public AssignValue(CodeLocation where) {
+	public AssignValue(CodeLocation where, DataframeSelection<R, C> selection, ConstantPropagation value) {
 		super(where);
+		this.selection = selection;
+		this.value = value;
 	}
 
 	@Override
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
-		AssignValue o = (AssignValue) other;
-		return this.equals(o);
+		if (!(other instanceof AssignValue))
+			return false;
+		AssignValue<R, C> o = (AssignValue<R, C>) other;
+		return selection.lessOrEqual(o.selection) && value.lessOrEqual(o.value);
 	}
 
 	@Override
@@ -35,13 +42,20 @@ public class AssignValue extends DataframeOperation {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AssignValue other = (AssignValue) obj;
+		AssignValue<?, ?> other = (AssignValue<?, ?>) obj;
 		if (selection == null) {
 			if (other.selection != null)
 				return false;
 		} else if (!selection.equals(other.selection))
 			return false;
-		return value == other.value;
+		
+		if (value == null) {
+			if (other.value != null)
+				return false;
+		} else if (!value.equals(other.value))
+			return false;
+			
+		return true;
 	}
 
 	@Override
