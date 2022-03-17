@@ -238,8 +238,8 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 
 	public static boolean processes(SymbolicExpression expression) {
 		return expression.hasRuntimeTypes()
-				? expression.getRuntimeTypes().anyMatch(PandasType.class::isInstance)
-				: expression.getStaticType() instanceof PandasType || expression.getStaticType().isUntyped();
+				? expression.getRuntimeTypes().anyMatch(t -> PandasType.isPandasType(t, false))
+				: PandasType.isPandasType(expression.getStaticType(), false) || expression.getStaticType().isUntyped();
 	}
 
 	@Override

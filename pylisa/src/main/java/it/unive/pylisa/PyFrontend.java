@@ -81,7 +81,6 @@ import it.unive.lisa.program.cfg.statement.logic.Not;
 import it.unive.lisa.program.cfg.statement.logic.Or;
 import it.unive.lisa.program.cfg.statement.numeric.Addition;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
-import it.unive.lisa.program.cfg.statement.numeric.Multiplication;
 import it.unive.lisa.program.cfg.statement.numeric.Remainder;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
 import it.unive.lisa.type.NullType;
@@ -201,6 +200,7 @@ import it.unive.pylisa.cfg.expression.PyFloorDiv;
 import it.unive.pylisa.cfg.expression.PyIn;
 import it.unive.pylisa.cfg.expression.PyIs;
 import it.unive.pylisa.cfg.expression.PyMatMul;
+import it.unive.pylisa.cfg.expression.PyMultiplication;
 import it.unive.pylisa.cfg.expression.PyPower;
 import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
 import it.unive.pylisa.cfg.expression.PyXor;
@@ -1532,7 +1532,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (ctx.term() == null) {
 			return visitFactor(ctx.factor());
 		} else {
-			return createPairFromSingle(new Multiplication(currentCFG, getLocation(ctx),
+			return createPairFromSingle(new PyMultiplication(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitFactor(ctx.factor())),
 					checkAndExtractSingleExpression(visitTerm(ctx.term()))));
 		}

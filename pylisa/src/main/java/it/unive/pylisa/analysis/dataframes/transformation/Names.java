@@ -7,8 +7,6 @@ import it.unive.lisa.analysis.lattices.SetLattice;
 
 public class Names extends SetLattice<Names, String> {
 
-	private final boolean isTop;
-
 	public Names() {
 		this(true);
 	}
@@ -26,8 +24,7 @@ public class Names extends SetLattice<Names, String> {
 	}
 
 	private Names(Set<String> elements, boolean isTop) {
-		super(elements);
-		this.isTop = isTop;
+		super(elements, isTop);
 	}
 
 	@Override
@@ -36,44 +33,12 @@ public class Names extends SetLattice<Names, String> {
 	}
 
 	@Override
-	public boolean isTop() {
-		return elements.isEmpty() && isTop;
-	}
-
-	@Override
 	public Names bottom() {
 		return new Names(false);
 	}
 
 	@Override
-	public boolean isBottom() {
-		return elements.isEmpty() && !isTop;
-	}
-
-	@Override
 	protected Names mk(Set<String> set) {
 		return new Names(set);
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + (isTop ? 1231 : 1237);
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (!super.equals(obj))
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Names other = (Names) obj;
-		if (isTop != other.isTop)
-			return false;
-		return true;
 	}
 }

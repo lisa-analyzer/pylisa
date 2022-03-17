@@ -10,6 +10,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.TreeSet;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -21,6 +23,7 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.types.InferredTypes;
+import it.unive.lisa.checks.warnings.Warning;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.outputs.JsonReport;
@@ -30,6 +33,7 @@ import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
 import it.unive.pylisa.checks.DataframeDumper;
+import it.unive.pylisa.checks.OpenCallsFinder;
 
 public abstract class NotebookTest {
 
@@ -47,6 +51,9 @@ public abstract class NotebookTest {
 		LiSAConfiguration conf = buildConfig(getWorkdir(file));
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
+		Collection<Warning> warnings = new TreeSet<>(lisa.getWarnings());
+		for (Warning warn : warnings)
+			System.err.println(warn);
 	}
 
 	private LiSAConfiguration buildConfig(String workdir) throws AnalysisSetupException {
@@ -58,6 +65,7 @@ public abstract class NotebookTest {
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
 		conf.addSemanticCheck(new DataframeDumper(conf));
+		conf.addSemanticCheck(new OpenCallsFinder<>());
 
 		PointBasedHeap heap = new FieldSensitivePointBasedHeap();
 		InferredTypes type = new InferredTypes();

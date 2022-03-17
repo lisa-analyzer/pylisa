@@ -15,6 +15,7 @@ import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
+import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ModularWorstCaseAnalysis;
 import it.unive.lisa.program.CompilationUnit;
@@ -82,7 +83,8 @@ public class DFSemanticsTest {
 		AnalysisState<
 				SimpleAbstractState<PointBasedHeap, SideEffectAwareDataframeDomain, TypeEnvironment<InferredTypes>>,
 				PointBasedHeap, SideEffectAwareDataframeDomain,
-				TypeEnvironment<InferredTypes>> entryState = new AnalysisState<>(entry, new ExpressionSet<>());
+				TypeEnvironment<InferredTypes>> entryState = new AnalysisState<>(entry, new ExpressionSet<>(),
+						new SymbolAliasing());
 
 		expressions = new StatementStore<>(entryState);
 
@@ -114,7 +116,8 @@ public class DFSemanticsTest {
 	public void testHead() throws SemanticException, AnalysisSetupException {
 		SourceCodeLocation headloc = new SourceCodeLocation("head", 0, 0);
 
-		DataframeGraphDomain elem1 = new DataframeGraphDomain(baseGraph, new AccessOperation<>(headloc, new NumberSlice(0, 5)));
+		DataframeGraphDomain elem1 = new DataframeGraphDomain(baseGraph,
+				new AccessOperation<>(headloc, new NumberSlice(0, 5)));
 		DFOrConstant df1 = new DFOrConstant(elem1);
 		DataframeGraphDomain elem2 = new DataframeGraphDomain(baseGraph,
 				new ProjectionOperation<>(headloc, new NumberSlice(0, 5)));
