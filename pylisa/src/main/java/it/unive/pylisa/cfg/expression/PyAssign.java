@@ -56,27 +56,30 @@ public class PyAssign extends Assignment {
 
 			if (containerLeft instanceof HeapDereference) {
 				HeapDereference heapDerefLeft = (HeapDereference) containerLeft;
-				SymbolicExpression r = right;
-				if (heapDerefLeft.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
-					if (right instanceof AccessChild
-							&& right.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE))) {
-						HeapDereference container_right = (HeapDereference) ((AccessChild) right).getContainer();
-						if (container_right.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
-							r = container_right;
-					}
 
-					return state
-							.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, heapDerefLeft, r,
-									WriteColumn.INSTANCE, getLocation()), this);
-				}
-			} else if (containerLeft instanceof AccessChild) {
-				// double array access
-				SymbolicExpression secondContainer = ((AccessChild) containerLeft).getContainer();
-				if (secondContainer instanceof HeapDereference) {
-					HeapDereference dfDereference = (HeapDereference) containerLeft;
-					if (dfDereference.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
-						return state.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, 
-								dfDereference, right, WriteSelection.INSTANCE, getLocation()), this);
+				if (!(heapDerefLeft.getExpression() instanceof AccessChild)) {
+					SymbolicExpression r = right;
+					if (heapDerefLeft.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
+						if (right instanceof AccessChild
+								&& right.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE))) {
+							HeapDereference container_right = (HeapDereference) ((AccessChild) right).getContainer();
+							if (container_right.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
+								r = container_right;
+						}
+
+						return state
+								.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, heapDerefLeft, r,
+										WriteColumn.INSTANCE, getLocation()), this);
+					}
+				} else {
+					// we have another nested access child double array access
+					SymbolicExpression secondContainer = ((AccessChild) heapDerefLeft.getExpression()).getContainer();
+					if (secondContainer instanceof HeapDereference) {
+						HeapDereference dfDereference = (HeapDereference) secondContainer;
+						if (dfDereference.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
+							return state.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, 
+									dfDereference, right, WriteSelection.INSTANCE, getLocation()), this);
+						}
 					}
 				}
 			}
@@ -114,5 +117,20 @@ public class PyAssign extends Assignment {
 
 		// we leave the reference on the stack
 		return assign.smallStepSemantics(ref, this);
+	}
+
+	public static HeapDereference getDataframeDereference(SymbolicExpression accessChild) {
+		if (accessChild instanceof AccessChild 
+			&& accessChild.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.REFERENCE) || t.equals(PandasSeriesType.REFERENCE))) {
+			HeapDereference firstDeref = (HeapDereference) ((AccessChild) accessChild).getContainer();
+			
+			if (!(firstDeref.getExpression() instanceof AccessChild)) {
+				return firstDeref;
+			}
+
+			HeapDereference secondDereference = (HeapDereference) ((AccessChild) firstDeref.getExpression()).getContainer();
+			return secondDereference;
+		}
+		return null;
 	}
 }

@@ -50,7 +50,7 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 					AccessRowsColumns.INSTANCE, 
 					getLocation()
 			);
-			tmp.smallStepSemantics(dfAccess, this);
+			tmp = tmp.smallStepSemantics(dfAccess, this);
 		}
 
 		AccessChild access = new AccessChild(Untyped.INSTANCE, deref, middle, getLocation());

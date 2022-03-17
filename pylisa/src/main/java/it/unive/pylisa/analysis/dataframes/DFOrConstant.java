@@ -1,5 +1,6 @@
 package it.unive.pylisa.analysis.dataframes;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -301,13 +302,13 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			if (topOrBottom(df) || topOrBottom(cols))
 				return TOP_GRAPH;
 
-			if (!(cols.getConstant() instanceof ExpressionSet<?>[]))
+				if (!(cols.getConstant() instanceof ArrayList<?>))
 				// check whether the cols constant is indeed what we expect for
 				// a constant list
 				return TOP_GRAPH;
 
 			@SuppressWarnings("unchecked")
-			ExpressionSet<Constant>[] cs = (ExpressionSet<Constant>[]) cols.getConstant();
+			ArrayList<ExpressionSet<Constant>> cs = (ArrayList<ExpressionSet<Constant>>) cols.getConstant();
 			Set<String> accessedCols = new HashSet<>();
 
 			for (ExpressionSet<Constant> c : cs) {
@@ -469,13 +470,13 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			if (topOrBottom(df) || topOrBottom(cols))
 				return TOP_GRAPH;
 
-			if (!(cols.getConstant() instanceof ExpressionSet<?>[]))
+			if (!(cols.getConstant() instanceof ArrayList<?>))
 				// check whether the cols constant is indeed what we expect for
 				// a constant list
 				return TOP_GRAPH;
 
 			@SuppressWarnings("unchecked")
-			ExpressionSet<Constant>[] cs = (ExpressionSet<Constant>[]) cols.getConstant();
+			ArrayList<ExpressionSet<Constant>> cs = (ArrayList<ExpressionSet<Constant>>) cols.getConstant();
 			Set<String> accessedCols = new HashSet<>();
 
 			for (ExpressionSet<Constant> c : cs) {

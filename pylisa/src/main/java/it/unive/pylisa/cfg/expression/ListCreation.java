@@ -1,5 +1,9 @@
 package it.unive.pylisa.cfg.expression;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -19,6 +23,7 @@ import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.cfg.type.PyListType;
@@ -26,6 +31,12 @@ import it.unive.pylisa.cfg.type.PyListType;
 public class ListCreation extends NaryExpression {
 	public ListCreation(CFG cfg, CodeLocation loc, Expression... values) {
 		super(cfg, loc, "list", values);
+	}
+
+	public static class StringListConstant extends Constant {
+		public StringListConstant(Type type, ArrayList<ExpressionSet<Constant>> elems, CodeLocation location) {
+			super(type, elems, location);
+		}
 	}
 
 	@Override
@@ -38,6 +49,31 @@ public class ListCreation extends NaryExpression {
 					ExpressionSet<SymbolicExpression>[] params,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
+
+		Boolean allStrings = true;
+
+		ArrayList<ExpressionSet<Constant>> elems = new ArrayList<>();
+		for (int i = 0; i < params.length; i++) {
+			ExpressionSet<SymbolicExpression> param = params[i];
+			Set<Constant> elemSet = new HashSet<>();
+			for (SymbolicExpression expr : param) {
+				if (!(expr instanceof Constant) || (!expr.getRuntimeTypes().allMatch(Type::isStringType))) {
+					allStrings = false;
+					break;
+				}
+				elemSet.add((Constant) expr);
+			}
+			if (!allStrings)
+				break;
+
+			elems.add(new ExpressionSet<>(elemSet));
+		}
+
+		if (allStrings) {
+			StringListConstant listConstant = new StringListConstant(PyListType.INSTANCE, elems, getLocation());
+			return state.smallStepSemantics(listConstant, this);
+		}
+
 		AnalysisState<A, H, V, T> result = state.bottom();
 
 		// allocate the heap region
