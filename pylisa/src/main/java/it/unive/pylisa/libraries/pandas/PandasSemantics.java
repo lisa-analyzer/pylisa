@@ -82,4 +82,19 @@ public class PandasSemantics {
 
 		return result;
 	}
+
+	public static SymbolicExpression getDataframeDereference(SymbolicExpression accessChild) {
+		if (accessChild instanceof AccessChild 
+			&& accessChild.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.REFERENCE) || t.equals(PandasSeriesType.REFERENCE))) {
+			HeapDereference firstDeref = (HeapDereference) ((AccessChild) accessChild).getContainer();
+			
+			if (!(firstDeref.getExpression() instanceof AccessChild)) {
+				return firstDeref;
+			}
+
+			HeapDereference secondDereference = (HeapDereference) ((AccessChild) firstDeref.getExpression()).getContainer();
+			return secondDereference;
+		}
+		return accessChild;
+	}
 }

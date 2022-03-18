@@ -26,6 +26,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.cfg.type.PyTupleType;
+import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.operators.WriteSelectionDataframe;
@@ -52,11 +53,11 @@ public class PyAssign extends Assignment {
 		if (left instanceof AccessChild && 
 			left.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE) || t.equals(PandasDataframeType.REFERENCE))) {
 
-			HeapDereference leftDataframeDeref = getDataframeDereference(left);
+			SymbolicExpression leftDataframeDeref = PandasSemantics.getDataframeDereference(left);
 
 			if (right.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.REFERENCE) || t.equals(PandasSeriesType.REFERENCE))) {
 				// asssigning part of a dataframe to another dataframe so get deref from right
-				HeapDereference rightDataframeDeref = getDataframeDereference(right);
+				SymbolicExpression rightDataframeDeref = PandasSemantics.getDataframeDereference(right);
 
 				return state.smallStepSemantics(
 					new BinaryExpression(PandasDataframeType.INSTANCE, leftDataframeDeref, rightDataframeDeref, 
@@ -102,20 +103,5 @@ public class PyAssign extends Assignment {
 
 		// we leave the reference on the stack
 		return assign.smallStepSemantics(ref, this);
-	}
-
-	public static HeapDereference getDataframeDereference(SymbolicExpression accessChild) {
-		if (accessChild instanceof AccessChild 
-			&& accessChild.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.REFERENCE) || t.equals(PandasSeriesType.REFERENCE))) {
-			HeapDereference firstDeref = (HeapDereference) ((AccessChild) accessChild).getContainer();
-			
-			if (!(firstDeref.getExpression() instanceof AccessChild)) {
-				return firstDeref;
-			}
-
-			HeapDereference secondDereference = (HeapDereference) ((AccessChild) firstDeref.getExpression()).getContainer();
-			return secondDereference;
-		}
-		return null;
 	}
 }
