@@ -25,7 +25,7 @@ version = '0.1a1'
 mainClassName = 'it.unive.pylisa.PyFrontend'
 
 dependencies {
-    implementation 'com.github.unive-ssv:lisa-core:0.1b5'
+    implementation 'com.github.unive-ssv:lisa-core:0.1b5-SNAPSHOT'
     antlr 'org.antlr:antlr4:4.8-1'    
     testImplementation 'junit:junit:4.12'
     implementation 'com.google.code.gson:gson:2.8.7'

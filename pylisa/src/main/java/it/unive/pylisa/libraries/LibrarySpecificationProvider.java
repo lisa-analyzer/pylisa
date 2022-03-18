@@ -142,16 +142,6 @@ public class LibrarySpecificationProvider {
 				new CFGDescriptor(PANDAS_LOC,
 						unit1,
 						false,
-						"set_option",
-						VoidType.INSTANCE,
-						new Parameter(PANDAS_LOC, "key", StringType.INSTANCE),
-						new Parameter(PANDAS_LOC, "value", Untyped.INSTANCE)),
-				NoEffectMethod.class));
-
-		unit1.addConstruct(new NativeCFG(
-				new CFGDescriptor(PANDAS_LOC,
-						unit1,
-						false,
 						"to_datetime",
 						PandasSeriesType.REFERENCE,
 						new Parameter(PANDAS_LOC, "arg", PandasSeriesType.REFERENCE)),
@@ -186,7 +176,7 @@ public class LibrarySpecificationProvider {
 						"describe",
 						PandasDataframeType.REFERENCE,
 						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE)),
-				NoEffectMethod.class));
+				UninterestingDataframeFunction.class));
 
 		unit1.addInstanceConstruct(new NativeCFG(
 				new CFGDescriptor(PANDAS_LOC,
@@ -195,7 +185,7 @@ public class LibrarySpecificationProvider {
 						"info",
 						VoidType.INSTANCE,
 						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE)),
-				NoEffectMethod.class));
+				UninterestingDataframeFunction.class));
 
 		unit1.addInstanceConstruct(new NativeCFG(
 				new CFGDescriptor(PANDAS_LOC,

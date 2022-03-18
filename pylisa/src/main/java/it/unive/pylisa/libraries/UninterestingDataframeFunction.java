@@ -17,16 +17,17 @@ import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 
-public class NoEffectMethod extends NaryExpression implements PluggableStatement {
+public class UninterestingDataframeFunction extends NaryExpression implements PluggableStatement {
 
 	protected Statement st;
 
-	public NoEffectMethod(CFG cfg, CodeLocation location, String constructName, Expression... parameters) {
+	public UninterestingDataframeFunction(CFG cfg, CodeLocation location, String constructName,
+			Expression... parameters) {
 		super(cfg, location, constructName, parameters);
 	}
 
-	public static NoEffectMethod build(CFG cfg, CodeLocation location, Expression[] exprs) {
-		return new NoEffectMethod(cfg, location, "unknown", exprs);
+	public static UninterestingDataframeFunction build(CFG cfg, CodeLocation location, Expression[] exprs) {
+		return new UninterestingDataframeFunction(cfg, location, "uninteresting-func", exprs);
 	}
 
 	@Override
@@ -43,6 +44,10 @@ public class NoEffectMethod extends NaryExpression implements PluggableStatement
 					AnalysisState<A, H, V, T> state,
 					ExpressionSet<SymbolicExpression>[] params,
 					StatementStore<A, H, V, T> expressions) throws SemanticException {
-		return state;
+		AnalysisState<A, H, V, T> result = state.bottom();
+		// we just return the same dataframe
+		for (SymbolicExpression df : params[0])
+			result = result.lub(state.smallStepSemantics(df, st));
+		return result;
 	}
 }
