@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -72,8 +73,8 @@ import it.unive.pylisa.symbolic.operators.PopSelection;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
-import it.unive.pylisa.symbolic.operators.WriteColumn;
-import it.unive.pylisa.symbolic.operators.WriteSelection;
+import it.unive.pylisa.symbolic.operators.WriteSelectionDataframe;
+import it.unive.pylisa.symbolic.operators.WriteSelectionConstant;
 
 public class DFGraphTest {
 
@@ -200,9 +201,9 @@ public class DFGraphTest {
 	public void testDropCols() throws SemanticException {
 
 		@SuppressWarnings("unchecked")
-		ExpressionSet<Constant>[] cols = (ExpressionSet<Constant>[]) new ExpressionSet[2];
-		cols[0] = new ExpressionSet<>(new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE));
-		cols[1] = new ExpressionSet<>(new Constant(StringType.INSTANCE, "col2", SyntheticLocation.INSTANCE));
+		ArrayList<ExpressionSet<Constant>> cols = new ArrayList<>();
+		cols.add(new ExpressionSet<>(new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE)));
+		cols.add(new ExpressionSet<>(new Constant(StringType.INSTANCE, "col2", SyntheticLocation.INSTANCE)));
 
 		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE,
 				df_foo,
@@ -329,11 +330,11 @@ public class DFGraphTest {
 	}
 
 	@Test
-	public void testWriteColumn() throws SemanticException {
+	public void testWriteSelectionDataframe() throws SemanticException {
 		BinaryExpression binary = new BinaryExpression(PandasDataframeType.INSTANCE,
 				df_foo_with_selection,
 				df_bar,
-				WriteColumn.INSTANCE,
+				WriteSelectionDataframe.INSTANCE,
 				SyntheticLocation.INSTANCE);
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(binary, fake);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
@@ -419,8 +420,8 @@ public class DFGraphTest {
 		env = env.putState(df2, sss.getValueOnStack());
 
 		@SuppressWarnings("unchecked")
-		ExpressionSet<Constant>[] cols = (ExpressionSet<Constant>[]) new ExpressionSet[1];
-		cols[0] = new ExpressionSet<>(new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE));
+		ArrayList<ExpressionSet<Constant>> cols = new ArrayList<>();
+		cols.add(new ExpressionSet<>(new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE)));
 
 		sss = env.smallStepSemantics(
 			new TernaryExpression(
@@ -455,7 +456,7 @@ public class DFGraphTest {
 	}
 
 	@Test
-	public void testWriteSelection() throws SemanticException {
+	public void testWriteSelectionConstant() throws SemanticException {
 		// Part 1: write selection with a constant value
 		Variable df1 = new Variable(PandasDataframeType.INSTANCE, "df1", SyntheticLocation.INSTANCE);
 		DataframeGraph df1Graph = new DataframeGraph();
@@ -468,7 +469,7 @@ public class DFGraphTest {
 		ValueEnvironment<DFOrConstant> sss = env.smallStepSemantics(
 			new BinaryExpression(PandasDataframeType.INSTANCE, df1, 
 				new Constant(StringType.INSTANCE, "hula-hoops", SyntheticLocation.INSTANCE), 
-			WriteSelection.INSTANCE, SyntheticLocation.INSTANCE), fake
+			WriteSelectionConstant.INSTANCE, SyntheticLocation.INSTANCE), fake
 		);
 
 		DataframeGraph expected = DataframeGraphDomain.append(

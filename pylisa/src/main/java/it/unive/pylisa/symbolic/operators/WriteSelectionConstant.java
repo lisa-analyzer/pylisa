@@ -9,11 +9,11 @@ import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 
-public class WriteSelection implements BinaryOperator, DataframeOperatorWithSideEffects {
+public class WriteSelectionConstant implements BinaryOperator, DataframeOperatorWithSideEffects {
 
-    public static final WriteSelection INSTANCE = new WriteSelection();
+    public static final WriteSelectionConstant INSTANCE = new WriteSelectionConstant();
 
-    private WriteSelection() {
+    private WriteSelectionConstant() {
     }
     
     @Override

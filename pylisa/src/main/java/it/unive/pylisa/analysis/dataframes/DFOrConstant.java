@@ -58,8 +58,8 @@ import it.unive.pylisa.symbolic.operators.PopSelection;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
-import it.unive.pylisa.symbolic.operators.WriteColumn;
-import it.unive.pylisa.symbolic.operators.WriteSelection;
+import it.unive.pylisa.symbolic.operators.WriteSelectionDataframe;
+import it.unive.pylisa.symbolic.operators.WriteSelectionConstant;
 
 public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
@@ -352,7 +352,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			concatGraph.addEdge(new ConcatEdge(exit2, concatNode, 1));
 
 			return new DFOrConstant(new DataframeGraphDomain(concatGraph));
-		} else if (operator instanceof WriteColumn) {
+		} else if (operator instanceof WriteSelectionDataframe) {
 			DataframeGraphDomain df1 = left.graph;
 			DataframeGraphDomain df2 = right.graph;
 
@@ -379,28 +379,24 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 			DataframeGraphDomain dfNew = new DataframeGraphDomain(result);
 			return new DFOrConstant(dfNew);
-		} else if (operator instanceof WriteSelection) {
+		} else if (operator instanceof WriteSelectionConstant) {
 			DataframeGraphDomain df = left.graph;
 			DataframeOperation leaf = df.getTransformations().getLeaf();
-			if (!(leaf instanceof AccessOperation))
+			if (!(leaf instanceof SelectionOperation))
 				return TOP_GRAPH;
 
-			AccessOperation<?> access = (AccessOperation<?>) leaf;
+			SelectionOperation<?> access = (SelectionOperation<?>) leaf;
 			DataframeGraph resultGraph = df.getTransformations().prefix();
 
-			DataframeOperation nodeToAdd = new TopOperation(pp.getLocation());
-
 			// right can be either constant or df
-			if (topOrBottom(right))
+			if (topOrBottom(right.constant))
 				return TOP_GRAPH;
 
-			if (!topOrBottom(right.constant)) {
-				DataframeSelection selection = (DataframeSelection) access.getSelection();
-				nodeToAdd = new AssignValue<>(pp.getLocation(), selection, right.constant);
-			} else if (!topOrBottom(right.graph)) {
-				// to deal with
-				return TOP_GRAPH;
-			}
+			@SuppressWarnings({ "rawtypes"})
+			DataframeSelection selection = (DataframeSelection) access.getSelection();
+			
+			@SuppressWarnings({ "unchecked" })
+			DataframeOperation nodeToAdd = new AssignValue<>(pp.getLocation(), selection, right.constant);
 			
 			DataframeGraphDomain resultGraphDomain = new DataframeGraphDomain(resultGraph, nodeToAdd);
 			return new DFOrConstant(resultGraphDomain);
@@ -415,10 +411,10 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeOperation leaf = original.getLeaf();
 			// we check if we had previously projected a part of the dataframe
 			// which we want to compare
-			if (!(leaf instanceof ProjectionOperation<?>))
+			if (!(leaf instanceof SelectionOperation<?>))
 				return TOP_GRAPH;
 
-			ProjectionOperation<?> projection = (ProjectionOperation<?>) leaf;
+			SelectionOperation<?> projection = (SelectionOperation<?>) leaf;
 
 			// we remove the access node and replace with a comparison node
 			DataframeGraph prefix = original.prefix();

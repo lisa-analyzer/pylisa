@@ -28,8 +28,8 @@ import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.cfg.type.PyTupleType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
-import it.unive.pylisa.symbolic.operators.WriteColumn;
-import it.unive.pylisa.symbolic.operators.WriteSelection;
+import it.unive.pylisa.symbolic.operators.WriteSelectionDataframe;
+import it.unive.pylisa.symbolic.operators.WriteSelectionConstant;
 
 public class PyAssign extends Assignment {
 
@@ -52,39 +52,24 @@ public class PyAssign extends Assignment {
 		if (left instanceof AccessChild && 
 			left.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE) || t.equals(PandasDataframeType.REFERENCE))) {
 
-			SymbolicExpression containerLeft = ((AccessChild) left).getContainer();
+			HeapDereference leftDataframeDeref = getDataframeDereference(left);
 
-			if (containerLeft instanceof HeapDereference) {
-				HeapDereference heapDerefLeft = (HeapDereference) containerLeft;
+			if (right.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.REFERENCE) || t.equals(PandasSeriesType.REFERENCE))) {
+				// asssigning part of a dataframe to another dataframe so get deref from right
+				HeapDereference rightDataframeDeref = getDataframeDereference(right);
 
-				if (!(heapDerefLeft.getExpression() instanceof AccessChild)) {
-					SymbolicExpression r = right;
-					if (heapDerefLeft.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
-						if (right instanceof AccessChild
-								&& right.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE))) {
-							HeapDereference container_right = (HeapDereference) ((AccessChild) right).getContainer();
-							if (container_right.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
-								r = container_right;
-						}
-
-						return state
-								.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, heapDerefLeft, r,
-										WriteColumn.INSTANCE, getLocation()), this);
-					}
-				} else {
-					// we have another nested access child double array access
-					SymbolicExpression secondContainer = ((AccessChild) heapDerefLeft.getExpression()).getContainer();
-					if (secondContainer instanceof HeapDereference) {
-						HeapDereference dfDereference = (HeapDereference) secondContainer;
-						if (dfDereference.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
-							return state.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, 
-									dfDereference, right, WriteSelection.INSTANCE, getLocation()), this);
-						}
-					}
-				}
+				return state.smallStepSemantics(
+					new BinaryExpression(PandasDataframeType.INSTANCE, leftDataframeDeref, rightDataframeDeref, 
+						WriteSelectionDataframe.INSTANCE, getLocation()
+					), 
+					this
+				);
+			} else {
+				// assigning a part of a dataframe to a constant
+				return state.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, 
+						leftDataframeDeref, right, WriteSelectionConstant.INSTANCE, getLocation()), this);
 			}
 		}
-		
 
 		Expression lefthand = getLeft();
 		if (!(lefthand instanceof TupleCreation))
