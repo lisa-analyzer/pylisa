@@ -28,7 +28,7 @@ public class PandasSeriesComparison implements BinaryOperator {
     public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> right) {
         if (left.noneMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
             return Caches.types().mkEmptySet();
-        if (right.noneMatch(t -> t.isNumericType() || t.isStringType()))
+        if (right.noneMatch(t -> t.isStringType()))
             return Caches.types().mkEmptySet();
         return Caches.types().mkSingletonSet(PandasSeriesType.INSTANCE);
     }

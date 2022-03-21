@@ -194,6 +194,7 @@ import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import it.unive.pylisa.cfg.expression.Empty;
 import it.unive.pylisa.cfg.expression.LambdaExpression;
 import it.unive.pylisa.cfg.expression.ListCreation;
+import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
 import it.unive.pylisa.cfg.expression.PyFloorDiv;
@@ -1644,7 +1645,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					last_name = expr.NAME().getSymbol().getText();
 					Global fieldName = new Global(getLocation(ctx), last_name);
 					previous_access = access;
-					access = new AccessInstanceGlobal(currentCFG, getLocation(expr), access, fieldName);
+					access = new PyAccessInstanceGlobal(currentCFG, getLocation(expr), access, fieldName);
 				} else if (expr.OPEN_PAREN() != null) {
 					if (last_name == null)
 						throw new UnsupportedStatementException(

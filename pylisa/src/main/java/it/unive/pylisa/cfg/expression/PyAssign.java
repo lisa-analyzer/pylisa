@@ -26,9 +26,11 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.cfg.type.PyTupleType;
+import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
-import it.unive.pylisa.symbolic.operators.WriteColumn;
+import it.unive.pylisa.symbolic.operators.WriteSelectionDataframe;
+import it.unive.pylisa.symbolic.operators.WriteSelectionConstant;
 
 public class PyAssign extends Assignment {
 
@@ -47,20 +49,26 @@ public class PyAssign extends Assignment {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		if (left instanceof AccessChild && left.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE))) {
-			HeapDereference container_left = (HeapDereference) ((AccessChild) left).getContainer();
-			SymbolicExpression r = right;
-			if (container_left.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE))) {
-				if (right instanceof AccessChild
-						&& right.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE))) {
-					HeapDereference container_right = (HeapDereference) ((AccessChild) right).getContainer();
-					if (container_right.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
-						r = container_right;
-				}
 
-				return state
-						.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, container_left, r,
-								WriteColumn.INSTANCE, getLocation()), this);
+		if (left instanceof AccessChild && 
+			left.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE) || t.equals(PandasDataframeType.REFERENCE))) {
+
+			SymbolicExpression leftDataframeDeref = PandasSemantics.getDataframeDereference(left);
+
+			if (right.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.REFERENCE) || t.equals(PandasSeriesType.REFERENCE))) {
+				// asssigning part of a dataframe to another dataframe so get deref from right
+				SymbolicExpression rightDataframeDeref = PandasSemantics.getDataframeDereference(right);
+
+				return state.smallStepSemantics(
+					new BinaryExpression(PandasDataframeType.INSTANCE, leftDataframeDeref, rightDataframeDeref, 
+						WriteSelectionDataframe.INSTANCE, getLocation()
+					), 
+					this
+				);
+			} else {
+				// assigning a part of a dataframe to a constant
+				return state.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, 
+						leftDataframeDeref, right, WriteSelectionConstant.INSTANCE, getLocation()), this);
 			}
 		}
 

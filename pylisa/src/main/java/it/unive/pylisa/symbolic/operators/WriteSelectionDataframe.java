@@ -8,11 +8,11 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 
-public class WriteColumn implements BinaryOperator, DataframeOperatorWithSideEffects {
+public class WriteSelectionDataframe implements BinaryOperator, DataframeOperatorWithSideEffects {
 
-	public static final WriteColumn INSTANCE = new WriteColumn();
+	public static final WriteSelectionDataframe INSTANCE = new WriteSelectionDataframe();
 
-	private WriteColumn() {
+	private WriteSelectionDataframe() {
 	}
 
 	@Override
