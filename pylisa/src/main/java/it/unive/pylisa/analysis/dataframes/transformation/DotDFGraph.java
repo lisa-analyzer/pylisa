@@ -113,6 +113,11 @@ public class DotDFGraph {
 
 		if (color != null)
 			e.setAttribute(COLOR, color);
+		
+		if (edge instanceof AssignEdge)
+			e.setAttribute(LABEL, "A");
+		else if (edge instanceof ConcatEdge)
+			e.setAttribute(LABEL, ((ConcatEdge) edge).getEdgeIndex());
 	}
 
 	public void dumpDot(Writer writer) throws IOException {

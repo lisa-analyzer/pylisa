@@ -2,6 +2,7 @@ package it.unive.pylisa.cfg.expression;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import it.unive.lisa.analysis.AbstractState;
@@ -23,20 +24,16 @@ import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.type.Type;
+import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.cfg.type.PyListType;
+import it.unive.pylisa.symbolic.AtomList;
 
 public class ListCreation extends NaryExpression {
+
 	public ListCreation(CFG cfg, CodeLocation loc, Expression... values) {
 		super(cfg, loc, "list", values);
-	}
-
-	public static class StringListConstant extends Constant {
-		public StringListConstant(Type type, ArrayList<ExpressionSet<Constant>> elems, CodeLocation location) {
-			super(type, elems, location);
-		}
 	}
 
 	@Override
@@ -50,28 +47,27 @@ public class ListCreation extends NaryExpression {
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 
-		Boolean allStrings = true;
+		boolean allAtoms = true;
 
-		ArrayList<ExpressionSet<Constant>> elems = new ArrayList<>();
-		for (int i = 0; i < params.length; i++) {
+		List<ExpressionSet<ValueExpression>> atoms = new ArrayList<>(params.length);
+		outer: for (int i = 0; i < params.length; i++) {
 			ExpressionSet<SymbolicExpression> param = params[i];
-			Set<Constant> elemSet = new HashSet<>();
+			Set<ValueExpression> elements = new HashSet<>();
 			for (SymbolicExpression expr : param) {
-				if (!(expr instanceof Constant) || (!expr.getRuntimeTypes().allMatch(Type::isStringType))) {
-					allStrings = false;
-					break;
+				if (!AtomList.isAtom(expr)) {
+					allAtoms = false;
+					break outer;
 				}
-				elemSet.add((Constant) expr);
-			}
-			if (!allStrings)
-				break;
 
-			elems.add(new ExpressionSet<>(elemSet));
+				elements.add((ValueExpression) expr);
+			}
+
+			atoms.add(new ExpressionSet<>(elements));
 		}
 
-		if (allStrings) {
-			StringListConstant listConstant = new StringListConstant(PyListType.INSTANCE, elems, getLocation());
-			return state.smallStepSemantics(listConstant, this);
+		if (allAtoms) {
+			AtomList list = new AtomList(getLocation(), atoms);
+			return state.smallStepSemantics(list, this);
 		}
 
 		AnalysisState<A, H, V, T> result = state.bottom();

@@ -25,10 +25,13 @@ import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.cfg.PythonUnit;
 import it.unive.pylisa.cfg.type.PyLambdaType;
+import it.unive.pylisa.cfg.type.PyListType;
 import it.unive.pylisa.libraries.geopandas.Geocode;
 import it.unive.pylisa.libraries.pandas.Apply;
+import it.unive.pylisa.libraries.pandas.Concatenate;
 import it.unive.pylisa.libraries.pandas.DropNA;
 import it.unive.pylisa.libraries.pandas.Head;
+import it.unive.pylisa.libraries.pandas.Join;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
 import it.unive.pylisa.libraries.pandas.ToDatetime;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
@@ -147,6 +150,15 @@ public class LibrarySpecificationProvider {
 						new Parameter(PANDAS_LOC, "arg", PandasSeriesType.REFERENCE)),
 				ToDatetime.class));
 
+		unit1.addConstruct(new NativeCFG(
+				new CFGDescriptor(PANDAS_LOC,
+						unit1,
+						false,
+						"concat",
+						PandasDataframeType.REFERENCE,
+						new Parameter(PANDAS_LOC, "objs", PyListType.INSTANCE)),
+				Concatenate.class));
+
 		return unit1;
 	}
 
@@ -209,6 +221,16 @@ public class LibrarySpecificationProvider {
 						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE),
 						new Parameter(PANDAS_LOC, "function", PyLambdaType.INSTANCE)),
 				Apply.class));
+
+		unit1.addInstanceConstruct(new NativeCFG(
+				new CFGDescriptor(PANDAS_LOC,
+						unit1,
+						true,
+						"join",
+						PandasDataframeType.REFERENCE,
+						new Parameter(PANDAS_LOC, "this", PandasDataframeType.REFERENCE),
+						new Parameter(PANDAS_LOC, "other", PandasDataframeType.REFERENCE)),
+				Join.class));
 
 		return unit1;
 	}

@@ -22,6 +22,7 @@ public class AssignValue<R extends RowSelection<R>, C extends ColumnSelection<C>
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
 		if (!(other instanceof AssignValue))
 			return false;
+		@SuppressWarnings("unchecked")
 		AssignValue<R, C> o = (AssignValue<R, C>) other;
 		return selection.lessOrEqual(o.selection) && value.lessOrEqual(o.value);
 	}
@@ -48,13 +49,13 @@ public class AssignValue<R extends RowSelection<R>, C extends ColumnSelection<C>
 				return false;
 		} else if (!selection.equals(other.selection))
 			return false;
-		
+
 		if (value == null) {
 			if (other.value != null)
 				return false;
 		} else if (!value.equals(other.value))
 			return false;
-			
+
 		return true;
 	}
 

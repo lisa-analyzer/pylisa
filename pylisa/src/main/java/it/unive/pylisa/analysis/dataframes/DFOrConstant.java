@@ -20,7 +20,6 @@ import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
-import it.unive.pylisa.analysis.dataframes.constants.SliceConstant;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.AssignEdge;
@@ -38,12 +37,12 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullA
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.SelectionOperation;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.TopOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Transform;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.AtomicBooleanSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
+import it.unive.pylisa.symbolic.SliceConstant;
 import it.unive.pylisa.symbolic.operators.AccessRows;
 import it.unive.pylisa.symbolic.operators.AccessRowsColumns;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
@@ -58,8 +57,8 @@ import it.unive.pylisa.symbolic.operators.PopSelection;
 import it.unive.pylisa.symbolic.operators.ProjectRows;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
-import it.unive.pylisa.symbolic.operators.WriteSelectionDataframe;
 import it.unive.pylisa.symbolic.operators.WriteSelectionConstant;
+import it.unive.pylisa.symbolic.operators.WriteSelectionDataframe;
 
 public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
@@ -237,6 +236,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 		return new DFOrConstant(this.constant.eval(constant));
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	protected DFOrConstant evalUnaryExpression(UnaryOperator operator, DFOrConstant arg, ProgramPoint pp)
 			throws SemanticException {
@@ -255,7 +255,6 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeOperation leaf = df.getTransformations().getLeaf();
 			if (!(leaf instanceof SelectionOperation<?>))
 				return TOP_GRAPH;
-			@SuppressWarnings({ "rawtypes", "unchecked" })
 			Transform t = op.getArg().isPresent()
 					? new Transform(pp.getLocation(), kind, ((SelectionOperation<?>) leaf).getSelection(),
 							op.getArg().get())
@@ -282,6 +281,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			return TOP;
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	protected DFOrConstant evalBinaryExpression(BinaryOperator operator, DFOrConstant left, DFOrConstant right,
 			ProgramPoint pp) throws SemanticException {
@@ -307,7 +307,6 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				// a constant list
 				return TOP_GRAPH;
 
-			@SuppressWarnings("unchecked")
 			ArrayList<ExpressionSet<Constant>> cs = (ArrayList<ExpressionSet<Constant>>) cols.getConstant();
 			Set<String> accessedCols = new HashSet<>();
 
@@ -369,7 +368,6 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeGraph result = new DataframeGraph(prefix);
 			result.mergeWith(df2.getTransformations());
 
-			@SuppressWarnings({ "rawtypes", "unchecked" })
 			AssignDataframe assign = new AssignDataframe(pp.getLocation(),
 					((SelectionOperation<?>) access).getSelection());
 
@@ -392,12 +390,8 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			if (topOrBottom(right.constant))
 				return TOP_GRAPH;
 
-			@SuppressWarnings({ "rawtypes"})
-			DataframeSelection selection = (DataframeSelection) access.getSelection();
-			
-			@SuppressWarnings({ "unchecked" })
+			DataframeSelection<?, ?> selection = (DataframeSelection<?, ?>) access.getSelection();
 			DataframeOperation nodeToAdd = new AssignValue<>(pp.getLocation(), selection, right.constant);
-			
 			DataframeGraphDomain resultGraphDomain = new DataframeGraphDomain(resultGraph, nodeToAdd);
 			return new DFOrConstant(resultGraphDomain);
 		} else if (operator instanceof PandasSeriesComparison) {
@@ -436,6 +430,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			return TOP;
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	protected DFOrConstant evalTernaryExpression(TernaryOperator operator, DFOrConstant left, DFOrConstant middle,
 			DFOrConstant right, ProgramPoint pp) throws SemanticException {
@@ -459,7 +454,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeGraphDomain df = left.graph;
 			DataframeGraph resultGraph = df.getTransformations();
 
-			DataframeSelection selection = new DataframeSelection<>(true);
+			DataframeSelection selection = new DataframeSelection(true);
 
 			// right is a list of strings so we will handle that first
 			ConstantPropagation cols = right.constant;
@@ -471,7 +466,6 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				// a constant list
 				return TOP_GRAPH;
 
-			@SuppressWarnings("unchecked")
 			ArrayList<ExpressionSet<Constant>> cs = (ArrayList<ExpressionSet<Constant>>) cols.getConstant();
 			Set<String> accessedCols = new HashSet<>();
 
