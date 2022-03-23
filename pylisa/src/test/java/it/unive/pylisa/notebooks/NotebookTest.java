@@ -43,12 +43,16 @@ public abstract class NotebookTest {
 	}
 
 	protected void perform(String file) throws IOException, AnalysisException {
+		perform(file, true);
+	}
+
+	protected void perform(String file, boolean findOpenCalls) throws IOException, AnalysisException {
 		String kind = FilenameUtils.getExtension(file);
 		PyFrontend translator = new PyFrontend(file, kind.equals("ipynb"));
 
 		Program program = translator.toLiSAProgram();
 
-		LiSAConfiguration conf = buildConfig(getWorkdir(file));
+		LiSAConfiguration conf = buildConfig(getWorkdir(file), findOpenCalls);
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
 		Collection<Warning> warnings = new TreeSet<>(lisa.getWarnings());
@@ -56,7 +60,7 @@ public abstract class NotebookTest {
 			System.err.println(warn);
 	}
 
-	private LiSAConfiguration buildConfig(String workdir) throws AnalysisSetupException {
+	private LiSAConfiguration buildConfig(String workdir, boolean findOpenCalls) throws AnalysisSetupException {
 		LiSAConfiguration conf = new LiSAConfiguration();
 		conf.setWorkdir(workdir);
 		conf.setDumpTypeInference(true);
@@ -65,7 +69,8 @@ public abstract class NotebookTest {
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
 		conf.addSemanticCheck(new DataframeDumper(conf));
-		conf.addSemanticCheck(new OpenCallsFinder<>());
+		if (findOpenCalls)
+			conf.addSemanticCheck(new OpenCallsFinder<>());
 
 		PointBasedHeap heap = new FieldSensitivePointBasedHeap();
 		InferredTypes type = new InferredTypes();
@@ -83,7 +88,7 @@ public abstract class NotebookTest {
 			fail("Cannot delete working directory '" + workdir + "': " + e.getMessage());
 		}
 
-		perform(file);
+		perform(file, false);
 
 		Path expectedPath = Paths.get(workdir.replace("workdir", "expected"));
 		Path actualPath = Paths.get(workdir);
