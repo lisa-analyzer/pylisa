@@ -13,4 +13,9 @@ public class ProjectionOperation<S extends Selection<S>> extends SelectionOperat
 	public String toString() {
 		return "project:" + getSelection();
 	}
+
+	@Override
+	public SelectionOperation<S> mk(CodeLocation where, S selection) {
+		return new ProjectionOperation<>(where, selection);
+	}
 }

@@ -4,7 +4,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.Selection;
 
-public class SelectionOperation<S extends Selection<S>> extends DataframeOperation {
+public abstract class SelectionOperation<S extends Selection<S>> extends DataframeOperation {
 
 	private final S selection;
 
@@ -32,8 +32,10 @@ public class SelectionOperation<S extends Selection<S>> extends DataframeOperati
 		SelectionOperation<?> o = (SelectionOperation<?>) other;
 		if (selection.getClass() != o.selection.getClass())
 			return top();
-		return new SelectionOperation<>(loc(other), selection.lub((S) o.selection));
+		return mk(loc(other), selection.lub((S) o.selection));
 	}
+
+	protected abstract SelectionOperation<S> mk(CodeLocation where, S selection);
 
 	@Override
 	public int hashCode() {
@@ -58,10 +60,5 @@ public class SelectionOperation<S extends Selection<S>> extends DataframeOperati
 		} else if (!selection.equals(other.selection))
 			return false;
 		return true;
-	}
-
-	@Override
-	public String toString() {
-		return "select:" + selection;
 	}
 }

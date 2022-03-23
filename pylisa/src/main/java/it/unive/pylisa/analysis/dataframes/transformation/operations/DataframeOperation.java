@@ -61,7 +61,7 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 		return getClass() == other.getClass() ? lessOrEqualSameOperation(other) : false;
 	}
 
-	protected CodeLocation loc(DataframeOperation other) {
+	public CodeLocation loc(DataframeOperation other) {
 		return where.equals(other.where) ? where : SyntheticLocation.INSTANCE;
 	}
 

@@ -116,7 +116,7 @@ public class DFGraphTest {
 				SyntheticLocation.INSTANCE);
 
 		selection = new ColumnListSelection(new Names("foo"));
-		selectionOp = new SelectionOperation<>(fake.getLocation(), selection);
+		selectionOp = new AccessOperation<>(fake.getLocation(), selection);
 
 		fname_foo = "foo.csv";
 		read_foo = new ReadFromFile(fake.getLocation(), fname_foo);

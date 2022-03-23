@@ -447,8 +447,8 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 			NumberSlice slice = new NumberSlice(start.as(Integer.class), end.as(Integer.class));
 			DataframeGraphDomain pr = new DataframeGraphDomain(df,
-					operator == ProjectRows.INSTANCE ? new ProjectionOperation<NumberSlice>(pp.getLocation(), slice)
-							: new AccessOperation<NumberSlice>(pp.getLocation(), slice));
+					operator == ProjectRows.INSTANCE ? new ProjectionOperation<>(pp.getLocation(), slice)
+							: new AccessOperation<>(pp.getLocation(), slice));
 
 			return new DFOrConstant(pr);
 		} else if (operator instanceof AccessRowsColumns) {

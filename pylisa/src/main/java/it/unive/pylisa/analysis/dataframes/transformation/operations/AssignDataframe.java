@@ -32,7 +32,7 @@ public class AssignDataframe<S extends Selection<S>> extends DataframeOperation 
 		AssignDataframe<?> o = (AssignDataframe<?>) other;
 		if (selection.getClass() != o.selection.getClass())
 			return top();
-		return new SelectionOperation<>(loc(other), selection.lub((S) o.selection));
+		return new AccessOperation<>(loc(other), selection.lub((S) o.selection));
 	}
 
 	@Override
