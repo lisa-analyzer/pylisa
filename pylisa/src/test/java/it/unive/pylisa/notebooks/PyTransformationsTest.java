@@ -25,7 +25,7 @@ public class PyTransformationsTest extends NotebookTest {
 
 	@Test
 	public void testGuide() throws IOException, AnalysisException {
-		perform("dataframes-tests/guide.py");
+		performAndCheck("dataframes-tests/guide.py");
 	}
 
 	@Test
