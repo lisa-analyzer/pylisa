@@ -56,6 +56,7 @@ import it.unive.pylisa.cfg.type.PySliceType;
 import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
 import it.unive.pylisa.symbolic.SliceConstant;
+import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
 import it.unive.pylisa.symbolic.operators.AccessRows;
 import it.unive.pylisa.symbolic.operators.AccessRowsColumns;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
@@ -449,7 +450,8 @@ public class DFGraphTest {
 
 		sss = env.smallStepSemantics(
 				new TernaryExpression(PandasDataframeType.INSTANCE, df1,
-						new SliceConstant(0, 2, null, SyntheticLocation.INSTANCE),
+						new SliceConstant(new RangeBound(0),
+								new RangeBound(2), null, SyntheticLocation.INSTANCE),
 						new Constant(PyListType.INSTANCE, cols, SyntheticLocation.INSTANCE),
 						AccessRowsColumns.INSTANCE, SyntheticLocation.INSTANCE),
 				fake);
@@ -522,7 +524,8 @@ public class DFGraphTest {
 				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
 				SliceCreation.INSTANCE,
 				SyntheticLocation.INSTANCE);
-		Constant slice2Constant = new SliceConstant(42, null, null, SyntheticLocation.INSTANCE);
+		Constant slice2Constant = new SliceConstant(new RangeBound(42), null, null,
+				SyntheticLocation.INSTANCE);
 		sss = env.smallStepSemantics(slice2, fake);
 		assertEquals(new ConstantPropagation(slice2Constant), sss.getValueOnStack().constant());
 
@@ -533,7 +536,8 @@ public class DFGraphTest {
 				skip,
 				SliceCreation.INSTANCE,
 				SyntheticLocation.INSTANCE);
-		Constant slice3Constant = new SliceConstant(42, 54, 2, SyntheticLocation.INSTANCE);
+		Constant slice3Constant = new SliceConstant(new RangeBound(42), new RangeBound(54), new RangeBound(2),
+				SyntheticLocation.INSTANCE);
 		sss = env.smallStepSemantics(slice3, fake);
 		assertEquals(new ConstantPropagation(slice3Constant), sss.getValueOnStack().constant());
 	}

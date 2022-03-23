@@ -37,9 +37,4 @@ public class PyTransformationsTest extends NotebookTest {
 	public void testTitanic() throws IOException, AnalysisException {
 		perform("dataframes-tests/titanic.py");
 	}
-
-	@Test
-	public void testTest1() throws IOException, AnalysisException {
-		perform("dataframes-tests/test1.py");
-	}
 }

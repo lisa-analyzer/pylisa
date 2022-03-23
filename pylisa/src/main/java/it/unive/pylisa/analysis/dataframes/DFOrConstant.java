@@ -43,6 +43,7 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.C
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
 import it.unive.pylisa.symbolic.SliceConstant;
+import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
 import it.unive.pylisa.symbolic.operators.AccessRows;
 import it.unive.pylisa.symbolic.operators.AccessRowsColumns;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
@@ -302,7 +303,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			if (topOrBottom(df) || topOrBottom(cols))
 				return TOP_GRAPH;
 
-				if (!(cols.getConstant() instanceof ArrayList<?>))
+			if (!(cols.getConstant() instanceof ArrayList<?>))
 				// check whether the cols constant is indeed what we expect for
 				// a constant list
 				return TOP_GRAPH;
@@ -418,8 +419,10 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			if (!(projection.getSelection() instanceof ColumnListSelection))
 				return TOP_GRAPH;
 
-			AtomicBooleanSelection booleanSelection = new AtomicBooleanSelection((ColumnListSelection) projection.getSelection(), seriesCompOp.getOp(), value);
-			BooleanComparison<AtomicBooleanSelection> boolComp = new BooleanComparison<>(pp.getLocation(), booleanSelection);
+			AtomicBooleanSelection booleanSelection = new AtomicBooleanSelection(
+					(ColumnListSelection) projection.getSelection(), seriesCompOp.getOp(), value);
+			BooleanComparison<
+					AtomicBooleanSelection> boolComp = new BooleanComparison<>(pp.getLocation(), booleanSelection);
 
 			DataframeOperation prevLeaf = result.getLeaf();
 			result.addNode(boolComp);
@@ -479,7 +482,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 			ColumnListSelection colsSelection = new ColumnListSelection(accessedCols);
 
-			// middle can be either a slice or a series comparison 
+			// middle can be either a slice or a series comparison
 			if (topOrBottom(middle))
 				return TOP_GRAPH;
 
@@ -488,22 +491,17 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				SliceConstant.Slice rowSlice = middle.constant.as(SliceConstant.Slice.class);
 
 				NumberSlice numberSlice = new NumberSlice(
-					rowSlice.getStart() == null ? 
-						new Interval().bottom() : 
-						new Interval(rowSlice.getStart(), rowSlice.getStart()), 
-					rowSlice.getEnd() == null ?
-						new Interval().bottom() :
-						new Interval(rowSlice.getEnd(), rowSlice.getEnd()),
-					rowSlice.getSkip() == null ?
-						new Interval().bottom() :
-						new Interval(rowSlice.getSkip(), rowSlice.getSkip()));
+						rowSlice.getStart() == null ? new Interval().bottom() : rowSlice.getStart().toInterval(),
+						rowSlice.getEnd() == null ? new Interval().bottom() : rowSlice.getEnd().toInterval(),
+						rowSlice.getSkip() == null ? new Interval().bottom() : rowSlice.getSkip().toInterval());
 
 				selection = new DataframeSelection(numberSlice, colsSelection);
 			} else if (!topOrBottom(middle.graph)) {
 				DataframeGraph middleGraph = middle.graph.getTransformations();
 				if (!middleGraph.prefix().equals(df.getTransformations().prefix()))
 					// df.loc[df["col"] < 5, ["col2", "col3"]]
-					// we want to check we are selecting with cols of the same dataframe
+					// we want to check we are selecting with cols of the same
+					// dataframe
 					return TOP_GRAPH;
 				resultGraph = middleGraph.prefix();
 
@@ -511,7 +509,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				if (!(leaf instanceof BooleanComparison))
 					return TOP_GRAPH;
 				BooleanComparison<?> colCompare = (BooleanComparison<?>) leaf;
-				
+
 				resultGraph = middleGraph.prefix();
 				selection = new DataframeSelection(colCompare.getSelection(), colsSelection);
 			}
@@ -523,12 +521,22 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				return TOP_CONSTANT;
 			}
 
-			Integer start = !left.constant.isTop() ? left.constant.as(Integer.class) : null;
-			Integer end = !middle.constant.isTop() ? middle.constant.as(Integer.class) : null;
-			Integer skip = !right.constant.isTop() ? right.constant.as(Integer.class) : null;
-
+			RangeBound start = getRangeBound(left);
+			RangeBound end = getRangeBound(middle);
+			RangeBound skip = getRangeBound(right);
 			return new DFOrConstant(new ConstantPropagation(new SliceConstant(start, end, skip, pp.getLocation())));
 		} else
 			return TOP;
+	}
+
+	private RangeBound getRangeBound(DFOrConstant c) {
+		RangeBound bound;
+		if (c.constant.isTop())
+			bound = null;
+		else if (c.constant.is(Integer.class))
+			bound = new RangeBound(c.constant.as(Integer.class));
+		else
+			bound = c.constant.as(RangeBound.class);
+		return bound;
 	}
 }

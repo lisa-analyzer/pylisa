@@ -40,6 +40,10 @@ public class ConstantPropagation extends BaseLattice<ConstantPropagation> {
 		return constant.getValue();
 	}
 
+	public <T> boolean is(Class<T> type) {
+		return type.isInstance(getConstant());
+	}
+
 	public <T> T as(Class<T> type) {
 		return type.cast(getConstant());
 	}
