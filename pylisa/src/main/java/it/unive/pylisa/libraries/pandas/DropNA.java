@@ -92,7 +92,7 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		AnalysisState<A, H, V, T> base = state;
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
-		
+
 		HeapDereference deref = new HeapDereference(dftype, expr, location);
 		ExpressionSet<SymbolicExpression> targets = new ExpressionSet<>(deref);
 
@@ -105,7 +105,9 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		FilterNull op = new FilterNull(axis);
 		for (SymbolicExpression loc : targets) {
 			UnaryExpression filter = new UnaryExpression(dftype, loc, op, location);
-			HeapReference ref = new HeapReference(dfref, loc, location);
+			SymbolicExpression ref = loc instanceof HeapDereference
+					? ((HeapDereference) loc).getExpression()
+					: new HeapReference(dfref, loc, location);
 			filtered = filtered.lub(base.smallStepSemantics(filter, st).smallStepSemantics(ref, st));
 		}
 

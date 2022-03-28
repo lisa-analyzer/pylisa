@@ -88,24 +88,24 @@ public class PandasSemantics {
 		return result;
 	}
 
-	public static SymbolicExpression getDataframeDereference(SymbolicExpression accessChild) {
+	public static HeapDereference getDataframeDereference(SymbolicExpression expr) throws SemanticException {
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		Type seriesref = ((PyClassType) seriestype).getReference();
 
-		if (accessChild instanceof AccessChild
-				&& accessChild.getRuntimeTypes().anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
-			HeapDereference firstDeref = (HeapDereference) ((AccessChild) accessChild).getContainer();
+		if (expr instanceof AccessChild
+				&& expr.getRuntimeTypes().anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
+			HeapDereference firstDeref = (HeapDereference) ((AccessChild) expr).getContainer();
 
-			if (!(firstDeref.getExpression() instanceof AccessChild)) {
+			if (!(firstDeref.getExpression() instanceof AccessChild))
 				return firstDeref;
-			}
 
 			HeapDereference secondDereference = (HeapDereference) ((AccessChild) firstDeref.getExpression())
 					.getContainer();
 			return secondDereference;
 		}
-		return accessChild;
+
+		throw new SemanticException("Access child expected");
 	}
 }

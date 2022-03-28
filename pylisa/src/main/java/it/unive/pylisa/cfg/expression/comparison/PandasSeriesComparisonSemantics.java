@@ -11,6 +11,7 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -40,9 +41,10 @@ public class PandasSeriesComparisonSemantics {
 			// custom behavior for comparison of expressions of the form
 			// df["col1"] <= 4
 
-			SymbolicExpression dfDereference = PandasSemantics.getDataframeDereference(left);
+			if (left instanceof AccessChild)
+				left = PandasSemantics.getDataframeDereference(left);
 
-			BinaryExpression seriesComp = new BinaryExpression(type, dfDereference, right,
+			BinaryExpression seriesComp = new BinaryExpression(type, left, right,
 					new PandasSeriesComparison(op), location);
 			return state.smallStepSemantics(seriesComp, pp);
 		}

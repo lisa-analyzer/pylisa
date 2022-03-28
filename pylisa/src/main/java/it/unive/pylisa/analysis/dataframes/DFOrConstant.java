@@ -251,6 +251,9 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			return new DFOrConstant(df);
 		} else if (operator instanceof ApplyTransformation) {
 			DataframeGraphDomain df = arg.graph;
+			if (topOrBottom(df))
+				return TOP_GRAPH;
+
 			ApplyTransformation op = (ApplyTransformation) operator;
 			Kind kind = op.getKind();
 			DataframeOperation leaf = df.getTransformations().getLeaf();
@@ -273,6 +276,9 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			return new DFOrConstant(dfNew);
 		} else if (operator instanceof PopSelection) {
 			DataframeGraphDomain df = arg.graph;
+			if (topOrBottom(df))
+				return TOP_GRAPH;
+
 			DataframeOperation leaf = df.getTransformations().getLeaf();
 			if (!(leaf instanceof SelectionOperation<?>))
 				return TOP_GRAPH;
@@ -293,7 +299,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				return TOP_GRAPH;
 
 			DataframeGraphDomain ca = new DataframeGraphDomain(df,
-					new ProjectionOperation<>(pp.getLocation(),
+					new AccessOperation<>(pp.getLocation(),
 							new ColumnListSelection(new Names(col.as(String.class)))));
 
 			return new DFOrConstant(ca);
@@ -380,6 +386,9 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			return new DFOrConstant(dfNew);
 		} else if (operator instanceof WriteSelectionConstant) {
 			DataframeGraphDomain df = left.graph;
+			if (topOrBottom(df))
+				return TOP_GRAPH;
+
 			DataframeOperation leaf = df.getTransformations().getLeaf();
 			if (!(leaf instanceof SelectionOperation))
 				return TOP_GRAPH;
@@ -455,14 +464,13 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			// left[middle, right]
 			// df[row_slice | column_comparison, columns]
 			DataframeGraphDomain df = left.graph;
-			DataframeGraph resultGraph = df.getTransformations();
-
-			DataframeSelection selection = new DataframeSelection(true);
-
 			// right is a list of strings so we will handle that first
 			ConstantPropagation cols = right.constant;
 			if (topOrBottom(df) || topOrBottom(cols))
 				return TOP_GRAPH;
+
+			DataframeGraph resultGraph = df.getTransformations();
+			DataframeSelection selection = new DataframeSelection(true);
 
 			if (!(cols.getConstant() instanceof ArrayList<?>))
 				// check whether the cols constant is indeed what we expect for

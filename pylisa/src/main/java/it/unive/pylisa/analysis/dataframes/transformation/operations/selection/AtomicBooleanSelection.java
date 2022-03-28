@@ -115,6 +115,6 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 		if (isBottom())
 			return Lattice.BOTTOM_STRING;
 
-		return "'" + cols + "' " + op + " " + val;
+		return cols + " " + op + " " + val;
 	}
 }

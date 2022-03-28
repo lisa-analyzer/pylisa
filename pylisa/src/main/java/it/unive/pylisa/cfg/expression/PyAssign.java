@@ -55,27 +55,24 @@ public class PyAssign extends Assignment {
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		Type seriesref = ((PyClassType) seriestype).getReference();
 
+		CodeLocation loc = getLocation();
 		if (left instanceof AccessChild &&
-				left.getRuntimeTypes().anyMatch(
-						t -> t.equals(seriesref) || t.equals(dfref))) {
+				left.getRuntimeTypes().anyMatch(t -> t.equals(seriesref) || t.equals(dfref))) {
 
-			SymbolicExpression leftDataframeDeref = PandasSemantics.getDataframeDereference(left);
-
-			if (right.getRuntimeTypes()
-					.anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
+			HeapDereference lderef = PandasSemantics.getDataframeDereference(left);
+			SymbolicExpression write;
+			if (right.getRuntimeTypes().anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
 				// asssigning part of a dataframe to another dataframe so get
 				// deref from right
-				SymbolicExpression rightDataframeDeref = PandasSemantics.getDataframeDereference(right);
-
-				return state.smallStepSemantics(
-						new BinaryExpression(dftype, leftDataframeDeref, rightDataframeDeref,
-								WriteSelectionDataframe.INSTANCE, getLocation()),
-						this);
-			} else {
+				if (right instanceof AccessChild)
+					right = PandasSemantics.getDataframeDereference(right);
+				write = new BinaryExpression(dftype, lderef, right, WriteSelectionDataframe.INSTANCE, loc);
+			} else
 				// assigning a part of a dataframe to a constant
-				return state.smallStepSemantics(new BinaryExpression(dftype,
-						leftDataframeDeref, right, WriteSelectionConstant.INSTANCE, getLocation()), this);
-			}
+				write = new BinaryExpression(dftype, lderef, right, WriteSelectionConstant.INSTANCE, loc);
+
+			// we leave on the stack the column that received the assignment
+			return state.smallStepSemantics(write, this).smallStepSemantics(left, this);
 		}
 
 		Expression lefthand = getLeft();
@@ -91,15 +88,15 @@ public class PyAssign extends Assignment {
 		AnalysisState<A, H, V, T> assign = state;
 
 		Type type = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
-		HeapReference ref = new HeapReference(type, right, getLocation());
-		HeapDereference deref = new HeapDereference(type, ref, getLocation());
+		HeapReference ref = new HeapReference(type, right, loc);
+		HeapDereference deref = new HeapDereference(type, ref, loc);
 
 		for (int i = 0; i < ids.size(); i++) {
 			ExpressionSet<SymbolicExpression> id = ids.get(i);
 
 			AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref,
-					new Constant(Int32.INSTANCE, i, getLocation()),
-					getLocation());
+					new Constant(Int32.INSTANCE, i, loc),
+					loc);
 			AnalysisState<A, H, V, T> fieldState = assign.smallStepSemantics(fieldAcc, this);
 
 			AnalysisState<A, H, V, T> fieldResult = state.bottom();

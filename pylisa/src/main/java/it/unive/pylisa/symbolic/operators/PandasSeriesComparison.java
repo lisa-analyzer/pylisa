@@ -17,7 +17,7 @@ public class PandasSeriesComparison implements BinaryOperator {
 
 	@Override
 	public String toString() {
-		return this.op.toString() + " ->";
+		return this.op.toString();
 	}
 
 	public ComparisonOperator getOp() {
