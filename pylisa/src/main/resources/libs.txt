@@ -1,0 +1,63 @@
+method print: it.unive.pylisa.libraries.standardLibrary.Print
+	type it.unive.lisa.type.VoidType::INSTANCE
+	param arg1 type it.unive.lisa.type.Untyped::INSTANCE
+sealed class List
+sealed class Set
+sealed class Dict
+sealed class Tuple
+sealed class Slice
+library warnings:
+	location warnings
+	method filterwarnings: it.unive.pylisa.libraries.warnings.FilterWarnings
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param arg1 type it.unive.lisa.type.Untyped::INSTANCE
+library pandas:
+	location pandas
+	method read_csv: it.unive.pylisa.libraries.pandas.ReadCsv
+		type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+		param filepath_or_buffer type it.unive.lisa.type.common.StringType::INSTANCE
+	method to_datetime: it.unive.pylisa.libraries.pandas.ToDatetime
+		type it.unive.pylisa.libraries.pandas.types.PandasSeriesType::REFERENCE
+		param arg type it.unive.pylisa.libraries.pandas.types.PandasSeriesType::REFERENCE
+	method concat: it.unive.pylisa.libraries.pandas.Concatenate
+		type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+		param objs type it.unive.pylisa.cfg.type.PyListType::INSTANCE
+	class pandas.DataFrame:
+		instance method head: it.unive.pylisa.libraries.pandas.Head
+			type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+			param this type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+			param n type it.unive.lisa.type.common.Int32::INSTANCE default 5
+		instance method describe: it.unive.pylisa.libraries.UninterestingDataframeFunction
+			type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+			param this type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+		instance method info: it.unive.pylisa.libraries.UninterestingDataframeFunction
+			type it.unive.lisa.type.VoidType::INSTANCE
+			param this type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+		instance method dropna: it.unive.pylisa.libraries.pandas.DropNA
+			type it.unive.lisa.type.Untyped::INSTANCE
+			param this type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+			param axis type it.unive.lisa.type.common.Int32::INSTANCE default 0
+			param inplace type it.unive.lisa.type.common.BoolType::INSTANCE default false
+		instance method apply: it.unive.pylisa.libraries.pandas.Apply
+			type it.unive.lisa.type.Untyped::INSTANCE
+			param this type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+			param function type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
+		instance method join: it.unive.pylisa.libraries.pandas.Join
+			type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+			param this type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+			param other type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+		instance method format: it.unive.pylisa.libraries.UninterestingDataframeFunction
+			type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+			param this type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+			param dict type it.unive.pylisa.cfg.type.PyDictType::INSTANCE
+	class pandas.Series:
+		instance method apply: it.unive.pylisa.libraries.pandas.Apply
+			type it.unive.lisa.type.Untyped::INSTANCE
+			param this type it.unive.pylisa.libraries.pandas.types.PandasSeriesType::REFERENCE
+			param function type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
+library geopandas:
+	location geopandas
+	method geocode: it.unive.pylisa.libraries.geopandas.Geocode
+		type it.unive.pylisa.libraries.pandas.types.PandasDataframeType::REFERENCE
+		param strings type it.unive.pylisa.libraries.pandas.types.PandasSeriesType::REFERENCE
+		param provider type it.unive.lisa.type.common.StringType::INSTANCE default "default"

@@ -32,6 +32,7 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
 import it.unive.lisa.AnalysisException;
+import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AbstractState;
@@ -40,7 +41,6 @@ import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.logging.IterationLogger;
-import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
@@ -85,6 +85,7 @@ import it.unive.lisa.program.cfg.statement.numeric.Remainder;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
 import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.type.VoidType;
 import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Float32;
 import it.unive.lisa.type.common.Int32;
@@ -217,8 +218,13 @@ import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
-import it.unive.pylisa.cfg.type.PyLibraryType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.cfg.type.PyDictType;
+import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.cfg.type.PyListType;
+import it.unive.pylisa.cfg.type.PySetType;
+import it.unive.pylisa.cfg.type.PySliceType;
+import it.unive.pylisa.cfg.type.PyTupleType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class PyFrontend extends Python3ParserBaseVisitor<Object> {
@@ -313,12 +319,33 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 * 
 	 * @return collection of @CFG in file
 	 * 
-	 * @throws IOException if {@code stream} to file cannot be read from or
-	 *                         closed
+	 * @throws IOException            if {@code stream} to file cannot be read
+	 *                                    from or closed
+	 * @throws AnalysisSetupException if something goes wrong while setting up
+	 *                                    the program
 	 */
 
-	public Program toLiSAProgram() throws IOException {
+	public Program toLiSAProgram() throws IOException, AnalysisSetupException {
 		log.info("PyToCFG setup...");
+
+		PyClassType.clearAll();
+
+		program.registerType(PyListType.INSTANCE);
+		program.registerType(PySetType.INSTANCE);
+		program.registerType(PyDictType.INSTANCE);
+		program.registerType(PyTupleType.INSTANCE);
+		program.registerType(PySliceType.INSTANCE);
+		program.registerType(PyLambdaType.INSTANCE);
+		program.registerType(BoolType.INSTANCE);
+		program.registerType(StringType.INSTANCE);
+		program.registerType(Int32.INSTANCE);
+		program.registerType(Float32.INSTANCE);
+		program.registerType(NullType.INSTANCE);
+		program.registerType(VoidType.INSTANCE);
+		program.registerType(Untyped.INSTANCE);
+
+		LibrarySpecificationProvider.load(program);
+
 		log.info("Reading file... " + filePath);
 
 		Python3Lexer lexer = null;
@@ -333,7 +360,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		visit(tree);
 
-		setupProgram(program);
+		PyClassType.all().forEach(program::registerType);
+
+		for (CFG cfg : program.getCFGs())
+			if (cfg.getDescriptor().getName().equals("main"))
+				program.addEntryPoint(cfg);
 
 		return program;
 	}
@@ -2028,26 +2059,5 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	@Override
 	public Pair<Statement, Statement> visitYield_arg(Yield_argContext ctx) {
 		throw new UnsupportedStatementException();
-	}
-
-	private static void setupProgram(Program program) {
-		program.registerType(PyListType.INSTANCE);
-		program.registerType(BoolType.INSTANCE);
-		program.registerType(StringType.INSTANCE);
-		program.registerType(Int32.INSTANCE);
-		program.registerType(Float32.INSTANCE);
-		program.registerType(NullType.INSTANCE);
-
-		for (CompilationUnit lib : LibrarySpecificationProvider.getLibraryUnits()) {
-			PyLibraryType.addUnit(lib);
-			program.addCompilationUnit(lib);
-			program.registerType(new PyLibraryType(lib.getName()));
-		}
-
-		LibrarySpecificationProvider.getAllStandardLibraryMethods(program).forEach(program::addConstruct);
-
-		for (CFG cfg : program.getCFGs())
-			if (cfg.getDescriptor().getName().equals("main"))
-				program.addEntryPoint(cfg);
 	}
 }
