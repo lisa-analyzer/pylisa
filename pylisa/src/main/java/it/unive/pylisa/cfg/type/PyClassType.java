@@ -9,6 +9,7 @@ import java.util.Set;
 
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.type.InMemoryType;
+import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
@@ -25,6 +26,10 @@ public class PyClassType implements InMemoryType, UnitType {
 
 	public static Collection<PyClassType> all() {
 		return types.values();
+	}
+
+	public static PyClassType lookup(String name) {
+		return lookup(name, null);
 	}
 
 	public static PyClassType lookup(String name, CompilationUnit unit) {
@@ -45,6 +50,10 @@ public class PyClassType implements InMemoryType, UnitType {
 	@Override
 	public CompilationUnit getUnit() {
 		return unit;
+	}
+
+	public ReferenceType getReference() {
+		return new ReferenceType(this);
 	}
 
 	@Override

@@ -17,14 +17,17 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.ReadDataframe;
 
 public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	private Statement st;
 
 	public ReadCsv(CFG cfg, CodeLocation location, Expression arg) {
-		super(cfg, location, "read_csv", PandasDataframeType.INSTANCE, arg);
+		super(cfg, location, "read_csv", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
+				arg);
 	}
 
 	@Override
@@ -48,14 +51,16 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 					throws SemanticException {
 		CodeLocation location = getLocation();
 		AnalysisState<A, H, V, T> assigned = state.bottom();
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
 
-		HeapAllocation allocation = new HeapAllocation(PandasDataframeType.INSTANCE, location);
+		HeapAllocation allocation = new HeapAllocation(dftype, location);
 		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, st);
 
-		UnaryExpression read = new UnaryExpression(PandasDataframeType.INSTANCE, arg, ReadDataframe.INSTANCE, location);
+		UnaryExpression read = new UnaryExpression(dftype, arg, ReadDataframe.INSTANCE, location);
 
 		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
-			HeapReference ref = new HeapReference(PandasDataframeType.REFERENCE, loc, location);
+			HeapReference ref = new HeapReference(dfref, loc, location);
 			AnalysisState<A, H, V, T> tmp = state.bottom();
 			AnalysisState<A, H, V, T> readState = allocated.smallStepSemantics(read, st);
 			for (SymbolicExpression df : readState.getComputedExpressions())

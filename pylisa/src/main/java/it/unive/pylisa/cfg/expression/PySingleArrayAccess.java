@@ -18,8 +18,8 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
-import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.ColumnAccess;
 
 public class PySingleArrayAccess extends BinaryExpression {
@@ -57,12 +57,16 @@ public class PySingleArrayAccess extends BinaryExpression {
 			dereferencedType = Untyped.INSTANCE;
 
 		HeapDereference deref = new HeapDereference(dereferencedType, left, getLocation());
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
+		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+		Type seriesref = ((PyClassType) seriestype).getReference();
 
-		if (left.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.REFERENCE))) {
+		if (left.getRuntimeTypes().anyMatch(t -> t.equals(dfref))) {
 			it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
-					PandasSeriesType.INSTANCE, deref, right, ColumnAccess.INSTANCE, getLocation());
+					seriestype, deref, right, ColumnAccess.INSTANCE, getLocation());
 			result = result.smallStepSemantics(col, this);
-			childType = PandasSeriesType.REFERENCE;
+			childType = seriesref;
 		}
 
 		AccessChild access = new AccessChild(childType, deref, right, getLocation());

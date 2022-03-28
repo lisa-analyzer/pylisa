@@ -9,14 +9,12 @@ import java.util.Map;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.apache.commons.lang3.tuple.Pair;
 
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.antlr.LibraryDefinitionLexer;
 import it.unive.pylisa.antlr.LibraryDefinitionParser;
-import it.unive.pylisa.cfg.type.PyClassType;
 
 public class LibrarySpecificationProvider {
 	
@@ -24,7 +22,7 @@ public class LibrarySpecificationProvider {
 	public static final String DICT = "Dict";
 	public static final String LIST = "List";
 	public static final String TUPLE = "Tuple";
-	public static final String SLICE = "slice";
+	public static final String SLICE = "Slice";
 
 	public static final String WARNINGS = "warnings";
 	
@@ -53,13 +51,6 @@ public class LibrarySpecificationProvider {
 		
 		for (CompilationUnit unit : parsed) 
 			LIBS.put(unit.getName(), unit);
-		
-		for (Pair<CompilationUnit, CompilationUnit> pair : libParser.getToType())
-			if (pair.getLeft() == null)
-				PyClassType.lookup(pair.getRight().getName(), pair.getRight());
-			else
-				// registering is a side effect of the constructor
-				new PyLibraryUnitType(pair.getLeft(), pair.getRight());
 	}
 	
 	public static Collection<CompilationUnit> getLibraryUnits() {

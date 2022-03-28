@@ -8,12 +8,13 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.pylisa.cfg.type.PyListType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class AtomList extends Constant {
 
 	public AtomList(CodeLocation location, List<ExpressionSet<ValueExpression>> constants) {
-		super(PyListType.INSTANCE, constants, location);
+		super(PyClassType.lookup(LibrarySpecificationProvider.LIST), constants, location);
 		for (ExpressionSet<ValueExpression> constant : constants)
 			for (ValueExpression c : constant)
 				if (!isAtom(c))

@@ -1,5 +1,7 @@
 package it.unive.pylisa.cfg.expression;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -18,9 +20,10 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
+import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import it.unive.pylisa.cfg.type.PyDictType;
-import org.apache.commons.lang3.tuple.Pair;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class DictionaryCreation extends NaryExpression {
 
@@ -52,14 +55,15 @@ public class DictionaryCreation extends NaryExpression {
 		AnalysisState<A, H, V, T> result = state.bottom();
 
 		// allocate the heap region
-		HeapAllocation alloc = new HeapAllocation(PyDictType.INSTANCE, getLocation());
+		Type type = PyClassType.lookup(LibrarySpecificationProvider.DICT);
+		HeapAllocation alloc = new HeapAllocation(type, getLocation());
 		AnalysisState<A, H, V, T> sem = state.smallStepSemantics(alloc, this);
 
 		// assign the pairs
 		AnalysisState<A, H, V, T> assign = sem;
 		for (SymbolicExpression loc : sem.getComputedExpressions()) {
-			HeapReference ref = new HeapReference(PyDictType.INSTANCE, loc, getLocation());
-			HeapDereference deref = new HeapDereference(PyDictType.INSTANCE, ref, getLocation());
+			HeapReference ref = new HeapReference(type, loc, getLocation());
+			HeapDereference deref = new HeapDereference(type, ref, getLocation());
 
 			for (int i = 0; i < params.length; i += 2) {
 				ExpressionSet<SymbolicExpression> key = params[i];

@@ -23,14 +23,14 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.Int32;
-import it.unive.pylisa.cfg.type.PyTupleType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
-import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
-import it.unive.pylisa.symbolic.operators.WriteSelectionDataframe;
 import it.unive.pylisa.symbolic.operators.WriteSelectionConstant;
+import it.unive.pylisa.symbolic.operators.WriteSelectionDataframe;
 
 public class PyAssign extends Assignment {
 
@@ -50,24 +50,30 @@ public class PyAssign extends Assignment {
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 
-		if (left instanceof AccessChild && 
-			left.getRuntimeTypes().anyMatch(t -> t.equals(PandasSeriesType.REFERENCE) || t.equals(PandasDataframeType.REFERENCE))) {
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
+		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+		Type seriesref = ((PyClassType) seriestype).getReference();
+
+		if (left instanceof AccessChild &&
+				left.getRuntimeTypes().anyMatch(
+						t -> t.equals(seriesref) || t.equals(dfref))) {
 
 			SymbolicExpression leftDataframeDeref = PandasSemantics.getDataframeDereference(left);
 
-			if (right.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.REFERENCE) || t.equals(PandasSeriesType.REFERENCE))) {
-				// asssigning part of a dataframe to another dataframe so get deref from right
+			if (right.getRuntimeTypes()
+					.anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
+				// asssigning part of a dataframe to another dataframe so get
+				// deref from right
 				SymbolicExpression rightDataframeDeref = PandasSemantics.getDataframeDereference(right);
 
 				return state.smallStepSemantics(
-					new BinaryExpression(PandasDataframeType.INSTANCE, leftDataframeDeref, rightDataframeDeref, 
-						WriteSelectionDataframe.INSTANCE, getLocation()
-					), 
-					this
-				);
+						new BinaryExpression(dftype, leftDataframeDeref, rightDataframeDeref,
+								WriteSelectionDataframe.INSTANCE, getLocation()),
+						this);
 			} else {
 				// assigning a part of a dataframe to a constant
-				return state.smallStepSemantics(new BinaryExpression(PandasDataframeType.INSTANCE, 
+				return state.smallStepSemantics(new BinaryExpression(dftype,
 						leftDataframeDeref, right, WriteSelectionConstant.INSTANCE, getLocation()), this);
 			}
 		}
@@ -83,8 +89,10 @@ public class PyAssign extends Assignment {
 
 		// assign the pairs
 		AnalysisState<A, H, V, T> assign = state;
-		HeapReference ref = new HeapReference(PyTupleType.INSTANCE, right, getLocation());
-		HeapDereference deref = new HeapDereference(PyTupleType.INSTANCE, ref, getLocation());
+
+		Type type = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
+		HeapReference ref = new HeapReference(type, right, getLocation());
+		HeapDereference deref = new HeapDereference(type, ref, getLocation());
 
 		for (int i = 0; i < ids.size(); i++) {
 			ExpressionSet<SymbolicExpression> id = ids.get(i);

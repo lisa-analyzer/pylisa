@@ -13,7 +13,8 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.numeric.Multiplication;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.libraries.pandas.types.PandasType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyLibraryUnitType;
 
 public class PyMultiplication extends Multiplication {
 
@@ -32,8 +33,9 @@ public class PyMultiplication extends Multiplication {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		if (left.getRuntimeTypes().anyMatch(t -> PandasType.isPandasType(t, true))
-				|| right.getRuntimeTypes().anyMatch(t -> PandasType.isPandasType(t, true)))
+		if (left.getRuntimeTypes().anyMatch(t -> PyLibraryUnitType.is(t, LibrarySpecificationProvider.PANDAS, true))
+				|| right.getRuntimeTypes()
+						.anyMatch(t -> PyLibraryUnitType.is(t, LibrarySpecificationProvider.PANDAS, true)))
 			// we allow scalar multiplication, but with no explicit handling for
 			// now
 			return state;

@@ -17,7 +17,8 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOp
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.SelectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.Selection;
-import it.unive.pylisa.libraries.pandas.types.PandasType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyLibraryUnitType;
 
 public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 
@@ -267,8 +268,10 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 
 	public static boolean processes(SymbolicExpression expression) {
 		return expression.hasRuntimeTypes()
-				? expression.getRuntimeTypes().anyMatch(t -> PandasType.isPandasType(t, false))
-				: PandasType.isPandasType(expression.getStaticType(), false) || expression.getStaticType().isUntyped();
+				? expression.getRuntimeTypes()
+						.anyMatch(t -> PyLibraryUnitType.is(t, LibrarySpecificationProvider.PANDAS, false))
+				: PyLibraryUnitType.is(expression.getStaticType(), LibrarySpecificationProvider.PANDAS, false)
+						|| expression.getStaticType().isUntyped();
 	}
 
 	@Override

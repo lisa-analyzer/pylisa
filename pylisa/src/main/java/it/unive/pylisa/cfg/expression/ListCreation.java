@@ -25,9 +25,11 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
+import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.Int32;
-import it.unive.pylisa.cfg.type.PyListType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.AtomList;
 
 public class ListCreation extends NaryExpression {
@@ -73,14 +75,15 @@ public class ListCreation extends NaryExpression {
 		AnalysisState<A, H, V, T> result = state.bottom();
 
 		// allocate the heap region
-		HeapAllocation alloc = new HeapAllocation(PyListType.INSTANCE, getLocation());
+		Type type = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+		HeapAllocation alloc = new HeapAllocation(type, getLocation());
 		AnalysisState<A, H, V, T> sem = state.smallStepSemantics(alloc, this);
 
 		// assign the pairs
 		AnalysisState<A, H, V, T> assign = state.bottom();
 		for (SymbolicExpression loc : sem.getComputedExpressions()) {
-			HeapReference ref = new HeapReference(PyListType.INSTANCE, loc, getLocation());
-			HeapDereference deref = new HeapDereference(PyListType.INSTANCE, ref, getLocation());
+			HeapReference ref = new HeapReference(type, loc, getLocation());
+			HeapDereference deref = new HeapDereference(type, ref, getLocation());
 
 			for (int i = 0; i < params.length; i++) {
 				AnalysisState<A, H, V, T> fieldResult = state.bottom();

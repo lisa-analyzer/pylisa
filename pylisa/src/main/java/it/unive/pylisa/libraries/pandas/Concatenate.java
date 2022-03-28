@@ -22,7 +22,9 @@ import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.AtomList;
 import it.unive.pylisa.symbolic.operators.ConcatRows;
 
@@ -31,7 +33,7 @@ public class Concatenate extends UnaryExpression implements PluggableStatement {
 	private Statement st;
 
 	public Concatenate(CFG cfg, CodeLocation location, Expression list) {
-		super(cfg, location, "concat", PandasDataframeType.REFERENCE, list);
+		super(cfg, location, "concat", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(), list);
 	}
 
 	public static Concatenate build(CFG cfg, CodeLocation location, Expression[] exprs) {
@@ -54,7 +56,10 @@ public class Concatenate extends UnaryExpression implements PluggableStatement {
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		CodeLocation loc = getLocation();
-		PushAny pushany = new PushAny(PandasDataframeType.REFERENCE, loc);
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
+
+		PushAny pushany = new PushAny(dfref, loc);
 		if (!(expr instanceof AtomList))
 			return state.smallStepSemantics(pushany, st);
 
@@ -77,9 +82,9 @@ public class Concatenate extends UnaryExpression implements PluggableStatement {
 				AnalysisState<A, H, V, T> concat = state.bottom();
 				for (SymbolicExpression rec : recs)
 					for (ValueExpression arg : list.get(i)) {
-						BinaryExpression cat = new BinaryExpression(PandasDataframeType.INSTANCE, rec, arg,
+						BinaryExpression cat = new BinaryExpression(dftype, rec, arg,
 								ConcatRows.INSTANCE, loc);
-						HeapReference ref = new HeapReference(PandasDataframeType.INSTANCE, rec, loc);
+						HeapReference ref = new HeapReference(dftype, rec, loc);
 						concat = concat.lub(base.smallStepSemantics(cat, st).smallStepSemantics(ref, st));
 					}
 				base = concat;

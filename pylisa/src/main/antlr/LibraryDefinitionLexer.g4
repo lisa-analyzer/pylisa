@@ -62,6 +62,11 @@ TYPE
 	'type'
 ;
 
+LIBTYPE
+:
+	'libtype'
+;
+
 DEFAULT
 :
 	'default'
@@ -85,6 +90,11 @@ DOUBLE_COLON
 DOT
 :
 	'.'
+;
+
+STAR
+:
+	'*'
 ;
 
 WHITESPACE

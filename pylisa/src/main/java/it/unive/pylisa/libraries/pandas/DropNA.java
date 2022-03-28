@@ -22,7 +22,9 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.FilterNull;
 import it.unive.pylisa.symbolic.operators.FilterNull.Axis;
 
@@ -34,12 +36,13 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 
 	private boolean inplace = false;
 
-	public DropNA(CFG cfg, CodeLocation location, String constructName, Expression series) {
-		super(cfg, location, constructName, series);
+	public DropNA(CFG cfg, CodeLocation location, Expression series) {
+		super(cfg, location, "dropna", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
+				series);
 	}
 
 	public static DropNA build(CFG cfg, CodeLocation location, Expression[] exprs) {
-		DropNA drop = new DropNA(cfg, location, "dropna", exprs[0]);
+		DropNA drop = new DropNA(cfg, location, exprs[0]);
 		if (exprs.length > 1)
 			for (int i = 1; i < exprs.length; i++)
 				setOptional(drop, exprs[i]);
@@ -87,7 +90,10 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 					throws SemanticException {
 		CodeLocation location = getLocation();
 		AnalysisState<A, H, V, T> base = state;
-		HeapDereference deref = new HeapDereference(PandasDataframeType.INSTANCE, expr, location);
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
+		
+		HeapDereference deref = new HeapDereference(dftype, expr, location);
 		ExpressionSet<SymbolicExpression> targets = new ExpressionSet<>(deref);
 
 		if (!inplace) {
@@ -98,8 +104,8 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		AnalysisState<A, H, V, T> filtered = state.bottom();
 		FilterNull op = new FilterNull(axis);
 		for (SymbolicExpression loc : targets) {
-			UnaryExpression filter = new UnaryExpression(PandasDataframeType.INSTANCE, loc, op, location);
-			HeapReference ref = new HeapReference(PandasDataframeType.REFERENCE, loc, location);
+			UnaryExpression filter = new UnaryExpression(dftype, loc, op, location);
+			HeapReference ref = new HeapReference(dfref, loc, location);
 			filtered = filtered.lub(base.smallStepSemantics(filter, st).smallStepSemantics(ref, st));
 		}
 

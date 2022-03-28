@@ -17,7 +17,9 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.BinaryExpression;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.ConcatCols;
 
 public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression implements PluggableStatement {
@@ -25,7 +27,8 @@ public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression i
 	private Statement st;
 
 	public Join(CFG cfg, CodeLocation location, Expression receiver, Expression other) {
-		super(cfg, location, "join", PandasDataframeType.REFERENCE, receiver, other);
+		super(cfg, location, "join", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
+				receiver, other);
 	}
 
 	public static Join build(CFG cfg, CodeLocation location, Expression[] exprs) {
@@ -50,13 +53,15 @@ public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression i
 					throws SemanticException {
 		CodeLocation loc = getLocation();
 		AnalysisState<A, H, V, T> result = state.bottom();
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
 
 		AnalysisState<A, H, V, T> copy = PandasSemantics.copyDataframe(state, left, st);
 		ExpressionSet<SymbolicExpression> recs = copy.getComputedExpressions();
 		for (SymbolicExpression rec : recs) {
-			BinaryExpression cat = new BinaryExpression(PandasDataframeType.INSTANCE, rec, right,
+			BinaryExpression cat = new BinaryExpression(dftype, rec, right,
 					ConcatCols.INSTANCE, loc);
-			HeapReference ref = new HeapReference(PandasDataframeType.INSTANCE, rec, loc);
+			HeapReference ref = new HeapReference(dfref, rec, loc);
 			result = result.lub(copy.smallStepSemantics(cat, st).smallStepSemantics(ref, st));
 		}
 

@@ -17,7 +17,8 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.AccessRowsColumns;
 
 public class PyDoubleArrayAccess extends TernaryExpression {
@@ -42,14 +43,15 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 		HeapDereference deref = new HeapDereference(getStaticType(), left, getLocation());
 		AnalysisState<A, H, V, T> tmp = state;
 
-		if (left.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.REFERENCE))) {
-			it.unive.lisa.symbolic.value.TernaryExpression dfAccess = 
-				new it.unive.lisa.symbolic.value.TernaryExpression(
-					PandasDataframeType.INSTANCE, 
-					deref, middle, right, 
-					AccessRowsColumns.INSTANCE, 
-					getLocation()
-			);
+		PyClassType type = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type typeref = ((PyClassType) type).getReference();
+
+		if (left.getRuntimeTypes().anyMatch(t -> t.equals(typeref))) {
+			it.unive.lisa.symbolic.value.TernaryExpression dfAccess = new it.unive.lisa.symbolic.value.TernaryExpression(
+					type,
+					deref, middle, right,
+					AccessRowsColumns.INSTANCE,
+					getLocation());
 			tmp = tmp.smallStepSemantics(dfAccess, this);
 		}
 

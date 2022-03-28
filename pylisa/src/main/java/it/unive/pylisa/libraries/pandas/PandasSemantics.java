@@ -14,8 +14,9 @@ import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
-import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
+import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
 import it.unive.pylisa.symbolic.operators.PopSelection;
 
@@ -32,13 +33,14 @@ public class PandasSemantics {
 					SymbolicExpression dataframe,
 					ProgramPoint pp)
 					throws SemanticException {
-
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		CodeLocation location = pp.getLocation();
+
 		if (!(dataframe instanceof HeapDereference))
-			dataframe = new HeapDereference(PandasDataframeType.INSTANCE, dataframe, location);
+			dataframe = new HeapDereference(dftype, dataframe, location);
 
 		// we allocate the copy of the dataframe
-		HeapAllocation allocation = new HeapAllocation(PandasDataframeType.INSTANCE, location);
+		HeapAllocation allocation = new HeapAllocation(dftype, location);
 		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, pp);
 
 		AnalysisState<A, H, V, T> copy = state.bottom();
@@ -62,6 +64,9 @@ public class PandasSemantics {
 					throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		AnalysisState<A, H, V, T> result = state.bottom();
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
+		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 
 		if (dataframe instanceof AccessChild)
 			dataframe = ((AccessChild) dataframe).getContainer();
@@ -69,14 +74,14 @@ public class PandasSemantics {
 		// we allocate the copy that will contain the converted portion
 		AnalysisState<A, H, V, T> copied = PandasSemantics.copyDataframe(state, dataframe, pp);
 
-		UnaryExpression pop = new UnaryExpression(PandasDataframeType.INSTANCE, dataframe, PopSelection.INSTANCE, loc);
+		UnaryExpression pop = new UnaryExpression(dftype, dataframe, PopSelection.INSTANCE, loc);
 		for (SymbolicExpression id : copied.getComputedExpressions()) {
 			// the new dataframe will receive the conversion
-			UnaryExpression transform = new UnaryExpression(PandasSeriesType.INSTANCE, id, op, loc);
+			UnaryExpression transform = new UnaryExpression(seriestype, id, op, loc);
 			AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(transform, pp);
 
 			// we leave a reference to the fresh dataframe on the stack
-			HeapReference ref = new HeapReference(PandasDataframeType.REFERENCE, id, loc);
+			HeapReference ref = new HeapReference(dfref, id, loc);
 			result = result.lub(tmp.smallStepSemantics(pop, pp).smallStepSemantics(ref, pp));
 		}
 
@@ -84,15 +89,21 @@ public class PandasSemantics {
 	}
 
 	public static SymbolicExpression getDataframeDereference(SymbolicExpression accessChild) {
-		if (accessChild instanceof AccessChild 
-			&& accessChild.getRuntimeTypes().anyMatch(t -> t.equals(PandasDataframeType.REFERENCE) || t.equals(PandasSeriesType.REFERENCE))) {
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
+		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+		Type seriesref = ((PyClassType) seriestype).getReference();
+
+		if (accessChild instanceof AccessChild
+				&& accessChild.getRuntimeTypes().anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
 			HeapDereference firstDeref = (HeapDereference) ((AccessChild) accessChild).getContainer();
-			
+
 			if (!(firstDeref.getExpression() instanceof AccessChild)) {
 				return firstDeref;
 			}
 
-			HeapDereference secondDereference = (HeapDereference) ((AccessChild) firstDeref.getExpression()).getContainer();
+			HeapDereference secondDereference = (HeapDereference) ((AccessChild) firstDeref.getExpression())
+					.getContainer();
 			return secondDereference;
 		}
 		return accessChild;

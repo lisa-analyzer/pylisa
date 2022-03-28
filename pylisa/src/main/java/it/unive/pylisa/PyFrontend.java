@@ -219,12 +219,7 @@ import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.type.PyClassType;
-import it.unive.pylisa.cfg.type.PyDictType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
-import it.unive.pylisa.cfg.type.PyListType;
-import it.unive.pylisa.cfg.type.PySetType;
-import it.unive.pylisa.cfg.type.PySliceType;
-import it.unive.pylisa.cfg.type.PyTupleType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class PyFrontend extends Python3ParserBaseVisitor<Object> {
@@ -330,11 +325,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		PyClassType.clearAll();
 
-		program.registerType(PyListType.INSTANCE);
-		program.registerType(PySetType.INSTANCE);
-		program.registerType(PyDictType.INSTANCE);
-		program.registerType(PyTupleType.INSTANCE);
-		program.registerType(PySliceType.INSTANCE);
 		program.registerType(PyLambdaType.INSTANCE);
 		program.registerType(BoolType.INSTANCE);
 		program.registerType(StringType.INSTANCE);

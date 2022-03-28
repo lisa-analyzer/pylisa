@@ -12,9 +12,11 @@ import org.junit.Test;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
+import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
+import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -51,10 +53,8 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.A
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
-import it.unive.pylisa.cfg.type.PyListType;
-import it.unive.pylisa.cfg.type.PySliceType;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
-import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.SliceConstant;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
 import it.unive.pylisa.symbolic.operators.AccessRows;
@@ -92,7 +92,24 @@ public class DFGraphTest {
 
 	private final ReadFromFile read_foo, read_bar;
 
-	public DFGraphTest() throws SemanticException {
+	private final PyClassType listtype;
+	private final PyClassType slicetype;
+	private final PyClassType dftype;
+//	private final ReferenceType dfref;
+	private final PyClassType seriestype;
+//	private final ReferenceType seriesref;
+
+	public DFGraphTest() throws SemanticException, AnalysisSetupException {
+		Program p = new Program();
+		LibrarySpecificationProvider.load(p);
+
+		listtype = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+		slicetype = PyClassType.lookup(LibrarySpecificationProvider.SLICE);
+		dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+//		dfref = ((PyClassType) dftype).getReference();
+		seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+//		seriesref = ((PyClassType) seriestype).getReference();
+
 		ValueEnvironment<DFOrConstant> singleton = new ValueEnvironment<>(new DFOrConstant());
 
 		fake = new ProgramPoint() {
@@ -108,11 +125,11 @@ public class DFGraphTest {
 			}
 		};
 
-		df_foo = new Variable(PandasDataframeType.INSTANCE, "df_foo", SyntheticLocation.INSTANCE);
-		df_bar = new Variable(PandasDataframeType.INSTANCE, "df_bar", SyntheticLocation.INSTANCE);
-		df_foo_with_selection = new Variable(PandasDataframeType.INSTANCE, "df_foo_with_selection",
+		df_foo = new Variable(dftype, "df_foo", SyntheticLocation.INSTANCE);
+		df_bar = new Variable(dftype, "df_bar", SyntheticLocation.INSTANCE);
+		df_foo_with_selection = new Variable(dftype, "df_foo_with_selection",
 				SyntheticLocation.INSTANCE);
-		df_bar_with_selection = new Variable(PandasDataframeType.INSTANCE, "df_bar_with_selection",
+		df_bar_with_selection = new Variable(dftype, "df_bar_with_selection",
 				SyntheticLocation.INSTANCE);
 
 		selection = new ColumnListSelection(new Names("foo"));
@@ -160,7 +177,7 @@ public class DFGraphTest {
 	@Test
 	public void testReadDataframe() throws SemanticException {
 		Constant filename = new Constant(StringType.INSTANCE, fname_foo, SyntheticLocation.INSTANCE);
-		UnaryExpression unary = new UnaryExpression(PandasDataframeType.INSTANCE, filename, ReadDataframe.INSTANCE,
+		UnaryExpression unary = new UnaryExpression(dftype, filename, ReadDataframe.INSTANCE,
 				SyntheticLocation.INSTANCE);
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(unary, fake);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
@@ -171,7 +188,7 @@ public class DFGraphTest {
 
 	@Test
 	public void testFilterNull() throws SemanticException {
-		UnaryExpression unary = new UnaryExpression(PandasDataframeType.INSTANCE, df_foo, new FilterNull(Axis.ROWS),
+		UnaryExpression unary = new UnaryExpression(dftype, df_foo, new FilterNull(Axis.ROWS),
 				SyntheticLocation.INSTANCE);
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(unary, fake);
 		DataframeGraphDomain stack = sss.getValueOnStack().df();
@@ -183,7 +200,7 @@ public class DFGraphTest {
 
 	@Test
 	public void testAccessRows() throws SemanticException {
-		TernaryExpression ternary = new TernaryExpression(PandasDataframeType.INSTANCE,
+		TernaryExpression ternary = new TernaryExpression(dftype,
 				df_foo,
 				new Constant(Int32.INSTANCE, 0, SyntheticLocation.INSTANCE),
 				new Constant(Int32.INSTANCE, 100, SyntheticLocation.INSTANCE),
@@ -204,9 +221,9 @@ public class DFGraphTest {
 		cols.add(new ExpressionSet<>(new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE)));
 		cols.add(new ExpressionSet<>(new Constant(StringType.INSTANCE, "col2", SyntheticLocation.INSTANCE)));
 
-		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE,
+		BinaryExpression bin = new BinaryExpression(dftype,
 				df_foo,
-				new Constant(PyListType.INSTANCE,
+				new Constant(listtype,
 						cols,
 						SyntheticLocation.INSTANCE),
 				DropCols.INSTANCE, SyntheticLocation.INSTANCE);
@@ -231,7 +248,7 @@ public class DFGraphTest {
 				new DropColumns(fake.getLocation(), new ColumnListSelection(new Names("foo"))));
 
 		ValueEnvironment<DFOrConstant> valEnv = base.putState(df_bar, new DFOrConstant(df2GraphDomain));
-		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df_foo, df_bar, ConcatCols.INSTANCE,
+		BinaryExpression bin = new BinaryExpression(dftype, df_foo, df_bar, ConcatCols.INSTANCE,
 				SyntheticLocation.INSTANCE);
 
 		ValueEnvironment<DFOrConstant> sss = valEnv.smallStepSemantics(bin, fake);
@@ -261,7 +278,7 @@ public class DFGraphTest {
 				new DropColumns(fake.getLocation(), new ColumnListSelection(new Names("foo"))));
 
 		ValueEnvironment<DFOrConstant> valEnv = base.putState(df_bar, new DFOrConstant(df2GraphDomain));
-		BinaryExpression bin = new BinaryExpression(PandasDataframeType.INSTANCE, df_foo, df_bar, ConcatRows.INSTANCE,
+		BinaryExpression bin = new BinaryExpression(dftype, df_foo, df_bar, ConcatRows.INSTANCE,
 				SyntheticLocation.INSTANCE);
 
 		ValueEnvironment<DFOrConstant> sss = valEnv.smallStepSemantics(bin, fake);
@@ -286,7 +303,7 @@ public class DFGraphTest {
 
 	@Test
 	public void testProjectRows() throws SemanticException {
-		TernaryExpression ternary = new TernaryExpression(PandasDataframeType.INSTANCE,
+		TernaryExpression ternary = new TernaryExpression(dftype,
 				df_foo,
 				new Constant(Int32.INSTANCE, 0, SyntheticLocation.INSTANCE),
 				new Constant(Int32.INSTANCE, 100, SyntheticLocation.INSTANCE),
@@ -302,7 +319,7 @@ public class DFGraphTest {
 
 	@Test
 	public void testApplyTransformation() throws SemanticException {
-		UnaryExpression unary = new UnaryExpression(PandasDataframeType.INSTANCE,
+		UnaryExpression unary = new UnaryExpression(dftype,
 				df_foo_with_selection,
 				new ApplyTransformation(Kind.TO_DATETIME),
 				SyntheticLocation.INSTANCE);
@@ -316,7 +333,7 @@ public class DFGraphTest {
 	}
 
 	public void testColumnAccess() throws SemanticException {
-		BinaryExpression binary = new BinaryExpression(PandasDataframeType.INSTANCE,
+		BinaryExpression binary = new BinaryExpression(dftype,
 				df_foo,
 				new Constant(StringType.INSTANCE, "foo", fake.getLocation()),
 				ColumnAccess.INSTANCE,
@@ -330,7 +347,7 @@ public class DFGraphTest {
 
 	@Test
 	public void testWriteSelectionDataframe() throws SemanticException {
-		BinaryExpression binary = new BinaryExpression(PandasDataframeType.INSTANCE,
+		BinaryExpression binary = new BinaryExpression(dftype,
 				df_foo_with_selection,
 				df_bar,
 				WriteSelectionDataframe.INSTANCE,
@@ -353,7 +370,7 @@ public class DFGraphTest {
 
 	@Test
 	public void testPopSelection() throws SemanticException {
-		UnaryExpression unary = new UnaryExpression(PandasDataframeType.INSTANCE,
+		UnaryExpression unary = new UnaryExpression(dftype,
 				df_foo_with_selection,
 				PopSelection.INSTANCE,
 				SyntheticLocation.INSTANCE);
@@ -379,7 +396,7 @@ public class DFGraphTest {
 		ValueEnvironment<
 				DFOrConstant> valEnv = base.putState(df_foo, new DFOrConstant(new DataframeGraphDomain(initialGraph)));
 
-		BinaryExpression comparison = new BinaryExpression(PandasSeriesType.INSTANCE, df_foo,
+		BinaryExpression comparison = new BinaryExpression(seriestype, df_foo,
 				new Constant(Int32.INSTANCE, 5, SyntheticLocation.INSTANCE),
 				new PandasSeriesComparison(ComparisonOperator.GEQ), SyntheticLocation.INSTANCE);
 		valEnv = valEnv.smallStepSemantics(comparison, fake);
@@ -406,11 +423,11 @@ public class DFGraphTest {
 		df1Graph = DataframeGraphDomain.append(df1Graph, new ProjectionOperation<ColumnListSelection>(
 				SyntheticLocation.INSTANCE, new ColumnListSelection(new Names("col1"))));
 
-		Variable df1 = new Variable(PandasDataframeType.INSTANCE, "df1", SyntheticLocation.INSTANCE);
+		Variable df1 = new Variable(dftype, "df1", SyntheticLocation.INSTANCE);
 		ValueEnvironment<DFOrConstant> env = base.putState(df1, new DFOrConstant(new DataframeGraphDomain(df1Graph)));
 
 		ValueEnvironment<DFOrConstant> sss = env.smallStepSemantics(
-				new BinaryExpression(PandasSeriesType.INSTANCE, df1,
+				new BinaryExpression(seriestype, df1,
 						new Constant(Int32.INSTANCE, 5, SyntheticLocation.INSTANCE),
 						new PandasSeriesComparison(ComparisonOperator.NEQ),
 						SyntheticLocation.INSTANCE),
@@ -418,7 +435,7 @@ public class DFGraphTest {
 
 		env = base.putState(df1, new DFOrConstant(new DataframeGraphDomain(df1Graph.prefix(),
 				new AccessOperation<>(SyntheticLocation.INSTANCE, new ColumnListSelection(new Names("col1"))))));
-		Variable df2 = new Variable(PandasSeriesType.INSTANCE, "df2", SyntheticLocation.INSTANCE);
+		Variable df2 = new Variable(seriestype, "df2", SyntheticLocation.INSTANCE);
 		env = env.putState(df2, sss.getValueOnStack());
 
 		ArrayList<ExpressionSet<Constant>> cols = new ArrayList<>();
@@ -426,8 +443,8 @@ public class DFGraphTest {
 
 		sss = env.smallStepSemantics(
 				new TernaryExpression(
-						PandasDataframeType.INSTANCE, df1, df2,
-						new Constant(PyListType.INSTANCE, cols, SyntheticLocation.INSTANCE),
+						dftype, df1, df2,
+						new Constant(listtype, cols, SyntheticLocation.INSTANCE),
 						AccessRowsColumns.INSTANCE, SyntheticLocation.INSTANCE),
 				fake);
 
@@ -449,10 +466,10 @@ public class DFGraphTest {
 		env = base.putState(df1, new DFOrConstant(new DataframeGraphDomain(df1Graph)));
 
 		sss = env.smallStepSemantics(
-				new TernaryExpression(PandasDataframeType.INSTANCE, df1,
+				new TernaryExpression(dftype, df1,
 						new SliceConstant(new RangeBound(0),
 								new RangeBound(2), null, SyntheticLocation.INSTANCE),
-						new Constant(PyListType.INSTANCE, cols, SyntheticLocation.INSTANCE),
+						new Constant(listtype, cols, SyntheticLocation.INSTANCE),
 						AccessRowsColumns.INSTANCE, SyntheticLocation.INSTANCE),
 				fake);
 
@@ -468,7 +485,7 @@ public class DFGraphTest {
 	@Test
 	public void testWriteSelectionConstant() throws SemanticException {
 		// Part 1: write selection with a constant value
-		Variable df1 = new Variable(PandasDataframeType.INSTANCE, "df1", SyntheticLocation.INSTANCE);
+		Variable df1 = new Variable(dftype, "df1", SyntheticLocation.INSTANCE);
 		DataframeGraph df1Graph = new DataframeGraph();
 		df1Graph = DataframeGraphDomain.append(df1Graph, new ReadFromFile(SyntheticLocation.INSTANCE, "foo1.csv"));
 		DataframeSelection<?, ?> selection = new DataframeSelection<>(new NumberSlice(25, 56),
@@ -478,7 +495,7 @@ public class DFGraphTest {
 		ValueEnvironment<DFOrConstant> env = base.putState(df1, new DFOrConstant(new DataframeGraphDomain(df1Graph)));
 
 		ValueEnvironment<DFOrConstant> sss = env.smallStepSemantics(
-				new BinaryExpression(PandasDataframeType.INSTANCE, df1,
+				new BinaryExpression(dftype, df1,
 						new Constant(StringType.INSTANCE, "hula-hoops", SyntheticLocation.INSTANCE),
 						WriteSelectionConstant.INSTANCE, SyntheticLocation.INSTANCE),
 				fake);
@@ -506,7 +523,7 @@ public class DFGraphTest {
 		env = env.putState(skip, skipState);
 
 		TernaryExpression slice1 = new TernaryExpression(
-				PySliceType.INSTANCE,
+				slicetype,
 				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
 				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
 				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
@@ -518,7 +535,7 @@ public class DFGraphTest {
 		assertEquals(new ConstantPropagation(slice1Constant), sss.getValueOnStack().constant());
 
 		TernaryExpression slice2 = new TernaryExpression(
-				PySliceType.INSTANCE,
+				slicetype,
 				start,
 				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
 				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
@@ -530,7 +547,7 @@ public class DFGraphTest {
 		assertEquals(new ConstantPropagation(slice2Constant), sss.getValueOnStack().constant());
 
 		TernaryExpression slice3 = new TernaryExpression(
-				PySliceType.INSTANCE,
+				slicetype,
 				start,
 				new Constant(Int32.INSTANCE, 54, SyntheticLocation.INSTANCE),
 				skip,

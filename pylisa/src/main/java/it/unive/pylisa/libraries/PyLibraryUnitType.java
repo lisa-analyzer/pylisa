@@ -2,6 +2,7 @@ package it.unive.pylisa.libraries;
 
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.type.ReferenceType;
+import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 
 public class PyLibraryUnitType extends PyClassType {
@@ -17,10 +18,6 @@ public class PyLibraryUnitType extends PyClassType {
 
 	public String getLibraryName() {
 		return libraryName;
-	}
-
-	public ReferenceType getReference() {
-		return new ReferenceType(this);
 	}
 
 	@Override
@@ -46,5 +43,14 @@ public class PyLibraryUnitType extends PyClassType {
 		} else if (!libraryName.equals(other.libraryName))
 			return false;
 		return true;
+	}
+
+	public static boolean is(Type t, String lib, boolean includeReferences) {
+		if (t instanceof PyLibraryUnitType)
+			return ((PyLibraryUnitType) t).getLibraryName().equals(lib);
+		else if (includeReferences && t instanceof ReferenceType)
+			return ((ReferenceType) t).getInnerTypes().anyMatch(tt -> is(tt, lib, true));
+		else
+			return false;
 	}
 }

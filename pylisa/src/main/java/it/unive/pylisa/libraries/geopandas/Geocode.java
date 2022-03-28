@@ -18,8 +18,9 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
-import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
+import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.ApplyTransformation;
 import it.unive.pylisa.symbolic.operators.PopSelection;
 
@@ -28,7 +29,8 @@ public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression
 	private Statement st;
 
 	public Geocode(CFG cfg, CodeLocation location, Expression dataframe) {
-		super(cfg, location, "geocode", PandasDataframeType.REFERENCE, dataframe);
+		super(cfg, location, "geocode", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
+				dataframe);
 	}
 
 	public static Geocode build(CFG cfg, CodeLocation location, Expression[] exprs) {
@@ -54,22 +56,26 @@ public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression
 		AnalysisState<A, H, V, T> result = state.bottom();
 		SymbolicExpression dataframe = ((AccessChild) expr).getContainer();
 
-		HeapAllocation allocation = new HeapAllocation(PandasDataframeType.INSTANCE, location);
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
+		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+
+		HeapAllocation allocation = new HeapAllocation(dftype, location);
 		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, st);
 		AnalysisState<A, H, V, T> copy = state.bottom();
 		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
 			// copy the dataframe
 			AnalysisState<A, H, V, T> assigned = allocated.assign(loc, dataframe, st);
 			for (SymbolicExpression id : assigned.getComputedExpressions()) {
-				UnaryExpression transform = new UnaryExpression(PandasSeriesType.INSTANCE, id,
+				UnaryExpression transform = new UnaryExpression(seriestype, id,
 						new ApplyTransformation(ApplyTransformation.Kind.TO_GEOCODE),
 						location);
 				copy = copy.lub(assigned.smallStepSemantics(transform, st));
 			}
 
 			// we leave a reference to the fresh dataframe on the stack
-			HeapReference ref = new HeapReference(PandasDataframeType.REFERENCE, loc, location);
-			UnaryExpression pop = new UnaryExpression(PandasDataframeType.INSTANCE, dataframe, PopSelection.INSTANCE,
+			HeapReference ref = new HeapReference(dfref, loc, location);
+			UnaryExpression pop = new UnaryExpression(dftype, dataframe, PopSelection.INSTANCE,
 					location);
 			result = result.lub(copy.smallStepSemantics(pop, st).smallStepSemantics(ref, st));
 		}

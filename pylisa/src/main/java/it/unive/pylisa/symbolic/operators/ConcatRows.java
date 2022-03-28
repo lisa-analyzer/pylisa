@@ -6,27 +6,30 @@ import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class ConcatRows implements BinaryOperator, DataframeOperatorWithSideEffects {
 
-    public static final ConcatRows INSTANCE = new ConcatRows();
+	public static final ConcatRows INSTANCE = new ConcatRows();
 
-    private ConcatRows() {}
+	private ConcatRows() {
+	}
 
-    @Override
-    public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> right) {
-        if (left.noneMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
-            return Caches.types().mkEmptySet();
-        if (right.noneMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
-            return Caches.types().mkEmptySet();
-        return Caches.types().mkSingletonSet(PandasDataframeType.INSTANCE);
-    }
+	@Override
+	public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> right) {
+		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		if (left.noneMatch(t -> t.equals(df)))
+			return Caches.types().mkEmptySet();
+		if (right.noneMatch(t -> t.equals(df)))
+			return Caches.types().mkEmptySet();
+		return Caches.types().mkSingletonSet(df);
+	}
 
-    @Override
-    public String toString() {
-        return "concat_rows->";
-    }
+	@Override
+	public String toString() {
+		return "concat_rows->";
+	}
 
 	@Override
 	public SymbolicExpression getDataFrame(SymbolicExpression container) {

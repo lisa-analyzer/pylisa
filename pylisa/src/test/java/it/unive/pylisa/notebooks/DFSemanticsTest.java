@@ -19,6 +19,7 @@ import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ModularWorstCaseAnalysis;
 import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
@@ -28,6 +29,7 @@ import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
+import it.unive.lisa.type.ReferenceType;
 import it.unive.pylisa.analysis.dataframes.DFOrConstant;
 import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
@@ -35,9 +37,10 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.AccessOpera
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.Head;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
 
 @SuppressWarnings("unchecked")
 public class DFSemanticsTest {
@@ -72,7 +75,19 @@ public class DFSemanticsTest {
 			PointBasedHeap, SideEffectAwareDataframeDomain,
 			TypeEnvironment<InferredTypes>> interproc = new ModularWorstCaseAnalysis<>();
 
+	private final PyClassType dftype;
+	private final ReferenceType dfref;
+//	private final PyClassType seriestype;
+//	private final ReferenceType seriesref;
+
 	public DFSemanticsTest() throws AnalysisSetupException, SemanticException {
+		Program p = new Program();
+		LibrarySpecificationProvider.load(p);
+
+		dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		dfref = ((PyClassType) dftype).getReference();
+//		seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+//		seriesref = ((PyClassType) seriestype).getReference();
 
 		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap();
 		SideEffectAwareDataframeDomain df = new SideEffectAwareDataframeDomain();
@@ -96,9 +111,9 @@ public class DFSemanticsTest {
 
 		ReadCsv read = new ReadCsv(fakeCfg, readloc, lit);
 		read.setOriginatingStatement(read);
-		site = new AllocationSite(PandasDataframeType.INSTANCE, readloc.getCodeLocation(), null, false, readloc);
+		site = new AllocationSite(dftype, readloc.getCodeLocation(), null, false, readloc);
 
-		df1 = new VariableRef(fakeCfg, loc, "df1", PandasDataframeType.REFERENCE);
+		df1 = new VariableRef(fakeCfg, loc, "df1", dfref);
 		Assignment assignment = new Assignment(fakeCfg, loc, df1, read);
 		base = assignment.semantics(state, interproc, expressions);
 	}
@@ -123,7 +138,7 @@ public class DFSemanticsTest {
 				new ProjectionOperation<>(headloc, new NumberSlice(0, 5)));
 		DFOrConstant df2 = new DFOrConstant(elem2);
 
-		AllocationSite headsite = new AllocationSite(PandasDataframeType.INSTANCE, headloc.getCodeLocation(), null,
+		AllocationSite headsite = new AllocationSite(dftype, headloc.getCodeLocation(), null,
 				false,
 				headloc);
 		Head head = new Head(fakeCfg, headloc, this.df1, new Int32Literal(fakeCfg, loc, 5));

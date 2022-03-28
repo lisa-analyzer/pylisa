@@ -38,9 +38,20 @@ parser grammar LibraryDefinitionParser;
  	tokenVocab = LibraryDefinitionLexer;
  }
 
- type
+ lisatype
  :
  	TYPE type_name = IDENTIFIER DOUBLE_COLON type_field = IDENTIFIER
+ ;
+
+ libtype
+ :
+ 	LIBTYPE type_name = IDENTIFIER STAR?
+ ;
+
+ type
+ :
+ 	lisatype
+ 	| libtype
  ;
 
  value
@@ -65,8 +76,8 @@ parser grammar LibraryDefinitionParser;
 
  method
  :
- 	INSTANCE? SEALED? METHOD name = IDENTIFIER COLON implementation = IDENTIFIER type
- 	param*
+ 	INSTANCE? SEALED? METHOD name = IDENTIFIER COLON implementation = IDENTIFIER
+ 	type param*
  ;
 
  classDef

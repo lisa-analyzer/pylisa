@@ -19,9 +19,11 @@ import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.common.Int32;
-import it.unive.pylisa.cfg.type.PyTupleType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class TupleCreation extends NaryExpression {
 
@@ -40,16 +42,17 @@ public class TupleCreation extends NaryExpression {
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		AnalysisState<A, H, V, T> result = state.bottom();
-
+		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
+		
 		// allocate the heap region
-		HeapAllocation alloc = new HeapAllocation(PyTupleType.INSTANCE, getLocation());
+		HeapAllocation alloc = new HeapAllocation(tupleType, getLocation());
 		AnalysisState<A, H, V, T> sem = state.smallStepSemantics(alloc, this);
 
 		// assign the pairs
 		AnalysisState<A, H, V, T> assign = state.bottom();
 		for (SymbolicExpression loc : sem.getComputedExpressions()) {
-			HeapReference ref = new HeapReference(PyTupleType.INSTANCE, loc, getLocation());
-			HeapDereference deref = new HeapDereference(PyTupleType.INSTANCE, ref, getLocation());
+			HeapReference ref = new HeapReference(tupleType, loc, getLocation());
+			HeapDereference deref = new HeapDereference(tupleType, ref, getLocation());
 
 			for (int i = 0; i < params.length; i++) {
 				AnalysisState<A, H, V, T> fieldResult = state.bottom();

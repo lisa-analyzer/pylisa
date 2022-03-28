@@ -14,7 +14,9 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 
@@ -31,7 +33,9 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 					AnalysisState<A, H, V, T> state,
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions) throws SemanticException {
-		if (expr.getRuntimeTypes().anyMatch(t -> (t.equals(PandasDataframeType.REFERENCE)))) {
+		PyClassType type = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type typeref = ((PyClassType) type).getReference();
+		if (expr.getRuntimeTypes().anyMatch(t -> (t.equals(typeref)))) {
 			String name = getTarget().getName();
 			switch (name) {
 			case "loc":

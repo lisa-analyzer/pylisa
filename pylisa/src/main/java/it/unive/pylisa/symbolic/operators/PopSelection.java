@@ -6,7 +6,8 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
-import it.unive.pylisa.libraries.pandas.types.PandasDataframeType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class PopSelection implements UnaryOperator, DataframeOperatorWithSideEffects {
 
@@ -22,9 +23,10 @@ public class PopSelection implements UnaryOperator, DataframeOperatorWithSideEff
 
 	@Override
 	public ExternalSet<Type> typeInference(ExternalSet<Type> argument) {
-		if (argument.noneMatch(t -> t.equals(PandasDataframeType.INSTANCE)))
+		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		if (argument.noneMatch(t -> t.equals(df)))
 			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(PandasDataframeType.INSTANCE);
+		return Caches.types().mkSingletonSet(df);
 	}
 
 	@Override

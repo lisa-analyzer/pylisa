@@ -6,16 +6,17 @@ import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.util.numeric.MathNumber;
-import it.unive.pylisa.cfg.type.PySliceType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class SliceConstant extends Constant {
 
 	public SliceConstant(Slice slice, CodeLocation location) {
-		super(PySliceType.INSTANCE, slice, location);
+		super(PyClassType.lookup(LibrarySpecificationProvider.SLICE), slice, location);
 	}
 
 	public SliceConstant(RangeBound start, RangeBound end, RangeBound skip, CodeLocation location) {
-		super(PySliceType.INSTANCE, new Slice(start, end, skip), location);
+		super(PyClassType.lookup(LibrarySpecificationProvider.SLICE), new Slice(start, end, skip), location);
 	}
 
 	public static class RangeBound {

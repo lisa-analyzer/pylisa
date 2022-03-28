@@ -5,7 +5,9 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -40,22 +42,27 @@ import it.unive.pylisa.antlr.LibraryDefinitionParser.ClassDefContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.FieldContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.FileContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.LibraryContext;
+import it.unive.pylisa.antlr.LibraryDefinitionParser.LibtypeContext;
+import it.unive.pylisa.antlr.LibraryDefinitionParser.LisatypeContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.MethodContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.ParamContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.TypeContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParserBaseVisitor;
+import it.unive.pylisa.cfg.type.PyClassType;
 
 public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisitor<Object> {
 
 	private final String file;
 	private final Program program;
 
-	private Collection<CompilationUnit> parsed;
+	private Map<String, CompilationUnit> parsed;
 	private Collection<Pair<CompilationUnit, CompilationUnit>> toType;
 
 	private Unit library, clazz;
 	private CodeLocation location;
 	private CFG init;
+
+	private boolean mode;
 
 	public LibrarySpecificationParser(String file, Program program) {
 		this.file = file;
@@ -73,28 +80,34 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 
 	@Override
 	public CompilationUnit visitClassDef(ClassDefContext ctx) {
-		CompilationUnit unit = new CompilationUnit(location, ctx.name.getText(), ctx.SEALED() != null);
-		clazz = unit;
+		String name = ctx.name.getText();
+		CompilationUnit unit = mode ? parsed.get(name) : new CompilationUnit(location, name, ctx.SEALED() != null);
 
-		for (MethodContext mtd : ctx.method()) {
-			NativeCFG construct = visitMethod(mtd);
-			if (construct.getDescriptor().isInstance())
-				unit.addInstanceConstruct(construct);
-			else
-				unit.addConstruct(construct);
+		if (mode) {
+			clazz = unit;
+
+			for (MethodContext mtd : ctx.method()) {
+				NativeCFG construct = visitMethod(mtd);
+				if (construct.getDescriptor().isInstance())
+					unit.addInstanceConstruct(construct);
+				else
+					unit.addConstruct(construct);
+			}
+
+			for (FieldContext fld : ctx.field()) {
+				Global field = visitField(fld);
+				if (fld.INSTANCE() != null)
+					unit.addInstanceGlobal(field);
+				else
+					unit.addGlobal(field);
+			}
+
+			clazz = null;
+		} else {
+			parsed.put(name, unit);
+			toType.add(library == program ? Pair.of(null, unit) : Pair.of((CompilationUnit) library, unit));
 		}
 
-		for (FieldContext fld : ctx.field()) {
-			Global field = visitField(fld);
-			if (fld.INSTANCE() != null)
-				unit.addInstanceGlobal(field);
-			else
-				unit.addGlobal(field);
-		}
-
-		clazz = null;
-		parsed.add(unit);
-		toType.add(library == program ? Pair.of(null, unit) : Pair.of((CompilationUnit) library, unit));
 		return unit;
 	}
 
@@ -135,6 +148,22 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 
 	@Override
 	public Type visitType(TypeContext ctx) {
+		if (ctx.libtype() != null)
+			return visitLibtype(ctx.libtype());
+		else
+			return visitLisatype(ctx.lisatype());
+	}
+
+	@Override
+	public Type visitLibtype(LibtypeContext ctx) {
+		Type t = PyClassType.lookup(ctx.type_name.getText());
+		if (ctx.STAR() != null)
+			t = ((PyClassType) t).getReference();
+		return t;
+	}
+
+	@Override
+	public Type visitLisatype(LisatypeContext ctx) {
 		try {
 			Class<?> type = Class.forName(ctx.type_name.getText());
 			Field field = type.getField(ctx.type_field.getText());
@@ -175,20 +204,29 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	@Override
 	public CompilationUnit visitLibrary(LibraryContext ctx) {
 		location = new SourceCodeLocation(ctx.loc.getText(), 0, 0);
-		CompilationUnit unit = new CompilationUnit(location, ctx.name.getText(), false);
+		String name = ctx.name.getText();
+		CompilationUnit unit = mode ? parsed.get(name) : new CompilationUnit(location, name, false);
 		library = unit;
 
-		for (MethodContext mtd : ctx.method())
-			unit.addConstruct(visitMethod(mtd));
+		if (mode) {
+			for (MethodContext mtd : ctx.method())
+				unit.addConstruct(visitMethod(mtd));
 
-		for (FieldContext fld : ctx.field())
-			unit.addGlobal(visitField(fld));
+			for (FieldContext fld : ctx.field())
+				unit.addGlobal(visitField(fld));
+		}
 
-		for (ClassDefContext cls : ctx.classDef())
-			program.addCompilationUnit(visitClassDef(cls));
+		for (ClassDefContext cls : ctx.classDef()) {
+			CompilationUnit c = visitClassDef(cls);
+			if (!mode)
+				// we add it only in the first pass
+				program.addCompilationUnit(c);
+		}
 
-		program.addCompilationUnit(unit);
-		parsed.add(unit);
+		if (!mode) {
+			program.addCompilationUnit(unit);
+			parsed.put(name, unit);
+		}
 
 		library = null;
 		location = null;
@@ -197,8 +235,32 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 
 	@Override
 	public Collection<CompilationUnit> visitFile(FileContext ctx) {
-		parsed = new HashSet<>();
+		parsed = new HashMap<>();
 		toType = new HashSet<>();
+
+		// only parse type definitions
+		mode = false;
+
+		// setup for the elements that will go directly into the program
+		location = new SourceCodeLocation("standard_library", 0, 0);
+		clazz = program;
+		library = program;
+
+		for (ClassDefContext cls : ctx.classDef())
+			program.addCompilationUnit(visitClassDef(cls));
+		for (LibraryContext lib : ctx.library())
+			visitLibrary(lib);
+
+		// generate types
+		for (Pair<CompilationUnit, CompilationUnit> pair : toType)
+			if (pair.getLeft() == null)
+				PyClassType.lookup(pair.getRight().getName(), pair.getRight());
+			else
+				// registering is a side effect of the constructor
+				new PyLibraryUnitType(pair.getLeft(), pair.getRight());
+
+		// parse signatures
+		mode = true;
 
 		// setup for the elements that will go directly into the program
 		location = new SourceCodeLocation("standard_library", 0, 0);
@@ -210,7 +272,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		for (FieldContext lfd : ctx.field())
 			program.addGlobal(visitField(lfd));
 		for (ClassDefContext cls : ctx.classDef())
-			program.addCompilationUnit(visitClassDef(cls));
+			visitClassDef(cls);
 
 		location = null;
 		clazz = null;
@@ -218,7 +280,8 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 
 		for (LibraryContext lib : ctx.library())
 			visitLibrary(lib);
-		return parsed;
+
+		return parsed.values();
 	}
 
 	public Collection<Pair<CompilationUnit, CompilationUnit>> getToType() {

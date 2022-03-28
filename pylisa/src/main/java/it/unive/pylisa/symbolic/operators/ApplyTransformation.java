@@ -8,7 +8,8 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
-import it.unive.pylisa.libraries.pandas.types.PandasSeriesType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class ApplyTransformation implements UnaryOperator, DataframeOperatorWithSideEffects {
 
@@ -51,9 +52,10 @@ public class ApplyTransformation implements UnaryOperator, DataframeOperatorWith
 
 	@Override
 	public ExternalSet<Type> typeInference(ExternalSet<Type> argument) {
-		if (argument.noneMatch(t -> t.equals(PandasSeriesType.INSTANCE)))
+		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+		if (argument.noneMatch(t -> t.equals(series)))
 			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(PandasSeriesType.INSTANCE);
+		return Caches.types().mkSingletonSet(series);
 	}
 
 	@Override
