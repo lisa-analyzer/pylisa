@@ -14,13 +14,10 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.HeapAllocation;
-import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
-import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.ReadDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
 
 public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	private Statement st;
@@ -50,24 +47,8 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		CodeLocation location = getLocation();
-		AnalysisState<A, H, V, T> assigned = state.bottom();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		Type dfref = ((PyClassType) dftype).getReference();
-
-		HeapAllocation allocation = new HeapAllocation(dftype, location);
-		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, st);
-
 		UnaryExpression read = new UnaryExpression(dftype, arg, ReadDataframe.INSTANCE, location);
-
-		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
-			HeapReference ref = new HeapReference(dfref, loc, location);
-			AnalysisState<A, H, V, T> tmp = state.bottom();
-			AnalysisState<A, H, V, T> readState = allocated.smallStepSemantics(read, st);
-			for (SymbolicExpression df : readState.getComputedExpressions())
-				tmp = tmp.lub(readState.assign(loc, df, st));
-			assigned = tmp.smallStepSemantics(ref, st);
-		}
-
-		return assigned;
+		return PandasSemantics.createAndInitDataframe(state, read, st);
 	}
 }

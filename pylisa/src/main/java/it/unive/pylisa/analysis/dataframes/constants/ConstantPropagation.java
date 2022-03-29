@@ -135,7 +135,9 @@ public class ConstantPropagation extends BaseLattice<ConstantPropagation> {
 	}
 
 	private static boolean isAccepted(Type t) {
-		return t.isNumericType() || t.isStringType() || t.toString().equals(LibrarySpecificationProvider.LIST)
+		return t.isNumericType() 
+				|| t.isStringType() 
+				|| t.toString().equals(LibrarySpecificationProvider.LIST)
 				|| t.toString().equals(LibrarySpecificationProvider.SLICE);
 	}
 

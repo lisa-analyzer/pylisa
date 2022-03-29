@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,7 +13,6 @@ import org.reflections.scanners.SubTypesScanner;
 
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SyntheticLocation;
@@ -55,26 +53,27 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.D
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.symbolic.ListConstant;
 import it.unive.pylisa.symbolic.SliceConstant;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
-import it.unive.pylisa.symbolic.operators.AccessRows;
-import it.unive.pylisa.symbolic.operators.AccessRowsColumns;
-import it.unive.pylisa.symbolic.operators.ApplyTransformation;
-import it.unive.pylisa.symbolic.operators.ApplyTransformation.Kind;
-import it.unive.pylisa.symbolic.operators.ColumnAccess;
-import it.unive.pylisa.symbolic.operators.ComparisonOperator;
-import it.unive.pylisa.symbolic.operators.ConcatCols;
-import it.unive.pylisa.symbolic.operators.ConcatRows;
-import it.unive.pylisa.symbolic.operators.DropCols;
-import it.unive.pylisa.symbolic.operators.FilterNull;
-import it.unive.pylisa.symbolic.operators.FilterNull.Axis;
-import it.unive.pylisa.symbolic.operators.PandasSeriesComparison;
-import it.unive.pylisa.symbolic.operators.PopSelection;
-import it.unive.pylisa.symbolic.operators.ProjectRows;
-import it.unive.pylisa.symbolic.operators.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
-import it.unive.pylisa.symbolic.operators.WriteSelectionConstant;
-import it.unive.pylisa.symbolic.operators.WriteSelectionDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.AccessRows;
+import it.unive.pylisa.symbolic.operators.dataframes.AccessRowsColumns;
+import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
+import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
+import it.unive.pylisa.symbolic.operators.dataframes.AxisConcatenation;
+import it.unive.pylisa.symbolic.operators.dataframes.ColumnAccess;
+import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
+import it.unive.pylisa.symbolic.operators.dataframes.DropCols;
+import it.unive.pylisa.symbolic.operators.dataframes.FilterNull;
+import it.unive.pylisa.symbolic.operators.dataframes.FilterNull.Axis;
+import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
+import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
+import it.unive.pylisa.symbolic.operators.dataframes.PopSelection;
+import it.unive.pylisa.symbolic.operators.dataframes.ProjectRows;
+import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
+import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
 
 public class DFGraphTest {
 
@@ -92,7 +91,7 @@ public class DFGraphTest {
 
 	private final ReadFromFile read_foo, read_bar;
 
-	private final PyClassType listtype;
+//	private final PyClassType listtype;
 	private final PyClassType slicetype;
 	private final PyClassType dftype;
 //	private final ReferenceType dfref;
@@ -103,7 +102,7 @@ public class DFGraphTest {
 		Program p = new Program();
 		LibrarySpecificationProvider.load(p);
 
-		listtype = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+//		listtype = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		slicetype = PyClassType.lookup(LibrarySpecificationProvider.SLICE);
 		dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 //		dfref = ((PyClassType) dftype).getReference();
@@ -158,7 +157,7 @@ public class DFGraphTest {
 
 	@Test
 	public void allOperatorsAreTested() throws ClassNotFoundException {
-		Reflections reflections = new Reflections("it.unive.pylisa.symbolic.operators", new SubTypesScanner(false));
+		Reflections reflections = new Reflections(ReadDataframe.class.getPackageName(), new SubTypesScanner(false));
 		Set<String> allTypes = reflections.getAllTypes();
 		for (String type : allTypes) {
 			Class<?> clazz = Class.forName(type);
@@ -216,16 +215,13 @@ public class DFGraphTest {
 
 	@Test
 	public void testDropCols() throws SemanticException {
-
-		ArrayList<ExpressionSet<Constant>> cols = new ArrayList<>();
-		cols.add(new ExpressionSet<>(new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE)));
-		cols.add(new ExpressionSet<>(new Constant(StringType.INSTANCE, "col2", SyntheticLocation.INSTANCE)));
-
 		BinaryExpression bin = new BinaryExpression(dftype,
 				df_foo,
-				new Constant(listtype,
-						cols,
-						SyntheticLocation.INSTANCE),
+				new ListConstant(SyntheticLocation.INSTANCE,
+						new DFOrConstant(new ConstantPropagation(
+								new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE))),
+						new DFOrConstant(new ConstantPropagation(
+								new Constant(StringType.INSTANCE, "col2", SyntheticLocation.INSTANCE)))),
 				DropCols.INSTANCE, SyntheticLocation.INSTANCE);
 
 		ValueEnvironment<DFOrConstant> sss = base.smallStepSemantics(bin, fake);
@@ -242,13 +238,13 @@ public class DFGraphTest {
 	}
 
 	@Test
-	public void testConcatCols() throws SemanticException {
+	public void testJoinCols() throws SemanticException {
 		DataframeGraphDomain df2GraphDomain = new DataframeGraphDomain(
 				base.getState(df_bar).df(),
 				new DropColumns(fake.getLocation(), new ColumnListSelection(new Names("foo"))));
 
 		ValueEnvironment<DFOrConstant> valEnv = base.putState(df_bar, new DFOrConstant(df2GraphDomain));
-		BinaryExpression bin = new BinaryExpression(dftype, df_foo, df_bar, ConcatCols.INSTANCE,
+		BinaryExpression bin = new BinaryExpression(dftype, df_foo, df_bar, JoinCols.INSTANCE,
 				SyntheticLocation.INSTANCE);
 
 		ValueEnvironment<DFOrConstant> sss = valEnv.smallStepSemantics(bin, fake);
@@ -272,13 +268,15 @@ public class DFGraphTest {
 	}
 
 	@Test
-	public void testConcatRows() throws SemanticException {
+	public void testAxisConcatenation() throws SemanticException {
 		DataframeGraphDomain df2GraphDomain = new DataframeGraphDomain(
 				base.getState(df_bar).df(),
 				new DropColumns(fake.getLocation(), new ColumnListSelection(new Names("foo"))));
 
 		ValueEnvironment<DFOrConstant> valEnv = base.putState(df_bar, new DFOrConstant(df2GraphDomain));
-		BinaryExpression bin = new BinaryExpression(dftype, df_foo, df_bar, ConcatRows.INSTANCE,
+		UnaryExpression bin = new UnaryExpression(dftype,
+				new ListConstant(fake.getLocation(), valEnv.getState(df_foo), valEnv.getState(df_bar)),
+				new AxisConcatenation(Axis.ROWS),
 				SyntheticLocation.INSTANCE);
 
 		ValueEnvironment<DFOrConstant> sss = valEnv.smallStepSemantics(bin, fake);
@@ -438,13 +436,14 @@ public class DFGraphTest {
 		Variable df2 = new Variable(seriestype, "df2", SyntheticLocation.INSTANCE);
 		env = env.putState(df2, sss.getValueOnStack());
 
-		ArrayList<ExpressionSet<Constant>> cols = new ArrayList<>();
-		cols.add(new ExpressionSet<>(new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE)));
-
+		ListConstant cols = new ListConstant(SyntheticLocation.INSTANCE,
+				new DFOrConstant(new ConstantPropagation(
+						new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE))));
+		
 		sss = env.smallStepSemantics(
 				new TernaryExpression(
 						dftype, df1, df2,
-						new Constant(listtype, cols, SyntheticLocation.INSTANCE),
+						cols,
 						AccessRowsColumns.INSTANCE, SyntheticLocation.INSTANCE),
 				fake);
 
@@ -469,7 +468,7 @@ public class DFGraphTest {
 				new TernaryExpression(dftype, df1,
 						new SliceConstant(new RangeBound(0),
 								new RangeBound(2), null, SyntheticLocation.INSTANCE),
-						new Constant(listtype, cols, SyntheticLocation.INSTANCE),
+						cols,
 						AccessRowsColumns.INSTANCE, SyntheticLocation.INSTANCE),
 				fake);
 

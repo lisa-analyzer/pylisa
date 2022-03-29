@@ -29,8 +29,8 @@ import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
-import it.unive.pylisa.symbolic.operators.WriteSelectionConstant;
-import it.unive.pylisa.symbolic.operators.WriteSelectionDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
+import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
 
 public class PyAssign extends Assignment {
 

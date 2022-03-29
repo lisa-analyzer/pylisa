@@ -1,8 +1,6 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import it.unive.lisa.analysis.AbstractState;
@@ -19,18 +17,13 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.AccessChild;
-import it.unive.lisa.symbolic.heap.HeapAllocation;
-import it.unive.lisa.symbolic.heap.HeapDereference;
-import it.unive.lisa.symbolic.heap.HeapReference;
-import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.ValueExpression;
+import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.Untyped;
-import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.AtomList;
+import it.unive.pylisa.symbolic.ListConstant;
+import it.unive.pylisa.symbolic.operators.ListAppend;
 
 public class ListCreation extends NaryExpression {
 
@@ -48,58 +41,31 @@ public class ListCreation extends NaryExpression {
 					ExpressionSet<SymbolicExpression>[] params,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
+		CodeLocation loc = getLocation();
+		ListConstant list = new ListConstant(loc);
 
-		boolean allAtoms = true;
-
-		List<ExpressionSet<ValueExpression>> atoms = new ArrayList<>(params.length);
-		outer: for (int i = 0; i < params.length; i++) {
-			ExpressionSet<SymbolicExpression> param = params[i];
-			Set<ValueExpression> elements = new HashSet<>();
-			for (SymbolicExpression expr : param) {
-				if (!AtomList.isAtom(expr)) {
-					allAtoms = false;
-					break outer;
-				}
-
-				elements.add((ValueExpression) expr);
-			}
-
-			atoms.add(new ExpressionSet<>(elements));
-		}
-
-		if (allAtoms) {
-			AtomList list = new AtomList(getLocation(), atoms);
+		if (params.length == 0)
 			return state.smallStepSemantics(list, this);
+
+		Type type = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+		BinaryOperator append = ListAppend.INSTANCE;
+
+		Set<BinaryExpression> ws = new HashSet<>(), tmp = new HashSet<>();
+		for (SymbolicExpression firstelement : params[0])
+			ws.add(new BinaryExpression(type, list, firstelement, append, loc));
+
+		for (int i = 1; i < params.length; i++) {
+			tmp.addAll(ws);
+			ws.clear();
+			for (SymbolicExpression element : params[i])
+				for (BinaryExpression listhead : tmp)
+					ws.add(new BinaryExpression(type, listhead, element, append, loc));
+			tmp.clear();
 		}
 
 		AnalysisState<A, H, V, T> result = state.bottom();
-
-		// allocate the heap region
-		Type type = PyClassType.lookup(LibrarySpecificationProvider.LIST);
-		HeapAllocation alloc = new HeapAllocation(type, getLocation());
-		AnalysisState<A, H, V, T> sem = state.smallStepSemantics(alloc, this);
-
-		// assign the pairs
-		AnalysisState<A, H, V, T> assign = state.bottom();
-		for (SymbolicExpression loc : sem.getComputedExpressions()) {
-			HeapReference ref = new HeapReference(type, loc, getLocation());
-			HeapDereference deref = new HeapDereference(type, ref, getLocation());
-
-			for (int i = 0; i < params.length; i++) {
-				AnalysisState<A, H, V, T> fieldResult = state.bottom();
-				Constant idx = new Constant(Int32.INSTANCE, i, getLocation());
-				AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref, idx, getLocation());
-				for (SymbolicExpression init : sem.getComputedExpressions()) {
-					AnalysisState<A, H, V, T> fieldState = state.smallStepSemantics(fieldAcc, this);
-					for (SymbolicExpression lenId : fieldState.getComputedExpressions())
-						fieldResult = fieldResult.lub(fieldState.assign(lenId, init, this));
-				}
-				assign = assign.lub(fieldResult);
-			}
-
-			// we leave the reference on the stack
-			result = result.lub(assign.smallStepSemantics(ref, this));
-		}
+		for (BinaryExpression completelist : ws)
+			result = result.lub(state.smallStepSemantics(completelist, this));
 
 		return result;
 	}

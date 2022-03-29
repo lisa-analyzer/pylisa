@@ -22,6 +22,7 @@ library pandas:
 	method concat: it.unive.pylisa.libraries.pandas.Concatenate
 		libtype pandas.DataFrame*
 		param objs libtype List
+		param axis type it.unive.lisa.type.common.Int32::INSTANCE default 0
 	class pandas.DataFrame:
 		instance method head: it.unive.pylisa.libraries.pandas.Head
 			libtype pandas.DataFrame*

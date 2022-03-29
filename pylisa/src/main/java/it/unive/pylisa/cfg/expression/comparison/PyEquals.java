@@ -13,7 +13,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.string.Equals;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.symbolic.operators.ComparisonOperator;
+import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
 
 public class PyEquals extends Equals {
 

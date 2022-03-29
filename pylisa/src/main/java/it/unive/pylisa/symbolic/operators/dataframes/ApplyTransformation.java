@@ -1,4 +1,4 @@
-package it.unive.pylisa.symbolic.operators;
+package it.unive.pylisa.symbolic.operators.dataframes;
 
 import java.util.Optional;
 

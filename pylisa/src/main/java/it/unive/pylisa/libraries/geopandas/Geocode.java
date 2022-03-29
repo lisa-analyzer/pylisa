@@ -21,8 +21,8 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.ApplyTransformation;
-import it.unive.pylisa.symbolic.operators.PopSelection;
+import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
+import it.unive.pylisa.symbolic.operators.dataframes.PopSelection;
 
 public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 

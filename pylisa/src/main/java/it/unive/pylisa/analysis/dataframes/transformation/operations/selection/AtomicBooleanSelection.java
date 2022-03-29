@@ -7,7 +7,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
-import it.unive.pylisa.symbolic.operators.ComparisonOperator;
+import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
 
 public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelection> {
 

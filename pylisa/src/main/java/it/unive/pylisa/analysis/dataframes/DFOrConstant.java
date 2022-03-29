@@ -1,12 +1,11 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.numeric.Interval;
@@ -42,24 +41,26 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.A
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
+import it.unive.pylisa.symbolic.ListConstant;
 import it.unive.pylisa.symbolic.SliceConstant;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
-import it.unive.pylisa.symbolic.operators.AccessRows;
-import it.unive.pylisa.symbolic.operators.AccessRowsColumns;
-import it.unive.pylisa.symbolic.operators.ApplyTransformation;
-import it.unive.pylisa.symbolic.operators.ApplyTransformation.Kind;
-import it.unive.pylisa.symbolic.operators.ColumnAccess;
-import it.unive.pylisa.symbolic.operators.ConcatCols;
-import it.unive.pylisa.symbolic.operators.ConcatRows;
-import it.unive.pylisa.symbolic.operators.DropCols;
-import it.unive.pylisa.symbolic.operators.FilterNull;
-import it.unive.pylisa.symbolic.operators.PandasSeriesComparison;
-import it.unive.pylisa.symbolic.operators.PopSelection;
-import it.unive.pylisa.symbolic.operators.ProjectRows;
-import it.unive.pylisa.symbolic.operators.ReadDataframe;
+import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
-import it.unive.pylisa.symbolic.operators.WriteSelectionConstant;
-import it.unive.pylisa.symbolic.operators.WriteSelectionDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.AccessRows;
+import it.unive.pylisa.symbolic.operators.dataframes.AccessRowsColumns;
+import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
+import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
+import it.unive.pylisa.symbolic.operators.dataframes.AxisConcatenation;
+import it.unive.pylisa.symbolic.operators.dataframes.ColumnAccess;
+import it.unive.pylisa.symbolic.operators.dataframes.DropCols;
+import it.unive.pylisa.symbolic.operators.dataframes.FilterNull;
+import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
+import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
+import it.unive.pylisa.symbolic.operators.dataframes.PopSelection;
+import it.unive.pylisa.symbolic.operators.dataframes.ProjectRows;
+import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
+import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
 
 public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
@@ -284,6 +285,39 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 				return TOP_GRAPH;
 			DataframeGraphDomain popped = new DataframeGraphDomain(df.getTransformations().prefix());
 			return new DFOrConstant(popped);
+		} else if (operator instanceof AxisConcatenation) {
+			ConstantPropagation list = arg.constant;
+
+			if (topOrBottom(list) || !list.is(List.class))
+				return TOP_GRAPH;
+
+			List<Lattice<?>> elements = list.as(List.class);
+
+			if (elements.isEmpty())
+				return BOTTOM;
+			DFOrConstant firstWrapped = (DFOrConstant) elements.iterator().next();
+			if (elements.size() == 1)
+				return firstWrapped;
+
+			DataframeGraph concatGraph = new DataframeGraph();
+			DataframeOperation concatNode = new Concat(pp.getLocation(),
+					operator == JoinCols.INSTANCE
+							? Concat.Axis.CONCAT_COLS
+							: Concat.Axis.CONCAT_ROWS);
+			concatGraph.addNode(concatNode);
+
+			for (int i = 0; i < elements.size(); i++)
+				try {
+					DataframeGraph graph = ((DFOrConstant) elements.get(i)).graph.getTransformations();
+					DataframeOperation exit = graph.getLeaf();
+					concatGraph.mergeWith(graph);
+					concatGraph.addEdge(new ConcatEdge(exit, concatNode, i));
+				} catch (IllegalStateException e) {
+					// one of the graphs involved has more than one leaf
+					return TOP_GRAPH;
+				}
+
+			return new DFOrConstant(new DataframeGraphDomain(concatGraph));
 		} else
 			return TOP;
 	}
@@ -292,7 +326,16 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 	@Override
 	protected DFOrConstant evalBinaryExpression(BinaryOperator operator, DFOrConstant left, DFOrConstant right,
 			ProgramPoint pp) throws SemanticException {
-		if (operator == ColumnAccess.INSTANCE) {
+		if (operator == ListAppend.INSTANCE) {
+			ConstantPropagation list = left.constant;
+			if (topOrBottom(list) || topOrBottom(right) || !list.is(List.class))
+				return TOP_CONSTANT;
+
+			ConstantPropagation newlist = new ConstantPropagation(
+					new ListConstant(pp.getLocation(), list.as(List.class), right));
+
+			return new DFOrConstant(newlist);
+		} else if (operator == ColumnAccess.INSTANCE) {
 			DataframeGraphDomain df = left.graph;
 			ConstantPropagation col = right.constant;
 			if (topOrBottom(df) || topOrBottom(col))
@@ -306,30 +349,27 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 		} else if (operator == DropCols.INSTANCE) {
 			DataframeGraphDomain df = left.graph;
 			ConstantPropagation cols = right.constant;
-			if (topOrBottom(df) || topOrBottom(cols))
+			if (topOrBottom(df) || topOrBottom(cols) || !cols.is(List.class))
 				return TOP_GRAPH;
 
-			if (!(cols.getConstant() instanceof ArrayList<?>))
-				// check whether the cols constant is indeed what we expect for
-				// a constant list
-				return TOP_GRAPH;
-
-			ArrayList<ExpressionSet<Constant>> cs = (ArrayList<ExpressionSet<Constant>>) cols.getConstant();
+			List<DFOrConstant> cs = cols.as(List.class);
 			Set<String> accessedCols = new HashSet<>();
+			ColumnListSelection colsSelection = null;
 
-			for (ExpressionSet<Constant> c : cs) {
-				for (Constant colName : c) {
-					if (!(colName.getValue() instanceof String))
-						return TOP_GRAPH;
-					accessedCols.add((String) colName.getValue());
+			for (DFOrConstant c : cs) {
+				if (topOrBottom(c.constant) || !c.constant.is(String.class)) {
+					colsSelection = new ColumnListSelection(true);
+					break;
 				}
+				accessedCols.add(c.constant.as(String.class));
 			}
 
-			DataframeGraphDomain ca = new DataframeGraphDomain(df,
-					new DropColumns(pp.getLocation(), new ColumnListSelection(accessedCols)));
+			if (colsSelection == null)
+				colsSelection = new ColumnListSelection(accessedCols);
 
+			DataframeGraphDomain ca = new DataframeGraphDomain(df, new DropColumns(pp.getLocation(), colsSelection));
 			return new DFOrConstant(ca);
-		} else if (operator == ConcatCols.INSTANCE || operator == ConcatRows.INSTANCE) {
+		} else if (operator == JoinCols.INSTANCE) {
 			DataframeGraphDomain df1 = left.graph;
 			DataframeGraphDomain df2 = right.graph;
 
@@ -351,8 +391,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			concatGraph.mergeWith(df1.getTransformations());
 			concatGraph.mergeWith(df2.getTransformations());
 
-			DataframeOperation concatNode = new Concat(pp.getLocation(),
-					operator == ConcatCols.INSTANCE ? Concat.Axis.CONCAT_COLS : Concat.Axis.CONCAT_ROWS);
+			DataframeOperation concatNode = new Concat(pp.getLocation(), Concat.Axis.CONCAT_COLS);
 			concatGraph.addNode(concatNode);
 			concatGraph.addEdge(new ConcatEdge(exit1, concatNode, 0));
 			concatGraph.addEdge(new ConcatEdge(exit2, concatNode, 1));
@@ -466,34 +505,28 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			DataframeGraphDomain df = left.graph;
 			// right is a list of strings so we will handle that first
 			ConstantPropagation cols = right.constant;
-			if (topOrBottom(df) || topOrBottom(cols))
+			if (topOrBottom(df) || topOrBottom(middle) || topOrBottom(cols) || !cols.is(List.class))
 				return TOP_GRAPH;
 
 			DataframeGraph resultGraph = df.getTransformations();
 			DataframeSelection selection = new DataframeSelection(true);
 
-			if (!(cols.getConstant() instanceof ArrayList<?>))
-				// check whether the cols constant is indeed what we expect for
-				// a constant list
-				return TOP_GRAPH;
-
-			ArrayList<ExpressionSet<Constant>> cs = (ArrayList<ExpressionSet<Constant>>) cols.getConstant();
+			List<DFOrConstant> cs = cols.as(List.class);
 			Set<String> accessedCols = new HashSet<>();
+			ColumnListSelection colsSelection = null;
 
-			for (ExpressionSet<Constant> c : cs) {
-				for (Constant colName : c) {
-					if (!(colName.getValue() instanceof String))
-						return TOP_GRAPH;
-					accessedCols.add((String) colName.getValue());
+			for (DFOrConstant c : cs) {
+				if (topOrBottom(c.constant) || !c.constant.is(String.class)) {
+					colsSelection = new ColumnListSelection(true);
+					break;
 				}
+				accessedCols.add(c.constant.as(String.class));
 			}
 
-			ColumnListSelection colsSelection = new ColumnListSelection(accessedCols);
+			if (colsSelection == null)
+				colsSelection = new ColumnListSelection(accessedCols);
 
 			// middle can be either a slice or a series comparison
-			if (topOrBottom(middle))
-				return TOP_GRAPH;
-
 			if (!topOrBottom(middle.constant)) {
 				// middle is a slice
 				SliceConstant.Slice rowSlice = middle.constant.as(SliceConstant.Slice.class);

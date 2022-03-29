@@ -16,7 +16,7 @@ public class SliceCreation implements TernaryOperator {
 
     @Override
     public String toString() {
-        return "slice->";
+        return "new_slice";
     }
 
     @Override

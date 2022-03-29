@@ -13,7 +13,7 @@ import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
-import it.unive.pylisa.symbolic.operators.DataframeOperatorWithSideEffects;
+import it.unive.pylisa.symbolic.operators.dataframes.DataframeOperatorWithSideEffects;
 
 public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwareDataframeDomain> {
 

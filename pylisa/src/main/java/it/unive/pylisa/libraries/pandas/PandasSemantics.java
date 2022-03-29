@@ -17,12 +17,40 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.ApplyTransformation;
-import it.unive.pylisa.symbolic.operators.PopSelection;
+import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
+import it.unive.pylisa.symbolic.operators.dataframes.PopSelection;
 
 public class PandasSemantics {
 
 	private PandasSemantics() {
+	}
+
+	public static <A extends AbstractState<A, H, V, T>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> createAndInitDataframe(
+					AnalysisState<A, H, V, T> state,
+					SymbolicExpression init,
+					ProgramPoint pp)
+					throws SemanticException {
+		CodeLocation location = pp.getLocation();
+		AnalysisState<A, H, V, T> assigned = state.bottom();
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
+
+		HeapAllocation allocation = new HeapAllocation(dftype, location);
+		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, pp);
+
+		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
+			HeapReference ref = new HeapReference(dfref, loc, location);
+			AnalysisState<A, H, V, T> tmp = state.bottom();
+			AnalysisState<A, H, V, T> readState = allocated.smallStepSemantics(init, pp);
+			for (SymbolicExpression df : readState.getComputedExpressions())
+				tmp = tmp.lub(readState.assign(loc, df, pp));
+			assigned = tmp.smallStepSemantics(ref, pp);
+		}
+
+		return assigned;
 	}
 
 	public static <A extends AbstractState<A, H, V, T>,

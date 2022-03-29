@@ -1,4 +1,4 @@
-package it.unive.pylisa.symbolic.operators;
+package it.unive.pylisa.symbolic.operators.dataframes;
 
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -9,11 +9,11 @@ import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class ConcatCols implements BinaryOperator, DataframeOperatorWithSideEffects {
+public class JoinCols implements BinaryOperator, DataframeOperatorWithSideEffects {
 
-	public static final ConcatCols INSTANCE = new ConcatCols();
+	public static final JoinCols INSTANCE = new JoinCols();
 
-	private ConcatCols() {
+	private JoinCols() {
 	}
 
 	@Override

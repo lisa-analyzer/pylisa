@@ -19,7 +19,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.AccessRowsColumns;
+import it.unive.pylisa.symbolic.operators.dataframes.AccessRowsColumns;
 
 public class PyDoubleArrayAccess extends TernaryExpression {
 

@@ -24,8 +24,8 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.AccessRows;
-import it.unive.pylisa.symbolic.operators.ProjectRows;
+import it.unive.pylisa.symbolic.operators.dataframes.AccessRows;
+import it.unive.pylisa.symbolic.operators.dataframes.ProjectRows;
 
 public class Head extends BinaryExpression implements PluggableStatement {
 

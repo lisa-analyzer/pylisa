@@ -20,7 +20,7 @@ import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.ConcatCols;
+import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
 
 public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression implements PluggableStatement {
 
@@ -59,8 +59,7 @@ public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression i
 		AnalysisState<A, H, V, T> copy = PandasSemantics.copyDataframe(state, left, st);
 		ExpressionSet<SymbolicExpression> recs = copy.getComputedExpressions();
 		for (SymbolicExpression rec : recs) {
-			BinaryExpression cat = new BinaryExpression(dftype, rec, right,
-					ConcatCols.INSTANCE, loc);
+			BinaryExpression cat = new BinaryExpression(dftype, rec, right, JoinCols.INSTANCE, loc);
 			HeapReference ref = new HeapReference(dfref, rec, loc);
 			result = result.lub(copy.smallStepSemantics(cat, st).smallStepSemantics(ref, st));
 		}

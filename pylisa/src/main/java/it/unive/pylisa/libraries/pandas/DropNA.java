@@ -25,8 +25,8 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.FilterNull;
-import it.unive.pylisa.symbolic.operators.FilterNull.Axis;
+import it.unive.pylisa.symbolic.operators.dataframes.FilterNull;
+import it.unive.pylisa.symbolic.operators.dataframes.FilterNull.Axis;
 
 public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 

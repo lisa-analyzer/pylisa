@@ -17,8 +17,8 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
-import it.unive.pylisa.symbolic.operators.ComparisonOperator;
-import it.unive.pylisa.symbolic.operators.PandasSeriesComparison;
+import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
+import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
 
 public class PandasSeriesComparisonSemantics {
 	public static <A extends AbstractState<A, H, V, T>,

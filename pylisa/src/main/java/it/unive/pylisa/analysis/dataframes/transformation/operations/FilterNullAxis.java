@@ -1,7 +1,7 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.pylisa.symbolic.operators.FilterNull.Axis;
+import it.unive.pylisa.symbolic.operators.dataframes.FilterNull.Axis;
 
 public class FilterNullAxis extends DataframeOperation {
 

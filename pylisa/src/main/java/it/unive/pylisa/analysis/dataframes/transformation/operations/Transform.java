@@ -5,7 +5,7 @@ import java.util.Optional;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.Selection;
-import it.unive.pylisa.symbolic.operators.ApplyTransformation.Kind;
+import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
 
 public class Transform<S extends Selection<S>> extends DataframeOperation {
 

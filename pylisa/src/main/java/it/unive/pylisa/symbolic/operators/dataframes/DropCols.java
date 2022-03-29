@@ -1,4 +1,4 @@
-package it.unive.pylisa.symbolic.operators;
+package it.unive.pylisa.symbolic.operators.dataframes;
 
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -9,11 +9,11 @@ import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class ConcatRows implements BinaryOperator, DataframeOperatorWithSideEffects {
+public class DropCols implements BinaryOperator, DataframeOperatorWithSideEffects {
 
-	public static final ConcatRows INSTANCE = new ConcatRows();
+	public static final DropCols INSTANCE = new DropCols();
 
-	private ConcatRows() {
+	private DropCols() {
 	}
 
 	@Override
@@ -21,18 +21,19 @@ public class ConcatRows implements BinaryOperator, DataframeOperatorWithSideEffe
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		if (left.noneMatch(t -> t.equals(df)))
 			return Caches.types().mkEmptySet();
-		if (right.noneMatch(t -> t.equals(df)))
+		if (right.noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.LIST))))
 			return Caches.types().mkEmptySet();
 		return Caches.types().mkSingletonSet(df);
-	}
-
-	@Override
-	public String toString() {
-		return "concat_rows->";
 	}
 
 	@Override
 	public SymbolicExpression getDataFrame(SymbolicExpression container) {
 		return ((BinaryExpression) container).getLeft();
 	}
+
+	@Override
+	public String toString() {
+		return "drop_columns->";
+	}
+
 }

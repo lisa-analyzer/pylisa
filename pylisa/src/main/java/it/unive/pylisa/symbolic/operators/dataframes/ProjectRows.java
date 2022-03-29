@@ -1,4 +1,4 @@
-package it.unive.pylisa.symbolic.operators;
+package it.unive.pylisa.symbolic.operators.dataframes;
 
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -9,16 +9,16 @@ import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class AccessRows implements TernaryOperator, DataframeOperatorWithSideEffects {
+public class ProjectRows implements TernaryOperator, DataframeOperatorWithSideEffects {
 
-	public static final AccessRows INSTANCE = new AccessRows();
+	public static final ProjectRows INSTANCE = new ProjectRows();
 
-	private AccessRows() {
+	private ProjectRows() {
 	}
 
 	@Override
 	public String toString() {
-		return "rows->";
+		return "head";
 	}
 
 	@Override
