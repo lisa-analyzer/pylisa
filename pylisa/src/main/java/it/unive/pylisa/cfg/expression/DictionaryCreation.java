@@ -1,5 +1,8 @@
 package it.unive.pylisa.cfg.expression;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.commons.lang3.tuple.Pair;
 
 import it.unive.lisa.analysis.AbstractState;
@@ -16,14 +19,13 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.AccessChild;
-import it.unive.lisa.symbolic.heap.HeapAllocation;
-import it.unive.lisa.symbolic.heap.HeapDereference;
-import it.unive.lisa.symbolic.heap.HeapReference;
+import it.unive.lisa.symbolic.value.TernaryExpression;
+import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.symbolic.DictConstant;
+import it.unive.pylisa.symbolic.operators.DictPut;
 
 public class DictionaryCreation extends NaryExpression {
 
@@ -52,38 +54,36 @@ public class DictionaryCreation extends NaryExpression {
 					ExpressionSet<SymbolicExpression>[] params,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		AnalysisState<A, H, V, T> result = state.bottom();
+		CodeLocation loc = getLocation();
+		DictConstant dict = new DictConstant(loc);
 
-		// allocate the heap region
+		if (params.length == 0)
+			return state.smallStepSemantics(dict, this);
+
 		Type type = PyClassType.lookup(LibrarySpecificationProvider.DICT);
-		HeapAllocation alloc = new HeapAllocation(type, getLocation());
-		AnalysisState<A, H, V, T> sem = state.smallStepSemantics(alloc, this);
+		TernaryOperator append = DictPut.INSTANCE;
 
-		// assign the pairs
-		AnalysisState<A, H, V, T> assign = sem;
-		for (SymbolicExpression loc : sem.getComputedExpressions()) {
-			HeapReference ref = new HeapReference(type, loc, getLocation());
-			HeapDereference deref = new HeapDereference(type, ref, getLocation());
+		Set<TernaryExpression> ws = new HashSet<>(), tmp = new HashSet<>();
+		for (SymbolicExpression firstkey : params[0])
+			for (SymbolicExpression firstvalue : params[1])
+				ws.add(new TernaryExpression(type, dict, firstkey, firstvalue, append, loc));
 
-			for (int i = 0; i < params.length; i += 2) {
-				ExpressionSet<SymbolicExpression> key = params[i];
-				ExpressionSet<SymbolicExpression> value = params[i + 1];
+		for (int i = 2; i < params.length - 1; i += 2) {
+			ExpressionSet<SymbolicExpression> key = params[i];
+			ExpressionSet<SymbolicExpression> value = params[i + 1];
 
-				AnalysisState<A, H, V, T> fieldResult = state.bottom();
-				for (SymbolicExpression field : key) {
-					AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref, field, getLocation());
-					for (SymbolicExpression init : value) {
-						AnalysisState<A, H, V, T> fieldState = assign.smallStepSemantics(fieldAcc, this);
-						for (SymbolicExpression lenId : fieldState.getComputedExpressions())
-							fieldResult = fieldResult.lub(fieldState.assign(lenId, init, this));
-					}
-				}
-				assign = assign.lub(fieldResult);
-			}
-
-			// we leave the reference on the stack
-			result = result.lub(assign.smallStepSemantics(ref, this));
+			tmp.addAll(ws);
+			ws.clear();
+			for (TernaryExpression dicthead : tmp)
+				for (SymbolicExpression field : key)
+					for (SymbolicExpression init : value)
+						ws.add(new TernaryExpression(type, dicthead, field, init, append, loc));
+			tmp.clear();
 		}
+
+		AnalysisState<A, H, V, T> result = state.bottom();
+		for (TernaryExpression completedict : ws)
+			result = result.lub(state.smallStepSemantics(completedict, this));
 
 		return result;
 	}

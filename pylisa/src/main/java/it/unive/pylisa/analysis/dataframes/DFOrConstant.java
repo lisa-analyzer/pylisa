@@ -2,7 +2,10 @@ package it.unive.pylisa.analysis.dataframes;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import org.apache.commons.lang3.tuple.Pair;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
@@ -41,9 +44,11 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.A
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
+import it.unive.pylisa.symbolic.DictConstant;
 import it.unive.pylisa.symbolic.ListConstant;
 import it.unive.pylisa.symbolic.SliceConstant;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
+import it.unive.pylisa.symbolic.operators.DictPut;
 import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.dataframes.AccessRows;
@@ -206,7 +211,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			return Lattice.TOP_REPR;
 		if (isBottom())
 			return Lattice.BOTTOM_REPR;
-		if (graph == null)
+		if (graph.isBottom())
 			return constant.representation();
 		return graph.representation();
 	}
@@ -485,7 +490,16 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 	@Override
 	protected DFOrConstant evalTernaryExpression(TernaryOperator operator, DFOrConstant left, DFOrConstant middle,
 			DFOrConstant right, ProgramPoint pp) throws SemanticException {
-		if (operator == ProjectRows.INSTANCE || operator == AccessRows.INSTANCE) {
+		if (operator == DictPut.INSTANCE) {
+			ConstantPropagation dict = left.constant;
+			if (topOrBottom(dict) || topOrBottom(middle) || topOrBottom(right) || !dict.is(Map.class))
+				return TOP_CONSTANT;
+
+			ConstantPropagation newdict = new ConstantPropagation(
+					new DictConstant(pp.getLocation(), dict.as(Map.class), Pair.of(middle, right)));
+
+			return new DFOrConstant(newdict);
+		} else if (operator == ProjectRows.INSTANCE || operator == AccessRows.INSTANCE) {
 			DataframeGraphDomain df = left.graph;
 			ConstantPropagation start = middle.constant;
 			ConstantPropagation end = right.constant;
