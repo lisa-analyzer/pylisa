@@ -209,6 +209,7 @@ import it.unive.pylisa.cfg.expression.PyMultiplication;
 import it.unive.pylisa.cfg.expression.PyPower;
 import it.unive.pylisa.cfg.expression.PyRemainder;
 import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
+import it.unive.pylisa.cfg.expression.PyTernaryOperator;
 import it.unive.pylisa.cfg.expression.PyXor;
 import it.unive.pylisa.cfg.expression.RangeValue;
 import it.unive.pylisa.cfg.expression.SetCreation;
@@ -1264,23 +1265,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		// no if into the condition
 		if (ctx.IF() != null) {
 			// visit the if into the condition
-			Statement trueCase = checkAndExtractSingleStatement(visitOr_test(ctx.or_test(0)));
-			Statement booleanGuard = checkAndExtractSingleStatement(visitOr_test(ctx.or_test(1)));
-			Pair<Statement, Statement> falseCase = visitTest(ctx.test());
-			NoOp testExitNode = new NoOp(currentCFG, getLocation(ctx));
+			Expression trueCase = (Expression) checkAndExtractSingleStatement(visitOr_test(ctx.or_test(0)));
+			Expression booleanGuard = (Expression) checkAndExtractSingleStatement(visitOr_test(ctx.or_test(1)));
+			Expression falseCase = (Expression) checkAndExtractSingleStatement(visitTest(ctx.test()));
 
-			currentCFG.addNodeIfNotPresent(booleanGuard);
-			currentCFG.addNodeIfNotPresent(trueCase);
-			currentCFG.addNodeIfNotPresent(falseCase.getLeft());
-			currentCFG.addNodeIfNotPresent(falseCase.getRight());
-			currentCFG.addNodeIfNotPresent(testExitNode);
+			PyTernaryOperator ternary = new PyTernaryOperator(currentCFG, getLocation(ctx), booleanGuard, trueCase,
+					falseCase);
 
-			currentCFG.addEdge(new TrueEdge(booleanGuard, trueCase));
-			currentCFG.addEdge(new FalseEdge(booleanGuard, falseCase.getLeft()));
-			currentCFG.addEdge(new SequentialEdge(falseCase.getRight(), testExitNode));
-			currentCFG.addEdge(new SequentialEdge(trueCase, testExitNode));
-
-			return Pair.of(booleanGuard, testExitNode);
+			return Pair.of(ternary, ternary);
 		} else if (ctx.lambdef() != null) {
 			List<Expression> args = extractNamesFromVarArgList(ctx.lambdef().varargslist());
 			Expression body = checkAndExtractSingleExpression(visitTest(ctx.lambdef().test()));
