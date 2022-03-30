@@ -11,10 +11,14 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.Function;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -258,15 +262,54 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	private final boolean notebook;
 
 	/**
+	 * List of the indexes of cells of a Jupyter notebook in the order they are
+	 * to be executed. Only valid if {@link #notebook} is {@code true}.
+	 */
+	private final List<Integer> cellOrder;
+
+	/**
 	 * Builds an instance of @PyToCFG for a given Python program given at the
 	 * location filePath.
 	 *
-	 * @param filePath file path to a Python program.
+	 * @param filePath file path to a Python program
+	 * @param notebook whether or not {@code filePath} points to a Jupyter
+	 *                     notebook file
 	 */
 	public PyFrontend(String filePath, boolean notebook) {
+		this(filePath, notebook, Collections.emptyList());
+	}
+
+	/**
+	 * Builds an instance of @PyToCFG for a given Python program given at the
+	 * location filePath.
+	 *
+	 * @param filePath  file path to a Python program
+	 * @param notebook  whether or not {@code filePath} points to a Jupyter
+	 *                      notebook file
+	 * @param cellOrder sequence of the indexes of cells of a Jupyter notebook
+	 *                      in the order they are to be executed. Only valid if
+	 *                      {@code notebook} is {@code true}.
+	 */
+	public PyFrontend(String filePath, boolean notebook, Integer... cellOrder) {
+		this(filePath, notebook, List.of(cellOrder));
+	}
+
+	/**
+	 * Builds an instance of @PyToCFG for a given Python program given at the
+	 * location filePath.
+	 *
+	 * @param filePath  file path to a Python program
+	 * @param notebook  whether or not {@code filePath} points to a Jupyter
+	 *                      notebook file
+	 * @param cellOrder list of the indexes of cells of a Jupyter notebook in
+	 *                      the order they are to be executed. Only valid if
+	 *                      {@code notebook} is {@code true}.
+	 */
+	public PyFrontend(String filePath, boolean notebook, List<Integer> cellOrder) {
 		this.program = new Program();
 		this.filePath = filePath;
 		this.notebook = notebook;
+		this.cellOrder = cellOrder;
 		this.currentUnit = new PythonUnit(new SourceCodeLocation(filePath, 0, 0),
 				FilenameUtils.removeExtension(filePath), true);
 	}
@@ -367,14 +410,31 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		JsonReader reader = gson.newJsonReader(new FileReader(filePath));
 		Map<?, ?> map = gson.fromJson(reader, Map.class);
 		@SuppressWarnings("unchecked")
-		ArrayList<Map<?, ?>> cells = (ArrayList<Map<?, ?>>) map.get("cells");
-		StringBuilder code = new StringBuilder();
-		for (Map<?, ?> l : cells) {
-			String ctype = (String) l.get("cell_type");
+		List<Map<?, ?>> cells = (ArrayList<Map<?, ?>>) map.get("cells");
+		SortedMap<Integer, String> codeBlocks = new TreeMap<>();
+		for (int i = 0; i < cells.size(); i++) {
+			Map<?, ?> cell = cells.get(i);
+			String ctype = (String) cell.get("cell_type");
 			if (ctype.equals("code")) {
 				@SuppressWarnings("unchecked")
-				List<String> code_list = (List<String>) l.get("source");
-				code.append(transformToCode(code_list)).append("\n");
+				List<String> code_list = (List<String>) cell.get("source");
+				codeBlocks.put(i, transformToCode(code_list));
+			}
+		}
+
+		StringBuilder code = new StringBuilder();
+
+		if (cellOrder.isEmpty())
+			for (Entry<Integer, String> c : codeBlocks.entrySet())
+				code.append(c.getValue()).append("\n");
+		else {
+			log.warn("The following cells contain code and can be analyzed: " + codeBlocks.keySet());
+			for (int idx : cellOrder) {
+				String str = codeBlocks.get(idx);
+				if (str == null)
+					log.warn("Cell " + idx + " does not contain code and will be skippded");
+				else
+					code.append(str).append("\n");
 			}
 		}
 
@@ -883,7 +943,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 	private Statement checkAndExtractSingleStatement(Pair<Statement, Statement> parsed) {
 		if (parsed.getLeft() != parsed.getRight())
-			throw new UnsupportedStatementException("It is not supported to have multiple expressions here");
+			throw new UnsupportedStatementException("It is not supported to have multiple expressions here ("
+					+ parsed.getLeft() + " and " + parsed.getRight() + ")");
 		return parsed.getLeft();
 	}
 

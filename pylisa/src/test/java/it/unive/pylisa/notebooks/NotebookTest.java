@@ -46,9 +46,13 @@ public abstract class NotebookTest {
 		perform(file, true);
 	}
 
-	protected void perform(String file, boolean findOpenCalls) throws IOException, AnalysisException {
+	protected void perform(String file, Integer... cells) throws IOException, AnalysisException {
+		perform(file, true, cells);
+	}
+
+	protected void perform(String file, boolean findOpenCalls, Integer... cells) throws IOException, AnalysisException {
 		String kind = FilenameUtils.getExtension(file);
-		PyFrontend translator = new PyFrontend(file, kind.equals("ipynb"));
+		PyFrontend translator = new PyFrontend(file, kind.equals("ipynb"), cells);
 
 		Program program = translator.toLiSAProgram();
 
@@ -79,7 +83,7 @@ public abstract class NotebookTest {
 		return conf;
 	}
 
-	protected void performAndCheck(String file) throws IOException, AnalysisException {
+	protected void performAndCheck(String file, Integer... cells) throws IOException, AnalysisException {
 		String workdir = getWorkdir(file);
 		try {
 			FileManager.forceDeleteFolder(workdir);
@@ -88,7 +92,7 @@ public abstract class NotebookTest {
 			fail("Cannot delete working directory '" + workdir + "': " + e.getMessage());
 		}
 
-		perform(file, false);
+		perform(file, false, cells);
 
 		Path expectedPath = Paths.get(workdir.replace("workdir", "expected"));
 		Path actualPath = Paths.get(workdir);
