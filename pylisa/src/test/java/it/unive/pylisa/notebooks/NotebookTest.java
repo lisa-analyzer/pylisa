@@ -84,6 +84,10 @@ public abstract class NotebookTest {
 	}
 
 	protected void performAndCheck(String file, Integer... cells) throws IOException, AnalysisException {
+		performAndCheck(file, false, cells);
+	}
+
+	protected void performAndCheck(String file, boolean findOpenCalls, Integer... cells) throws IOException, AnalysisException {
 		String workdir = getWorkdir(file);
 		try {
 			FileManager.forceDeleteFolder(workdir);
@@ -92,7 +96,7 @@ public abstract class NotebookTest {
 			fail("Cannot delete working directory '" + workdir + "': " + e.getMessage());
 		}
 
-		perform(file, false, cells);
+		perform(file, findOpenCalls, cells);
 
 		Path expectedPath = Paths.get(workdir.replace("workdir", "expected"));
 		Path actualPath = Paths.get(workdir);
