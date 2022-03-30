@@ -66,19 +66,22 @@ public class DataframeGraph {
 	public String toString() {
 		StringBuilder res = new StringBuilder();
 
-		SortedMap<String, Set<String>> aux = new TreeMap<>();
+		SortedMap<DataframeOperation, Set<String>> aux = new TreeMap<>();
 		for (Entry<DataframeOperation, Edges> entry : matrix.entrySet()) {
 			Set<String> outs = new TreeSet<>();
 			for (DataframeEdge out : entry.getValue().getOutgoing())
 				outs.add(out.getEdgeSymbol() + " " + out.getDestination().toString());
 
 			if (entry.getValue().ingoing.isEmpty())
-				aux.put("*" + entry.getKey().toString(), outs);
+				aux.put(entry.getKey(), outs);
 			else
-				aux.put(entry.getKey().toString(), outs);
+				aux.put(entry.getKey(), outs);
 		}
 
-		for (Entry<String, Set<String>> entry : aux.entrySet()) {
+		Collection<DataframeOperation> entries = getEntries();
+		for (Entry<DataframeOperation, Set<String>> entry : aux.entrySet()) {
+			if (entries.contains(entry.getKey()))
+				res.append("*");
 			res.append(entry.getKey()).append(": [");
 			res.append(StringUtils.join(entry.getValue(), ", "));
 			res.append("]\n");
@@ -284,5 +287,17 @@ public class DataframeGraph {
 
 	public void dump(Writer writer) throws IOException {
 		new DotDFGraph(this).dumpDot(writer);
+	}
+
+	public DataframeGraph replaceNode(DataframeOperation original, DataframeOperation newnode) {
+		DataframeGraph copy = new DataframeGraph(this);
+		Edges edges = copy.matrix.get(original);
+		copy.addNode(newnode);
+		for (DataframeEdge in : edges.ingoing)
+			copy.addEdge(in.mk(in.getSource(), newnode));
+		for (DataframeEdge out : edges.outgoing)
+			copy.addEdge(out.mk(newnode, out.getDestination()));
+		copy.removeNode(original);
+		return copy;
 	}
 }

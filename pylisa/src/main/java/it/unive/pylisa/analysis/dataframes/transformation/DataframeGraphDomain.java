@@ -5,18 +5,13 @@ import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
-import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.util.collections.workset.FIFOWorkingSet;
 import it.unive.lisa.util.collections.workset.WorkingSet;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.AccessOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.SelectionOperation;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.Selection;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyLibraryUnitType;
 
@@ -52,9 +47,7 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 		this(append(source, transformation), false);
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static DataframeGraph append(DataframeGraph source, DataframeOperation transformation)
-			throws SemanticException {
+	public static DataframeGraph append(DataframeGraph source, DataframeOperation transformation) {
 		if (source.getNodesCount() == 0) {
 			DataframeGraph graph = new DataframeGraph();
 			graph.addNode(transformation);
@@ -62,28 +55,6 @@ public class DataframeGraphDomain extends BaseLattice<DataframeGraphDomain> {
 		}
 
 		DataframeOperation leaf = source.getLeaf();
-		if (transformation instanceof SelectionOperation<?> && leaf.getClass() == transformation.getClass()) {
-			// same kind of operation!
-			Selection<?> s1 = ((SelectionOperation<?>) leaf).getSelection();
-			Selection<?> s2 = ((SelectionOperation<?>) transformation).getSelection();
-
-			if (s1.getClass() == s2.getClass()) {
-				// same kind of selection!
-				DataframeGraph copy = source.prefix();
-				DataframeOperation pred = copy.getLeaf();
-				Selection<?> merged = s1.lub(s2);
-				CodeLocation loc = leaf.loc(transformation);
-				SelectionOperation<?> op;
-				if (leaf instanceof ProjectionOperation<?>)
-					op = new ProjectionOperation(loc, merged);
-				else
-					op = new AccessOperation(loc, merged);
-				copy.addNode(op);
-				copy.addEdge(new SimpleEdge(pred, op));
-				return copy;
-			}
-		}
-
 		DataframeGraph copy = new DataframeGraph(source);
 		copy.addNode(transformation);
 		copy.addEdge(new SimpleEdge(leaf, transformation));

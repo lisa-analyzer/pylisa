@@ -12,4 +12,9 @@ public class AssignEdge extends DataframeEdge {
 	public String getEdgeSymbol() {
 		return "-A->";
 	}
+	
+	@Override
+	public DataframeEdge mk(DataframeOperation source, DataframeOperation destination) {
+		return new AssignEdge(source, destination);
+	}
 }

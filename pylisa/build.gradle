@@ -50,6 +50,11 @@ java {
     withSourcesJar()
 }
 
+compileJava   {
+  sourceCompatibility = '11'
+  targetCompatibility = '11'
+}
+
 javadoc {
 	if(JavaVersion.current().isJava9Compatible()) {
         options.addBooleanOption('html5', true)

@@ -5,7 +5,8 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CodeLocation;
 
-public abstract class DataframeOperation extends BaseLattice<DataframeOperation> {
+public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
+		implements Comparable<DataframeOperation> {
 
 	public static final DataframeOperation TOP = new TopOperation();
 
@@ -16,7 +17,7 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 	protected DataframeOperation(CodeLocation where) {
 		this.where = where;
 	}
-	
+
 	public CodeLocation getWhere() {
 		return where;
 	}
@@ -96,4 +97,14 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 
 	@Override
 	public abstract String toString();
+
+	@Override
+	public final int compareTo(DataframeOperation o) {
+		int cmp;
+		if ((cmp = where.compareTo(o.where)) != 0)
+			return cmp;
+		if ((cmp = getClass().getName().compareTo(o.getClass().getName())) != 0)
+			return cmp;
+		return toString().compareTo(o.toString());
+	}
 }

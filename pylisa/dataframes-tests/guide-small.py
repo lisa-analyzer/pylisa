@@ -16,3 +16,6 @@ df3 = pd.concat([df, df2])
 
 # concat along columns - combine the column
 df4 = df.join(df2)
+
+# concat along rows - with the same dataframe
+df5 = pd.concat([df['bar'], df['foo']])

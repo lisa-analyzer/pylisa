@@ -1,14 +1,19 @@
 package it.unive.pylisa.analysis.dataframes;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.heap.pointbased.AllocationSite;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.numeric.Interval;
@@ -21,6 +26,8 @@ import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
+import it.unive.lisa.util.collections.workset.FIFOWorkingSet;
+import it.unive.lisa.util.collections.workset.LIFOWorkingSet;
 import it.unive.pylisa.analysis.dataframes.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
@@ -235,6 +242,15 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			throws SemanticException {
 		if (id instanceof MemoryPointer)
 			return environment.getState(((MemoryPointer) id).getReferencedLocation());
+
+		if (id instanceof AllocationSite) {
+			// TODO this is very fragile and only works with the current state
+			// of the field sensitive program point based heap
+			AllocationSite as = (AllocationSite) id;
+			if (as.getName().endsWith("]"))
+				id = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(), as.getCodeLocation());
+		}
+
 		return super.evalIdentifier(id, environment, pp);
 	}
 
@@ -311,16 +327,63 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 							: Concat.Axis.CONCAT_ROWS);
 			concatGraph.addNode(concatNode);
 
-			for (int i = 0; i < elements.size(); i++)
-				try {
-					DataframeGraph graph = ((DFOrConstant) elements.get(i)).graph.getTransformations();
-					DataframeOperation exit = graph.getLeaf();
-					concatGraph.mergeWith(graph);
-					concatGraph.addEdge(new ConcatEdge(exit, concatNode, i));
-				} catch (IllegalStateException e) {
-					// one of the graphs involved has more than one leaf
-					return TOP_GRAPH;
+			// 1) if a leaf is an access it has to become a projection
+			// 2) the same graph might appear multiple times as different nodes
+			// of the concat
+
+			int nelements = elements.size();
+			List<Lattice<?>> distinctElements = elements.stream().distinct().collect(Collectors.toList());
+			int[] opIndexes = new int[nelements];
+			Map<Integer, List<Integer>> positions = new HashMap<>();
+			for (int i = 0; i < nelements; i++) {
+				int idx = distinctElements.indexOf(elements.get(i));
+				opIndexes[i] = idx;
+				positions.computeIfAbsent(idx, index -> new LinkedList<>()).add(i);
+			}
+
+			Map<Integer, LIFOWorkingSet<DataframeOperation>> leaves = new HashMap<>();
+			DataframeGraph[] operands = new DataframeGraph[nelements];
+			for (Entry<Integer, List<Integer>> entry : positions.entrySet()) {
+				DataframeGraph original = ((DFOrConstant) distinctElements.get(entry.getKey())).graph
+						.getTransformations();
+				LIFOWorkingSet<DataframeOperation> leavesWs = LIFOWorkingSet.mk();
+				if (entry.getValue().size() == 1) {
+					// appears once
+					operands[entry.getValue().iterator().next()] = original;
+					leavesWs.push(original.getLeaf());
+					leaves.put(entry.getKey(), leavesWs);
+				} else {
+					// appears more than once
+					DataframeGraph operand = original;
+					FIFOWorkingSet<DataframeOperation> ws = FIFOWorkingSet.mk();
+					for (int i = 0; i < entry.getValue().size(); i++) {
+						DataframeOperation leaf = operand.getLeaf();
+						operand = operand.prefix();
+						if (leaf instanceof AccessOperation<?>)
+							leaf = new ProjectionOperation(leaf.getWhere(), ((AccessOperation<?>) leaf).getSelection());
+						ws.push(leaf);
+					}
+
+					DataframeOperation leaf = operand.getLeaf();
+					while (!ws.isEmpty()) {
+						DataframeOperation popped = ws.pop();
+						operand.addNode(popped);
+						operand.addEdge(new SimpleEdge(leaf, popped));
+						leavesWs.push(popped);
+					}
+
+					leaves.put(entry.getKey(), leavesWs);
+					for (int pos : entry.getValue())
+						operands[pos] = operand;
 				}
+			}
+
+			for (int i = 0; i < operands.length; i++) {
+				DataframeGraph graph = operands[i];
+				DataframeOperation exit = leaves.get(opIndexes[i]).pop();
+				concatGraph.mergeWith(graph);
+				concatGraph.addEdge(new ConcatEdge(exit, concatNode, i));
+			}
 
 			return new DFOrConstant(new DataframeGraphDomain(concatGraph));
 		} else
@@ -381,27 +444,75 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			if (topOrBottom(df1) || topOrBottom(df2))
 				return TOP_GRAPH;
 
-			DataframeOperation exit1 = null;
-			DataframeOperation exit2 = null;
+			if (df1.equals(df2)) {
+				// the last two nodes are the leaves to use for writing
+				DataframeOperation exit1 = null;
+				DataframeOperation exit2 = null;
+				DataframeGraph original = df1.getTransformations();
+				DataframeGraph root = original.prefix();
+				DataframeGraph preroot = root.prefix();
 
-			try {
-				exit1 = df1.getTransformations().getLeaf();
-				exit2 = df2.getTransformations().getLeaf();
-			} catch (IllegalStateException e) {
-				// at least one has more than one leaf
-				return TOP_GRAPH;
+				try {
+					exit1 = original.getLeaf();
+					if (exit1 instanceof AccessOperation<?>)
+						exit1 = new ProjectionOperation(exit1.getWhere(), ((AccessOperation<?>) exit1).getSelection());
+					exit2 = root.getLeaf();
+					if (exit2 instanceof AccessOperation<?>)
+						exit2 = new ProjectionOperation(exit2.getWhere(), ((AccessOperation<?>) exit2).getSelection());
+				} catch (IllegalStateException e) {
+					// at least one has more than one leaf
+					return TOP_GRAPH;
+				}
+
+				DataframeGraph concatGraph = new DataframeGraph(preroot);
+
+				DataframeOperation concatNode = new Concat(pp.getLocation(), Concat.Axis.CONCAT_COLS);
+				concatGraph.addNode(concatNode);
+				concatGraph.addNode(exit1);
+				concatGraph.addNode(exit2);
+				concatGraph.addEdge(new SimpleEdge(preroot.getLeaf(), exit1));
+				concatGraph.addEdge(new SimpleEdge(preroot.getLeaf(), exit2));
+				concatGraph.addEdge(new ConcatEdge(exit1, concatNode, 1));
+				concatGraph.addEdge(new ConcatEdge(exit2, concatNode, 0));
+
+				return new DFOrConstant(new DataframeGraphDomain(concatGraph));
+			} else {
+				DataframeOperation exit1 = null;
+				DataframeOperation exit2 = null;
+				DataframeGraph df1graph = df1.getTransformations();
+				DataframeGraph df2graph = df2.getTransformations();
+
+				try {
+					exit1 = df1graph.getLeaf();
+					if (exit1 instanceof AccessOperation<?>) {
+						DataframeOperation tmp = new ProjectionOperation(exit1.getWhere(),
+								((AccessOperation<?>) exit1).getSelection());
+						df1graph = df1graph.replaceNode(exit1, tmp);
+						exit1 = tmp;
+					}
+					exit2 = df2graph.getLeaf();
+					if (exit2 instanceof AccessOperation<?>) {
+						DataframeOperation tmp = new ProjectionOperation(exit2.getWhere(),
+								((AccessOperation<?>) exit2).getSelection());
+						df2graph = df2graph.replaceNode(exit2, tmp);
+						exit2 = tmp;
+					}
+				} catch (IllegalStateException e) {
+					// at least one has more than one leaf
+					return TOP_GRAPH;
+				}
+
+				DataframeGraph concatGraph = new DataframeGraph();
+				concatGraph.mergeWith(df1graph);
+				concatGraph.mergeWith(df2graph);
+
+				DataframeOperation concatNode = new Concat(pp.getLocation(), Concat.Axis.CONCAT_COLS);
+				concatGraph.addNode(concatNode);
+				concatGraph.addEdge(new ConcatEdge(exit1, concatNode, 0));
+				concatGraph.addEdge(new ConcatEdge(exit2, concatNode, 1));
+
+				return new DFOrConstant(new DataframeGraphDomain(concatGraph));
 			}
-
-			DataframeGraph concatGraph = new DataframeGraph();
-			concatGraph.mergeWith(df1.getTransformations());
-			concatGraph.mergeWith(df2.getTransformations());
-
-			DataframeOperation concatNode = new Concat(pp.getLocation(), Concat.Axis.CONCAT_COLS);
-			concatGraph.addNode(concatNode);
-			concatGraph.addEdge(new ConcatEdge(exit1, concatNode, 0));
-			concatGraph.addEdge(new ConcatEdge(exit2, concatNode, 1));
-
-			return new DFOrConstant(new DataframeGraphDomain(concatGraph));
 		} else if (operator instanceof WriteSelectionDataframe) {
 			DataframeGraphDomain df1 = left.graph;
 			DataframeGraphDomain df2 = right.graph;
@@ -409,25 +520,64 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			if (topOrBottom(df1) || topOrBottom(df2))
 				return TOP_GRAPH;
 
-			DataframeGraph original = df1.getTransformations();
-			DataframeOperation access = original.getLeaf();
-			if (!(access instanceof SelectionOperation<?>))
-				return TOP_GRAPH;
+			if (df1.equals(df2)) {
+				// the last two nodes are the leaves to use for writing
+				DataframeGraph original = df1.getTransformations();
+				DataframeOperation righthand = original.getLeaf();
+				if (righthand instanceof AccessOperation<?>)
+					righthand = new ProjectionOperation(righthand.getWhere(),
+							((AccessOperation<?>) righthand).getSelection());
 
-			DataframeGraph prefix = original.prefix();
+				DataframeGraph prefix = original.prefix();
+				DataframeOperation lefthand = prefix.getLeaf();
+				if (!(lefthand instanceof SelectionOperation<?>))
+					return TOP_GRAPH;
+				if (lefthand instanceof AccessOperation<?>)
+					lefthand = new ProjectionOperation(lefthand.getWhere(),
+							((AccessOperation<?>) lefthand).getSelection());
 
-			DataframeGraph result = new DataframeGraph(prefix);
-			result.mergeWith(df2.getTransformations());
+				DataframeGraph result = new DataframeGraph(prefix.prefix());
 
-			AssignDataframe assign = new AssignDataframe(pp.getLocation(),
-					((SelectionOperation<?>) access).getSelection());
+				AssignDataframe assign = new AssignDataframe(pp.getLocation(),
+						((SelectionOperation<?>) lefthand).getSelection());
 
-			result.addNode(assign);
-			result.addEdge(new SimpleEdge(prefix.getLeaf(), assign));
-			result.addEdge(new AssignEdge(df2.getTransformations().getLeaf(), assign));
+				result.addNode(assign);
+				result.addEdge(new SimpleEdge(lefthand, assign));
+				result.addNode(righthand);
+				result.addEdge(new AssignEdge(righthand, assign));
 
-			DataframeGraphDomain dfNew = new DataframeGraphDomain(result);
-			return new DFOrConstant(dfNew);
+				DataframeGraphDomain dfNew = new DataframeGraphDomain(result);
+				return new DFOrConstant(dfNew);
+			} else {
+				DataframeGraph original = df1.getTransformations();
+				DataframeOperation access = original.getLeaf();
+				if (!(access instanceof SelectionOperation<?>))
+					return TOP_GRAPH;
+
+				DataframeGraph prefix = original.prefix();
+
+				DataframeGraph result = new DataframeGraph(prefix);
+				DataframeGraph df2graph = df2.getTransformations();
+				DataframeOperation df2leaf = df2graph.getLeaf();
+				if (df2leaf instanceof AccessOperation<?>) {
+					DataframeOperation tmp = new ProjectionOperation(df2leaf.getWhere(),
+							((AccessOperation<?>) df2leaf).getSelection());
+					df2graph = df2graph.replaceNode(df2leaf, tmp);
+					df2leaf = tmp;
+				}
+
+				result.mergeWith(df2graph);
+
+				AssignDataframe assign = new AssignDataframe(pp.getLocation(),
+						((SelectionOperation<?>) access).getSelection());
+
+				result.addNode(assign);
+				result.addEdge(new SimpleEdge(prefix.getLeaf(), assign));
+				result.addEdge(new AssignEdge(df2leaf, assign));
+
+				DataframeGraphDomain dfNew = new DataframeGraphDomain(result);
+				return new DFOrConstant(dfNew);
+			}
 		} else if (operator instanceof WriteSelectionConstant) {
 			DataframeGraphDomain df = left.graph;
 			if (topOrBottom(df))

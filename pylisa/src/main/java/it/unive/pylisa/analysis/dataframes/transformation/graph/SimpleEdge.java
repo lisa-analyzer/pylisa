@@ -12,4 +12,9 @@ public class SimpleEdge extends DataframeEdge {
 	public String getEdgeSymbol() {
 		return "->";
 	}
+	
+	@Override
+	public DataframeEdge mk(DataframeOperation source, DataframeOperation destination) {
+		return new SimpleEdge(source, destination);
+	}
 }

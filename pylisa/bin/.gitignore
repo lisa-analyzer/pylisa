@@ -1,2 +1,14 @@
-/main/
-/test/
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+
+# Ignore Gradle target output directory
+target
+
+# throwaway folder for testing and running analyses
+*workdir
+
+# gradle configuration for accessing the snapshot of lisa
+gradle.properties

@@ -11,6 +11,8 @@ public abstract class DataframeEdge {
 		this.destination = destination;
 	}
 
+	public abstract DataframeEdge mk(DataframeOperation source, DataframeOperation destination);
+
 	public DataframeOperation getSource() {
 		return source;
 	}
