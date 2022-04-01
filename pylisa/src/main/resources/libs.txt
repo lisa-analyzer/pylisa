@@ -1,4 +1,4 @@
-method print: it.unive.pylisa.libraries.standardLibrary.Print
+method print: it.unive.pylisa.libraries.NoOpFunction
 	type it.unive.lisa.type.VoidType::INSTANCE
 	param arg1 type it.unive.lisa.type.Untyped::INSTANCE
 sealed class List
@@ -8,7 +8,7 @@ sealed class Tuple
 sealed class Slice
 library warnings:
 	location warnings
-	method filterwarnings: it.unive.pylisa.libraries.warnings.FilterWarnings
+	method filterwarnings: it.unive.pylisa.libraries.NoOpFunction
 		type it.unive.lisa.type.Untyped::INSTANCE
 		param arg1 type it.unive.lisa.type.Untyped::INSTANCE
 library pandas:
@@ -28,10 +28,10 @@ library pandas:
 			libtype pandas.DataFrame*
 			param this libtype pandas.DataFrame*
 			param n type it.unive.lisa.type.common.Int32::INSTANCE default 5
-		instance method describe: it.unive.pylisa.libraries.UninterestingDataframeFunction
+		instance method describe: it.unive.pylisa.libraries.pandas.UninterestingDataframeFunction
 			libtype pandas.DataFrame*
 			param this libtype pandas.DataFrame*
-		instance method info: it.unive.pylisa.libraries.UninterestingDataframeFunction
+		instance method info: it.unive.pylisa.libraries.pandas.UninterestingDataframeFunction
 			type it.unive.lisa.type.VoidType::INSTANCE
 			param this libtype pandas.DataFrame*
 		instance method dropna: it.unive.pylisa.libraries.pandas.DropNA
@@ -47,10 +47,24 @@ library pandas:
 			libtype pandas.DataFrame*
 			param this libtype pandas.DataFrame*
 			param other libtype pandas.DataFrame*
-		instance method format: it.unive.pylisa.libraries.UninterestingDataframeFunction
+		instance method format: it.unive.pylisa.libraries.pandas.UninterestingDataframeFunction
 			libtype pandas.DataFrame*
 			param this libtype pandas.DataFrame*
 			param dict libtype Dict
+		instance method highlight_min: it.unive.pylisa.libraries.pandas.DataframeFunctionWithSubsetAccess
+			libtype pandas.DataFrame*
+			param this libtype pandas.DataFrame*
+			param subset libtype List default none
+			param color type it.unive.lisa.type.common.StringType::INSTANCE default "yellow"
+			param axis type it.unive.lisa.type.common.Int32::INSTANCE default 0
+			param props type it.unive.lisa.type.common.StringType::INSTANCE default none
+		instance method highlight_max: it.unive.pylisa.libraries.pandas.DataframeFunctionWithSubsetAccess
+			libtype pandas.DataFrame*
+			param this libtype pandas.DataFrame*
+			param subset libtype List default none 
+			param color type it.unive.lisa.type.common.StringType::INSTANCE default "yellow"
+			param axis type it.unive.lisa.type.common.Int32::INSTANCE default 0
+			param props type it.unive.lisa.type.common.StringType::INSTANCE default none
 	class pandas.Series:
 		instance method apply: it.unive.pylisa.libraries.pandas.Apply
 			type it.unive.lisa.type.Untyped::INSTANCE

@@ -18,13 +18,17 @@ import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 
-public abstract class NoOpFunction extends NaryExpression implements PluggableStatement {
+public class NoOpFunction extends NaryExpression implements PluggableStatement {
 
 	protected Statement st;
 
 	protected NoOpFunction(CFG cfg, CodeLocation location, String constructName,
 			Expression... parameters) {
 		super(cfg, location, constructName, parameters);
+	}
+
+	public static NoOpFunction build(CFG cfg, CodeLocation location, Expression[] exprs) {
+		return new NoOpFunction(cfg, location, "noop-func", exprs);
 	}
 
 	@Override

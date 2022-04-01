@@ -86,7 +86,6 @@ import it.unive.lisa.program.cfg.statement.logic.Or;
 import it.unive.lisa.program.cfg.statement.numeric.Addition;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
-import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.VoidType;
 import it.unive.lisa.type.common.BoolType;
@@ -223,6 +222,7 @@ import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
+import it.unive.pylisa.cfg.type.NoneType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -374,7 +374,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		program.registerType(StringType.INSTANCE);
 		program.registerType(Int32.INSTANCE);
 		program.registerType(Float32.INSTANCE);
-		program.registerType(NullType.INSTANCE);
+		program.registerType(NoneType.INSTANCE);
 		program.registerType(VoidType.INSTANCE);
 		program.registerType(Untyped.INSTANCE);
 

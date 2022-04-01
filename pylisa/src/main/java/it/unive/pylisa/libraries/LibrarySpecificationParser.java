@@ -48,6 +48,7 @@ import it.unive.pylisa.antlr.LibraryDefinitionParser.MethodContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.ParamContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.TypeContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParserBaseVisitor;
+import it.unive.pylisa.cfg.expression.NoneLiteral;
 import it.unive.pylisa.cfg.type.PyClassType;
 
 public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisitor<Object> {
@@ -127,7 +128,9 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 
 		makeInit();
 		Expression def;
-		if (type == BoolType.INSTANCE)
+		if (ctx.val.NONE() != null) 
+			def = new NoneLiteral(init, location);
+		else if (type == BoolType.INSTANCE)
 			if (ctx.val.BOOLEAN().getText().equals("true"))
 				def = new TrueLiteral(init, location);
 			else

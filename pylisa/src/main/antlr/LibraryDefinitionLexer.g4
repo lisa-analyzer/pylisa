@@ -10,7 +10,8 @@ BOOLEAN
 
 NUMBER
 :
-	'0' | NonZeroDigit Digit*
+	'0'
+	| NonZeroDigit Digit*
 ;
 
 STRING
@@ -20,6 +21,11 @@ STRING
 		~["\\\r\n]
 		| EscapeSequence
 	)* '"'
+;
+
+NONE
+:
+	'none' 
 ;
 
 LIBRARY
@@ -109,7 +115,10 @@ LINE_COMMENT
 
 IDENTIFIER
 :
-	Letter LetterOrDigit* ('.' Letter LetterOrDigit*)*
+	Letter LetterOrDigit*
+	(
+		'.' Letter LetterOrDigit*
+	)*
 ;
 
 fragment

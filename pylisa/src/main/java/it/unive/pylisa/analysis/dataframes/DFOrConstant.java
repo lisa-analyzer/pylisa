@@ -409,9 +409,25 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 			if (topOrBottom(df) || topOrBottom(col))
 				return TOP_GRAPH;
 
+			ColumnListSelection columns;
+			if (col.is(String.class))
+				columns = new ColumnListSelection(new Names(col.as(String.class)));
+			else {
+				List<DFOrConstant> cs = col.as(List.class);
+				Set<String> accessedCols = new HashSet<>();
+
+				for (DFOrConstant c : cs) {
+					if (topOrBottom(c.constant) || !c.constant.is(String.class)) {
+						columns = new ColumnListSelection(true);
+						break;
+					}
+					accessedCols.add(c.constant.as(String.class));
+				}
+				columns = new ColumnListSelection(accessedCols);
+			}
+
 			DataframeGraphDomain ca = new DataframeGraphDomain(df,
-					new AccessOperation<>(pp.getLocation(),
-							new ColumnListSelection(new Names(col.as(String.class)))));
+					new AccessOperation<>(pp.getLocation(), columns));
 
 			return new DFOrConstant(ca);
 		} else if (operator == DropCols.INSTANCE) {

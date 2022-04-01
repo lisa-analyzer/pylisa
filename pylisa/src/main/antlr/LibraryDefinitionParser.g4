@@ -59,7 +59,8 @@ parser grammar LibraryDefinitionParser;
  	NUMBER
  	| BOOLEAN
  	| STRING
- ;
+ 	| NONE
+ ; 
 
  param
  :
