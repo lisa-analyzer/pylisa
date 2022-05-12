@@ -21,6 +21,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 
+import it.unive.pylisa.analysis.string.StringConstantPropagation;
+import it.unive.pylisa.analysis.string.SyntacticAnalysis;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -226,6 +228,7 @@ import it.unive.pylisa.cfg.type.NoneType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.lisa.checks.warnings.Warning;
 
 public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
@@ -325,7 +328,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	public static void main(String[] args) throws IOException, AnalysisException {
-		String file = args[0];
+		String file = "./src/test/resources/publisher.py";
+		//String file = "./src/test/resources/subscriber.py";
 		String extension = FilenameUtils.getExtension(file);
 		PyFrontend translator = new PyFrontend(file, extension.equals("ipynb"));
 		Program program = translator.toLiSAProgram();
@@ -336,14 +340,16 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		conf.setDumpTypeInference(true);
 		conf.setDumpAnalysis(true);
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
+		conf.addSyntacticCheck(new SyntacticAnalysis());
 
-		DataframeGraphDomain domain = new DataframeGraphDomain();
+		StringConstantPropagation domain = new StringConstantPropagation();
 		PointBasedHeap heap = new PointBasedHeap();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain, type));
-
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
+		for(Warning w : lisa.getWarnings())
+			System.out.println(w.getMessage());
 	}
 
 	private static String transformToCode(List<String> code_list) {
