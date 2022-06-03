@@ -19,6 +19,7 @@ import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
+import it.unive.lisa.LiSAConfiguration.GraphType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
@@ -26,8 +27,8 @@ import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.warnings.Warning;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
-import it.unive.lisa.outputs.JsonReport;
 import it.unive.lisa.outputs.compare.JsonReportComparer;
+import it.unive.lisa.outputs.json.JsonReport;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.PyFrontend;
@@ -67,8 +68,8 @@ public abstract class NotebookTest {
 	private LiSAConfiguration buildConfig(String workdir, boolean findOpenCalls) throws AnalysisSetupException {
 		LiSAConfiguration conf = new LiSAConfiguration();
 		conf.setWorkdir(workdir);
-		conf.setDumpTypeInference(true);
-		conf.setDumpAnalysis(true);
+		conf.setSerializeResults(true);
+		conf.setDumpAnalysis(GraphType.HTML_WITH_SUBNODES);
 		conf.setJsonOutput(true);
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);

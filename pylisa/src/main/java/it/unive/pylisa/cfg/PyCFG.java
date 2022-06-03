@@ -10,7 +10,7 @@ public class PyCFG extends CFG {
 	}
 
 	public void addNodeIfNotPresent(Statement n) {
-		if (!this.adjacencyMatrix.getNodes().contains(n))
+		if (!this.list.getNodes().contains(n))
 			this.addNode(n);
 	}
 

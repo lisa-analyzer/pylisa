@@ -39,6 +39,7 @@ import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
+import it.unive.lisa.LiSAConfiguration.GraphType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
@@ -331,10 +332,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		Program program = translator.toLiSAProgram();
 
 		LiSAConfiguration conf = new LiSAConfiguration();
-		conf.setDumpCFGs(true);
 		conf.setWorkdir("workdir");
-		conf.setDumpTypeInference(true);
-		conf.setDumpAnalysis(true);
+		conf.setSerializeResults(true);
+		conf.setDumpAnalysis(GraphType.HTML);
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 
 		DataframeGraphDomain domain = new DataframeGraphDomain();

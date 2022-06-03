@@ -49,9 +49,9 @@ public class ConstantPropagation extends BaseLattice<ConstantPropagation> {
 
 	public DomainRepresentation representation() {
 		if (isTop())
-			return Lattice.TOP_REPR;
+			return Lattice.topRepresentation();
 		if (isBottom())
-			return Lattice.BOTTOM_REPR;
+			return Lattice.bottomRepresentation();
 		return new StringRepresentation(constant);
 	}
 

@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import it.unive.pylisa.analysis.dataframes.transformation.DotDFGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 
 public class DataframeGraph {
 
@@ -64,6 +65,19 @@ public class DataframeGraph {
 
 	@Override
 	public String toString() {
+		StringBuilder res = new StringBuilder();
+		
+		for (DataframeOperation entry : getEntries())
+			if (entry instanceof ReadFromFile) {
+				if (res.length() > 0)
+					res.append(", ");
+				res.append(((ReadFromFile) entry).getFile());
+			}
+		
+		return res.toString();
+	}
+	
+	public String toStringFull() {
 		StringBuilder res = new StringBuilder();
 
 		SortedMap<DataframeOperation, Set<String>> aux = new TreeMap<>();

@@ -14,6 +14,10 @@ public class ReadFromFile extends DataframeOperation {
 		super(where);
 		this.file = file;
 	}
+	
+	public String getFile() {
+		return file;
+	}
 
 	@Override
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) {
