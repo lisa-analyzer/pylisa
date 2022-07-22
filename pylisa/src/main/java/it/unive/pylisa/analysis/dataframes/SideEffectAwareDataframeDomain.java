@@ -1,5 +1,7 @@
 package it.unive.pylisa.analysis.dataframes;
 
+import java.util.function.Predicate;
+
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.heap.pointbased.AllocationSite;
@@ -109,6 +111,11 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 	@Override
 	public SideEffectAwareDataframeDomain forgetIdentifier(Identifier id) throws SemanticException {
 		return new SideEffectAwareDataframeDomain(env.forgetIdentifier(id));
+	}
+	
+	@Override
+	public SideEffectAwareDataframeDomain forgetIdentifiersIf(Predicate<Identifier> test) throws SemanticException {
+		return new SideEffectAwareDataframeDomain(env.forgetIdentifiersIf(test));
 	}
 
 	@Override
