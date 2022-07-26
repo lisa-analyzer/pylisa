@@ -1,7 +1,4 @@
 {
-	"warnings": [],
-	"files": [
-		"analysis___untyped_dataframes-tests_guide-small.main().dot",
-		"typing___untyped_dataframes-tests_guide-small.main().dot"
-	]
+  "warnings" : [ ],
+  "files" : [ "untyped_dataframes-tests_guide-small.main().json" ]
 }

@@ -33,10 +33,13 @@ import it.unive.lisa.program.Program;
 import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
+import it.unive.pylisa.checks.BottomFinder;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.OpenCallsFinder;
 
 public abstract class NotebookTest {
+
+	private static final boolean FIND_OPEN_CALLS = false;
 
 	private static String getWorkdir(String file) {
 		String kind = FilenameUtils.getExtension(file);
@@ -44,11 +47,11 @@ public abstract class NotebookTest {
 	}
 
 	protected void perform(String file) throws IOException, AnalysisException {
-		perform(file, true);
+		perform(file, FIND_OPEN_CALLS);
 	}
 
 	protected void perform(String file, Integer... cells) throws IOException, AnalysisException {
-		perform(file, true, cells);
+		perform(file, FIND_OPEN_CALLS, cells);
 	}
 
 	protected void perform(String file, boolean findOpenCalls, Integer... cells) throws IOException, AnalysisException {
@@ -69,11 +72,12 @@ public abstract class NotebookTest {
 		LiSAConfiguration conf = new LiSAConfiguration();
 		conf.setWorkdir(workdir);
 		conf.setSerializeResults(true);
-		conf.setDumpAnalysis(GraphType.HTML_WITH_SUBNODES);
+//		conf.setDumpAnalysis(GraphType.HTML_WITH_SUBNODES);
 		conf.setJsonOutput(true);
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
 		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
 		conf.addSemanticCheck(new DataframeDumper(conf));
+		conf.addSemanticCheck(new BottomFinder<>());
 		if (findOpenCalls)
 			conf.addSemanticCheck(new OpenCallsFinder<>());
 
