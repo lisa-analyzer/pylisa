@@ -1,8 +1,11 @@
 package it.unive.pylisa.analysis.dataframes.transformation.graph;
 
+import it.unive.lisa.util.datastructures.graph.Edge;
+import it.unive.lisa.util.datastructures.graph.GraphVisitor;
+import it.unive.pylisa.analysis.dataframes.graph.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 
-public abstract class DataframeEdge {
+public abstract class DataframeEdge implements Comparable<DataframeEdge>, Edge<DataframeForest, DataframeOperation, DataframeEdge> {
 
 	private final DataframeOperation source, destination;
 
@@ -13,10 +16,12 @@ public abstract class DataframeEdge {
 
 	public abstract DataframeEdge mk(DataframeOperation source, DataframeOperation destination);
 
+	@Override
 	public DataframeOperation getSource() {
 		return source;
 	}
 
+	@Override
 	public DataframeOperation getDestination() {
 		return destination;
 	}
@@ -58,4 +63,20 @@ public abstract class DataframeEdge {
 	}
 
 	public abstract String getEdgeSymbol();
+	
+
+	@Override
+	public <V> boolean accept(GraphVisitor<DataframeForest, DataframeOperation, DataframeEdge, V> visitor, V tool) {
+		return visitor.visit(tool, null, this);
+	}
+
+	@Override
+	public int compareTo(DataframeEdge o) {
+		int cmp;
+		if ((cmp = source.compareTo(o.source)) != 0)
+			return cmp;
+		if ((cmp = destination.compareTo(o.destination)) != 0)
+			return cmp;
+		return getClass().getName().compareTo(o.getClass().getName());
+	}
 }

@@ -2,18 +2,19 @@ package it.unive.pylisa.analysis.dataframes.constants;
 
 import java.util.Objects;
 
-import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
+import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class ConstantPropagation extends BaseLattice<ConstantPropagation> {
+public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation> {
 
 	private static final ConstantPropagation TOP = new ConstantPropagation(null, true);
 	private static final ConstantPropagation BOTTOM = new ConstantPropagation(null, false);
@@ -118,22 +119,6 @@ public class ConstantPropagation extends BaseLattice<ConstantPropagation> {
 		return true;
 	}
 
-	public ConstantPropagation eval(Constant constant) throws SemanticException {
-		if (isAccepted(constant.getStaticType()))
-			return new ConstantPropagation(constant);
-		return TOP;
-	}
-
-	public static boolean tracks(Identifier id) {
-		return processes(id);
-	}
-
-	public static boolean processes(SymbolicExpression expression) {
-		return expression.hasRuntimeTypes()
-				? expression.getRuntimeTypes().anyMatch(ConstantPropagation::isAccepted)
-				: isAccepted(expression.getStaticType());
-	}
-
 	private static boolean isAccepted(Type t) {
 		return t.isNumericType() 
 				|| t.isStringType() 
@@ -143,7 +128,28 @@ public class ConstantPropagation extends BaseLattice<ConstantPropagation> {
 	}
 
 	@Override
-	public String toString() {
-		return representation().toString();
+	public boolean tracksIdentifiers(Identifier id) {
+		return canProcess(id);
 	}
+
+	@Override
+	public boolean canProcess(SymbolicExpression expression) {
+		return expression.hasRuntimeTypes()
+				? expression.getRuntimeTypes().anyMatch(ConstantPropagation::isAccepted)
+				: isAccepted(expression.getStaticType());
+	}
+
+	@Override
+	public ConstantPropagation evalNullConstant(ProgramPoint pp) throws SemanticException {
+		return TOP;
+	}
+
+	@Override
+	public ConstantPropagation evalNonNullConstant(Constant constant, ProgramPoint pp) throws SemanticException {
+		if (isAccepted(constant.getStaticType()))
+			return new ConstantPropagation(constant);
+		return TOP;
+	}
+	
+	
 }

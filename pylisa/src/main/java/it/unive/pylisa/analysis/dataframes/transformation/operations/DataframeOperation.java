@@ -4,9 +4,13 @@ import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.util.datastructures.graph.GraphVisitor;
+import it.unive.lisa.util.datastructures.graph.Node;
+import it.unive.pylisa.analysis.dataframes.graph.DataframeForest;
+import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeEdge;
 
 public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
-		implements Comparable<DataframeOperation> {
+		implements Comparable<DataframeOperation>, Node<DataframeForest, DataframeOperation, DataframeEdge> {
 
 	public static final DataframeOperation TOP = new TopOperation();
 
@@ -17,7 +21,7 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 	protected DataframeOperation(CodeLocation where) {
 		this.where = where;
 	}
-
+	
 	public CodeLocation getWhere() {
 		return where;
 	}
@@ -106,5 +110,10 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 		if ((cmp = getClass().getName().compareTo(o.getClass().getName())) != 0)
 			return cmp;
 		return toString().compareTo(o.toString());
+	}
+	
+	@Override
+	public <V> boolean accept(GraphVisitor<DataframeForest, DataframeOperation, DataframeEdge, V> visitor, V tool) {
+		return visitor.visit(tool, null, this);
 	}
 }

@@ -225,12 +225,12 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 	@Override
 	public boolean tracksIdentifiers(Identifier id) {
-		return ConstantPropagation.tracks(id) || DataframeGraphDomain.tracks(id);
+		return constant.tracksIdentifiers(id) || DataframeGraphDomain.tracks(id);
 	}
 
 	@Override
 	public boolean canProcess(SymbolicExpression expression) {
-		return ConstantPropagation.processes(expression) || DataframeGraphDomain.processes(expression);
+		return constant.canProcess(expression) || DataframeGraphDomain.processes(expression);
 	}
 
 	private static boolean topOrBottom(Lattice<?> l) {
@@ -256,7 +256,7 @@ public class DFOrConstant extends BaseNonRelationalValueDomain<DFOrConstant> {
 
 	@Override
 	protected DFOrConstant evalNonNullConstant(Constant constant, ProgramPoint pp) throws SemanticException {
-		return new DFOrConstant(this.constant.eval(constant));
+		return new DFOrConstant(this.constant.evalNonNullConstant(constant, pp));
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

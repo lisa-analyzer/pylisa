@@ -41,6 +41,7 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 			// of the field sensitive program point based heap
 			AllocationSite as = (AllocationSite) id;
 			if (as.getName().endsWith("]")) 
+				// we remove the name of the field using only location name
 				id = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(), as.getCodeLocation());
 		}
 		

@@ -19,7 +19,6 @@ import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
-import it.unive.lisa.LiSAConfiguration.GraphType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
@@ -32,7 +31,7 @@ import it.unive.lisa.outputs.json.JsonReport;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.PyFrontend;
-import it.unive.pylisa.analysis.dataframes.SideEffectAwareDataframeDomain;
+import it.unive.pylisa.analysis.dataframes.graph.DataframeGraphDomain;
 import it.unive.pylisa.checks.BottomFinder;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.OpenCallsFinder;
@@ -83,7 +82,7 @@ public abstract class NotebookTest {
 
 		PointBasedHeap heap = new FieldSensitivePointBasedHeap();
 		InferredTypes type = new InferredTypes();
-		SideEffectAwareDataframeDomain df = new SideEffectAwareDataframeDomain();
+		DataframeGraphDomain df = new DataframeGraphDomain();
 		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, df, type));
 		return conf;
 	}
