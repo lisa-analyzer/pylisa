@@ -1,7 +1,10 @@
 package it.unive.pylisa.analysis.dataframes.graph;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
+
+import org.apache.commons.collections4.SetUtils;
 
 public class SetLattice<E> extends it.unive.lisa.analysis.lattices.SetLattice<SetLattice<E>, E> {
 
@@ -30,5 +33,24 @@ public class SetLattice<E> extends it.unive.lisa.analysis.lattices.SetLattice<Se
 	@Override
 	protected SetLattice<E> mk(Set<E> set) {
 		return new SetLattice<>(set, isTop);
+	}
+
+	public boolean intersects(SetLattice<E> other) {
+		return !SetUtils.intersection(elements, other.elements).isEmpty();
+	}
+
+	public SetLattice<E> replace(SetLattice<E> elements, SetLattice<E> targets) {
+		return new SetLattice<>(
+				SetUtils.union(
+						SetUtils.difference(this.elements, elements.elements),
+						targets.elements),
+				false);
+	}
+
+	public SetLattice<E> replace(E element, E target) {
+		HashSet<E> eles = new HashSet<>(elements);
+		eles.remove(element);
+		eles.add(target);
+		return new SetLattice<>(eles, false);
 	}
 }

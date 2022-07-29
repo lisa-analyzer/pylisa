@@ -1,14 +1,12 @@
 package it.unive.pylisa.analysis.dataframes.graph;
 
-import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
-
 public class NodeId {
 
 	private static long counter = 0;
 
 	private final long id;
 
-	protected NodeId(DataframeOperation node) {
+	public NodeId() {
 		this.id = counter++;
 	}
 

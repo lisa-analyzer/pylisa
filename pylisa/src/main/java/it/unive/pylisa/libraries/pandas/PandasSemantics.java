@@ -18,7 +18,7 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
-import it.unive.pylisa.symbolic.operators.dataframes.PopSelection;
+import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
 
 public class PandasSemantics {
 
@@ -43,11 +43,8 @@ public class PandasSemantics {
 
 		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
 			HeapReference ref = new HeapReference(dfref, loc, location);
-			AnalysisState<A, H, V, T> tmp = state.bottom();
-			AnalysisState<A, H, V, T> readState = allocated.smallStepSemantics(init, pp);
-			for (SymbolicExpression df : readState.getComputedExpressions())
-				tmp = tmp.lub(readState.assign(loc, df, pp));
-			assigned = tmp.smallStepSemantics(ref, pp);
+			AnalysisState<A, H, V, T> readState = allocated.smallStepSemantics(init, pp).assign(loc, init, pp);
+			assigned = readState.smallStepSemantics(ref, pp);
 		}
 
 		return assigned;
@@ -72,11 +69,10 @@ public class PandasSemantics {
 		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, pp);
 
 		AnalysisState<A, H, V, T> copy = state.bottom();
-		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
+		UnaryExpression cp = new UnaryExpression(dftype, dataframe, CopyDataframe.INSTANCE, location);
+		for (SymbolicExpression loc : allocated.getComputedExpressions()) 
 			// copy the dataframe
-			AnalysisState<A, H, V, T> assigned = allocated.assign(loc, dataframe, pp);
-			copy = copy.lub(assigned);
-		}
+			copy = copy.lub(allocated.smallStepSemantics(cp, pp).assign(loc, cp, pp));
 
 		return copy;
 	}
@@ -102,7 +98,6 @@ public class PandasSemantics {
 		// we allocate the copy that will contain the converted portion
 		AnalysisState<A, H, V, T> copied = PandasSemantics.copyDataframe(state, dataframe, pp);
 
-		UnaryExpression pop = new UnaryExpression(dftype, dataframe, PopSelection.INSTANCE, loc);
 		for (SymbolicExpression id : copied.getComputedExpressions()) {
 			// the new dataframe will receive the conversion
 			UnaryExpression transform = new UnaryExpression(seriestype, id, op, loc);
@@ -110,7 +105,7 @@ public class PandasSemantics {
 
 			// we leave a reference to the fresh dataframe on the stack
 			HeapReference ref = new HeapReference(dfref, id, loc);
-			result = result.lub(tmp.smallStepSemantics(pop, pp).smallStepSemantics(ref, pp));
+			result = result.lub(tmp.smallStepSemantics(ref, pp));
 		}
 
 		return result;

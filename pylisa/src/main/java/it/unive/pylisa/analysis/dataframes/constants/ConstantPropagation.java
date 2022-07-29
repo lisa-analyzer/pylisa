@@ -150,6 +150,4 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 			return new ConstantPropagation(constant);
 		return TOP;
 	}
-	
-	
 }
