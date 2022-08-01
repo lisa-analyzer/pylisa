@@ -24,6 +24,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.dataframes.DFOrConstant;
@@ -50,7 +51,6 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.A
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
-import it.unive.pylisa.cfg.type.NoneType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.ListConstant;
@@ -523,9 +523,9 @@ public class DFGraphTest {
 
 		TernaryExpression slice1 = new TernaryExpression(
 				slicetype,
-				new Constant(NoneType.INSTANCE, null, SyntheticLocation.INSTANCE),
-				new Constant(NoneType.INSTANCE, null, SyntheticLocation.INSTANCE),
-				new Constant(NoneType.INSTANCE, null, SyntheticLocation.INSTANCE),
+				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
+				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
+				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
 				SliceCreation.INSTANCE,
 				SyntheticLocation.INSTANCE);
 
@@ -536,8 +536,8 @@ public class DFGraphTest {
 		TernaryExpression slice2 = new TernaryExpression(
 				slicetype,
 				start,
-				new Constant(NoneType.INSTANCE, null, SyntheticLocation.INSTANCE),
-				new Constant(NoneType.INSTANCE, null, SyntheticLocation.INSTANCE),
+				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
+				new Constant(NullType.INSTANCE, null, SyntheticLocation.INSTANCE),
 				SliceCreation.INSTANCE,
 				SyntheticLocation.INSTANCE);
 		Constant slice2Constant = new SliceConstant(new RangeBound(42), null, null,

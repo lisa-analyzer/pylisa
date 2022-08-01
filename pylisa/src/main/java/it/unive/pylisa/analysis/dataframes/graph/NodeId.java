@@ -2,7 +2,7 @@ package it.unive.pylisa.analysis.dataframes.graph;
 
 public class NodeId {
 
-	private static long counter = 0;
+	public static long counter = 0;
 
 	private final long id;
 

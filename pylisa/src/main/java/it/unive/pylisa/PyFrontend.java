@@ -87,12 +87,14 @@ import it.unive.lisa.program.cfg.statement.logic.Or;
 import it.unive.lisa.program.cfg.statement.numeric.Addition;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
+import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.VoidType;
 import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Float32;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
+import it.unive.pylisa.analysis.dataframes.graph.NodeId;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
@@ -200,6 +202,12 @@ import it.unive.pylisa.cfg.expression.LambdaExpression;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
 import it.unive.pylisa.cfg.expression.PyAssign;
+import it.unive.pylisa.cfg.expression.PyBitwiseAnd;
+import it.unive.pylisa.cfg.expression.PyBitwiseLeftShift;
+import it.unive.pylisa.cfg.expression.PyBitwiseNot;
+import it.unive.pylisa.cfg.expression.PyBitwiseOr;
+import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
+import it.unive.pylisa.cfg.expression.PyBitwiseXor;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
 import it.unive.pylisa.cfg.expression.PyFloorDiv;
 import it.unive.pylisa.cfg.expression.PyIn;
@@ -210,7 +218,6 @@ import it.unive.pylisa.cfg.expression.PyPower;
 import it.unive.pylisa.cfg.expression.PyRemainder;
 import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
 import it.unive.pylisa.cfg.expression.PyTernaryOperator;
-import it.unive.pylisa.cfg.expression.PyXor;
 import it.unive.pylisa.cfg.expression.RangeValue;
 import it.unive.pylisa.cfg.expression.SetCreation;
 import it.unive.pylisa.cfg.expression.StarExpression;
@@ -223,7 +230,6 @@ import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
-import it.unive.pylisa.cfg.type.NoneType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -368,13 +374,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		log.info("PyToCFG setup...");
 
 		PyClassType.clearAll();
+		NodeId.counter = 0;
 
 		program.registerType(PyLambdaType.INSTANCE);
 		program.registerType(BoolType.INSTANCE);
 		program.registerType(StringType.INSTANCE);
 		program.registerType(Int32.INSTANCE);
 		program.registerType(Float32.INSTANCE);
-		program.registerType(NoneType.INSTANCE);
+		program.registerType(NullType.INSTANCE);
 		program.registerType(VoidType.INSTANCE);
 		program.registerType(Untyped.INSTANCE);
 
@@ -1449,17 +1456,17 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return visitXor_expr(ctx.xor_expr(0));
 		} else if (nXor == 2) {
 			// two Xor
-			return createPairFromSingle(new PyXor(currentCFG, getLocation(ctx),
+			return createPairFromSingle(new PyBitwiseOr(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(0))),
 					checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(1)))));
 		} else {
-			Expression temp = new PyXor(currentCFG, getLocation(ctx),
+			Expression temp = new PyBitwiseOr(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(nXor - 2))),
 					checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(nXor - 1))));
 			nXor = nXor - 2;
 			// concatenate all the Xor expressions together
 			while (nXor > 0) {
-				temp = new PyXor(currentCFG, getLocation(ctx),
+				temp = new PyBitwiseOr(currentCFG, getLocation(ctx),
 						checkAndExtractSingleExpression(visitXor_expr(ctx.xor_expr(--nXor))),
 						temp);
 			}
@@ -1476,17 +1483,17 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (nAnd == 1) {
 			return visitAnd_expr(ctx.and_expr(0));
 		} else if (nAnd == 2) {
-			return createPairFromSingle(new PyXor(currentCFG, getLocation(ctx),
+			return createPairFromSingle(new PyBitwiseXor(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(0))),
 					checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(1)))));
 		} else {
-			Expression temp = new PyXor(currentCFG, getLocation(ctx),
+			Expression temp = new PyBitwiseXor(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(nAnd - 2))),
 					checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(nAnd - 1))));
 			nAnd = nAnd - 2;
 			// concatenate all the And expressions together
 			while (nAnd > 0) {
-				temp = new PyXor(currentCFG, getLocation(ctx),
+				temp = new PyBitwiseXor(currentCFG, getLocation(ctx),
 						checkAndExtractSingleExpression(visitAnd_expr(ctx.and_expr(--nAnd))),
 						temp);
 			}
@@ -1500,17 +1507,17 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (nShift == 1) {
 			return visitLeft_shift(ctx.left_shift(0));
 		} else if (nShift == 2) {
-			return createPairFromSingle(new And(currentCFG, getLocation(ctx),
+			return createPairFromSingle(new PyBitwiseAnd(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(0))),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(1)))));
 		} else {
-			Expression temp = new And(currentCFG, getLocation(ctx),
+			Expression temp = new PyBitwiseAnd(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 2))),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 1))));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new And(currentCFG, getLocation(ctx),
+				temp = new PyBitwiseAnd(currentCFG, getLocation(ctx),
 						checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(--nShift))),
 						temp);
 			}
@@ -1524,17 +1531,17 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (nShift == 1) {
 			return visitRight_shift(ctx.right_shift());
 		} else if (nShift == 2) {
-			return createPairFromSingle(new And(currentCFG, getLocation(ctx),
+			return createPairFromSingle(new PyBitwiseLeftShift(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift())),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(0)))));
 		} else {
-			Expression temp = new And(currentCFG, getLocation(ctx),
+			Expression temp = new PyBitwiseLeftShift(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 3))),
 					checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(nShift - 2))));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new And(currentCFG, getLocation(ctx),
+				temp = new PyBitwiseLeftShift(currentCFG, getLocation(ctx),
 						checkAndExtractSingleExpression(visitLeft_shift(ctx.left_shift(--nShift - 1))),
 						temp);
 			}
@@ -1548,17 +1555,17 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (nShift == 1) {
 			return visitArith_expr(ctx.arith_expr());
 		} else if (nShift == 2) {
-			return createPairFromSingle(new And(currentCFG, getLocation(ctx),
+			return createPairFromSingle(new PyBitwiseRIghtShift(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr())),
 					checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(0)))));
 		} else {
-			Expression temp = new And(currentCFG, getLocation(ctx),
+			Expression temp = new PyBitwiseRIghtShift(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(nShift - 3))),
 					checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(nShift - 2))));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new And(currentCFG, getLocation(ctx),
+				temp = new PyBitwiseRIghtShift(currentCFG, getLocation(ctx),
 						checkAndExtractSingleExpression(visitRight_shift(ctx.right_shift(--nShift - 1))),
 						temp);
 			}
@@ -1680,12 +1687,17 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public Pair<Statement, Statement> visitFactor(FactorContext ctx) {
 		if (ctx.power() != null) {
 			return visitPower(ctx.power());
-		}
-		return (Pair<Statement, Statement>) super.visitFactor(ctx);
+		} else if (ctx.NOT_OP() != null)
+			return createPairFromSingle(new PyBitwiseNot(currentCFG, getLocation(ctx), 
+					checkAndExtractSingleExpression(visitFactor(ctx.factor()))));
+		else if (ctx.MINUS() != null)
+			return createPairFromSingle(new PyMultiplication(currentCFG, getLocation(ctx), 
+					new Int32Literal(currentCFG, getLocation(ctx), -1), 
+					checkAndExtractSingleExpression(visitFactor(ctx.factor()))));
+		return visitFactor(ctx.factor());
 	}
 
 	@Override

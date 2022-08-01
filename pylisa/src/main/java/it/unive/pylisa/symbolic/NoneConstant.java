@@ -2,14 +2,14 @@ package it.unive.pylisa.symbolic;
 
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.pylisa.cfg.type.NoneType;
+import it.unive.lisa.type.NullType;
 
 public class NoneConstant extends Constant {
 
 	private static final Object NULL_CONST = new Object();
 
 	public NoneConstant(CodeLocation location) {
-		super(NoneType.INSTANCE, NULL_CONST, location);
+		super(NullType.INSTANCE, NULL_CONST, location);
 	}
 
 	@Override

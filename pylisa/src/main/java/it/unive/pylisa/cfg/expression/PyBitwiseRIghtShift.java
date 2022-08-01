@@ -13,13 +13,13 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.type.common.BoolType;
-import it.unive.pylisa.UnsupportedStatementException;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftRight;
+import it.unive.lisa.type.Untyped;
 
-public class PyXor extends BinaryExpression {
+public class PyBitwiseRIghtShift extends BinaryExpression {
 
-	public PyXor(CFG cfg, CodeLocation loc, Expression left, Expression right) {
-		super(cfg, loc, "^", BoolType.INSTANCE, left, right);
+	public PyBitwiseRIghtShift(CFG cfg, CodeLocation loc, Expression left, Expression right) {
+		super(cfg, loc, ">>", Untyped.INSTANCE, left, right);
 	}
 
 	@Override
@@ -33,6 +33,13 @@ public class PyXor extends BinaryExpression {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		throw new UnsupportedStatementException(this);
+		return state.smallStepSemantics(
+				new it.unive.lisa.symbolic.value.BinaryExpression(
+						Untyped.INSTANCE, 
+						left, 
+						right, 
+						BitwiseShiftRight.INSTANCE, 
+						getLocation()), 
+				this);
 	}
 }

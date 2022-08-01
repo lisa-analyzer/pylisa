@@ -11,13 +11,13 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.literal.Literal;
-import it.unive.pylisa.cfg.type.NoneType;
+import it.unive.lisa.type.NullType;
 import it.unive.pylisa.symbolic.NoneConstant;
 
 public class NoneLiteral extends Literal<Object> {
 
 	public NoneLiteral(CFG cfg, CodeLocation location) {
-		super(cfg, location, null, NoneType.INSTANCE);
+		super(cfg, location, null, NullType.INSTANCE);
 	}
 
 	@Override
