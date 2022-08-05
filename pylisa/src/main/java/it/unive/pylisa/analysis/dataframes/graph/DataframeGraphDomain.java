@@ -53,23 +53,29 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullAxis;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.Keys;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.SelectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Transform;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.AtomicBooleanSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnRangeSelection;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.Selection;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyLibraryUnitType;
 import it.unive.pylisa.symbolic.DictConstant;
 import it.unive.pylisa.symbolic.ListConstant;
 import it.unive.pylisa.symbolic.SliceConstant;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
+import it.unive.pylisa.symbolic.SliceConstant.Slice;
 import it.unive.pylisa.symbolic.operators.DictPut;
 import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
+import it.unive.pylisa.symbolic.operators.dataframes.AccessKeys;
 import it.unive.pylisa.symbolic.operators.dataframes.AccessRows;
 import it.unive.pylisa.symbolic.operators.dataframes.AccessRowsColumns;
 import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
@@ -77,6 +83,8 @@ import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
 import it.unive.pylisa.symbolic.operators.dataframes.AxisConcatenation;
 import it.unive.pylisa.symbolic.operators.dataframes.ColumnAccess;
 import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.DataframeColumnSlice;
+import it.unive.pylisa.symbolic.operators.dataframes.DataframeColumnSlice.ColumnSlice;
 import it.unive.pylisa.symbolic.operators.dataframes.DropCols;
 import it.unive.pylisa.symbolic.operators.dataframes.FilterNull;
 import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
@@ -143,7 +151,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 //			nodes.forEach(map::remove);
 //			this.operations = new CollectingMapLattice<>(operations.lattice, map);
 //		} else
-			this.operations = operations;
+		this.operations = operations;
 
 		// FIXME temporary sanity check
 		SetLattice<DataframeOperation> pointed = resolvePointers(this);
@@ -162,6 +170,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					sss.graph,
 					sss.pointers,
 					sss.operations);
+		else if (expression.getRuntimeTypes().noneMatch(
+				t -> t.toString().equals(LibrarySpecificationProvider.PANDAS_DF)
+						|| t.toString().equals(LibrarySpecificationProvider.PANDAS_SERIES)))
+			return sss;
 		else if (!sss.pointers.lattice.isBottom())
 			return new DataframeGraphDomain(
 					sss.constants,
@@ -331,17 +343,29 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	private static SetLattice<DataframeOperation> resolvePointers(DataframeGraphDomain domain) {
 		return resolvePointers(domain.operations, domain.pointers.lattice);
 	}
-	
+
 	private static SetLattice<DataframeOperation> resolvePointers(
-			CollectingMapLattice<NodeId, DataframeOperation> operations, 
+			CollectingMapLattice<NodeId, DataframeOperation> operations,
 			SetLattice<NodeId> ids) {
 		if (topOrBottom(operations) || topOrBottom(ids))
 			return NO_NODES;
-		
+
 		Set<DataframeOperation> resolved = new HashSet<>();
 		for (NodeId pointer : ids)
 			resolved.addAll(operations.getState(pointer).elements());
 		return new SetLattice<>(resolved, false);
+	}
+
+	private static SetLattice<DataframeOperation> moveBackwards(
+			DataframeForest forest,
+			SetLattice<DataframeOperation> ops) {
+		if (topOrBottom(ops))
+			return ops;
+
+		Set<DataframeOperation> preds = new HashSet<>();
+		for (DataframeOperation op : ops)
+			preds.addAll(forest.predecessorsOf(op));
+		return new SetLattice<>(preds, false);
 	}
 
 	private static CollectingMapLattice<Identifier, NodeId> shift(
@@ -369,6 +393,23 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			bound = new RangeBound(c.as(Integer.class));
 		else
 			bound = c.as(RangeBound.class);
+		return bound;
+	}
+
+	private static ColumnRangeSelection getRangeBound(SetLattice<DataframeOperation> ops) throws SemanticException {
+		ColumnRangeSelection bound = ColumnRangeSelection.BOTTOM;
+
+		for (DataframeOperation op : ops) {
+			if (!(op instanceof AccessOperation<?>))
+				return ColumnRangeSelection.TOP;
+
+			Selection<?> selection = ((AccessOperation<?>) op).getSelection();
+			if (!(selection instanceof ColumnRangeSelection))
+				return ColumnRangeSelection.TOP;
+
+			bound = bound.lub((ColumnRangeSelection) selection);
+		}
+
 		return bound;
 	}
 
@@ -442,7 +483,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			for (DataframeOperation leaf : stack) {
 				if (!(leaf instanceof SelectionOperation<?>))
 					return arg.top();
-				
+
 				Transform t = op.getArg().isPresent()
 						? new Transform(pp.getLocation(), kind, ((SelectionOperation<?>) leaf).getSelection(),
 								op.getArg().get())
@@ -527,12 +568,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			Lattice<?> firstWrapped = elements.iterator().next();
 			if (elements.size() == 1)
 				if (firstWrapped instanceof SetLattice<?>)
-				return new DataframeGraphDomain(
-						arg.constants.smallStepSemantics(new Skip(pp.getLocation()), pp),
-						arg.graph,
-						arg.pointers.setStack((SetLattice<NodeId>) firstWrapped),
-						arg.operations);
-				else 
+					return new DataframeGraphDomain(
+							arg.constants.smallStepSemantics(new Skip(pp.getLocation()), pp),
+							arg.graph,
+							arg.pointers.setStack((SetLattice<NodeId>) firstWrapped),
+							arg.operations);
+				else
 					return arg.top();
 
 			DataframeForest forest = new DataframeForest(arg.graph);
@@ -546,7 +587,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			// 1) if a leaf is an access it has to become a projection
 			// 2) the same leaf might appear multiple times as different
 			// nodes of the concat
-			
+
 			int nelements = elements.size();
 			List<Lattice<?>> distinctElements = elements.stream().distinct().collect(Collectors.toList());
 			int[] opIndexes = new int[nelements];
@@ -564,7 +605,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					return arg.top();
 
 				SetLattice<DataframeOperation> ops = resolvePointers(arg.operations, (SetLattice<NodeId>) element);
-				if (entry.getValue().size() == 1) 
+				if (entry.getValue().size() == 1)
 					// appears once
 					operands[entry.getValue().iterator().next()] = ops;
 				else {
@@ -572,7 +613,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					Set<DataframeOperation> operand = ops.elements();
 					FIFOWorkingSet<SetLattice<DataframeOperation>> ws = FIFOWorkingSet.mk();
 					for (int i = 0; i < entry.getValue().size(); i++) {
-						Set<DataframeOperation> fixed = new HashSet<>(); 
+						Set<DataframeOperation> fixed = new HashSet<>();
 						for (DataframeOperation op : operand) {
 							if (op instanceof AccessOperation<?>)
 								if (replacements.containsKey(op)) {
@@ -586,7 +627,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 						}
 
 						ws.push(new SetLattice<>(fixed, false));
-						operand = fixed.stream().flatMap(o -> forest.predecessorsOf(o).stream()).distinct().collect(Collectors.toSet());
+						operand = fixed.stream().flatMap(o -> forest.predecessorsOf(o).stream()).distinct()
+								.collect(Collectors.toSet());
 					}
 
 					for (int pos : entry.getValue())
@@ -609,8 +651,34 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					forest,
 					arg.pointers.setStack(new SetLattice<>(id)),
 					ops.putState(id, new SetLattice<>(concatNode)));
+		} else if (operator == AccessKeys.INSTANCE) {
+			SetLattice<DataframeOperation> ops = resolvePointers(arg);
+			if (topOrBottom(ops))
+				return arg.top();
+
+			Keys access = new Keys(pp.getLocation());
+			DataframeForest forest = new DataframeForest(arg.graph);
+			forest.addNode(access);
+			for (DataframeOperation op : ops)
+				forest.addEdge(new SimpleEdge(op, access));
+
+			NodeId id = new NodeId();
+			SetLattice<NodeId> ids = new SetLattice<>(id);
+			CollectingMapLattice<Identifier, NodeId> pointers = shift(arg.pointers, arg.pointers.lattice, ids);
+			return new DataframeGraphDomain(
+					arg.constants.smallStepSemantics(new Skip(pp.getLocation()), pp),
+					forest,
+					pointers.setStack(ids),
+					arg.operations.putState(id, new SetLattice<>(access)));
+		} else if (!arg.constants.getValueOnStack().isBottom()
+				&& arg.constants.lattice.canProcess(expression)) {
+			return new DataframeGraphDomain(
+					arg.constants.smallStepSemantics(expression, pp),
+					arg.graph,
+					arg.pointers.setStack(NO_IDS),
+					arg.operations);
 		} else
-			return arg.top();
+			return cleanStack(arg, pp);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -648,10 +716,19 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			if (topOrBottom(ops) || topOrBottom(col))
 				return right.top();
 
-			ColumnListSelection columns;
+			ColumnSelection<?> columns;
 			if (col.is(String.class))
 				columns = new ColumnListSelection(new Names(col.as(String.class)));
-			else {
+			else if (col.is(Integer.class))
+				columns = new ColumnRangeSelection(col.as(Integer.class));
+			else if (col.is(NumberSlice.class))
+				columns = new ColumnRangeSelection(col.as(NumberSlice.class));
+			else if (col.is(SliceConstant.class)) {
+				SliceConstant c = col.as(SliceConstant.class);
+				Slice slice = (Slice) c.getValue();
+				columns = new ColumnRangeSelection(new NumberSlice(slice.getStart().toInterval(),
+						slice.getEnd().toInterval(), slice.getSkip().toInterval()));
+			} else if (col.is(List.class)) {
 				List<ConstantPropagation> cs = col.as(List.class);
 				Set<String> accessedCols = new HashSet<>();
 				for (ConstantPropagation c : cs) {
@@ -662,9 +739,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					accessedCols.add(c.as(String.class));
 				}
 				columns = new ColumnListSelection(accessedCols);
-			}
+			} else
+				return right.top();
 
-			AccessOperation<ColumnListSelection> access = new AccessOperation<>(pp.getLocation(), columns);
+			@SuppressWarnings("rawtypes")
+			AccessOperation access = new AccessOperation(pp.getLocation(), columns);
 			DataframeForest forest = new DataframeForest(right.graph);
 			forest.addNode(access);
 			for (DataframeOperation op : ops)
@@ -731,9 +810,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			}
 
 			for (DataframeOperation op : df2) {
-				if (op instanceof AccessOperation<?>) 
+				if (op instanceof AccessOperation<?>)
 					op = toProjection(right, forest, operations, op);
-				
+
 				forest.addEdge(new ConcatEdge(op, concatNode, 1));
 			}
 
@@ -776,7 +855,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			}
 
 			for (DataframeOperation op : df2) {
-				if (op instanceof AccessOperation<?>) 
+				if (op instanceof AccessOperation<?>)
 					op = toProjection(right, forest, operations, op);
 
 				for (DataframeOperation assign : assignments)
@@ -859,17 +938,24 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			SetLattice<NodeId> ids = new SetLattice<>(id);
 			CollectingMapLattice<NodeId,
 					DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice, operations);
-//			CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointers.lattice, ids);
 			return new DataframeGraphDomain(
 					right.constants.smallStepSemantics(new Skip(pp.getLocation()), pp),
 					forest,
 					pointers.setStack(ids),
 					ops.putState(id, new SetLattice<>(comparisons, false)));
+		} else if (!left.constants.getValueOnStack().isBottom()
+				&& !right.constants.getValueOnStack().isBottom()
+				&& right.constants.lattice.canProcess(expression)) {
+			return new DataframeGraphDomain(
+					right.constants.smallStepSemantics(expression, pp),
+					right.graph,
+					right.pointers.setStack(NO_IDS),
+					right.operations);
 		} else
-			return DataframeGraphDomain.this;
+			return cleanStack(right, pp);
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public DataframeGraphDomain visit(TernaryExpression expression, DataframeGraphDomain left,
 			DataframeGraphDomain middle, DataframeGraphDomain right, ProgramPoint pp)
 			throws SemanticException {
@@ -939,25 +1025,32 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			SetLattice<DataframeOperation> df = resolvePointers(left);
 			// right is a list of strings so we will handle that first
 			ConstantPropagation cols = right.constants.getValueOnStack();
-			if (topOrBottom(df) || topOrBottom(middle) || topOrBottom(cols) || !cols.is(List.class))
+			if (topOrBottom(df) || topOrBottom(middle) || topOrBottom(cols))
 				return right.top();
 
 			DataframeForest forest = new DataframeForest(right.graph);
 
-			List<Lattice<?>> cs = cols.as(List.class);
-			Set<String> accessedCols = new HashSet<>();
-			ColumnListSelection colsSelection = null;
-			ConstantPropagation cc;
-			for (Lattice<?> c : cs) {
-				if (!(c instanceof ConstantPropagation) || topOrBottom(cc = (ConstantPropagation) c)
-						|| !cc.is(String.class)) {
-					colsSelection = new ColumnListSelection(true);
-					break;
+			ColumnSelection<?> colsSelection = null;
+			if (cols.is(List.class)) {
+				List<Lattice<?>> cs = cols.as(List.class);
+				Set<String> accessedCols = new HashSet<>();
+				ConstantPropagation cc;
+				for (Lattice<?> c : cs) {
+					if (!(c instanceof ConstantPropagation) || topOrBottom(cc = (ConstantPropagation) c)
+							|| !cc.is(String.class)) {
+						colsSelection = new ColumnListSelection(true);
+						break;
+					}
+					accessedCols.add(cc.as(String.class));
 				}
-				accessedCols.add(cc.as(String.class));
-			}
-			if (colsSelection == null)
-				colsSelection = new ColumnListSelection(accessedCols);
+				if (colsSelection == null)
+					colsSelection = new ColumnListSelection(accessedCols);
+			} else if (cols.is(ColumnSlice.class)) {
+				ColumnSlice slice = cols.as(ColumnSlice.class);
+				colsSelection = new ColumnRangeSelection(new NumberSlice(slice.getStart().getColumns().getBeginIndex(),
+						slice.getEnd().getColumns().getEndIndex(), slice.getSkip().toInterval()));
+			} else
+				return right.top();
 
 			// middle can be either a slice or a series comparison
 			if (!topOrBottom(middle.constants.getValueOnStack())) {
@@ -967,7 +1060,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 						rowSlice.getStart() == null ? new Interval().bottom() : rowSlice.getStart().toInterval(),
 						rowSlice.getEnd() == null ? new Interval().bottom() : rowSlice.getEnd().toInterval(),
 						rowSlice.getSkip() == null ? new Interval().bottom() : rowSlice.getSkip().toInterval());
-				DataframeSelection<?, ?> selection = new DataframeSelection<>(numberSlice, colsSelection);
+				DataframeSelection<?, ?> selection = new DataframeSelection(numberSlice, colsSelection);
 				DataframeOperation access = new AccessOperation<>(pp.getLocation(), selection);
 				forest.addNode(access);
 				for (DataframeOperation op : df)
@@ -993,7 +1086,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 					BooleanComparison<?> colCompare = (BooleanComparison<?>) op;
 					DataframeSelection<?,
-							?> selection = new DataframeSelection<>(colCompare.getSelection(), colsSelection);
+							?> selection = new DataframeSelection(colCompare.getSelection(), colsSelection);
 					DataframeOperation access = new AccessOperation<>(pp.getLocation(), selection);
 
 					forest.addNode(access);
@@ -1031,22 +1124,57 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 						right.operations.putState(id, new SetLattice<>(access)));
 			}
 		} else if (operator instanceof SliceCreation) {
-			if (left.constants.getValueOnStack().isBottom()
-					|| middle.constants.getValueOnStack().isBottom()
-					|| right.constants.getValueOnStack().isBottom()) {
+			if (right.constants.getValueOnStack().isBottom())
 				return right.top();
-			}
-			RangeBound start = getRangeBound(left.constants.getValueOnStack());
-			RangeBound end = getRangeBound(middle.constants.getValueOnStack());
 			RangeBound skip = getRangeBound(right.constants.getValueOnStack());
-			SliceConstant slice = new SliceConstant(start, end, skip, pp.getLocation());
+
+			if (!left.constants.getValueOnStack().isBottom()
+					&& !middle.constants.getValueOnStack().isBottom()) {
+				// numeric slice
+				RangeBound start = getRangeBound(left.constants.getValueOnStack());
+				RangeBound end = getRangeBound(middle.constants.getValueOnStack());
+				SliceConstant slice = new SliceConstant(start, end, skip, pp.getLocation());
+				return new DataframeGraphDomain(
+						right.constants.smallStepSemantics(slice, pp),
+						right.graph,
+						right.pointers.setStack(NO_IDS),
+						right.operations);
+			} else if (!topOrBottom(left.pointers.lattice) && !topOrBottom(middle.pointers.lattice)) {
+				// column slice
+				SetLattice<DataframeOperation> l = resolvePointers(left);
+				SetLattice<DataframeOperation> m = resolvePointers(middle);
+				if (l.equals(m))
+					l = moveBackwards(right.graph, l);
+				ColumnRangeSelection start = getRangeBound(l);
+				ColumnRangeSelection end = getRangeBound(m);
+				DataframeColumnSlice slice = new DataframeColumnSlice(start, end, skip, pp.getLocation());
+				return new DataframeGraphDomain(
+						right.constants.smallStepSemantics(slice, pp),
+						right.graph,
+						right.pointers.setStack(NO_IDS),
+						right.operations);
+			} else
+				return right.top();
+		} else if (!left.constants.getValueOnStack().isBottom()
+				&& !middle.constants.getValueOnStack().isBottom()
+				&& !right.constants.getValueOnStack().isBottom()
+				&& right.constants.lattice.canProcess(expression)) {
 			return new DataframeGraphDomain(
-					right.constants.smallStepSemantics(slice, pp),
+					right.constants.smallStepSemantics(expression, pp),
 					right.graph,
 					right.pointers.setStack(NO_IDS),
 					right.operations);
 		} else
-			return DataframeGraphDomain.this;
+			return cleanStack(right, pp);
+	}
+
+	private static DataframeGraphDomain cleanStack(DataframeGraphDomain right, ProgramPoint pp)
+			throws SemanticException {
+		return new DataframeGraphDomain(
+				right.constants.smallStepSemantics(new Skip(pp.getLocation()), pp),
+				right.graph,
+				right.pointers.setStack(NO_IDS),
+				right.operations);
 	}
 
 	public DataframeGraphDomain visit(PushAny expression, ProgramPoint pp) throws SemanticException {
@@ -1075,16 +1203,17 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public DataframeGraphDomain visit(Identifier expression, ProgramPoint pp) throws SemanticException {
 		if (expression instanceof MemoryPointer)
 			expression = ((MemoryPointer) expression).getReferencedLocation();
-		
+
 		if (expression instanceof AllocationSite) {
 			// TODO this is very fragile and only works with the current state
 			// of the field sensitive program point based heap
 			AllocationSite as = (AllocationSite) expression;
-			if (as.getName().endsWith("]")) 
+			if (as.getName().endsWith("]"))
 				// we remove the name of the field using only location name
-				expression = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(), as.getCodeLocation());
+				expression = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(),
+						as.getCodeLocation());
 		}
-		
+
 		if (constants.getKeys().contains(expression))
 			return new DataframeGraphDomain(
 					constants.smallStepSemantics(expression, pp),

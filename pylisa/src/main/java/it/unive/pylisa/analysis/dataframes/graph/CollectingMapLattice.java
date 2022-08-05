@@ -1,5 +1,6 @@
 package it.unive.pylisa.analysis.dataframes.graph;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -15,7 +16,7 @@ public class CollectingMapLattice<K, V>
 		extends FunctionalLattice<CollectingMapLattice<K, V>, K, SetLattice<V>> {
 	
 	public CollectingMapLattice(SetLattice<V> lattice) {
-		super(lattice);
+		super(lattice, null);
 	}
 
 	public CollectingMapLattice(SetLattice<V> lattice, Map<K, SetLattice<V>> function) {
@@ -36,6 +37,13 @@ public class CollectingMapLattice<K, V>
 		return new CollectingMapLattice<>(lattice.bottom(), null);
 	}
 
+	@Override
+	public Map<K, SetLattice<V>> getMap() {
+		if (function == null)
+			return new HashMap<>();
+		return super.getMap();
+	}
+	
 	@Override
 	protected CollectingMapLattice<K, V> mk(SetLattice<V> lattice, Map<K, SetLattice<V>> function) {
 		return new CollectingMapLattice<>(lattice, function);
@@ -77,6 +85,6 @@ public class CollectingMapLattice<K, V>
 	}
 	
 	public CollectingMapLattice<K, V> setStack(SetLattice<V> stack) {
-		return mk(stack, mkNewFunction(function));
+		return mk(stack, function == null ? null : mkNewFunction(function));
 	}
 }

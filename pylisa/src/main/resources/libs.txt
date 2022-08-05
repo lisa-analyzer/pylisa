@@ -28,6 +28,9 @@ library pandas:
 			libtype pandas.DataFrame*
 			param this libtype pandas.DataFrame*
 			param n type it.unive.lisa.type.common.Int32::INSTANCE default 5
+		instance method keys: it.unive.pylisa.libraries.pandas.Keys
+			libtype pandas.DataFrame*
+			param this libtype pandas.DataFrame*
 		instance method describe: it.unive.pylisa.libraries.pandas.UninterestingDataframeFunction
 			libtype pandas.DataFrame*
 			param this libtype pandas.DataFrame*

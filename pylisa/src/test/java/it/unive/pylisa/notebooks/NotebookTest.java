@@ -19,6 +19,7 @@ import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
+import it.unive.lisa.LiSAConfiguration.GraphType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
@@ -68,6 +69,13 @@ public abstract class NotebookTest {
 	}
 
 	private LiSAConfiguration buildConfig(String workdir, boolean findOpenCalls) throws AnalysisSetupException {
+		try {
+			FileManager.forceDeleteFolder(workdir.toString());
+		} catch (IOException e) {
+			e.printStackTrace(System.err);
+			fail("Cannot delete working directory '" + workdir + "': " + e.getMessage());
+		}
+		
 		LiSAConfiguration conf = new LiSAConfiguration();
 		conf.setWorkdir(workdir);
 		conf.setSerializeResults(true);

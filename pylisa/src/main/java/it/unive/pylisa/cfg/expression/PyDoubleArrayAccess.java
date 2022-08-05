@@ -15,6 +15,7 @@ import it.unive.lisa.program.cfg.statement.TernaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -59,7 +60,10 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 		tmp = tmp.smallStepSemantics(access, this);
 		AnalysisState<A, H, V, T> result = state.bottom();
 		for (SymbolicExpression expr : tmp.getComputedExpressions()) {
-			deref = new HeapDereference(Untyped.INSTANCE, expr, getLocation());
+			SymbolicExpression cont = expr instanceof HeapReference
+					? expr
+					: new HeapReference(Untyped.INSTANCE, expr, getLocation());
+			deref = new HeapDereference(Untyped.INSTANCE, cont, getLocation());
 			access = new AccessChild(Untyped.INSTANCE, deref, right, getLocation());
 			result = result.lub(tmp.smallStepSemantics(access, this));
 		}

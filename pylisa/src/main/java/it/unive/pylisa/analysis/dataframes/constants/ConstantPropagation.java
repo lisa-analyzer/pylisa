@@ -11,7 +11,12 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.operator.Multiplication;
+import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
+import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation> {
@@ -120,8 +125,8 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 	}
 
 	private static boolean isAccepted(Type t) {
-		return t.isNumericType() 
-				|| t.isStringType() 
+		return t.isNumericType()
+				|| t.isStringType()
 				|| t.toString().equals(LibrarySpecificationProvider.LIST)
 				|| t.toString().equals(LibrarySpecificationProvider.DICT)
 				|| t.toString().equals(LibrarySpecificationProvider.SLICE);
@@ -149,5 +154,48 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		if (isAccepted(constant.getStaticType()))
 			return new ConstantPropagation(constant);
 		return TOP;
+	}
+
+	@Override
+	protected ConstantPropagation evalUnaryExpression(UnaryOperator operator, ConstantPropagation arg,
+			ProgramPoint pp) {
+		if (arg.isTop())
+			return top();
+		if (operator == NumericNegation.INSTANCE)
+			if (arg.is(Integer.class))
+				return new ConstantPropagation(
+						new Constant(Int32.INSTANCE, -1 * arg.as(Integer.class), pp.getLocation()));
+		// TODO more types
+
+		return top();
+	}
+
+	@Override
+	protected ConstantPropagation evalBinaryExpression(BinaryOperator operator, ConstantPropagation left,
+			ConstantPropagation right, ProgramPoint pp) {
+
+		// TODO
+		
+		/*if (operator instanceof AdditionOperator)
+			return left.isTop() || right.isTop() ? top() : new ConstantPropagation(left.value + right.value);
+		else if (operator instanceof DivisionOperator)
+			if (!left.isTop() && left.value == 0)
+				return new ConstantPropagation(0);
+			else if (!right.isTop() && right.value == 0)
+				return bottom();
+			else if (left.isTop() || right.isTop() || left.value % right.value != 0)
+				return top();
+			else
+				return new ConstantPropagation(left.value / right.value);
+		else if (operator instanceof Module)
+			return left.isTop() || right.isTop() ? top() : new ConstantPropagation(left.value % right.value);
+		else */if (operator instanceof Multiplication)
+			return left.isTop() || right.isTop() ? top()
+					: new ConstantPropagation(new Constant(Int32.INSTANCE,
+							left.as(Integer.class) * right.as(Integer.class), pp.getLocation()));
+		/*else if (operator instanceof SubtractionOperator)
+			return left.isTop() || right.isTop() ? top() : new ConstantPropagation(left.value - right.value);*/
+		else
+			return top();
 	}
 }

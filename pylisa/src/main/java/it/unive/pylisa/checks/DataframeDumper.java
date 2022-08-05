@@ -3,6 +3,7 @@ package it.unive.pylisa.checks;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -113,8 +114,9 @@ public class DataframeDumper implements SemanticCheck<
 						PointBasedHeap, DataframeGraphDomain,
 						TypeEnvironment<InferredTypes>> post = result.getAnalysisStateAfter(node);
 
-				String filename = result.getId() == null ? "" : result.getId().hashCode() + "_";
-				filename = filename + graph.getDescriptor().getFullSignatureWithParNames();
+				String filename = result.getDescriptor().getFullSignatureWithParNames();
+				if (result.getId() != null)
+					filename += "_" + result.getId().hashCode();
 				
 				PointBasedHeap heap = post.getDomainInstance(PointBasedHeap.class);
 				DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
@@ -124,12 +126,12 @@ public class DataframeDumper implements SemanticCheck<
 				
 				Map<DataframeOperation, Set<Identifier>> refs = new HashMap<>();
 				for (Entry<Identifier, SetLattice<NodeId>> pointer : pointers) {
-					Identifier id = reverse(heap, pointer.getKey());
-					if (id == null)
+					Set<Identifier> ids = reverse(heap, pointer.getKey());
+					if (ids.isEmpty())
 						continue;
 					
 					for (NodeId n : pointer.getValue())
-						operations.getState(n).elements().forEach(op -> refs.computeIfAbsent(op, o -> new HashSet<>()).add(id));
+						operations.getState(n).elements().forEach(op -> refs.computeIfAbsent(op, o -> new HashSet<>()).addAll(ids));
 				}
 				
 				try {
@@ -147,20 +149,22 @@ public class DataframeDumper implements SemanticCheck<
 	}
 
 	@SuppressWarnings("unchecked")
-	private Identifier reverse(PointBasedHeap heap, Identifier key) {
+	private Set<Identifier> reverse(PointBasedHeap heap, Identifier key) {
 		if (!(key instanceof AllocationSite))
-			return null;
+			return Collections.emptySet();
 
+		Set<Identifier> result = new HashSet<>();
 		try {
 			Field envField = PointBasedHeap.class.getDeclaredField("heapEnv");
 			envField.setAccessible(true);
 			HeapEnvironment<AllocationSites> env = (HeapEnvironment<AllocationSites>) envField.get(heap);
 			for (Entry<Identifier, AllocationSites> v : env)
 				if (v.getValue().contains((AllocationSite) key))
-					return v.getKey();
+					result.add(v.getKey());
+			return result;
 		} catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
 		}
-		return null;
+		return Collections.emptySet();
 	}
 
 	@Override

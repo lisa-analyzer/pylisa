@@ -5,9 +5,9 @@ import it.unive.lisa.analysis.numeric.Interval;
 
 public class NumberSlice extends RowSelection<NumberSlice> {
 
-	private static final NumberSlice TOP = new NumberSlice(new Interval().top(), new Interval().top(),
+	public static final NumberSlice TOP = new NumberSlice(new Interval().top(), new Interval().top(),
 			new Interval().top());
-	private static final NumberSlice BOTTOM = new NumberSlice(new Interval().bottom(), new Interval().bottom(),
+	public static final NumberSlice BOTTOM = new NumberSlice(new Interval().bottom(), new Interval().bottom(),
 			new Interval().bottom());
 
 	private final Interval beginIndex, endIndex, skip;
