@@ -44,27 +44,33 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 		HeapDereference deref = new HeapDereference(getStaticType(), left, getLocation());
 		AnalysisState<A, H, V, T> tmp = state;
 
-		PyClassType type = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		Type typeref = ((PyClassType) type).getReference();
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
 
-		if (left.getRuntimeTypes().anyMatch(t -> t.equals(typeref))) {
+		Type firstLevel = Untyped.INSTANCE;
+		Type firstLevelDeref = Untyped.INSTANCE;
+		Type secondLevel = Untyped.INSTANCE;
+		if (left.getRuntimeTypes().anyMatch(t -> t.equals(dfref))) {
 			it.unive.lisa.symbolic.value.TernaryExpression dfAccess = new it.unive.lisa.symbolic.value.TernaryExpression(
-					type,
+					dftype,
 					deref, middle, right,
 					AccessRowsColumns.INSTANCE,
 					getLocation());
 			tmp = tmp.smallStepSemantics(dfAccess, this);
+			firstLevel = dfref;
+			secondLevel = dfref;
+			firstLevelDeref = dftype;
 		}
 
-		AccessChild access = new AccessChild(Untyped.INSTANCE, deref, middle, getLocation());
+		AccessChild access = new AccessChild(firstLevel, deref, middle, getLocation());
 		tmp = tmp.smallStepSemantics(access, this);
 		AnalysisState<A, H, V, T> result = state.bottom();
 		for (SymbolicExpression expr : tmp.getComputedExpressions()) {
 			SymbolicExpression cont = expr instanceof HeapReference
 					? expr
-					: new HeapReference(Untyped.INSTANCE, expr, getLocation());
-			deref = new HeapDereference(Untyped.INSTANCE, cont, getLocation());
-			access = new AccessChild(Untyped.INSTANCE, deref, right, getLocation());
+					: new HeapReference(firstLevel, expr, getLocation());
+			deref = new HeapDereference(firstLevelDeref, cont, getLocation());
+			access = new AccessChild(secondLevel, deref, right, getLocation());
 			result = result.lub(tmp.smallStepSemantics(access, this));
 		}
 		return result;

@@ -13,23 +13,35 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.comparison.GreaterThan;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
 
 public class PyGreaterThan extends GreaterThan {
 
-    public PyGreaterThan(CFG cfg, CodeLocation location, Expression left, Expression right) {
-        super(cfg, location, left, right);
-    }
-    
-    @Override
-    protected <A extends AbstractState<A, H, V, T>, H extends HeapDomain<H>, V extends ValueDomain<V>, T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
-            InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state,
-            SymbolicExpression left, SymbolicExpression right, StatementStore<A, H, V, T> expressions)
-            throws SemanticException {
-        AnalysisState<A, H, V, T> pandasSeriesSemantics = PandasSeriesComparisonSemantics.pandasSeriesBinarySemantics(interprocedural, state, left, right, expressions, this, getLocation(), ComparisonOperator.GT);
-        if (pandasSeriesSemantics != null)
-            return pandasSeriesSemantics;
+	public PyGreaterThan(CFG cfg, CodeLocation location, Expression left, Expression right) {
+		super(cfg, location, left, right);
+	}
 
-        return super.binarySemantics(interprocedural, state, left, right, expressions);
-    }
+	@Override
+	protected <A extends AbstractState<A, H, V, T>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
+					InterproceduralAnalysis<A, H, V, T> interprocedural, 
+					AnalysisState<A, H, V, T> state,
+					SymbolicExpression left, 
+					SymbolicExpression right, 
+					StatementStore<A, H, V, T> expressions)
+					throws SemanticException {
+		AnalysisState<A, H, V, T> sem = PandasSemantics.compare(
+				state, 
+				left, 
+				right, 
+				this, 
+				ComparisonOperator.GT);
+		if (sem != null)
+			return sem;
+
+		return super.binarySemantics(interprocedural, state, left, right, expressions);
+	}
 }

@@ -13,12 +13,15 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
+import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
+import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
 import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
 
 public class PandasSemantics {
 
@@ -70,7 +73,7 @@ public class PandasSemantics {
 
 		AnalysisState<A, H, V, T> copy = state.bottom();
 		UnaryExpression cp = new UnaryExpression(dftype, dataframe, CopyDataframe.INSTANCE, location);
-		for (SymbolicExpression loc : allocated.getComputedExpressions()) 
+		for (SymbolicExpression loc : allocated.getComputedExpressions())
 			// copy the dataframe
 			copy = copy.lub(allocated.smallStepSemantics(cp, pp).assign(loc, cp, pp));
 
@@ -130,5 +133,32 @@ public class PandasSemantics {
 		}
 
 		throw new SemanticException("Access child expected");
+	}
+
+	public static <A extends AbstractState<A, H, V, T>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> compare(
+					AnalysisState<A, H, V, T> state,
+					SymbolicExpression left,
+					SymbolicExpression right,
+					ProgramPoint pp,
+					ComparisonOperator op)
+					throws SemanticException {
+		PyClassType type = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+		Type typeref = ((PyClassType) type).getReference();
+		if (left.getRuntimeTypes().anyMatch(t -> t.equals(typeref)) &&
+				right.getRuntimeTypes().anyMatch(t -> t.isNumericType() || t.isStringType())) {
+			// custom behavior for comparison of expressions of the form
+			// df["col1"] <= 4
+
+			if (left instanceof AccessChild)
+				left = getDataframeDereference(left);
+
+			BinaryExpression seriesComp = new BinaryExpression(type, left, right,
+					new PandasSeriesComparison(op), pp.getLocation());
+			return state.smallStepSemantics(seriesComp, pp);
+		}
+		return null;
 	}
 }

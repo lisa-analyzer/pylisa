@@ -13,25 +13,36 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.comparison.NotEqual;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
 
 public class PyNotEqual extends NotEqual {
 
-    public PyNotEqual(CFG cfg, CodeLocation location, Expression left, Expression right) {
-        super(cfg, location, left, right);
-    }
+	public PyNotEqual(CFG cfg, CodeLocation location, Expression left, Expression right) {
+		super(cfg, location, left, right);
+	}
 
-    @Override
-    protected <A extends AbstractState<A, H, V, T>, H extends HeapDomain<H>, V extends ValueDomain<V>, T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
-            InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state,
-            SymbolicExpression left, SymbolicExpression right, StatementStore<A, H, V, T> expressions)
-            throws SemanticException {
+	@Override
+	protected <A extends AbstractState<A, H, V, T>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
+					InterproceduralAnalysis<A, H, V, T> interprocedural, 
+					AnalysisState<A, H, V, T> state,
+					SymbolicExpression left, 
+					SymbolicExpression right, 
+					StatementStore<A, H, V, T> expressions)
+					throws SemanticException {
+		AnalysisState<A, H, V, T> sem = PandasSemantics.compare(
+				state, 
+				left, 
+				right, 
+				this, 
+				ComparisonOperator.NEQ);
+		if (sem != null)
+			return sem;
 
-        AnalysisState<A, H, V, T> pandasSeriesSemantics = PandasSeriesComparisonSemantics.pandasSeriesBinarySemantics(interprocedural, state, left, right, expressions, this, getLocation(), ComparisonOperator.NEQ);
-        if (pandasSeriesSemantics != null)
-            return pandasSeriesSemantics;
+		return super.binarySemantics(interprocedural, state, left, right, expressions);
+	}
 
-        return super.binarySemantics(interprocedural, state, left, right, expressions);
-    }
-    
 }

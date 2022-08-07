@@ -80,6 +80,9 @@ public class CollectingMapLattice<K, V>
 		if (isBottom())
 			return Lattice.bottomRepresentation();
 
+		if (function == null || function.isEmpty())
+			return new StringRepresentation("");
+		
 		return new MapRepresentation(function, StringRepresentation::new,
 				set -> new SetRepresentation(set.elements(), valueMapper));
 	}

@@ -18,10 +18,13 @@ public class AccessRowsColumns implements TernaryOperator, DataframeOperatorWith
 
 	@Override
 	public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> middle, ExternalSet<Type> right) {
-		if (middle.noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.SLICE))
-				|| t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES))))
+		if (left.noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF))))
 			return Caches.types().mkEmptySet();
-		if (right.noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.LIST))))
+		if (middle.noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.SLICE))
+					|| t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES))))
+				return Caches.types().mkEmptySet();
+		if (right.noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.SLICE))
+				|| t.equals(PyClassType.lookup(LibrarySpecificationProvider.LIST))))
 			return Caches.types().mkEmptySet();
 		return Caches.types().mkSingletonSet(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF));
 	}

@@ -1,5 +1,7 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
+import java.util.Set;
+
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
@@ -19,9 +21,16 @@ public class CopyDataframe implements UnaryOperator, DataframeOperatorWithSideEf
 	@Override
 	public ExternalSet<Type> typeInference(ExternalSet<Type> arg) {
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		if (arg.noneMatch(t -> t.equals(df)))
+		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+		boolean notdf = arg.noneMatch(t -> t.equals(df));
+		boolean notseries = arg.noneMatch(t -> t.equals(series));
+		if (notdf && notseries)
 			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(df);
+		if (notdf)
+			return Caches.types().mkSingletonSet(series);
+		if (notseries)
+			return Caches.types().mkSingletonSet(df);
+		return Caches.types().mkSet(Set.of(df, series));
 	}
 
 	@Override
