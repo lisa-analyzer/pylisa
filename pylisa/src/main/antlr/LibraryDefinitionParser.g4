@@ -83,7 +83,7 @@ parser grammar LibraryDefinitionParser;
 
  classDef
  :
- 	SEALED? CLASS name = IDENTIFIER
+ 	ROOT? SEALED? CLASS name = IDENTIFIER (EXTENDS base = IDENTIFIER)?
  	(
  		COLON
  		(

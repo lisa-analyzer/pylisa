@@ -48,6 +48,16 @@ FIELD
 	'field'
 ;
 
+EXTENDS
+:
+	'extends'
+;
+
+ROOT
+:
+	'root'
+;
+
 INSTANCE
 :
 	'instance'

@@ -23,6 +23,7 @@ public class LibrarySpecificationProvider {
 	public static final String LIST = "List";
 	public static final String TUPLE = "Tuple";
 	public static final String SLICE = "Slice";
+	public static final String OBJECT = "Object";
 
 	public static final String WARNINGS = "warnings";
 	
@@ -34,6 +35,8 @@ public class LibrarySpecificationProvider {
 	public static final String GEOPANDAS_TOOLS = "geopandas.tools";
 
 	private static final Map<String, CompilationUnit> LIBS = new HashMap<>();
+	
+	public static CompilationUnit hierarchyRoot;
 
 	public static void load(Program program) throws AnalysisSetupException {
 		String file = "/libs.txt";
@@ -48,6 +51,7 @@ public class LibrarySpecificationProvider {
 		LibraryDefinitionParser parser = new LibraryDefinitionParser(new CommonTokenStream(lexer));
 		LibrarySpecificationParser libParser = new LibrarySpecificationParser(file, program);
 		Collection<CompilationUnit> parsed = libParser.visitFile(parser.file());
+		hierarchyRoot = libParser.root;
 		
 		for (CompilationUnit unit : parsed) 
 			LIBS.put(unit.getName(), unit);

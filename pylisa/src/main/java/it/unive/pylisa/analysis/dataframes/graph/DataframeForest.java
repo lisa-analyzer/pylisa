@@ -27,24 +27,25 @@ import it.unive.lisa.outputs.serializableGraph.SerializableGraph;
 import it.unive.lisa.outputs.serializableGraph.SerializableNode;
 import it.unive.lisa.outputs.serializableGraph.SerializableNodeDescription;
 import it.unive.lisa.outputs.serializableGraph.SerializableValue;
-import it.unive.lisa.util.datastructures.graph.AdjacencyMatrix;
-import it.unive.lisa.util.datastructures.graph.AdjacencyMatrix.NodeEdges;
-import it.unive.lisa.util.datastructures.graph.BaseGraph;
+import it.unive.lisa.util.datastructures.graph.code.CodeGraph;
+import it.unive.lisa.util.datastructures.graph.code.NodeList;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeEdge;
+import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 
-public class DataframeForest extends BaseGraph<DataframeForest, DataframeOperation, DataframeEdge>
+public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperation, DataframeEdge>
 		implements Lattice<DataframeForest> {
 
 	private final boolean isTop;
 
 	public DataframeForest(boolean isTop) {
+		super(new SimpleEdge(null, null));
 		this.isTop = isTop;
 	}
 
 	public DataframeForest(Collection<DataframeOperation> entrypoints,
-			AdjacencyMatrix<DataframeForest, DataframeOperation, DataframeEdge> adjacencyMatrix,
+			NodeList<DataframeForest, DataframeOperation, DataframeEdge> adjacencyMatrix,
 			boolean isTop) {
 		super(entrypoints, adjacencyMatrix);
 		this.isTop = isTop;
@@ -55,13 +56,38 @@ public class DataframeForest extends BaseGraph<DataframeForest, DataframeOperati
 		this.isTop = other.isTop;
 	}
 	
+	@Override
+	public void addNode(DataframeOperation node, boolean entrypoint) {
+		if (containsNode(node)) 
+			for (DataframeOperation op : list)
+				if (op.equals(node)) {
+					node.setOffset(op.getOffset());
+					return;
+				}
+		
+		super.addNode(node, entrypoint);
+	}
+	
+	@Override
+	public void addEdge(DataframeEdge edge) {
+		if (edge.getSource().equals(edge.getDestination()))
+			// no self loops
+			return;
+		
+		// we only keep 1 simple edge maximum, and only if there are no other edges 
+		Collection<DataframeEdge> existing = getEdgesConnecting(edge.getSource(), edge.getDestination());
+		existing.stream().filter(SimpleEdge.class::isInstance).forEach(list::removeEdge);
+		
+		super.addEdge(edge);
+	}
+	
 	public void replace(DataframeOperation origin, DataframeOperation target) {
 		addNode(target);
 		for (DataframeEdge in : getIngoingEdges(origin))
-			addEdge(in.mk(in.getSource(), target));
+			addEdge(in.newInstance(in.getSource(), target));
 		for (DataframeEdge out : getOutgoingEdges(origin))
-			addEdge(out.mk(target, out.getDestination()));
-		adjacencyMatrix.removeNode(origin);
+			addEdge(out.newInstance(target, out.getDestination()));
+		list.removeNode(origin);
 	}
 
 	@Override
@@ -79,7 +105,7 @@ public class DataframeForest extends BaseGraph<DataframeForest, DataframeOperati
 
 		for (DataframeOperation src : getNodes())
 			for (DataframeOperation dest : followersOf(src))
-				for (DataframeEdge edge : adjacencyMatrix.getEdgesConnecting(src, dest))
+				for (DataframeEdge edge : list.getEdgesConnecting(src, dest))
 					if (edge instanceof ConcatEdge)
 						edges.add(new ConcatSerializableEdge(nodeIds.get(src), nodeIds.get(dest), edge.getClass().getSimpleName(), ((ConcatEdge) edge).getEdgeIndex()));
 					else 
@@ -148,7 +174,7 @@ public class DataframeForest extends BaseGraph<DataframeForest, DataframeOperati
 
 	@Override
 	public boolean isTop() {
-		return adjacencyMatrix.getNodes().isEmpty() && isTop;
+		return list.getNodes().isEmpty() && isTop;
 	}
 
 	@Override
@@ -158,7 +184,7 @@ public class DataframeForest extends BaseGraph<DataframeForest, DataframeOperati
 
 	@Override
 	public boolean isBottom() {
-		return adjacencyMatrix.getNodes().isEmpty() && !isTop;
+		return list.getNodes().isEmpty() && !isTop;
 	}
 
 	@Override
@@ -182,7 +208,7 @@ public class DataframeForest extends BaseGraph<DataframeForest, DataframeOperati
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (isTop ? 1231 : 1237);
-		result = prime * result + ((adjacencyMatrix == null) ? 0 : adjacencyMatrix.hashCode());
+		result = prime * result + ((list == null) ? 0 : list.hashCode());
 		result = prime * result + ((entrypoints == null) ? 0 : entrypoints.hashCode());
 		return result;
 	}
@@ -199,18 +225,18 @@ public class DataframeForest extends BaseGraph<DataframeForest, DataframeOperati
 		StringBuilder res = new StringBuilder();
 
 		SortedMap<DataframeOperation, Set<String>> aux = new TreeMap<>();
-		for (Entry<DataframeOperation, NodeEdges<DataframeForest, DataframeOperation, DataframeEdge>> entry : adjacencyMatrix) {
+		for (DataframeOperation entry : list) {
 			Set<String> outs = new TreeSet<>();
-			for (DataframeEdge out : entry.getValue().getOutgoing())
+			for (DataframeEdge out : list.getOutgoingEdges(entry))
 				outs.add(out.getEdgeSymbol() + " " + out.getDestination().toString());
 
-			if (entry.getValue().getIngoing().isEmpty())
-				aux.put(entry.getKey(), outs);
+			if (list.getIngoingEdges(entry).isEmpty())
+				aux.put(entry, outs);
 			else
-				aux.put(entry.getKey(), outs);
+				aux.put(entry, outs);
 		}
 
-		Collection<DataframeOperation> entries = adjacencyMatrix.getEntries();
+		Collection<DataframeOperation> entries = list.getEntries();
 		for (Entry<DataframeOperation, Set<String>> entry : aux.entrySet()) {
 			if (entries.contains(entry.getKey()))
 				res.append("*");
@@ -282,7 +308,7 @@ public class DataframeForest extends BaseGraph<DataframeForest, DataframeOperati
 			long id = edge.getSourceId();
 			long id1 = edge.getDestId();
 
-			Edge e = graph.addEdge(edgeName(id, id1), nodeName(id), nodeName(id1), true);
+			Edge e = graph.addEdge(edgeName(id, id1, edge), nodeName(id), nodeName(id1), true);
 			
 			switch (edge.getKind()) {
 			case "ConcatEdge":
@@ -302,6 +328,10 @@ public class DataframeForest extends BaseGraph<DataframeForest, DataframeOperati
 				e.setAttribute(COLOR, COLOR_BLACK);
 				break;
 			}
+		}
+		
+		protected static String edgeName(long src, long dest, SerializableEdge edge) {
+			return "edge-" + src + "-" + dest + "-" + edge.getKind();
 		}
 	}
 }

@@ -94,7 +94,6 @@ import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Float32;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
-import it.unive.pylisa.analysis.dataframes.graph.NodeId;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
@@ -374,7 +373,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		log.info("PyToCFG setup...");
 
 		PyClassType.clearAll();
-		NodeId.counter = 0;
 
 		program.registerType(PyLambdaType.INSTANCE);
 		program.registerType(BoolType.INSTANCE);
@@ -1086,7 +1084,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				currentCFG,
 				getLocation(ctx),
 				"__counter_location" + getLocation(ctx).getLine(), Int32.INSTANCE);
-		Expression[] counter_pars = { counter };
+		Expression[] counter_pars = { collection, counter };
 
 		// counter = 0;
 		Assignment counter_init = new Assignment(
@@ -1097,7 +1095,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		currentCFG.addNodeIfNotPresent(counter_init);
 
 		// counter < collection.size()
-		LessThan condition = new LessThan(
+		LessThan condition = new PyLessThan(
 				currentCFG,
 				getLocation(ctx),
 				counter,
@@ -1109,7 +1107,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						TRAVERSAL_STRATEGY,
 						CallType.INSTANCE,
 						null,
-						"size",
+						"__len__",
 						collection_pars));
 		currentCFG.addNodeIfNotPresent(condition);
 
@@ -1126,7 +1124,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						TRAVERSAL_STRATEGY,
 						CallType.INSTANCE,
 						null,
-						"at",
+						"__getitem__",
 						counter_pars));
 		currentCFG.addNodeIfNotPresent(element_assignment);
 
@@ -1989,7 +1987,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	public Pair<Statement, Statement> visitClassdef(ClassdefContext ctx) {
 		Unit previous = this.currentUnit;
 		String name = ctx.NAME().getSymbol().getText();
-		this.currentUnit = new PythonUnit(new SourceCodeLocation(name, 0, 0), name, true);
+		// TODO inheritance
+		PythonUnit cu = new PythonUnit(new SourceCodeLocation(name, 0, 0), name, true);
+		if (LibrarySpecificationProvider.hierarchyRoot != null)
+			cu.addSuperUnit(LibrarySpecificationProvider.hierarchyRoot);
+		this.currentUnit = cu;
 		parseClassBody(ctx.suite());
 		this.currentUnit = previous;
 		return null;

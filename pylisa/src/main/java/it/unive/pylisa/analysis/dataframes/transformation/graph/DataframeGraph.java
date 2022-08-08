@@ -308,9 +308,9 @@ public class DataframeGraph {
 		Edges edges = copy.matrix.get(original);
 		copy.addNode(newnode);
 		for (DataframeEdge in : edges.ingoing)
-			copy.addEdge(in.mk(in.getSource(), newnode));
+			copy.addEdge(in.newInstance(in.getSource(), newnode));
 		for (DataframeEdge out : edges.outgoing)
-			copy.addEdge(out.mk(newnode, out.getDestination()));
+			copy.addEdge(out.newInstance(newnode, out.getDestination()));
 		copy.removeNode(original);
 		return copy;
 	}

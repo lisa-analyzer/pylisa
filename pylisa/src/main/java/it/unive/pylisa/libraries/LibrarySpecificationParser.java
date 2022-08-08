@@ -59,11 +59,12 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	private Map<String, CompilationUnit> parsed;
 	private Collection<Pair<CompilationUnit, CompilationUnit>> toType;
 
+	CompilationUnit root;
 	private Unit library, clazz;
 	private CodeLocation location;
 	private CFG init;
 
-	private boolean mode;
+	private boolean typedefsOnly;
 
 	public LibrarySpecificationParser(String file, Program program) {
 		this.file = file;
@@ -82,10 +83,19 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	@Override
 	public CompilationUnit visitClassDef(ClassDefContext ctx) {
 		String name = ctx.name.getText();
-		CompilationUnit unit = mode ? parsed.get(name) : new CompilationUnit(location, name, ctx.SEALED() != null);
+		CompilationUnit unit = typedefsOnly ? new CompilationUnit(location, name, ctx.SEALED() != null) : parsed.get(name);
+		if (typedefsOnly && ctx.ROOT() != null)
+			if (root != null)
+				throw new IllegalStateException("More than one root class defined as hierarchy root");
+			else 
+				root = unit;
 
-		if (mode) {
+		if (!typedefsOnly) {
 			clazz = unit;
+			if (ctx.base != null)
+				unit.addSuperUnit(parsed.get(ctx.base.getText()));
+			else if (root != null && unit != root)
+				unit.addSuperUnit(root);
 
 			for (MethodContext mtd : ctx.method()) {
 				NativeCFG construct = visitMethod(mtd);
@@ -208,10 +218,10 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	public CompilationUnit visitLibrary(LibraryContext ctx) {
 		location = new SourceCodeLocation(ctx.loc.getText(), 0, 0);
 		String name = ctx.name.getText();
-		CompilationUnit unit = mode ? parsed.get(name) : new CompilationUnit(location, name, false);
+		CompilationUnit unit = typedefsOnly ? new CompilationUnit(location, name, false) : parsed.get(name);
 		library = unit;
 
-		if (mode) {
+		if (!typedefsOnly) {
 			for (MethodContext mtd : ctx.method())
 				unit.addConstruct(visitMethod(mtd));
 
@@ -221,12 +231,12 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 
 		for (ClassDefContext cls : ctx.classDef()) {
 			CompilationUnit c = visitClassDef(cls);
-			if (!mode)
+			if (typedefsOnly)
 				// we add it only in the first pass
 				program.addCompilationUnit(c);
 		}
 
-		if (!mode) {
+		if (typedefsOnly) {
 			program.addCompilationUnit(unit);
 			parsed.put(name, unit);
 		}
@@ -242,7 +252,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		toType = new HashSet<>();
 
 		// only parse type definitions
-		mode = false;
+		typedefsOnly = true;
 
 		// setup for the elements that will go directly into the program
 		location = new SourceCodeLocation("standard_library", 0, 0);
@@ -263,7 +273,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 				new PyLibraryUnitType(pair.getLeft(), pair.getRight());
 
 		// parse signatures
-		mode = true;
+		typedefsOnly = false;
 
 		// setup for the elements that will go directly into the program
 		location = new SourceCodeLocation("standard_library", 0, 0);

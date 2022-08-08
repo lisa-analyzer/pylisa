@@ -2,6 +2,8 @@ package it.unive.pylisa.symbolic.operators.dataframes;
 
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.pylisa.analysis.dataframes.graph.SetLattice;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnRangeSelection;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -13,27 +15,38 @@ public class DataframeColumnSlice extends Constant {
 		super(PyClassType.lookup(LibrarySpecificationProvider.SLICE), slice, location);
 	}
 
-	public DataframeColumnSlice(ColumnRangeSelection start, ColumnRangeSelection end, RangeBound skip,
-			CodeLocation location) {
-		super(PyClassType.lookup(LibrarySpecificationProvider.SLICE), new ColumnSlice(start, end, skip), location);
-	}
-
 	public static class ColumnSlice {
 		private ColumnRangeSelection start, end;
+		private SetLattice<DataframeOperation> startNodes, endNodes;
 		private RangeBound skip;
 
-		public ColumnSlice(ColumnRangeSelection start, ColumnRangeSelection end, RangeBound skip) {
+		public ColumnSlice(
+				ColumnRangeSelection start, 
+				ColumnRangeSelection end, 
+				RangeBound skip,
+				SetLattice<DataframeOperation> startNodes, 
+				SetLattice<DataframeOperation> endNodes) {
 			this.start = start;
 			this.end = end;
 			this.skip = skip;
+			this.startNodes = startNodes;
+			this.endNodes = endNodes;
 		}
 
 		public ColumnRangeSelection getStart() {
 			return start;
 		}
+		
+		public SetLattice<DataframeOperation> getStartNodes() {
+			return startNodes;
+		}
 
 		public ColumnRangeSelection getEnd() {
 			return end;
+		}
+		
+		public SetLattice<DataframeOperation> getEndNodes() {
+			return endNodes;
 		}
 
 		public RangeBound getSkip() {
@@ -41,26 +54,50 @@ public class DataframeColumnSlice extends Constant {
 		}
 
 		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((end == null) ? 0 : end.hashCode());
+			result = prime * result + ((endNodes == null) ? 0 : endNodes.hashCode());
+			result = prime * result + ((skip == null) ? 0 : skip.hashCode());
+			result = prime * result + ((start == null) ? 0 : start.hashCode());
+			result = prime * result + ((startNodes == null) ? 0 : startNodes.hashCode());
+			return result;
+		}
+
+		@Override
 		public boolean equals(Object obj) {
-			if (!(obj instanceof ColumnSlice))
+			if (this == obj)
+				return true;
+			if (obj == null)
 				return false;
-			ColumnSlice o = (ColumnSlice) obj;
-			if (this.start == null) {
-				if (o.start != null)
-					return false;
-			} else if (!this.start.equals(o.start))
+			if (getClass() != obj.getClass())
 				return false;
-
-			if (this.end == null) {
-				if (o.end != null)
+			ColumnSlice other = (ColumnSlice) obj;
+			if (end == null) {
+				if (other.end != null)
 					return false;
-			} else if (!this.end.equals(o.end))
+			} else if (!end.equals(other.end))
 				return false;
-
-			if (this.skip == null) {
-				if (o.skip != null)
+			if (endNodes == null) {
+				if (other.endNodes != null)
 					return false;
-			} else if (!this.skip.equals(o.skip))
+			} else if (!endNodes.equals(other.endNodes))
+				return false;
+			if (skip == null) {
+				if (other.skip != null)
+					return false;
+			} else if (!skip.equals(other.skip))
+				return false;
+			if (start == null) {
+				if (other.start != null)
+					return false;
+			} else if (!start.equals(other.start))
+				return false;
+			if (startNodes == null) {
+				if (other.startNodes != null)
+					return false;
+			} else if (!startNodes.equals(other.startNodes))
 				return false;
 			return true;
 		}

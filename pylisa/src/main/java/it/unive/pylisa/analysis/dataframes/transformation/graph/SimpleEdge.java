@@ -14,7 +14,12 @@ public class SimpleEdge extends DataframeEdge {
 	}
 	
 	@Override
-	public DataframeEdge mk(DataframeOperation source, DataframeOperation destination) {
+	public DataframeEdge newInstance(DataframeOperation source, DataframeOperation destination) {
 		return new SimpleEdge(source, destination);
+	}
+	
+	@Override
+	public boolean isUnconditional() {
+		return true;
 	}
 }

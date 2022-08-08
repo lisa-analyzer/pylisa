@@ -32,6 +32,7 @@ import it.unive.lisa.outputs.json.JsonReport;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.PyFrontend;
+import it.unive.pylisa.PyRTA;
 import it.unive.pylisa.analysis.dataframes.graph.DataframeGraphDomain;
 import it.unive.pylisa.checks.BottomFinder;
 import it.unive.pylisa.checks.DataframeDumper;
@@ -82,6 +83,7 @@ public abstract class NotebookTest {
 //		conf.setDumpAnalysis(GraphType.HTML_WITH_SUBNODES);
 		conf.setJsonOutput(true);
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
+		conf.setCallGraph(new PyRTA());
 		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
 		conf.addSemanticCheck(new DataframeDumper(conf));
 		conf.addSemanticCheck(new BottomFinder<>());

@@ -1,11 +1,20 @@
 method print: it.unive.pylisa.libraries.NoOpFunction
 	type it.unive.lisa.type.VoidType::INSTANCE
 	param arg1 type it.unive.lisa.type.Untyped::INSTANCE
-sealed class List
-sealed class Set
-sealed class Dict
-sealed class Tuple
-sealed class Slice
+root class Object
+class Sequence:
+	instance method __getitem__: it.unive.pylisa.libraries.SequenceGetItem
+		libtype Object*
+		param this libtype Sequence*
+		param index type it.unive.lisa.type.common.Int32::INSTANCE
+	instance method __len__: it.unive.pylisa.libraries.SequenceLen
+		type it.unive.lisa.type.common.Int32::INSTANCE
+		param this libtype Sequence*
+sealed class List extends Sequence 
+sealed class Set extends Sequence
+sealed class Dict extends Sequence
+sealed class Tuple extends Sequence
+sealed class Slice extends Sequence
 library warnings:
 	location warnings
 	method filterwarnings: it.unive.pylisa.libraries.NoOpFunction
@@ -23,7 +32,7 @@ library pandas:
 		libtype pandas.DataFrame*
 		param objs libtype List
 		param axis type it.unive.lisa.type.common.Int32::INSTANCE default 0
-	class pandas.DataFrame:
+	class pandas.DataFrame extends Sequence:
 		instance method head: it.unive.pylisa.libraries.pandas.Head
 			libtype pandas.DataFrame*
 			param this libtype pandas.DataFrame*
@@ -68,7 +77,7 @@ library pandas:
 			param color type it.unive.lisa.type.common.StringType::INSTANCE default "yellow"
 			param axis type it.unive.lisa.type.common.Int32::INSTANCE default 0
 			param props type it.unive.lisa.type.common.StringType::INSTANCE default none
-	class pandas.Series:
+	class pandas.Series extends Sequence:
 		instance method apply: it.unive.pylisa.libraries.pandas.Apply
 			type it.unive.lisa.type.Untyped::INSTANCE
 			param this libtype pandas.Series*

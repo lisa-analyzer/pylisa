@@ -14,7 +14,7 @@ public class AssignEdge extends DataframeEdge {
 	}
 	
 	@Override
-	public DataframeEdge mk(DataframeOperation source, DataframeOperation destination) {
+	public DataframeEdge newInstance(DataframeOperation source, DataframeOperation destination) {
 		return new AssignEdge(source, destination);
 	}
 }

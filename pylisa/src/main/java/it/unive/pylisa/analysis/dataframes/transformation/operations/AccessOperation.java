@@ -18,5 +18,4 @@ public class AccessOperation<S extends Selection<S>> extends SelectionOperation<
 	public SelectionOperation<S> mk(CodeLocation where, S selection) {
 		return new AccessOperation<>(where, selection);
 	}
-
 }
