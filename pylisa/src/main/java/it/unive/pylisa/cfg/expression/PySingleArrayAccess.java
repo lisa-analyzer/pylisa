@@ -15,6 +15,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
@@ -69,7 +70,21 @@ public class PySingleArrayAccess extends BinaryExpression {
 			childType = seriesref;
 		}
 
-		AccessChild access = new AccessChild(childType, deref, right, getLocation());
-		return result.smallStepSemantics(access, this);
+		if (childType.isPointerType()) {
+			Type inner = null;
+			for (Type t : childType.asPointerType().getInnerTypes())
+				if (inner == null)
+					inner = t;
+				else
+					inner = inner.commonSupertype(t);
+			if (inner == null)
+				inner = Untyped.INSTANCE;
+			AccessChild access = new AccessChild(inner, deref, right, getLocation());
+			HeapReference ref = new HeapReference(childType, access, getLocation());
+			return result.smallStepSemantics(ref, this);
+		} else {
+			AccessChild access = new AccessChild(childType, deref, right, getLocation());
+			return result.smallStepSemantics(access, this);
+		}
 	}
 }

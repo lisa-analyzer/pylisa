@@ -26,6 +26,7 @@ public class ColumnAccess implements BinaryOperator, DataframeOperatorWithSideEf
 		if (left.noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF))))
 			return Caches.types().mkEmptySet();
 		if (right.noneMatch(Type::isStringType)
+				&& right.noneMatch(t -> t.isNumericType() && t.asNumericType().isIntegral())
 				&& right.noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.LIST))))
 			return Caches.types().mkEmptySet();
 		return Caches.types().mkSingletonSet(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES));

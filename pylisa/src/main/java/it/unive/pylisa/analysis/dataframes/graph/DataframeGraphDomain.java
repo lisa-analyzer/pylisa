@@ -1299,15 +1299,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		if (expression instanceof MemoryPointer)
 			expression = ((MemoryPointer) expression).getReferencedLocation();
 
-		if (expression instanceof AllocationSite) {
-			// TODO this is very fragile and only works with the current state
-			// of the field sensitive program point based heap
-			AllocationSite as = (AllocationSite) expression;
-			if (as.getName().endsWith("]"))
-				// we remove the name of the field using only location name
-				expression = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(),
-						as.getCodeLocation());
-		}
+		if (expression instanceof AllocationSite)
+			expression = stripFields((AllocationSite) expression);
 
 		if (constants.getKeys().contains(expression))
 			return new DataframeGraphDomain(
@@ -1327,6 +1320,16 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					graph,
 					pointers.setStack(NO_IDS),
 					operations);
+	}
+
+	public static AllocationSite stripFields(AllocationSite as) {
+		// TODO this is very fragile and only works with the current state
+		// of the field sensitive program point based heap
+		if (as.getName().endsWith("]"))
+			// we remove the name of the field using only location name
+			as = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(),
+					as.getCodeLocation());
+		return as;
 	}
 
 	@Override

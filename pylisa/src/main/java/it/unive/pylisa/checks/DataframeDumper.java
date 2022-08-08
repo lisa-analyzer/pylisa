@@ -117,23 +117,24 @@ public class DataframeDumper implements SemanticCheck<
 				String filename = result.getDescriptor().getFullSignatureWithParNames();
 				if (result.getId() != null)
 					filename += "_" + result.getId().hashCode();
-				
+
 				PointBasedHeap heap = post.getDomainInstance(PointBasedHeap.class);
 				DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
 				DataframeForest forest = dom.getGraph();
 				CollectingMapLattice<Identifier, NodeId> pointers = dom.getPointers();
 				CollectingMapLattice<NodeId, DataframeOperation> operations = dom.getOperations();
-				
+
 				Map<DataframeOperation, Set<Identifier>> refs = new HashMap<>();
 				for (Entry<Identifier, SetLattice<NodeId>> pointer : pointers) {
 					Set<Identifier> ids = reverse(heap, pointer.getKey());
 					if (ids.isEmpty())
 						continue;
-					
+
 					for (NodeId n : pointer.getValue())
-						operations.getState(n).elements().forEach(op -> refs.computeIfAbsent(op, o -> new HashSet<>()).addAll(ids));
+						operations.getState(n).elements()
+								.forEach(op -> refs.computeIfAbsent(op, o -> new HashSet<>()).addAll(ids));
 				}
-				
+
 				try {
 					fileManager.mkDotFile(filename + "@" + node.getOffset(),
 							writer -> forest.toSerializableGraph(op -> refs.containsKey(op)
@@ -159,7 +160,8 @@ public class DataframeDumper implements SemanticCheck<
 			envField.setAccessible(true);
 			HeapEnvironment<AllocationSites> env = (HeapEnvironment<AllocationSites>) envField.get(heap);
 			for (Entry<Identifier, AllocationSites> v : env)
-				if (v.getValue().contains((AllocationSite) key))
+				if (v.getValue().elements().stream()
+						.anyMatch(site -> DataframeGraphDomain.stripFields(site).equals((AllocationSite) key)))
 					result.add(v.getKey());
 			return result;
 		} catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {

@@ -41,37 +41,55 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		HeapDereference deref = new HeapDereference(getStaticType(), left, getLocation());
-		AnalysisState<A, H, V, T> tmp = state;
 
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 
-		Type firstLevel = Untyped.INSTANCE;
-		Type firstLevelDeref = Untyped.INSTANCE;
-		Type secondLevel = Untyped.INSTANCE;
+		Type dereferencedType = Untyped.INSTANCE;
+		Type firstAccessedType = Untyped.INSTANCE;
+		Type childType = Untyped.INSTANCE;
 		if (left.getRuntimeTypes().anyMatch(t -> t.equals(dfref))) {
+			HeapDereference deref = new HeapDereference(dftype, left, getLocation());
 			it.unive.lisa.symbolic.value.TernaryExpression dfAccess = new it.unive.lisa.symbolic.value.TernaryExpression(
 					dftype,
 					deref, middle, right,
 					AccessRowsColumns.INSTANCE,
 					getLocation());
-			tmp = tmp.smallStepSemantics(dfAccess, this);
-			firstLevel = dfref;
-			secondLevel = dfref;
-			firstLevelDeref = dftype;
+			state = state.smallStepSemantics(dfAccess, this);
+			dereferencedType = dftype;
+			firstAccessedType = dftype;
+			childType = dfref;
 		}
 
-		AccessChild access = new AccessChild(firstLevel, deref, middle, getLocation());
-		tmp = tmp.smallStepSemantics(access, this);
+		HeapDereference deref = new HeapDereference(dereferencedType, left, getLocation());
+		AccessChild firstAccess = new AccessChild(firstAccessedType, deref, middle, getLocation());
+		AnalysisState<A, H, V, T> tmp = state.smallStepSemantics(firstAccess, this);
 		AnalysisState<A, H, V, T> result = state.bottom();
-		for (SymbolicExpression expr : tmp.getComputedExpressions()) {
-			SymbolicExpression cont = expr instanceof HeapReference
-					? expr
-					: new HeapReference(firstLevel, expr, getLocation());
-			deref = new HeapDereference(firstLevelDeref, cont, getLocation());
-			access = new AccessChild(secondLevel, deref, right, getLocation());
-			result = result.lub(tmp.smallStepSemantics(access, this));
+		for (SymbolicExpression accessed : tmp.getComputedExpressions()) {
+			SymbolicExpression cont;
+			if (accessed instanceof HeapReference)
+				cont = accessed;
+			else
+				cont = new HeapReference(dereferencedType, accessed, getLocation());
+			
+			deref = new HeapDereference(firstAccessedType, cont, getLocation());
+			
+			if (childType.isPointerType()) {
+				Type inner = null;
+				for (Type t : childType.asPointerType().getInnerTypes())
+					if (inner == null)
+						inner = t;
+					else
+						inner = inner.commonSupertype(t);
+				if (inner == null)
+					inner = Untyped.INSTANCE;
+				AccessChild access = new AccessChild(inner, deref, right, getLocation());
+				HeapReference ref = new HeapReference(childType, access, getLocation());
+				result = result.lub(tmp.smallStepSemantics(ref, this));
+			} else {
+				AccessChild access = new AccessChild(childType, deref, right, getLocation());
+				result = result.lub(tmp.smallStepSemantics(access, this));
+			}
 		}
 		return result;
 	}
