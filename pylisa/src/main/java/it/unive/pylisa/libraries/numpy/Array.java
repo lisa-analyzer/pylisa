@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.pandas;
+package it.unive.pylisa.libraries.numpy;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -13,24 +13,22 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.HeapDereference;
-import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.AccessKeys;
 
-public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
+public class Array extends UnaryExpression implements PluggableStatement {
 
-	private Statement st;
+	protected Statement st;
 
-	public Keys(CFG cfg, CodeLocation location, Expression dataframe) {
-		super(cfg, location, "keys", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
-				dataframe);
+	public Array(CFG cfg, CodeLocation location, Expression arraylike) {
+		super(cfg, location, "array", arraylike);
 	}
 
-	public static Keys build(CFG cfg, CodeLocation location, Expression[] exprs) {
-		return new Keys(cfg, location, exprs[0]);
+	public static Array build(CFG cfg, CodeLocation location, Expression[] exprs) {
+		return new Array(cfg, location, exprs[0]);
 	}
 
 	@Override
@@ -45,17 +43,10 @@ public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression im
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(
 					InterproceduralAnalysis<A, H, V, T> interprocedural,
 					AnalysisState<A, H, V, T> state,
-					SymbolicExpression arg,
+					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		CodeLocation loc = getLocation();
-		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-
-		HeapDereference deref = new HeapDereference(dftype, arg, loc);
-		UnaryExpression transform = new UnaryExpression(seriestype, deref, AccessKeys.INSTANCE, loc);
-		AnalysisState<A, H, V, T> tmp = state.smallStepSemantics(transform, st);
-
-		return tmp.smallStepSemantics(arg, st);
+		PushAny push = new PushAny(PyClassType.lookup(LibrarySpecificationProvider.NUMPY_ARRAY).getReference(), getLocation());
+		return state.smallStepSemantics(push, st);
 	}
 }

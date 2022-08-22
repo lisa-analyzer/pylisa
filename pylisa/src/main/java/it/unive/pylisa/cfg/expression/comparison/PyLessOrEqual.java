@@ -13,7 +13,10 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.comparison.LessOrEqual;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.lisa.type.common.BoolType;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
+import it.unive.pylisa.symbolic.operators.compare.PyComparisonLe;
 import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
 
 public class PyLessOrEqual extends LessOrEqual {
@@ -42,6 +45,14 @@ public class PyLessOrEqual extends LessOrEqual {
 		if (sem != null)
 			return sem;
 
-		return super.binarySemantics(interprocedural, state, left, right, expressions);
+		// python does not require the types to be numeric
+		return state.smallStepSemantics(
+				new BinaryExpression(
+						BoolType.INSTANCE,
+						left,
+						right,
+						PyComparisonLe.INSTANCE,
+						getLocation()),
+				this);
 	}
 }

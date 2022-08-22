@@ -14,6 +14,7 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.pylisa.analysis.dataframes.graph.DataframeGraphDomain;
 
 public class BottomFinder<A extends AbstractState<A, H, V, T>,
 		H extends HeapDomain<H>,
@@ -60,10 +61,21 @@ public class BottomFinder<A extends AbstractState<A, H, V, T>,
 				tool.warnOn(dest, "State goes to bottom after " + edge.getClass().getSimpleName() + " in " + dest);
 			else if (!pre.getDomainInstance(ValueDomain.class).isBottom() && post.getDomainInstance(ValueDomain.class).isBottom())
 				tool.warnOn(dest, "Value goes to bottom after " + edge.getClass().getSimpleName() + " in " + dest);
+			else if (!pre.getDomainInstance(HeapDomain.class).isBottom() && post.getDomainInstance(HeapDomain.class).isBottom())
+				tool.warnOn(dest, "Heap goes to bottom after " + edge.getClass().getSimpleName() + " in " + dest);
+			else if (!topOrBottom(pre.getDomainInstance(DataframeGraphDomain.class)) && topOrBottom(post.getDomainInstance(DataframeGraphDomain.class)))
+				tool.warnOn(dest, "DataframeGraphDomain goes to bottom after " + edge.getClass().getSimpleName() + " in " + dest);
 		}
 			
 		
 		return true;
 	}
 
+	private static boolean topOrBottom(DataframeGraphDomain dgd) {
+		return dgd.graph.isTop() || dgd.graph.isBottom()
+				|| dgd.constants.isTop() || dgd.constants.isBottom()
+				|| dgd.pointers.isTop() || dgd.pointers.isBottom() || dgd.pointers.getMap().isEmpty()
+				|| dgd.operations.isTop() || dgd.operations.isBottom() || dgd.operations.getMap().isEmpty();
+				
+	}
 }

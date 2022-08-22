@@ -17,6 +17,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.pandas.Keys;
 
 public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 
@@ -43,6 +44,11 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 				// for pandas dataframes we treat some properties as the
 				// dataframe itself
 				return state.smallStepSemantics(expr, this);
+			case "columns":
+				// we treat this as a call to keys()
+				Keys keys = new Keys(getCFG(), getLocation(), getSubExpression());
+				keys.setOriginatingStatement(this);
+				return keys.unarySemantics(interprocedural, state, expr, expressions);
 			}
 		}
 

@@ -1,5 +1,7 @@
 package it.unive.pylisa.cfg.expression;
 
+import org.apache.commons.lang3.StringUtils;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -30,6 +32,14 @@ public class TupleCreation extends NaryExpression {
 	public TupleCreation(CFG cfg, CodeLocation loc, Expression... values) {
 		super(cfg, loc, "tuple", values);
 	}
+	
+	@Override
+	public String toString() {
+		Expression[] subs = getSubExpressions();
+		if (subs.length == 1)
+			return "(" + StringUtils.join(subs, ", ") + ")";
+		return super.toString();
+	}
 
 	@Override
 	public <A extends AbstractState<A, H, V, T>,
@@ -41,6 +51,11 @@ public class TupleCreation extends NaryExpression {
 					ExpressionSet<SymbolicExpression>[] params,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
+		// a tuple creation is also created when parsing expressions between parentheses
+		// if we only have one sub-expression, we assume to be in that case
+		if (params.length == 1)
+			return state;
+		
 		AnalysisState<A, H, V, T> result = state.bottom();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 		

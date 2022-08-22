@@ -81,9 +81,7 @@ import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
-import it.unive.lisa.program.cfg.statement.logic.And;
 import it.unive.lisa.program.cfg.statement.logic.Not;
-import it.unive.lisa.program.cfg.statement.logic.Or;
 import it.unive.lisa.program.cfg.statement.numeric.Addition;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
@@ -221,12 +219,14 @@ import it.unive.pylisa.cfg.expression.RangeValue;
 import it.unive.pylisa.cfg.expression.SetCreation;
 import it.unive.pylisa.cfg.expression.StarExpression;
 import it.unive.pylisa.cfg.expression.TupleCreation;
+import it.unive.pylisa.cfg.expression.comparison.PyAnd;
 import it.unive.pylisa.cfg.expression.comparison.PyEquals;
 import it.unive.pylisa.cfg.expression.comparison.PyGreaterOrEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyGreaterThan;
 import it.unive.pylisa.cfg.expression.comparison.PyLessOrEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
+import it.unive.pylisa.cfg.expression.comparison.PyOr;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -1327,16 +1327,16 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (nAndTest == 1) {
 			return visitAnd_test(ctx.and_test(0));
 		} else if (nAndTest == 2) {
-			return createPairFromSingle(new Or(currentCFG, getLocation(ctx),
+			return createPairFromSingle(new PyOr(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(0))),
 					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(1)))));
 		} else {
-			Expression temp = new Or(currentCFG, getLocation(ctx),
+			Expression temp = new PyOr(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 2))),
 					checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(nAndTest - 1))));
 			nAndTest = nAndTest - 2;
 			while (nAndTest > 0) {
-				temp = new Or(currentCFG, getLocation(ctx),
+				temp = new PyOr(currentCFG, getLocation(ctx),
 						checkAndExtractSingleExpression(visitAnd_test(ctx.and_test(--nAndTest))),
 						temp);
 			}
@@ -1351,16 +1351,16 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (nNotTest == 1) {
 			return visitNot_test(ctx.not_test(0));
 		} else if (nNotTest == 2) {
-			return createPairFromSingle(new And(currentCFG, getLocation(ctx),
+			return createPairFromSingle(new PyAnd(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(0))),
 					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(1)))));
 		} else {
-			Expression temp = new And(currentCFG, getLocation(ctx),
+			Expression temp = new PyAnd(currentCFG, getLocation(ctx),
 					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 2))),
 					checkAndExtractSingleExpression(visitNot_test(ctx.not_test(nNotTest - 1))));
 			nNotTest = nNotTest - 2;
 			while (nNotTest > 0) {
-				temp = new And(currentCFG, getLocation(ctx),
+				temp = new PyAnd(currentCFG, getLocation(ctx),
 						checkAndExtractSingleExpression(visitNot_test(ctx.not_test(--nNotTest))),
 						temp);
 			}

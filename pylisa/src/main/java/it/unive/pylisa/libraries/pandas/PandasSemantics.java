@@ -15,6 +15,7 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -64,7 +65,7 @@ public class PandasSemantics {
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		CodeLocation location = pp.getLocation();
 
-		if (!(dataframe instanceof HeapDereference))
+		if (dataframe instanceof HeapReference || dataframe instanceof Variable)
 			dataframe = new HeapDereference(dftype, dataframe, location);
 
 		// we allocate the copy of the dataframe
@@ -114,21 +115,25 @@ public class PandasSemantics {
 		return result;
 	}
 
-	public static HeapDereference getDataframeDereference(SymbolicExpression expr) throws SemanticException {
+	public static boolean isDataframePortionThatCanBeAssignedTo(SymbolicExpression left) {
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		Type dfref = ((PyClassType) dftype).getReference();
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-		Type seriesref = ((PyClassType) seriestype).getReference();
+		return left instanceof HeapReference
+				&& ((HeapReference) left).getExpression() instanceof AccessChild
+				&& ((HeapReference) left).getExpression().getRuntimeTypes()
+						.anyMatch(t -> t.equals(seriestype) || t.equals(dftype));
+	}
 
-		if (expr instanceof AccessChild
-				&& expr.getRuntimeTypes().anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
-			HeapDereference firstDeref = (HeapDereference) ((AccessChild) expr).getContainer();
+	public static HeapDereference getDataframeDereference(SymbolicExpression expr) throws SemanticException {
+		if (isDataframePortionThatCanBeAssignedTo(expr)) {
+			HeapDereference firstDeref = (HeapDereference) ((AccessChild) ((HeapReference) expr).getExpression())
+					.getContainer();
 
-			if (!(firstDeref.getExpression() instanceof AccessChild))
+			if (!isDataframePortionThatCanBeAssignedTo(firstDeref.getExpression()))
 				return firstDeref;
 
-			HeapDereference secondDereference = (HeapDereference) ((AccessChild) firstDeref.getExpression())
-					.getContainer();
+			HeapDereference secondDereference = (HeapDereference) ((AccessChild) ((HeapReference) firstDeref
+					.getExpression()).getExpression()).getContainer();
 			return secondDereference;
 		}
 
@@ -145,19 +150,52 @@ public class PandasSemantics {
 					ProgramPoint pp,
 					ComparisonOperator op)
 					throws SemanticException {
-		PyClassType type = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-		Type typeref = ((PyClassType) type).getReference();
-		if (left.getRuntimeTypes().anyMatch(t -> t.equals(typeref)) &&
+		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+		Type seriesref = ((PyClassType) seriestype).getReference();
+		if (left.getRuntimeTypes().anyMatch(t -> t.equals(seriesref)) &&
 				right.getRuntimeTypes().anyMatch(t -> t.isNumericType() || t.isStringType())) {
 			// custom behavior for comparison of expressions of the form
 			// df["col1"] <= 4
 
-			if (left instanceof AccessChild)
+			if (isDataframePortionThatCanBeAssignedTo(left))
 				left = getDataframeDereference(left);
 
-			BinaryExpression seriesComp = new BinaryExpression(type, left, right,
-					new PandasSeriesComparison(op), pp.getLocation());
-			return state.smallStepSemantics(seriesComp, pp);
+			// we allocate the copy that will contain the converted portion
+			AnalysisState<A, H, V, T> copied = PandasSemantics.copyDataframe(state, left, pp);
+
+			AnalysisState<A, H, V, T> result = state.bottom();
+			CodeLocation loc = pp.getLocation();
+			for (SymbolicExpression id : copied.getComputedExpressions()) {
+				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, right,
+						new PandasSeriesComparison(op), loc);
+				AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(seriesComp, pp);
+				
+				HeapReference ref = new HeapReference(seriesref, id, loc);
+				result = result.lub(tmp.smallStepSemantics(ref, pp));
+			}
+			return result;
+		} else if (right.getRuntimeTypes().anyMatch(t -> t.equals(seriesref)) &&
+				left.getRuntimeTypes().anyMatch(t -> t.isNumericType() || t.isStringType())) {
+			// custom behavior for comparison of expressions of the form
+			// 4 <= df["col1"]
+
+			if (isDataframePortionThatCanBeAssignedTo(left))
+				left = getDataframeDereference(left);
+
+			// we allocate the copy that will contain the converted portion
+			AnalysisState<A, H, V, T> copied = PandasSemantics.copyDataframe(state, left, pp);
+
+			AnalysisState<A, H, V, T> result = state.bottom();
+			CodeLocation loc = pp.getLocation();
+			for (SymbolicExpression id : copied.getComputedExpressions()) {
+				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, right,
+						new PandasSeriesComparison(op), loc);
+				AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(seriesComp, pp);
+				
+				HeapReference ref = new HeapReference(seriesref, id, loc);
+				result = result.lub(tmp.smallStepSemantics(ref, pp));
+			}
+			return result;
 		}
 		return null;
 	}

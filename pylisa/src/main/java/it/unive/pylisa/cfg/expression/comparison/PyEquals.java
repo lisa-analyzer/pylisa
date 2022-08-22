@@ -11,12 +11,12 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.string.Equals;
+import it.unive.lisa.program.cfg.statement.comparison.Equal;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
 
-public class PyEquals extends Equals {
+public class PyEquals extends Equal {
 
 	public PyEquals(CFG cfg, CodeLocation location, Expression left, Expression right) {
 		super(cfg, location, left, right);
@@ -32,7 +32,7 @@ public class PyEquals extends Equals {
 					SymbolicExpression left,
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
+					throws SemanticException {		
 		AnalysisState<A, H, V, T> sem = PandasSemantics.compare(
 				state,
 				left,

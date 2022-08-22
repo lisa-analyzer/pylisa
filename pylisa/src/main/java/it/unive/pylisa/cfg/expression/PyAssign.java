@@ -56,15 +56,13 @@ public class PyAssign extends Assignment {
 		Type seriesref = ((PyClassType) seriestype).getReference();
 
 		CodeLocation loc = getLocation();
-		if (left instanceof AccessChild &&
-				left.getRuntimeTypes().anyMatch(t -> t.equals(seriesref) || t.equals(dfref))) {
-
+		if (PandasSemantics.isDataframePortionThatCanBeAssignedTo(left)) {
 			HeapDereference lderef = PandasSemantics.getDataframeDereference(left);
 			SymbolicExpression write;
 			if (right.getRuntimeTypes().anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
 				// asssigning part of a dataframe to another dataframe so get
 				// deref from right
-				if (right instanceof AccessChild)
+				if (PandasSemantics.isDataframePortionThatCanBeAssignedTo(right))
 					right = PandasSemantics.getDataframeDereference(right);
 				write = new BinaryExpression(dftype, lderef, right, WriteSelectionDataframe.INSTANCE, loc);
 			} else

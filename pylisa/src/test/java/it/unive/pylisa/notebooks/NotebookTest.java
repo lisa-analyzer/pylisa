@@ -21,7 +21,6 @@ import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.LiSAConfiguration.GraphType;
 import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.warnings.Warning;
@@ -31,6 +30,7 @@ import it.unive.lisa.outputs.compare.JsonReportComparer;
 import it.unive.lisa.outputs.json.JsonReport;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.util.file.FileManager;
+import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.PyRTA;
 import it.unive.pylisa.analysis.dataframes.graph.DataframeGraphDomain;
@@ -90,7 +90,7 @@ public abstract class NotebookTest {
 		if (findOpenCalls)
 			conf.addSemanticCheck(new OpenCallsFinder<>());
 
-		PointBasedHeap heap = new FieldSensitivePointBasedHeap();
+		PointBasedHeap heap = new PyFieldSensitivePointBasedHeap();
 		InferredTypes type = new InferredTypes();
 		DataframeGraphDomain df = new DataframeGraphDomain();
 		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, df, type));

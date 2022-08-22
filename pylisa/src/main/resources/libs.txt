@@ -88,3 +88,21 @@ library geopandas:
 		libtype pandas.DataFrame*
 		param strings libtype pandas.Series*
 		param provider type it.unive.lisa.type.common.StringType::INSTANCE default "default"
+library numpy:
+	location numpy
+	method array: it.unive.pylisa.libraries.numpy.Array
+		libtype numpy.NDArray*
+		param array_like libtype Object*
+	method array: it.unive.pylisa.libraries.numpy.Array
+		libtype numpy.NDArray*
+		param array_like libtype Object
+	sealed class numpy.NDArray:
+		instance method reshape: it.unive.pylisa.libraries.numpy.Reshape
+			libtype numpy.NDArray*
+			param a libtype numpy.NDArray*
+			param shape libtype Tuple*
+		instance method reshape: it.unive.pylisa.libraries.numpy.Reshape
+			libtype numpy.NDArray*
+			param a libtype numpy.NDArray*
+			param x type it.unive.lisa.type.common.Int32::INSTANCE
+			param y type it.unive.lisa.type.common.Int32::INSTANCE

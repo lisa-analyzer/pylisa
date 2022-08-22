@@ -34,6 +34,8 @@ public class LibrarySpecificationProvider {
 	public static final String GEOPANDAS = "geopandas";
 	public static final String GEOPANDAS_TOOLS = "geopandas.tools";
 
+	public static final String NUMPY_ARRAY = "numpy.NDArray";
+
 	private static final Map<String, CompilationUnit> LIBS = new HashMap<>();
 	
 	public static CompilationUnit hierarchyRoot;
