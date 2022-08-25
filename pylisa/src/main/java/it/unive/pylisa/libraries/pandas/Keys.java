@@ -15,7 +15,9 @@ import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.AccessKeys;
@@ -51,11 +53,20 @@ public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression im
 		CodeLocation loc = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+		Type seriesref = ((PyClassType) seriestype).getReference();
+
 
 		HeapDereference deref = new HeapDereference(dftype, arg, loc);
-		UnaryExpression transform = new UnaryExpression(seriestype, deref, AccessKeys.INSTANCE, loc);
-		AnalysisState<A, H, V, T> tmp = state.smallStepSemantics(transform, st);
-
-		return tmp.smallStepSemantics(arg, st);
+		AnalysisState<A, H, V, T> copied = PandasSemantics.copyDataframe(state, deref, st);
+		
+		AnalysisState<A, H, V, T> result = state.bottom();
+		for (SymbolicExpression id : copied.getComputedExpressions()) {
+			UnaryExpression transform = new UnaryExpression(seriestype, id, AccessKeys.INSTANCE, loc);
+			AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(transform, st);
+			
+			HeapReference ref = new HeapReference(seriesref, id, loc);
+			result = result.lub(tmp.smallStepSemantics(ref, st));
+		}
+		return result;
 	}
 }

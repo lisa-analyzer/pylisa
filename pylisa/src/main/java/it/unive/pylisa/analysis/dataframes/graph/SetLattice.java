@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.collections4.SetUtils.SetView;
 
 public class SetLattice<E> extends it.unive.lisa.analysis.lattices.SetLattice<SetLattice<E>, E> {
 
@@ -40,11 +41,11 @@ public class SetLattice<E> extends it.unive.lisa.analysis.lattices.SetLattice<Se
 	}
 
 	public SetLattice<E> replace(SetLattice<E> elements, SetLattice<E> targets) {
-		return new SetLattice<>(
-				SetUtils.union(
-						SetUtils.difference(this.elements, elements.elements),
-						targets.elements),
-				false);
+		SetView<E> result = SetUtils.union(
+				SetUtils.difference(this.elements, elements.elements),
+				targets.elements);
+		
+		return new SetLattice<>(new HashSet<>(result), false);
 	}
 
 	public SetLattice<E> replace(E element, E target) {

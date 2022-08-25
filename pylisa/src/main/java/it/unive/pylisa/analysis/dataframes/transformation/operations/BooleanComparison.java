@@ -35,34 +35,33 @@ public class BooleanComparison<B extends BooleanSelection<B>> extends DataframeO
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        BooleanComparison<?> other = (BooleanComparison<?>) obj;
-        if (selection == null) {
-            if (other.selection != null)
-                return false;
-        } else if (!selection.equals(other.selection))
-            return false;
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((selection == null) ? 0 : selection.hashCode());
+		return result;
+	}
 
-        return true;
-    }
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		BooleanComparison<?> other = (BooleanComparison<?>) obj;
+		if (selection == null) {
+			if (other.selection != null)
+				return false;
+		} else if (!selection.equals(other.selection))
+			return false;
+		return true;
+	}
 
-    @Override
+	@Override
     public String toString() {
         return selection.toString();
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((selection == null) ? 0 : selection.hashCode());
-        return result;
     }
 
     public B getSelection() {

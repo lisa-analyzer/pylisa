@@ -39,7 +39,7 @@ public class PySingleArrayAccess extends BinaryExpression {
 					SymbolicExpression left,
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
+					throws SemanticException {		
 		AnalysisState<A, H, V, T> result = state;
 		Type dereferencedType = null;
 		Type childType = getStaticType();
@@ -67,7 +67,7 @@ public class PySingleArrayAccess extends BinaryExpression {
 			it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
 					seriestype, deref, right, ColumnAccess.INSTANCE, getLocation());
 			result = result.smallStepSemantics(col, this);
-			childType = seriesref;
+			childType = right.getRuntimeTypes().anyMatch(dfref::equals) ? dfref : seriesref;
 		}
 
 		if (childType.isPointerType()) {

@@ -24,6 +24,7 @@ import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.outputs.serializableGraph.SerializableString;
+import it.unive.lisa.outputs.serializableGraph.SerializableValue;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Unit;
@@ -96,6 +97,9 @@ public class DataframeDumper implements SemanticCheck<
 					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
 					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
 			CFG graph, Statement node) {
+		if (!graph.getDescriptor().getName().equals("main"))
+			return true;
+		
 		if (node.stopsExecution()) {
 			Collection<
 					CFGWithAnalysisResults<
@@ -137,9 +141,7 @@ public class DataframeDumper implements SemanticCheck<
 
 				try {
 					fileManager.mkDotFile(filename + "@" + node.getOffset(),
-							writer -> forest.toSerializableGraph(op -> refs.containsKey(op)
-									? new SerializableString(new TreeMap<>(), "Pointed by: " + refs.get(op))
-									: null).toDot().dump(writer));
+							writer -> forest.toSerializableGraph(op -> label(op, refs)).toDot().dump(writer));
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
@@ -147,6 +149,11 @@ public class DataframeDumper implements SemanticCheck<
 		}
 
 		return true;
+	}
+
+	private SerializableValue label(DataframeOperation op, Map<DataframeOperation, Set<Identifier>> refs) {
+		String extra = refs.containsKey(op) ? "\nPointed by: " + refs.get(op) : "";
+		return new SerializableString(new TreeMap<>(), "at: " + op.getWhere().getCodeLocation() + extra);
 	}
 
 	@SuppressWarnings("unchecked")

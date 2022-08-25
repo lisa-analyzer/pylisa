@@ -11,10 +11,10 @@ import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
 
 public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelection> {
 
-	private static final AtomicBooleanSelection TOP = new AtomicBooleanSelection(new ColumnListSelection(new Names()).top(),
+	static final AtomicBooleanSelection TOP = new AtomicBooleanSelection(new ColumnListSelection(new Names()).top(),
 			ComparisonOperator.TOP,
 			new ConstantPropagation().top());
-	private static final AtomicBooleanSelection BOTTOM = new AtomicBooleanSelection(new ColumnListSelection(new Names()).bottom(),
+	static final AtomicBooleanSelection BOTTOM = new AtomicBooleanSelection(new ColumnListSelection(new Names()).bottom(),
 			ComparisonOperator.BOT, new ConstantPropagation().bottom());
 
 	private final ColumnListSelection cols;

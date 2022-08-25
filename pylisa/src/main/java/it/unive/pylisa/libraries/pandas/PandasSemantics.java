@@ -170,7 +170,7 @@ public class PandasSemantics {
 						new PandasSeriesComparison(op), loc);
 				AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(seriesComp, pp);
 				
-				HeapReference ref = new HeapReference(seriesref, id, loc);
+				HeapReference ref = new HeapReference(seriesref, id, loc); 
 				result = result.lub(tmp.smallStepSemantics(ref, pp));
 			}
 			return result;

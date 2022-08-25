@@ -15,8 +15,13 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.PushAny;
+import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.symbolic.operators.dataframes.Iterate;
 
 public class SequenceGetItem extends BinaryExpression implements PluggableStatement {
 
@@ -47,7 +52,17 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		return state.smallStepSemantics(
-				new PushAny(PyClassType.lookup(LibrarySpecificationProvider.OBJECT), getLocation()), st);
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
+		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+		
+		CodeLocation loc = getLocation();
+		if (left.getRuntimeTypes().anyMatch(dfref::equals)) {
+			HeapDereference deref = new HeapDereference(dftype, left, loc);
+			UnaryExpression iterate = new UnaryExpression(seriestype, deref, Iterate.INSTANCE, loc);
+			return state.smallStepSemantics(iterate, st);
+		}
+		
+		return state.smallStepSemantics(new PushAny(Untyped.INSTANCE, loc), st);
 	}
 }

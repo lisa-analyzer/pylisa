@@ -40,6 +40,7 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 			String name = getTarget().getName();
 			switch (name) {
 			case "loc":
+			case "iloc":
 			case "style":
 				// for pandas dataframes we treat some properties as the
 				// dataframe itself

@@ -541,7 +541,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	private CFGDescriptor buildCFGDescriptor(FuncdefContext funcDecl) {
 		String funcName = funcDecl.NAME().getText();
 
-		Parameter[] cfgArgs = new Parameter[] {};
+		Parameter[] cfgArgs = visitParameters(funcDecl.parameters());
 
 		return new CFGDescriptor(getLocation(funcDecl), currentUnit, false, funcName, cfgArgs);
 	}
@@ -586,13 +586,28 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Pair<Statement, Statement> visitParameters(ParametersContext ctx) {
-		throw new UnsupportedStatementException();
+	public Parameter[] visitParameters(ParametersContext ctx) {
+		if (ctx.typedargslist() == null)
+			return new Parameter[0];
+		return visitTypedargslist(ctx.typedargslist());
 	}
 
 	@Override
-	public Pair<Statement, Statement> visitTypedargslist(TypedargslistContext ctx) {
-		throw new UnsupportedStatementException();
+	public Parameter[] visitTypedargslist(TypedargslistContext ctx) {
+		if (ctx.test() != null && !ctx.test().isEmpty())
+			throw new UnsupportedStatementException();
+		if (ctx.STAR() != null || ctx.POWER() != null)
+			throw new UnsupportedStatementException();
+
+		List<Parameter> pars = new LinkedList<>();
+		if (ctx.tfpdef() != null)
+			for (TfpdefContext def : ctx.tfpdef()) {
+				if (def.test() != null)
+					throw new UnsupportedStatementException();
+				pars.add(new Parameter(getLocation(ctx), def.NAME().getText()));
+			}
+				
+		return pars.toArray(Parameter[]::new);
 	}
 
 	@Override

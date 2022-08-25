@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Set;
 
+import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.heap.pointbased.AllocationSite;
 import it.unive.lisa.analysis.heap.pointbased.AllocationSites;
@@ -170,5 +171,15 @@ public class PyFieldSensitivePointBasedHeap extends PointBasedHeap {
 			}
 			return new ExpressionSet<>(expression);
 		}
+	}
+	
+	@Override
+	public PointBasedHeap popScope(ScopeToken scope) throws SemanticException {
+		return this;
+	}
+	
+	@Override
+	public PointBasedHeap pushScope(ScopeToken scope) throws SemanticException {
+		return this;
 	}
 }

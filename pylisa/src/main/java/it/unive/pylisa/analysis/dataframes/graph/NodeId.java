@@ -7,7 +7,7 @@ public class NodeId {
 	private final String id;
 
 	public NodeId(DataframeOperation node) {
-		this.id = "node" + node.getOffset();
+		this.id = "node" + node.getOffset() + "-" + node.getWhere().getCodeLocation().hashCode();
 	}
 
 	public NodeId(NodeId other) {
