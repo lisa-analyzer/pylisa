@@ -1,7 +1,6 @@
 package it.unive.pylisa.symbolic;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -44,7 +43,7 @@ public class DictConstant extends Constant {
 	}
 
 	@SuppressWarnings("unchecked")
-	public List<Lattice<?>> getList() {
-		return (List<Lattice<?>>) getValue();
+	public Map<Lattice<?>, Lattice<?>> getList() {
+		return (Map<Lattice<?>, Lattice<?>>) getValue();
 	}
 }

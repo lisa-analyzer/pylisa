@@ -25,6 +25,9 @@ library pandas:
 	method read_csv: it.unive.pylisa.libraries.pandas.ReadCsv
 		libtype pandas.DataFrame*
 		param filepath_or_buffer type it.unive.lisa.type.common.StringType::INSTANCE
+	method DataFrame: it.unive.pylisa.libraries.pandas.DataFrame
+		libtype pandas.DataFrame*
+		param data libtype Dict
 	method to_datetime: it.unive.pylisa.libraries.pandas.ToDatetime
 		libtype pandas.Series*
 		param arg libtype pandas.Series*

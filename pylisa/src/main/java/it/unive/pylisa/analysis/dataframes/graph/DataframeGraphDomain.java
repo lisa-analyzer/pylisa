@@ -50,6 +50,7 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.AssignDataf
 import it.unive.pylisa.analysis.dataframes.transformation.operations.AssignValue;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.BooleanComparison;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.CreateFromDict;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullAxis;
@@ -60,13 +61,13 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.ReadFromFil
 import it.unive.pylisa.analysis.dataframes.transformation.operations.SelectionOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Transform;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.AtomicBooleanSelection;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.RowFilter;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnIteration;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnListSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnRangeSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.NumberSlice;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.RowFilter;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.Selection;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyLibraryUnitType;
@@ -86,6 +87,7 @@ import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
 import it.unive.pylisa.symbolic.operators.dataframes.AxisConcatenation;
 import it.unive.pylisa.symbolic.operators.dataframes.ColumnAccess;
 import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.CreateDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.DataframeColumnSlice;
 import it.unive.pylisa.symbolic.operators.dataframes.DataframeColumnSlice.ColumnSlice;
 import it.unive.pylisa.symbolic.operators.dataframes.DropCols;
@@ -454,6 +456,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		UnaryOperator operator = expression.getOperator();
 		if (operator == ReadDataframe.INSTANCE)
 			return doReadDataframe(arg, pp);
+		if (operator == CreateDataframe.INSTANCE)
+			return doCreateDataframe(arg, pp);
 		else if (operator == CopyDataframe.INSTANCE)
 			return doCopyDataframe(arg, pp);
 		else if (operator instanceof ApplyTransformation)
@@ -757,6 +761,37 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		DataframeForest df = new DataframeForest(arg.graph);
 		ReadFromFile op = new ReadFromFile(pp.getLocation(), filename.as(String.class));
+		df.addNode(op);
+
+		NodeId id = new NodeId(op);
+		SetLattice<NodeId> ids = new SetLattice<>(id);
+		SetLattice<DataframeOperation> operations = new SetLattice<>(op);
+		// no shift necessary: this is a new dataframe creation
+		return new DataframeGraphDomain(
+				arg.constants.smallStepSemantics(new Skip(pp.getLocation()), pp),
+				df,
+				arg.pointers.setStack(ids),
+				arg.operations.putState(id, operations));
+	}
+
+	@SuppressWarnings("unchecked")
+	private static DataframeGraphDomain doCreateDataframe(DataframeGraphDomain arg, ProgramPoint pp)
+			throws SemanticException {
+		ConstantPropagation dict = arg.constants.getValueOnStack();
+		if (topOrBottom(dict))
+			return cleanStack(arg, pp);
+
+		DataframeForest df = new DataframeForest(arg.graph);
+		Map<Lattice<?>, Lattice<?>> c;
+		if (!dict.is(Map.class))
+			c = Map.of();
+		else
+			c = dict.as(Map.class);
+		Set<String> cols = new HashSet<>();
+		for (Lattice<?> name : c.keySet())
+			if (!topOrBottom(name) && name instanceof ConstantPropagation && ((ConstantPropagation) name).is(String.class))
+				cols.add(((ConstantPropagation) name).as(String.class));
+		CreateFromDict op = new CreateFromDict(pp.getLocation(), new Names(cols));
 		df.addNode(op);
 
 		NodeId id = new NodeId(op);
