@@ -117,4 +117,16 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 
 		return cols + " " + op + " " + val;
 	}
+
+	@Override
+	protected int compareToSameClass(Selection<?> o) {
+		AtomicBooleanSelection other = (AtomicBooleanSelection) o;
+		int cmp = op.compareTo(other.op);
+		if (cmp != 0)
+			return cmp;
+		cmp = val.compareTo(other.val);
+		if (cmp != 0)
+			return cmp;
+		return cols.compareTo(other.cols);
+	}
 }

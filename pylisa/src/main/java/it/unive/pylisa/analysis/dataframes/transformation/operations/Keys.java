@@ -22,4 +22,9 @@ public class Keys extends DataframeOperation {
 	public String toString() {
 		return "get_keys";
 	}
+	
+	@Override
+	protected int compareToSameClassAndLocation(DataframeOperation o) {
+		return 0;
+	}
 }

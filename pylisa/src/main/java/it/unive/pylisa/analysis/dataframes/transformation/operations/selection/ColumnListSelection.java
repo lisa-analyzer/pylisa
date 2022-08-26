@@ -86,4 +86,10 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 	public String toString() {
 		return columns.toString();
 	}
+	
+	@Override
+	protected int compareToSameClass(Selection<?> o) {
+		ColumnListSelection other = (ColumnListSelection) o;
+		return columns.compareTo(other.columns);
+	}
 }

@@ -61,4 +61,10 @@ public abstract class SelectionOperation<S extends Selection<S>> extends Datafra
 			return false;
 		return true;
 	}
+	
+	@Override
+	protected int compareToSameClassAndLocation(DataframeOperation o) {
+		SelectionOperation<?> other = (SelectionOperation<?>) o;
+		return selection.compareTo(other.selection);
+	}
 }

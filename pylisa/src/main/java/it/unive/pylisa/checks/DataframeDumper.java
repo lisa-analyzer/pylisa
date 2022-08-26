@@ -152,7 +152,10 @@ public class DataframeDumper implements SemanticCheck<
 	}
 
 	private SerializableValue label(DataframeOperation op, Map<DataframeOperation, Set<Identifier>> refs) {
-		String extra = refs.containsKey(op) ? "\nPointed by: " + refs.get(op) : "";
+		String extra = refs.containsKey(op)
+				? "\nPointed by: " + refs.get(op).stream().map(id -> id.toString()).sorted()
+						.reduce("", (res, s) -> res + s + "\n").trim()
+				: "";
 		return new SerializableString(new TreeMap<>(), "at: " + op.getWhere().getCodeLocation() + extra);
 	}
 

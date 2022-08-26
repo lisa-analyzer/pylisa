@@ -139,9 +139,9 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 		if (this.isBottom() || other.isTop())
 			return other;
 
-		DataframeForest forest = new DataframeForest(this);
-		other.getNodes().forEach(forest::addNode);
-		other.getEdges().forEach(forest::addEdge);
+		NodeList<DataframeForest, DataframeOperation, DataframeEdge> res = new NodeList<>(this.list);
+		res.mergeWith(other.list);
+		DataframeForest forest = new DataframeForest(Collections.emptySet(), res, false);
 		return forest;
 	}
 

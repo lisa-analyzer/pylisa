@@ -22,4 +22,9 @@ public class Iteration extends DataframeOperation {
 	public String toString() {
 		return "iterate";
 	}
+	
+	@Override
+	protected int compareToSameClassAndLocation(DataframeOperation o) {
+		return 0;
+	}
 }

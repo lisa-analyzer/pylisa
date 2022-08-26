@@ -73,5 +73,11 @@ public class Concat extends DataframeOperation {
 		}
 		return "concat";
 	}
+	
+	@Override
+	protected int compareToSameClassAndLocation(DataframeOperation o) {
+		Concat other = (Concat) o;
+		return axis.compareTo(other.axis);
+	}
 
 }

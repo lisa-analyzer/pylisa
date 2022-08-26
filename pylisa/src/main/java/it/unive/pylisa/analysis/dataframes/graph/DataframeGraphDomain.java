@@ -53,6 +53,7 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.CreateFromDict;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DropColumns;
+import it.unive.pylisa.analysis.dataframes.transformation.operations.FillNullAxis;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.FilterNullAxis;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.Keys;
@@ -91,6 +92,7 @@ import it.unive.pylisa.symbolic.operators.dataframes.CreateDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.DataframeColumnSlice;
 import it.unive.pylisa.symbolic.operators.dataframes.DataframeColumnSlice.ColumnSlice;
 import it.unive.pylisa.symbolic.operators.dataframes.DropCols;
+import it.unive.pylisa.symbolic.operators.dataframes.FillNull;
 import it.unive.pylisa.symbolic.operators.dataframes.FilterNull;
 import it.unive.pylisa.symbolic.operators.dataframes.Iterate;
 import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
@@ -265,20 +267,20 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	@Override
 	public DataframeGraphDomain pushScope(ScopeToken token) throws SemanticException {
-		return this;/*new DataframeGraphDomain(
-				constants.pushScope(token),
-				graph,
-				pointers.lift(id -> (Identifier) id.pushScope(token), e -> e),
-				operations);*/
+		return this;/*
+					 * new DataframeGraphDomain( constants.pushScope(token),
+					 * graph, pointers.lift(id -> (Identifier)
+					 * id.pushScope(token), e -> e), operations);
+					 */
 	}
 
 	@Override
 	public DataframeGraphDomain popScope(ScopeToken token) throws SemanticException {
-		return this;/*new DataframeGraphDomain(
-				constants.popScope(token),
-				graph,
-				pointers.lift(id -> (Identifier) id.popScope(token), e -> e),
-				operations);*/
+		return this;/*
+					 * new DataframeGraphDomain( constants.popScope(token),
+					 * graph, pointers.lift(id -> (Identifier)
+					 * id.popScope(token), e -> e), operations);
+					 */
 	}
 
 	@Override
@@ -385,8 +387,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	/**
-	 * Yields a copy of pointers, with the same lattice, but where 
-	 * stack has been replaced with ids in all mappings.
+	 * Yields a copy of pointers, with the same lattice, but where stack has
+	 * been replaced with ids in all mappings.
 	 */
 	private static CollectingMapLattice<Identifier, NodeId> shift(
 			CollectingMapLattice<Identifier, NodeId> pointers,
@@ -789,7 +791,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			c = dict.as(Map.class);
 		Set<String> cols = new HashSet<>();
 		for (Lattice<?> name : c.keySet())
-			if (!topOrBottom(name) && name instanceof ConstantPropagation && ((ConstantPropagation) name).is(String.class))
+			if (!topOrBottom(name) && name instanceof ConstantPropagation
+					&& ((ConstantPropagation) name).is(String.class))
 				cols.add(((ConstantPropagation) name).as(String.class));
 		CreateFromDict op = new CreateFromDict(pp.getLocation(), new Names(cols));
 		df.addNode(op);
@@ -818,6 +821,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return doListAppend(left, right, pp);
 		else if (operator == ColumnAccess.INSTANCE)
 			return doColumnAccess(left, right, pp);
+		else if (operator instanceof FillNull)
+			return doFillNull(left, right, operator, pp);
 		else if (operator == DropCols.INSTANCE)
 			return doDropColumns(left, right, pp);
 		else if (operator == JoinCols.INSTANCE)
@@ -1051,6 +1056,31 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				forest,
 				pointers.setStack(ids),
 				right.operations.putState(id, new SetLattice<>(drop)));
+	}
+
+	private static DataframeGraphDomain doFillNull(DataframeGraphDomain left,
+			DataframeGraphDomain right, BinaryOperator operator, ProgramPoint pp)
+			throws SemanticException {
+		SetLattice<DataframeOperation> ops = resolvePointers(left);
+		ConstantPropagation value = right.constants.getValueOnStack();
+		if (topOrBottom(ops))
+			return cleanStack(right, pp);
+
+		FillNullAxis filler = new FillNullAxis(pp.getLocation(), ((FillNull) operator).getAxis(), value);
+
+		DataframeForest forest = new DataframeForest(right.graph);
+		forest.addNode(filler);
+		for (DataframeOperation op : ops)
+			forest.addEdge(new SimpleEdge(op, filler));
+
+		NodeId id = new NodeId(filler);
+		SetLattice<NodeId> ids = new SetLattice<>(id);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointers.lattice, ids);
+		return new DataframeGraphDomain(
+				right.constants.smallStepSemantics(new Skip(pp.getLocation()), pp),
+				forest,
+				pointers.setStack(ids),
+				right.operations.putState(id, new SetLattice<>(filler)));
 	}
 
 	@SuppressWarnings("unchecked")

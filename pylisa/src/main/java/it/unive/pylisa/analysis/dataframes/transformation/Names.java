@@ -5,7 +5,7 @@ import java.util.Set;
 
 import it.unive.lisa.analysis.lattices.SetLattice;
 
-public class Names extends SetLattice<Names, String> {
+public class Names extends SetLattice<Names, String> implements Comparable<Names> {
 
 	public Names() {
 		this(true);
@@ -40,5 +40,11 @@ public class Names extends SetLattice<Names, String> {
 	@Override
 	protected Names mk(Set<String> set) {
 		return new Names(set);
+	}
+
+	@Override
+	public int compareTo(Names knownColumns) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 }

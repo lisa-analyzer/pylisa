@@ -81,4 +81,10 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
     public String toString() {
         return selection.toString();
     }
+	
+	@Override
+	protected int compareToSameClass(Selection<?> o) {
+		RowFilter<?> other = (RowFilter<?>) o;
+		return selection.compareTo(other.selection);
+	}
 }

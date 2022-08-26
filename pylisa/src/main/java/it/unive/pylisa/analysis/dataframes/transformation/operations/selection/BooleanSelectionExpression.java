@@ -118,4 +118,16 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 
 		return left + " " + type.name() + " " + right;
 	}
+
+	@Override
+	protected int compareToSameClass(Selection<?> o) {
+		BooleanSelectionExpression<?, ?> other = (BooleanSelectionExpression<?, ?>) o;
+		int cmp = type.compareTo(other.type);
+		if (cmp != 0)
+			return cmp;
+		cmp = left.compareTo(other.left);
+		if (cmp != 0)
+			return cmp;
+		return right.compareTo(other.right);
+	}
 }

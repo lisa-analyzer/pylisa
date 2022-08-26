@@ -67,4 +67,10 @@ public class BooleanComparison<B extends BooleanSelection<B>> extends DataframeO
     public B getSelection() {
         return selection;
     }
+	
+	@Override
+	protected int compareToSameClassAndLocation(DataframeOperation o) {
+		BooleanComparison<?> other = (BooleanComparison<?>) o;
+		return selection.compareTo(other.selection);
+	}
 }

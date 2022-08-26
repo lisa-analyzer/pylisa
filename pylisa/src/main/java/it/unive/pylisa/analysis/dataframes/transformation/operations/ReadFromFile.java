@@ -78,4 +78,17 @@ public class ReadFromFile extends DataframeOperation {
 	public String toString() {
 		return "read(" + (file == null ? Lattice.TOP_STRING : file) + ")";
 	}
+	
+	@Override
+	protected int compareToSameClassAndLocation(DataframeOperation o) {
+		ReadFromFile other = (ReadFromFile) o;
+		if (file == null && other.file != null)
+			return 1;
+		else if (file != null && other.file == null)
+			return -1;
+		else if (file == null)
+			return 0;
+		else
+			return file.compareTo(other.file);
+	}
 }

@@ -152,8 +152,7 @@ public class PandasSemantics {
 					throws SemanticException {
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		Type seriesref = ((PyClassType) seriestype).getReference();
-		if (left.getRuntimeTypes().anyMatch(t -> t.equals(seriesref)) &&
-				right.getRuntimeTypes().anyMatch(t -> t.isNumericType() || t.isStringType())) {
+		if (left.getRuntimeTypes().anyMatch(t -> t.equals(seriesref))) {
 			// custom behavior for comparison of expressions of the form
 			// df["col1"] <= 4
 
@@ -174,21 +173,20 @@ public class PandasSemantics {
 				result = result.lub(tmp.smallStepSemantics(ref, pp));
 			}
 			return result;
-		} else if (right.getRuntimeTypes().anyMatch(t -> t.equals(seriesref)) &&
-				left.getRuntimeTypes().anyMatch(t -> t.isNumericType() || t.isStringType())) {
+		} else if (right.getRuntimeTypes().anyMatch(t -> t.equals(seriesref))) {
 			// custom behavior for comparison of expressions of the form
 			// 4 <= df["col1"]
 
-			if (isDataframePortionThatCanBeAssignedTo(left))
-				left = getDataframeDereference(left);
+			if (isDataframePortionThatCanBeAssignedTo(right))
+				right = getDataframeDereference(right);
 
 			// we allocate the copy that will contain the converted portion
-			AnalysisState<A, H, V, T> copied = PandasSemantics.copyDataframe(state, left, pp);
+			AnalysisState<A, H, V, T> copied = PandasSemantics.copyDataframe(state, right, pp);
 
 			AnalysisState<A, H, V, T> result = state.bottom();
 			CodeLocation loc = pp.getLocation();
 			for (SymbolicExpression id : copied.getComputedExpressions()) {
-				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, right,
+				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, left,
 						new PandasSeriesComparison(op), loc);
 				AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(seriesComp, pp);
 				

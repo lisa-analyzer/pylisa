@@ -8,6 +8,8 @@ import it.unive.pylisa.cfg.type.PyClassType;
 public class PyLibraryUnitType extends PyClassType {
 
 	private final String libraryName;
+	
+	private Integer hash = null;
 
 	public PyLibraryUnitType(CompilationUnit library, CompilationUnit unit) {
 		super(unit.getName(), unit);
@@ -22,9 +24,12 @@ public class PyLibraryUnitType extends PyClassType {
 
 	@Override
 	public int hashCode() {
+		if (hash != null)
+			return hash;
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + ((libraryName == null) ? 0 : libraryName.hashCode());
+		hash = result;
 		return result;
 	}
 

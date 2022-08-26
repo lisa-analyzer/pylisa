@@ -9,8 +9,8 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.R
 
 public class AssignValue<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
 
-	private DataframeSelection<R, C> selection;
-	private ConstantPropagation value;
+	private final DataframeSelection<R, C> selection;
+	private final ConstantPropagation value;
 
 	public AssignValue(CodeLocation where, DataframeSelection<R, C> selection, ConstantPropagation value) {
 		super(where);
@@ -70,6 +70,15 @@ public class AssignValue<R extends RowSelection<R>, C extends ColumnSelection<C>
 	@Override
 	public String toString() {
 		return "assign(" + selection + ", " + value + ")";
+	}
+	
+	@Override
+	protected int compareToSameClassAndLocation(DataframeOperation o) {
+		AssignValue<?, ?> other = (AssignValue<?, ?>) o;
+		int cmp = selection.compareTo(other.selection);
+		if (cmp != 0)
+			return cmp;
+		return value.compareTo(other.value);
 	}
 
 }

@@ -64,5 +64,10 @@ public class DropColumns extends DataframeOperation {
 	public String toString() {
 		return "drop_columns(" + columns.toString() + ")";
 	}
-
+	
+	@Override
+	protected int compareToSameClassAndLocation(DataframeOperation o) {
+		DropColumns other = (DropColumns) o;
+		return columns.compareTo(other.columns);
+	}
 }

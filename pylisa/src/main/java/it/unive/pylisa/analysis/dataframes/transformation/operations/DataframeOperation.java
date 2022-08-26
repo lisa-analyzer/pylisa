@@ -111,9 +111,11 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 			return cmp;
 		if ((cmp = getClass().getName().compareTo(o.getClass().getName())) != 0)
 			return cmp;
-		return toString().compareTo(o.toString());
+		return compareToSameClassAndLocation(o);
 	}
 	
+	protected abstract int compareToSameClassAndLocation(DataframeOperation o);
+
 	@Override
 	public <V> boolean accept(GraphVisitor<DataframeForest, DataframeOperation, DataframeEdge, V> visitor, V tool) {
 		return visitor.visit(tool, null, this);

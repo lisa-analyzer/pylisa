@@ -58,4 +58,10 @@ public class CreateFromDict extends DataframeOperation {
 	public String toString() {
 		return "fromDict(" + knownColumns + ")";
 	}
+	
+	@Override
+	protected int compareToSameClassAndLocation(DataframeOperation o) {
+		CreateFromDict other = (CreateFromDict) o;
+		return knownColumns.compareTo(other.knownColumns);
+	}
 }

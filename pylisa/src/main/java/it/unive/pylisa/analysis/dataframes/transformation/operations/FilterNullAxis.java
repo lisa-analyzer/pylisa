@@ -66,4 +66,10 @@ public class FilterNullAxis extends DataframeOperation {
 	public String toString() {
 		return "filter_null(" + axis + ")";
 	}
+	
+	@Override
+	protected int compareToSameClassAndLocation(DataframeOperation o) {
+		FilterNullAxis other = (FilterNullAxis) o;
+		return axis.compareTo(other.axis);
+	}
 }

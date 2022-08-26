@@ -54,6 +54,11 @@ library pandas:
 			param this libtype pandas.DataFrame*
 			param axis type it.unive.lisa.type.common.Int32::INSTANCE default 0
 			param inplace type it.unive.lisa.type.common.BoolType::INSTANCE default false
+		instance method fillna: it.unive.pylisa.libraries.pandas.FillNA
+			type it.unive.lisa.type.Untyped::INSTANCE
+			param this libtype pandas.DataFrame*
+			param value type it.unive.lisa.type.common.Int32::INSTANCE
+			param inplace type it.unive.lisa.type.common.BoolType::INSTANCE default false
 		instance method apply: it.unive.pylisa.libraries.pandas.Apply
 			type it.unive.lisa.type.Untyped::INSTANCE
 			param this libtype pandas.DataFrame*

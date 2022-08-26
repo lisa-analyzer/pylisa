@@ -19,7 +19,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation> {
+public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation> implements Comparable<ConstantPropagation> {
 
 	private static final ConstantPropagation TOP = new ConstantPropagation(null, true);
 	private static final ConstantPropagation BOTTOM = new ConstantPropagation(null, false);
@@ -197,5 +197,25 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 			return left.isTop() || right.isTop() ? top() : new ConstantPropagation(left.value - right.value);*/
 		else
 			return top();
+	}
+
+	@Override
+	public int compareTo(ConstantPropagation other) {
+		if (isBottom() && !other.isBottom())
+			return -1;
+		else if (!isBottom() && other.isBottom())
+			return 1;
+		else if (isBottom())
+			return 0;
+		
+		if (isTop() && !other.isTop())
+			return 1;
+		else if (!isTop() && other.isTop())
+			return -1;
+		else if (isTop())
+			return 0;
+		
+		// not much we can do here..
+		return Integer.compare(constant.hashCode(), other.constant.hashCode());
 	}
 }

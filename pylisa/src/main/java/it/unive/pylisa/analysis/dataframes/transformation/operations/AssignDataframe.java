@@ -64,4 +64,10 @@ public class AssignDataframe<S extends Selection<S>> extends DataframeOperation 
 	public String toString() {
 		return "assign_to:" + selection;
 	}
+	
+	@Override
+	protected int compareToSameClassAndLocation(DataframeOperation o) {
+		AssignDataframe<?> other = (AssignDataframe<?>) o;
+		return selection.compareTo(other.selection);
+	}
 }

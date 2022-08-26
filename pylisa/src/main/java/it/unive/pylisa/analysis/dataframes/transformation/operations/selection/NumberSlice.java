@@ -120,4 +120,40 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 		return beginIndex.lessOrEqual(other.beginIndex) && endIndex.lessOrEqual(other.endIndex)
 				&& skip.lessOrEqual(other.skip);
 	}
+
+	@Override
+	protected int compareToSameClass(Selection<?> o) {
+		NumberSlice other = (NumberSlice) o;
+		int cmp = compare(beginIndex, other.beginIndex);
+		if (cmp != 0)
+			return cmp;
+		cmp = compare(endIndex, other.endIndex);
+		if (cmp != 0)
+			return cmp;
+		return compare(skip, other.skip);
+	}
+
+	private static int compare(Interval first, Interval second) {
+		if (first.isBottom() && !second.isBottom())
+			return -1;
+		else if (!first.isBottom() && second.isBottom())
+			return 1;
+		else if (first.isBottom())
+			return 0;
+		
+		if (first.isTop() && !second.isTop())
+			return 1;
+		else if (!first.isTop() && second.isTop())
+			return -1;
+		else if (first.isTop())
+			return 0;
+		
+		int cmp = first.interval.getLow().compareTo(second.interval.getLow());
+		if (cmp != 0)
+			return cmp;
+		cmp = first.interval.getHigh().compareTo(second.interval.getHigh());
+		if (cmp != 0)
+			return cmp;
+		return 0;
+	}
 }

@@ -95,4 +95,17 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 			return top();
 		return new Transform<>(loc(other), type, selection.lub((S) o.selection), arg.equals(o.arg) ? arg : null);
 	}
+	
+	@Override
+	protected int compareToSameClassAndLocation(DataframeOperation o) {
+		Transform<?> other = (Transform<?>) o;
+		int cmp = type.compareTo(other.type);
+		if (cmp != 0)
+			return cmp;
+		cmp = selection.compareTo(other.selection);
+		if (cmp != 0)
+			return cmp;
+		// not much we can do here..
+		return Integer.compare(arg.hashCode(), other.arg.hashCode());
+	}
 }

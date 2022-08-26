@@ -142,4 +142,16 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 	public String toString() {
 		return "{" + rowSelection + ", " + columnSelection + "}";
 	}
+
+	@Override
+	protected int compareToSameClass(Selection<?> o) {
+		DataframeSelection<?, ?> other = (DataframeSelection<?, ?>) o;
+		int cmp = Boolean.compare(isTop, other.isTop);
+		if (cmp != 0)
+			return cmp;
+		cmp = columnSelection.compareTo(other.columnSelection);
+		if (cmp != 0)
+			return cmp;
+		return rowSelection.compareTo(other.rowSelection);
+	}
 }
