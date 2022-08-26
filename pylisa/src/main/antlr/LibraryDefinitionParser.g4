@@ -30,86 +30,53 @@
  */
 parser grammar LibraryDefinitionParser;
 
- @header {
+@ header
+{
     package it.unive.pylisa.antlr;
 }
 
- options {
- 	tokenVocab = LibraryDefinitionLexer;
- }
+options { tokenVocab = LibraryDefinitionLexer; }
+lisatype
+   : TYPE type_name = IDENTIFIER DOUBLE_COLON type_field = IDENTIFIER
+   ;
 
- lisatype
- :
- 	TYPE type_name = IDENTIFIER DOUBLE_COLON type_field = IDENTIFIER
- ;
+libtype
+   : LIBTYPE type_name = IDENTIFIER STAR?
+   ;
 
- libtype
- :
- 	LIBTYPE type_name = IDENTIFIER STAR?
- ;
+type
+   : lisatype
+   | libtype
+   ;
 
- type
- :
- 	lisatype
- 	| libtype
- ;
+value
+   : NUMBER
+   | BOOLEAN
+   | STRING
+   | NONE
+   ;
 
- value
- :
- 	NUMBER
- 	| BOOLEAN
- 	| STRING
- 	| NONE
- ; 
+param
+   : PARAM name = IDENTIFIER type (DEFAULT val = value)?
+   ;
 
- param
- :
- 	PARAM name = IDENTIFIER type
- 	(
- 		DEFAULT val = value
- 	)?
- ;
+field
+   : INSTANCE? FIELD name = IDENTIFIER type
+   ;
 
- field
- :
- 	INSTANCE? FIELD name = IDENTIFIER type
- ;
+method
+   : INSTANCE? SEALED? METHOD name = IDENTIFIER COLON implementation = IDENTIFIER type param*
+   ;
 
- method
- :
- 	INSTANCE? SEALED? METHOD name = IDENTIFIER COLON implementation = IDENTIFIER
- 	type param*
- ;
+classDef
+   : ROOT? SEALED? CLASS name = IDENTIFIER (EXTENDS base = IDENTIFIER)? (COLON (method | field)+)?
+   ;
 
- classDef
- :
- 	ROOT? SEALED? CLASS name = IDENTIFIER (EXTENDS base = IDENTIFIER)?
- 	(
- 		COLON
- 		(
- 			method
- 			| field
- 		)+
- 	)?
- ;
+library
+   : LIBRARY name = IDENTIFIER COLON LOCATION loc = IDENTIFIER (method | field | classDef)*
+   ;
 
- library
- :
- 	LIBRARY name = IDENTIFIER COLON LOCATION loc = IDENTIFIER
- 	(
- 		method
- 		| field
- 		| classDef
- 	)*
- ;
+file
+   : (method | field | classDef | library)*
+   ;
 
- file
- :
- 	(
- 		method
- 		| field
- 		| classDef
- 		| library
- 	)*
- ;
-   

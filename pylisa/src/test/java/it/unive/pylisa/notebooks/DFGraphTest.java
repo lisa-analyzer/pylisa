@@ -3,14 +3,6 @@ package it.unive.pylisa.notebooks;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import java.lang.reflect.Modifier;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.junit.Test;
-import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
-
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
@@ -74,6 +66,12 @@ import it.unive.pylisa.symbolic.operators.dataframes.ProjectRows;
 import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
+import java.lang.reflect.Modifier;
+import java.util.HashSet;
+import java.util.Set;
+import org.junit.Test;
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
 
 public class DFGraphTest {
 
@@ -439,7 +437,7 @@ public class DFGraphTest {
 		ListConstant cols = new ListConstant(SyntheticLocation.INSTANCE,
 				new DFOrConstant(new ConstantPropagation(
 						new Constant(StringType.INSTANCE, "col1", SyntheticLocation.INSTANCE))));
-		
+
 		sss = env.smallStepSemantics(
 				new TernaryExpression(
 						dftype, df1, df2,

@@ -1,10 +1,9 @@
 package it.unive.pylisa.cfg.type;
 
-import java.util.Collection;
-import java.util.Set;
-
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import java.util.Collection;
+import java.util.Set;
 
 public class PyLambdaType implements Type {
 

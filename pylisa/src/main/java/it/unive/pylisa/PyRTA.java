@@ -1,11 +1,5 @@
 package it.unive.pylisa;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.callgraph.BaseCallGraph;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
@@ -18,6 +12,11 @@ import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.UnitType;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class PyRTA extends BaseCallGraph {
 
@@ -29,10 +28,10 @@ public class PyRTA extends BaseCallGraph {
 
 	@Override
 	protected void resolveInstance(
-			UnresolvedCall call, 
-			ExternalSet<Type>[] types, 
+			UnresolvedCall call,
+			ExternalSet<Type>[] types,
 			Collection<CFG> targets,
-			Collection<NativeCFG> natives, 
+			Collection<NativeCFG> natives,
 			SymbolAliasing aliasing)
 			throws CallResolutionException {
 		// FIXME temporary patch to https://github.com/UniVE-SSV/lisa/issues/212

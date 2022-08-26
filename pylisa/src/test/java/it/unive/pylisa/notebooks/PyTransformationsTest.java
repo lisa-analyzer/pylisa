@@ -1,10 +1,8 @@
 package it.unive.pylisa.notebooks;
 
-import java.io.IOException;
-
-import org.junit.Test;
-
 import it.unive.lisa.AnalysisException;
+import java.io.IOException;
+import org.junit.Test;
 
 public class PyTransformationsTest extends NotebookTest {
 
@@ -12,7 +10,7 @@ public class PyTransformationsTest extends NotebookTest {
 	public void testCovid19() throws IOException, AnalysisException {
 		performAndCheck("dataframes-tests/covid-19.py");
 	}
-	
+
 	@Test
 	public void testCovid19Updated() throws IOException, AnalysisException {
 		perform("dataframes-tests/covid-19-updated.py");
@@ -33,7 +31,7 @@ public class PyTransformationsTest extends NotebookTest {
 		performAndCheck("dataframes-tests/guide.py");
 	}
 
-	@Test 
+	@Test
 	public void testGuideSmall() throws IOException, AnalysisException {
 		performAndCheck("dataframes-tests/guide-small.py");
 	}

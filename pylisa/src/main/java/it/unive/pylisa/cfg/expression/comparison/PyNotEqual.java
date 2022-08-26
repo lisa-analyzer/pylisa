@@ -27,17 +27,17 @@ public class PyNotEqual extends NotEqual {
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural, 
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
 					AnalysisState<A, H, V, T> state,
-					SymbolicExpression left, 
-					SymbolicExpression right, 
+					SymbolicExpression left,
+					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		AnalysisState<A, H, V, T> sem = PandasSemantics.compare(
-				state, 
-				left, 
-				right, 
-				this, 
+				state,
+				left,
+				right,
+				this,
 				ComparisonOperator.NEQ);
 		if (sem != null)
 			return sem;

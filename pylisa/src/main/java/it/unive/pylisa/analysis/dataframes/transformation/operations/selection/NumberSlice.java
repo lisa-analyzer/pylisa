@@ -140,14 +140,14 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 			return 1;
 		else if (first.isBottom())
 			return 0;
-		
+
 		if (first.isTop() && !second.isTop())
 			return 1;
 		else if (!first.isTop() && second.isTop())
 			return -1;
 		else if (first.isTop())
 			return 0;
-		
+
 		int cmp = first.interval.getLow().compareTo(second.interval.getLow());
 		if (cmp != 0)
 			return cmp;

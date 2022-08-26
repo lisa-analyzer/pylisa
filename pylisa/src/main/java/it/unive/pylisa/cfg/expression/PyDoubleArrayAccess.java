@@ -71,9 +71,9 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 				cont = accessed;
 			else
 				cont = new HeapReference(dereferencedType, accessed, getLocation());
-			
+
 			deref = new HeapDereference(firstAccessedType, cont, getLocation());
-			
+
 			if (childType.isPointerType()) {
 				Type inner = null;
 				for (Type t : childType.asPointerType().getInnerTypes())

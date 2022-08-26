@@ -1,18 +1,5 @@
 package it.unive.pylisa.analysis.dataframes.graph;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.tuple.Pair;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
@@ -102,6 +89,17 @@ import it.unive.pylisa.symbolic.operators.dataframes.ProjectRows;
 import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
@@ -1083,7 +1081,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				right.operations.putState(id, new SetLattice<>(filler)));
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static DataframeGraphDomain doColumnAccess(DataframeGraphDomain left, DataframeGraphDomain right,
 			ProgramPoint pp)
 			throws SemanticException {
@@ -1099,7 +1097,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				if (arg instanceof Iteration)
 					selection = selection == null ? new ColumnIteration() : new ColumnListSelection(true);
 				else if (arg instanceof BooleanComparison<?>)
-					selection = selection == null ? new RowFilter<>(((BooleanComparison<?>) arg).getSelection())
+					selection = selection == null ? new RowFilter(((BooleanComparison<?>) arg).getSelection())
 							: new ColumnListSelection(true);
 				else
 					return cleanStack(right, pp);
@@ -1130,7 +1128,6 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		} else
 			selection = new ColumnListSelection(true);
 
-		@SuppressWarnings("rawtypes")
 		AccessOperation access = new AccessOperation(pp.getLocation(), selection);
 		DataframeForest forest = new DataframeForest(right.graph);
 		forest.addNode(access);

@@ -32,7 +32,7 @@ public class PyEquals extends Equal {
 					SymbolicExpression left,
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {		
+					throws SemanticException {
 		AnalysisState<A, H, V, T> sem = PandasSemantics.compare(
 				state,
 				left,

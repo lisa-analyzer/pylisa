@@ -1,11 +1,10 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations;
 
-import java.util.Optional;
-
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.Selection;
 import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
+import java.util.Optional;
 
 public class Transform<S extends Selection<S>> extends DataframeOperation {
 
@@ -95,7 +94,7 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 			return top();
 		return new Transform<>(loc(other), type, selection.lub((S) o.selection), arg.equals(o.arg) ? arg : null);
 	}
-	
+
 	@Override
 	protected int compareToSameClassAndLocation(DataframeOperation o) {
 		Transform<?> other = (Transform<?>) o;

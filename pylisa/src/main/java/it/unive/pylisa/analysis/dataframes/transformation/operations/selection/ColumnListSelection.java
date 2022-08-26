@@ -1,9 +1,8 @@
 package it.unive.pylisa.analysis.dataframes.transformation.operations.selection;
 
-import java.util.Set;
-
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.dataframes.transformation.Names;
+import java.util.Set;
 
 public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 
@@ -86,7 +85,7 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 	public String toString() {
 		return columns.toString();
 	}
-	
+
 	@Override
 	protected int compareToSameClass(Selection<?> o) {
 		ColumnListSelection other = (ColumnListSelection) o;

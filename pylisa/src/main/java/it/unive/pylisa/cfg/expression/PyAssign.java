@@ -1,9 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -31,6 +27,9 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PyAssign extends Assignment {
 

@@ -25,7 +25,7 @@ public class FillNullAxis extends DataframeOperation {
 		FillNullAxis o = (FillNullAxis) other;
 		if (!value.lessOrEqual(o.value))
 			return false;
-		
+
 		if (axis == Axis.TOP)
 			return o.axis == Axis.TOP;
 
@@ -73,7 +73,7 @@ public class FillNullAxis extends DataframeOperation {
 	public String toString() {
 		return "fill_null(" + axis + ", " + value + ")";
 	}
-	
+
 	@Override
 	protected int compareToSameClassAndLocation(DataframeOperation o) {
 		FillNullAxis other = (FillNullAxis) o;

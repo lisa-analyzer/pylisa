@@ -1,10 +1,8 @@
 package it.unive.pylisa.notebooks;
 
-import java.io.IOException;
-
-import org.junit.Test;
-
 import it.unive.lisa.AnalysisException;
+import java.io.IOException;
+import org.junit.Test;
 
 public class JupyterTransformationsTest extends NotebookTest {
 

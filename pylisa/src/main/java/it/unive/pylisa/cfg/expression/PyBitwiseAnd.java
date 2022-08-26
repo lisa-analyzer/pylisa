@@ -35,11 +35,11 @@ public class PyBitwiseAnd extends BinaryExpression {
 					throws SemanticException {
 		return state.smallStepSemantics(
 				new it.unive.lisa.symbolic.value.BinaryExpression(
-						Untyped.INSTANCE, 
-						left, 
-						right, 
-						BitwiseAnd.INSTANCE, 
-						getLocation()), 
+						Untyped.INSTANCE,
+						left,
+						right,
+						BitwiseAnd.INSTANCE,
+						getLocation()),
 				this);
 	}
 }

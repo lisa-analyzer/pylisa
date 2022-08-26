@@ -6,16 +6,16 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 
 	private static final RowFilter<?> TOP = new RowFilter<>(AtomicBooleanSelection.TOP);
 	private static final RowFilter<?> BOTTOM = new RowFilter<>(AtomicBooleanSelection.BOTTOM);
-	
+
 	private B selection;
 
-    public RowFilter(B selection) {
-        this.selection = selection;
-    }
+	public RowFilter(B selection) {
+		this.selection = selection;
+	}
 
-    public B getSelection() {
-        return selection;
-    }
+	public B getSelection() {
+		return selection;
+	}
 
 	@Override
 	@SuppressWarnings("unchecked")
@@ -34,25 +34,25 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 		return lubAux(other);
 	}
 
-    @Override
-    protected boolean lessOrEqualAux(RowFilter<B> other) throws SemanticException {
-    	if (this.equals(other))
-            return true;
-        if (!this.selection.getClass().equals(other.selection.getClass()))
-            return false;
-        return selection.lessOrEqual(other.selection);
-    }
-    
+	@Override
+	protected boolean lessOrEqualAux(RowFilter<B> other) throws SemanticException {
+		if (this.equals(other))
+			return true;
+		if (!this.selection.getClass().equals(other.selection.getClass()))
+			return false;
+		return selection.lessOrEqual(other.selection);
+	}
+
 	@Override
 	@SuppressWarnings("unchecked")
-    protected RowFilter<B> lubAux(RowFilter<B> other) throws SemanticException {
-    	if (!this.selection.getClass().equals(other.selection.getClass())) {
-            return (RowFilter<B>) TOP;
-        }
-        return new RowFilter<>(selection.lub(other.selection));
-    }
+	protected RowFilter<B> lubAux(RowFilter<B> other) throws SemanticException {
+		if (!this.selection.getClass().equals(other.selection.getClass())) {
+			return (RowFilter<B>) TOP;
+		}
+		return new RowFilter<>(selection.lub(other.selection));
+	}
 
-    @Override
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
@@ -78,10 +78,10 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 	}
 
 	@Override
-    public String toString() {
-        return selection.toString();
-    }
-	
+	public String toString() {
+		return selection.toString();
+	}
+
 	@Override
 	protected int compareToSameClass(Selection<?> o) {
 		RowFilter<?> other = (RowFilter<?>) o;

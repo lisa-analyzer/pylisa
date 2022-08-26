@@ -1,7 +1,5 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
-import java.util.Optional;
-
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
@@ -10,6 +8,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import java.util.Optional;
 
 public class ApplyTransformation implements UnaryOperator, DataframeOperatorWithSideEffects {
 

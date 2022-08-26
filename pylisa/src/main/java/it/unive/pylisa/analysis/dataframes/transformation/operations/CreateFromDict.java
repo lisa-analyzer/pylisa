@@ -12,11 +12,11 @@ public class CreateFromDict extends DataframeOperation {
 		super(where);
 		this.knownColumns = knownColumns;
 	}
-	
+
 	public Names getKnownColumns() {
 		return knownColumns;
 	}
-	
+
 	@Override
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
 		CreateFromDict o = (CreateFromDict) other;
@@ -58,7 +58,7 @@ public class CreateFromDict extends DataframeOperation {
 	public String toString() {
 		return "fromDict(" + knownColumns + ")";
 	}
-	
+
 	@Override
 	protected int compareToSameClassAndLocation(DataframeOperation o) {
 		CreateFromDict other = (CreateFromDict) o;

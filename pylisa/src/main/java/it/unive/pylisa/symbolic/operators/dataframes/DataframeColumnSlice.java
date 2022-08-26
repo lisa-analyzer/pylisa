@@ -21,10 +21,10 @@ public class DataframeColumnSlice extends Constant {
 		private RangeBound skip;
 
 		public ColumnSlice(
-				ColumnRangeSelection start, 
-				ColumnRangeSelection end, 
+				ColumnRangeSelection start,
+				ColumnRangeSelection end,
 				RangeBound skip,
-				SetLattice<DataframeOperation> startNodes, 
+				SetLattice<DataframeOperation> startNodes,
 				SetLattice<DataframeOperation> endNodes) {
 			this.start = start;
 			this.end = end;
@@ -36,7 +36,7 @@ public class DataframeColumnSlice extends Constant {
 		public ColumnRangeSelection getStart() {
 			return start;
 		}
-		
+
 		public SetLattice<DataframeOperation> getStartNodes() {
 			return startNodes;
 		}
@@ -44,7 +44,7 @@ public class DataframeColumnSlice extends Constant {
 		public ColumnRangeSelection getEnd() {
 			return end;
 		}
-		
+
 		public SetLattice<DataframeOperation> getEndNodes() {
 			return endNodes;
 		}

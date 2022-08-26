@@ -41,7 +41,7 @@ public class ConcatEdge extends DataframeEdge {
 	public String getEdgeSymbol() {
 		return "-" + edgeIndex + "->";
 	}
-	
+
 	@Override
 	public DataframeEdge newInstance(DataframeOperation source, DataframeOperation destination) {
 		return new ConcatEdge(source, destination, edgeIndex);

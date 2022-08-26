@@ -1,9 +1,8 @@
 package it.unive.pylisa.analysis.dataframes.transformation;
 
+import it.unive.lisa.analysis.lattices.SetLattice;
 import java.util.Collections;
 import java.util.Set;
-
-import it.unive.lisa.analysis.lattices.SetLattice;
 
 public class Names extends SetLattice<Names, String> implements Comparable<Names> {
 

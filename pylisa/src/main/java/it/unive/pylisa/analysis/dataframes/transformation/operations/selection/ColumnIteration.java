@@ -49,7 +49,7 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 	public String toString() {
 		return "iterated_column";
 	}
-	
+
 	@Override
 	protected int compareToSameClass(Selection<?> o) {
 		return 0;

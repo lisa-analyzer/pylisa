@@ -83,7 +83,7 @@ public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> 
 	public String toString() {
 		return "cols_range:" + columns.toString();
 	}
-	
+
 	@Override
 	protected int compareToSameClass(Selection<?> o) {
 		ColumnRangeSelection other = (ColumnRangeSelection) o;

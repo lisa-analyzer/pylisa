@@ -46,7 +46,8 @@ public class Array extends UnaryExpression implements PluggableStatement {
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		PushAny push = new PushAny(PyClassType.lookup(LibrarySpecificationProvider.NUMPY_ARRAY).getReference(), getLocation());
+		PushAny push = new PushAny(PyClassType.lookup(LibrarySpecificationProvider.NUMPY_ARRAY).getReference(),
+				getLocation());
 		return state.smallStepSemantics(push, st);
 	}
 }

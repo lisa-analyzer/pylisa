@@ -55,15 +55,14 @@ public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression im
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		Type seriesref = ((PyClassType) seriestype).getReference();
 
-
 		HeapDereference deref = new HeapDereference(dftype, arg, loc);
 		AnalysisState<A, H, V, T> copied = PandasSemantics.copyDataframe(state, deref, st);
-		
+
 		AnalysisState<A, H, V, T> result = state.bottom();
 		for (SymbolicExpression id : copied.getComputedExpressions()) {
 			UnaryExpression transform = new UnaryExpression(seriestype, id, AccessKeys.INSTANCE, loc);
 			AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(transform, st);
-			
+
 			HeapReference ref = new HeapReference(seriesref, id, loc);
 			result = result.lub(tmp.smallStepSemantics(ref, st));
 		}

@@ -1,7 +1,5 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.util.function.Predicate;
-
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.heap.pointbased.AllocationSite;
@@ -16,6 +14,7 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.pylisa.analysis.dataframes.transformation.DataframeGraphDomain;
 import it.unive.pylisa.symbolic.operators.dataframes.DataframeOperatorWithSideEffects;
+import java.util.function.Predicate;
 
 public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwareDataframeDomain> {
 
@@ -40,11 +39,11 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 			// TODO this is very fragile and only works with the current state
 			// of the field sensitive program point based heap
 			AllocationSite as = (AllocationSite) id;
-			if (as.getName().endsWith("]")) 
+			if (as.getName().endsWith("]"))
 				// we remove the name of the field using only location name
 				id = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(), as.getCodeLocation());
 		}
-		
+
 		return new SideEffectAwareDataframeDomain(env.assign(id, expression, pp));
 	}
 
@@ -89,7 +88,7 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 				dfVar = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(), as.getCodeLocation());
 			else
 				return sss;
-			
+
 			if (!env.getKeys().contains(dfVar))
 				return sss;
 		}
@@ -113,7 +112,7 @@ public class SideEffectAwareDataframeDomain implements ValueDomain<SideEffectAwa
 	public SideEffectAwareDataframeDomain forgetIdentifier(Identifier id) throws SemanticException {
 		return new SideEffectAwareDataframeDomain(env.forgetIdentifier(id));
 	}
-	
+
 	@Override
 	public SideEffectAwareDataframeDomain forgetIdentifiersIf(Predicate<Identifier> test) throws SemanticException {
 		return new SideEffectAwareDataframeDomain(env.forgetIdentifiersIf(test));

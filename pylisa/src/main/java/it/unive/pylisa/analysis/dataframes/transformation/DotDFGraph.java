@@ -1,21 +1,19 @@
 package it.unive.pylisa.analysis.dataframes.transformation;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.Map;
-
-import org.apache.commons.text.StringEscapeUtils;
-import org.graphstream.graph.implementations.MultiGraph;
-import org.graphstream.stream.file.FileSinkDOT;
-
 import it.unive.pylisa.analysis.dataframes.transformation.graph.AssignEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeGraph;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.Collection;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import org.apache.commons.text.StringEscapeUtils;
+import org.graphstream.graph.implementations.MultiGraph;
+import org.graphstream.stream.file.FileSinkDOT;
 
 public class DotDFGraph {
 
@@ -113,7 +111,7 @@ public class DotDFGraph {
 
 		if (color != null)
 			e.setAttribute(COLOR, color);
-		
+
 		if (edge instanceof AssignEdge)
 			e.setAttribute(LABEL, "A");
 		else if (edge instanceof ConcatEdge)

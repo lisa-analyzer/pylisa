@@ -21,8 +21,8 @@ public class AccessRowsColumns implements TernaryOperator, DataframeOperatorWith
 		if (left.noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF))))
 			return Caches.types().mkEmptySet();
 		if (middle.noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.SLICE))
-					|| t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES))))
-				return Caches.types().mkEmptySet();
+				|| t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES))))
+			return Caches.types().mkEmptySet();
 		if (right.noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.SLICE))
 				|| t.equals(PyClassType.lookup(LibrarySpecificationProvider.LIST))))
 			return Caches.types().mkEmptySet();

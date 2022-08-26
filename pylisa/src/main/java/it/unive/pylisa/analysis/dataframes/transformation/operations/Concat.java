@@ -39,7 +39,6 @@ public class Concat extends DataframeOperation {
 		return new Concat(loc(other), this.axis);
 	}
 
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -73,7 +72,7 @@ public class Concat extends DataframeOperation {
 		}
 		return "concat";
 	}
-	
+
 	@Override
 	protected int compareToSameClassAndLocation(DataframeOperation o) {
 		Concat other = (Concat) o;

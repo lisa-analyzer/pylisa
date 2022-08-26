@@ -52,22 +52,25 @@ public class BottomFinder<A extends AbstractState<A, H, V, T>,
 	public boolean visit(CheckToolWithAnalysisResults<A, H, V, T> tool, CFG graph, Edge edge) {
 		Statement source = edge.getSource();
 		Statement dest = edge.getDestination();
-		
+
 		for (CFGWithAnalysisResults<A, H, V, T> res : tool.getResultOf(graph)) {
 			AnalysisState<A, H, V, T> pre = res.getAnalysisStateAfter(source);
 			AnalysisState<A, H, V, T> post = res.getAnalysisStateAfter(dest);
-			
+
 			if (!pre.isBottom() && post.isBottom())
 				tool.warnOn(dest, "State goes to bottom after " + edge.getClass().getSimpleName() + " in " + dest);
-			else if (!pre.getDomainInstance(ValueDomain.class).isBottom() && post.getDomainInstance(ValueDomain.class).isBottom())
+			else if (!pre.getDomainInstance(ValueDomain.class).isBottom()
+					&& post.getDomainInstance(ValueDomain.class).isBottom())
 				tool.warnOn(dest, "Value goes to bottom after " + edge.getClass().getSimpleName() + " in " + dest);
-			else if (!pre.getDomainInstance(HeapDomain.class).isBottom() && post.getDomainInstance(HeapDomain.class).isBottom())
+			else if (!pre.getDomainInstance(HeapDomain.class).isBottom()
+					&& post.getDomainInstance(HeapDomain.class).isBottom())
 				tool.warnOn(dest, "Heap goes to bottom after " + edge.getClass().getSimpleName() + " in " + dest);
-			else if (!topOrBottom(pre.getDomainInstance(DataframeGraphDomain.class)) && topOrBottom(post.getDomainInstance(DataframeGraphDomain.class)))
-				tool.warnOn(dest, "DataframeGraphDomain goes to bottom after " + edge.getClass().getSimpleName() + " in " + dest);
+			else if (!topOrBottom(pre.getDomainInstance(DataframeGraphDomain.class))
+					&& topOrBottom(post.getDomainInstance(DataframeGraphDomain.class)))
+				tool.warnOn(dest,
+						"DataframeGraphDomain goes to bottom after " + edge.getClass().getSimpleName() + " in " + dest);
 		}
-			
-		
+
 		return true;
 	}
 
@@ -76,6 +79,6 @@ public class BottomFinder<A extends AbstractState<A, H, V, T>,
 				|| dgd.constants.isTop() || dgd.constants.isBottom()
 				|| dgd.pointers.isTop() || dgd.pointers.isBottom() || dgd.pointers.getMap().isEmpty()
 				|| dgd.operations.isTop() || dgd.operations.isBottom() || dgd.operations.getMap().isEmpty();
-				
+
 	}
 }

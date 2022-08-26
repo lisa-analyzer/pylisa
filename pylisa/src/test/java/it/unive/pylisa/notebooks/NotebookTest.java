@@ -4,17 +4,6 @@ import static it.unive.lisa.LiSAFactory.getDefaultFor;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.TreeSet;
-
-import org.apache.commons.io.FilenameUtils;
-
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
@@ -36,6 +25,15 @@ import it.unive.pylisa.analysis.dataframes.graph.DataframeGraphDomain;
 import it.unive.pylisa.checks.BottomFinder;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.OpenCallsFinder;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.TreeSet;
+import org.apache.commons.io.FilenameUtils;
 
 public abstract class NotebookTest {
 
@@ -75,7 +73,7 @@ public abstract class NotebookTest {
 			e.printStackTrace(System.err);
 			fail("Cannot delete working directory '" + workdir + "': " + e.getMessage());
 		}
-		
+
 		LiSAConfiguration conf = new LiSAConfiguration();
 		conf.setWorkdir(workdir);
 		conf.setSerializeResults(true);
@@ -100,7 +98,8 @@ public abstract class NotebookTest {
 		performAndCheck(file, false, cells);
 	}
 
-	protected void performAndCheck(String file, boolean findOpenCalls, Integer... cells) throws IOException, AnalysisException {
+	protected void performAndCheck(String file, boolean findOpenCalls, Integer... cells)
+			throws IOException, AnalysisException {
 		String workdir = getWorkdir(file);
 		try {
 			FileManager.forceDeleteFolder(workdir);

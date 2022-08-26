@@ -1,7 +1,5 @@
 package it.unive.pylisa.analysis.dataframes.constants;
 
-import java.util.Objects;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -18,8 +16,10 @@ import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.common.Int32;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import java.util.Objects;
 
-public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation> implements Comparable<ConstantPropagation> {
+public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation>
+		implements Comparable<ConstantPropagation> {
 
 	private static final ConstantPropagation TOP = new ConstantPropagation(null, true);
 	private static final ConstantPropagation BOTTOM = new ConstantPropagation(null, false);
@@ -175,26 +175,27 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 			ConstantPropagation right, ProgramPoint pp) {
 
 		// TODO
-		
-		/*if (operator instanceof AdditionOperator)
-			return left.isTop() || right.isTop() ? top() : new ConstantPropagation(left.value + right.value);
-		else if (operator instanceof DivisionOperator)
-			if (!left.isTop() && left.value == 0)
-				return new ConstantPropagation(0);
-			else if (!right.isTop() && right.value == 0)
-				return bottom();
-			else if (left.isTop() || right.isTop() || left.value % right.value != 0)
-				return top();
-			else
-				return new ConstantPropagation(left.value / right.value);
-		else if (operator instanceof Module)
-			return left.isTop() || right.isTop() ? top() : new ConstantPropagation(left.value % right.value);
-		else */if (operator instanceof Multiplication)
+
+		/*
+		 * if (operator instanceof AdditionOperator) return left.isTop() ||
+		 * right.isTop() ? top() : new ConstantPropagation(left.value +
+		 * right.value); else if (operator instanceof DivisionOperator) if
+		 * (!left.isTop() && left.value == 0) return new ConstantPropagation(0);
+		 * else if (!right.isTop() && right.value == 0) return bottom(); else if
+		 * (left.isTop() || right.isTop() || left.value % right.value != 0)
+		 * return top(); else return new ConstantPropagation(left.value /
+		 * right.value); else if (operator instanceof Module) return
+		 * left.isTop() || right.isTop() ? top() : new
+		 * ConstantPropagation(left.value % right.value); else
+		 */if (operator instanceof Multiplication)
 			return left.isTop() || right.isTop() ? top()
 					: new ConstantPropagation(new Constant(Int32.INSTANCE,
 							left.as(Integer.class) * right.as(Integer.class), pp.getLocation()));
-		/*else if (operator instanceof SubtractionOperator)
-			return left.isTop() || right.isTop() ? top() : new ConstantPropagation(left.value - right.value);*/
+		/*
+		 * else if (operator instanceof SubtractionOperator) return left.isTop()
+		 * || right.isTop() ? top() : new ConstantPropagation(left.value -
+		 * right.value);
+		 */
 		else
 			return top();
 	}
@@ -207,14 +208,14 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 			return 1;
 		else if (isBottom())
 			return 0;
-		
+
 		if (isTop() && !other.isTop())
 			return 1;
 		else if (!isTop() && other.isTop())
 			return -1;
 		else if (isTop())
 			return 0;
-		
+
 		// not much we can do here..
 		return Integer.compare(constant.hashCode(), other.constant.hashCode());
 	}

@@ -1,7 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.function.Predicate;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -18,6 +16,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.common.StringType;
+import java.util.function.Predicate;
 
 public class PyRemainder extends Remainder {
 
@@ -38,7 +37,7 @@ public class PyRemainder extends Remainder {
 			// this might be a string formatting
 			result = state.smallStepSemantics(new PushAny(StringType.INSTANCE, getLocation()), this);
 		if (left.getRuntimeTypes().anyMatch(Predicate.not(Type::isStringType)))
-			// this might not be a string formatting 
+			// this might not be a string formatting
 			result = result.lub(super.binarySemantics(interprocedural, state, left, right, expressions));
 		return result;
 	}

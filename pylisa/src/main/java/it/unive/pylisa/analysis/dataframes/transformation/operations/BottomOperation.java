@@ -55,7 +55,7 @@ public class BottomOperation extends DataframeOperation {
 	protected DataframeOperation lubSameOperation(DataframeOperation other) {
 		return this;
 	}
-	
+
 	@Override
 	protected int compareToSameClassAndLocation(DataframeOperation o) {
 		return 0;

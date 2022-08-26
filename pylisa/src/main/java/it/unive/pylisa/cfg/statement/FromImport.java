@@ -61,7 +61,7 @@ public class FromImport extends Import {
 					InterproceduralAnalysis<A, H, V, T> interprocedural, StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		entryState = entryState.smallStepSemantics(new Skip(getLocation()), this);
-		
+
 		if (name == null)
 			return entryState.alias(new QualifiedNameSymbol(importedLibrary, component),
 					new QualifiedNameSymbol(null, name));

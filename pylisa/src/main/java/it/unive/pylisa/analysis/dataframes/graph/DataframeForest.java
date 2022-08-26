@@ -1,22 +1,5 @@
 package it.unive.pylisa.analysis.dataframes.graph;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.function.Function;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.graphstream.graph.Edge;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
@@ -33,6 +16,21 @@ import it.unive.pylisa.analysis.dataframes.transformation.graph.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.graph.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.function.Function;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.graphstream.graph.Edge;
 
 public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperation, DataframeEdge>
 		implements Lattice<DataframeForest> {
@@ -55,32 +53,33 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 		super(other);
 		this.isTop = other.isTop;
 	}
-	
+
 	@Override
 	public void addNode(DataframeOperation node, boolean entrypoint) {
-		if (containsNode(node)) 
+		if (containsNode(node))
 			for (DataframeOperation op : list)
 				if (op.equals(node)) {
 					node.setOffset(op.getOffset());
 					return;
 				}
-		
+
 		super.addNode(node, entrypoint);
 	}
-	
+
 	@Override
 	public void addEdge(DataframeEdge edge) {
 		if (edge.getSource().equals(edge.getDestination()))
 			// no self loops
 			return;
-		
-		// we only keep 1 simple edge maximum, and only if there are no other edges 
+
+		// we only keep 1 simple edge maximum, and only if there are no other
+		// edges
 		Collection<DataframeEdge> existing = getEdgesConnecting(edge.getSource(), edge.getDestination());
 		existing.stream().filter(SimpleEdge.class::isInstance).forEach(list::removeEdge);
-		
+
 		super.addEdge(edge);
 	}
-	
+
 	public void replace(DataframeOperation origin, DataframeOperation target) {
 		addNode(target);
 		for (DataframeEdge in : getIngoingEdges(origin))
@@ -107,15 +106,17 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 			for (DataframeOperation dest : followersOf(src))
 				for (DataframeEdge edge : list.getEdgesConnecting(src, dest))
 					if (edge instanceof ConcatEdge)
-						edges.add(new ConcatSerializableEdge(nodeIds.get(src), nodeIds.get(dest), edge.getClass().getSimpleName(), ((ConcatEdge) edge).getEdgeIndex()));
-					else 
-						edges.add(new SerializableEdge(nodeIds.get(src), nodeIds.get(dest), edge.getClass().getSimpleName()));
+						edges.add(new ConcatSerializableEdge(nodeIds.get(src), nodeIds.get(dest),
+								edge.getClass().getSimpleName(), ((ConcatEdge) edge).getEdgeIndex()));
+					else
+						edges.add(new SerializableEdge(nodeIds.get(src), nodeIds.get(dest),
+								edge.getClass().getSimpleName()));
 
 		return new CustomSerializableGraph(name, null, nodes, edges, descrs);
 	}
-	
+
 	private static int counter = 0;
-	
+
 	private static int addNode(
 			SortedSet<SerializableNode> nodes,
 			SortedSet<SerializableNodeDescription> descrs,
@@ -212,7 +213,7 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 		result = prime * result + ((entrypoints == null) ? 0 : entrypoints.hashCode());
 		return result;
 	}
-	
+
 	public DomainRepresentation representation() {
 		if (isTop())
 			return Lattice.topRepresentation();
@@ -220,7 +221,7 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 			return Lattice.bottomRepresentation();
 		return new StringRepresentation(deterministicToString());
 	}
-	
+
 	private String deterministicToString() {
 		StringBuilder res = new StringBuilder();
 
@@ -251,7 +252,6 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 	static class ConcatSerializableEdge extends SerializableEdge {
 		private final int index;
 
-		
 		public ConcatSerializableEdge(int sourceId, int destId, String kind, int index) {
 			super(sourceId, destId, kind);
 			this.index = index;
@@ -261,9 +261,9 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 			return index;
 		}
 	}
-	
+
 	static class CustomSerializableGraph extends SerializableGraph {
-		
+
 		public CustomSerializableGraph(String name, String description, SortedSet<SerializableNode> nodes,
 				SortedSet<SerializableEdge> edges, SortedSet<SerializableNodeDescription> descriptions) {
 			super(name, description, nodes, edges, descriptions);
@@ -288,7 +288,8 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 
 			for (SerializableNode n : getNodes())
 				if (!inners.contains(n.getId()))
-					graph.addNode(n, !hasPreds.contains(n.getId()), !hasFollows.contains(n.getId()), labels.get(n.getId()));
+					graph.addNode(n, !hasPreds.contains(n.getId()), !hasFollows.contains(n.getId()),
+							labels.get(n.getId()));
 
 			for (SerializableEdge e : getEdges())
 				graph.addEdge(e);
@@ -296,20 +297,20 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 			return graph;
 		}
 	}
-	
+
 	static class CustomDotGraph extends DotGraph {
 
 		public CustomDotGraph(String title) {
 			super(title);
 		}
-		
+
 		@Override
 		public void addEdge(SerializableEdge edge) {
 			long id = edge.getSourceId();
 			long id1 = edge.getDestId();
 
 			Edge e = graph.addEdge(edgeName(id, id1, edge), nodeName(id), nodeName(id1), true);
-			
+
 			switch (edge.getKind()) {
 			case "ConcatEdge":
 				e.setAttribute(COLOR, COLOR_RED);
@@ -329,7 +330,7 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 				break;
 			}
 		}
-		
+
 		protected static String edgeName(long src, long dest, SerializableEdge edge) {
 			return "edge-" + src + "-" + dest + "-" + edge.getKind();
 		}

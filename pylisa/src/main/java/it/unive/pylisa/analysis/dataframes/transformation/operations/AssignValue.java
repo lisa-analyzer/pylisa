@@ -71,7 +71,7 @@ public class AssignValue<R extends RowSelection<R>, C extends ColumnSelection<C>
 	public String toString() {
 		return "assign(" + selection + ", " + value + ")";
 	}
-	
+
 	@Override
 	protected int compareToSameClassAndLocation(DataframeOperation o) {
 		AssignValue<?, ?> other = (AssignValue<?, ?>) o;

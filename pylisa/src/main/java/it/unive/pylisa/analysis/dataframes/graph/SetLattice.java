@@ -3,7 +3,6 @@ package it.unive.pylisa.analysis.dataframes.graph;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.collections4.SetUtils.SetView;
 
@@ -44,7 +43,7 @@ public class SetLattice<E> extends it.unive.lisa.analysis.lattices.SetLattice<Se
 		SetView<E> result = SetUtils.union(
 				SetUtils.difference(this.elements, elements.elements),
 				targets.elements);
-		
+
 		return new SetLattice<>(new HashSet<>(result), false);
 	}
 

@@ -14,7 +14,8 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 	static final AtomicBooleanSelection TOP = new AtomicBooleanSelection(new ColumnListSelection(new Names()).top(),
 			ComparisonOperator.TOP,
 			new ConstantPropagation().top());
-	static final AtomicBooleanSelection BOTTOM = new AtomicBooleanSelection(new ColumnListSelection(new Names()).bottom(),
+	static final AtomicBooleanSelection BOTTOM = new AtomicBooleanSelection(
+			new ColumnListSelection(new Names()).bottom(),
 			ComparisonOperator.BOT, new ConstantPropagation().bottom());
 
 	private final ColumnListSelection cols;

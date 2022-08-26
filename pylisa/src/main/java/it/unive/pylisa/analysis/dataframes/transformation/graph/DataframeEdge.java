@@ -5,7 +5,8 @@ import it.unive.lisa.util.datastructures.graph.code.CodeEdge;
 import it.unive.pylisa.analysis.dataframes.graph.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
 
-public abstract class DataframeEdge implements Comparable<DataframeEdge>, CodeEdge<DataframeForest, DataframeOperation, DataframeEdge> {
+public abstract class DataframeEdge
+		implements Comparable<DataframeEdge>, CodeEdge<DataframeForest, DataframeOperation, DataframeEdge> {
 
 	private final DataframeOperation source, destination;
 
@@ -61,7 +62,6 @@ public abstract class DataframeEdge implements Comparable<DataframeEdge>, CodeEd
 	}
 
 	public abstract String getEdgeSymbol();
-	
 
 	@Override
 	public <V> boolean accept(GraphVisitor<DataframeForest, DataframeOperation, DataframeEdge, V> visitor, V tool) {
@@ -77,7 +77,7 @@ public abstract class DataframeEdge implements Comparable<DataframeEdge>, CodeEd
 			return cmp;
 		return getClass().getName().compareTo(o.getClass().getName());
 	}
-	
+
 	@Override
 	public boolean isUnconditional() {
 		return false;

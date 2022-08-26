@@ -17,13 +17,13 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 	public static final DataframeOperation BOTTOM = new BottomOperation();
 
 	protected final CodeLocation where;
-	
+
 	protected int offset;
 
 	protected DataframeOperation(CodeLocation where) {
 		this.where = where;
 	}
-	
+
 	public CodeLocation getWhere() {
 		return where;
 	}
@@ -113,7 +113,7 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 			return cmp;
 		return compareToSameClassAndLocation(o);
 	}
-	
+
 	protected abstract int compareToSameClassAndLocation(DataframeOperation o);
 
 	@Override

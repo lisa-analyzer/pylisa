@@ -8,7 +8,7 @@ import it.unive.pylisa.cfg.type.PyClassType;
 public class PyLibraryUnitType extends PyClassType {
 
 	private final String libraryName;
-	
+
 	private Integer hash = null;
 
 	public PyLibraryUnitType(CompilationUnit library, CompilationUnit unit) {

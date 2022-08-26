@@ -35,11 +35,11 @@ public class PyBitwiseRIghtShift extends BinaryExpression {
 					throws SemanticException {
 		return state.smallStepSemantics(
 				new it.unive.lisa.symbolic.value.BinaryExpression(
-						Untyped.INSTANCE, 
-						left, 
-						right, 
-						BitwiseShiftRight.INSTANCE, 
-						getLocation()), 
+						Untyped.INSTANCE,
+						left,
+						right,
+						BitwiseShiftRight.INSTANCE,
+						getLocation()),
 				this);
 	}
 }

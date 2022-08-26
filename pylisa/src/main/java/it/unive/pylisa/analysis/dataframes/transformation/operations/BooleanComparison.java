@@ -8,33 +8,33 @@ import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.B
 @SuppressWarnings("unchecked")
 public class BooleanComparison<B extends BooleanSelection<B>> extends DataframeOperation {
 
-    private B selection;
+	private B selection;
 
-    public BooleanComparison(CodeLocation where, B selection) {
-        super(where);
-        this.selection = selection;
-    }
+	public BooleanComparison(CodeLocation where, B selection) {
+		super(where);
+		this.selection = selection;
+	}
 
 	@Override
-    protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
-        BooleanComparison<?> o = (BooleanComparison<?>) other;
-        if (this.equals(o))
-            return true;
-        if (!this.selection.getClass().equals(o.selection.getClass()))
-            return false;
-        return selection.lessOrEqual((B) o.selection);
-    }
+	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+		BooleanComparison<?> o = (BooleanComparison<?>) other;
+		if (this.equals(o))
+			return true;
+		if (!this.selection.getClass().equals(o.selection.getClass()))
+			return false;
+		return selection.lessOrEqual((B) o.selection);
+	}
 
-    @Override
-    protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
-        BooleanComparison<?> o = (BooleanComparison<?>) other;
-        if (!this.selection.getClass().equals(o.selection.getClass())) {
-            return DataframeOperation.TOP;
-        }
-        return new BooleanComparison<>(SyntheticLocation.INSTANCE, selection.lub((B) o.selection));
-    }
+	@Override
+	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+		BooleanComparison<?> o = (BooleanComparison<?>) other;
+		if (!this.selection.getClass().equals(o.selection.getClass())) {
+			return DataframeOperation.TOP;
+		}
+		return new BooleanComparison<>(SyntheticLocation.INSTANCE, selection.lub((B) o.selection));
+	}
 
-    @Override
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
@@ -60,14 +60,14 @@ public class BooleanComparison<B extends BooleanSelection<B>> extends DataframeO
 	}
 
 	@Override
-    public String toString() {
-        return selection.toString();
-    }
+	public String toString() {
+		return selection.toString();
+	}
 
-    public B getSelection() {
-        return selection;
-    }
-	
+	public B getSelection() {
+		return selection;
+	}
+
 	@Override
 	protected int compareToSameClassAndLocation(DataframeOperation o) {
 		BooleanComparison<?> other = (BooleanComparison<?>) o;

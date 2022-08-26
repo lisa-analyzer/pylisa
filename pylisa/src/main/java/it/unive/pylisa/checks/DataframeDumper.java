@@ -1,16 +1,5 @@
 package it.unive.pylisa.checks;
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-
 import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.CFGWithAnalysisResults;
@@ -39,6 +28,16 @@ import it.unive.pylisa.analysis.dataframes.graph.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.graph.NodeId;
 import it.unive.pylisa.analysis.dataframes.graph.SetLattice;
 import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
 
 public class DataframeDumper implements SemanticCheck<
 		SimpleAbstractState<
@@ -99,7 +98,7 @@ public class DataframeDumper implements SemanticCheck<
 			CFG graph, Statement node) {
 		if (!graph.getDescriptor().getName().equals("main"))
 			return true;
-		
+
 		if (node.stopsExecution()) {
 			Collection<
 					CFGWithAnalysisResults<

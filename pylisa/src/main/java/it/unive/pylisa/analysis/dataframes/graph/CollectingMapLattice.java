@@ -1,9 +1,5 @@
 package it.unive.pylisa.analysis.dataframes.graph;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.lattices.FunctionalLattice;
@@ -11,10 +7,13 @@ import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.MapRepresentation;
 import it.unive.lisa.analysis.representation.SetRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
 public class CollectingMapLattice<K, V>
 		extends FunctionalLattice<CollectingMapLattice<K, V>, K, SetLattice<V>> {
-	
+
 	public CollectingMapLattice(SetLattice<V> lattice) {
 		super(lattice, null);
 	}
@@ -22,7 +21,7 @@ public class CollectingMapLattice<K, V>
 	public CollectingMapLattice(SetLattice<V> lattice, Map<K, SetLattice<V>> function) {
 		super(lattice, function);
 	}
-	
+
 	public SetLattice<V> getLattice() {
 		return lattice;
 	}
@@ -43,7 +42,7 @@ public class CollectingMapLattice<K, V>
 			return new HashMap<>();
 		return super.getMap();
 	}
-	
+
 	@Override
 	protected CollectingMapLattice<K, V> mk(SetLattice<V> lattice, Map<K, SetLattice<V>> function) {
 		return new CollectingMapLattice<>(lattice, function);
@@ -82,11 +81,11 @@ public class CollectingMapLattice<K, V>
 
 		if (function == null || function.isEmpty())
 			return new StringRepresentation("");
-		
+
 		return new MapRepresentation(function, StringRepresentation::new,
 				set -> new SetRepresentation(set.elements(), valueMapper));
 	}
-	
+
 	public CollectingMapLattice<K, V> setStack(SetLattice<V> stack) {
 		return mk(stack, function == null ? null : mkNewFunction(function));
 	}

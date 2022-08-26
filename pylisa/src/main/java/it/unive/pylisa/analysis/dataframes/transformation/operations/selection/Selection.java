@@ -9,7 +9,7 @@ public abstract class Selection<S extends Selection<S>> extends BaseLattice<S> i
 	public S lub(Selection<?> other) throws SemanticException {
 		return lub((S) other);
 	}
-	
+
 	@Override
 	public final int compareTo(Selection<?> o) {
 		int cmp;

@@ -12,7 +12,7 @@ public class ConsumeEdge extends DataframeEdge {
 	public String getEdgeSymbol() {
 		return "-C->";
 	}
-	
+
 	@Override
 	public DataframeEdge newInstance(DataframeOperation source, DataframeOperation destination) {
 		return new ConsumeEdge(source, destination);

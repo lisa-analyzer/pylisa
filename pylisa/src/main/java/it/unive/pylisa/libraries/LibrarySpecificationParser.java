@@ -1,18 +1,5 @@
 package it.unive.pylisa.libraries;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.apache.commons.lang3.tuple.Pair;
-
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Program;
@@ -50,6 +37,17 @@ import it.unive.pylisa.antlr.LibraryDefinitionParser.TypeContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParserBaseVisitor;
 import it.unive.pylisa.cfg.expression.NoneLiteral;
 import it.unive.pylisa.cfg.type.PyClassType;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisitor<Object> {
 
@@ -83,11 +81,12 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	@Override
 	public CompilationUnit visitClassDef(ClassDefContext ctx) {
 		String name = ctx.name.getText();
-		CompilationUnit unit = typedefsOnly ? new CompilationUnit(location, name, ctx.SEALED() != null) : parsed.get(name);
+		CompilationUnit unit = typedefsOnly ? new CompilationUnit(location, name, ctx.SEALED() != null)
+				: parsed.get(name);
 		if (typedefsOnly && ctx.ROOT() != null)
 			if (root != null)
 				throw new IllegalStateException("More than one root class defined as hierarchy root");
-			else 
+			else
 				root = unit;
 
 		if (!typedefsOnly) {
@@ -138,7 +137,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 
 		makeInit();
 		Expression def;
-		if (ctx.val.NONE() != null) 
+		if (ctx.val.NONE() != null)
 			def = new NoneLiteral(init, location);
 		else if (type == BoolType.INSTANCE)
 			if (ctx.val.BOOLEAN().getText().equals("true"))

@@ -2,8 +2,6 @@ package it.unive.pylisa.notebooks;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
-
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSAFactory;
 import it.unive.lisa.analysis.AnalysisState;
@@ -41,6 +39,7 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.Head;
 import it.unive.pylisa.libraries.pandas.ReadCsv;
+import org.junit.Test;
 
 @SuppressWarnings("unchecked")
 public class DFSemanticsTest {

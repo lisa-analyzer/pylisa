@@ -1,173 +1,128 @@
 lexer grammar LibraryDefinitionLexer;
 
-@lexer::header {package it.unive.pylisa.antlr;}
-
+@ lexer :: header
+{package it.unive.pylisa.antlr;}
 BOOLEAN
-:
-	'true'
-	| 'false'
-;
+   : 'true'
+   | 'false'
+   ;
 
 NUMBER
-:
-	'0'
-	| NonZeroDigit Digit*
-;
+   : '0'
+   | NonZeroDigit Digit*
+   ;
 
 STRING
-:
-	'"'
-	(
-		~["\\\r\n]
-		| EscapeSequence
-	)* '"'
-;
+   : '"' (~ ["\\\r\n] | EscapeSequence)* '"'
+   ;
 
 NONE
-:
-	'none' 
-;
+   : 'none'
+   ;
 
 LIBRARY
-:
-	'library'
-;
+   : 'library'
+   ;
 
 CLASS
-:
-	'class'
-;
+   : 'class'
+   ;
 
 METHOD
-:
-	'method'
-;
+   : 'method'
+   ;
 
 FIELD
-:
-	'field'
-;
+   : 'field'
+   ;
 
 EXTENDS
-:
-	'extends'
-;
+   : 'extends'
+   ;
 
 ROOT
-:
-	'root'
-;
+   : 'root'
+   ;
 
 INSTANCE
-:
-	'instance'
-;
+   : 'instance'
+   ;
 
 PARAM
-:
-	'param'
-;
+   : 'param'
+   ;
 
 LOCATION
-:
-	'location'
-;
+   : 'location'
+   ;
 
 TYPE
-:
-	'type'
-;
+   : 'type'
+   ;
 
 LIBTYPE
-:
-	'libtype'
-;
+   : 'libtype'
+   ;
 
 DEFAULT
-:
-	'default'
-;
+   : 'default'
+   ;
 
 SEALED
-:
-	'sealed'
-;
+   : 'sealed'
+   ;
 
 COLON
-:
-	':'
-;
+   : ':'
+   ;
 
 DOUBLE_COLON
-:
-	'::'
-;
+   : '::'
+   ;
 
 DOT
-:
-	'.'
-;
+   : '.'
+   ;
 
 STAR
-:
-	'*'
-;
+   : '*'
+   ;
 
 WHITESPACE
-:
-	[ \t\r\n\u000C]+ -> channel ( HIDDEN )
-;
+   : [ \t\r\n\u000C]+ -> channel (HIDDEN)
+   ;
 
 LINE_COMMENT
-:
-	'#' ~[\r\n]* -> channel ( HIDDEN )
-;
+   : '#' ~ [\r\n]* -> channel (HIDDEN)
+   ;
 
 IDENTIFIER
-:
-	Letter LetterOrDigit*
-	(
-		'.' Letter LetterOrDigit*
-	)*
-;
+   : Letter LetterOrDigit* ('.' Letter LetterOrDigit*)*
+   ;
 
-fragment
-Digit
-:
-	[0-9]
-;
+fragment Digit
+   : [0-9]
+   ;
 
-fragment
-NonZeroDigit
-:
-	[1-9]
-;
+fragment NonZeroDigit
+   : [1-9]
+   ;
 
-fragment
-Digits
-:
-	[0-9]+
-;
+fragment Digits
+   : [0-9]+
+   ;
 
-fragment
-Letter
-:
-	[a-zA-Z$_]
-;
+fragment Letter
+   : [a-zA-Z$_]
+   ;
 
-fragment
-LetterOrDigit
-:
-	Letter
-	| Digit
-;
+fragment LetterOrDigit
+   : Letter
+   | Digit
+   ;
 
-fragment
-EscapeSequence
-:
-	'\\' [btnfr"'\\]
-	| '\\'
-	(
-		[0-3]? [0-7]
-	)? [0-7]
-;
+fragment EscapeSequence
+   : '\\' [btnfr"'\\]
+   | '\\' ([0-3]? [0-7])? [0-7]
+   ;
+

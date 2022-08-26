@@ -1,9 +1,5 @@
 package it.unive.pylisa;
 
-import java.lang.reflect.Field;
-import java.util.HashSet;
-import java.util.Set;
-
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.heap.pointbased.AllocationSite;
@@ -26,6 +22,9 @@ import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
+import java.lang.reflect.Field;
+import java.util.HashSet;
+import java.util.Set;
 
 public class PyFieldSensitivePointBasedHeap extends PointBasedHeap {
 
@@ -72,7 +71,7 @@ public class PyFieldSensitivePointBasedHeap extends PointBasedHeap {
 
 			return result;
 		}
-		
+
 		@Override
 		public ExpressionSet<ValueExpression> visit(HeapDereference expression, ExpressionSet<ValueExpression> arg,
 				Object... params)
@@ -88,7 +87,8 @@ public class PyFieldSensitivePointBasedHeap extends PointBasedHeap {
 					if (heapEnv.getKeys().contains(id))
 						result.addAll(resolveIdentifier(id));
 					else if (id instanceof Variable) {
-						// this is a variable from the program that we know nothing about
+						// this is a variable from the program that we know
+						// nothing about
 						CodeLocation loc = expression.getCodeLocation();
 						AllocationSite site = new AllocationSite(id.getStaticType(), "unknown@" + id.getName(), loc);
 						result.add(site);
@@ -164,7 +164,7 @@ public class PyFieldSensitivePointBasedHeap extends PointBasedHeap {
 
 				Type tmp = inner.isEmpty() ? Untyped.INSTANCE
 						: inner.reduce(inner.first(), (r, tt) -> r.commonSupertype(tt));
-				
+
 				CodeLocation loc = expression.getCodeLocation();
 				AllocationSite site = new AllocationSite(tmp, "unknown@" + loc.getCodeLocation(), loc);
 				return new ExpressionSet<>(new MemoryPointer(expression.getStaticType(), site, loc));
@@ -172,12 +172,12 @@ public class PyFieldSensitivePointBasedHeap extends PointBasedHeap {
 			return new ExpressionSet<>(expression);
 		}
 	}
-	
+
 	@Override
 	public PointBasedHeap popScope(ScopeToken scope) throws SemanticException {
 		return this;
 	}
-	
+
 	@Override
 	public PointBasedHeap pushScope(ScopeToken scope) throws SemanticException {
 		return this;
