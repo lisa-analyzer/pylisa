@@ -13,7 +13,7 @@ public class PyTransformationsTest extends NotebookTest {
 
 	@Test
 	public void testCovid19Updated() throws IOException, AnalysisException {
-		perform("dataframes-tests/covid-19-updated.py");
+		performAndCheck("dataframes-tests/covid-19-updated.py");
 	}
 
 	@Test
