@@ -19,7 +19,6 @@ import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
-import it.unive.lisa.LiSAConfiguration.GraphType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.types.InferredTypes;

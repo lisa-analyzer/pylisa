@@ -12,6 +12,11 @@ public class PyTransformationsTest extends NotebookTest {
 	public void testCovid19() throws IOException, AnalysisException {
 		performAndCheck("dataframes-tests/covid-19.py");
 	}
+	
+	@Test
+	public void testCovid19Updated() throws IOException, AnalysisException {
+		perform("dataframes-tests/covid-19-updated.py");
+	}
 
 	@Test
 	public void testCreditFraud() throws IOException, AnalysisException {
