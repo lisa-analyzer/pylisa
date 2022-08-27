@@ -124,6 +124,7 @@ public class DataframeDumper implements SemanticCheck<
 				PointBasedHeap heap = post.getDomainInstance(PointBasedHeap.class);
 				DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
 				DataframeForest forest = dom.getGraph();
+				Collection<DataframeForest> subgraphs = forest.partitionByRoot();
 				CollectingMapLattice<Identifier, NodeId> pointers = dom.getPointers();
 				CollectingMapLattice<NodeId, DataframeOperation> operations = dom.getOperations();
 
@@ -144,6 +145,15 @@ public class DataframeDumper implements SemanticCheck<
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
+				
+				int i = 1;
+				for (DataframeForest sub : subgraphs)
+					try {
+						fileManager.mkDotFile(i++ + "-" + filename + "@" + node.getOffset(),
+								writer -> sub.toSerializableGraph(op -> label(op, refs)).toDot().dump(writer));
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
 			}
 		}
 

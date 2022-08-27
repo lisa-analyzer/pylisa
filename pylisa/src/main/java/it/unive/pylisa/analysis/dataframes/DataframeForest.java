@@ -1,21 +1,6 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import it.unive.lisa.analysis.Lattice;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.representation.DomainRepresentation;
-import it.unive.lisa.analysis.representation.StringRepresentation;
-import it.unive.lisa.outputs.DotGraph;
-import it.unive.lisa.outputs.serializableGraph.SerializableEdge;
-import it.unive.lisa.outputs.serializableGraph.SerializableGraph;
-import it.unive.lisa.outputs.serializableGraph.SerializableNode;
-import it.unive.lisa.outputs.serializableGraph.SerializableNodeDescription;
-import it.unive.lisa.outputs.serializableGraph.SerializableValue;
-import it.unive.lisa.util.datastructures.graph.code.CodeGraph;
-import it.unive.lisa.util.datastructures.graph.code.NodeList;
-import it.unive.pylisa.analysis.dataframes.edge.ConcatEdge;
-import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
-import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
-import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,9 +13,29 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.graphstream.graph.Edge;
+
+import it.unive.lisa.analysis.Lattice;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.representation.DomainRepresentation;
+import it.unive.lisa.analysis.representation.StringRepresentation;
+import it.unive.lisa.outputs.DotGraph;
+import it.unive.lisa.outputs.serializableGraph.SerializableEdge;
+import it.unive.lisa.outputs.serializableGraph.SerializableGraph;
+import it.unive.lisa.outputs.serializableGraph.SerializableNode;
+import it.unive.lisa.outputs.serializableGraph.SerializableNodeDescription;
+import it.unive.lisa.outputs.serializableGraph.SerializableValue;
+import it.unive.lisa.util.collections.workset.LIFOWorkingSet;
+import it.unive.lisa.util.collections.workset.VisitOnceWorkingSet;
+import it.unive.lisa.util.datastructures.graph.code.CodeGraph;
+import it.unive.lisa.util.datastructures.graph.code.NodeList;
+import it.unive.pylisa.analysis.dataframes.edge.ConcatEdge;
+import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
+import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
+import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 
 public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperation, DataframeEdge>
 		implements Lattice<DataframeForest> {
@@ -334,5 +339,37 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 		protected static String edgeName(long src, long dest, SerializableEdge edge) {
 			return "edge-" + src + "-" + dest + "-" + edge.getKind();
 		}
+	}
+	
+	public Collection<DataframeForest> partitionByRoot() {
+		Collection<DataframeOperation> entries = list.getEntries();
+		Collection<DataframeForest> result = new ArrayList<>(entries.size());
+		for (DataframeOperation entry : entries)
+			result.add(dfs(entry));
+		return result;
+	}
+
+	private DataframeForest dfs(DataframeOperation entry) {
+		DataframeForest forest = new DataframeForest(false);
+		forest.addNode(entry);
+		VisitOnceWorkingSet<DataframeOperation> ws = VisitOnceWorkingSet.mk(LIFOWorkingSet.mk());
+		Set<DataframeEdge> seenEdges = new TreeSet<>();
+		ws.push(entry);
+		
+		while (!ws.isEmpty()) {
+			DataframeOperation current = ws.pop();
+			for (DataframeEdge edge : getOutgoingEdges(current)) {
+				if (!ws.getSeen().contains(edge.getDestination())) { 
+					forest.addNode(edge.getDestination());
+					ws.push(edge.getDestination());
+				}
+				if (!seenEdges.contains(edge)) {
+					forest.addEdge(edge);
+					seenEdges.add(edge);
+				}
+			}
+		}
+		
+		return forest;
 	}
 }
