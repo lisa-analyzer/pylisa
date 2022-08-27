@@ -1,19 +1,22 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
 import it.unive.lisa.caches.Caches;
-import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class AccessRowsColumns implements TernaryOperator, DataframeOperatorWithSideEffects {
+public class AccessRowsColumns implements TernaryOperator {
 
 	public static final AccessRowsColumns INSTANCE = new AccessRowsColumns();
 
 	private AccessRowsColumns() {
+	}
+
+	@Override
+	public String toString() {
+		return "access_rows_cols->";
 	}
 
 	@Override
@@ -28,15 +31,4 @@ public class AccessRowsColumns implements TernaryOperator, DataframeOperatorWith
 			return Caches.types().mkEmptySet();
 		return Caches.types().mkSingletonSet(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF));
 	}
-
-	@Override
-	public String toString() {
-		return "access_rows_cols->";
-	}
-
-	@Override
-	public SymbolicExpression getDataFrame(SymbolicExpression container) {
-		return ((TernaryExpression) container).getLeft();
-	}
-
 }

@@ -1,15 +1,13 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
 import it.unive.lisa.caches.Caches;
-import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class PopSelection implements UnaryOperator, DataframeOperatorWithSideEffects {
+public class PopSelection implements UnaryOperator {
 
 	public static final PopSelection INSTANCE = new PopSelection();
 
@@ -27,10 +25,5 @@ public class PopSelection implements UnaryOperator, DataframeOperatorWithSideEff
 		if (argument.noneMatch(t -> t.equals(df)))
 			return Caches.types().mkEmptySet();
 		return Caches.types().mkSingletonSet(df);
-	}
-
-	@Override
-	public SymbolicExpression getDataFrame(SymbolicExpression container) {
-		return ((UnaryExpression) container).getExpression();
 	}
 }

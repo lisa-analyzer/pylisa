@@ -2,9 +2,9 @@ package it.unive.pylisa.symbolic.operators.dataframes;
 
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.pylisa.analysis.dataframes.graph.SetLattice;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.DataframeOperation;
-import it.unive.pylisa.analysis.dataframes.transformation.operations.selection.ColumnRangeSelection;
+import it.unive.pylisa.analysis.dataframes.SetLattice;
+import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
+import it.unive.pylisa.analysis.dataframes.operations.selection.ColumnRangeSelection;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;

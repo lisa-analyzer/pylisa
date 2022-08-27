@@ -1,15 +1,13 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
 import it.unive.lisa.caches.Caches;
-import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class FillNull implements BinaryOperator, DataframeOperatorWithSideEffects {
+public class FillNull implements BinaryOperator {
 
 	public static enum Axis {
 		ROWS, COLUMNS, TOP
@@ -60,10 +58,5 @@ public class FillNull implements BinaryOperator, DataframeOperatorWithSideEffect
 		if (axis != other.axis)
 			return false;
 		return true;
-	}
-
-	@Override
-	public SymbolicExpression getDataFrame(SymbolicExpression container) {
-		return ((UnaryExpression) container).getExpression();
 	}
 }

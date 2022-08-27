@@ -14,7 +14,7 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.pylisa.analysis.dataframes.graph.DataframeGraphDomain;
+import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 
 public class BottomFinder<A extends AbstractState<A, H, V, T>,
 		H extends HeapDomain<H>,

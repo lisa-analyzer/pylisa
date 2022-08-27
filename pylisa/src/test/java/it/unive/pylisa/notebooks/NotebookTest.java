@@ -21,7 +21,7 @@ import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.PyRTA;
-import it.unive.pylisa.analysis.dataframes.graph.DataframeGraphDomain;
+import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.checks.BottomFinder;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.OpenCallsFinder;

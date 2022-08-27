@@ -1,15 +1,13 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
 import it.unive.lisa.caches.Caches;
-import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class WriteSelectionConstant implements BinaryOperator, DataframeOperatorWithSideEffects {
+public class WriteSelectionConstant implements BinaryOperator {
 
 	public static final WriteSelectionConstant INSTANCE = new WriteSelectionConstant();
 
@@ -30,10 +28,5 @@ public class WriteSelectionConstant implements BinaryOperator, DataframeOperator
 	@Override
 	public String toString() {
 		return "write_selection->";
-	}
-
-	@Override
-	public SymbolicExpression getDataFrame(SymbolicExpression container) {
-		return ((BinaryExpression) container).getLeft();
 	}
 }
