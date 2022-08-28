@@ -1,5 +1,18 @@
 package it.unive.pylisa.analysis.dataframes;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.tuple.Pair;
+
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
@@ -10,6 +23,7 @@ import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.ObjectRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.analysis.value.ValueDomain;
+import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
@@ -88,17 +102,6 @@ import it.unive.pylisa.symbolic.operators.dataframes.ProjectRows;
 import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 
 public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
@@ -1529,5 +1532,49 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	@Override
 	public String toString() {
 		return representation().toString();
+	}
+
+	public DataframeForest close() {
+		DataframeOperation close = new CloseOperation();
+		
+		DataframeForest result = new DataframeForest(graph);
+		result.addNode(close);
+		
+		Collection<DataframeOperation> exits = new HashSet<>();
+		for (SetLattice<NodeId> variable : pointers.getValues())
+			for (NodeId id : variable)
+				exits.addAll(operations.getState(id).elements());
+			
+		for (DataframeOperation op : exits)
+			result.addEdge(new SimpleEdge(op, close));
+		
+		return result;
+	}
+
+	public static class CloseOperation extends DataframeOperation {
+		
+		public  CloseOperation() {
+			super(SyntheticLocation.INSTANCE);
+		}
+
+		@Override
+		public String toString() {
+			return "exit";
+		}
+
+		@Override
+		protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+			return this;
+		}
+
+		@Override
+		protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+			return false;
+		}
+
+		@Override
+		protected int compareToSameClassAndLocation(DataframeOperation o) {
+			return 0;
+		}
 	}
 }

@@ -1,4 +1,14 @@
 {
-  "warnings" : [ ],
+  "warnings" : [ {
+    "message" : "[GENERIC] ['mapa.csv'] columns accessed before being assigned: [\"col2\", 'País']"
+  }, {
+    "message" : "[GENERIC] ['mapa.csv'] columns accessed: ['geometry']"
+  }, {
+    "message" : "[GENERIC] ['mapa.csv'] columns assigned: ['Longitude', 'cool-col', 'geometry', 'Latitude']"
+  }, {
+    "message" : "[GENERIC] ['temporal.csv'] columns accessed before being assigned: ['bar', 'Mes', 'foo']"
+  }, {
+    "message" : "[GENERIC] ['temporal.csv'] columns assigned: ['Mes']"
+  } ],
   "files" : [ "untyped_dataframes-tests_guide-small.main().json" ]
 }

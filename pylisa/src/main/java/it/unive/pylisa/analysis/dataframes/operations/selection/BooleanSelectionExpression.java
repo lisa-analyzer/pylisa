@@ -2,6 +2,7 @@ package it.unive.pylisa.analysis.dataframes.operations.selection;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.pylisa.analysis.dataframes.Names;
 
 public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends BooleanSelection<R>>
 		extends BooleanSelection<BooleanSelectionExpression<L, R>> {
@@ -129,5 +130,10 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 		if (cmp != 0)
 			return cmp;
 		return right.compareTo(other.right);
+	}
+	
+	@Override
+	public Names extractColumnNames() throws SemanticException {
+		return left.extractColumnNames().lub(right.extractColumnNames());
 	}
 }

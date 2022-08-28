@@ -2,6 +2,7 @@ package it.unive.pylisa.analysis.dataframes.operations.selection;
 
 import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.pylisa.analysis.dataframes.Names;
 
 public abstract class Selection<S extends Selection<S>> extends BaseLattice<S> implements Comparable<Selection<?>> {
 
@@ -19,4 +20,6 @@ public abstract class Selection<S extends Selection<S>> extends BaseLattice<S> i
 	}
 
 	protected abstract int compareToSameClass(Selection<?> o);
+	
+	public abstract Names extractColumnNames() throws SemanticException;
 }

@@ -2,6 +2,7 @@ package it.unive.pylisa.analysis.dataframes.operations.selection;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.numeric.Interval;
+import it.unive.pylisa.analysis.dataframes.Names;
 
 public class NumberSlice extends RowSelection<NumberSlice> {
 
@@ -155,5 +156,10 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 		if (cmp != 0)
 			return cmp;
 		return 0;
+	}
+	
+	@Override
+	public Names extractColumnNames() {
+		return Names.BOTTOM;
 	}
 }

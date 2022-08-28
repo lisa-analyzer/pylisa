@@ -1,6 +1,7 @@
 package it.unive.pylisa.analysis.dataframes.operations.selection;
 
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.pylisa.analysis.dataframes.Names;
 
 public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFilter<B>> {
 
@@ -86,5 +87,10 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 	protected int compareToSameClass(Selection<?> o) {
 		RowFilter<?> other = (RowFilter<?>) o;
 		return selection.compareTo(other.selection);
+	}
+	
+	@Override
+	public Names extractColumnNames() {
+		return Names.BOTTOM;
 	}
 }

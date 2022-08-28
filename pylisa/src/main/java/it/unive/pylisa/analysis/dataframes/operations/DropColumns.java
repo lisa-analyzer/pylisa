@@ -12,6 +12,10 @@ public class DropColumns extends DataframeOperation {
 		super(where);
 		this.columns = columns;
 	}
+	
+	public ColumnListSelection getColumns() {
+		return columns;
+	}
 
 	@Override
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {

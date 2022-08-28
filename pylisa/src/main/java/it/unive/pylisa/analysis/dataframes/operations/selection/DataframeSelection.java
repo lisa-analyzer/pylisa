@@ -2,6 +2,7 @@ package it.unive.pylisa.analysis.dataframes.operations.selection;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.pylisa.analysis.dataframes.Names;
 
 public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelection<C>>
 		extends Selection<DataframeSelection<R, C>> {
@@ -153,5 +154,10 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 		if (cmp != 0)
 			return cmp;
 		return rowSelection.compareTo(other.rowSelection);
+	}
+	
+	@Override
+	public Names extractColumnNames() throws SemanticException {
+		return columnSelection == null ? Names.TOP : columnSelection.extractColumnNames();
 	}
 }

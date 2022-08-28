@@ -24,6 +24,7 @@ import it.unive.pylisa.PyRTA;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.checks.BottomFinder;
 import it.unive.pylisa.checks.DataframeDumper;
+import it.unive.pylisa.checks.DataframeStructureConstructor;
 import it.unive.pylisa.checks.OpenCallsFinder;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -84,6 +85,7 @@ public abstract class NotebookTest {
 		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
 		conf.addSemanticCheck(new DataframeDumper(conf));
 		conf.addSemanticCheck(new BottomFinder<>());
+		conf.addSemanticCheck(new DataframeStructureConstructor());
 		if (findOpenCalls)
 			conf.addSemanticCheck(new OpenCallsFinder<>());
 

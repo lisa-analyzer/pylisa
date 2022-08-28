@@ -1,4 +1,16 @@
 {
-  "warnings" : [ ],
+  "warnings" : [ {
+    "message" : "[GENERIC] ['mapa.csv'] columns accessed before being assigned: ['País']"
+  }, {
+    "message" : "[GENERIC] ['mapa.csv'] columns accessed: ['geometry']"
+  }, {
+    "message" : "[GENERIC] ['mapa.csv'] columns assigned: ['Longitude', 'geometry', 'Latitude']"
+  }, {
+    "message" : "[GENERIC] ['temporal.csv'] columns accessed before being assigned: ['machine learning', 'deep learning', 'data science', 'Mes']"
+  }, {
+    "message" : "[GENERIC] ['temporal.csv'] columns accessed: ['Mes']"
+  }, {
+    "message" : "[GENERIC] ['temporal.csv'] columns assigned: ['Mes']"
+  } ],
   "files" : [ "untyped_dataframes-tests_guide.color_producer(untyped_val)_-822500990.json", "untyped_dataframes-tests_guide.main().json" ]
 }

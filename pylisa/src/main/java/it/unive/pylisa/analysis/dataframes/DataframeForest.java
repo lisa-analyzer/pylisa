@@ -350,21 +350,22 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 	}
 
 	private DataframeForest dfs(DataframeOperation entry) {
-		DataframeForest forest = new DataframeForest(false);
-		forest.addNode(entry);
+		NodeList<DataframeForest, DataframeOperation, DataframeEdge> list = new NodeList<>(new SimpleEdge(null, null), false);
+		DataframeForest forest = new DataframeForest(Collections.singleton(entry), list, false);
 		VisitOnceWorkingSet<DataframeOperation> ws = VisitOnceWorkingSet.mk(LIFOWorkingSet.mk());
 		Set<DataframeEdge> seenEdges = new TreeSet<>();
 		ws.push(entry);
+		list.addNode(entry);
 		
 		while (!ws.isEmpty()) {
 			DataframeOperation current = ws.pop();
 			for (DataframeEdge edge : getOutgoingEdges(current)) {
 				if (!ws.getSeen().contains(edge.getDestination())) { 
-					forest.addNode(edge.getDestination());
+					list.addNode(edge.getDestination());
 					ws.push(edge.getDestination());
 				}
 				if (!seenEdges.contains(edge)) {
-					forest.addEdge(edge);
+					list.addEdge(edge);
 					seenEdges.add(edge);
 				}
 			}

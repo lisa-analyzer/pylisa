@@ -1,6 +1,7 @@
 package it.unive.pylisa.analysis.dataframes.operations.selection;
 
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.pylisa.analysis.dataframes.Names;
 
 public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> {
 
@@ -88,5 +89,10 @@ public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> 
 	protected int compareToSameClass(Selection<?> o) {
 		ColumnRangeSelection other = (ColumnRangeSelection) o;
 		return columns.compareTo(other.columns);
+	}
+	
+	@Override
+	public Names extractColumnNames() {
+		return Names.BOTTOM;
 	}
 }

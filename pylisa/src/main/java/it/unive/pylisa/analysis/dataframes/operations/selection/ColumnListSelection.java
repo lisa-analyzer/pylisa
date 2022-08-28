@@ -6,8 +6,8 @@ import java.util.Set;
 
 public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 
-	private static final ColumnListSelection TOP = new ColumnListSelection(new Names().top());
-	private static final ColumnListSelection BOTTOM = new ColumnListSelection(new Names().bottom());
+	private static final ColumnListSelection TOP = new ColumnListSelection(Names.TOP);
+	private static final ColumnListSelection BOTTOM = new ColumnListSelection(Names.BOTTOM);
 
 	private final Names columns;
 
@@ -20,7 +20,7 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 	}
 
 	public ColumnListSelection(boolean allCols) {
-		this(allCols ? new Names().top() : new Names().bottom());
+		this(allCols ? Names.TOP : Names.BOTTOM);
 	}
 
 	public Names getColumns() {
@@ -90,5 +90,10 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 	protected int compareToSameClass(Selection<?> o) {
 		ColumnListSelection other = (ColumnListSelection) o;
 		return columns.compareTo(other.columns);
+	}
+	
+	@Override
+	public Names extractColumnNames() {
+		return columns;
 	}
 }

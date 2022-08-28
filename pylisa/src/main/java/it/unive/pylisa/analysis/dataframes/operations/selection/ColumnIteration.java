@@ -1,6 +1,7 @@
 package it.unive.pylisa.analysis.dataframes.operations.selection;
 
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.pylisa.analysis.dataframes.Names;
 
 public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 
@@ -53,5 +54,10 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 	@Override
 	protected int compareToSameClass(Selection<?> o) {
 		return 0;
+	}
+	
+	@Override
+	public Names extractColumnNames() {
+		return Names.BOTTOM;
 	}
 }
