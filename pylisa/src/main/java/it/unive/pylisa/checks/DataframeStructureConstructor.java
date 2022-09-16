@@ -1,7 +1,11 @@
 package it.unive.pylisa.checks;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.BaseLattice;
@@ -9,6 +13,7 @@ import it.unive.lisa.analysis.CFGWithAnalysisResults;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
+import it.unive.lisa.analysis.lattices.FunctionalLattice;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
@@ -128,43 +133,32 @@ public class DataframeStructureConstructor implements SemanticCheck<
 
 				DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
 				DataframeForest forest = dom.close();
-				Collection<DataframeForest> subgraphs = forest.partitionByRoot();
 				Collection<DataframeOperation> exits = forest.getNodeList().getExits();
 				if (exits.size() != 1)
 					throw new IllegalStateException("Close operation failed");
 				DataframeOperation exit = exits.iterator().next();
 
-				for (DataframeForest sub : subgraphs) {
-					Collection<DataframeOperation> entries = sub.getEntrypoints();
-					if (entries.size() != 1)
-						throw new IllegalStateException("Partitioned graphs should always have one entrypoint");
-					DataframeOperation entry = entries.iterator().next();
-					if (!(entry instanceof ReadFromFile))
-						continue;
+				ColumnsDomain columnsDomain;
+				try {
+					columnsDomain = process(forest, exit);
+				} catch (FixpointException e) {
+					throw new RuntimeException("Processing failed", e);
+				}
 
-					String file = ((ReadFromFile) entry).getFile();
-					if (file == null)
-						file = "<UNKNOWN>";
-
-					Columns columns;
-					try {
-						columns = process(sub, entry, exit);
-					} catch (FixpointException e) {
-						throw new RuntimeException("Processing failed", e);
-					}
-
+				for (Entry<Names, Columns> entry : columnsDomain) {
+					Names sources = entry.getKey();
+					Columns columns = entry.getValue();
 					if (!columns.accessedBeforeAssigned.isEmpty())
-						tool.warn("[" + file + "] columns accessed before being assigned: "
+						tool.warn("[" + sources + "] columns accessed before being assigned: "
 								+ columns.accessedBeforeAssigned);
 					if (!columns.accessedAfterRemoved.isEmpty())
-						tool.warn(
-								"[" + file + "] columns accessed after being removed: " + columns.accessedAfterRemoved);
+						tool.warn(sources + " columns accessed after being removed: " + columns.accessedAfterRemoved);
 					if (!columns.accessed.isEmpty())
-						tool.warn("[" + file + "] columns accessed: " + columns.accessed);
+						tool.warn(sources + " columns accessed: " + columns.accessed);
 					if (!columns.assigned.isEmpty())
-						tool.warn("[" + file + "] columns assigned: " + columns.assigned);
+						tool.warn(sources + " columns assigned: " + columns.assigned);
 					if (!columns.removed.isEmpty())
-						tool.warn("[" + file + "] columns removed: " + columns.removed);
+						tool.warn(sources + " columns removed: " + columns.removed);
 				}
 			}
 		}
@@ -172,73 +166,136 @@ public class DataframeStructureConstructor implements SemanticCheck<
 		return true;
 	}
 
-	private Columns process(DataframeForest sub, DataframeOperation entry, DataframeOperation exit)
+	private ColumnsDomain process(DataframeForest graph, DataframeOperation exit)
 			throws FixpointException {
-		Fixpoint<DataframeForest, DataframeOperation, DataframeEdge, Columns> fix = new Fixpoint<>(sub);
-		Map<DataframeOperation, Columns> fixpoint = fix.fixpoint(Map.of(entry, Columns.TOP), FIFOWorkingSet.mk(),
-				new FixpointImplementation<DataframeOperation, DataframeEdge, DataframeStructureConstructor.Columns>() {
+		Fixpoint<DataframeForest, DataframeOperation, DataframeEdge, ColumnsDomain> fix = new Fixpoint<>(graph);
+		ColumnsDomain beginning = new ColumnsDomain(Columns.TOP).bottom();
+
+		Map<DataframeOperation, ColumnsDomain> entrypoints = new HashMap<>();
+		for (DataframeOperation entry : graph.getNodeList().getEntries())
+			entrypoints.put(entry, beginning);
+
+		Map<DataframeOperation, ColumnsDomain> fixpoint = fix.fixpoint(entrypoints, FIFOWorkingSet.mk(),
+				new FixpointImplementation<DataframeOperation, DataframeEdge,
+						DataframeStructureConstructor.ColumnsDomain>() {
 
 					@Override
-					public Columns union(DataframeOperation node, Columns left, Columns right) throws Exception {
+					public ColumnsDomain union(DataframeOperation node, ColumnsDomain left, ColumnsDomain right)
+							throws Exception {
 						return join(node, left, right);
 					}
 
 					@Override
-					public Columns traverse(DataframeEdge edge, Columns entrystate) throws Exception {
+					public ColumnsDomain traverse(DataframeEdge edge, ColumnsDomain entrystate) throws Exception {
 						return entrystate;
 					}
 
 					@Override
-					public Columns join(DataframeOperation node, Columns approx, Columns old) throws Exception {
-						Names accessed = approx.accessed.lub(old.accessed);
-						Names assigned = approx.assigned.lub(old.assigned);
-						Names removed = approx.removed.lub(old.removed);
-						Names accessedBeforeAssigned = approx.accessedBeforeAssigned
-								.lub(old.accessedBeforeAssigned);
-						Names accessedAfterRemoved = approx.accessedAfterRemoved.lub(old.accessedAfterRemoved);
-						return new Columns(accessed, assigned, removed, accessedBeforeAssigned, accessedAfterRemoved);
+					public ColumnsDomain join(DataframeOperation node, ColumnsDomain approx, ColumnsDomain old)
+							throws Exception {
+						return approx.lub(old);
 					}
 
 					@Override
-					public boolean equality(DataframeOperation node, Columns approx, Columns old) throws Exception {
+					public boolean equality(DataframeOperation node, ColumnsDomain approx, ColumnsDomain old)
+							throws Exception {
 						return approx.lessOrEqual(old);
 					}
 
 					@Override
-					public Columns semantics(DataframeOperation node, Columns entrystate) throws Exception {
+					public ColumnsDomain semantics(DataframeOperation node, ColumnsDomain entrystate) throws Exception {
+						Names sources = extractSources(node, graph);
+
 						if (node instanceof AssignDataframe<?>)
-							return entrystate.assign(((AssignDataframe<?>) node).getSelection().extractColumnNames());
+							return entrystate.assign(sources,
+									((AssignDataframe<?>) node).getSelection().extractColumnNames());
 						else if (node instanceof AssignValue<?, ?>)
-							return entrystate.assign(((AssignValue<?, ?>) node).getSelection().extractColumnNames());
+							return entrystate.assign(sources,
+									((AssignValue<?, ?>) node).getSelection().extractColumnNames());
 						else if (node instanceof BooleanComparison<?>)
-							return entrystate.access(((BooleanComparison<?>) node).getSelection().extractColumnNames());
+							return entrystate.access(sources,
+									((BooleanComparison<?>) node).getSelection().extractColumnNames());
 						else if (node instanceof DropColumns)
-							return entrystate.remove(((DropColumns) node).getColumns().extractColumnNames());
+							return entrystate.remove(sources, ((DropColumns) node).getColumns().extractColumnNames());
 						else if (node instanceof SelectionOperation<?>) {
 							boolean allConsume = true;
-							for (DataframeEdge edge : sub.getOutgoingEdges(node))
+							for (DataframeEdge edge : graph.getOutgoingEdges(node))
 								if (!(edge instanceof ConsumeEdge)) {
 									allConsume = false;
 									break;
 								}
 							if (allConsume)
-								// will be reported separately as selection of the consumer
+								// will be reported separately as selection of
+								// the consumer
 								return entrystate;
-							return entrystate.access(((SelectionOperation<?>) node).getSelection().extractColumnNames());
+							return entrystate.access(sources,
+									((SelectionOperation<?>) node).getSelection().extractColumnNames());
 						} else if (node instanceof Transform<?>)
-							return entrystate.access(((Transform<?>) node).getSelection().extractColumnNames());
-						else if (node instanceof CloseOperation || node instanceof Concat
-								|| node instanceof FillNullAxis || node instanceof FilterNullAxis
-								|| node instanceof Iteration || node instanceof Keys)
+							return entrystate.access(sources,
+									((Transform<?>) node).getSelection().extractColumnNames());
+						else if (node instanceof ReadFromFile || node instanceof Concat)
+							return entrystate.define(sources);
+						else if (node instanceof CreateFromDict || node instanceof BottomOperation
+								|| node instanceof CloseOperation || node instanceof FillNullAxis
+								|| node instanceof FilterNullAxis || node instanceof Iteration || node instanceof Keys)
 							return entrystate;
-						else if (node instanceof ReadFromFile || node instanceof CreateFromDict || node instanceof BottomOperation)
-							return Columns.BOTTOM;
 						else
-							return Columns.TOP;
+							return entrystate.top();
+					}
+
+					private Names extractSources(DataframeOperation node, DataframeForest graph) {
+						DataframeForest cut = graph.bDFS(node);
+						Set<String> names = new HashSet<>();
+						for (DataframeOperation op : cut.getNodeList().getEntries())
+							if (op instanceof ReadFromFile && ((ReadFromFile) op).getFile() != null)
+								names.add(((ReadFromFile) op).getFile());
+						return new Names(names);
 					}
 				});
 
 		return fixpoint.get(exit);
+	}
+
+	private static class ColumnsDomain extends FunctionalLattice<ColumnsDomain, Names, Columns> {
+
+		public ColumnsDomain(Columns lattice, Map<Names, Columns> function) {
+			super(lattice, function);
+		}
+
+		public ColumnsDomain define(Names sources) {
+			return putState(sources, Columns.BOTTOM);
+		}
+
+		public ColumnsDomain(Columns lattice) {
+			super(lattice);
+		}
+
+		public ColumnsDomain assign(Names key, Names names) throws SemanticException {
+			return putState(key, getState(key).assign(names));
+		}
+
+		public ColumnsDomain remove(Names key, Names names) throws SemanticException {
+			return putState(key, getState(key).remove(names));
+		}
+
+		public ColumnsDomain access(Names key, Names names) throws SemanticException {
+			return putState(key, getState(key).access(names));
+		}
+
+		@Override
+		public ColumnsDomain top() {
+			return new ColumnsDomain(lattice.top(), null);
+		}
+
+		@Override
+		public ColumnsDomain bottom() {
+			return new ColumnsDomain(lattice.bottom(), null);
+		}
+
+		@Override
+		protected ColumnsDomain mk(Columns lattice, Map<Names, Columns> function) {
+			return new ColumnsDomain(lattice, function);
+		}
 	}
 
 	private static class Columns extends BaseLattice<Columns> {
@@ -300,12 +357,13 @@ public class DataframeStructureConstructor implements SemanticCheck<
 
 		@Override
 		protected Columns lubAux(Columns other) throws SemanticException {
-			return new Columns(
-					accessed.lub(other.accessed),
-					assigned.lub(other.assigned),
-					removed.lub(other.removed),
-					accessedBeforeAssigned.lub(other.accessedBeforeAssigned),
-					accessedAfterRemoved.lub(other.accessedAfterRemoved));
+			Names accessed = this.accessed.lub(other.accessed);
+			Names assigned = this.assigned.lub(other.assigned);
+			Names removed = this.removed.lub(other.removed);
+			Names accessedBeforeAssigned = this.accessedBeforeAssigned
+					.lub(other.accessedBeforeAssigned);
+			Names accessedAfterRemoved = this.accessedAfterRemoved.lub(other.accessedAfterRemoved);
+			return new Columns(accessed, assigned, removed, accessedBeforeAssigned, accessedAfterRemoved);
 		}
 
 		@Override
