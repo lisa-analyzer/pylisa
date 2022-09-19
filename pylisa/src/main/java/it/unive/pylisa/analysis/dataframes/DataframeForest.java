@@ -1,5 +1,9 @@
 package it.unive.pylisa.analysis.dataframes;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,6 +21,9 @@ import java.util.function.Function;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.graphstream.graph.Edge;
+import org.graphstream.graph.Element;
+import org.graphstream.graph.implementations.MultiGraph;
+import org.graphstream.stream.file.FileSinkDOT;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
@@ -338,6 +345,131 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 
 		protected static String edgeName(long src, long dest, SerializableEdge edge) {
 			return "edge-" + src + "-" + dest + "-" + edge.getKind();
+		}
+
+		private class CustomDotSink extends FileSinkDOT {
+
+			@Override
+			protected void outputHeader() throws IOException {
+				out = (PrintWriter) output;
+				out.printf("%s {%n", "digraph");
+			}
+
+			@Override
+			protected String outputAttribute(String key, Object value, boolean first) {
+				boolean quote = true;
+
+				if (value instanceof Number || key.equals(LABEL))
+					// labels that we output are always in html format
+					// so no need to quote them
+					quote = false;
+
+				Object quoting = quote ? "\"" : "";
+				return String.format("%s%s=%s%s%s", first ? "" : ",", key, quoting, value, quoting);
+			}
+
+			@Override
+			protected String outputAttributes(Element e) {
+				if (e.getAttributeCount() == 0)
+					return "";
+
+				Map<String, String> attrs = new HashMap<>();
+				e.attributeKeys().forEach(key -> attrs.put(key, outputAttribute(key, e.getAttribute(key), true)));
+
+				StringBuilder buffer = new StringBuilder("[");
+				for (Entry<String, String> entry : attrs.entrySet())
+					if (!entry.getKey().equals(LABEL))
+						buffer.append(entry.getValue()).append(",");
+
+				if (attrs.containsKey(LABEL))
+					buffer.append(attrs.get(LABEL));
+
+				String result = buffer.toString();
+				if (result.endsWith(","))
+					result = result.substring(0, result.length() - 1);
+
+				return result + "]";
+			}
+		}
+		
+		@Override
+		public void dump(Writer writer) throws IOException {
+			FileSinkDOT sink = new CustomDotSink() {
+				@Override
+				protected void outputEndOfFile() throws IOException {
+					LegendClusterSink legend = new LegendClusterSink();
+					legend.setDirected(true);
+					StringWriter sw = new StringWriter();
+					legend.writeAll(new Legend().graph, sw);
+					out.printf("%s%n", sw.toString());
+					super.outputEndOfFile();
+				}
+			};
+			sink.setDirected(true);
+			sink.writeAll(graph, writer);
+		}
+
+		private class LegendClusterSink extends CustomDotSink {
+			@Override
+			protected void outputHeader() throws IOException {
+				out = (PrintWriter) output;
+				out.printf("%s {%n", "subgraph cluster_legend");
+				out.printf("\tlabel=\"Legend\";%n");
+				out.printf("\tstyle=dotted;%n");
+				out.printf("\tnode [shape=plaintext];%n");
+			}
+		}
+
+		private static final class Legend {
+			private final org.graphstream.graph.Graph graph;
+
+			private Legend() {
+				graph = new MultiGraph("legend");
+				org.graphstream.graph.Node l = graph.addNode("legend");
+				StringBuilder builder = new StringBuilder();
+				builder.append("<");
+				builder.append("<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">");
+				builder.append("<tr><td align=\"right\">node border&nbsp;</td><td align=\"left\"><font color=\"");
+				builder.append(NORMAL_NODE_COLOR);
+				builder.append("\">");
+				builder.append(NORMAL_NODE_COLOR);
+				builder.append("</font>, single</td></tr>");
+				builder.append("<tr><td align=\"right\">entrypoint border&nbsp;</td><td align=\"left\"><font color=\"");
+				builder.append(SPECIAL_NODE_COLOR);
+				builder.append("\">");
+				builder.append(SPECIAL_NODE_COLOR);
+				builder.append("</font>, single</td></tr>");
+				builder.append("<tr><td align=\"right\">exitpoint border&nbsp;</td><td align=\"left\"><font color=\"");
+				builder.append(SPECIAL_NODE_COLOR);
+				builder.append("\">");
+				builder.append(SPECIAL_NODE_COLOR);
+				builder.append("</font>, double</td></tr>");
+				builder.append("<tr><td align=\"right\">sequential edge&nbsp;</td><td align=\"left\"><font color=\"");
+				builder.append(COLOR_BLACK);
+				builder.append("\">");
+				builder.append(COLOR_BLACK);
+				builder.append("</font>, solid</td></tr>");
+				builder.append("<tr><td align=\"right\">assign edge&nbsp;</td><td align=\"left\"><font color=\"");
+				builder.append(COLOR_BLUE);
+				builder.append("\">");
+				builder.append(COLOR_BLUE);
+				builder.append("</font>, solid</td></tr>");
+				builder.append("<tr><td align=\"right\">concat edge&nbsp;</td><td align=\"left\"><font color=\"");
+				builder.append(COLOR_RED);
+				builder.append("\">");
+				builder.append(COLOR_RED);
+				builder.append("</font>, solid</td></tr>");
+				builder.append("<tr><td align=\"right\">consume edge&nbsp;</td><td align=\"left\"><font color=\"");
+				builder.append(COLOR_BLACK);
+				builder.append("\">");
+				builder.append(COLOR_BLACK);
+				builder.append("</font>, ");
+				builder.append(CONDITIONAL_EDGE_STYLE);
+				builder.append("</td></tr>");
+				builder.append("</table>");
+				builder.append(">");
+				l.setAttribute("label", builder.toString());
+			}
 		}
 	}
 	
