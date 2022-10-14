@@ -12,7 +12,7 @@ repositories {
     mavenCentral()
     maven {
         name = 'GitHubPackages'
-        url = 'https://maven.pkg.github.com/UniVE-SSV/lisa'
+        url = 'https://maven.pkg.github.com/lisa-analyzer/lisa'
         credentials {
             username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
             password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
@@ -25,7 +25,7 @@ version = '0.1a1'
 mainClassName = 'it.unive.pylisa.PyFrontend'
 
 dependencies {
-    implementation 'com.github.unive-ssv:lisa-core:0.1b5-SNAPSHOT'
+    implementation 'io.github.lisa-analyzer:lisa-core:0.1b5-SNAPSHOT'
     antlr 'org.antlr:antlr4:4.8-1'    
     testImplementation 'junit:junit:4.12'
     implementation 'com.google.code.gson:gson:2.8.7'
@@ -118,12 +118,12 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             artifactId = project.name 
-            groupId = 'com.github.unive-ssv'
+            groupId = 'io.github.lisa-analyzer'
             from components.java
             pom {
                 name = 'PyLiSA (' + project.name + ')' 
                 description = 'Python frontend for LiSA'
-                url = 'https://unive-ssv.github.io/lisa/'
+                url = 'https://lisa-analyzer.github.io/'
                 packaging = 'jar'
                 licenses {
                     license {
@@ -150,9 +150,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:git://github.com/UniVE-SSV/pylisa.git'
-                    developerConnection = 'scm:git:ssh://github.com/UniVE-SSV/pylisa.git'
-                    url = 'https://github.com/UniVE-SSV/pylisa'
+                    connection = 'scm:git:git://github.com/lisa-analyzer/pylisa.git'
+                    developerConnection = 'scm:git:ssh://github.com/lisa-analyzer/pylisa.git'
+                    url = 'https://github.com/lisa-analyzer/pylisa'
                 }
             }
         }
@@ -160,7 +160,7 @@ publishing {
     repositories {
         maven {
             name = 'OSSRH'
-            url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+            url = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
             credentials {
                 username = System.getenv('MAVEN_USERNAME')
                 password = System.getenv('MAVEN_PASSWORD')

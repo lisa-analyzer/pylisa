@@ -7,9 +7,9 @@ Python frontend for LiSA
 Sometimes, PyLiSA will refer to a snapshot release of LiSA to exploit unreleased features. If, when building, you get the following error message:
 
 ```
-> Could not resolve com.github.unive-ssv:lisa-project:ver-SNAPSHOT.
-  > Could not get resource 'https://maven.pkg.github.com/UniVE-SSV/lisa/com/github/unive-ssv/lisa-project/ver-SNAPSHOT/maven-metadata.xml'.
-    > Could not GET 'https://maven.pkg.github.com/UniVE-SSV/lisa/com/github/unive-ssv/lisa-project/ver-SNAPSHOT/maven-metadata.xml'. Received status code 401 from server: Unauthorized
+> Could not resolve io.github.lisa-analyzer:lisa-project:ver-SNAPSHOT.
+  > Could not get resource 'https://maven.pkg.github.com/lisa-analyzer/lisa/io/github/lisa-analyzer/lisa-project/ver-SNAPSHOT/maven-metadata.xml'.
+    > Could not GET 'https://maven.pkg.github.com/lisa-analyzer/lisa/io/github/lisa-analyzer/lisa-project/ver-SNAPSHOT/maven-metadata.xml'. Received status code 401 from server: Unauthorized
 ```
 
 Then you have to perform the following:

@@ -34,7 +34,7 @@ public class PyRTA extends BaseCallGraph {
 			Collection<NativeCFG> natives,
 			SymbolAliasing aliasing)
 			throws CallResolutionException {
-		// FIXME temporary patch to https://github.com/UniVE-SSV/lisa/issues/212
+		// FIXME temporary patch to https://github.com/lisa-analyzer/lisa/issues/212
 		if (call.getParameters().length == 0)
 			throw new CallResolutionException(
 					"An instance call should have at least one parameter to be used as the receiver of the call");
