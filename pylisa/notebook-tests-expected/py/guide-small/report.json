@@ -9,6 +9,8 @@
     "message" : "[GENERIC] ['temporal.csv'] columns accessed before being assigned: ['bar', 'Mes', 'foo']"
   }, {
     "message" : "[GENERIC] ['temporal.csv'] columns assigned: ['Mes']"
+  }, {
+    "message" : "[GENERIC] [TO_GEOCODE(['País'])] columns accessed before being assigned: ['geometry']"
   } ],
   "files" : [ "untyped_dataframes-tests_guide-small.main().json" ]
 }

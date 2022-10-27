@@ -1,6 +1,7 @@
 package it.unive.pylisa.cfg.type;
 
 import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.type.InMemoryType;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
@@ -97,7 +98,7 @@ public class PyClassType implements InMemoryType, UnitType {
 				return current;
 
 			// null since we do not want to create new types here
-			current.unit.getSuperUnits().forEach(u -> ws.push(lookup(u.getName(), null)));
+			current.unit.getImmediateAncestors().forEach(u -> ws.push(lookup(u.getName(), null)));
 		}
 
 		return Untyped.INSTANCE;
@@ -145,7 +146,7 @@ public class PyClassType implements InMemoryType, UnitType {
 	@Override
 	public Collection<Type> allInstances() {
 		Collection<Type> instances = new HashSet<>();
-		for (CompilationUnit in : unit.getInstances())
+		for (Unit in : unit.getInstances())
 			instances.add(lookup(in.getName(), null));
 		return instances;
 	}

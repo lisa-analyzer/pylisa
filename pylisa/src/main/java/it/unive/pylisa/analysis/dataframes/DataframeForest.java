@@ -17,6 +17,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -391,7 +392,7 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 				return result + "]";
 			}
 		}
-		
+
 		@Override
 		public void dump(Writer writer) throws IOException {
 			FileSinkDOT sink = new CustomDotSink() {
@@ -472,7 +473,7 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 			}
 		}
 	}
-	
+
 	public Collection<DataframeForest> partitionByRoot() {
 		Collection<DataframeOperation> entries = list.getEntries();
 		Collection<DataframeForest> result = new ArrayList<>(entries.size());
@@ -482,17 +483,18 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 	}
 
 	private DataframeForest dfs(DataframeOperation entry) {
-		NodeList<DataframeForest, DataframeOperation, DataframeEdge> list = new NodeList<>(new SimpleEdge(null, null), false);
+		NodeList<DataframeForest, DataframeOperation,
+				DataframeEdge> list = new NodeList<>(new SimpleEdge(null, null), false);
 		DataframeForest forest = new DataframeForest(Collections.singleton(entry), list, false);
 		VisitOnceWorkingSet<DataframeOperation> ws = VisitOnceWorkingSet.mk(LIFOWorkingSet.mk());
 		Set<DataframeEdge> seenEdges = new TreeSet<>();
 		ws.push(entry);
 		list.addNode(entry);
-		
+
 		while (!ws.isEmpty()) {
 			DataframeOperation current = ws.pop();
 			for (DataframeEdge edge : getOutgoingEdges(current)) {
-				if (!ws.getSeen().contains(edge.getDestination())) { 
+				if (!ws.getSeen().contains(edge.getDestination())) {
 					list.addNode(edge.getDestination());
 					ws.push(edge.getDestination());
 				}
@@ -502,22 +504,28 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 				}
 			}
 		}
-		
+
 		return forest;
 	}
-	
-	public DataframeForest bDFS(DataframeOperation leaf) {
-		NodeList<DataframeForest, DataframeOperation, DataframeEdge> list = new NodeList<>(new SimpleEdge(null, null), false);
+
+	public DataframeForest bDFS(DataframeOperation leaf, Predicate<DataframeOperation> stop,
+			Predicate<DataframeEdge> follow) {
+		NodeList<DataframeForest, DataframeOperation,
+				DataframeEdge> list = new NodeList<>(new SimpleEdge(null, null), false);
 		DataframeForest forest = new DataframeForest(Collections.emptySet(), list, false);
 		VisitOnceWorkingSet<DataframeOperation> ws = VisitOnceWorkingSet.mk(LIFOWorkingSet.mk());
 		Set<DataframeEdge> seenEdges = new TreeSet<>();
 		ws.push(leaf);
 		list.addNode(leaf);
-		
+
 		while (!ws.isEmpty()) {
 			DataframeOperation current = ws.pop();
+			if (stop.test(current))
+				continue;
 			for (DataframeEdge edge : getIngoingEdges(current)) {
-				if (!ws.getSeen().contains(edge.getSource())) { 
+				if (!follow.test(edge))
+					continue;
+				if (!ws.getSeen().contains(edge.getSource())) {
 					list.addNode(edge.getSource());
 					ws.push(edge.getSource());
 				}
@@ -527,7 +535,7 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 				}
 			}
 		}
-		
+
 		return forest;
 	}
 }

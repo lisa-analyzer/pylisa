@@ -22,12 +22,15 @@ public class ApplyTransformation implements UnaryOperator {
 
 	private final Optional<Object> arg;
 
-	public ApplyTransformation(Kind type) {
-		this(type, null);
+	private final boolean changeShape;
+
+	public ApplyTransformation(Kind type, boolean changeShape) {
+		this(type, changeShape, null);
 	}
 
-	public ApplyTransformation(Kind type, Object arg) {
+	public ApplyTransformation(Kind type, boolean changeShape, Object arg) {
 		this.type = type;
+		this.changeShape = changeShape;
 		this.arg = Optional.ofNullable(arg);
 	}
 
@@ -37,6 +40,10 @@ public class ApplyTransformation implements UnaryOperator {
 
 	public Optional<Object> getArg() {
 		return arg;
+	}
+	
+	public boolean isChangeShape() {
+		return changeShape;
 	}
 
 	@Override
@@ -60,6 +67,7 @@ public class ApplyTransformation implements UnaryOperator {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((arg == null) ? 0 : arg.hashCode());
+		result = prime * result + (changeShape ? 1231 : 1237);
 		result = prime * result + ((type == null) ? 0 : type.hashCode());
 		return result;
 	}
@@ -77,6 +85,8 @@ public class ApplyTransformation implements UnaryOperator {
 			if (other.arg != null)
 				return false;
 		} else if (!arg.equals(other.arg))
+			return false;
+		if (changeShape != other.changeShape)
 			return false;
 		if (type != other.type)
 			return false;

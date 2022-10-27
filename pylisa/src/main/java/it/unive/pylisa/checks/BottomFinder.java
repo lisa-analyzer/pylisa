@@ -8,7 +8,6 @@ import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
-import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
@@ -30,7 +29,7 @@ public class BottomFinder<A extends AbstractState<A, H, V, T>,
 	}
 
 	@Override
-	public boolean visitCompilationUnit(CheckToolWithAnalysisResults<A, H, V, T> tool, CompilationUnit unit) {
+	public boolean visitUnit(CheckToolWithAnalysisResults<A, H, V, T> tool, Unit unit) {
 		return true;
 	}
 

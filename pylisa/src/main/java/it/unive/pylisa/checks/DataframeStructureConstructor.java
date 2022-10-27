@@ -18,7 +18,6 @@ import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
-import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
@@ -32,6 +31,7 @@ import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain.CloseOperation;
 import it.unive.pylisa.analysis.dataframes.Names;
+import it.unive.pylisa.analysis.dataframes.edge.AssignEdge;
 import it.unive.pylisa.analysis.dataframes.edge.ConsumeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.operations.AssignDataframe;
@@ -72,11 +72,11 @@ public class DataframeStructureConstructor implements SemanticCheck<
 	}
 
 	@Override
-	public boolean visitCompilationUnit(
+	public boolean visitUnit(
 			CheckToolWithAnalysisResults<
 					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
 					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
-			CompilationUnit unit) {
+			Unit unit) {
 		return true;
 	}
 
@@ -149,7 +149,7 @@ public class DataframeStructureConstructor implements SemanticCheck<
 					Names sources = entry.getKey();
 					Columns columns = entry.getValue();
 					if (!columns.accessedBeforeAssigned.isEmpty())
-						tool.warn("[" + sources + "] columns accessed before being assigned: "
+						tool.warn(sources + " columns accessed before being assigned: "
 								+ columns.accessedBeforeAssigned);
 					if (!columns.accessedAfterRemoved.isEmpty())
 						tool.warn(sources + " columns accessed after being removed: " + columns.accessedAfterRemoved);
@@ -220,7 +220,9 @@ public class DataframeStructureConstructor implements SemanticCheck<
 						else if (node instanceof SelectionOperation<?>) {
 							boolean allConsume = true;
 							for (DataframeEdge edge : graph.getOutgoingEdges(node))
-								if (!(edge instanceof ConsumeEdge)) {
+								if (edge.getDestination().equals(exit))
+									continue;
+								else if (!(edge instanceof ConsumeEdge)) {
 									allConsume = false;
 									break;
 								}
@@ -231,7 +233,10 @@ public class DataframeStructureConstructor implements SemanticCheck<
 							return entrystate.access(sources,
 									((SelectionOperation<?>) node).getSelection().extractColumnNames());
 						} else if (node instanceof Transform<?>)
-							return entrystate.access(sources,
+							if (((Transform<?>) node).isChangeShape())
+								return entrystate.define(sources);
+							else
+								return entrystate.access(sources,
 									((Transform<?>) node).getSelection().extractColumnNames());
 						else if (node instanceof ReadFromFile || node instanceof Concat)
 							return entrystate.define(sources);
@@ -244,11 +249,15 @@ public class DataframeStructureConstructor implements SemanticCheck<
 					}
 
 					private Names extractSources(DataframeOperation node, DataframeForest graph) {
-						DataframeForest cut = graph.bDFS(node);
+						DataframeForest cut = graph.bDFS(node,
+								op -> op instanceof Transform<?> && ((Transform<?>) op).isChangeShape(),
+								edge -> !(edge instanceof AssignEdge));
 						Set<String> names = new HashSet<>();
 						for (DataframeOperation op : cut.getNodeList().getEntries())
 							if (op instanceof ReadFromFile && ((ReadFromFile) op).getFile() != null)
 								names.add(((ReadFromFile) op).getFile());
+							else
+								names.add(op.toString());
 						return new Names(names);
 					}
 				});

@@ -1,5 +1,16 @@
 package it.unive.pylisa.checks;
 
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+
 import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.CFGWithAnalysisResults;
@@ -14,7 +25,6 @@ import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.outputs.serializableGraph.SerializableString;
 import it.unive.lisa.outputs.serializableGraph.SerializableValue;
-import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
@@ -28,16 +38,6 @@ import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.NodeId;
 import it.unive.pylisa.analysis.dataframes.SetLattice;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
 
 public class DataframeDumper implements SemanticCheck<
 		SimpleAbstractState<
@@ -67,11 +67,11 @@ public class DataframeDumper implements SemanticCheck<
 	}
 
 	@Override
-	public boolean visitCompilationUnit(
+	public boolean visitUnit(
 			CheckToolWithAnalysisResults<
 					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
 					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
-			CompilationUnit unit) {
+			Unit unit) {
 		return true;
 	}
 

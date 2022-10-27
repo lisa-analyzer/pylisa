@@ -2,8 +2,39 @@ package it.unive.pylisa;
 
 import static it.unive.lisa.LiSAFactory.getDefaultFor;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.function.Function;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
@@ -15,13 +46,15 @@ import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.logging.IterationLogger;
+import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.CodeUnit;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
-import it.unive.lisa.program.cfg.CFGDescriptor;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.VariableTableEntry;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -38,10 +71,6 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.cfg.statement.call.assignment.PythonLikeAssigningStrategy;
-import it.unive.lisa.program.cfg.statement.call.resolution.PythonLikeMatchingStrategy;
-import it.unive.lisa.program.cfg.statement.call.resolution.RuntimeTypesMatchingStrategy;
-import it.unive.lisa.program.cfg.statement.call.traversal.SingleInheritanceTraversalStrategy;
 import it.unive.lisa.program.cfg.statement.comparison.LessThan;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
@@ -161,7 +190,6 @@ import it.unive.pylisa.antlr.Python3Parser.Yield_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
 import it.unive.pylisa.antlr.Python3ParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
-import it.unive.pylisa.cfg.PythonUnit;
 import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import it.unive.pylisa.cfg.expression.Empty;
 import it.unive.pylisa.cfg.expression.LambdaExpression;
@@ -201,42 +229,8 @@ import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.function.Function;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class PyFrontend extends Python3ParserBaseVisitor<Object> {
-
-	// TODO this is not right, but its fine for now
-	private static final SingleInheritanceTraversalStrategy TRAVERSAL_STRATEGY = SingleInheritanceTraversalStrategy.INSTANCE;
-	private static final PythonLikeMatchingStrategy MATCHING_STRATEGY = new PythonLikeMatchingStrategy(
-			RuntimeTypesMatchingStrategy.INSTANCE);
-	private static final PythonLikeAssigningStrategy ASSIGN_STRATEGY = PythonLikeAssigningStrategy.INSTANCE;
 
 	private static final Logger log = LogManager.getLogger(PyFrontend.class);
 
@@ -310,12 +304,13 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 *                      {@code notebook} is {@code true}.
 	 */
 	public PyFrontend(String filePath, boolean notebook, List<Integer> cellOrder) {
-		this.program = new Program();
+		this.program = new Program(new PythonFeatures());
 		this.filePath = filePath;
 		this.notebook = notebook;
 		this.cellOrder = cellOrder;
-		this.currentUnit = new PythonUnit(new SourceCodeLocation(filePath, 0, 0),
-				FilenameUtils.removeExtension(filePath), true);
+		this.currentUnit = new CodeUnit(new SourceCodeLocation(filePath, 0, 0),
+				program, FilenameUtils.removeExtension(filePath));
+		program.addUnit(currentUnit);
 	}
 
 	/**
@@ -398,9 +393,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		PyClassType.all().forEach(program::registerType);
 
-		for (CFG cfg : program.getCFGs())
-			if (cfg.getDescriptor().getName().equals("main"))
-				program.addEntryPoint(cfg);
+		for (CFG cm : program.getAllCFGs())
+			if (cm.getDescriptor().getName().equals("main"))
+				program.addEntryPoint(cm);
 
 		return program;
 	}
@@ -461,7 +456,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	@Override
 	public Pair<Statement, Statement> visitFile_input(File_inputContext ctx) {
 		currentCFG = new PyCFG(buildMainCFGDescriptor(getLocation(ctx)));
-		program.addCFG(currentCFG);
+		currentUnit.addCodeMember(currentCFG);
 		Statement last_stmt = null;
 		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
 			Compound_stmtContext comp = stmt.compound_stmt();
@@ -528,19 +523,19 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		return new SourceCodeLocation(this.getFilePath(), getLine(ctx), getCol(ctx));
 	}
 
-	private CFGDescriptor buildMainCFGDescriptor(SourceCodeLocation loc) {
+	private CodeMemberDescriptor buildMainCFGDescriptor(SourceCodeLocation loc) {
 		String funcName = "main";
 		Parameter[] cfgArgs = new Parameter[] {};
 
-		return new CFGDescriptor(loc, currentUnit, false, funcName, cfgArgs);
+		return new CodeMemberDescriptor(loc, currentUnit, false, funcName, cfgArgs);
 	}
 
-	private CFGDescriptor buildCFGDescriptor(FuncdefContext funcDecl) {
+	private CodeMemberDescriptor buildCFGDescriptor(FuncdefContext funcDecl) {
 		String funcName = funcDecl.NAME().getText();
 
 		Parameter[] cfgArgs = visitParameters(funcDecl.parameters());
 
-		return new CFGDescriptor(getLocation(funcDecl), currentUnit, false, funcName, cfgArgs);
+		return new CodeMemberDescriptor(getLocation(funcDecl), currentUnit, false, funcName, cfgArgs);
 	}
 
 	@Override
@@ -572,13 +567,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	public Pair<Statement, Statement> visitFuncdef(FuncdefContext ctx) {
 		PyCFG oldCFG = currentCFG;
 		currentCFG = new PyCFG(buildCFGDescriptor(ctx));
-		program.addCFG(currentCFG);
 		Pair<Statement, Statement> r = visitSuite(ctx.suite());
 		currentCFG.addNodeIfNotPresent(r.getLeft(), true);
 		addRetNodesToCurrentCFG();
 		PyCFG result = currentCFG;
 		currentCFG = oldCFG;
-		currentUnit.addCFG(result);
+		currentUnit.addCodeMember(result); // TODO instance?
 		return null;
 	}
 
@@ -704,9 +698,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		Statement result = new UnresolvedCall(
 				currentCFG,
 				getLocation(ctx),
-				ASSIGN_STRATEGY,
-				MATCHING_STRATEGY,
-				TRAVERSAL_STRATEGY,
 				CallType.STATIC,
 				Program.PROGRAM_NAME,
 				"del",
@@ -737,9 +728,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					new UnresolvedCall(
 							currentCFG,
 							getLocation(ctx),
-							ASSIGN_STRATEGY,
-							MATCHING_STRATEGY,
-							TRAVERSAL_STRATEGY,
 							CallType.STATIC,
 							Program.PROGRAM_NAME,
 							"yield from",
@@ -922,9 +910,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						new UnresolvedCall(
 								currentCFG,
 								getLocation(ctx),
-								ASSIGN_STRATEGY,
-								MATCHING_STRATEGY,
-								TRAVERSAL_STRATEGY,
 								CallType.STATIC,
 								"assert",
 								Program.PROGRAM_NAME,
@@ -1114,9 +1099,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				new UnresolvedCall(
 						currentCFG,
 						getLocation(ctx),
-						ASSIGN_STRATEGY,
-						MATCHING_STRATEGY,
-						TRAVERSAL_STRATEGY,
 						CallType.INSTANCE,
 						null,
 						"__len__",
@@ -1131,9 +1113,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				new UnresolvedCall(
 						currentCFG,
 						getLocation(ctx),
-						ASSIGN_STRATEGY,
-						MATCHING_STRATEGY,
-						TRAVERSAL_STRATEGY,
 						CallType.INSTANCE,
 						null,
 						"__getitem__",
@@ -1739,9 +1718,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			for (TrailerContext expr : ctx.trailer()) {
 				if (expr.NAME() != null) {
 					last_name = expr.NAME().getSymbol().getText();
-					Global fieldName = new Global(getLocation(ctx), last_name);
 					previous_access = access;
-					access = new PyAccessInstanceGlobal(currentCFG, getLocation(expr), access, fieldName);
+					access = new PyAccessInstanceGlobal(currentCFG, getLocation(expr), access, last_name);
 				} else if (expr.OPEN_PAREN() != null) {
 					if (last_name == null)
 						throw new UnsupportedStatementException(
@@ -1759,9 +1737,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					access = new UnresolvedCall(
 							currentCFG,
 							getLocation(expr),
-							ASSIGN_STRATEGY,
-							MATCHING_STRATEGY,
-							TRAVERSAL_STRATEGY,
 							instance ? CallType.UNKNOWN : CallType.STATIC,
 							null,
 							method_name,
@@ -2000,11 +1975,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		Unit previous = this.currentUnit;
 		String name = ctx.NAME().getSymbol().getText();
 		// TODO inheritance
-		PythonUnit cu = new PythonUnit(new SourceCodeLocation(name, 0, 0), name, true);
+		ClassUnit cu = new ClassUnit(new SourceCodeLocation(name, 0, 0), program, name, true);
 		if (LibrarySpecificationProvider.hierarchyRoot != null)
-			cu.addSuperUnit(LibrarySpecificationProvider.hierarchyRoot);
+			cu.addAncestor(LibrarySpecificationProvider.hierarchyRoot);
 		this.currentUnit = cu;
 		parseClassBody(ctx.suite());
+		program.addUnit(cu);
 		this.currentUnit = previous;
 		return null;
 	}
@@ -2017,7 +1993,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		for (StmtContext stmt : ctx.stmt()) {
 			if (stmt.simple_stmt() != null) {
 				Pair<VariableRef, Expression> p = parseField(stmt.simple_stmt());
-				currentUnit.addGlobal(new Global(getLocation(ctx), p.getLeft().getName()));
+				currentUnit.addGlobal(new Global(getLocation(ctx), currentUnit, p.getLeft().getName(), true));
 				if (p.getRight() != null)
 					fields_init.add(p);
 			} else if (stmt.compound_stmt().funcdef() != null) {
@@ -2042,8 +2018,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	private void dumpConstructor(List<Pair<VariableRef, Expression>> fields_init, CodeLocation location) {
 		if (fields_init.size() > 0) {
 			PyCFG oldCFG = currentCFG;
-			currentCFG = new PyCFG(new CFGDescriptor(location, currentUnit, true, "<init>"));
-			program.addCFG(currentCFG);
+			currentCFG = new PyCFG(new CodeMemberDescriptor(location, currentUnit, true, "<init>"));
 			Statement previous = null;
 			for (Pair<VariableRef, Expression> init : fields_init) {
 				Statement f = new Assignment(currentCFG, init.getLeft().getLocation(), init.getLeft(), init.getRight());
@@ -2052,7 +2027,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					currentCFG.addEdge(new SequentialEdge(previous, f));
 				previous = f;
 			}
-			currentUnit.addCFG(currentCFG);
+			currentUnit.addCodeMember(currentCFG);
 			currentCFG = oldCFG;
 		}
 

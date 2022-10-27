@@ -1,11 +1,11 @@
 package it.unive.pylisa.cfg;
 
 import it.unive.lisa.program.cfg.CFG;
-import it.unive.lisa.program.cfg.CFGDescriptor;
+import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.statement.Statement;
 
 public class PyCFG extends CFG {
-	public PyCFG(CFGDescriptor descriptor) {
+	public PyCFG(CodeMemberDescriptor descriptor) {
 		super(descriptor);
 	}
 

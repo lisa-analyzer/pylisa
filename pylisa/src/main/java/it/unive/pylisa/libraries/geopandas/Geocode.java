@@ -47,7 +47,7 @@ public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		ApplyTransformation op = new ApplyTransformation(ApplyTransformation.Kind.TO_GEOCODE);
+		ApplyTransformation op = new ApplyTransformation(ApplyTransformation.Kind.TO_GEOCODE, true);
 		return PandasSemantics.transform(state, expr, st, op);
 	}
 }

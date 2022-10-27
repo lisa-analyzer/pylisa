@@ -1,5 +1,19 @@
 package it.unive.pylisa.libraries;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.apache.commons.lang3.tuple.Pair;
+
+import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Program;
@@ -8,8 +22,9 @@ import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
-import it.unive.lisa.program.cfg.CFGDescriptor;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.CodeMember;
+import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -23,6 +38,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Int32;
 import it.unive.lisa.type.common.StringType;
+import it.unive.pylisa.PythonFeatures;
 import it.unive.pylisa.antlr.LibraryDefinitionLexer;
 import it.unive.pylisa.antlr.LibraryDefinitionParser;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.ClassDefContext;
@@ -37,28 +53,17 @@ import it.unive.pylisa.antlr.LibraryDefinitionParser.TypeContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParserBaseVisitor;
 import it.unive.pylisa.cfg.expression.NoneLiteral;
 import it.unive.pylisa.cfg.type.PyClassType;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.apache.commons.lang3.tuple.Pair;
 
 public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisitor<Object> {
 
 	private final String file;
 	private final Program program;
 
-	private Map<String, CompilationUnit> parsed;
-	private Collection<Pair<CompilationUnit, CompilationUnit>> toType;
+	private Map<String, ClassUnit> parsed;
+	private Collection<Pair<ClassUnit, ClassUnit>> toType;
 
-	CompilationUnit root;
-	private Unit library, clazz;
+	ClassUnit root;
+	private Unit library, clazz, fieldContainer;
 	private CodeLocation location;
 	private CFG init;
 
@@ -73,15 +78,15 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		if (init != null)
 			return;
 
-		init = new CFG(new CFGDescriptor(SyntheticLocation.INSTANCE, program, false, "LiSA$init"));
+		init = new CFG(new CodeMemberDescriptor(SyntheticLocation.INSTANCE, program, false, "LiSA$init"));
 		init.addNode(new Ret(init, SyntheticLocation.INSTANCE), true);
-		program.addCFG(init);
+		program.addCodeMember(init);
 	}
 
 	@Override
 	public CompilationUnit visitClassDef(ClassDefContext ctx) {
 		String name = ctx.name.getText();
-		CompilationUnit unit = typedefsOnly ? new CompilationUnit(location, name, ctx.SEALED() != null)
+		ClassUnit unit = typedefsOnly ? new ClassUnit(location, program, name, ctx.SEALED() != null)
 				: parsed.get(name);
 		if (typedefsOnly && ctx.ROOT() != null)
 			if (root != null)
@@ -92,18 +97,19 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		if (!typedefsOnly) {
 			clazz = unit;
 			if (ctx.base != null)
-				unit.addSuperUnit(parsed.get(ctx.base.getText()));
+				unit.addAncestor(parsed.get(ctx.base.getText()));
 			else if (root != null && unit != root)
-				unit.addSuperUnit(root);
+				unit.addAncestor(root);
 
 			for (MethodContext mtd : ctx.method()) {
 				NativeCFG construct = visitMethod(mtd);
 				if (construct.getDescriptor().isInstance())
-					unit.addInstanceConstruct(construct);
+					unit.addInstanceCodeMember(construct);
 				else
-					unit.addConstruct(construct);
+					unit.addCodeMember(construct);
 			}
 
+			fieldContainer = clazz;
 			for (FieldContext fld : ctx.field()) {
 				Global field = visitField(fld);
 				if (fld.INSTANCE() != null)
@@ -115,7 +121,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 			clazz = null;
 		} else {
 			parsed.put(name, unit);
-			toType.add(library == program ? Pair.of(null, unit) : Pair.of((CompilationUnit) library, unit));
+			toType.add(library == program ? Pair.of(null, unit) : Pair.of((ClassUnit) library, unit));
 		}
 
 		return unit;
@@ -125,7 +131,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	public Global visitField(FieldContext ctx) {
 		Type type = visitType(ctx.type());
 		String name = ctx.name.getText();
-		return new Global(location, name, type);
+		return new Global(location, fieldContainer, name, ctx.INSTANCE() != null, type);
 	}
 
 	@Override
@@ -196,7 +202,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		for (int i = 0; i < pars.length; i++)
 			pars[i] = visitParam(ctx.param(i));
 
-		CFGDescriptor desc = new CFGDescriptor(
+		CodeMemberDescriptor desc = new CodeMemberDescriptor(
 				location,
 				clazz == null ? library : clazz,
 				ctx.INSTANCE() != null,
@@ -217,13 +223,14 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	public CompilationUnit visitLibrary(LibraryContext ctx) {
 		location = new SourceCodeLocation(ctx.loc.getText(), 0, 0);
 		String name = ctx.name.getText();
-		CompilationUnit unit = typedefsOnly ? new CompilationUnit(location, name, false) : parsed.get(name);
+		ClassUnit unit = typedefsOnly ? new ClassUnit(location, program, name, false) : parsed.get(name);
 		library = unit;
 
 		if (!typedefsOnly) {
 			for (MethodContext mtd : ctx.method())
-				unit.addConstruct(visitMethod(mtd));
+				unit.addCodeMember(visitMethod(mtd));
 
+			fieldContainer = library;
 			for (FieldContext fld : ctx.field())
 				unit.addGlobal(visitField(fld));
 		}
@@ -232,11 +239,11 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 			CompilationUnit c = visitClassDef(cls);
 			if (typedefsOnly)
 				// we add it only in the first pass
-				program.addCompilationUnit(c);
+				program.addUnit(c);
 		}
 
 		if (typedefsOnly) {
-			program.addCompilationUnit(unit);
+			program.addUnit(unit);
 			parsed.put(name, unit);
 		}
 
@@ -246,7 +253,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	}
 
 	@Override
-	public Collection<CompilationUnit> visitFile(FileContext ctx) {
+	public Collection<ClassUnit> visitFile(FileContext ctx) {
 		parsed = new HashMap<>();
 		toType = new HashSet<>();
 
@@ -259,12 +266,12 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		library = program;
 
 		for (ClassDefContext cls : ctx.classDef())
-			program.addCompilationUnit(visitClassDef(cls));
+			program.addUnit(visitClassDef(cls));
 		for (LibraryContext lib : ctx.library())
 			visitLibrary(lib);
 
 		// generate types
-		for (Pair<CompilationUnit, CompilationUnit> pair : toType)
+		for (Pair<ClassUnit, ClassUnit> pair : toType)
 			if (pair.getLeft() == null)
 				PyClassType.lookup(pair.getRight().getName(), pair.getRight());
 			else
@@ -280,7 +287,8 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		library = program;
 
 		for (MethodContext mtd : ctx.method())
-			program.addConstruct(visitMethod(mtd));
+			program.addCodeMember(visitMethod(mtd));
+		fieldContainer = program;
 		for (FieldContext lfd : ctx.field())
 			program.addGlobal(visitField(lfd));
 		for (ClassDefContext cls : ctx.classDef())
@@ -296,7 +304,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		return parsed.values();
 	}
 
-	public Collection<Pair<CompilationUnit, CompilationUnit>> getToType() {
+	public Collection<Pair<ClassUnit, ClassUnit>> getToType() {
 		return toType;
 	}
 
@@ -323,7 +331,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 			throw new IOException("Unable to parse '" + file + "'", e);
 		}
 
-		Program program = new Program();
+		Program program = new Program(new PythonFeatures());
 		LibraryDefinitionParser parser = new LibraryDefinitionParser(new CommonTokenStream(lexer));
 		new LibrarySpecificationParser(file, program).visitFile(parser.file());
 		dump(program);
@@ -333,29 +341,24 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		System.out.println(program.getName());
 		for (Global global : program.getGlobals())
 			System.out.println("\t" + global.getName());
-		for (CFG cfg : program.getCFGs())
+		for (CodeMember cfg : program.getCodeMembers())
 			System.out.println("\t" + cfg.getDescriptor().getFullSignatureWithParNames());
-		for (NativeCFG construct : program.getConstructs())
-			System.out.println("\t" + construct.getDescriptor().getFullSignatureWithParNames());
-		for (CompilationUnit unit : program.getUnits())
+		for (Unit unit : program.getUnits())
 			dump(unit, 1);
 	}
 
-	private static void dump(CompilationUnit unit, int indent) {
+	private static void dump(Unit unit, int indent) {
 		System.out.println("\t".repeat(indent) + unit.getName());
 		for (Global global : unit.getGlobals())
 			System.out.println("\t".repeat(indent + 1) + global.getName());
-		for (Global global : unit.getInstanceGlobals(false))
-			System.out.println("\t".repeat(indent + 1) + "instance " + global.getName());
-		for (CFG cfg : unit.getCFGs())
-			System.out.println("\t".repeat(indent + 1) + cfg.getDescriptor().getFullSignatureWithParNames());
-		for (CFG cfg : unit.getInstanceCFGs(false))
-			System.out.println(
-					"\t".repeat(indent + 1) + "instance " + cfg.getDescriptor().getFullSignatureWithParNames());
-		for (NativeCFG construct : unit.getConstructs())
-			System.out.println("\t".repeat(indent + 1) + construct.getDescriptor().getFullSignatureWithParNames());
-		for (NativeCFG construct : unit.getInstanceConstructs(false))
-			System.out.println(
-					"\t".repeat(indent + 1) + "instance " + construct.getDescriptor().getFullSignatureWithParNames());
+		if (unit instanceof CompilationUnit)
+			for (Global global : ((CompilationUnit) unit).getInstanceGlobals(false))
+				System.out.println("\t".repeat(indent + 1) + "instance " + global.getName());
+		for (CodeMember cm : unit.getCodeMembers())
+			System.out.println("\t".repeat(indent + 1) + cm.getDescriptor().getFullSignatureWithParNames());
+		if (unit instanceof CompilationUnit)
+			for (CodeMember cm : ((CompilationUnit) unit).getInstanceCodeMembers(false))
+				System.out.println(
+						"\t".repeat(indent + 1) + "instance " + cm.getDescriptor().getFullSignatureWithParNames());
 	}
 }

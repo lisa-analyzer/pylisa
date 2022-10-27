@@ -712,9 +712,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				return cleanStack(arg, pp);
 
 			Transform t = op.getArg().isPresent()
-					? new Transform(pp.getLocation(), kind, ((SelectionOperation<?>) leaf).getSelection(),
-							op.getArg().get())
-					: new Transform(pp.getLocation(), kind, ((SelectionOperation<?>) leaf).getSelection());
+					? new Transform(pp.getLocation(), kind, op.isChangeShape(),
+							((SelectionOperation<?>) leaf).getSelection(), op.getArg().get())
+					: new Transform(pp.getLocation(), kind, op.isChangeShape(),
+							((SelectionOperation<?>) leaf).getSelection());
 
 			df.addNode(t);
 			df.addEdge(new ConsumeEdge(leaf, t));
@@ -1536,24 +1537,24 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	public DataframeForest close() {
 		DataframeOperation close = new CloseOperation();
-		
+
 		DataframeForest result = new DataframeForest(graph);
 		result.addNode(close);
-		
+
 		Collection<DataframeOperation> exits = new HashSet<>();
 		for (SetLattice<NodeId> variable : pointers.getValues())
 			for (NodeId id : variable)
 				exits.addAll(operations.getState(id).elements());
-			
+
 		for (DataframeOperation op : exits)
 			result.addEdge(new SimpleEdge(op, close));
-		
+
 		return result;
 	}
 
 	public static class CloseOperation extends DataframeOperation {
-		
-		public  CloseOperation() {
+
+		public CloseOperation() {
 			super(SyntheticLocation.INSTANCE);
 		}
 

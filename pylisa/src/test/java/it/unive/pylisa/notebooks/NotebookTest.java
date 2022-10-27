@@ -4,6 +4,17 @@ import static it.unive.lisa.LiSAFactory.getDefaultFor;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.TreeSet;
+
+import org.apache.commons.io.FilenameUtils;
+
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
@@ -14,27 +25,18 @@ import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.warnings.Warning;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
+import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.outputs.compare.JsonReportComparer;
 import it.unive.lisa.outputs.json.JsonReport;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.PyFrontend;
-import it.unive.pylisa.PyRTA;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.checks.BottomFinder;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
 import it.unive.pylisa.checks.OpenCallsFinder;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.TreeSet;
-import org.apache.commons.io.FilenameUtils;
 
 public abstract class NotebookTest {
 
@@ -81,7 +83,7 @@ public abstract class NotebookTest {
 //		conf.setDumpAnalysis(GraphType.HTML_WITH_SUBNODES);
 		conf.setJsonOutput(true);
 		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
-		conf.setCallGraph(new PyRTA());
+		conf.setCallGraph(new RTACallGraph());
 		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
 		conf.addSemanticCheck(new DataframeDumper(conf));
 		conf.addSemanticCheck(new BottomFinder<>());

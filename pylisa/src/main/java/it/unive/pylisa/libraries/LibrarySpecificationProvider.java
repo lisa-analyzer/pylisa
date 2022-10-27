@@ -1,6 +1,7 @@
 package it.unive.pylisa.libraries;
 
 import it.unive.lisa.AnalysisSetupException;
+import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.antlr.LibraryDefinitionLexer;
@@ -50,7 +51,7 @@ public class LibrarySpecificationProvider {
 
 		LibraryDefinitionParser parser = new LibraryDefinitionParser(new CommonTokenStream(lexer));
 		LibrarySpecificationParser libParser = new LibrarySpecificationParser(file, program);
-		Collection<CompilationUnit> parsed = libParser.visitFile(parser.file());
+		Collection<ClassUnit> parsed = libParser.visitFile(parser.file());
 		hierarchyRoot = libParser.root;
 
 		for (CompilationUnit unit : parsed)

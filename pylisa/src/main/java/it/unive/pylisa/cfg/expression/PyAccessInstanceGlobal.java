@@ -7,21 +7,26 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
+import it.unive.lisa.caches.Caches;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.program.Global;
+import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.AccessChild;
+import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.Keys;
 
 public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 
-	public PyAccessInstanceGlobal(CFG cfg, CodeLocation location, Expression receiver, Global target) {
+	public PyAccessInstanceGlobal(CFG cfg, CodeLocation location, Expression receiver, String target) {
 		super(cfg, location, receiver, target);
 	}
 
@@ -37,7 +42,7 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 		PyClassType type = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type typeref = ((PyClassType) type).getReference();
 		if (expr.getRuntimeTypes().anyMatch(t -> (t.equals(typeref)))) {
-			String name = getTarget().getName();
+			String name = getTarget();
 			switch (name) {
 			case "loc":
 			case "iloc":
@@ -53,6 +58,15 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 			}
 		}
 
-		return super.unarySemantics(interprocedural, state, expr, expressions);
+		// FIXME
+		AnalysisState<A, H, V, T> sup = super.unarySemantics(interprocedural, state, expr, expressions);
+		if (!sup.isBottom())
+			return sup;
+
+		Variable var = new Variable(Untyped.INSTANCE, getTarget(), new Annotations(), getLocation());
+		HeapDereference container = new HeapDereference(Untyped.INSTANCE, expr, getLocation());
+		container.setRuntimeTypes(Caches.types().mkSet(Untyped.INSTANCE.allInstances()));
+		AccessChild access = new AccessChild(Untyped.INSTANCE, container, var, getLocation());
+		return state.smallStepSemantics(access, this);
 	}
 }
