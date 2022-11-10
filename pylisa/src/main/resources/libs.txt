@@ -6,9 +6,9 @@ class Sequence:
 	instance method __getitem__: it.unive.pylisa.libraries.SequenceGetItem
 		libtype Object*
 		param this libtype Sequence*
-		param index type it.unive.lisa.type.common.Int32::INSTANCE
+		param index type it.unive.lisa.type.common.Int32Type::INSTANCE
 	instance method __len__: it.unive.pylisa.libraries.SequenceLen
-		type it.unive.lisa.type.common.Int32::INSTANCE
+		type it.unive.lisa.type.common.Int32Type::INSTANCE
 		param this libtype Sequence*
 sealed class List extends Sequence 
 sealed class Set extends Sequence
@@ -34,12 +34,12 @@ library pandas:
 	method concat: it.unive.pylisa.libraries.pandas.Concatenate
 		libtype pandas.DataFrame*
 		param objs libtype List
-		param axis type it.unive.lisa.type.common.Int32::INSTANCE default 0
+		param axis type it.unive.lisa.type.common.Int32Type::INSTANCE default 0
 	class pandas.DataFrame extends Sequence:
 		instance method head: it.unive.pylisa.libraries.pandas.Head
 			libtype pandas.DataFrame*
 			param this libtype pandas.DataFrame*
-			param n type it.unive.lisa.type.common.Int32::INSTANCE default 5
+			param n type it.unive.lisa.type.common.Int32Type::INSTANCE default 5
 		instance method keys: it.unive.pylisa.libraries.pandas.Keys
 			libtype pandas.DataFrame*
 			param this libtype pandas.DataFrame*
@@ -52,12 +52,12 @@ library pandas:
 		instance method dropna: it.unive.pylisa.libraries.pandas.DropNA
 			type it.unive.lisa.type.Untyped::INSTANCE
 			param this libtype pandas.DataFrame*
-			param axis type it.unive.lisa.type.common.Int32::INSTANCE default 0
+			param axis type it.unive.lisa.type.common.Int32Type::INSTANCE default 0
 			param inplace type it.unive.lisa.type.common.BoolType::INSTANCE default false
 		instance method fillna: it.unive.pylisa.libraries.pandas.FillNA
 			type it.unive.lisa.type.Untyped::INSTANCE
 			param this libtype pandas.DataFrame*
-			param value type it.unive.lisa.type.common.Int32::INSTANCE
+			param value type it.unive.lisa.type.common.Int32Type::INSTANCE
 			param inplace type it.unive.lisa.type.common.BoolType::INSTANCE default false
 		instance method apply: it.unive.pylisa.libraries.pandas.Apply
 			type it.unive.lisa.type.Untyped::INSTANCE
@@ -76,14 +76,14 @@ library pandas:
 			param this libtype pandas.DataFrame*
 			param subset libtype List default none
 			param color type it.unive.lisa.type.common.StringType::INSTANCE default "yellow"
-			param axis type it.unive.lisa.type.common.Int32::INSTANCE default 0
+			param axis type it.unive.lisa.type.common.Int32Type::INSTANCE default 0
 			param props type it.unive.lisa.type.common.StringType::INSTANCE default none
 		instance method highlight_max: it.unive.pylisa.libraries.pandas.DataframeFunctionWithSubsetAccess
 			libtype pandas.DataFrame*
 			param this libtype pandas.DataFrame*
 			param subset libtype List default none 
 			param color type it.unive.lisa.type.common.StringType::INSTANCE default "yellow"
-			param axis type it.unive.lisa.type.common.Int32::INSTANCE default 0
+			param axis type it.unive.lisa.type.common.Int32Type::INSTANCE default 0
 			param props type it.unive.lisa.type.common.StringType::INSTANCE default none
 	class pandas.Series extends Sequence:
 		instance method apply: it.unive.pylisa.libraries.pandas.Apply
@@ -112,5 +112,5 @@ library numpy:
 		instance method reshape: it.unive.pylisa.libraries.numpy.Reshape
 			libtype numpy.NDArray*
 			param a libtype numpy.NDArray*
-			param x type it.unive.lisa.type.common.Int32::INSTANCE
-			param y type it.unive.lisa.type.common.Int32::INSTANCE
+			param x type it.unive.lisa.type.common.Int32Type::INSTANCE
+			param y type it.unive.lisa.type.common.Int32Type::INSTANCE

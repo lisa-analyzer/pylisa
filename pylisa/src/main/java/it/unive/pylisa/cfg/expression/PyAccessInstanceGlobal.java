@@ -7,7 +7,6 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
-import it.unive.lisa.caches.Caches;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
@@ -31,7 +30,7 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 	}
 
 	@Override
-	protected <A extends AbstractState<A, H, V, T>,
+	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(
@@ -41,7 +40,7 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 					StatementStore<A, H, V, T> expressions) throws SemanticException {
 		PyClassType type = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type typeref = ((PyClassType) type).getReference();
-		if (expr.getRuntimeTypes().anyMatch(t -> (t.equals(typeref)))) {
+		if (expr.getRuntimeTypes(getProgram().getTypes()).stream().anyMatch(t -> (t.equals(typeref)))) {
 			String name = getTarget();
 			switch (name) {
 			case "loc":
@@ -65,7 +64,7 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 
 		Variable var = new Variable(Untyped.INSTANCE, getTarget(), new Annotations(), getLocation());
 		HeapDereference container = new HeapDereference(Untyped.INSTANCE, expr, getLocation());
-		container.setRuntimeTypes(Caches.types().mkSet(Untyped.INSTANCE.allInstances()));
+		container.setRuntimeTypes(Untyped.INSTANCE.allInstances(getProgram().getTypes()));
 		AccessChild access = new AccessChild(Untyped.INSTANCE, container, var, getLocation());
 		return state.smallStepSemantics(access, this);
 	}

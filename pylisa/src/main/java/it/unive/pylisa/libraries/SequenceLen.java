@@ -16,7 +16,7 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.lisa.type.common.Int32;
+import it.unive.lisa.type.common.Int32Type;
 
 public class SequenceLen extends UnaryExpression implements PluggableStatement {
 
@@ -37,7 +37,7 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 	}
 
 	@Override
-	protected <A extends AbstractState<A, H, V, T>,
+	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(
@@ -46,6 +46,6 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		return state.smallStepSemantics(new PushAny(Int32.INSTANCE, getLocation()), st);
+		return state.smallStepSemantics(new PushAny(Int32Type.INSTANCE, getLocation()), st);
 	}
 }

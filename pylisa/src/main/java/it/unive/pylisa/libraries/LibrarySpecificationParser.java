@@ -36,9 +36,10 @@ import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.common.BoolType;
-import it.unive.lisa.type.common.Int32;
+import it.unive.lisa.type.common.Int32Type;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.PythonFeatures;
+import it.unive.pylisa.PythonTypeSystem;
 import it.unive.pylisa.antlr.LibraryDefinitionLexer;
 import it.unive.pylisa.antlr.LibraryDefinitionParser;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.ClassDefContext;
@@ -152,7 +153,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 				def = new FalseLiteral(init, location);
 		else if (type == StringType.INSTANCE)
 			def = new StringLiteral(init, location, clean(ctx.val.STRING().getText()));
-		else if (type == Int32.INSTANCE)
+		else if (type == Int32Type.INSTANCE)
 			def = new Int32Literal(init, location, Integer.parseInt(ctx.val.NUMBER().getText()));
 		else
 			throw new LibraryParsingException(file, "Unsupported default parameter type: " + type);
@@ -331,7 +332,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 			throw new IOException("Unable to parse '" + file + "'", e);
 		}
 
-		Program program = new Program(new PythonFeatures());
+		Program program = new Program(new PythonFeatures(), new PythonTypeSystem());
 		LibraryDefinitionParser parser = new LibraryDefinitionParser(new CommonTokenStream(lexer));
 		new LibrarySpecificationParser(file, program).visitFile(parser.file());
 		dump(program);

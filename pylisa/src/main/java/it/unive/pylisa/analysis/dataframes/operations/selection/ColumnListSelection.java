@@ -42,17 +42,17 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 	}
 
 	@Override
-	protected ColumnListSelection lubAux(ColumnListSelection other) throws SemanticException {
+	public ColumnListSelection lubAux(ColumnListSelection other) throws SemanticException {
 		return new ColumnListSelection(columns.lub(other.columns));
 	}
 
 	@Override
-	protected ColumnListSelection wideningAux(ColumnListSelection other) throws SemanticException {
+	public ColumnListSelection wideningAux(ColumnListSelection other) throws SemanticException {
 		return new ColumnListSelection(columns.widening(other.columns));
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(ColumnListSelection other) throws SemanticException {
+	public boolean lessOrEqualAux(ColumnListSelection other) throws SemanticException {
 		return columns.lessOrEqual(other.columns);
 	}
 

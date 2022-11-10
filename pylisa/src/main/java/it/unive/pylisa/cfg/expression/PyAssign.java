@@ -1,5 +1,9 @@
 package it.unive.pylisa.cfg.expression;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -20,16 +24,14 @@ import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
-import it.unive.lisa.type.common.Int32;
+import it.unive.lisa.type.common.Int32Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class PyAssign extends Assignment {
 
@@ -38,7 +40,7 @@ public class PyAssign extends Assignment {
 	}
 
 	@Override
-	protected <A extends AbstractState<A, H, V, T>,
+	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
@@ -58,7 +60,8 @@ public class PyAssign extends Assignment {
 		if (PandasSemantics.isDataframePortionThatCanBeAssignedTo(left)) {
 			HeapDereference lderef = PandasSemantics.getDataframeDereference(left);
 			SymbolicExpression write;
-			if (right.getRuntimeTypes().anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
+			TypeSystem types = getProgram().getTypes();
+			if (right.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
 				// asssigning part of a dataframe to another dataframe so get
 				// deref from right
 				if (PandasSemantics.isDataframePortionThatCanBeAssignedTo(right))
@@ -92,7 +95,7 @@ public class PyAssign extends Assignment {
 			ExpressionSet<SymbolicExpression> id = ids.get(i);
 
 			AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref,
-					new Constant(Int32.INSTANCE, i, loc),
+					new Constant(Int32Type.INSTANCE, i, loc),
 					loc);
 			AnalysisState<A, H, V, T> fieldState = assign.smallStepSemantics(fieldAcc, this);
 

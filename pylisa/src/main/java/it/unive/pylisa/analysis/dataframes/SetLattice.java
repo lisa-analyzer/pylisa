@@ -31,7 +31,7 @@ public class SetLattice<E> extends it.unive.lisa.analysis.lattices.SetLattice<Se
 	}
 
 	@Override
-	protected SetLattice<E> mk(Set<E> set) {
+	public SetLattice<E> mk(Set<E> set) {
 		return new SetLattice<>(set, isTop);
 	}
 

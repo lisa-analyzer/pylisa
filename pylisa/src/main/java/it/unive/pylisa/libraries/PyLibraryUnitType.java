@@ -54,7 +54,7 @@ public class PyLibraryUnitType extends PyClassType {
 		if (t instanceof PyLibraryUnitType)
 			return ((PyLibraryUnitType) t).getLibraryName().equals(lib);
 		else if (includeReferences && t instanceof ReferenceType)
-			return ((ReferenceType) t).getInnerTypes().anyMatch(tt -> is(tt, lib, true));
+			return is(((ReferenceType) t).getInnerType(), lib, true);
 		else
 			return false;
 	}

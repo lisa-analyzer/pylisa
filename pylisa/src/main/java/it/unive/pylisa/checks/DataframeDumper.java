@@ -51,7 +51,7 @@ public class DataframeDumper implements SemanticCheck<
 	private final FileManager fileManager;
 
 	public DataframeDumper(LiSAConfiguration conf) {
-		this.fileManager = new FileManager(conf.getWorkdir());
+		this.fileManager = new FileManager(conf.workdir);
 	}
 
 	@Override
@@ -145,7 +145,7 @@ public class DataframeDumper implements SemanticCheck<
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
-				
+
 				int i = 1;
 				for (DataframeForest sub : subgraphs)
 					try {

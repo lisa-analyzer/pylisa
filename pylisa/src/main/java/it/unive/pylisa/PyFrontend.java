@@ -84,11 +84,12 @@ import it.unive.lisa.program.cfg.statement.numeric.Addition;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
 import it.unive.lisa.type.NullType;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.VoidType;
 import it.unive.lisa.type.common.BoolType;
-import it.unive.lisa.type.common.Float32;
-import it.unive.lisa.type.common.Int32;
+import it.unive.lisa.type.common.Float32Type;
+import it.unive.lisa.type.common.Int32Type;
 import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.antlr.Python3Lexer;
@@ -211,6 +212,7 @@ import it.unive.pylisa.cfg.expression.PyMultiplication;
 import it.unive.pylisa.cfg.expression.PyPower;
 import it.unive.pylisa.cfg.expression.PyRemainder;
 import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
+import it.unive.pylisa.cfg.expression.PyStringLiteral;
 import it.unive.pylisa.cfg.expression.PyTernaryOperator;
 import it.unive.pylisa.cfg.expression.RangeValue;
 import it.unive.pylisa.cfg.expression.SetCreation;
@@ -304,7 +306,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 *                      {@code notebook} is {@code true}.
 	 */
 	public PyFrontend(String filePath, boolean notebook, List<Integer> cellOrder) {
-		this.program = new Program(new PythonFeatures());
+		this.program = new Program(new PythonFeatures(), new PythonTypeSystem());
 		this.filePath = filePath;
 		this.notebook = notebook;
 		this.cellOrder = cellOrder;
@@ -329,15 +331,15 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		Program program = translator.toLiSAProgram();
 
 		LiSAConfiguration conf = new LiSAConfiguration();
-		conf.setWorkdir("workdir");
-		conf.setSerializeResults(true);
-		conf.setDumpAnalysis(GraphType.HTML);
-		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
+		conf.workdir = "workdir";
+		conf.serializeResults = true;
+		conf.analysisGraphs = GraphType.HTML;
+		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 
 		DataframeGraphDomain domain = new DataframeGraphDomain();
 		PointBasedHeap heap = new PointBasedHeap();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
-		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, domain, type));
+		conf.abstractState = getDefaultFor(AbstractState.class, heap, domain, type);
 
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
@@ -366,14 +368,15 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		PyClassType.clearAll();
 
-		program.registerType(PyLambdaType.INSTANCE);
-		program.registerType(BoolType.INSTANCE);
-		program.registerType(StringType.INSTANCE);
-		program.registerType(Int32.INSTANCE);
-		program.registerType(Float32.INSTANCE);
-		program.registerType(NullType.INSTANCE);
-		program.registerType(VoidType.INSTANCE);
-		program.registerType(Untyped.INSTANCE);
+		TypeSystem types = program.getTypes();
+		types.registerType(PyLambdaType.INSTANCE);
+		types.registerType(BoolType.INSTANCE);
+		types.registerType(StringType.INSTANCE);
+		types.registerType(Int32Type.INSTANCE);
+		types.registerType(Float32Type.INSTANCE);
+		types.registerType(NullType.INSTANCE);
+		types.registerType(VoidType.INSTANCE);
+		types.registerType(Untyped.INSTANCE);
 
 		LibrarySpecificationProvider.load(program);
 
@@ -391,7 +394,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		visit(tree);
 
-		PyClassType.all().forEach(program::registerType);
+		PyClassType.all().forEach(types::registerType);
 
 		for (CFG cm : program.getAllCFGs())
 			if (cm.getDescriptor().getName().equals("main"))
@@ -1080,7 +1083,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		VariableRef counter = new VariableRef(
 				currentCFG,
 				getLocation(ctx),
-				"__counter_location" + getLocation(ctx).getLine(), Int32.INSTANCE);
+				"__counter_location" + getLocation(ctx).getLine(), Int32Type.INSTANCE);
 		Expression[] counter_pars = { collection, counter };
 
 		// counter = 0;
@@ -1816,7 +1819,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return createPairFromSingle(new NullLiteral(currentCFG, getLocation(ctx)));
 		} else if (ctx.STRING().size() > 0) {
 			// create a string
-			return createPairFromSingle(new StringLiteral(currentCFG, getLocation(ctx), ctx.STRING(0).getText()));
+			return createPairFromSingle(strip(getLocation(ctx), ctx.STRING(0).getText()));
 		} else if (ctx.yield_expr() != null) {
 			return visitYield_expr(ctx.yield_expr());
 		} else if (ctx.OPEN_BRACE() == null && ctx.dictorsetmaker() != null) {
@@ -1839,6 +1842,19 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return createPairFromSingle(r);
 		}
 		throw new UnsupportedStatementException();
+	}
+
+	private StringLiteral strip(CodeLocation location, String string) {
+		// ', ''', ", """
+		if (string.startsWith("'''") && string.endsWith("'''"))
+			return new PyStringLiteral(currentCFG, location, string.substring(3, string.length() - 3), "'''");
+		if (string.startsWith("\"\"\"") && string.endsWith("\"\"\""))
+			return new PyStringLiteral(currentCFG, location, string.substring(3, string.length() - 3), "\"\"\"");
+		if (string.startsWith("'") && string.endsWith("'"))
+			return new PyStringLiteral(currentCFG, location, string.substring(1, string.length() - 1), "'");
+		if (string.startsWith("\"") && string.endsWith("\""))
+			return new PyStringLiteral(currentCFG, location, string.substring(1, string.length() - 1), "\"");
+		return new PyStringLiteral(currentCFG, location, string, "\"");
 	}
 
 	private List<Pair<Expression, Expression>> extractPairsFromDictorSet(DictorsetmakerContext ctx) {

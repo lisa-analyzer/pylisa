@@ -38,6 +38,7 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.util.collections.workset.FIFOWorkingSet;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.edge.AssignEdge;
@@ -150,35 +151,36 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		this.pointers = pointers;
 
 		// cleanup unreachable nodes
-//		Map<NodeId, SetLattice<DataframeOperation>> map = operations.getMap();
-//		if (map != null && !map.isEmpty()) {
-//			Set<NodeId> nodes = new HashSet<>(operations.getKeys());
-//			for (SetLattice<NodeId> used : this.pointers.getValues())
-//				used.forEach(nodes::remove);
-//			pointers.lattice.forEach(nodes::remove);
-//			nodes.forEach(map::remove);
-//			this.operations = new CollectingMapLattice<>(operations.lattice, map);
-//		} else
-		this.operations = operations;
+		Map<NodeId, SetLattice<DataframeOperation>> map = operations.getMap();
+		if (map != null && !map.isEmpty()) {
+			Set<NodeId> nodes = new HashSet<>(operations.getKeys());
+			for (SetLattice<NodeId> used : this.pointers.getValues())
+				used.forEach(nodes::remove);
+			pointers.lattice.forEach(nodes::remove);
+			nodes.forEach(map::remove);
+			this.operations = new CollectingMapLattice<>(operations.lattice, map);
+		} else
+			this.operations = operations;
 
 		// FIXME temporary sanity check
-		SetLattice<DataframeOperation> pointed = resolvePointers(this);
-		for (DataframeOperation op : pointed)
-			if (!graph.containsNode(op))
-				throw new IllegalStateException();
+//		SetLattice<DataframeOperation> pointed = resolvePointers(this);
+//		for (DataframeOperation op : pointed)
+//			if (!graph.containsNode(op))
+//				throw new IllegalStateException();
 	}
 
 	@Override
 	public DataframeGraphDomain assign(Identifier id, ValueExpression expression, ProgramPoint pp)
 			throws SemanticException {
 		DataframeGraphDomain sss = smallStepSemantics(expression, pp);
+		TypeSystem types = pp.getProgram().getTypes();
 		if (!sss.constants.getValueOnStack().isBottom())
 			return new DataframeGraphDomain(
 					sss.constants.putState(id, sss.constants.getValueOnStack()),
 					sss.graph,
 					sss.pointers,
 					sss.operations);
-		else if (expression.getRuntimeTypes().noneMatch(
+		else if (expression.getRuntimeTypes(types).stream().noneMatch(
 				t -> t.toString().equals(LibrarySpecificationProvider.PANDAS_DF)
 						|| t.toString().equals(LibrarySpecificationProvider.PANDAS_SERIES)))
 			return sss;
@@ -348,7 +350,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	public static boolean isDataframeRelated(SymbolicExpression expression) {
 		return expression.hasRuntimeTypes()
-				? expression.getRuntimeTypes()
+				? expression.getRuntimeTypes(null).stream()
 						.anyMatch(t -> PyLibraryUnitType.is(t, LibrarySpecificationProvider.PANDAS, false))
 				: PyLibraryUnitType.is(expression.getStaticType(), LibrarySpecificationProvider.PANDAS, false)
 						|| expression.getStaticType().isUntyped();
@@ -1478,9 +1480,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	public static AllocationSite stripFields(AllocationSite as) {
-		// TODO this is very fragile and only works with the current state
-		// of the field sensitive program point based heap
-		if (as.getName().endsWith("]"))
+		if (as.getField() != null)
 			// we remove the name of the field using only location name
 			as = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(),
 					as.getCodeLocation());

@@ -1,12 +1,13 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
-import it.unive.lisa.caches.Caches;
+import java.util.Collections;
+import java.util.Set;
+
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.util.collections.externalSet.ExternalSet;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.Set;
 
 public class CopyDataframe implements UnaryOperator {
 
@@ -21,17 +22,17 @@ public class CopyDataframe implements UnaryOperator {
 	}
 
 	@Override
-	public ExternalSet<Type> typeInference(ExternalSet<Type> arg) {
+	public Set<Type> typeInference(TypeSystem types, Set<Type> arg) {
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-		boolean notdf = arg.noneMatch(t -> t.equals(df));
-		boolean notseries = arg.noneMatch(t -> t.equals(series));
+		boolean notdf = arg.stream().noneMatch(t -> t.equals(df));
+		boolean notseries = arg.stream().noneMatch(t -> t.equals(series));
 		if (notdf && notseries)
-			return Caches.types().mkEmptySet();
+			return Collections.emptySet();
 		if (notdf)
-			return Caches.types().mkSingletonSet(series);
+			return Collections.singleton(series);
 		if (notseries)
-			return Caches.types().mkSingletonSet(df);
-		return Caches.types().mkSet(Set.of(df, series));
+			return Collections.singleton(df);
+		return Set.of(df, series);
 	}
 }

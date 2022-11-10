@@ -5,6 +5,7 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.type.InMemoryType;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.collections.workset.FIFOWorkingSet;
@@ -144,8 +145,8 @@ public class PyClassType implements InMemoryType, UnitType {
 	}
 
 	@Override
-	public Collection<Type> allInstances() {
-		Collection<Type> instances = new HashSet<>();
+	public Set<Type> allInstances(TypeSystem types) {
+		Set<Type> instances = new HashSet<>();
 		for (Unit in : unit.getInstances())
 			instances.add(lookup(in.getName(), null));
 		return instances;

@@ -1,9 +1,11 @@
 package it.unive.pylisa.symbolic.operators;
 
-import it.unive.lisa.caches.Caches;
+import java.util.Collections;
+import java.util.Set;
+
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.util.collections.externalSet.ExternalSet;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
@@ -20,10 +22,10 @@ public class DictPut implements TernaryOperator {
 	}
 
 	@Override
-	public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> middle, ExternalSet<Type> right) {
-		if (left.noneMatch(t -> t.toString().equals(LibrarySpecificationProvider.DICT)))
-			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(PyClassType.lookup(LibrarySpecificationProvider.DICT));
+	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> middle, Set<Type> right) {
+		if (left.stream().noneMatch(t -> t.toString().equals(LibrarySpecificationProvider.DICT)))
+			return Collections.emptySet();
+		return Collections.singleton(PyClassType.lookup(LibrarySpecificationProvider.DICT));
 	}
 
 }

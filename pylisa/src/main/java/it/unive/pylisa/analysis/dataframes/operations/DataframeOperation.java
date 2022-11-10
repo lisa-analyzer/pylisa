@@ -49,7 +49,7 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 	}
 
 	@Override
-	protected DataframeOperation lubAux(DataframeOperation other) throws SemanticException {
+	public DataframeOperation lubAux(DataframeOperation other) throws SemanticException {
 		if (getClass() == other.getClass())
 			return lubSameOperation(other);
 		else if (where.equals(other.where))
@@ -59,12 +59,12 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 	}
 
 	@Override
-	protected final DataframeOperation wideningAux(DataframeOperation other) throws SemanticException {
+	public final DataframeOperation wideningAux(DataframeOperation other) throws SemanticException {
 		return lubAux(other);
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(DataframeOperation other) throws SemanticException {
+	public boolean lessOrEqualAux(DataframeOperation other) throws SemanticException {
 		return getClass() == other.getClass() ? lessOrEqualSameOperation(other) : false;
 	}
 

@@ -1,11 +1,13 @@
 package it.unive.pylisa.symbolic.operators.compare;
 
-import it.unive.lisa.caches.Caches;
+import java.util.Collections;
+import java.util.Set;
+
 import it.unive.lisa.symbolic.value.operator.LogicalOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.common.BoolType;
-import it.unive.lisa.util.collections.externalSet.ExternalSet;
 
 public class PyLogicalAnd implements LogicalOperator, BinaryOperator {
 
@@ -25,7 +27,7 @@ public class PyLogicalAnd implements LogicalOperator, BinaryOperator {
 	}
 
 	@Override
-	public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> right) {
-		return Caches.types().mkSingletonSet(BoolType.INSTANCE);
+	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+		return Collections.singleton(BoolType.INSTANCE);
 	}
 }

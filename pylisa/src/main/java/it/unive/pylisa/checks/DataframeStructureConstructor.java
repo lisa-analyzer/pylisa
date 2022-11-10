@@ -302,7 +302,7 @@ public class DataframeStructureConstructor implements SemanticCheck<
 		}
 
 		@Override
-		protected ColumnsDomain mk(Columns lattice, Map<Names, Columns> function) {
+		public ColumnsDomain mk(Columns lattice, Map<Names, Columns> function) {
 			return new ColumnsDomain(lattice, function);
 		}
 	}
@@ -365,7 +365,7 @@ public class DataframeStructureConstructor implements SemanticCheck<
 		}
 
 		@Override
-		protected Columns lubAux(Columns other) throws SemanticException {
+		public Columns lubAux(Columns other) throws SemanticException {
 			Names accessed = this.accessed.lub(other.accessed);
 			Names assigned = this.assigned.lub(other.assigned);
 			Names removed = this.removed.lub(other.removed);
@@ -376,12 +376,12 @@ public class DataframeStructureConstructor implements SemanticCheck<
 		}
 
 		@Override
-		protected Columns wideningAux(Columns other) throws SemanticException {
+		public Columns wideningAux(Columns other) throws SemanticException {
 			return lubAux(other);
 		}
 
 		@Override
-		protected boolean lessOrEqualAux(Columns other) throws SemanticException {
+		public boolean lessOrEqualAux(Columns other) throws SemanticException {
 			return accessed.lessOrEqual(other.accessed)
 					&& assigned.lessOrEqual(other.assigned)
 					&& removed.lessOrEqual(other.removed)

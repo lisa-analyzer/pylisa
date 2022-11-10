@@ -1,9 +1,10 @@
 package it.unive.pylisa.cfg.type;
 
-import it.unive.lisa.type.Type;
-import it.unive.lisa.type.Untyped;
-import java.util.Collection;
 import java.util.Set;
+
+import it.unive.lisa.type.Type;
+import it.unive.lisa.type.TypeSystem;
+import it.unive.lisa.type.Untyped;
 
 public class PyLambdaType implements Type {
 
@@ -34,7 +35,7 @@ public class PyLambdaType implements Type {
 	}
 
 	@Override
-	public Collection<Type> allInstances() {
+	public Set<Type> allInstances(TypeSystem types) {
 		return Set.of(INSTANCE);
 	}
 }

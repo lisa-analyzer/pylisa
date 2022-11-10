@@ -44,7 +44,7 @@ public class CollectingMapLattice<K, V>
 	}
 
 	@Override
-	protected CollectingMapLattice<K, V> mk(SetLattice<V> lattice, Map<K, SetLattice<V>> function) {
+	public CollectingMapLattice<K, V> mk(SetLattice<V> lattice, Map<K, SetLattice<V>> function) {
 		return new CollectingMapLattice<>(lattice, function);
 	}
 
@@ -55,10 +55,10 @@ public class CollectingMapLattice<K, V>
 
 	public CollectingMapLattice<K, V> lift(Lifter<K> keyLifter, Lifter<SetLattice<V>> valueLifter)
 			throws SemanticException {
-		if (isBottom() || isTop())
+		if (isBottom() || isTop() || function == null)
 			return this;
 
-		Map<K, SetLattice<V>> function = mkNewFunction(null);
+		Map<K, SetLattice<V>> function = mkNewFunction(null, false);
 		for (K id : getKeys()) {
 			K liftedKey = keyLifter.apply(id);
 			SetLattice<V> liftedValue = valueLifter.apply(getState(id));
@@ -87,6 +87,6 @@ public class CollectingMapLattice<K, V>
 	}
 
 	public CollectingMapLattice<K, V> setStack(SetLattice<V> stack) {
-		return mk(stack, function == null ? null : mkNewFunction(function));
+		return mk(stack, function == null ? null : mkNewFunction(function, false));
 	}
 }

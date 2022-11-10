@@ -21,12 +21,12 @@ public class BottomOperation extends DataframeOperation {
 	}
 
 	@Override
-	protected DataframeOperation lubAux(DataframeOperation other) throws SemanticException {
+	public DataframeOperation lubAux(DataframeOperation other) throws SemanticException {
 		return other;
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(DataframeOperation other) throws SemanticException {
+	public boolean lessOrEqualAux(DataframeOperation other) throws SemanticException {
 		return true;
 	}
 

@@ -21,12 +21,12 @@ public class TopOperation extends DataframeOperation {
 	}
 
 	@Override
-	protected DataframeOperation lubAux(DataframeOperation other) throws SemanticException {
+	public DataframeOperation lubAux(DataframeOperation other) throws SemanticException {
 		return where.equals(other.where) ? this : DataframeOperation.TOP;
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(DataframeOperation other) throws SemanticException {
+	public boolean lessOrEqualAux(DataframeOperation other) throws SemanticException {
 		return other instanceof TopOperation;
 	}
 

@@ -17,6 +17,7 @@ import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
@@ -118,10 +119,15 @@ public class PandasSemantics {
 	public static boolean isDataframePortionThatCanBeAssignedTo(SymbolicExpression left) {
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-		return left instanceof HeapReference
-				&& ((HeapReference) left).getExpression() instanceof AccessChild
-				&& ((HeapReference) left).getExpression().getRuntimeTypes()
-						.anyMatch(t -> t.equals(seriestype) || t.equals(dftype));
+		if (!(left instanceof HeapReference))
+			return false;
+		SymbolicExpression expression = ((HeapReference) left).getExpression();
+
+		return expression instanceof AccessChild
+				&& (expression.hasRuntimeTypes()
+						? expression.getRuntimeTypes(null).stream()
+								.anyMatch(t -> t.equals(seriestype) || t.equals(dftype))
+						: expression.getStaticType().equals(seriestype) || expression.getStaticType().equals(dftype));
 	}
 
 	public static HeapDereference getDataframeDereference(SymbolicExpression expr) throws SemanticException {
@@ -152,7 +158,8 @@ public class PandasSemantics {
 					throws SemanticException {
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		Type seriesref = ((PyClassType) seriestype).getReference();
-		if (left.getRuntimeTypes().anyMatch(t -> t.equals(seriesref))) {
+		TypeSystem types = pp.getProgram().getTypes();
+		if (left.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(seriesref))) {
 			// custom behavior for comparison of expressions of the form
 			// df["col1"] <= 4
 
@@ -173,7 +180,7 @@ public class PandasSemantics {
 				result = result.lub(tmp.smallStepSemantics(ref, pp));
 			}
 			return result;
-		} else if (right.getRuntimeTypes().anyMatch(t -> t.equals(seriesref))) {
+		} else if (right.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(seriesref))) {
 			// custom behavior for comparison of expressions of the form
 			// 4 <= df["col1"]
 

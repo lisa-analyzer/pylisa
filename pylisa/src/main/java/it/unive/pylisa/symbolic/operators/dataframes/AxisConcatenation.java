@@ -1,9 +1,11 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
-import it.unive.lisa.caches.Caches;
+import java.util.Collections;
+import java.util.Set;
+
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.util.collections.externalSet.ExternalSet;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.FilterNull.Axis;
@@ -21,12 +23,12 @@ public class AxisConcatenation implements UnaryOperator {
 	}
 
 	@Override
-	public ExternalSet<Type> typeInference(ExternalSet<Type> arg) {
+	public Set<Type> typeInference(TypeSystem types, Set<Type> arg) {
 		PyClassType list = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		if (arg.noneMatch(t -> t.equals(list)))
-			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(df);
+		if (arg.stream().noneMatch(t -> t.equals(list)))
+			return Collections.emptySet();
+		return Collections.singleton(df);
 	}
 
 	@Override

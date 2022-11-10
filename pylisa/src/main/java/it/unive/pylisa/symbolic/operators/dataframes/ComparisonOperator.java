@@ -54,7 +54,7 @@ public class ComparisonOperator extends BaseLattice<ComparisonOperator> implemen
 	}
 
 	@Override
-	protected ComparisonOperator lubAux(ComparisonOperator other) throws SemanticException {
+	public ComparisonOperator lubAux(ComparisonOperator other) throws SemanticException {
 		if (lessOrEqual(other)) {
 			return other;
 		}
@@ -62,12 +62,12 @@ public class ComparisonOperator extends BaseLattice<ComparisonOperator> implemen
 	}
 
 	@Override
-	protected ComparisonOperator wideningAux(ComparisonOperator other) throws SemanticException {
+	public ComparisonOperator wideningAux(ComparisonOperator other) throws SemanticException {
 		return lub(other);
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(ComparisonOperator other) throws SemanticException {
+	public boolean lessOrEqualAux(ComparisonOperator other) throws SemanticException {
 		if (this.op == Operator.BOTTOM) {
 			return true;
 		} else if (this.op == other.op) {

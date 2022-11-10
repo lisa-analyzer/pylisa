@@ -44,7 +44,7 @@ public class Names extends SetLattice<Names, String> implements Comparable<Names
 	}
 
 	@Override
-	protected Names mk(Set<String> set) {
+	public Names mk(Set<String> set) {
 		return new Names(set);
 	}
 

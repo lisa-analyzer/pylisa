@@ -1,9 +1,11 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
-import it.unive.lisa.caches.Caches;
+import java.util.Collections;
+import java.util.Set;
+
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.util.collections.externalSet.ExternalSet;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
@@ -15,14 +17,14 @@ public class WriteSelectionConstant implements BinaryOperator {
 	}
 
 	@Override
-	public ExternalSet<Type> typeInference(ExternalSet<Type> left, ExternalSet<Type> right) {
+	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
 		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		if (left.noneMatch(t -> t.equals(df) || t.equals(series)))
-			return Caches.types().mkEmptySet();
-		if (right.noneMatch(t -> t.equals(df) || t.equals(series) || t.isNumericType() || t.isStringType()))
-			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(df);
+		if (left.stream().noneMatch(t -> t.equals(df) || t.equals(series)))
+			return Collections.emptySet();
+		if (right.stream().noneMatch(t -> t.equals(df) || t.equals(series) || t.isNumericType() || t.isStringType()))
+			return Collections.emptySet();
+		return Collections.singleton(df);
 	}
 
 	@Override

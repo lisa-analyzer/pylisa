@@ -17,8 +17,8 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
-import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.ColumnAccess;
@@ -30,7 +30,7 @@ public class PySingleArrayAccess extends BinaryExpression {
 	}
 
 	@Override
-	protected <A extends AbstractState<A, H, V, T>,
+	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
@@ -43,16 +43,14 @@ public class PySingleArrayAccess extends BinaryExpression {
 		AnalysisState<A, H, V, T> result = state;
 		Type dereferencedType = null;
 		Type childType = getStaticType();
-		for (Type t : left.getRuntimeTypes())
+		TypeSystem types = getProgram().getTypes();
+		for (Type t : left.getRuntimeTypes(types))
 			if (t.isPointerType()) {
-				ExternalSet<Type> inner = t.asPointerType().getInnerTypes();
-
-				Type tmp = inner.isEmpty() ? Untyped.INSTANCE
-						: inner.reduce(inner.first(), (r, tt) -> r.commonSupertype(tt));
+				Type inner = t.asPointerType().getInnerType();
 				if (dereferencedType == null)
-					dereferencedType = tmp;
+					dereferencedType = inner;
 				else
-					dereferencedType = dereferencedType.commonSupertype(tmp);
+					dereferencedType = dereferencedType.commonSupertype(inner);
 			}
 		if (dereferencedType == null)
 			dereferencedType = Untyped.INSTANCE;
@@ -63,22 +61,15 @@ public class PySingleArrayAccess extends BinaryExpression {
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		Type seriesref = ((PyClassType) seriestype).getReference();
 
-		if (left.getRuntimeTypes().anyMatch(t -> t.equals(dfref))) {
+		if (left.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfref))) {
 			it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
 					seriestype, deref, right, ColumnAccess.INSTANCE, getLocation());
 			result = result.smallStepSemantics(col, this);
-			childType = right.getRuntimeTypes().anyMatch(dfref::equals) ? dfref : seriesref;
+			childType = right.getRuntimeTypes(types).stream().anyMatch(dfref::equals) ? dfref : seriesref;
 		}
 
 		if (childType.isPointerType()) {
-			Type inner = null;
-			for (Type t : childType.asPointerType().getInnerTypes())
-				if (inner == null)
-					inner = t;
-				else
-					inner = inner.commonSupertype(t);
-			if (inner == null)
-				inner = Untyped.INSTANCE;
+			Type inner = childType.asPointerType().getInnerType();
 			AccessChild access = new AccessChild(inner, deref, right, getLocation());
 			HeapReference ref = new HeapReference(childType, access, getLocation());
 			return result.smallStepSemantics(ref, this);

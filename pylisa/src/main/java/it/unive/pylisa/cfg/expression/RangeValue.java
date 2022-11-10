@@ -16,7 +16,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.common.Int32;
+import it.unive.lisa.type.common.Int32Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
@@ -29,7 +29,7 @@ public class RangeValue extends TernaryExpression {
 	}
 
 	@Override
-	protected <A extends AbstractState<A, H, V, T>,
+	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> ternarySemantics(
@@ -43,11 +43,11 @@ public class RangeValue extends TernaryExpression {
 		CodeLocation loc = getLocation();
 		Type type = PyClassType.lookup(LibrarySpecificationProvider.SLICE);
 		if (left instanceof Skip)
-			left = new Constant(Int32.INSTANCE, new RangeBound(0), loc);
+			left = new Constant(Int32Type.INSTANCE, new RangeBound(0), loc);
 		if (middle instanceof Skip)
-			middle = new Constant(Int32.INSTANCE, new RangeBound(), loc);
+			middle = new Constant(Int32Type.INSTANCE, new RangeBound(), loc);
 		if (right instanceof Skip)
-			right = new Constant(Int32.INSTANCE, new RangeBound(1), loc);
+			right = new Constant(Int32Type.INSTANCE, new RangeBound(1), loc);
 		return state.smallStepSemantics(
 				new it.unive.lisa.symbolic.value.TernaryExpression(
 						type, left, middle, right, SliceCreation.INSTANCE, loc),

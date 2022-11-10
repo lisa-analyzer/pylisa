@@ -16,17 +16,17 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 	}
 
 	@Override
-	protected ColumnIteration lubAux(ColumnIteration other) throws SemanticException {
+	public ColumnIteration lubAux(ColumnIteration other) throws SemanticException {
 		return this;
 	}
 
 	@Override
-	protected ColumnIteration wideningAux(ColumnIteration other) throws SemanticException {
+	public ColumnIteration wideningAux(ColumnIteration other) throws SemanticException {
 		return this;
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(ColumnIteration other) throws SemanticException {
+	public boolean lessOrEqualAux(ColumnIteration other) throws SemanticException {
 		return true;
 	}
 

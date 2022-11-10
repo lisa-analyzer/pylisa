@@ -57,20 +57,20 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 	}
 
 	@Override
-	protected BooleanSelectionExpression<L, R> lubAux(BooleanSelectionExpression<L, R> other) throws SemanticException {
+	public BooleanSelectionExpression<L, R> lubAux(BooleanSelectionExpression<L, R> other) throws SemanticException {
 		return type != other.type ? top()
 				: new BooleanSelectionExpression<>(type, left.lub(other.left), right.lub(other.right));
 	}
 
 	@Override
-	protected BooleanSelectionExpression<L, R> wideningAux(BooleanSelectionExpression<L, R> other)
+	public BooleanSelectionExpression<L, R> wideningAux(BooleanSelectionExpression<L, R> other)
 			throws SemanticException {
 		return type != other.type ? top()
 				: new BooleanSelectionExpression<>(type, left.widening(other.left), right.widening(other.right));
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(BooleanSelectionExpression<L, R> other) throws SemanticException {
+	public boolean lessOrEqualAux(BooleanSelectionExpression<L, R> other) throws SemanticException {
 		return type != other.type ? false
 				: left.lessOrEqual(other.left) && right.lessOrEqual(other.right);
 	}

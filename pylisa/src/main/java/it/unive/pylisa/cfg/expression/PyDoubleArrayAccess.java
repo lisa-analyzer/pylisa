@@ -17,6 +17,7 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -30,7 +31,7 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 	}
 
 	@Override
-	protected <A extends AbstractState<A, H, V, T>,
+	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> ternarySemantics(
@@ -48,7 +49,8 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 		Type dereferencedType = Untyped.INSTANCE;
 		Type firstAccessedType = Untyped.INSTANCE;
 		Type childType = Untyped.INSTANCE;
-		if (left.getRuntimeTypes().anyMatch(t -> t.equals(dfref))) {
+		TypeSystem types = getProgram().getTypes();
+		if (left.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfref))) {
 			HeapDereference deref = new HeapDereference(dftype, left, getLocation());
 			it.unive.lisa.symbolic.value.TernaryExpression dfAccess = new it.unive.lisa.symbolic.value.TernaryExpression(
 					dftype,
@@ -75,14 +77,7 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 			deref = new HeapDereference(firstAccessedType, cont, getLocation());
 
 			if (childType.isPointerType()) {
-				Type inner = null;
-				for (Type t : childType.asPointerType().getInnerTypes())
-					if (inner == null)
-						inner = t;
-					else
-						inner = inner.commonSupertype(t);
-				if (inner == null)
-					inner = Untyped.INSTANCE;
+				Type inner = childType.asPointerType().getInnerType();
 				AccessChild access = new AccessChild(inner, deref, right, getLocation());
 				HeapReference ref = new HeapReference(childType, access, getLocation());
 				result = result.lub(tmp.smallStepSemantics(ref, this));

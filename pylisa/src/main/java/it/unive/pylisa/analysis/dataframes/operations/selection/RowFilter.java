@@ -31,12 +31,12 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 	}
 
 	@Override
-	protected RowFilter<B> wideningAux(RowFilter<B> other) throws SemanticException {
+	public RowFilter<B> wideningAux(RowFilter<B> other) throws SemanticException {
 		return lubAux(other);
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(RowFilter<B> other) throws SemanticException {
+	public boolean lessOrEqualAux(RowFilter<B> other) throws SemanticException {
 		if (this.equals(other))
 			return true;
 		if (!this.selection.getClass().equals(other.selection.getClass()))
@@ -46,7 +46,7 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected RowFilter<B> lubAux(RowFilter<B> other) throws SemanticException {
+	public RowFilter<B> lubAux(RowFilter<B> other) throws SemanticException {
 		if (!this.selection.getClass().equals(other.selection.getClass())) {
 			return (RowFilter<B>) TOP;
 		}

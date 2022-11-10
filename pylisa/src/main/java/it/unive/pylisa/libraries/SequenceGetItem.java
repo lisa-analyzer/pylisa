@@ -42,7 +42,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 	}
 
 	@Override
-	protected <A extends AbstractState<A, H, V, T>,
+	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
@@ -57,7 +57,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 
 		CodeLocation loc = getLocation();
-		if (left.getRuntimeTypes().anyMatch(dfref::equals)) {
+		if (left.getRuntimeTypes(getProgram().getTypes()).stream().anyMatch(dfref::equals)) {
 			HeapDereference deref = new HeapDereference(dftype, left, loc);
 			UnaryExpression iterate = new UnaryExpression(seriestype, deref, Iterate.INSTANCE, loc);
 			return state.smallStepSemantics(iterate, st);

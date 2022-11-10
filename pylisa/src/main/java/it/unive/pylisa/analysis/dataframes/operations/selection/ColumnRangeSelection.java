@@ -41,17 +41,17 @@ public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> 
 	}
 
 	@Override
-	protected ColumnRangeSelection lubAux(ColumnRangeSelection other) throws SemanticException {
+	public ColumnRangeSelection lubAux(ColumnRangeSelection other) throws SemanticException {
 		return new ColumnRangeSelection(columns.lub(other.columns));
 	}
 
 	@Override
-	protected ColumnRangeSelection wideningAux(ColumnRangeSelection other) throws SemanticException {
+	public ColumnRangeSelection wideningAux(ColumnRangeSelection other) throws SemanticException {
 		return new ColumnRangeSelection(columns.widening(other.columns));
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(ColumnRangeSelection other) throws SemanticException {
+	public boolean lessOrEqualAux(ColumnRangeSelection other) throws SemanticException {
 		return columns.lessOrEqual(other.columns);
 	}
 

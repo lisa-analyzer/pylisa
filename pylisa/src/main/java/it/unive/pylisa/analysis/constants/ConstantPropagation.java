@@ -1,5 +1,7 @@
 package it.unive.pylisa.analysis.constants;
 
+import java.util.Objects;
+
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -9,14 +11,13 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
-import it.unive.lisa.symbolic.value.operator.Multiplication;
+import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.common.Int32;
+import it.unive.lisa.type.common.Int32Type;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.Objects;
 
 public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation>
 		implements Comparable<ConstantPropagation> {
@@ -82,17 +83,17 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 	}
 
 	@Override
-	protected ConstantPropagation lubAux(ConstantPropagation other) throws SemanticException {
+	public ConstantPropagation lubAux(ConstantPropagation other) throws SemanticException {
 		return Objects.equals(constant, other.constant) ? this : top();
 	}
 
 	@Override
-	protected ConstantPropagation wideningAux(ConstantPropagation other) throws SemanticException {
+	public ConstantPropagation wideningAux(ConstantPropagation other) throws SemanticException {
 		return lubAux(other);
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(ConstantPropagation other) throws SemanticException {
+	public boolean lessOrEqualAux(ConstantPropagation other) throws SemanticException {
 		return Objects.equals(constant, other.constant);
 	}
 
@@ -140,7 +141,7 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 	@Override
 	public boolean canProcess(SymbolicExpression expression) {
 		return expression.hasRuntimeTypes()
-				? expression.getRuntimeTypes().anyMatch(ConstantPropagation::isAccepted)
+				? expression.getRuntimeTypes(null).stream().anyMatch(ConstantPropagation::isAccepted)
 				: isAccepted(expression.getStaticType());
 	}
 
@@ -157,21 +158,21 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 	}
 
 	@Override
-	protected ConstantPropagation evalUnaryExpression(UnaryOperator operator, ConstantPropagation arg,
+	public ConstantPropagation evalUnaryExpression(UnaryOperator operator, ConstantPropagation arg,
 			ProgramPoint pp) {
 		if (arg.isTop())
 			return top();
 		if (operator == NumericNegation.INSTANCE)
 			if (arg.is(Integer.class))
 				return new ConstantPropagation(
-						new Constant(Int32.INSTANCE, -1 * arg.as(Integer.class), pp.getLocation()));
+						new Constant(Int32Type.INSTANCE, -1 * arg.as(Integer.class), pp.getLocation()));
 		// TODO more types
 
 		return top();
 	}
 
 	@Override
-	protected ConstantPropagation evalBinaryExpression(BinaryOperator operator, ConstantPropagation left,
+	public ConstantPropagation evalBinaryExpression(BinaryOperator operator, ConstantPropagation left,
 			ConstantPropagation right, ProgramPoint pp) {
 
 		// TODO
@@ -187,9 +188,9 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		 * right.value); else if (operator instanceof Module) return
 		 * left.isTop() || right.isTop() ? top() : new
 		 * ConstantPropagation(left.value % right.value); else
-		 */if (operator instanceof Multiplication)
+		 */if (operator instanceof MultiplicationOperator)
 			return left.isTop() || right.isTop() ? top()
-					: new ConstantPropagation(new Constant(Int32.INSTANCE,
+					: new ConstantPropagation(new Constant(Int32Type.INSTANCE,
 							left.as(Integer.class) * right.as(Integer.class), pp.getLocation()));
 		/*
 		 * else if (operator instanceof SubtractionOperator) return left.isTop()

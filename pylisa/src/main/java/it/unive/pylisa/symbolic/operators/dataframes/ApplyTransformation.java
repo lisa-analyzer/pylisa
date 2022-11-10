@@ -1,12 +1,14 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
-import it.unive.lisa.caches.Caches;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
+
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.util.collections.externalSet.ExternalSet;
+import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.Optional;
 
 public class ApplyTransformation implements UnaryOperator {
 
@@ -55,11 +57,11 @@ public class ApplyTransformation implements UnaryOperator {
 	}
 
 	@Override
-	public ExternalSet<Type> typeInference(ExternalSet<Type> argument) {
+	public Set<Type> typeInference(TypeSystem types, Set<Type> argument) {
 		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-		if (argument.noneMatch(t -> t.equals(series)))
-			return Caches.types().mkEmptySet();
-		return Caches.types().mkSingletonSet(series);
+		if (argument.stream().noneMatch(t -> t.equals(series)))
+			return Collections.emptySet();
+		return Collections.singleton(series);
 	}
 
 	@Override

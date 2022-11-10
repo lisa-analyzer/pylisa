@@ -70,19 +70,19 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 	}
 
 	@Override
-	protected DataframeSelection<R, C> lubAux(DataframeSelection<R, C> other) throws SemanticException {
+	public DataframeSelection<R, C> lubAux(DataframeSelection<R, C> other) throws SemanticException {
 		return new DataframeSelection<>(nullSafe(rowSelection, other.rowSelection, Lattice::lub),
 				nullSafe(columnSelection, other.columnSelection, Lattice::lub));
 	}
 
 	@Override
-	protected DataframeSelection<R, C> wideningAux(DataframeSelection<R, C> other) throws SemanticException {
+	public DataframeSelection<R, C> wideningAux(DataframeSelection<R, C> other) throws SemanticException {
 		return new DataframeSelection<>(nullSafe(rowSelection, other.rowSelection, Lattice::widening),
 				nullSafe(columnSelection, other.columnSelection, Lattice::widening));
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(DataframeSelection<R, C> other) throws SemanticException {
+	public boolean lessOrEqualAux(DataframeSelection<R, C> other) throws SemanticException {
 		if (nullSafe(rowSelection, other.rowSelection, Lattice::lub) == null)
 			return false;
 

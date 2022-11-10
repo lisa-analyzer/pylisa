@@ -21,7 +21,7 @@ import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.common.Int32;
+import it.unive.lisa.type.common.Int32Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.AccessRows;
@@ -50,7 +50,7 @@ public class Head extends BinaryExpression implements PluggableStatement {
 	}
 
 	@Override
-	protected <A extends AbstractState<A, H, V, T>,
+	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
@@ -65,7 +65,7 @@ public class Head extends BinaryExpression implements PluggableStatement {
 		Type dfref = ((PyClassType) dftype).getReference();
 
 		HeapDereference derefLeft = new HeapDereference(dftype, left, location);
-		Constant start = new Constant(Int32.INSTANCE, 0, location);
+		Constant start = new Constant(Int32Type.INSTANCE, 0, location);
 
 		// we allocate the copy that will have only the given rows
 		AnalysisState<A, H, V, T> copied = PandasSemantics.copyDataframe(state, derefLeft, st);

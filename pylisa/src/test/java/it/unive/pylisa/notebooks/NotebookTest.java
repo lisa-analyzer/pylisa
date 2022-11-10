@@ -78,23 +78,23 @@ public abstract class NotebookTest {
 		}
 
 		LiSAConfiguration conf = new LiSAConfiguration();
-		conf.setWorkdir(workdir);
-		conf.setSerializeResults(true);
-//		conf.setDumpAnalysis(GraphType.HTML_WITH_SUBNODES);
-		conf.setJsonOutput(true);
-		conf.setInterproceduralAnalysis(new ContextBasedAnalysis<>());
-		conf.setCallGraph(new RTACallGraph());
-		conf.setOpenCallPolicy(ReturnTopPolicy.INSTANCE);
-		conf.addSemanticCheck(new DataframeDumper(conf));
-		conf.addSemanticCheck(new BottomFinder<>());
-		conf.addSemanticCheck(new DataframeStructureConstructor());
+		conf.workdir = workdir;
+		conf.serializeResults = true;
+//		conf.analysisGraphs = GraphType.HTML_WITH_SUBNODES;
+		conf.jsonOutput = true;
+		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+		conf.callGraph = new RTACallGraph();
+		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
+		conf.semanticChecks.add(new DataframeDumper(conf));
+		conf.semanticChecks.add(new BottomFinder<>());
+		conf.semanticChecks.add(new DataframeStructureConstructor());
 		if (findOpenCalls)
-			conf.addSemanticCheck(new OpenCallsFinder<>());
+			conf.semanticChecks.add(new OpenCallsFinder<>());
 
 		PointBasedHeap heap = new PyFieldSensitivePointBasedHeap();
 		InferredTypes type = new InferredTypes();
 		DataframeGraphDomain df = new DataframeGraphDomain();
-		conf.setAbstractState(getDefaultFor(AbstractState.class, heap, df, type));
+		conf.abstractState = getDefaultFor(AbstractState.class, heap, df, type);
 		return conf;
 	}
 

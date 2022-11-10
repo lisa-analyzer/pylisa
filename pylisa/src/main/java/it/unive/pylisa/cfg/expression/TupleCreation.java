@@ -1,5 +1,7 @@
 package it.unive.pylisa.cfg.expression;
 
+import org.apache.commons.lang3.StringUtils;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -21,10 +23,9 @@ import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import it.unive.lisa.type.common.Int32;
+import it.unive.lisa.type.common.Int32Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import org.apache.commons.lang3.StringUtils;
 
 public class TupleCreation extends NaryExpression {
 
@@ -71,7 +72,7 @@ public class TupleCreation extends NaryExpression {
 
 			for (int i = 0; i < params.length; i++) {
 				AnalysisState<A, H, V, T> fieldResult = state.bottom();
-				Constant idx = new Constant(Int32.INSTANCE, i, getLocation());
+				Constant idx = new Constant(Int32Type.INSTANCE, i, getLocation());
 				AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref, idx, getLocation());
 				for (SymbolicExpression init : params[i]) {
 					AnalysisState<A, H, V, T> fieldState = sem.smallStepSemantics(fieldAcc, this);

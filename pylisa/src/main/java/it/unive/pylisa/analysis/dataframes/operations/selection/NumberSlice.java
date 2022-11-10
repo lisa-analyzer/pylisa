@@ -106,18 +106,18 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 	}
 
 	@Override
-	protected NumberSlice lubAux(NumberSlice other) throws SemanticException {
+	public NumberSlice lubAux(NumberSlice other) throws SemanticException {
 		return new NumberSlice(beginIndex.lub(other.beginIndex), endIndex.lub(other.endIndex), skip.lub(other.skip));
 	}
 
 	@Override
-	protected NumberSlice wideningAux(NumberSlice other) throws SemanticException {
+	public NumberSlice wideningAux(NumberSlice other) throws SemanticException {
 		return new NumberSlice(beginIndex.widening(other.beginIndex), endIndex.widening(other.endIndex),
 				skip.widening(other.skip));
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(NumberSlice other) throws SemanticException {
+	public boolean lessOrEqualAux(NumberSlice other) throws SemanticException {
 		return beginIndex.lessOrEqual(other.beginIndex) && endIndex.lessOrEqual(other.endIndex)
 				&& skip.lessOrEqual(other.skip);
 	}

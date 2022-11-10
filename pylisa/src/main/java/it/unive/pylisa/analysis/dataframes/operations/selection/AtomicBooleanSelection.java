@@ -57,19 +57,19 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 	}
 
 	@Override
-	protected AtomicBooleanSelection lubAux(AtomicBooleanSelection other) throws SemanticException {
+	public AtomicBooleanSelection lubAux(AtomicBooleanSelection other) throws SemanticException {
 		return op != other.op ? top()
 				: new AtomicBooleanSelection(cols.lub(other.cols), op, val.lub(other.val));
 	}
 
 	@Override
-	protected AtomicBooleanSelection wideningAux(AtomicBooleanSelection other) throws SemanticException {
+	public AtomicBooleanSelection wideningAux(AtomicBooleanSelection other) throws SemanticException {
 		return op != other.op ? top()
 				: new AtomicBooleanSelection(cols.widening(other.cols), op, val.widening(other.val));
 	}
 
 	@Override
-	protected boolean lessOrEqualAux(AtomicBooleanSelection other) throws SemanticException {
+	public boolean lessOrEqualAux(AtomicBooleanSelection other) throws SemanticException {
 		return op != other.op ? false
 				: cols.lessOrEqual(other.cols) && val.lessOrEqual(other.val);
 	}
