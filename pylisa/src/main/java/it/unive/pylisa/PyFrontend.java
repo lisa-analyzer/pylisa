@@ -464,7 +464,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			Compound_stmtContext comp = stmt.compound_stmt();
 			Pair<Statement, Statement> visited_stmt;
 			if (comp != null)
-				// WHY returns null on visitClassDef, visitFuncdef?
 				visited_stmt = visitCompound_stmt(comp);
 			else
 				visited_stmt = visitSimple_stmt(stmt.simple_stmt());
@@ -588,7 +587,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 	@Override
 	public Parameter[] visitTypedargslist(TypedargslistContext ctx) {
-		if (ctx.test() != null && !ctx.test().isEmpty()) // THIS is the problem with args=None.
+		if (ctx.test() != null && !ctx.test().isEmpty())
 			throw new UnsupportedStatementException();
 		if (ctx.STAR() != null || ctx.POWER() != null)
 			throw new UnsupportedStatementException();
