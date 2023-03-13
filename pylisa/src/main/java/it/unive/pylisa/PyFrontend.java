@@ -396,11 +396,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		PyClassType.all().forEach(types::registerType);
 
-		for (CFG cm : program.getAllCFGs()) {
-			System.out.println(cm);
+		for (CFG cm : program.getAllCFGs())
 			if (cm.getDescriptor().getName().equals("main"))
 				program.addEntryPoint(cm);
-		}
 		return program;
 	}
 
