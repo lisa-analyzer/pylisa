@@ -401,7 +401,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				program.addEntryPoint(cm);
 		return program;
 	}
-
 	private InputStream mkStream() throws FileNotFoundException {
 		if (!this.notebook)
 			return new FileInputStream(getFilePath());
