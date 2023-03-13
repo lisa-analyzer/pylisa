@@ -399,8 +399,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		for (CFG cm : program.getAllCFGs())
 			if (cm.getDescriptor().getName().equals("main"))
 				program.addEntryPoint(cm);
+
 		return program;
 	}
+
 	private InputStream mkStream() throws FileNotFoundException {
 		if (!this.notebook)
 			return new FileInputStream(getFilePath());
