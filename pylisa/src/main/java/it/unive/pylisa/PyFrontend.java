@@ -382,8 +382,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		log.info("Reading file... " + filePath);
 
-		Python3Lexer lexer;
-		try (InputStream stream = mkStream()) {
+		Python3Lexer lexer = null;
+		try (InputStream stream = mkStream();) {
 			lexer = new Python3Lexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
 		} catch (IOException e) {
 			throw new IOException("Unable to parse '" + filePath + "'", e);
