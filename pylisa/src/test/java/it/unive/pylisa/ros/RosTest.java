@@ -5,24 +5,19 @@ import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.types.InferredTypes;
-import it.unive.lisa.interprocedural.ContextBasedAnalysis;
-import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.PyFrontend;
+import it.unive.pylisa.analysis.dataflow.rospropagation.RosTopic;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
-import it.unive.pylisa.checks.BottomFinder;
-import it.unive.pylisa.checks.DataframeDumper;
-import it.unive.pylisa.checks.DataframeStructureConstructor;
+import it.unive.pylisa.checks.RosTopicDeclarationFinder;
 import org.junit.Test;
 
 import static it.unive.lisa.LiSAFactory.getDefaultFor;
-import static org.junit.Assert.fail;
 
 public class RosTest {
 
-    private final boolean FIND_OPEN_CALLS = false;
 
     @Test
     public void test() throws Exception {
@@ -36,17 +31,19 @@ public class RosTest {
         conf.jsonOutput = true;
         conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
         //conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
-        //conf.callGraph = new RTACallGraph();
-        conf.openCallPolicy =
-        conf.semanticChecks.add(new DataframeDumper(conf));
-        conf.semanticChecks.add(new BottomFinder<>());
-        conf.semanticChecks.add(new DataframeStructureConstructor());
+        conf.callGraph = new RTACallGraph();
+        //conf.openCallPolicy
+        RosTopic rt = new RosTopic();
+        conf.syntacticChecks.add(new RosTopicDeclarationFinder());
+        //conf.semanticChecks.add(new DataframeDumper(conf));
+        //conf.semanticChecks.add(new BottomFinder<>());
+        //conf.semanticChecks.add(new DataframeStructureConstructor());
         PointBasedHeap heap = new PyFieldSensitivePointBasedHeap();
         InferredTypes type = new InferredTypes();
-        DataframeGraphDomain df = new DataframeGraphDomain();
-        conf.abstractState = getDefaultFor(AbstractState.class, heap, df, type);
+        //conf.interproceduralAnalysis = new ContextBasedAnalysis();
+        DataframeGraphDomain domain = new DataframeGraphDomain();
+        conf.abstractState = getDefaultFor(AbstractState.class, heap, domain, type);
         LiSA lisa = new LiSA(conf);
         lisa.run(program);
-        System.out.println("CIAO");
     }
 }

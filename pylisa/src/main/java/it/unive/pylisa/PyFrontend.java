@@ -382,8 +382,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		log.info("Reading file... " + filePath);
 
-		Python3Lexer lexer = null;
-		try (InputStream stream = mkStream();) {
+		Python3Lexer lexer;
+		try (InputStream stream = mkStream()) {
 			lexer = new Python3Lexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
 		} catch (IOException e) {
 			throw new IOException("Unable to parse '" + filePath + "'", e);
@@ -466,6 +466,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			Compound_stmtContext comp = stmt.compound_stmt();
 			Pair<Statement, Statement> visited_stmt;
 			if (comp != null)
+				// WHY returns null on visitClassDef, visitFuncdef?
 				visited_stmt = visitCompound_stmt(comp);
 			else
 				visited_stmt = visitSimple_stmt(stmt.simple_stmt());
@@ -589,7 +590,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 	@Override
 	public Parameter[] visitTypedargslist(TypedargslistContext ctx) {
-		if (ctx.test() != null && !ctx.test().isEmpty())
+		if (ctx.test() != null && !ctx.test().isEmpty()) // THIS is the problem with args=None.
 			throw new UnsupportedStatementException();
 		if (ctx.STAR() != null || ctx.POWER() != null)
 			throw new UnsupportedStatementException();

@@ -1,9 +1,0 @@
-digraph {
-subgraph cluster_legend {
-	label="Legend";
-	style=dotted;
-	node [shape=plaintext];
-	"legend" [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0"><tr><td align="right">node border&nbsp;</td><td align="left"><font color="gray">gray</font>, single</td></tr><tr><td align="right">entrypoint border&nbsp;</td><td align="left"><font color="black">black</font>, single</td></tr><tr><td align="right">exitpoint border&nbsp;</td><td align="left"><font color="black">black</font>, double</td></tr><tr><td align="right">sequential edge&nbsp;</td><td align="left"><font color="black">black</font>, solid</td></tr><tr><td align="right">assign edge&nbsp;</td><td align="left"><font color="blue">blue</font>, solid</td></tr><tr><td align="right">concat edge&nbsp;</td><td align="left"><font color="red">red</font>, solid</td></tr><tr><td align="right">consume edge&nbsp;</td><td align="left"><font color="black">black</font>, dashed</td></tr></table>>];
-}
-
-}
