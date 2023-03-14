@@ -41,21 +41,16 @@ public class RosTopicDeclarationFinder implements SyntacticCheck {
     @Override
     public boolean visit(CheckTool checkTool, CFG cfg, Statement statement) {
 
-        //checkTool.warnOn(cfg, "[ROS-TOPIC-DECLARATION-FINDER] Test Visit");
         if (statement instanceof Call) {
             if (Objects.equals(((Call) statement).getTargetName(), "create_subscription")) {
-                // topic name and message type used by the publisher and subscriber must match to allow them to communicate.
                 String topicName = ((Call) statement).getSubExpressions()[2].toString();
                 String messageType = ((Call) statement).getSubExpressions()[1].toString();
                 checkTool.warnOn(cfg, "Subscriber found: " + statement + ". Read from topic: " + topicName + ", message type: " + messageType);
-                return true;
             }
             if (Objects.equals(((Call) statement).getTargetName(), "create_publisher")) {
-                // topic name and message type used by the publisher and subscriber must match to allow them to communicate.
                 String topicName = ((Call) statement).getSubExpressions()[2].toString();
                 String messageType = ((Call) statement).getSubExpressions()[1].toString();
                 checkTool.warnOn(cfg, "Publisher found: " + statement + ". Write on topic: " + topicName + ", message type: " + messageType);
-                return true;
             }
         }
         return true;
