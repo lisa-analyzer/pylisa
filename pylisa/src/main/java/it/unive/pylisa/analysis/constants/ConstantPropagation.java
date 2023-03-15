@@ -21,6 +21,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.common.*;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.value.StringAdd;
+import it.unive.pylisa.symbolic.operators.value.StringMult;
 
 public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation>
 		implements Comparable<ConstantPropagation> {
@@ -184,7 +185,9 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		if (operator instanceof StringAdd) {
 			return stringConcat(left, right, pp);
 		}
-
+		if (operator instanceof StringMult) {
+			return stringRepeat(left, right, pp);
+		}
 		// TODO
 		/*
 		 * if (operator instanceof AdditionOperator) return left.isTop() ||
@@ -281,6 +284,41 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 					new Constant(StringType.INSTANCE, left.as(String.class) + right.as(String.class),pp.getLocation()));
 		}
 		return TOP;
+	}
+
+	private ConstantPropagation stringRepeat(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+		if (left.isTop() || right.isTop()) {
+			return TOP;
+		}
+		if (left.constant.getStaticType().isStringType() && right.constant.getStaticType().isNumericType()) {
+			if (right.constant.getStaticType().asNumericType().isIntegral()) {
+				// use long
+				Long longRight = Long.valueOf(right.as(Integer.class).longValue());
+				String stringLeft = left.as(String.class);
+
+				return new ConstantPropagation(
+						new Constant(StringType.INSTANCE, stringRepeatAux(stringLeft, longRight), pp.getLocation()));
+			}
+		}
+		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isStringType()) {
+			if (left.constant.getStaticType().asNumericType().isIntegral()) {
+				// use long
+				Long longLeft = Long.valueOf(left.as(Integer.class).longValue());
+				String stringRight = right.as(String.class);
+
+				return new ConstantPropagation(
+						new Constant(StringType.INSTANCE, stringRepeatAux(stringRight, longLeft), pp.getLocation()));
+			}
+		}
+		return TOP;
+	}
+
+	private String stringRepeatAux(String s, Long times) {
+		StringBuilder sb = new StringBuilder();
+		for (long i = 0; i < times; i++) {
+			sb.append(s);
+		}
+		return sb.toString();
 	}
 
 	public static Class<? extends Number> getJavaClassFor(NumericType numericType) {

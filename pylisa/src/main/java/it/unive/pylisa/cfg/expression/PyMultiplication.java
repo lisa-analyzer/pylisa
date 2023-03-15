@@ -13,9 +13,12 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.numeric.Multiplication;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyLibraryUnitType;
+import it.unive.pylisa.symbolic.operators.value.StringMult;
 
 public class PyMultiplication extends Multiplication {
 
@@ -42,6 +45,19 @@ public class PyMultiplication extends Multiplication {
 			// we allow scalar multiplication, but with no explicit handling for
 			// now
 			return state;
+		// string repeat: STRING * Integer || Integer * String
+		if ((left.getRuntimeTypes(types).stream().anyMatch(Type::isStringType) && right.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType)) ||
+				(right.getRuntimeTypes(types).stream().anyMatch(Type::isStringType) && left.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType))) {
+
+			return state.smallStepSemantics(
+					new BinaryExpression(
+							getStaticType(),
+							left,
+							right,
+							StringMult.INSTANCE,
+							getLocation()),
+					this);
+		}
 		return super.binarySemantics(interprocedural, state, left, right, expressions);
 	}
 }

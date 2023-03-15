@@ -17,6 +17,7 @@ import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingAdd;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
+import it.unive.pylisa.symbolic.operators.value.StringAdd;
 
 public class PyAddition extends Addition {
 
@@ -62,11 +63,15 @@ public class PyAddition extends Addition {
                             getStaticType(),
                             left,
                             right,
-                            NumericNonOverflowingAdd.INSTANCE,
+                            StringAdd.INSTANCE,
                             getLocation()),
                     this);
         }
-
+        // TODO: OTHER CASES:
+        // - List (The + operator returns a list containing all the elements of the first and the second list (second list appended to first)
+        // - Tuple (The + operator works like List, i.e. it returns a Tuple of M = n1+n2 elements where the first n1 elements are all the elements of the first (right) tuple
+        //      and the last n2 are all the elements of the second (right) tuple.
+        // Set and Dict does not support operand +
         return state.bottom();
     }
 }
