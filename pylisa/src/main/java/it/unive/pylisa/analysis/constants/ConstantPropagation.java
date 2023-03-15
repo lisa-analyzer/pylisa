@@ -22,6 +22,7 @@ import it.unive.lisa.type.common.*;
 
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.value.StringAdd;
+import it.unive.pylisa.symbolic.operators.value.StringConstructor;
 import it.unive.pylisa.symbolic.operators.value.StringLength;
 import it.unive.pylisa.symbolic.operators.value.StringMult;
 
@@ -177,6 +178,12 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 			if (arg.is(String.class)) {
 				return new ConstantPropagation(
 						new Constant(Int32Type.INSTANCE,  arg.as(String.class).length(), pp.getLocation()));
+			}
+		}
+		if (operator == StringConstructor.INSTANCE) {
+			if (arg.is(String.class) || arg.is(Integer.class)) {
+				return new ConstantPropagation(
+						new Constant(StringType.INSTANCE,  arg.toString(), pp.getLocation()));
 			}
 		}
 		// TODO more...

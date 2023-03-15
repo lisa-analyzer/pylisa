@@ -23,6 +23,7 @@ import java.util.function.Function;
 
 import it.unive.pylisa.cfg.expression.*;
 import it.unive.pylisa.cfg.expression.unary.PyLength;
+import it.unive.pylisa.cfg.expression.unary.PyStringConstructor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -1077,7 +1078,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						currentCFG,
 						getLocation(ctx),
 						CallType.INSTANCE,
-						null,
+										null,
 						"__len__",
 						collection_pars));
 		currentCFG.addNodeIfNotPresent(condition);
@@ -1747,6 +1748,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	private Expression visitMethod(PyCFG currentCFG, TrailerContext expr, boolean instance, String methodName, List<Expression> pars) {
 		if (methodName.equals("len")) {
 			return new PyLength(currentCFG, getLocation(expr), pars.get(0));
+		}
+		if (methodName.equals("str")) {
+			return new PyStringConstructor(currentCFG, getLocation(expr), pars.get(0));
 		}
 		return new UnresolvedCall(
 				currentCFG,

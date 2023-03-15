@@ -16,7 +16,17 @@ class MinimalSubscriber(Node):
 class MinimalPublisher(Node):
     def __init__(self):
         super().__init__('minimal_publisher')
-        self.publisher_ = self.create_publisher(String, 'topic', 30)
+        x = "topic"
+        z = 2 + 1
+        y = len(x*z)
+        c = "topic" + "name" * z
+        a = len(c)
+        b = "B"
+        g = str(b*2)+str(34)*2
+        h = str(b*3) # fix str of a string (double ")
+        i = str(34)
+        l = str(34)*2
+        self.publisher_ = self.create_publisher(String, c + "_" + (x + (b + b)*2) + g, 30)
         timer_period = 0.5  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
@@ -29,14 +39,19 @@ class MinimalPublisher(Node):
         self.i += 1
 
 def main(args):
-        rclpy.init(args=args)
-        minimal_subscriber = MinimalSubscriber()
-        minimal_publisher = MinimalPublisher()
-        rclpy.spin(minimal_subscriber)
-        rclpy.spin(minimal_publisher)
-        minimal_subscriber.destroy_node()
-        minimal_publisher.destroy_node()
-        rclpy.shutdown()
+    rclpy.init(args=args)
+    minimal_subscriber = MinimalSubscriber()
+    minimal_publisher = MinimalPublisher()
+    rclpy.spin(minimal_subscriber)
+    rclpy.spin(minimal_publisher)
+    minimal_subscriber.destroy_node()
+    minimal_publisher.destroy_node()
+    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
+
+
+
+
+
