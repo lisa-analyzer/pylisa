@@ -11,12 +11,14 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
+import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.common.Int32Type;
+import it.unive.lisa.type.common.*;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation>
@@ -174,9 +176,12 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 	@Override
 	public ConstantPropagation evalBinaryExpression(BinaryOperator operator, ConstantPropagation left,
 			ConstantPropagation right, ProgramPoint pp) {
+		// test int addition propagation
+		if (operator instanceof AdditionOperator) {
+			return add(left, right, pp);
 
+		}
 		// TODO
-
 		/*
 		 * if (operator instanceof AdditionOperator) return left.isTop() ||
 		 * right.isTop() ? top() : new ConstantPropagation(left.value +
@@ -220,4 +225,66 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		// not much we can do here..
 		return Integer.compare(constant.hashCode(), other.constant.hashCode());
 	}
+
+
+	public ConstantPropagation add(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+		if (left.isTop() || right.isTop()) {
+			return TOP;
+		}
+		// NUMERIC
+		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isNumericType()) {
+			NumericType superType = left.constant.getStaticType().asNumericType().supertype(right.constant.getStaticType().asNumericType());
+			//Class<? extends Number> type = getJavaClassFor(superType);
+			if (superType.is8Bits()) {
+				return new ConstantPropagation(
+						new Constant(Int8Type.INSTANCE, left.as(Byte.class) + right.as(Byte.class),pp.getLocation()));
+			}
+			if (superType.is16Bits()) {
+				return new ConstantPropagation(
+						new Constant(Int16Type.INSTANCE, left.as(Short.class) + right.as(Short.class),pp.getLocation()));
+			}
+			if (superType.is32Bits()) {
+				if (!superType.isIntegral()) {
+					return new ConstantPropagation(
+							new Constant(Float32Type.INSTANCE, left.as(Float.class) + right.as(Float.class), pp.getLocation()));
+				} else {
+					if (left.constant.getStaticType().asNumericType().isIntegral()) {
+
+					}
+					return new ConstantPropagation(
+							new Constant(Int32Type.INSTANCE, left.as(Integer.class) + right.as(Integer.class), pp.getLocation()));
+				}
+			}
+			if (superType.is64Bits()) {
+				if (!superType.isIntegral()) {
+					return new ConstantPropagation(
+							new Constant(Float64Type.INSTANCE, left.as(Double.class) + right.as(Double.class), pp.getLocation()));
+				} else {
+					return new ConstantPropagation(
+							new Constant(Int64Type.INSTANCE, left.as(Long.class) + right.as(Long.class),pp.getLocation()));
+				}
+			}
+
+			//Constant _left = new Constant(superType.)
+			//NumericType _right =
+			return TOP;
+		}
+		// STRING
+		if (left.constant.getStaticType().isStringType() && right.constant.getStaticType().isStringType()) {
+			return new ConstantPropagation(
+					new Constant(StringType.INSTANCE, left.as(String.class) + right.as(String.class),pp.getLocation()));
+		}
+		return TOP;
+	}
+
+
+	public static Class<? extends Number> getJavaClassFor(NumericType numericType) {
+		if (numericType.is8Bits()) return Byte.class;
+		if (numericType.is16Bits()) return Short.class;
+		if (numericType.is32Bits() && numericType.isIntegral()) return Integer.class;
+		if (numericType.is32Bits() && !numericType.isIntegral()) return Float.class;
+		if (numericType.is64Bits() && numericType.isIntegral()) return Long.class;
+		return Double.class;
+	}
+
 }

@@ -21,6 +21,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 
+import it.unive.pylisa.cfg.expression.*;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -191,33 +192,6 @@ import it.unive.pylisa.antlr.Python3Parser.Yield_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
 import it.unive.pylisa.antlr.Python3ParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
-import it.unive.pylisa.cfg.expression.DictionaryCreation;
-import it.unive.pylisa.cfg.expression.Empty;
-import it.unive.pylisa.cfg.expression.LambdaExpression;
-import it.unive.pylisa.cfg.expression.ListCreation;
-import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
-import it.unive.pylisa.cfg.expression.PyAssign;
-import it.unive.pylisa.cfg.expression.PyBitwiseAnd;
-import it.unive.pylisa.cfg.expression.PyBitwiseLeftShift;
-import it.unive.pylisa.cfg.expression.PyBitwiseNot;
-import it.unive.pylisa.cfg.expression.PyBitwiseOr;
-import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
-import it.unive.pylisa.cfg.expression.PyBitwiseXor;
-import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
-import it.unive.pylisa.cfg.expression.PyFloorDiv;
-import it.unive.pylisa.cfg.expression.PyIn;
-import it.unive.pylisa.cfg.expression.PyIs;
-import it.unive.pylisa.cfg.expression.PyMatMul;
-import it.unive.pylisa.cfg.expression.PyMultiplication;
-import it.unive.pylisa.cfg.expression.PyPower;
-import it.unive.pylisa.cfg.expression.PyRemainder;
-import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
-import it.unive.pylisa.cfg.expression.PyStringLiteral;
-import it.unive.pylisa.cfg.expression.PyTernaryOperator;
-import it.unive.pylisa.cfg.expression.RangeValue;
-import it.unive.pylisa.cfg.expression.SetCreation;
-import it.unive.pylisa.cfg.expression.StarExpression;
-import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.expression.comparison.PyAnd;
 import it.unive.pylisa.cfg.expression.comparison.PyEquals;
 import it.unive.pylisa.cfg.expression.comparison.PyGreaterOrEqual;
@@ -1127,7 +1101,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				currentCFG,
 				getLocation(ctx),
 				counter,
-				new Addition(
+				new PyAddition(
 						currentCFG,
 						getLocation(ctx),
 						counter,
@@ -1583,7 +1557,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return visitTerm(ctx.term());
 		} else {
 			return createPairFromSingle(
-					new Addition(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTerm(ctx.term())),
+					new PyAddition(currentCFG, getLocation(ctx), checkAndExtractSingleExpression(visitTerm(ctx.term())),
 							checkAndExtractSingleExpression(visitArith_expr(ctx.arith_expr()))));
 		}
 
