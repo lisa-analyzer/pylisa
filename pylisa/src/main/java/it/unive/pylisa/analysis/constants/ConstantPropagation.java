@@ -20,6 +20,7 @@ import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.common.*;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.symbolic.operators.value.StringAdd;
 
 public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation>
 		implements Comparable<ConstantPropagation> {
@@ -176,11 +177,14 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 	@Override
 	public ConstantPropagation evalBinaryExpression(BinaryOperator operator, ConstantPropagation left,
 			ConstantPropagation right, ProgramPoint pp) {
-		// test int addition propagation
 		if (operator instanceof AdditionOperator) {
-			return add(left, right, pp);
-
+			return numericAdd(left, right, pp);
 		}
+
+		if (operator instanceof StringAdd) {
+			return stringConcat(left, right, pp);
+		}
+
 		// TODO
 		/*
 		 * if (operator instanceof AdditionOperator) return left.isTop() ||
@@ -227,11 +231,10 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 	}
 
 
-	public ConstantPropagation add(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+	private ConstantPropagation numericAdd(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
 		if (left.isTop() || right.isTop()) {
 			return TOP;
 		}
-		// NUMERIC
 		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isNumericType()) {
 			NumericType superType = left.constant.getStaticType().asNumericType().supertype(right.constant.getStaticType().asNumericType());
 			//Class<? extends Number> type = getJavaClassFor(superType);
@@ -264,19 +267,21 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 							new Constant(Int64Type.INSTANCE, left.as(Long.class) + right.as(Long.class),pp.getLocation()));
 				}
 			}
-
-			//Constant _left = new Constant(superType.)
-			//NumericType _right =
 			return TOP;
 		}
-		// STRING
+		return TOP;
+	}
+
+	private ConstantPropagation stringConcat(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+		if (left.isTop() || right.isTop()) {
+			return TOP;
+		}
 		if (left.constant.getStaticType().isStringType() && right.constant.getStaticType().isStringType()) {
 			return new ConstantPropagation(
 					new Constant(StringType.INSTANCE, left.as(String.class) + right.as(String.class),pp.getLocation()));
 		}
 		return TOP;
 	}
-
 
 	public static Class<? extends Number> getJavaClassFor(NumericType numericType) {
 		if (numericType.is8Bits()) return Byte.class;
