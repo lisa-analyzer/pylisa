@@ -171,7 +171,8 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 				return new ConstantPropagation(
 						new Constant(Int32Type.INSTANCE, -1 * arg.as(Integer.class), pp.getLocation()));
 		// TODO more types
-
+		
+		
 		return top();
 	}
 
@@ -188,7 +189,7 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		if (operator instanceof StringMult) {
 			return stringRepeat(left, right, pp);
 		}
-		// TODO
+		// TODO: Numeric Multiplication
 		/*
 		 * if (operator instanceof AdditionOperator) return left.isTop() ||
 		 * right.isTop() ? top() : new ConstantPropagation(left.value +
@@ -238,6 +239,7 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		if (left.isTop() || right.isTop()) {
 			return TOP;
 		}
+		// TODO: handle overflow (?)
 		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isNumericType()) {
 			NumericType superType = left.constant.getStaticType().asNumericType().supertype(right.constant.getStaticType().asNumericType());
 			//Class<? extends Number> type = getJavaClassFor(superType);
@@ -254,9 +256,6 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 					return new ConstantPropagation(
 							new Constant(Float32Type.INSTANCE, left.as(Float.class) + right.as(Float.class), pp.getLocation()));
 				} else {
-					if (left.constant.getStaticType().asNumericType().isIntegral()) {
-
-					}
 					return new ConstantPropagation(
 							new Constant(Int32Type.INSTANCE, left.as(Integer.class) + right.as(Integer.class), pp.getLocation()));
 				}
@@ -293,7 +292,7 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		if (left.constant.getStaticType().isStringType() && right.constant.getStaticType().isNumericType()) {
 			if (right.constant.getStaticType().asNumericType().isIntegral()) {
 				// use long
-				Long longRight = Long.valueOf(right.as(Integer.class).longValue());
+				Long longRight = right.as(Integer.class).longValue();
 				String stringLeft = left.as(String.class);
 
 				return new ConstantPropagation(
@@ -303,7 +302,7 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isStringType()) {
 			if (left.constant.getStaticType().asNumericType().isIntegral()) {
 				// use long
-				Long longLeft = Long.valueOf(left.as(Integer.class).longValue());
+				Long longLeft = left.as(Integer.class).longValue();
 				String stringRight = right.as(String.class);
 
 				return new ConstantPropagation(
