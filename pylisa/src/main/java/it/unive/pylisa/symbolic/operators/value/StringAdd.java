@@ -1,9 +1,7 @@
 package it.unive.pylisa.symbolic.operators.value;
-
-import it.unive.lisa.symbolic.value.operator.StringOperator;
 import it.unive.lisa.symbolic.value.operator.binary.StringConcat;
 
-public class StringAdd extends StringConcat implements StringOperator {
+public class StringAdd extends StringConcat {
 
     /**
      * The singleton instance of this class.

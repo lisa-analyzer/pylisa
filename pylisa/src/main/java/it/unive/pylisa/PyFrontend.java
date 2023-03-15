@@ -22,6 +22,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 
 import it.unive.pylisa.cfg.expression.*;
+import it.unive.pylisa.cfg.expression.unary.PyLength;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -81,7 +82,6 @@ import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.cfg.statement.logic.Not;
-import it.unive.lisa.program.cfg.statement.numeric.Addition;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
 import it.unive.lisa.type.NullType;
@@ -671,7 +671,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	@Override
 	public Pair<Statement, Statement> visitDel_stmt(Del_stmtContext ctx) {
 		if (ctx.exprlist().star_expr().size() > 0)
-			throw new UnsupportedStatementException("We support only expressions withou * in del statements");
+			throw new UnsupportedStatementException("We support only expressions without * in del statements");
 		Statement result = new UnresolvedCall(
 				currentCFG,
 				getLocation(ctx),
@@ -1711,13 +1711,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
 
 					pars = convertAssignmentsToByNameParameters(pars);
-					access = new UnresolvedCall(
-							currentCFG,
-							getLocation(expr),
-							instance ? CallType.UNKNOWN : CallType.STATIC,
-							null,
-							method_name,
-							pars.toArray(Expression[]::new));
+					access = visitMethod(currentCFG, expr, instance, method_name, pars);
 					last_name = null;
 					previous_access = null;
 				} else if (expr.OPEN_BRACK() != null) {
@@ -1749,7 +1743,20 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		} else
 			return visitAtom(ctx.atom());
 	}
-
+	
+	private Expression visitMethod(PyCFG currentCFG, TrailerContext expr, boolean instance, String methodName, List<Expression> pars) {
+		if (methodName.equals("len")) {
+			return new PyLength(currentCFG, getLocation(expr), pars.get(0));
+		}
+		return new UnresolvedCall(
+				currentCFG,
+				getLocation(expr),
+				instance ? CallType.UNKNOWN : CallType.STATIC,
+				null,
+				methodName,
+				pars.toArray(Expression[]::new));
+	}
+	
 	private List<Expression> convertAssignmentsToByNameParameters(List<Expression> pars) {
 		List<Expression> converted = new ArrayList<>(pars.size());
 		for (Expression e : pars)
