@@ -183,7 +183,7 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		if (operator == StringConstructor.INSTANCE) {
 			if (arg.is(String.class) || arg.is(Integer.class)) {
 				return new ConstantPropagation(
-						new Constant(StringType.INSTANCE,  arg.toString(), pp.getLocation()));
+						new Constant(StringType.INSTANCE,  arg.constant.getValue().toString(), pp.getLocation()));
 			}
 		}
 		// TODO more...
