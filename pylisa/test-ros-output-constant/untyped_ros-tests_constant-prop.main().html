@@ -143,7 +143,7 @@
 				No node selected. Select a node to show its results.
 				</div>
 				<div id="header-node0" class="header-hidden">
-					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">d = +("hello ", "world")</span></div>
+					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">d = str("hello!")</span></div>
 					<span class="description-header">expressions: </span>[d]<br/>
 					<span class="description-header">state: </span><br/>
 					<div class="description-nest">
@@ -152,14 +152,17 @@
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">d: </span>_|_<br/>
+								<span class="description-header">d: </span>[string]<br/>
 							</div>
-							<span class="description-header">stack: </span>_|_<br/>
+							<span class="description-header">stack: </span>[string]<br/>
 						</div>
 						<span class="description-header">value: </span><br/>
 						<div class="description-nest">
-							<span class="description-header">map: </span>empty<br/>
-							<span class="description-header">stack: </span>_|_<br/>
+							<span class="description-header">map: </span><br/>
+							<div class="description-nest">
+								<span class="description-header">d: </span>"hello!"<br/>
+							</div>
+							<span class="description-header">stack: </span>"hello!"<br/>
 						</div>
 					</div>
 				</div>
@@ -178,26 +181,26 @@
 					</div>
 				</div>
 				<div id="header-node2" class="header-hidden">
-					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">+("hello ", "world")</span></div>
-					<span class="description-header">expressions: </span>["hello " + "world"]<br/>
+					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">str("hello!")</span></div>
+					<span class="description-header">expressions: </span>[str "hello!"]<br/>
 					<span class="description-header">state: </span><br/>
 					<div class="description-nest">
 						<span class="description-header">heap: </span>#TOP#<br/>
 						<span class="description-header">type: </span><br/>
 						<div class="description-nest">
 							<span class="description-header">map: </span>empty<br/>
-							<span class="description-header">stack: </span>_|_<br/>
+							<span class="description-header">stack: </span>[string]<br/>
 						</div>
 						<span class="description-header">value: </span><br/>
 						<div class="description-nest">
 							<span class="description-header">map: </span>empty<br/>
-							<span class="description-header">stack: </span>"hello world"<br/>
+							<span class="description-header">stack: </span>"hello!"<br/>
 						</div>
 					</div>
 				</div>
 				<div id="header-node3" class="header-hidden">
-					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">"hello "</span></div>
-					<span class="description-header">expressions: </span>["hello "]<br/>
+					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">"hello!"</span></div>
+					<span class="description-header">expressions: </span>["hello!"]<br/>
 					<span class="description-header">state: </span><br/>
 					<div class="description-nest">
 						<span class="description-header">heap: </span>#TOP#<br/>
@@ -209,30 +212,12 @@
 						<span class="description-header">value: </span><br/>
 						<div class="description-nest">
 							<span class="description-header">map: </span>empty<br/>
-							<span class="description-header">stack: </span>"hello "<br/>
+							<span class="description-header">stack: </span>"hello!"<br/>
 						</div>
 					</div>
 				</div>
 				<div id="header-node4" class="header-hidden">
-					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">"world"</span></div>
-					<span class="description-header">expressions: </span>["world"]<br/>
-					<span class="description-header">state: </span><br/>
-					<div class="description-nest">
-						<span class="description-header">heap: </span>#TOP#<br/>
-						<span class="description-header">type: </span><br/>
-						<div class="description-nest">
-							<span class="description-header">map: </span>empty<br/>
-							<span class="description-header">stack: </span>[string]<br/>
-						</div>
-						<span class="description-header">value: </span><br/>
-						<div class="description-nest">
-							<span class="description-header">map: </span>empty<br/>
-							<span class="description-header">stack: </span>"world"<br/>
-						</div>
-					</div>
-				</div>
-				<div id="header-node5" class="header-hidden">
-					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">e = 1</span></div>
+					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">e = str(42)</span></div>
 					<span class="description-header">expressions: </span>[e]<br/>
 					<span class="description-header">state: </span><br/>
 					<div class="description-nest">
@@ -241,22 +226,23 @@
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">d: </span>_|_<br/>
-								<span class="description-header">e: </span>[int32]<br/>
+								<span class="description-header">d: </span>[string]<br/>
+								<span class="description-header">e: </span>[string]<br/>
 							</div>
-							<span class="description-header">stack: </span>[int32]<br/>
+							<span class="description-header">stack: </span>[string]<br/>
 						</div>
 						<span class="description-header">value: </span><br/>
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">e: </span>1<br/>
+								<span class="description-header">d: </span>"hello!"<br/>
+								<span class="description-header">e: </span>"42"<br/>
 							</div>
-							<span class="description-header">stack: </span>1<br/>
+							<span class="description-header">stack: </span>"42"<br/>
 						</div>
 					</div>
 				</div>
-				<div id="header-node6" class="header-hidden">
+				<div id="header-node5" class="header-hidden">
 					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">e</span></div>
 					<span class="description-header">expressions: </span>[e]<br/>
 					<span class="description-header">state: </span><br/>
@@ -266,20 +252,23 @@
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">d: </span>_|_<br/>
+								<span class="description-header">d: </span>[string]<br/>
 							</div>
 							<span class="description-header">stack: </span>#TOP#<br/>
 						</div>
 						<span class="description-header">value: </span><br/>
 						<div class="description-nest">
-							<span class="description-header">map: </span>empty<br/>
+							<span class="description-header">map: </span><br/>
+							<div class="description-nest">
+								<span class="description-header">d: </span>"hello!"<br/>
+							</div>
 							<span class="description-header">stack: </span>_|_<br/>
 						</div>
 					</div>
 				</div>
-				<div id="header-node7" class="header-hidden">
-					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">1</span></div>
-					<span class="description-header">expressions: </span>[1]<br/>
+				<div id="header-node6" class="header-hidden">
+					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">str(42)</span></div>
+					<span class="description-header">expressions: </span>[str 42]<br/>
 					<span class="description-header">state: </span><br/>
 					<div class="description-nest">
 						<span class="description-header">heap: </span>#TOP#<br/>
@@ -287,19 +276,46 @@
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">d: </span>_|_<br/>
+								<span class="description-header">d: </span>[string]<br/>
+							</div>
+							<span class="description-header">stack: </span>[string]<br/>
+						</div>
+						<span class="description-header">value: </span><br/>
+						<div class="description-nest">
+							<span class="description-header">map: </span><br/>
+							<div class="description-nest">
+								<span class="description-header">d: </span>"hello!"<br/>
+							</div>
+							<span class="description-header">stack: </span>"42"<br/>
+						</div>
+					</div>
+				</div>
+				<div id="header-node7" class="header-hidden">
+					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">42</span></div>
+					<span class="description-header">expressions: </span>[42]<br/>
+					<span class="description-header">state: </span><br/>
+					<div class="description-nest">
+						<span class="description-header">heap: </span>#TOP#<br/>
+						<span class="description-header">type: </span><br/>
+						<div class="description-nest">
+							<span class="description-header">map: </span><br/>
+							<div class="description-nest">
+								<span class="description-header">d: </span>[string]<br/>
 							</div>
 							<span class="description-header">stack: </span>[int32]<br/>
 						</div>
 						<span class="description-header">value: </span><br/>
 						<div class="description-nest">
-							<span class="description-header">map: </span>empty<br/>
-							<span class="description-header">stack: </span>1<br/>
+							<span class="description-header">map: </span><br/>
+							<div class="description-nest">
+								<span class="description-header">d: </span>"hello!"<br/>
+							</div>
+							<span class="description-header">stack: </span>42<br/>
 						</div>
 					</div>
 				</div>
 				<div id="header-node8" class="header-hidden">
-					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">f = +(e, 3)</span></div>
+					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">f = upper(d)</span></div>
 					<span class="description-header">expressions: </span>[f]<br/>
 					<span class="description-header">state: </span><br/>
 					<div class="description-nest">
@@ -308,20 +324,17 @@
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">d: </span>_|_<br/>
-								<span class="description-header">e: </span>[int32]<br/>
-								<span class="description-header">f: </span>[int32]<br/>
+								<span class="description-header">f: </span>#TOP#<br/>
 							</div>
-							<span class="description-header">stack: </span>[int32]<br/>
+							<span class="description-header">stack: </span>#TOP#<br/>
 						</div>
 						<span class="description-header">value: </span><br/>
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">e: </span>1<br/>
-								<span class="description-header">f: </span>4<br/>
+								<span class="description-header">f: </span>#TOP#<br/>
 							</div>
-							<span class="description-header">stack: </span>4<br/>
+							<span class="description-header">stack: </span>#TOP#<br/>
 						</div>
 					</div>
 				</div>
@@ -335,8 +348,7 @@
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">d: </span>_|_<br/>
-								<span class="description-header">e: </span>[int32]<br/>
+								<span class="description-header">open_call_ret_value@'ros-tests/constant-prop.py':11:12: </span>#TOP#<br/>
 							</div>
 							<span class="description-header">stack: </span>#TOP#<br/>
 						</div>
@@ -344,15 +356,15 @@
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">e: </span>1<br/>
+								<span class="description-header">open_call_ret_value@'ros-tests/constant-prop.py':11:12: </span>#TOP#<br/>
 							</div>
 							<span class="description-header">stack: </span>_|_<br/>
 						</div>
 					</div>
 				</div>
 				<div id="header-node10" class="header-hidden">
-					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">+(e, 3)</span></div>
-					<span class="description-header">expressions: </span>[e + 3]<br/>
+					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">upper(d)</span></div>
+					<span class="description-header">expressions: </span>[open_call_ret_value@'ros-tests/constant-prop.py':11:12]<br/>
 					<span class="description-header">state: </span><br/>
 					<div class="description-nest">
 						<span class="description-header">heap: </span>#TOP#<br/>
@@ -360,24 +372,23 @@
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">d: </span>_|_<br/>
-								<span class="description-header">e: </span>[int32]<br/>
+								<span class="description-header">open_call_ret_value@'ros-tests/constant-prop.py':11:12: </span>#TOP#<br/>
 							</div>
-							<span class="description-header">stack: </span>[int32]<br/>
+							<span class="description-header">stack: </span>#TOP#<br/>
 						</div>
 						<span class="description-header">value: </span><br/>
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">e: </span>1<br/>
+								<span class="description-header">open_call_ret_value@'ros-tests/constant-prop.py':11:12: </span>#TOP#<br/>
 							</div>
-							<span class="description-header">stack: </span>4<br/>
+							<span class="description-header">stack: </span>#TOP#<br/>
 						</div>
 					</div>
 				</div>
 				<div id="header-node11" class="header-hidden">
-					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">e</span></div>
-					<span class="description-header">expressions: </span>[e]<br/>
+					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">d</span></div>
+					<span class="description-header">expressions: </span>[d]<br/>
 					<span class="description-header">state: </span><br/>
 					<div class="description-nest">
 						<span class="description-header">heap: </span>#TOP#<br/>
@@ -385,49 +396,25 @@
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">d: </span>_|_<br/>
-								<span class="description-header">e: </span>[int32]<br/>
+								<span class="description-header">d: </span>[string]<br/>
+								<span class="description-header">e: </span>[string]<br/>
 							</div>
-							<span class="description-header">stack: </span>[int32]<br/>
+							<span class="description-header">stack: </span>[string]<br/>
 						</div>
 						<span class="description-header">value: </span><br/>
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">e: </span>1<br/>
+								<span class="description-header">d: </span>"hello!"<br/>
+								<span class="description-header">e: </span>"42"<br/>
 							</div>
-							<span class="description-header">stack: </span>1<br/>
+							<span class="description-header">stack: </span>"hello!"<br/>
 						</div>
 					</div>
 				</div>
 				<div id="header-node12" class="header-hidden">
-					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">3</span></div>
-					<span class="description-header">expressions: </span>[3]<br/>
-					<span class="description-header">state: </span><br/>
-					<div class="description-nest">
-						<span class="description-header">heap: </span>#TOP#<br/>
-						<span class="description-header">type: </span><br/>
-						<div class="description-nest">
-							<span class="description-header">map: </span><br/>
-							<div class="description-nest">
-								<span class="description-header">d: </span>_|_<br/>
-								<span class="description-header">e: </span>[int32]<br/>
-							</div>
-							<span class="description-header">stack: </span>[int32]<br/>
-						</div>
-						<span class="description-header">value: </span><br/>
-						<div class="description-nest">
-							<span class="description-header">map: </span><br/>
-							<div class="description-nest">
-								<span class="description-header">e: </span>1<br/>
-							</div>
-							<span class="description-header">stack: </span>3<br/>
-						</div>
-					</div>
-				</div>
-				<div id="header-node13" class="header-hidden">
-					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">print(c)</span></div>
-					<span class="description-header">expressions: </span>[open_call_ret_value@'ros-tests/constant-prop.py':11:7]<br/>
+					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">print(f)</span></div>
+					<span class="description-header">expressions: </span>[open_call_ret_value@'ros-tests/constant-prop.py':12:7]<br/>
 					<span class="description-header">state: </span><br/>
 					<div class="description-nest">
 						<span class="description-header">heap: </span>#TOP#<br/>
@@ -435,9 +422,9 @@
 						<span class="description-header">value: </span>#TOP#<br/>
 					</div>
 				</div>
-				<div id="header-node14" class="header-hidden">
-					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">c</span></div>
-					<span class="description-header">expressions: </span>[c]<br/>
+				<div id="header-node13" class="header-hidden">
+					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">f</span></div>
+					<span class="description-header">expressions: </span>[f]<br/>
 					<span class="description-header">state: </span><br/>
 					<div class="description-nest">
 						<span class="description-header">heap: </span>#TOP#<br/>
@@ -445,9 +432,7 @@
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">d: </span>_|_<br/>
-								<span class="description-header">e: </span>[int32]<br/>
-								<span class="description-header">f: </span>[int32]<br/>
+								<span class="description-header">f: </span>#TOP#<br/>
 							</div>
 							<span class="description-header">stack: </span>#TOP#<br/>
 						</div>
@@ -455,14 +440,13 @@
 						<div class="description-nest">
 							<span class="description-header">map: </span><br/>
 							<div class="description-nest">
-								<span class="description-header">e: </span>1<br/>
-								<span class="description-header">f: </span>4<br/>
+								<span class="description-header">f: </span>#TOP#<br/>
 							</div>
-							<span class="description-header">stack: </span>_|_<br/>
+							<span class="description-header">stack: </span>#TOP#<br/>
 						</div>
 					</div>
 				</div>
-				<div id="header-node15" class="header-hidden">
+				<div id="header-node14" class="header-hidden">
 					<div class="description-title-wrapper"><span class="description-title">Results for </span><span class="description-title-text">ret</span></div>
 					<span class="description-header">expressions: </span>[skip]<br/>
 					<span class="description-header">state: </span><br/>
@@ -558,7 +542,7 @@
 				],
 				
 				ready: function () {
-					var data = '<?xml version="1.0" encoding="UTF-8"?><graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns   http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="NODE_IS_ENTRY" for="node" attr.name="NODE_IS_ENTRY" attr.type="string"/><key id="NODE_IS_EXIT" for="node" attr.name="NODE_IS_EXIT" attr.type="string"/><key id="NODE_KIND" for="node" attr.name="NODE_KIND" attr.type="string"/><key id="NODE_TEXT" for="node" attr.name="NODE_TEXT" attr.type="string"/><key id="EDGE_KIND" for="edge" attr.name="EDGE_KIND" attr.type="string"/><graph id="graph" edgedefault="directed"><node id="node0"><data key="NODE_IS_ENTRY">yes</data><data key="NODE_TEXT">d = +(&quot;hello &quot;, &quot;world&quot;)</data><data key="NODE_IS_EXIT">no</data><graph id="0::2" edgedefault="directed"><node id="node2"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">+(&quot;hello &quot;, &quot;world&quot;)</data><data key="NODE_IS_EXIT">no</data><graph id="2::4" edgedefault="directed"><node id="node4"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">&quot;world&quot;</data><data key="NODE_IS_EXIT">no</data></node></graph><graph id="2::3" edgedefault="directed"><node id="node3"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">&quot;hello &quot;</data><data key="NODE_IS_EXIT">no</data></node></graph></node></graph><graph id="0::1" edgedefault="directed"><node id="node1"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">d</data><data key="NODE_IS_EXIT">no</data></node></graph></node><node id="node5"><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">e = 1</data><data key="NODE_IS_EXIT">no</data><graph id="5::7" edgedefault="directed"><node id="node7"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">1</data><data key="NODE_IS_EXIT">no</data></node></graph><graph id="5::6" edgedefault="directed"><node id="node6"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">e</data><data key="NODE_IS_EXIT">no</data></node></graph></node><node id="node15"><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">ret</data><data key="NODE_IS_EXIT">yes</data></node><node id="node13"><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">print(c)</data><data key="NODE_IS_EXIT">no</data><graph id="13::14" edgedefault="directed"><node id="node14"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">c</data><data key="NODE_IS_EXIT">no</data></node></graph></node><node id="node8"><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">f = +(e, 3)</data><data key="NODE_IS_EXIT">no</data><graph id="8::10" edgedefault="directed"><node id="node10"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">+(e, 3)</data><data key="NODE_IS_EXIT">no</data><graph id="10::12" edgedefault="directed"><node id="node12"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">3</data><data key="NODE_IS_EXIT">no</data></node></graph><graph id="10::11" edgedefault="directed"><node id="node11"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">e</data><data key="NODE_IS_EXIT">no</data></node></graph></node></graph><graph id="8::9" edgedefault="directed"><node id="node9"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">f</data><data key="NODE_IS_EXIT">no</data></node></graph></node><edge id="edge-0-5" source="node0" target="node5" directed="true"><data key="EDGE_KIND">SequentialEdge</data></edge><edge id="edge-5-8" source="node5" target="node8" directed="true"><data key="EDGE_KIND">SequentialEdge</data></edge><edge id="edge-8-13" source="node8" target="node13" directed="true"><data key="EDGE_KIND">SequentialEdge</data></edge><edge id="edge-13-15" source="node13" target="node15" directed="true"><data key="EDGE_KIND">SequentialEdge</data></edge></graph></graphml>'
+					var data = '<?xml version="1.0" encoding="UTF-8"?><graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns   http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="NODE_IS_ENTRY" for="node" attr.name="NODE_IS_ENTRY" attr.type="string"/><key id="NODE_IS_EXIT" for="node" attr.name="NODE_IS_EXIT" attr.type="string"/><key id="NODE_KIND" for="node" attr.name="NODE_KIND" attr.type="string"/><key id="NODE_TEXT" for="node" attr.name="NODE_TEXT" attr.type="string"/><key id="EDGE_KIND" for="edge" attr.name="EDGE_KIND" attr.type="string"/><graph id="graph" edgedefault="directed"><node id="node0"><data key="NODE_IS_ENTRY">yes</data><data key="NODE_TEXT">d = str(&quot;hello!&quot;)</data><data key="NODE_IS_EXIT">no</data><graph id="0::2" edgedefault="directed"><node id="node2"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">str(&quot;hello!&quot;)</data><data key="NODE_IS_EXIT">no</data><graph id="2::3" edgedefault="directed"><node id="node3"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">&quot;hello!&quot;</data><data key="NODE_IS_EXIT">no</data></node></graph></node></graph><graph id="0::1" edgedefault="directed"><node id="node1"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">d</data><data key="NODE_IS_EXIT">no</data></node></graph></node><node id="node14"><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">ret</data><data key="NODE_IS_EXIT">yes</data></node><node id="node12"><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">print(f)</data><data key="NODE_IS_EXIT">no</data><graph id="12::13" edgedefault="directed"><node id="node13"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">f</data><data key="NODE_IS_EXIT">no</data></node></graph></node><node id="node8"><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">f = upper(d)</data><data key="NODE_IS_EXIT">no</data><graph id="8::10" edgedefault="directed"><node id="node10"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">upper(d)</data><data key="NODE_IS_EXIT">no</data><graph id="10::11" edgedefault="directed"><node id="node11"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">d</data><data key="NODE_IS_EXIT">no</data></node></graph></node></graph><graph id="8::9" edgedefault="directed"><node id="node9"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">f</data><data key="NODE_IS_EXIT">no</data></node></graph></node><node id="node4"><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">e = str(42)</data><data key="NODE_IS_EXIT">no</data><graph id="4::6" edgedefault="directed"><node id="node6"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">str(42)</data><data key="NODE_IS_EXIT">no</data><graph id="6::7" edgedefault="directed"><node id="node7"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">42</data><data key="NODE_IS_EXIT">no</data></node></graph></node></graph><graph id="4::5" edgedefault="directed"><node id="node5"><data key="NODE_KIND">SUBNODE</data><data key="NODE_IS_ENTRY">no</data><data key="NODE_TEXT">e</data><data key="NODE_IS_EXIT">no</data></node></graph></node><edge id="edge-0-4" source="node0" target="node4" directed="true"><data key="EDGE_KIND">SequentialEdge</data></edge><edge id="edge-4-8" source="node4" target="node8" directed="true"><data key="EDGE_KIND">SequentialEdge</data></edge><edge id="edge-8-12" source="node8" target="node12" directed="true"><data key="EDGE_KIND">SequentialEdge</data></edge><edge id="edge-12-14" source="node12" target="node14" directed="true"><data key="EDGE_KIND">SequentialEdge</data></edge></graph></graphml>'
 					this.graphml({layoutBy: null});
 					this.graphml(data);
 					

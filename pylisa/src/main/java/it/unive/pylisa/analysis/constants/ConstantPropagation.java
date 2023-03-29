@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
+import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
@@ -26,8 +27,7 @@ import it.unive.pylisa.symbolic.operators.value.StringConstructor;
 import it.unive.pylisa.symbolic.operators.value.StringLength;
 import it.unive.pylisa.symbolic.operators.value.StringMult;
 
-public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation>
-		implements Comparable<ConstantPropagation> {
+public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation> {
 
 	private static final ConstantPropagation TOP = new ConstantPropagation(null, true);
 	private static final ConstantPropagation BOTTOM = new ConstantPropagation(null, false);
@@ -50,7 +50,7 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 	}
 
 	public Object getConstant() {
-		return constant.getValue();
+		return constant != null ? constant.getValue() : null;
 	}
 
 	public <T> boolean is(Class<T> type) {
@@ -229,7 +229,6 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 			return top();
 	}
 
-	@Override
 	public int compareTo(ConstantPropagation other) {
 		if (isBottom() && !other.isBottom())
 			return -1;
