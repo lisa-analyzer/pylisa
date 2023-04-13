@@ -22,8 +22,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 
 import it.unive.pylisa.cfg.expression.*;
-import it.unive.pylisa.cfg.expression.unary.PyLength;
-import it.unive.pylisa.cfg.expression.unary.PyStringConstructor;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -1712,7 +1711,13 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
 
 					pars = convertAssignmentsToByNameParameters(pars);
-					access = visitMethod(currentCFG, expr, instance, method_name, pars);
+					access =  new UnresolvedCall(
+							currentCFG,
+							getLocation(expr),
+							instance ? CallType.UNKNOWN : CallType.STATIC,
+							null,
+							method_name,
+							pars.toArray(Expression[]::new));
 					last_name = null;
 					previous_access = null;
 				} else if (expr.OPEN_BRACK() != null) {
@@ -1744,22 +1749,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		} else
 			return visitAtom(ctx.atom());
 	}
-	
-	private Expression visitMethod(PyCFG currentCFG, TrailerContext expr, boolean instance, String methodName, List<Expression> pars) {
-		if (methodName.equals("len")) {
-			return new PyLength(currentCFG, getLocation(expr), pars.get(0));
-		}
-		if (methodName.equals("str")) {
-			return new PyStringConstructor(currentCFG, getLocation(expr), pars.get(0));
-		}
-		return new UnresolvedCall(
-				currentCFG,
-				getLocation(expr),
-				instance ? CallType.UNKNOWN : CallType.STATIC,
-				null,
-				methodName,
-				pars.toArray(Expression[]::new));
-	}
+
 	
 	private List<Expression> convertAssignmentsToByNameParameters(List<Expression> pars) {
 		List<Expression> converted = new ArrayList<>(pars.size());
