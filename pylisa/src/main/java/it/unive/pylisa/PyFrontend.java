@@ -1077,7 +1077,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						currentCFG,
 						getLocation(ctx),
 						CallType.INSTANCE,
-										null,
+						null,
 						"__len__",
 						collection_pars));
 		currentCFG.addNodeIfNotPresent(condition);
@@ -1711,7 +1711,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
 
 					pars = convertAssignmentsToByNameParameters(pars);
-					access =  new UnresolvedCall(
+					access = new UnresolvedCall(
 							currentCFG,
 							getLocation(expr),
 							instance ? CallType.UNKNOWN : CallType.STATIC,
