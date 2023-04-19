@@ -21,6 +21,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 
+import it.unive.lisa.type.*;
 import it.unive.pylisa.cfg.expression.*;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -84,10 +85,6 @@ import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.cfg.statement.logic.Not;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
-import it.unive.lisa.type.NullType;
-import it.unive.lisa.type.TypeSystem;
-import it.unive.lisa.type.Untyped;
-import it.unive.lisa.type.VoidType;
 import it.unive.lisa.type.common.BoolType;
 import it.unive.lisa.type.common.Float32Type;
 import it.unive.lisa.type.common.Int32Type;
@@ -371,7 +368,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		PyClassType.all().forEach(types::registerType);
 
 		for (CFG cm : program.getAllCFGs())
-			if (cm.getDescriptor().getName().equals("main"))
+			if (cm.getDescriptor().getName().equals("$main"))
 				program.addEntryPoint(cm);
 
 		return program;
@@ -501,7 +498,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	private CodeMemberDescriptor buildMainCFGDescriptor(SourceCodeLocation loc) {
-		String funcName = "main";
+		String funcName = "$main";
 		Parameter[] cfgArgs = new Parameter[] {};
 
 		return new CodeMemberDescriptor(loc, currentUnit, false, funcName, cfgArgs);
@@ -511,8 +508,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		String funcName = funcDecl.NAME().getText();
 
 		Parameter[] cfgArgs = visitParameters(funcDecl.parameters());
-
-		return new CodeMemberDescriptor(getLocation(funcDecl), currentUnit, false, funcName, cfgArgs);
+		boolean instance = false;
+		if (currentUnit instanceof ClassUnit) {
+			instance = true;
+		}
+		return new CodeMemberDescriptor(getLocation(funcDecl), currentUnit, instance, funcName, cfgArgs);
 	}
 
 	@Override
@@ -549,7 +549,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		addRetNodesToCurrentCFG();
 		PyCFG result = currentCFG;
 		currentCFG = oldCFG;
-		currentUnit.addCodeMember(result); // TODO instance?
+		if (currentUnit instanceof ClassUnit) {
+			((ClassUnit)currentUnit).addInstanceCodeMember(result);
+		} else {
+			currentUnit.addCodeMember(result);
+		}
 		return null;
 	}
 
@@ -566,14 +570,23 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			throw new UnsupportedStatementException();
 		if (ctx.STAR() != null || ctx.POWER() != null)
 			throw new UnsupportedStatementException();
-
+		boolean firstParam = true;
 		List<Parameter> pars = new LinkedList<>();
 		if (ctx.tfpdef() != null)
 			for (TfpdefContext def : ctx.tfpdef()) {
 				if (def.test() != null)
 					throw new UnsupportedStatementException();
-				pars.add(new Parameter(getLocation(ctx), def.NAME().getText()));
-			}
+				if (firstParam) {
+					if (currentUnit instanceof ClassUnit) {
+						pars.add(new Parameter(getLocation(ctx), def.NAME().getText(), new ReferenceType(PyClassType.lookup(currentUnit.getName(), (ClassUnit) currentUnit))));
+					} else {
+						pars.add(new Parameter(getLocation(ctx), def.NAME().getText()));
+					}
+					firstParam = false;
+				} else {
+					pars.add(new Parameter(getLocation(ctx), def.NAME().getText()));
+				}
+				}
 
 		return pars.toArray(Parameter[]::new);
 	}
@@ -1711,13 +1724,23 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
 
 					pars = convertAssignmentsToByNameParameters(pars);
-					access = new UnresolvedCall(
-							currentCFG,
-							getLocation(expr),
-							instance ? CallType.UNKNOWN : CallType.STATIC,
-							null,
-							method_name,
-							pars.toArray(Expression[]::new));
+					Unit cu = program.getUnit(method_name);
+					if (cu != null && cu instanceof ClassUnit) {
+						access = new PyNewObj(
+								currentCFG,
+								getLocation(expr),
+								"__init__",
+								PyClassType.lookup(cu.getName(), (ClassUnit) cu),
+								pars.toArray(Expression[]::new));
+					} else {
+						access = new UnresolvedCall(
+								currentCFG,
+								getLocation(expr),
+								instance ? CallType.INSTANCE : CallType.STATIC,
+								null,
+								method_name,
+								pars.toArray(Expression[]::new));
+					}
 					last_name = null;
 					previous_access = null;
 				} else if (expr.OPEN_BRACK() != null) {
