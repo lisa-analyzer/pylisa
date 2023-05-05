@@ -1,6 +1,12 @@
 method print: it.unive.pylisa.libraries.NoOpFunction
 	type it.unive.lisa.type.VoidType::INSTANCE
 	param arg1 type it.unive.lisa.type.Untyped::INSTANCE
+method str: it.unive.pylisa.libraries.Str
+    type it.unive.lisa.type.common.StringType::INSTANCE
+    param arg1 type it.unive.lisa.type.Untyped::INSTANCE
+method len: it.unive.pylisa.libraries.Len
+    type it.unive.lisa.type.common.Int32Type::INSTANCE
+    param arg1 type it.unive.lisa.type.Untyped::INSTANCE
 root class Object
 class Sequence:
 	instance method __getitem__: it.unive.pylisa.libraries.SequenceGetItem
@@ -81,7 +87,7 @@ library pandas:
 		instance method highlight_max: it.unive.pylisa.libraries.pandas.DataframeFunctionWithSubsetAccess
 			libtype pandas.DataFrame*
 			param this libtype pandas.DataFrame*
-			param subset libtype List default none 
+			param subset libtype List default none
 			param color type it.unive.lisa.type.common.StringType::INSTANCE default "yellow"
 			param axis type it.unive.lisa.type.common.Int32Type::INSTANCE default 0
 			param props type it.unive.lisa.type.common.StringType::INSTANCE default none

@@ -26,6 +26,8 @@ import it.unive.pylisa.symbolic.operators.value.StringAdd;
 import it.unive.pylisa.symbolic.operators.value.StringConstructor;
 import it.unive.pylisa.symbolic.operators.value.StringLength;
 import it.unive.pylisa.symbolic.operators.value.StringMult;
+import it.unive.pylisa.symbolic.operators.value.Power;
+
 
 public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation> {
 
@@ -204,6 +206,7 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		if (operator instanceof StringMult) {
 			return stringRepeat(left, right, pp);
 		}
+
 		// TODO: Numeric Multiplication
 		/*
 		 * if (operator instanceof AdditionOperator) return left.isTop() ||
@@ -216,10 +219,15 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 		 * right.value); else if (operator instanceof Module) return
 		 * left.isTop() || right.isTop() ? top() : new
 		 * ConstantPropagation(left.value % right.value); else
-		 */if (operator instanceof MultiplicationOperator)
-			return left.isTop() || right.isTop() ? top()
-					: new ConstantPropagation(new Constant(Int32Type.INSTANCE,
-							left.as(Integer.class) * right.as(Integer.class), pp.getLocation()));
+		 */
+		if (operator instanceof MultiplicationOperator) {
+			return numericMult(left, right, pp);
+		}
+
+		if (operator instanceof Power) {
+			return power(left, right, pp);
+		}
+
 		/*
 		 * else if (operator instanceof SubtractionOperator) return left.isTop()
 		 * || right.isTop() ? top() : new ConstantPropagation(left.value -
@@ -284,6 +292,90 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 				}
 			}
 			return TOP;
+		}
+		return TOP;
+	}
+
+	private ConstantPropagation numericMult(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+		if (left.isTop() || right.isTop()) {
+			return TOP;
+		}
+		// TODO: handle overflow (?)
+		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isNumericType()) {
+			NumericType superType = left.constant.getStaticType().asNumericType().supertype(right.constant.getStaticType().asNumericType());
+			//Class<? extends Number> type = getJavaClassFor(superType);
+			if (superType.is8Bits()) {
+				return new ConstantPropagation(
+						new Constant(Int8Type.INSTANCE, left.as(Byte.class) * right.as(Byte.class),pp.getLocation()));
+			}
+			if (superType.is16Bits()) {
+				return new ConstantPropagation(
+						new Constant(Int16Type.INSTANCE, left.as(Short.class) * right.as(Short.class),pp.getLocation()));
+			}
+			if (superType.is32Bits()) {
+				if (!superType.isIntegral()) {
+					return new ConstantPropagation(
+							new Constant(Float32Type.INSTANCE, left.as(Float.class) * right.as(Float.class), pp.getLocation()));
+				} else {
+					return new ConstantPropagation(
+							new Constant(Int32Type.INSTANCE, left.as(Integer.class) * right.as(Integer.class), pp.getLocation()));
+				}
+			}
+			if (superType.is64Bits()) {
+				if (!superType.isIntegral()) {
+					return new ConstantPropagation(
+							new Constant(Float64Type.INSTANCE, left.as(Double.class) * right.as(Double.class), pp.getLocation()));
+				} else {
+					return new ConstantPropagation(
+							new Constant(Int64Type.INSTANCE, left.as(Long.class) * right.as(Long.class),pp.getLocation()));
+				}
+			}
+			return TOP;
+		}
+		return TOP;
+	}
+
+	private ConstantPropagation power(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+		if (left.isTop() || right.isTop()) {
+			return TOP;
+		}
+		// TODO: handle overflow (?)
+		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isNumericType()) {
+			NumericType superType = left.constant.getStaticType().asNumericType().supertype(right.constant.getStaticType().asNumericType());
+			//Class<? extends Number> type = getJavaClassFor(superType);
+			if (superType.is8Bits()) {
+				return new ConstantPropagation(
+						new Constant(Int8Type.INSTANCE, (byte) (Math.pow((double)left.as(Byte.class), (double)right.as(Byte.class))), pp.getLocation()));
+			}
+			if (superType.is16Bits()) {
+				return new ConstantPropagation(
+						new Constant(Int16Type.INSTANCE, (short) (Math.pow((double)left.as(Short.class), (double)right.as(Short.class))), pp.getLocation()));
+			}
+			if (superType.is32Bits()) {
+				if (!superType.isIntegral()) {
+					return new ConstantPropagation(
+							new Constant(Float32Type.INSTANCE, (float) (Math.pow((double)left.as(Float.class), (double)right.as(Float.class))), pp.getLocation()));
+				} else {
+					if (right.as(Integer.class) < 0) {
+						return new ConstantPropagation(
+								new Constant(Float32Type.INSTANCE, (float) (Math.pow((double)left.as(Integer.class), (double)right.as(Integer.class))), pp.getLocation()));
+
+					} else {
+						return new ConstantPropagation(
+								new Constant(Int32Type.INSTANCE, (int) (Math.pow((double)left.as(Integer.class), (double)right.as(Integer.class))), pp.getLocation()));
+
+					}
+					}
+			}
+			if (superType.is64Bits()) {
+				if (!superType.isIntegral()) {
+					return new ConstantPropagation(
+							new Constant(Float64Type.INSTANCE, Math.pow(left.as(Double.class), right.as(Double.class)), pp.getLocation()));
+				} else {
+					return new ConstantPropagation(
+							new Constant(Int64Type.INSTANCE, (long) (Math.pow((double)left.as(Long.class), (double)right.as(Long.class))), pp.getLocation()));
+				}
+			}
 		}
 		return TOP;
 	}

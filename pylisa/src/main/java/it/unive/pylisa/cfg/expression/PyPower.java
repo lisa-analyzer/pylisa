@@ -13,7 +13,9 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.UnsupportedStatementException;
+import it.unive.lisa.type.Type;
+import it.unive.lisa.type.TypeSystem;
+import it.unive.pylisa.symbolic.operators.value.Power;
 
 public class PyPower extends BinaryExpression {
 
@@ -32,6 +34,18 @@ public class PyPower extends BinaryExpression {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		throw new UnsupportedStatementException(this);
+		TypeSystem types = getProgram().getTypes();
+		if (left.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType) && right.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType)) {
+			return state.smallStepSemantics(
+					new it.unive.lisa.symbolic.value.BinaryExpression(
+							getStaticType(),
+							left,
+							right,
+							Power.INSTANCE,
+							getLocation()),
+					this);
+		}
+
+		return state.bottom();
 	}
 }
