@@ -21,6 +21,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 
+import it.unive.lisa.program.*;
 import it.unive.lisa.type.*;
 import it.unive.pylisa.cfg.expression.*;
 
@@ -49,12 +50,6 @@ import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.logging.IterationLogger;
-import it.unive.lisa.program.ClassUnit;
-import it.unive.lisa.program.CodeUnit;
-import it.unive.lisa.program.Global;
-import it.unive.lisa.program.Program;
-import it.unive.lisa.program.SourceCodeLocation;
-import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
@@ -404,7 +399,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			for (int idx : cellOrder) {
 				String str = codeBlocks.get(idx);
 				if (str == null)
-					log.warn("Cell " + idx + " does not contain code and will be skippded");
+					log.warn("Cell " + idx + " does not contain code and will be skippPed");
 				else
 					code.append(str).append("\n");
 			}
@@ -1736,7 +1731,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						access = new UnresolvedCall(
 								currentCFG,
 								getLocation(expr),
-								instance ? CallType.INSTANCE : CallType.STATIC,
+								instance ? CallType.UNKNOWN : CallType.STATIC,
 								null,
 								method_name,
 								pars.toArray(Expression[]::new));
@@ -1989,9 +1984,24 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		Unit previous = this.currentUnit;
 		String name = ctx.NAME().getSymbol().getText();
 		// TODO inheritance
-		ClassUnit cu = new ClassUnit(new SourceCodeLocation(name, 0, 0), program, name, true);
-		if (LibrarySpecificationProvider.hierarchyRoot != null)
+		ClassUnit cu = new ClassUnit(new SourceCodeLocation(name, 0, 0), program, name, false);
+		ArrayList<ArgumentContext> superclasses = ctx.arglist() != null ? new ArrayList<>(ctx.arglist().argument()) : new ArrayList<>();
+		// parse anchestors
+		for (ArgumentContext superclass : superclasses) {
+			// if exists a class unit in the program with name superclass.getText(): add it to the anchestors
+			for (Unit programCu : this.program.getUnits()) {
+				if (programCu instanceof CompilationUnit && programCu.getName().equals(superclass.getText())) {
+					cu.addAncestor(((CompilationUnit) programCu));
+					System.out.println(programCu.getName());
+				}
+
+			}
+			System.out.println(superclass.getText());
+			
+		}
+		if (cu.getImmediateAncestors().isEmpty() && LibrarySpecificationProvider.hierarchyRoot != null)
 			cu.addAncestor(LibrarySpecificationProvider.hierarchyRoot);
+		
 		this.currentUnit = cu;
 		parseClassBody(ctx.suite());
 		program.addUnit(cu);
@@ -2044,7 +2054,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			currentUnit.addCodeMember(currentCFG);
 			currentCFG = oldCFG;
 		}
-
 	}
 
 	private Pair<VariableRef, Expression> parseField(Simple_stmtContext st) {

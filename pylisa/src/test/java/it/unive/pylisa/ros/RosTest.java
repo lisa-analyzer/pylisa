@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
+import it.unive.lisa.interprocedural.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
@@ -23,7 +24,7 @@ public class RosTest {
 
     @Test
     public void test() throws Exception {
-        PyFrontend translator = new PyFrontend("ros-tests/main.py", false);
+        PyFrontend translator = new PyFrontend("ros-tests/main2.py", false);
 
         Program program = translator.toLiSAProgram();
 
@@ -32,11 +33,11 @@ public class RosTest {
         conf.serializeResults = true;
         conf.jsonOutput = true;
         conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
-        //conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+        conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
         conf.callGraph = new RTACallGraph();
         //conf.openCallPolicy
         RosTopic rt = new RosTopic();
-        conf.syntacticChecks.add(new RosTopicDeclarationFinder());
+        //conf.syntacticChecks.add(new RosTopicDeclarationFinder());
         //conf.semanticChecks.add(new DataframeDumper(conf));
         //conf.semanticChecks.add(new BottomFinder<>());
         //conf.semanticChecks.add(new DataframeStructureConstructor());
@@ -44,7 +45,7 @@ public class RosTest {
         InferredTypes type = new InferredTypes();
         //conf.interproceduralAnalysis = new ContextBasedAnalysis();
         ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<ConstantPropagation>(new ConstantPropagation());
-        conf.semanticChecks.add(new it.unive.pylisa.checks.semantics.RosTopicDeclarationFinder());
+        //conf.semanticChecks.add(new it.unive.pylisa.checks.semantics.RosTopicDeclarationFinder());
         conf.abstractState = getDefaultFor(AbstractState.class, heap, domain, type);
         LiSA lisa = new LiSA(conf);
         lisa.run(program);

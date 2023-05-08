@@ -24,8 +24,8 @@ public class FromImport extends Import {
 	@Override
 	public String toString() {
 		if (name == null)
-			return "from " + super.importedLibrary + " import " + importedLibrary;
-		return "from " + super.importedLibrary + " import " + importedLibrary + " as " + name;
+			return "from " + super.importedLibrary + " import " + component;
+		return "from " + super.importedLibrary + " import " + component + " as " + name;
 	}
 
 	@Override

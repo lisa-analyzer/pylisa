@@ -75,7 +75,7 @@ public class PyNewObj extends NaryExpression {
         ref.setRuntimeTypes(Collections.singleton(reftype));
 
         // we need to add the receiver to the parameters
-        VariableRef paramThis = new VariableRef(getCFG(), getLocation(), "$self", type);
+        VariableRef paramThis = new VariableRef(getCFG(), getLocation(), "$self", reftype);
         Expression[] fullExpressions = ArrayUtils.insert(0, getSubExpressions(), paramThis);
         ExpressionSet<SymbolicExpression>[] fullParams = ArrayUtils.insert(0, params, new ExpressionSet<>(created));
 
@@ -104,7 +104,7 @@ public class PyNewObj extends NaryExpression {
         AnalysisState<A, H, V, T> result = state.bottom();
         for (SymbolicExpression loc : sem.getComputedExpressions()) {
             ReferenceType staticType = new ReferenceType(loc.getStaticType());
-            HeapReference locref = new HeapReference(loc.getStaticType(), loc, getLocation());
+            HeapReference locref = new HeapReference(staticType, loc, getLocation());
             result = result.lub(sem.smallStepSemantics(locref, call));
         }
 
