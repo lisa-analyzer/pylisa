@@ -1,19 +1,24 @@
 import rclpy
-from rclpy.node import Node
+#class MinimalPublisher(rclpy.node.Node):
+#    def __init__(self):
+#        self.x = 4
+#        self.publisher = self.create_publisher(String, "TEST_TOPIC")
+#        super().__init__("node_name")
 
-x = 3 + 5
-
-class MinimalPublisher(rclpy.node.Node):
+class MinimalSubscriber(rclpy.node.Node):
     def __init__(self):
-        self.x = 4
-        self.publisher = self.create_publisher(String, "TEST_TOPIC")
-        #self.publisher.publish("message")
-x2 = MinimalPublisher()
-p = x2.create_publisher(String, "CIAO")
-c = x2.x
-cx = x2.publisher
-#x4 = x2.publisher
-#x4.publish("msg")
-
-n = numpy.array([1,2])
-n.reshape(1,1)
+        super().__init__("ciao_name")
+        self.x = 10
+        self.subscription = self.create_subscription(String, "TEST_TOPIC")
+    def test(self):
+        self.a = "ciao!"
+#rclpy.init()
+#numpy.array([1,2])
+#p = rclpy.node.Node("test_obj")
+#publisher = MinimalPublisher()
+#pub = publisher.create_publisher(String, "CIAO")
+subscriber = MinimalSubscriber()
+subscriber.test()
+#sub = subscriber.create_subscription(String, "CIAO")
+#n = numpy.array([1,2])
+#n.reshape(1,1)

@@ -25,6 +25,7 @@ import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.UnitType;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
 
 import it.unive.pylisa.cfg.PyCFG;
@@ -77,13 +78,16 @@ public class PyNewObj extends NaryExpression {
         // we need to add the receiver to the parameters
         VariableRef paramThis = new VariableRef(getCFG(), getLocation(), "$self", reftype);
         Expression[] fullExpressions = ArrayUtils.insert(0, getSubExpressions(), paramThis);
-        ExpressionSet<SymbolicExpression>[] fullParams = ArrayUtils.insert(0, params, new ExpressionSet<>(created));
 
         // we also have to add the receiver inside the state
         AnalysisState<A, H, V, T> callstate = paramThis.semantics(state, interprocedural, expressions);
         AnalysisState<A, H, V, T> tmp = state.bottom();
-        for (SymbolicExpression v : callstate.getComputedExpressions())
+        HashSet<SymbolicExpression> expr = new HashSet<>();
+        for (SymbolicExpression v : callstate.getComputedExpressions()) {
             tmp = tmp.lub(callstate.assign(v, ref, paramThis));
+            expr.add(v);
+        }
+        ExpressionSet<SymbolicExpression>[] fullParams = ArrayUtils.insert(0, params, new ExpressionSet<>(expr));
         expressions.put(paramThis, tmp);
 
         UnresolvedCall call = new UnresolvedCall(getCFG(), getLocation(), CallType.INSTANCE, type.toString(),

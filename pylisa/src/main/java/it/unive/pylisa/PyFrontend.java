@@ -22,8 +22,10 @@ import java.util.TreeMap;
 import java.util.function.Function;
 
 import it.unive.lisa.program.*;
+import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.type.*;
 import it.unive.pylisa.cfg.expression.*;
+
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -68,7 +70,6 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
-import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.comparison.LessThan;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
@@ -1719,7 +1720,18 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 							pars.add(checkAndExtractSingleExpression(visitArgument(arg)));
 
 					pars = convertAssignmentsToByNameParameters(pars);
-					Unit cu = program.getUnit(method_name);
+					Unit cu;
+					cu = program.getUnit(method_name);
+					if (cu == null) {
+						cu = program.getUnit(access.toString().replace("::", "."));
+						if (cu != null) {
+							for (Expression par : pars) {
+								if (par instanceof AccessInstanceGlobal) {
+									pars.remove(par);
+								}
+							}
+						}
+					}
 					if (cu != null && cu instanceof ClassUnit) {
 						access = new PyNewObj(
 								currentCFG,
@@ -1992,11 +2004,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			for (Unit programCu : this.program.getUnits()) {
 				if (programCu instanceof CompilationUnit && programCu.getName().equals(superclass.getText())) {
 					cu.addAncestor(((CompilationUnit) programCu));
-					System.out.println(programCu.getName());
+
 				}
 
 			}
-			System.out.println(superclass.getText());
+
 			
 		}
 		if (cu.getImmediateAncestors().isEmpty() && LibrarySpecificationProvider.hierarchyRoot != null)
