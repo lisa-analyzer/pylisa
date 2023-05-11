@@ -1,6 +1,8 @@
 package it.unive.pylisa.checks;
 
 import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AnalyzedCFG;
+import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
@@ -44,11 +46,15 @@ public class OpenCallsFinder<A extends AbstractState<A, H, V, T>,
 
 	@Override
 	public boolean visit(CheckToolWithAnalysisResults<A, H, V, T> tool, CFG graph, Statement node) {
-		if (node instanceof UnresolvedCall) {
-			Call resolved = tool.getResolvedVersion((UnresolvedCall) node);
-			if (resolved instanceof OpenCall)
-				tool.warnOn(node, "Open call found: " + node);
-		}
+		if (node instanceof UnresolvedCall)
+			for (AnalyzedCFG<A, H, V, T> result : tool.getResultOf(graph))
+				try {
+					Call resolved = tool.getResolvedVersion((UnresolvedCall) node, result);
+					if (resolved instanceof OpenCall)
+						tool.warnOn(node, "Open call found: " + node);
+				} catch (SemanticException e) {
+					throw new RuntimeException(e);
+				}
 
 		return true;
 	}

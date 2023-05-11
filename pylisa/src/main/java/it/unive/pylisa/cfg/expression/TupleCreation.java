@@ -15,15 +15,15 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
-import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
+import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import it.unive.lisa.type.common.Int32Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
@@ -61,7 +61,7 @@ public class TupleCreation extends NaryExpression {
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
 		// allocate the heap region
-		HeapAllocation alloc = new HeapAllocation(tupleType, getLocation());
+		MemoryAllocation alloc = new MemoryAllocation(tupleType, getLocation());
 		AnalysisState<A, H, V, T> sem = state.smallStepSemantics(alloc, this);
 
 		// assign the pairs

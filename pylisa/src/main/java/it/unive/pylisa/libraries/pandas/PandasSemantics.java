@@ -10,9 +10,9 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
-import it.unive.lisa.symbolic.heap.HeapAllocation;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
+import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
@@ -43,7 +43,7 @@ public class PandasSemantics {
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 
-		HeapAllocation allocation = new HeapAllocation(dftype, location);
+		MemoryAllocation allocation = new MemoryAllocation(dftype, location);
 		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, pp);
 
 		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
@@ -70,7 +70,7 @@ public class PandasSemantics {
 			dataframe = new HeapDereference(dftype, dataframe, location);
 
 		// we allocate the copy of the dataframe
-		HeapAllocation allocation = new HeapAllocation(dftype, location);
+		MemoryAllocation allocation = new MemoryAllocation(dftype, location);
 		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, pp);
 
 		AnalysisState<A, H, V, T> copy = state.bottom();

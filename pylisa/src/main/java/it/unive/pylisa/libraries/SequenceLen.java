@@ -14,9 +14,9 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.UnaryExpression;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.lisa.type.common.Int32Type;
 
 public class SequenceLen extends UnaryExpression implements PluggableStatement {
 

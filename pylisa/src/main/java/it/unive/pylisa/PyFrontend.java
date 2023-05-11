@@ -38,13 +38,13 @@ import com.google.gson.stream.JsonReader;
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
-import it.unive.lisa.LiSAConfiguration;
-import it.unive.lisa.LiSAConfiguration.GraphType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
-import it.unive.lisa.interprocedural.ContextBasedAnalysis;
+import it.unive.lisa.conf.LiSAConfiguration;
+import it.unive.lisa.conf.LiSAConfiguration.GraphType;
+import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.logging.IterationLogger;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CodeUnit;
@@ -57,6 +57,8 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.VariableTableEntry;
+import it.unive.lisa.program.cfg.controlFlow.ControlFlowStructure;
+import it.unive.lisa.program.cfg.controlFlow.Loop;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
@@ -83,14 +85,14 @@ import it.unive.lisa.program.cfg.statement.logic.Not;
 import it.unive.lisa.program.cfg.statement.numeric.Addition;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
+import it.unive.lisa.program.type.BoolType;
+import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Int32Type;
+import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.VoidType;
-import it.unive.lisa.type.common.BoolType;
-import it.unive.lisa.type.common.Float32Type;
-import it.unive.lisa.type.common.Int32Type;
-import it.unive.lisa.type.common.StringType;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
@@ -179,6 +181,7 @@ import it.unive.pylisa.antlr.Python3Parser.Testlist_star_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.TfpdefContext;
 import it.unive.pylisa.antlr.Python3Parser.TrailerContext;
 import it.unive.pylisa.antlr.Python3Parser.Try_stmtContext;
+import it.unive.pylisa.antlr.Python3Parser.TypedargContext;
 import it.unive.pylisa.antlr.Python3Parser.TypedargslistContext;
 import it.unive.pylisa.antlr.Python3Parser.VarargslistContext;
 import it.unive.pylisa.antlr.Python3Parser.VfpdefContext;
@@ -255,6 +258,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 * Current CFG to parse
 	 */
 	private PyCFG currentCFG;
+	
+	private Collection<ControlFlowStructure> cfs;
 
 	/**
 	 * Whether or not {@link #filePath} points to a Jupyter notebook file
@@ -459,6 +464,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	@Override
 	public Pair<Statement, Statement> visitFile_input(File_inputContext ctx) {
 		currentCFG = new PyCFG(buildMainCFGDescriptor(getLocation(ctx)));
+		cfs = new HashSet<>();
 		currentUnit.addCodeMember(currentCFG);
 		Statement last_stmt = null;
 		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
@@ -485,6 +491,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		}
 
 		addRetNodesToCurrentCFG();
+		cfs.forEach(currentCFG::addControlFlowStructure);
 		return null;
 	}
 
@@ -569,13 +576,16 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	@Override
 	public Pair<Statement, Statement> visitFuncdef(FuncdefContext ctx) {
 		PyCFG oldCFG = currentCFG;
+		Collection<ControlFlowStructure> oldCfs = cfs;
 		currentCFG = new PyCFG(buildCFGDescriptor(ctx));
+		cfs = new HashSet<>();
 		Pair<Statement, Statement> r = visitSuite(ctx.suite());
 		currentCFG.addNodeIfNotPresent(r.getLeft(), true);
 		addRetNodesToCurrentCFG();
-		PyCFG result = currentCFG;
+		cfs.forEach(currentCFG::addControlFlowStructure);
+		currentUnit.addCodeMember(currentCFG); // TODO instance?
 		currentCFG = oldCFG;
-		currentUnit.addCodeMember(result); // TODO instance?
+		cfs = oldCfs;
 		return null;
 	}
 
@@ -588,20 +598,26 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 	@Override
 	public Parameter[] visitTypedargslist(TypedargslistContext ctx) {
-		if (ctx.test() != null && !ctx.test().isEmpty())
-			throw new UnsupportedStatementException();
 		if (ctx.STAR() != null || ctx.POWER() != null)
 			throw new UnsupportedStatementException();
 
 		List<Parameter> pars = new LinkedList<>();
-		if (ctx.tfpdef() != null)
-			for (TfpdefContext def : ctx.tfpdef()) {
-				if (def.test() != null)
-					throw new UnsupportedStatementException();
-				pars.add(new Parameter(getLocation(ctx), def.NAME().getText()));
-			}
+		if (ctx.typedarg() != null)
+			for (TypedargContext def : ctx.typedarg())
+				pars.add(visitTypedarg(def));
 
 		return pars.toArray(Parameter[]::new);
+	}
+
+	@Override
+	public Parameter visitTypedarg(TypedargContext ctx) {
+		if (ctx.tfpdef().test() != null)
+			throw new UnsupportedStatementException();
+		if (ctx.test() == null)
+			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText());
+		else
+			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText(),
+					(Expression) visitTest(ctx.test()).getLeft());
 	}
 
 	@Override
@@ -659,17 +675,15 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitExpr_stmt(Expr_stmtContext ctx) {
+		Statement assign;
 
-		Statement assegnazione;
-
-		// � un assegnazione
 		if (ctx.ASSIGN().size() > 0) {
-			assegnazione = createAssign(visitTestlist_star_expr(ctx.testlist_star_expr(0)),
+			assign = createAssign(visitTestlist_star_expr(ctx.testlist_star_expr(0)),
 					visitTestlist_star_expr(ctx.testlist_star_expr(1)), getLocation(ctx));
-			currentCFG.addNodeIfNotPresent(assegnazione);
+			currentCFG.addNodeIfNotPresent(assign);
 		} else
 			return visitTestlistStarExpr(ctx);
-		return createPairFromSingle(assegnazione);
+		return createPairFromSingle(assign);
 	}
 
 	@Override
@@ -1053,14 +1067,18 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		currentCFG.addEdge(new SequentialEdge(trueBlock.getRight(), condition));
 
 		// check if there's an else condition for the while
+		Statement firstFollower;
 		if (ctx.ELSE() != null) {
 			Pair<Statement, Statement> falseBlock = visitSuite(ctx.suite(1));
 			currentCFG.addEdge(new FalseEdge(condition, falseBlock.getLeft()));
 			currentCFG.addEdge(new SequentialEdge(falseBlock.getRight(), whileExitNode));
+			firstFollower = falseBlock.getLeft();
 		} else {
 			currentCFG.addEdge(new FalseEdge(condition, whileExitNode));
+			firstFollower = whileExitNode;
 		}
 
+		cfs.add(new Loop(currentCFG.getNodeList(), condition, firstFollower, null));
 		return Pair.of(condition, whileExitNode);
 	}
 

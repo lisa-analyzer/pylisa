@@ -123,12 +123,14 @@ public class PyTernaryOperator extends Expression {
 			case BOTTOM:
 				return entryState.bottom();
 			case NOT_SATISFIED:
-				return ifFalse.semantics(postCondition.assume(cond, condition), interprocedural, expressions);
+				return ifFalse.semantics(postCondition.assume(cond, condition, ifTrue), interprocedural, expressions);
 			case SATISFIED:
-				return ifTrue.semantics(postCondition.assume(negated, condition), interprocedural, expressions);
+				return ifTrue.semantics(postCondition.assume(negated, condition, ifFalse), interprocedural,
+						expressions);
 			case UNKNOWN:
-				return ifTrue.semantics(postCondition.assume(cond, condition), interprocedural, expressions)
-						.lub(ifFalse.semantics(postCondition.assume(negated, condition), interprocedural, expressions));
+				return ifTrue.semantics(postCondition.assume(cond, condition, ifTrue), interprocedural, expressions)
+						.lub(ifFalse.semantics(postCondition.assume(negated, condition, ifFalse), interprocedural,
+								expressions));
 			}
 		}
 

@@ -1,19 +1,21 @@
 package it.unive.pylisa.libraries;
 
-import it.unive.lisa.AnalysisSetupException;
-import it.unive.lisa.program.ClassUnit;
-import it.unive.lisa.program.CompilationUnit;
-import it.unive.lisa.program.Program;
-import it.unive.pylisa.antlr.LibraryDefinitionLexer;
-import it.unive.pylisa.antlr.LibraryDefinitionParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+
+import it.unive.lisa.AnalysisSetupException;
+import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Program;
+import it.unive.pylisa.antlr.LibraryDefinitionLexer;
+import it.unive.pylisa.antlr.LibraryDefinitionParser;
 
 public class LibrarySpecificationProvider {
 

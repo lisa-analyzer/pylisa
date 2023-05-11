@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
@@ -16,11 +17,11 @@ import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.common.Int32Type;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPropagation>
-		implements Comparable<ConstantPropagation> {
+public class ConstantPropagation implements
+		BaseNonRelationalValueDomain<ConstantPropagation>,
+		Comparable<ConstantPropagation> {
 
 	private static final ConstantPropagation TOP = new ConstantPropagation(null, true);
 	private static final ConstantPropagation BOTTOM = new ConstantPropagation(null, false);
@@ -69,7 +70,7 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 
 	@Override
 	public boolean isTop() {
-		return super.isTop() || (constant == null && isTop);
+		return BaseNonRelationalValueDomain.super.isTop() || (constant == null && isTop);
 	}
 
 	@Override
@@ -79,7 +80,7 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 
 	@Override
 	public boolean isBottom() {
-		return super.isBottom() || (constant == null && !isTop);
+		return BaseNonRelationalValueDomain.super.isBottom() || (constant == null && !isTop);
 	}
 
 	@Override

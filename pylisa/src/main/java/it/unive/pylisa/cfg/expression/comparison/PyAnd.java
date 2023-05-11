@@ -14,7 +14,6 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.logic.And;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
-import it.unive.lisa.type.common.BoolType;
 import it.unive.pylisa.symbolic.operators.compare.PyLogicalAnd;
 
 public class PyAnd extends And {
@@ -36,7 +35,7 @@ public class PyAnd extends And {
 					throws SemanticException {
 		return state.smallStepSemantics(
 				new BinaryExpression(
-						BoolType.INSTANCE,
+						it.unive.lisa.program.type.BoolType.INSTANCE,
 						left,
 						right,
 						PyLogicalAnd.INSTANCE,

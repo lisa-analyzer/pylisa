@@ -7,9 +7,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import it.unive.lisa.AnalysisExecutionException;
 import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.BaseLattice;
-import it.unive.lisa.analysis.CFGWithAnalysisResults;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
@@ -114,53 +115,55 @@ public class DataframeStructureConstructor implements SemanticCheck<
 			return true;
 
 		if (node.stopsExecution()) {
-			Collection<
-					CFGWithAnalysisResults<
+			Collection<AnalyzedCFG<
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
+							TypeEnvironment<InferredTypes>>,
+					PointBasedHeap, DataframeGraphDomain,
+					TypeEnvironment<InferredTypes>>> results = tool.getResultOf(graph);
+
+			for (AnalyzedCFG<
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
+					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> result : results)
+				try {
+					AnalysisState<
 							SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
 									TypeEnvironment<InferredTypes>>,
 							PointBasedHeap, DataframeGraphDomain,
-							TypeEnvironment<InferredTypes>>> results = tool.getResultOf(graph);
+							TypeEnvironment<InferredTypes>> post = result.getAnalysisStateAfter(node);
 
-			for (CFGWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> result : results) {
+					DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
+					DataframeForest forest = dom.close();
+					Collection<DataframeOperation> exits = forest.getNodeList().getExits();
+					if (exits.size() != 1)
+						throw new IllegalStateException("Close operation failed");
+					DataframeOperation exit = exits.iterator().next();
 
-				AnalysisState<
-						SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-								TypeEnvironment<InferredTypes>>,
-						PointBasedHeap, DataframeGraphDomain,
-						TypeEnvironment<InferredTypes>> post = result.getAnalysisStateAfter(node);
+					ColumnsDomain columnsDomain;
+					try {
+						columnsDomain = process(forest, exit);
+					} catch (FixpointException e) {
+						throw new RuntimeException("Processing failed", e);
+					}
 
-				DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
-				DataframeForest forest = dom.close();
-				Collection<DataframeOperation> exits = forest.getNodeList().getExits();
-				if (exits.size() != 1)
-					throw new IllegalStateException("Close operation failed");
-				DataframeOperation exit = exits.iterator().next();
-
-				ColumnsDomain columnsDomain;
-				try {
-					columnsDomain = process(forest, exit);
-				} catch (FixpointException e) {
-					throw new RuntimeException("Processing failed", e);
+					for (Entry<Names, Columns> entry : columnsDomain) {
+						Names sources = entry.getKey();
+						Columns columns = entry.getValue();
+						if (!columns.accessedBeforeAssigned.isEmpty())
+							tool.warn(sources + " columns accessed before being assigned: "
+									+ columns.accessedBeforeAssigned);
+						if (!columns.accessedAfterRemoved.isEmpty())
+							tool.warn(
+									sources + " columns accessed after being removed: " + columns.accessedAfterRemoved);
+						if (!columns.accessed.isEmpty())
+							tool.warn(sources + " columns accessed: " + columns.accessed);
+						if (!columns.assigned.isEmpty())
+							tool.warn(sources + " columns assigned: " + columns.assigned);
+						if (!columns.removed.isEmpty())
+							tool.warn(sources + " columns removed: " + columns.removed);
+					}
+				} catch (SemanticException e) {
+					throw new AnalysisExecutionException(e);
 				}
-
-				for (Entry<Names, Columns> entry : columnsDomain) {
-					Names sources = entry.getKey();
-					Columns columns = entry.getValue();
-					if (!columns.accessedBeforeAssigned.isEmpty())
-						tool.warn(sources + " columns accessed before being assigned: "
-								+ columns.accessedBeforeAssigned);
-					if (!columns.accessedAfterRemoved.isEmpty())
-						tool.warn(sources + " columns accessed after being removed: " + columns.accessedAfterRemoved);
-					if (!columns.accessed.isEmpty())
-						tool.warn(sources + " columns accessed: " + columns.accessed);
-					if (!columns.assigned.isEmpty())
-						tool.warn(sources + " columns assigned: " + columns.assigned);
-					if (!columns.removed.isEmpty())
-						tool.warn(sources + " columns removed: " + columns.removed);
-				}
-			}
 		}
 
 		return true;
@@ -168,7 +171,7 @@ public class DataframeStructureConstructor implements SemanticCheck<
 
 	private ColumnsDomain process(DataframeForest graph, DataframeOperation exit)
 			throws FixpointException {
-		Fixpoint<DataframeForest, DataframeOperation, DataframeEdge, ColumnsDomain> fix = new Fixpoint<>(graph);
+		Fixpoint<DataframeForest, DataframeOperation, DataframeEdge, ColumnsDomain> fix = new Fixpoint<>(graph, false);
 		ColumnsDomain beginning = new ColumnsDomain(Columns.TOP).bottom();
 
 		Map<DataframeOperation, ColumnsDomain> entrypoints = new HashMap<>();
@@ -182,18 +185,12 @@ public class DataframeStructureConstructor implements SemanticCheck<
 					@Override
 					public ColumnsDomain union(DataframeOperation node, ColumnsDomain left, ColumnsDomain right)
 							throws Exception {
-						return join(node, left, right);
+						return operation(node, left, right);
 					}
 
 					@Override
 					public ColumnsDomain traverse(DataframeEdge edge, ColumnsDomain entrystate) throws Exception {
 						return entrystate;
-					}
-
-					@Override
-					public ColumnsDomain join(DataframeOperation node, ColumnsDomain approx, ColumnsDomain old)
-							throws Exception {
-						return approx.lub(old);
 					}
 
 					@Override
@@ -237,7 +234,7 @@ public class DataframeStructureConstructor implements SemanticCheck<
 								return entrystate.define(sources);
 							else
 								return entrystate.access(sources,
-									((Transform<?>) node).getSelection().extractColumnNames());
+										((Transform<?>) node).getSelection().extractColumnNames());
 						else if (node instanceof ReadFromFile || node instanceof Concat)
 							return entrystate.define(sources);
 						else if (node instanceof CreateFromDict || node instanceof BottomOperation
@@ -259,6 +256,12 @@ public class DataframeStructureConstructor implements SemanticCheck<
 							else
 								names.add(op.toString());
 						return new Names(names);
+					}
+
+					@Override
+					public ColumnsDomain operation(DataframeOperation node, ColumnsDomain approx, ColumnsDomain old)
+							throws Exception {
+						return approx.lub(old);
 					}
 				});
 
@@ -307,7 +310,7 @@ public class DataframeStructureConstructor implements SemanticCheck<
 		}
 	}
 
-	private static class Columns extends BaseLattice<Columns> {
+	private static class Columns implements BaseLattice<Columns> {
 
 		private static final Columns TOP = new Columns(Names.TOP, Names.TOP, Names.TOP, Names.TOP, Names.TOP);
 		private static final Columns BOTTOM = new Columns(Names.BOTTOM, Names.BOTTOM, Names.BOTTOM, Names.BOTTOM,

@@ -1,9 +1,10 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
+import java.util.HashSet;
+
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.operations.selection.ColumnListSelection;
-import java.util.HashSet;
 
 public class DropColumns extends DataframeOperation {
 	private ColumnListSelection columns;

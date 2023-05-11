@@ -4,7 +4,7 @@ import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 
-public class ComparisonOperator extends BaseLattice<ComparisonOperator> implements Comparable<ComparisonOperator> {
+public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comparable<ComparisonOperator> {
 
 	public static enum Operator {
 		EQ("=="),
