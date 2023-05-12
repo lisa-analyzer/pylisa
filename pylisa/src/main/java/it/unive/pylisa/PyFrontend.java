@@ -372,7 +372,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		PyClassType.all().forEach(types::registerType);
 
 		for (CFG cm : program.getAllCFGs())
-			if (cm.getDescriptor().getName().equals("main"))
+			if (cm.getDescriptor().getName().equals("$main"))
 				program.addEntryPoint(cm);
 
 		return program;
@@ -506,7 +506,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	private CodeMemberDescriptor buildMainCFGDescriptor(SourceCodeLocation loc) {
-		String funcName = "&main";
+		String funcName = "$main";
 		Parameter[] cfgArgs = new Parameter[] {};
 
 		return new CodeMemberDescriptor(loc, currentUnit, false, funcName, cfgArgs);
