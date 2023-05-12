@@ -8,8 +8,7 @@ import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.program.cfg.ProgramPoint;
-import it.unive.lisa.program.type.Float32Type;
-import it.unive.lisa.program.type.Int32Type;
+import it.unive.lisa.program.type.*;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
@@ -22,10 +21,15 @@ import it.unive.lisa.symbolic.value.operator.RemainderOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
+import it.unive.lisa.symbolic.value.operator.unary.StringLength;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-
+import it.unive.pylisa.symbolic.operators.Power;
+import it.unive.pylisa.symbolic.operators.StringAdd;
+import it.unive.pylisa.symbolic.operators.StringConstructor;
+import it.unive.pylisa.symbolic.operators.StringMult;
+import it.unive.lisa.type.NumericType;
 public class ConstantPropagation implements
 		BaseNonRelationalValueDomain<ConstantPropagation>,
 		Comparable<ConstantPropagation> {
@@ -182,6 +186,15 @@ public class ConstantPropagation implements
 			else if (arg.is(Float.class))
 				return new ConstantPropagation(
 						new Constant(Float32Type.INSTANCE, -1 * arg.as(Float.class), pp.getLocation()));
+
+		// String constructor
+		if (operator == StringConstructor.INSTANCE)
+			if (arg.is(String.class))
+				return new ConstantPropagation(
+						new Constant(StringType.INSTANCE, arg.as(String.class), pp.getLocation()));
+			else if (arg.is(Integer.class))
+				return new ConstantPropagation(
+						new Constant(StringType.INSTANCE, arg.as(Integer.class), pp.getLocation()));
 		return top();
 	}
 
@@ -212,11 +225,16 @@ public class ConstantPropagation implements
 				c = mul(left, right, pp);
 			else if (operator instanceof SubtractionOperator)
 				c = sub(left, right, pp);
+			else if (operator instanceof Power)
+				return power(left, right, pp);
 			else
 				return top();
 			return new ConstantPropagation(c);
-		} else
-			return top();
+		} else if (operator instanceof StringAdd)
+			return stringConcat(left, right, pp);
+		if (operator instanceof StringMult)
+			return stringRepeat(left, right, pp);
+		return top();
 	}
 
 	private Constant div(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
@@ -304,6 +322,98 @@ public class ConstantPropagation implements
 		return c;
 	}
 
+
+	private ConstantPropagation stringConcat(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+
+		if (left.isTop() || right.isTop()) {
+			return TOP;
+		}
+		if (left.constant.getStaticType().isStringType() && right.constant.getStaticType().isStringType()) {
+			return new ConstantPropagation(
+					new Constant(StringType.INSTANCE, left.as(String.class) + right.as(String.class),pp.getLocation()));
+		}
+		return TOP;
+	}
+
+	private ConstantPropagation stringRepeat(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+		if (left.isTop() || right.isTop()) {
+			return TOP;
+		}
+		if (left.constant.getStaticType().isStringType() && right.constant.getStaticType().isNumericType()) {
+			if (right.constant.getStaticType().asNumericType().isIntegral()) {
+				// use long
+				Long longRight = right.as(Integer.class).longValue();
+				String stringLeft = left.as(String.class);
+
+				return new ConstantPropagation(
+						new Constant(StringType.INSTANCE, stringRepeatAux(stringLeft, longRight), pp.getLocation()));
+			}
+		}
+		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isStringType()) {
+			if (left.constant.getStaticType().asNumericType().isIntegral()) {
+				// use long
+				Long longLeft = left.as(Integer.class).longValue();
+				String stringRight = right.as(String.class);
+
+				return new ConstantPropagation(
+						new Constant(StringType.INSTANCE, stringRepeatAux(stringRight, longLeft), pp.getLocation()));
+			}
+		}
+		return TOP;
+	}
+
+	private ConstantPropagation power(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+		if (left.isTop() || right.isTop()) {
+			return TOP;
+		}
+		// TODO: handle overflow (?)
+		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isNumericType()) {
+			NumericType superType = left.constant.getStaticType().asNumericType().supertype(right.constant.getStaticType().asNumericType());
+			//Class<? extends Number> type = getJavaClassFor(superType);
+			if (superType.is8Bits()) {
+				return new ConstantPropagation(
+						new Constant(Int8Type.INSTANCE, (byte) (Math.pow((double)left.as(Byte.class), (double)right.as(Byte.class))), pp.getLocation()));
+			}
+			if (superType.is16Bits()) {
+				return new ConstantPropagation(
+						new Constant(Int16Type.INSTANCE, (short) (Math.pow((double)left.as(Short.class), (double)right.as(Short.class))), pp.getLocation()));
+			}
+			if (superType.is32Bits()) {
+				if (!superType.isIntegral()) {
+					return new ConstantPropagation(
+							new Constant(Float32Type.INSTANCE, (float) (Math.pow((double)left.as(Float.class), (double)right.as(Float.class))), pp.getLocation()));
+				} else {
+					if (right.as(Integer.class) < 0) {
+						return new ConstantPropagation(
+								new Constant(Float32Type.INSTANCE, (float) (Math.pow((double)left.as(Integer.class), (double)right.as(Integer.class))), pp.getLocation()));
+
+					} else {
+						return new ConstantPropagation(
+								new Constant(Int32Type.INSTANCE, (int) (Math.pow((double)left.as(Integer.class), (double)right.as(Integer.class))), pp.getLocation()));
+
+					}
+				}
+			}
+			if (superType.is64Bits()) {
+				if (!superType.isIntegral()) {
+					return new ConstantPropagation(
+							new Constant(Float64Type.INSTANCE, Math.pow(left.as(Double.class), right.as(Double.class)), pp.getLocation()));
+				} else {
+					return new ConstantPropagation(
+							new Constant(Int64Type.INSTANCE, (long) (Math.pow((double)left.as(Long.class), (double)right.as(Long.class))), pp.getLocation()));
+				}
+			}
+		}
+		return TOP;
+	}
+
+	private String stringRepeatAux(String s, Long times) {
+		StringBuilder sb = new StringBuilder();
+		for (long i = 0; i < times; i++) {
+			sb.append(s);
+		}
+		return sb.toString();
+	}
 	@Override
 	public int compareTo(ConstantPropagation other) {
 		if (isBottom() && !other.isBottom())
