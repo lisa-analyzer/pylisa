@@ -16,6 +16,7 @@ import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataflow.rospropagation.RosTopic;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.checks.RosTopicDeclarationFinder;
+import it.unive.pylisa.checks.semantics.ROSComputationGraphDumper;
 import org.junit.Test;
 
 import static it.unive.lisa.LiSAFactory.getDefaultFor;
@@ -38,7 +39,7 @@ public class RosTest {
         conf.callGraph = new RTACallGraph();
         //conf.openCallPolicy
         RosTopic rt = new RosTopic();
-        //conf.syntacticChecks.add(new RosTopicDeclarationFinder());
+        // conf.syntacticChecks.add(new ROSComputationGraphDumper());
         //conf.semanticChecks.add(new DataframeDumper(conf));
         //conf.semanticChecks.add(new BottomFinder<>());
         //conf.semanticChecks.add(new DataframeStructureConstructor());
@@ -46,7 +47,7 @@ public class RosTest {
         InferredTypes type = new InferredTypes();
         //conf.interproceduralAnalysis = new ContextBasedAnalysis();
         ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<ConstantPropagation>(new ConstantPropagation());
-        //conf.semanticChecks.add(new it.unive.pylisa.checks.semantics.RosTopicDeclarationFinder());
+        conf.semanticChecks.add(new ROSComputationGraphDumper());
         conf.abstractState = getDefaultFor(AbstractState.class, heap, domain, type);
         LiSA lisa = new LiSA(conf);
         lisa.run(program);

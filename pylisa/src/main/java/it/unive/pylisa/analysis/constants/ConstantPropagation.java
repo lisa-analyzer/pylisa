@@ -5,6 +5,7 @@ import java.util.Objects;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
+import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.analysis.value.ValueDomain;
@@ -12,6 +13,7 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
@@ -19,6 +21,7 @@ import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.TypeTokenType;
 import it.unive.lisa.type.common.*;
 
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -40,6 +43,11 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 
 	public ConstantPropagation() {
 		this(null, true);
+	}
+
+	@Override
+	public ConstantPropagation eval(ValueExpression expression, ValueEnvironment<ConstantPropagation> environment, ProgramPoint pp) throws SemanticException {
+		return super.eval(expression, environment, pp);
 	}
 
 	public ConstantPropagation(Constant constant) {
@@ -139,7 +147,10 @@ public class ConstantPropagation extends BaseNonRelationalValueDomain<ConstantPr
 				|| t.isStringType()
 				|| t.toString().equals(LibrarySpecificationProvider.LIST)
 				|| t.toString().equals(LibrarySpecificationProvider.DICT)
-				|| t.toString().equals(LibrarySpecificationProvider.SLICE);
+				|| t.toString().equals(LibrarySpecificationProvider.SLICE)
+				|| t.isReferenceType()
+				|| (t.isTypeTokenType() && ((TypeTokenType) t).getTypes().stream().anyMatch(ConstantPropagation::isAccepted));
+
 	}
 
 	@Override

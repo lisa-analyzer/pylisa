@@ -18,6 +18,7 @@ import it.unive.lisa.program.cfg.statement.*;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.operator.binary.StringConcat;
+import it.unive.lisa.symbolic.value.operator.binary.TypeCast;
 import it.unive.lisa.symbolic.value.operator.binary.TypeConv;
 import it.unive.lisa.type.*;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -64,7 +65,7 @@ public class Super extends it.unive.lisa.program.cfg.statement.NaryExpression im
                             refTypeTo,
                             new Constant(classTypeFrom.getReference(), refTypeFrom, codeLocation),
                             new Constant(tokenTypeTo, tokenTypes, codeLocation),
-                            TypeConv.INSTANCE,
+                            TypeCast.INSTANCE,
                             codeLocation),
                     this));
         }
