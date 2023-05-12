@@ -20,7 +20,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
+import it.unive.lisa.program.*;
+import it.unive.lisa.type.*;
+import it.unive.pylisa.cfg.expression.*;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -46,12 +48,6 @@ import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.conf.LiSAConfiguration.GraphType;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.logging.IterationLogger;
-import it.unive.lisa.program.ClassUnit;
-import it.unive.lisa.program.CodeUnit;
-import it.unive.lisa.program.Global;
-import it.unive.lisa.program.Program;
-import it.unive.lisa.program.SourceCodeLocation;
-import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -91,10 +87,6 @@ import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
-import it.unive.lisa.type.NullType;
-import it.unive.lisa.type.TypeSystem;
-import it.unive.lisa.type.Untyped;
-import it.unive.lisa.type.VoidType;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.antlr.Python3Lexer;
@@ -197,33 +189,6 @@ import it.unive.pylisa.antlr.Python3Parser.Yield_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
 import it.unive.pylisa.antlr.Python3ParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
-import it.unive.pylisa.cfg.expression.DictionaryCreation;
-import it.unive.pylisa.cfg.expression.Empty;
-import it.unive.pylisa.cfg.expression.LambdaExpression;
-import it.unive.pylisa.cfg.expression.ListCreation;
-import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
-import it.unive.pylisa.cfg.expression.PyAssign;
-import it.unive.pylisa.cfg.expression.PyBitwiseAnd;
-import it.unive.pylisa.cfg.expression.PyBitwiseLeftShift;
-import it.unive.pylisa.cfg.expression.PyBitwiseNot;
-import it.unive.pylisa.cfg.expression.PyBitwiseOr;
-import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
-import it.unive.pylisa.cfg.expression.PyBitwiseXor;
-import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
-import it.unive.pylisa.cfg.expression.PyFloorDiv;
-import it.unive.pylisa.cfg.expression.PyIn;
-import it.unive.pylisa.cfg.expression.PyIs;
-import it.unive.pylisa.cfg.expression.PyMatMul;
-import it.unive.pylisa.cfg.expression.PyMultiplication;
-import it.unive.pylisa.cfg.expression.PyPower;
-import it.unive.pylisa.cfg.expression.PyRemainder;
-import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
-import it.unive.pylisa.cfg.expression.PyStringLiteral;
-import it.unive.pylisa.cfg.expression.PyTernaryOperator;
-import it.unive.pylisa.cfg.expression.RangeValue;
-import it.unive.pylisa.cfg.expression.SetCreation;
-import it.unive.pylisa.cfg.expression.StarExpression;
-import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.expression.comparison.PyAnd;
 import it.unive.pylisa.cfg.expression.comparison.PyEquals;
 import it.unive.pylisa.cfg.expression.comparison.PyGreaterOrEqual;
@@ -443,7 +408,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			for (int idx : cellOrder) {
 				String str = codeBlocks.get(idx);
 				if (str == null)
-					log.warn("Cell " + idx + " does not contain code and will be skippded");
+					log.warn("Cell " + idx + " does not contain code and will be skipped");
 				else
 					code.append(str).append("\n");
 			}
@@ -541,7 +506,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	private CodeMemberDescriptor buildMainCFGDescriptor(SourceCodeLocation loc) {
-		String funcName = "main";
+		String funcName = "&main";
 		Parameter[] cfgArgs = new Parameter[] {};
 
 		return new CodeMemberDescriptor(loc, currentUnit, false, funcName, cfgArgs);
@@ -552,7 +517,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		Parameter[] cfgArgs = visitParameters(funcDecl.parameters());
 
-		return new CodeMemberDescriptor(getLocation(funcDecl), currentUnit, false, funcName, cfgArgs);
+		return new CodeMemberDescriptor(getLocation(funcDecl), currentUnit, currentUnit instanceof ClassUnit ? true : false, funcName, cfgArgs);
 	}
 
 	@Override
@@ -592,7 +557,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		addRetNodesToCurrentCFG();
 		cfs.forEach(currentCFG::addControlFlowStructure);
 		currentCFG.simplify();
-		currentUnit.addCodeMember(currentCFG); // TODO instance?
+		if (currentUnit instanceof ClassUnit) {
+			((ClassUnit)currentUnit).addInstanceCodeMember(currentCFG);
+		} else {
+			currentUnit.addCodeMember(currentCFG);
+		}
 		currentCFG = oldCFG;
 		cfs = oldCfs;
 		return newCFG;
@@ -609,13 +578,25 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	public Parameter[] visitTypedargslist(TypedargslistContext ctx) {
 		if (ctx.STAR() != null || ctx.POWER() != null)
 			throw new UnsupportedStatementException();
-
+		boolean firstParam = true;
 		List<Parameter> pars = new LinkedList<>();
 		if (ctx.typedarg() != null)
-			for (TypedargContext def : ctx.typedarg())
-				pars.add(visitTypedarg(def));
 
-		return pars.toArray(Parameter[]::new);
+			for (TypedargContext def : ctx.typedarg()) {
+				if (firstParam) {
+					if (currentUnit instanceof ClassUnit) {
+						pars.add(new Parameter(getLocation(ctx), def.tfpdef().NAME().getText(), new ReferenceType(PyClassType.lookup(currentUnit.getName(), (ClassUnit) currentUnit))));
+					} else {
+						pars.add(visitTypedarg(def));
+					}
+					firstParam = false;
+				} else {
+					pars.add(visitTypedarg(def));
+				}
+			}
+
+
+				return pars.toArray(Parameter[]::new);
 	}
 
 	@Override
@@ -1093,7 +1074,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				currentCFG,
 				getLocation(ctx),
 				counter,
-				new Addition(
+				new PyAddition(
 						currentCFG,
 						getLocation(ctx),
 						counter,
@@ -1678,13 +1659,34 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 							pars.add(visitArgument(arg));
 
 					pars = convertAssignmentsToByNameParameters(pars);
-					access = new UnresolvedCall(
-							currentCFG,
-							getLocation(expr),
-							instance ? CallType.UNKNOWN : CallType.STATIC,
-							null,
-							method_name,
-							pars.toArray(Expression[]::new));
+					Unit cu;
+					cu = program.getUnit(method_name);
+					if (cu == null) {
+						cu = program.getUnit(access.toString().replace("::", "."));
+						if (cu != null) {
+							for (Expression par : pars) {
+								if (par instanceof AccessInstanceGlobal) {
+									pars.remove(par);
+								}
+							}
+						}
+					}
+					if (cu != null && cu instanceof ClassUnit) {
+						access = new PyNewObj(
+								currentCFG,
+								getLocation(expr),
+								"__init__",
+								PyClassType.lookup(cu.getName(), (ClassUnit) cu),
+								pars.toArray(Expression[]::new));
+					} else {
+						access = new UnresolvedCall(
+								currentCFG,
+								getLocation(expr),
+								instance ? CallType.UNKNOWN : CallType.STATIC,
+								null,
+								method_name,
+								pars.toArray(Expression[]::new));
+					}
 					last_name = null;
 					previous_access = null;
 				} else if (expr.OPEN_BRACK() != null) {
@@ -1899,7 +1901,17 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		String name = ctx.NAME().getSymbol().getText();
 		// TODO inheritance
 		ClassUnit cu = new ClassUnit(new SourceCodeLocation(name, 0, 0), program, name, true);
-		if (LibrarySpecificationProvider.hierarchyRoot != null)
+		ArrayList<ArgumentContext> superclasses = ctx.arglist() != null ? new ArrayList<>(ctx.arglist().argument()) : new ArrayList<>();
+		// parse anchestors
+		for (ArgumentContext superclass : superclasses) {
+			// if exists a class unit in the program with name superclass.getText(): add it to the anchestors
+			for (Unit programCu : this.program.getUnits()) {
+				if (programCu instanceof CompilationUnit && programCu.getName().equals(superclass.getText())) {
+					cu.addAncestor(((CompilationUnit) programCu));
+				}
+			}
+		}
+		if (cu.getImmediateAncestors().isEmpty() && LibrarySpecificationProvider.hierarchyRoot != null)
 			cu.addAncestor(LibrarySpecificationProvider.hierarchyRoot);
 		this.currentUnit = cu;
 		parseClassBody(ctx.suite());
