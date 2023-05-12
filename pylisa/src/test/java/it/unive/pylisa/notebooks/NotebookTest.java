@@ -83,7 +83,7 @@ public abstract class NotebookTest {
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
-		conf.semanticChecks.add(new DataframeDumper(conf));
+		conf.semanticChecks.add(new DataframeDumper());
 		conf.semanticChecks.add(new BottomFinder<>());
 		conf.semanticChecks.add(new DataframeStructureConstructor());
 		if (findOpenCalls)

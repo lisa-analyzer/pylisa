@@ -8,11 +8,18 @@ import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.operator.AdditionOperator;
+import it.unive.lisa.symbolic.value.operator.ArithmeticOperator;
+import it.unive.lisa.symbolic.value.operator.DivisionOperator;
+import it.unive.lisa.symbolic.value.operator.ModuloOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
+import it.unive.lisa.symbolic.value.operator.RemainderOperator;
+import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
@@ -55,6 +62,11 @@ public class ConstantPropagation implements
 		return type.cast(getConstant());
 	}
 
+	@Override
+	public String toString() {
+		return representation().toString();
+	}
+	
 	public DomainRepresentation representation() {
 		if (isTop())
 			return Lattice.topRepresentation();
@@ -167,39 +179,129 @@ public class ConstantPropagation implements
 			if (arg.is(Integer.class))
 				return new ConstantPropagation(
 						new Constant(Int32Type.INSTANCE, -1 * arg.as(Integer.class), pp.getLocation()));
-		// TODO more types
-
+			else if (arg.is(Float.class))
+				return new ConstantPropagation(
+						new Constant(Float32Type.INSTANCE, -1 * arg.as(Float.class), pp.getLocation()));
 		return top();
 	}
 
 	@Override
 	public ConstantPropagation evalBinaryExpression(BinaryOperator operator, ConstantPropagation left,
 			ConstantPropagation right, ProgramPoint pp) {
+		if (operator instanceof ArithmeticOperator) {
+			if (left.isTop() || right.isTop() || !left.constant.getStaticType().isNumericType()
+					|| !right.constant.getStaticType().isNumericType())
+				return top();
 
-		// TODO
-
-		/*
-		 * if (operator instanceof AdditionOperator) return left.isTop() ||
-		 * right.isTop() ? top() : new ConstantPropagation(left.value +
-		 * right.value); else if (operator instanceof DivisionOperator) if
-		 * (!left.isTop() && left.value == 0) return new ConstantPropagation(0);
-		 * else if (!right.isTop() && right.value == 0) return bottom(); else if
-		 * (left.isTop() || right.isTop() || left.value % right.value != 0)
-		 * return top(); else return new ConstantPropagation(left.value /
-		 * right.value); else if (operator instanceof Module) return
-		 * left.isTop() || right.isTop() ? top() : new
-		 * ConstantPropagation(left.value % right.value); else
-		 */if (operator instanceof MultiplicationOperator)
-			return left.isTop() || right.isTop() ? top()
-					: new ConstantPropagation(new Constant(Int32Type.INSTANCE,
-							left.as(Integer.class) * right.as(Integer.class), pp.getLocation()));
-		/*
-		 * else if (operator instanceof SubtractionOperator) return left.isTop()
-		 * || right.isTop() ? top() : new ConstantPropagation(left.value -
-		 * right.value);
-		 */
-		else
+			Constant c;
+			if (operator instanceof AdditionOperator)
+				c = sum(left, right, pp);
+			else if (operator instanceof DivisionOperator)
+				if ((right.is(Integer.class) && right.as(Integer.class) == 0)
+						|| (right.is(Float.class) && right.as(Float.class) == 0f))
+					return bottom();
+				else
+					c = div(left, right, pp);
+			else if (operator instanceof RemainderOperator || operator instanceof ModuloOperator)
+				if ((right.is(Integer.class) && right.as(Integer.class) == 0)
+						|| (right.is(Float.class) && right.as(Float.class) == 0f))
+					return bottom();
+				else
+					c = rem(left, right, pp);
+			else if (operator instanceof MultiplicationOperator)
+				c = mul(left, right, pp);
+			else if (operator instanceof SubtractionOperator)
+				c = sub(left, right, pp);
+			else
+				return top();
+			return new ConstantPropagation(c);
+		} else
 			return top();
+	}
+
+	private Constant div(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+		Constant c;
+		if (left.is(Integer.class) && right.is(Integer.class)) {
+			Integer l = left.as(Integer.class);
+			Integer r = right.as(Integer.class);
+			c = l % r == 0
+					? new Constant(Int32Type.INSTANCE, l / r, pp.getLocation())
+					: new Constant(Float32Type.INSTANCE, l / (float) r, pp.getLocation());
+		} else if (left.is(Float.class) && right.is(Integer.class))
+			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) / right.as(Integer.class), pp.getLocation());
+		else if (left.is(Integer.class) && right.is(Float.class))
+			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) / right.as(Float.class), pp.getLocation());
+		else
+			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) / right.as(Float.class), pp.getLocation());
+		return c;
+	}
+
+	private Constant rem(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+		Constant c;
+		if (left.is(Integer.class) && right.is(Integer.class)) {
+			Integer l = left.as(Integer.class);
+			Integer r = right.as(Integer.class);
+			c = l % r == 0
+					? new Constant(Int32Type.INSTANCE, l % r, pp.getLocation())
+					: new Constant(Float32Type.INSTANCE, l % (float) r, pp.getLocation());
+		} else if (left.is(Float.class) && right.is(Integer.class))
+			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) % right.as(Integer.class), pp.getLocation());
+		else if (left.is(Integer.class) && right.is(Float.class))
+			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) % right.as(Float.class), pp.getLocation());
+		else
+			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) % right.as(Float.class), pp.getLocation());
+		return c;
+	}
+
+	private Constant sum(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+		Constant c;
+		if (left.is(Integer.class) && right.is(Integer.class))
+			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) + right.as(Integer.class),
+					pp.getLocation());
+		else if (left.is(Float.class) && right.is(Integer.class))
+			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) + right.as(Integer.class),
+					pp.getLocation());
+		else if (left.is(Integer.class) && right.is(Float.class))
+			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) + right.as(Float.class),
+					pp.getLocation());
+		else
+			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) + right.as(Float.class),
+					pp.getLocation());
+		return c;
+	}
+
+	private Constant sub(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+		Constant c;
+		if (left.is(Integer.class) && right.is(Integer.class))
+			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) - right.as(Integer.class),
+					pp.getLocation());
+		else if (left.is(Float.class) && right.is(Integer.class))
+			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) - right.as(Integer.class),
+					pp.getLocation());
+		else if (left.is(Integer.class) && right.is(Float.class))
+			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) - right.as(Float.class),
+					pp.getLocation());
+		else
+			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) - right.as(Float.class),
+					pp.getLocation());
+		return c;
+	}
+
+	private Constant mul(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+		Constant c;
+		if (left.is(Integer.class) && right.is(Integer.class))
+			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) * right.as(Integer.class),
+					pp.getLocation());
+		else if (left.is(Float.class) && right.is(Integer.class))
+			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) * right.as(Integer.class),
+					pp.getLocation());
+		else if (left.is(Integer.class) && right.is(Float.class))
+			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) * right.as(Float.class),
+					pp.getLocation());
+		else
+			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) * right.as(Float.class),
+					pp.getLocation());
+		return c;
 	}
 
 	@Override

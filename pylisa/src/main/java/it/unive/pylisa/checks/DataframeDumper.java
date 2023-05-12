@@ -24,7 +24,6 @@ import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
-import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.outputs.serializableGraph.SerializableString;
 import it.unive.lisa.outputs.serializableGraph.SerializableValue;
 import it.unive.lisa.program.Global;
@@ -33,7 +32,6 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Identifier;
-import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.analysis.dataframes.CollectingMapLattice;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
@@ -50,10 +48,7 @@ public class DataframeDumper implements SemanticCheck<
 		DataframeGraphDomain,
 		TypeEnvironment<InferredTypes>> {
 
-	private final FileManager fileManager;
-
-	public DataframeDumper(LiSAConfiguration conf) {
-		this.fileManager = new FileManager(conf.workdir);
+	public DataframeDumper() {
 	}
 
 	@Override
@@ -142,7 +137,7 @@ public class DataframeDumper implements SemanticCheck<
 					}
 
 					try {
-						fileManager.mkDotFile(filename + "@" + node.getOffset(),
+						tool.getFileManager().mkDotFile(filename + "@" + node.getOffset(),
 								writer -> forest.toSerializableGraph((f, op) -> label(op, refs)).toDot().dump(writer));
 					} catch (IOException e) {
 						throw new RuntimeException(e);
@@ -151,7 +146,7 @@ public class DataframeDumper implements SemanticCheck<
 					int i = 1;
 					for (DataframeForest sub : subgraphs)
 						try {
-							fileManager.mkDotFile(i++ + "-" + filename + "@" + node.getOffset(),
+							tool.getFileManager().mkDotFile(i++ + "-" + filename + "@" + node.getOffset(),
 									writer -> sub.toSerializableGraph((f, op) -> label(op, refs)).toDot().dump(writer));
 						} catch (IOException e) {
 							throw new RuntimeException(e);
