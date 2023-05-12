@@ -16,16 +16,15 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.type.TypeSystem;
-import it.unive.lisa.type.common.StringType;
-import it.unive.pylisa.symbolic.operators.value.StringConstructor;
-
+import it.unive.pylisa.symbolic.operators.StringConstructor;
 
 public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
     protected Statement st;
 
     protected Str(CFG cfg, CodeLocation location, String constructName,
-                          Expression sequence) {
+                  Expression sequence) {
         super(cfg, location, constructName, sequence);
     }
 
@@ -40,7 +39,8 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
             return state.smallStepSemantics(
                     new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
         }
-        return null;
+        // TODO Handle other cases
+        return state;
     }
 
     @Override

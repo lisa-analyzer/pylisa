@@ -22,9 +22,7 @@ import it.unive.lisa.symbolic.value.operator.binary.TypeCast;
 import it.unive.lisa.symbolic.value.operator.binary.TypeConv;
 import it.unive.lisa.type.*;
 import it.unive.pylisa.cfg.type.PyClassType;
-import it.unive.pylisa.symbolic.operators.value.StringConstructor;
 
-import java.util.Collection;
 import java.util.HashSet;
 
 
@@ -32,7 +30,7 @@ public class Super extends it.unive.lisa.program.cfg.statement.NaryExpression im
     protected Statement st;
 
     protected Super(CFG cfg, CodeLocation location, String constructName,
-                  Expression[] expressions) {
+                    Expression[] expressions) {
         super(cfg, location, constructName, expressions);
     }
 

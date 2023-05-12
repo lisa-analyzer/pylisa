@@ -19,7 +19,7 @@ import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapReference;
-import it.unive.lisa.symbolic.heap.HeapAllocation;
+import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
@@ -31,17 +31,6 @@ import java.util.Objects;
 import it.unive.pylisa.cfg.PyCFG;
 import org.apache.commons.lang3.ArrayUtils;
 
-/**
- * An expression modeling the object allocation and initialization operation
- * ({@code className(...)}). The type of this expression is the
- * {@link UnitType} representing the created class. This expression corresponds
- * to a {@link HeapAllocation} that is used as first parameter (i.e.,
- * {@code this}) for the {@link UnresolvedCall} targeting the invoked
- * constructor. All parameters of the constructor call are provided to the
- * {@link UnresolvedCall}.
- *
- * @author <a href="mailto:luca.negrini@unive.it">Luca Negrini</a>
- */
 public class PyNewObj extends NaryExpression {
 
 
@@ -70,7 +59,7 @@ public class PyNewObj extends NaryExpression {
             throws SemanticException {
         Type type = getStaticType();
         ReferenceType reftype = new ReferenceType(type);
-        HeapAllocation created = new HeapAllocation(type, getLocation());
+        MemoryAllocation created = new MemoryAllocation(type, getLocation(), false);
         HeapReference ref = new HeapReference(reftype, created, getLocation());
         created.setRuntimeTypes(Collections.singleton(type));
         ref.setRuntimeTypes(Collections.singleton(reftype));

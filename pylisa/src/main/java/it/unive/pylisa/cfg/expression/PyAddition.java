@@ -14,10 +14,9 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.numeric.Addition;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
-import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingAdd;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
-import it.unive.pylisa.symbolic.operators.value.StringAdd;
+import it.unive.pylisa.symbolic.operators.StringAdd;
 
 public class PyAddition extends Addition {
 
@@ -45,17 +44,6 @@ public class PyAddition extends Addition {
             StatementStore<A, H, V, T> expressions)
             throws SemanticException {
         TypeSystem types = getProgram().getTypes();
-        // NUMERICAL ADD
-        if (left.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType) && right.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType)) {
-            return state.smallStepSemantics(
-                    new BinaryExpression(
-                            getStaticType(),
-                            left,
-                            right,
-                            NumericNonOverflowingAdd.INSTANCE,
-                            getLocation()),
-                    this);
-        }
         // STRING ADD (CONCATENATION)
         if (left.getRuntimeTypes(types).stream().anyMatch(Type::isStringType) && right.getRuntimeTypes(types).stream().anyMatch(Type::isStringType)) {
             return state.smallStepSemantics(
@@ -72,6 +60,6 @@ public class PyAddition extends Addition {
         // - Tuple (The + operator works like List, i.e. it returns a Tuple of M = n1+n2 elements where the first n1 elements are all the elements of the first (right) tuple
         //      and the last n2 are all the elements of the second (right) tuple.
         // Set and Dict does not support operand +
-        return state.bottom();
+        return super.binarySemantics(interprocedural, state, left, right, expressions);
     }
 }

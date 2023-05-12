@@ -13,9 +13,10 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
-import it.unive.pylisa.symbolic.operators.value.Power;
+import it.unive.lisa.type.Type;
+import it.unive.pylisa.UnsupportedStatementException;
+import it.unive.pylisa.symbolic.operators.Power;
 
 public class PyPower extends BinaryExpression {
 
