@@ -207,7 +207,7 @@ nonlocal_stmt
    ;
 
 assert_stmt
-   : 'assert' test (',' test)?
+   : 'assert' testlist
    ;
 
 compound_stmt
