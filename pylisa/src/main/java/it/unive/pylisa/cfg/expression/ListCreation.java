@@ -1,5 +1,8 @@
 package it.unive.pylisa.cfg.expression;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -21,8 +24,6 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.ListConstant;
 import it.unive.pylisa.symbolic.operators.ListAppend;
-import java.util.HashSet;
-import java.util.Set;
 
 public class ListCreation extends NaryExpression {
 

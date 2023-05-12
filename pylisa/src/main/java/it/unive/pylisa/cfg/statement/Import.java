@@ -1,5 +1,8 @@
 package it.unive.pylisa.cfg.statement;
 
+import java.util.Map;
+import java.util.Map.Entry;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -18,14 +21,12 @@ import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 
 public class Import extends Statement {
 
-	protected final String importedLibrary;
-	protected final String name;
+	private final Map<String, String> libs;
 
-	// import <importedLibrary> as <name>
-	public Import(String importedLibrary, String name, CFG cfg, CodeLocation loc) {
+	// import <left> as <right>
+	public Import(Map<String, String> libs, CFG cfg, CodeLocation loc) {
 		super(cfg, loc);
-		this.importedLibrary = importedLibrary;
-		this.name = name;
+		this.libs = libs;
 	}
 
 	@Override
@@ -41,17 +42,22 @@ public class Import extends Statement {
 
 	@Override
 	public String toString() {
-		if (name == null)
-			return "import " + importedLibrary;
-		return "import " + importedLibrary + " as " + name;
+		StringBuilder builder = new StringBuilder("import ");
+		for (Entry<String, String> lib : libs.entrySet()) {
+			builder.append(lib.getKey());
+			if (lib.getValue() != null)
+				builder.append(" as ").append(lib.getValue());
+			builder.append(", ");
+		}
+		builder.delete(builder.length() - 2, builder.length());
+		return builder.toString();
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((importedLibrary == null) ? 0 : importedLibrary.hashCode());
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((libs == null) ? 0 : libs.hashCode());
 		return result;
 	}
 
@@ -64,15 +70,10 @@ public class Import extends Statement {
 		if (getClass() != obj.getClass())
 			return false;
 		Import other = (Import) obj;
-		if (importedLibrary == null) {
-			if (other.importedLibrary != null)
+		if (libs == null) {
+			if (other.libs != null)
 				return false;
-		} else if (!importedLibrary.equals(other.importedLibrary))
-			return false;
-		if (name == null) {
-			if (other.name != null)
-				return false;
-		} else if (!name.equals(other.name))
+		} else if (!libs.equals(other.libs))
 			return false;
 		return true;
 	}
@@ -86,12 +87,13 @@ public class Import extends Statement {
 					InterproceduralAnalysis<A, H, V, T> interprocedural,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		entryState = entryState.smallStepSemantics(new Skip(getLocation()), this);
+		AnalysisState<A, H, V, T> result = entryState.smallStepSemantics(new Skip(getLocation()), this);
 
-		if (name == null)
-			return entryState;
+		for (Entry<String, String> lib : libs.entrySet()) {
+			if (lib.getValue() != null)
+				result = result.alias(new QualifierSymbol(lib.getKey()), new QualifierSymbol(lib.getValue()));
+		}
 
-		return entryState.alias(new QualifierSymbol(importedLibrary), new QualifierSymbol(name));
+		return result;
 	}
-
 }

@@ -1,12 +1,13 @@
 package it.unive.pylisa.symbolic;
 
+import java.util.Optional;
+
 import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.Optional;
 
 public class SliceConstant extends Constant {
 

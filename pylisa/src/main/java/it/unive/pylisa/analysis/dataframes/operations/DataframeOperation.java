@@ -9,8 +9,10 @@ import it.unive.lisa.util.datastructures.graph.code.CodeNode;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 
-public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
-		implements Comparable<DataframeOperation>, CodeNode<DataframeForest, DataframeOperation, DataframeEdge> {
+public abstract class DataframeOperation implements
+		BaseLattice<DataframeOperation>,
+		Comparable<DataframeOperation>,
+		CodeNode<DataframeForest, DataframeOperation, DataframeEdge> {
 
 	public static final DataframeOperation TOP = new TopOperation();
 
@@ -40,12 +42,12 @@ public abstract class DataframeOperation extends BaseLattice<DataframeOperation>
 
 	@Override
 	public boolean isTop() {
-		return super.isTop() || TOP.equals(this);
+		return BaseLattice.super.isTop() || TOP.equals(this);
 	}
 
 	@Override
 	public boolean isBottom() {
-		return super.isBottom() || BOTTOM.equals(this);
+		return BaseLattice.super.isBottom() || BOTTOM.equals(this);
 	}
 
 	@Override

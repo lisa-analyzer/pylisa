@@ -1,6 +1,5 @@
 package it.unive.pylisa.notebooks;
 
-import static it.unive.lisa.LiSAFactory.getDefaultFor;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -10,22 +9,22 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.TreeSet;
 
 import org.apache.commons.io.FilenameUtils;
 
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
-import it.unive.lisa.LiSAConfiguration;
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.LiSAReport;
+import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
+import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.warnings.Warning;
-import it.unive.lisa.interprocedural.ContextBasedAnalysis;
+import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
+import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.outputs.compare.JsonReportComparer;
 import it.unive.lisa.outputs.json.JsonReport;
 import it.unive.lisa.program.Program;
@@ -63,9 +62,8 @@ public abstract class NotebookTest {
 
 		LiSAConfiguration conf = buildConfig(getWorkdir(file), findOpenCalls);
 		LiSA lisa = new LiSA(conf);
-		lisa.run(program);
-		Collection<Warning> warnings = new TreeSet<>(lisa.getWarnings());
-		for (Warning warn : warnings)
+		LiSAReport report = lisa.run(program);
+		for (Warning warn : report.getWarnings())
 			System.err.println(warn);
 	}
 
@@ -85,16 +83,16 @@ public abstract class NotebookTest {
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
-		conf.semanticChecks.add(new DataframeDumper(conf));
+		conf.semanticChecks.add(new DataframeDumper());
 		conf.semanticChecks.add(new BottomFinder<>());
 		conf.semanticChecks.add(new DataframeStructureConstructor());
 		if (findOpenCalls)
 			conf.semanticChecks.add(new OpenCallsFinder<>());
 
 		PointBasedHeap heap = new PyFieldSensitivePointBasedHeap();
-		InferredTypes type = new InferredTypes();
+		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		DataframeGraphDomain df = new DataframeGraphDomain();
-		conf.abstractState = getDefaultFor(AbstractState.class, heap, df, type);
+		conf.abstractState = new SimpleAbstractState<>(heap, df, type);
 		return conf;
 	}
 

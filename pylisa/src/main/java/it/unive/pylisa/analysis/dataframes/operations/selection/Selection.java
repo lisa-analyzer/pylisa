@@ -4,7 +4,7 @@ import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.dataframes.Names;
 
-public abstract class Selection<S extends Selection<S>> extends BaseLattice<S> implements Comparable<Selection<?>> {
+public abstract class Selection<S extends Selection<S>> implements BaseLattice<S>, Comparable<Selection<?>> {
 
 	@SuppressWarnings("unchecked")
 	public S lub(Selection<?> other) throws SemanticException {

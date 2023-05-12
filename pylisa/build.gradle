@@ -3,7 +3,7 @@ plugins {
     id 'application'
    	id 'antlr'
    	id 'eclipse'
-   	id "com.diffplug.spotless" version "6.2.0"
+   	id "com.diffplug.spotless" version "6.18.0"
    	id 'maven-publish'
     id 'signing'
 }
@@ -25,7 +25,9 @@ version = '0.1a1'
 mainClassName = 'it.unive.pylisa.PyFrontend'
 
 dependencies {
-    implementation 'io.github.lisa-analyzer:lisa-core:0.1b7'
+    implementation 'io.github.lisa-analyzer:lisa-sdk:0.1b8'
+    implementation 'io.github.lisa-analyzer:lisa-program:0.1b8'
+    implementation 'io.github.lisa-analyzer:lisa-analyses:0.1b8'
     antlr 'org.antlr:antlr4:4.8-1'    
     testImplementation 'junit:junit:4.12'
     implementation 'com.google.code.gson:gson:2.8.7'
@@ -76,13 +78,11 @@ spotless {
         // use the eclipse formatting with the one provided with the project
         eclipse().configFile(new File(rootProject.projectDir, 'spotless-formatting.xml'))
     
+        target 'src/**/*.java'    
         // ignore generated code
-        target project.fileTree(project.projectDir) {
-            include '**/*.java'
-            exclude '**/build/generated/**'
-            exclude '**/build/generated-src/**'
-            exclude '**/target/generated-sources/**'
-        }
+        targetExclude '**/build/generated/**/*.java'
+        targetExclude '**/build/generated-src/**/*.java'
+        targetExclude '**/target/generated-sources/**/*.java'
     }
     antlr4 {
         target 'src/*/antlr/**/*.g4'

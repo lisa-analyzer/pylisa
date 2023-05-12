@@ -11,9 +11,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import it.unive.lisa.LiSAConfiguration;
+import it.unive.lisa.AnalysisExecutionException;
 import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.CFGWithAnalysisResults;
+import it.unive.lisa.analysis.AnalyzedCFG;
+import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.AllocationSite;
 import it.unive.lisa.analysis.heap.pointbased.AllocationSites;
@@ -31,7 +32,6 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Identifier;
-import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.analysis.dataframes.CollectingMapLattice;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
@@ -48,10 +48,7 @@ public class DataframeDumper implements SemanticCheck<
 		DataframeGraphDomain,
 		TypeEnvironment<InferredTypes>> {
 
-	private final FileManager fileManager;
-
-	public DataframeDumper(LiSAConfiguration conf) {
-		this.fileManager = new FileManager(conf.workdir);
+	public DataframeDumper() {
 	}
 
 	@Override
@@ -101,60 +98,62 @@ public class DataframeDumper implements SemanticCheck<
 
 		if (node.stopsExecution()) {
 			Collection<
-					CFGWithAnalysisResults<
+					AnalyzedCFG<
 							SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
 									TypeEnvironment<InferredTypes>>,
 							PointBasedHeap, DataframeGraphDomain,
 							TypeEnvironment<InferredTypes>>> results = tool.getResultOf(graph);
 
-			for (CFGWithAnalysisResults<
+			for (AnalyzedCFG<
 					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> result : results) {
-
-				AnalysisState<
-						SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-								TypeEnvironment<InferredTypes>>,
-						PointBasedHeap, DataframeGraphDomain,
-						TypeEnvironment<InferredTypes>> post = result.getAnalysisStateAfter(node);
-
-				String filename = result.getDescriptor().getFullSignatureWithParNames();
-				if (result.getId() != null)
-					filename += "_" + result.getId().hashCode();
-
-				PointBasedHeap heap = post.getDomainInstance(PointBasedHeap.class);
-				DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
-				DataframeForest forest = dom.getGraph();
-				Collection<DataframeForest> subgraphs = forest.partitionByRoot();
-				CollectingMapLattice<Identifier, NodeId> pointers = dom.getPointers();
-				CollectingMapLattice<NodeId, DataframeOperation> operations = dom.getOperations();
-
-				Map<DataframeOperation, Set<Identifier>> refs = new HashMap<>();
-				for (Entry<Identifier, SetLattice<NodeId>> pointer : pointers) {
-					Set<Identifier> ids = reverse(heap, pointer.getKey());
-					if (ids.isEmpty())
-						continue;
-
-					for (NodeId n : pointer.getValue())
-						operations.getState(n).elements()
-								.forEach(op -> refs.computeIfAbsent(op, o -> new HashSet<>()).addAll(ids));
-				}
-
+					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> result : results)
 				try {
-					fileManager.mkDotFile(filename + "@" + node.getOffset(),
-							writer -> forest.toSerializableGraph(op -> label(op, refs)).toDot().dump(writer));
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+					AnalysisState<
+							SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
+									TypeEnvironment<InferredTypes>>,
+							PointBasedHeap, DataframeGraphDomain,
+							TypeEnvironment<InferredTypes>> post = result.getAnalysisStateAfter(node);
 
-				int i = 1;
-				for (DataframeForest sub : subgraphs)
+					String filename = result.getDescriptor().getFullSignatureWithParNames();
+					if (result.getId() != null)
+						filename += "_" + result.getId().hashCode();
+
+					PointBasedHeap heap = post.getDomainInstance(PointBasedHeap.class);
+					DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
+					DataframeForest forest = dom.getGraph();
+					Collection<DataframeForest> subgraphs = forest.partitionByRoot();
+					CollectingMapLattice<Identifier, NodeId> pointers = dom.getPointers();
+					CollectingMapLattice<NodeId, DataframeOperation> operations = dom.getOperations();
+
+					Map<DataframeOperation, Set<Identifier>> refs = new HashMap<>();
+					for (Entry<Identifier, SetLattice<NodeId>> pointer : pointers) {
+						Set<Identifier> ids = reverse(heap, pointer.getKey());
+						if (ids.isEmpty())
+							continue;
+
+						for (NodeId n : pointer.getValue())
+							operations.getState(n).elements()
+									.forEach(op -> refs.computeIfAbsent(op, o -> new HashSet<>()).addAll(ids));
+					}
+
 					try {
-						fileManager.mkDotFile(i++ + "-" + filename + "@" + node.getOffset(),
-								writer -> sub.toSerializableGraph(op -> label(op, refs)).toDot().dump(writer));
+						tool.getFileManager().mkDotFile(filename + "@" + node.getOffset(),
+								writer -> forest.toSerializableGraph((f, op) -> label(op, refs)).toDot().dump(writer));
 					} catch (IOException e) {
 						throw new RuntimeException(e);
 					}
-			}
+
+					int i = 1;
+					for (DataframeForest sub : subgraphs)
+						try {
+							tool.getFileManager().mkDotFile(i++ + "-" + filename + "@" + node.getOffset(),
+									writer -> sub.toSerializableGraph((f, op) -> label(op, refs)).toDot().dump(writer));
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+				} catch (SemanticException e) {
+					throw new AnalysisExecutionException(e);
+				}
 		}
 
 		return true;
