@@ -1,3 +1,5 @@
+method super: it.unive.pylisa.libraries.Super
+    type it.unive.lisa.type.Untyped::INSTANCE
 method print: it.unive.pylisa.libraries.NoOpFunction
 	type it.unive.lisa.type.VoidType::INSTANCE
 	param arg1 type it.unive.lisa.type.Untyped::INSTANCE
