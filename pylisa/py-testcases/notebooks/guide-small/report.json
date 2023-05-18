@@ -12,5 +12,38 @@
   }, {
     "message" : "[GENERIC] [temporal.csv] columns assigned: [Mes]"
   } ],
-  "files" : [ "untyped_dataframes-tests_guide-small.main().json" ]
+  "files" : [ "df1@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "df1@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "df2@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "df2@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "forest@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "forest@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "report.json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "774ms",
+    "end" : "2023-05-18T22:21:49.854+02:00",
+    "expressions" : "83",
+    "files" : "6",
+    "globals" : "0",
+    "members" : "30",
+    "programs" : "1",
+    "start" : "2023-05-18T22:21:49.080+02:00",
+    "statements" : "20",
+    "units" : "15",
+    "version" : "0.1b8",
+    "warnings" : "6"
+  },
+  "configuration" : {
+    "analysisGraphs" : "NONE",
+    "descendingPhaseType" : "NONE",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "DuplicateFreeFIFOWorkingSet",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "jsonOutput" : "true",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "optimize" : "true",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "BottomFinder, DataframeDumper, DataframeStructureConstructor",
+    "serializeInputs" : "false",
+    "serializeResults" : "false",
+    "syntacticChecks" : "",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/notebooks/guide-small"
+  }
 }

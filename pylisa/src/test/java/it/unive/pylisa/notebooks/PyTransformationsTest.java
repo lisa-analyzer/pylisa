@@ -24,8 +24,9 @@ public class PyTransformationsTest extends AnalysisTestExecutor {
 
 	private CronConfiguration buildConfig(boolean findOpenCalls) {
 		CronConfiguration conf = new CronConfiguration();
-		conf.serializeResults = true;
-//		conf.analysisGraphs = GraphType.HTML_WITH_SUBNODES;
+		//conf.serializeResults = true;
+		//conf.analysisGraphs = it.unive.lisa.conf.LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
+		conf.optimize = true;
 		conf.jsonOutput = true;
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		conf.callGraph = new RTACallGraph();

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 import it.unive.lisa.AnalysisExecutionException;
 import it.unive.lisa.analysis.AnalysisState;
@@ -32,6 +33,8 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.util.file.FileManager.WriteAction;
+import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.dataframes.CollectingMapLattice;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
@@ -93,7 +96,7 @@ public class DataframeDumper implements SemanticCheck<
 					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
 					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
 			CFG graph, Statement node) {
-		if (!graph.getDescriptor().getName().equals("main"))
+		if (!graph.getDescriptor().getName().equals(PyFrontend.INSTRUMENTED_MAIN_FUNCTION_NAME))
 			return true;
 
 		if (node.stopsExecution()) {
@@ -113,11 +116,6 @@ public class DataframeDumper implements SemanticCheck<
 									TypeEnvironment<InferredTypes>>,
 							PointBasedHeap, DataframeGraphDomain,
 							TypeEnvironment<InferredTypes>> post = result.getAnalysisStateAfter(node);
-
-					String filename = result.getDescriptor().getFullSignatureWithParNames();
-					if (result.getId() != null)
-						filename += "_" + result.getId().hashCode();
-
 					PointBasedHeap heap = post.getDomainInstance(PointBasedHeap.class);
 					DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
 					DataframeForest forest = dom.getGraph();
@@ -136,9 +134,21 @@ public class DataframeDumper implements SemanticCheck<
 									.forEach(op -> refs.computeIfAbsent(op, o -> new HashSet<>()).addAll(ids));
 					}
 
+					Function<DataframeForest,
+							WriteAction> jsonFactory = _forest -> writer -> _forest
+									.toSerializableGraph((f, op) -> label(op, refs))
+									.dump(writer);
+					Function<DataframeForest,
+							WriteAction> dotFactory = _forest -> writer -> _forest
+									.toSerializableGraph((f, op) -> label(op, refs))
+									.toDot()
+									.dump(writer);
 					try {
-						tool.getFileManager().mkDotFile(filename + "@" + node.getOffset(),
-								writer -> forest.toSerializableGraph((f, op) -> label(op, refs)).toDot().dump(writer));
+						String name = "forest@" + node.getLocation();
+						if (!result.getId().isStartingId())
+							name += "_" + result.getId().hashCode();
+						tool.getFileManager().mkJsonFile(name, jsonFactory.apply(forest));
+						tool.getFileManager().mkDotFile(name, dotFactory.apply(forest));
 					} catch (IOException e) {
 						throw new RuntimeException(e);
 					}
@@ -146,8 +156,11 @@ public class DataframeDumper implements SemanticCheck<
 					int i = 1;
 					for (DataframeForest sub : subgraphs)
 						try {
-							tool.getFileManager().mkDotFile(i++ + "-" + filename + "@" + node.getOffset(),
-									writer -> sub.toSerializableGraph((f, op) -> label(op, refs)).toDot().dump(writer));
+							String name = "df" + i++ + "@" + node.getLocation();
+							if (!result.getId().isStartingId())
+								name += "_" + result.getId().hashCode();
+							tool.getFileManager().mkJsonFile(name, jsonFactory.apply(forest));
+							tool.getFileManager().mkDotFile(name, dotFactory.apply(sub));
 						} catch (IOException e) {
 							throw new RuntimeException(e);
 						}

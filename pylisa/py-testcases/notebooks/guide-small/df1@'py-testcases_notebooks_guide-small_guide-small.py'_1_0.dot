@@ -1,0 +1,34 @@
+digraph {
+	"node93" [shape="rect",color="black",label=<read(temporal.csv)<BR/><BR/>at: 'py-testcases/notebooks/guide-small/guide-small.py':2:31>];
+	"node94" [shape="rect",color="gray",label=<access:[[0, 0]:[10, 10]:]<BR/><BR/>at: 'py-testcases/notebooks/guide-small/guide-small.py':3:10>];
+	"node95" [shape="rect",color="black",peripheries="2",label=<project:[[0, 0]:[10, 10]:]<BR/><BR/>at: 'py-testcases/notebooks/guide-small/guide-small.py':3:10>];
+	"node96" [shape="rect",color="gray",label=<access:[Mes]<BR/><BR/>at: 'py-testcases/notebooks/guide-small/guide-small.py':4:8>];
+	"node97" [shape="rect",color="gray",label=<access:[Mes]<BR/><BR/>at: 'py-testcases/notebooks/guide-small/guide-small.py':4:35>];
+	"node98" [shape="rect",color="gray",label=<assign_to:[Mes]<BR/><BR/>at: 'py-testcases/notebooks/guide-small/guide-small.py':4:36>];
+	"node99" [shape="rect",color="gray",label=<TO_DATETIME([Mes])<BR/><BR/>at: 'py-testcases/notebooks/guide-small/guide-small.py':4:36>];
+	"node100" [shape="rect",color="black",peripheries="2",label=<concat_rows<BR/><BR/>at: 'py-testcases/notebooks/guide-small/guide-small.py':15:25<BR/>Pointed by: df3>];
+	"node101" [shape="rect",color="black",peripheries="2",label=<concat_cols<BR/><BR/>at: 'py-testcases/notebooks/guide-small/guide-small.py':18:17<BR/>Pointed by: df4>];
+	"node102" [shape="rect",color="gray",label=<project:[bar]<BR/><BR/>at: 'py-testcases/notebooks/guide-small/guide-small.py':21:25>];
+	"node103" [shape="rect",color="gray",label=<project:[foo]<BR/><BR/>at: 'py-testcases/notebooks/guide-small/guide-small.py':21:36<BR/>Pointed by: df>];
+	"node104" [shape="rect",color="black",peripheries="2",label=<concat_rows<BR/><BR/>at: 'py-testcases/notebooks/guide-small/guide-small.py':21:38<BR/>Pointed by: df5>];
+	"node93" -> "node94" [color="black"];
+	"node93" -> "node95" [color="black"];
+	"node94" -> "node97" [color="black"];
+	"node96" -> "node98" [color="black",style="dashed"];
+	"node97" -> "node96" [color="black"];
+	"node97" -> "node99" [color="black",style="dashed"];
+	"node98" -> "node100" [color="red",label=0];
+	"node98" -> "node101" [color="red",label=0];
+	"node98" -> "node102" [color="black"];
+	"node99" -> "node98" [color="blue",label=A];
+	"node102" -> "node103" [color="black"];
+	"node102" -> "node104" [color="red",label=0];
+	"node103" -> "node104" [color="red",label=1];
+subgraph cluster_legend {
+	label="Legend";
+	style=dotted;
+	node [shape=plaintext];
+	"legend" [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0"><tr><td align="right">node border&nbsp;</td><td align="left"><font color="gray">gray</font>, single</td></tr><tr><td align="right">entrypoint border&nbsp;</td><td align="left"><font color="black">black</font>, single</td></tr><tr><td align="right">exitpoint border&nbsp;</td><td align="left"><font color="black">black</font>, double</td></tr><tr><td align="right">sequential edge&nbsp;</td><td align="left"><font color="black">black</font>, solid</td></tr><tr><td align="right">assign edge&nbsp;</td><td align="left"><font color="blue">blue</font>, solid</td></tr><tr><td align="right">concat edge&nbsp;</td><td align="left"><font color="red">red</font>, solid</td></tr><tr><td align="right">consume edge&nbsp;</td><td align="left"><font color="black">black</font>, dashed</td></tr></table>>];
+}
+
+}

@@ -17,10 +17,13 @@ import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.heap.pointbased.AllocationSite;
+import it.unive.lisa.analysis.heap.pointbased.HeapAllocationSite;
+import it.unive.lisa.analysis.heap.pointbased.StackAllocationSite;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.ObjectRepresentation;
+import it.unive.lisa.analysis.representation.SetRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.program.SyntheticLocation;
@@ -111,7 +114,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public final ValueEnvironment<ConstantPropagation> constants;
 
 	public final ConstantPropagation constStack;
-	
+
 	public final DataframeForest graph;
 
 	public final CollectingMapLattice<Identifier, NodeId> pointers;
@@ -149,7 +152,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			CollectingMapLattice<NodeId, DataframeOperation> operations) {
 		this(constants, constants.lattice.bottom(), graph, pointers, operations);
 	}
-	
+
 	private DataframeGraphDomain(
 			ValueEnvironment<ConstantPropagation> constants,
 			ConstantPropagation constStack,
@@ -163,7 +166,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		this.pointers = pointers;
 
 		// cleanup unreachable nodes
-		Map<NodeId, SetLattice<DataframeOperation>> map = operations.getMap();
+		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(operations.getMap());
 		if (map != null && !map.isEmpty()) {
 			Set<NodeId> nodes = new HashSet<>(operations.getKeys());
 			for (SetLattice<NodeId> used : this.pointers.getValues())
@@ -200,7 +203,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return new DataframeGraphDomain(
 					sss.constants,
 					sss.graph,
-					sss.pointers.putState(id, sss.pointers.lattice),
+					sss.pointers.putState(id, sss.pointers.lattice).setStack(sss.pointers.lattice),
 					sss.operations);
 		else
 			return sss;
@@ -302,7 +305,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public DomainRepresentation representation() {
 		return new ObjectRepresentation(Map.of(
 				"constants", constants.representation(),
+				"constants-stack", constStack.representation(),
 				"pointers", pointers.representation(StringRepresentation::new),
+				"pointers-stack", new SetRepresentation(pointers.lattice.elements(), StringRepresentation::new),
 				"operations", operations.representation(StringRepresentation::new),
 				"graph", graph.representation()));
 	}
@@ -311,6 +316,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public DataframeGraphDomain lub(DataframeGraphDomain other) throws SemanticException {
 		return new DataframeGraphDomain(
 				constants.lub(other.constants),
+				constStack.lub(other.constStack),
 				graph.lub(other.graph),
 				pointers.lub(other.pointers),
 				operations.lub(other.operations));
@@ -320,6 +326,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public DataframeGraphDomain widening(DataframeGraphDomain other) throws SemanticException {
 		return new DataframeGraphDomain(
 				constants.widening(other.constants),
+				constStack.widening(other.constStack),
 				graph.widening(other.graph),
 				pointers.widening(other.pointers),
 				operations.widening(other.operations));
@@ -328,8 +335,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	@Override
 	public boolean lessOrEqual(DataframeGraphDomain other) throws SemanticException {
 		return constants.lessOrEqual(other.constants)
+				&& constStack.lessOrEqual(other.constStack)
 				&& graph.lessOrEqual(other.graph)
 				&& pointers.lessOrEqual(other.pointers)
+				// functional lattice does not check the partial order over the
+				// inner lattice instance
+				&& pointers.lattice.lessOrEqual(other.pointers.lattice)
 				&& operations.lessOrEqual(other.operations);
 	}
 
@@ -337,6 +348,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public DataframeGraphDomain top() {
 		return new DataframeGraphDomain(
 				constants.top(),
+				constStack.top(),
 				graph.top(),
 				pointers.top(),
 				operations.top());
@@ -344,13 +356,14 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	@Override
 	public boolean isTop() {
-		return constants.isTop() && graph.isTop() && pointers.isTop() && operations.isTop();
+		return constants.isTop() && constStack.isTop() && graph.isTop() && pointers.isTop() && operations.isTop();
 	}
 
 	@Override
 	public DataframeGraphDomain bottom() {
 		return new DataframeGraphDomain(
 				constants.bottom(),
+				constStack.bottom(),
 				graph.bottom(),
 				pointers.bottom(),
 				operations.bottom());
@@ -358,7 +371,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	@Override
 	public boolean isBottom() {
-		return constants.isBottom() && graph.isBottom() && pointers.isBottom() && operations.isBottom();
+		return constants.isBottom()
+				&& constStack.isBottom()
+				&& graph.isBottom()
+				&& pointers.isBottom()
+				&& operations.isBottom();
 	}
 
 	public static boolean isDataframeRelated(SymbolicExpression expression) {
@@ -1503,8 +1520,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public static AllocationSite stripFields(AllocationSite as) {
 		if (as.getField() != null)
 			// we remove the name of the field using only location name
-			as = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(),
-					as.getCodeLocation());
+			if (as instanceof HeapAllocationSite)
+				as = new HeapAllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(),
+						as.getCodeLocation());
+			else
+				as = new StackAllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(),
+						as.getCodeLocation());
 		return as;
 	}
 
@@ -1513,6 +1534,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((constants == null) ? 0 : constants.hashCode());
+		result = prime * result + ((constStack == null) ? 0 : constStack.hashCode());
 		result = prime * result + ((graph == null) ? 0 : graph.hashCode());
 		result = prime * result + ((operations == null) ? 0 : operations.hashCode());
 		result = prime * result + ((pointers == null) ? 0 : pointers.hashCode());
@@ -1532,6 +1554,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			if (other.constants != null)
 				return false;
 		} else if (!constants.equals(other.constants))
+			return false;
+		if (constStack == null) {
+			if (other.constStack != null)
+				return false;
+		} else if (!constStack.equals(other.constStack))
 			return false;
 		if (graph == null) {
 			if (other.graph != null)

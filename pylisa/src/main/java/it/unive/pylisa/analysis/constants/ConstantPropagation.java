@@ -8,7 +8,13 @@ import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.program.cfg.ProgramPoint;
-import it.unive.lisa.program.type.*;
+import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
+import it.unive.lisa.program.type.Int16Type;
+import it.unive.lisa.program.type.Int32Type;
+import it.unive.lisa.program.type.Int64Type;
+import it.unive.lisa.program.type.Int8Type;
+import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
@@ -21,15 +27,14 @@ import it.unive.lisa.symbolic.value.operator.RemainderOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
-import it.unive.lisa.symbolic.value.operator.unary.StringLength;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
+import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.Power;
 import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
-import it.unive.lisa.type.NumericType;
 public class ConstantPropagation implements
 		BaseNonRelationalValueDomain<ConstantPropagation>,
 		Comparable<ConstantPropagation> {

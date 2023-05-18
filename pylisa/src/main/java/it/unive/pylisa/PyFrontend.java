@@ -205,6 +205,8 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
+	public static final String INSTRUMENTED_MAIN_FUNCTION_NAME = "$main";
+
 	private static final SequentialEdge SEQUENTIAL_SINGLETON = new SequentialEdge();
 
 	private static final Logger log = LogManager.getLogger(PyFrontend.class);
@@ -372,7 +374,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		PyClassType.all().forEach(types::registerType);
 
 		for (CFG cm : program.getAllCFGs())
-			if (cm.getDescriptor().getName().equals("$main"))
+			if (cm.getDescriptor().getName().equals(INSTRUMENTED_MAIN_FUNCTION_NAME))
 				program.addEntryPoint(cm);
 
 		return program;
@@ -506,10 +508,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	private CodeMemberDescriptor buildMainCFGDescriptor(SourceCodeLocation loc) {
-		String funcName = "$main";
 		Parameter[] cfgArgs = new Parameter[] {};
 
-		return new CodeMemberDescriptor(loc, currentUnit, false, funcName, cfgArgs);
+		return new CodeMemberDescriptor(loc, currentUnit, false, INSTRUMENTED_MAIN_FUNCTION_NAME, cfgArgs);
 	}
 
 	private CodeMemberDescriptor buildCFGDescriptor(FuncdefContext funcDecl) {
