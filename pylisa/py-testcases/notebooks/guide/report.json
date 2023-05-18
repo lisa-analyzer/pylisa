@@ -1,7 +1,5 @@
 {
   "warnings" : [ {
-    "message" : "['dataframes-tests/guide.py':6:37] on 'untyped dataframes-tests/guide::main()': [EXPRESSION] DataframeGraphDomain goes to bottom after SequentialEdge in set_option(pd, 'display.max_rows', 500)"
-  }, {
     "message" : "[GENERIC] [TO_GEOCODE([País])] columns accessed before being assigned: [geometry]"
   }, {
     "message" : "[GENERIC] [mapa.csv] columns accessed before being assigned: [País]"
@@ -16,5 +14,38 @@
   }, {
     "message" : "[GENERIC] [temporal.csv] columns assigned: [Mes]"
   } ],
-  "files" : [ "untyped_dataframes-tests_guide.color_producer(untyped_val)_-822500990.json", "untyped_dataframes-tests_guide.main().json" ]
+  "files" : [ "df1@'py-testcases_notebooks_guide_guide.py'_1_0.dot", "df1@'py-testcases_notebooks_guide_guide.py'_1_0.json", "df2@'py-testcases_notebooks_guide_guide.py'_1_0.dot", "df2@'py-testcases_notebooks_guide_guide.py'_1_0.json", "forest@'py-testcases_notebooks_guide_guide.py'_1_0.dot", "forest@'py-testcases_notebooks_guide_guide.py'_1_0.json", "report.json" ],
+  "info" : {
+    "cfgs" : "3",
+    "duration" : "1s 538ms",
+    "end" : "2023-05-18T23:39:47.901+02:00",
+    "expressions" : "661",
+    "files" : "6",
+    "globals" : "0",
+    "members" : "31",
+    "programs" : "1",
+    "start" : "2023-05-18T23:39:46.363+02:00",
+    "statements" : "108",
+    "units" : "15",
+    "version" : "0.1b8",
+    "warnings" : "7"
+  },
+  "configuration" : {
+    "analysisGraphs" : "NONE",
+    "descendingPhaseType" : "NONE",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "DuplicateFreeFIFOWorkingSet",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "jsonOutput" : "true",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "optimize" : "true",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "DataframeDumper, DataframeStructureConstructor",
+    "serializeInputs" : "false",
+    "serializeResults" : "false",
+    "syntacticChecks" : "",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/notebooks/guide"
+  }
 }

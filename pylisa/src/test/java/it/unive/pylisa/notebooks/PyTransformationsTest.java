@@ -32,7 +32,9 @@ public class PyTransformationsTest extends AnalysisTestExecutor {
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 		conf.semanticChecks.add(new DataframeDumper());
-		conf.semanticChecks.add(new BottomFinder<>());
+		if (!conf.optimize)
+			// if optimize is true, we will have bottom almost everywhere
+			conf.semanticChecks.add(new BottomFinder<>());
 		conf.semanticChecks.add(new DataframeStructureConstructor());
 		if (findOpenCalls)
 			conf.semanticChecks.add(new OpenCallsFinder<>());
