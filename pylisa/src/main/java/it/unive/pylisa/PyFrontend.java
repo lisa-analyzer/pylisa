@@ -1,7 +1,5 @@
 package it.unive.pylisa;
 
-import static it.unive.lisa.LiSAFactory.getDefaultFor;
-
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -20,9 +18,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import it.unive.lisa.program.*;
-import it.unive.lisa.type.*;
-import it.unive.pylisa.cfg.expression.*;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -37,17 +33,15 @@ import org.apache.logging.log4j.Logger;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
-import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
-import it.unive.lisa.LiSA;
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
-import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
-import it.unive.lisa.analysis.types.InferredTypes;
-import it.unive.lisa.conf.LiSAConfiguration;
-import it.unive.lisa.conf.LiSAConfiguration.GraphType;
-import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.logging.IterationLogger;
+import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.CodeUnit;
+import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Global;
+import it.unive.lisa.program.Program;
+import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -87,8 +81,12 @@ import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
+import it.unive.lisa.type.NullType;
+import it.unive.lisa.type.ReferenceType;
+import it.unive.lisa.type.TypeSystem;
+import it.unive.lisa.type.Untyped;
+import it.unive.lisa.type.VoidType;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
-import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
 import it.unive.pylisa.antlr.Python3Parser.AddContext;
@@ -189,6 +187,35 @@ import it.unive.pylisa.antlr.Python3Parser.Yield_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
 import it.unive.pylisa.antlr.Python3ParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
+import it.unive.pylisa.cfg.expression.DictionaryCreation;
+import it.unive.pylisa.cfg.expression.Empty;
+import it.unive.pylisa.cfg.expression.LambdaExpression;
+import it.unive.pylisa.cfg.expression.ListCreation;
+import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
+import it.unive.pylisa.cfg.expression.PyAddition;
+import it.unive.pylisa.cfg.expression.PyAssign;
+import it.unive.pylisa.cfg.expression.PyBitwiseAnd;
+import it.unive.pylisa.cfg.expression.PyBitwiseLeftShift;
+import it.unive.pylisa.cfg.expression.PyBitwiseNot;
+import it.unive.pylisa.cfg.expression.PyBitwiseOr;
+import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
+import it.unive.pylisa.cfg.expression.PyBitwiseXor;
+import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
+import it.unive.pylisa.cfg.expression.PyFloorDiv;
+import it.unive.pylisa.cfg.expression.PyIn;
+import it.unive.pylisa.cfg.expression.PyIs;
+import it.unive.pylisa.cfg.expression.PyMatMul;
+import it.unive.pylisa.cfg.expression.PyMultiplication;
+import it.unive.pylisa.cfg.expression.PyNewObj;
+import it.unive.pylisa.cfg.expression.PyPower;
+import it.unive.pylisa.cfg.expression.PyRemainder;
+import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
+import it.unive.pylisa.cfg.expression.PyStringLiteral;
+import it.unive.pylisa.cfg.expression.PyTernaryOperator;
+import it.unive.pylisa.cfg.expression.RangeValue;
+import it.unive.pylisa.cfg.expression.SetCreation;
+import it.unive.pylisa.cfg.expression.StarExpression;
+import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.expression.comparison.PyAnd;
 import it.unive.pylisa.cfg.expression.comparison.PyEquals;
 import it.unive.pylisa.cfg.expression.comparison.PyGreaterOrEqual;
@@ -299,27 +326,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 */
 	public String getFilePath() {
 		return filePath;
-	}
-
-	public static void main(String[] args) throws IOException, AnalysisException {
-		String file = args[0];
-		String extension = FilenameUtils.getExtension(file);
-		PyFrontend translator = new PyFrontend(file, extension.equals("ipynb"));
-		Program program = translator.toLiSAProgram();
-
-		LiSAConfiguration conf = new LiSAConfiguration();
-		conf.workdir = "workdir";
-		conf.serializeResults = true;
-		conf.analysisGraphs = GraphType.HTML;
-		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
-
-		DataframeGraphDomain domain = new DataframeGraphDomain();
-		PointBasedHeap heap = new PointBasedHeap();
-		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
-		conf.abstractState = getDefaultFor(AbstractState.class, heap, domain, type);
-
-		LiSA lisa = new LiSA(conf);
-		lisa.run(program);
 	}
 
 	private static String transformToCode(List<String> code_list) {
