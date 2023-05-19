@@ -1626,4 +1626,26 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return 0;
 		}
 	}
+
+	public Map<Identifier, DataframeForest> partitionByVarialbe() {
+		Map<Identifier, DataframeForest> result = new HashMap<>();
+
+		for (Entry<Identifier, SetLattice<NodeId>> entry : pointers.getMap().entrySet())
+			if (!entry.getValue().isTop() && !entry.getValue().isBottom()) {
+				DataframeForest accumulator = null;
+				for (NodeId id : entry.getValue())
+					for (DataframeOperation op : operations.getState(id)) {
+						DataframeForest sub = graph.bDFS(op,
+								o -> false, 
+								edge -> true);
+						if (accumulator == null)
+							accumulator = sub;
+						else
+							accumulator = accumulator.union(sub);
+					}
+				result.put(entry.getKey(), accumulator);
+			}
+
+		return result;
+	}
 }

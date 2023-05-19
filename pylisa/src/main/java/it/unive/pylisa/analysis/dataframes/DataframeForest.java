@@ -156,6 +156,11 @@ public class DataframeForest
 		if (this.isBottom() || other.isTop())
 			return other;
 
+		DataframeForest forest = union(other);
+		return forest;
+	}
+
+	public DataframeForest union(DataframeForest other) {
 		NodeList<DataframeForest, DataframeOperation, DataframeEdge> res = new NodeList<>(this.list);
 		res.mergeWith(other.list);
 		DataframeForest forest = new DataframeForest(Collections.emptySet(), res, false);
@@ -511,8 +516,9 @@ public class DataframeForest
 		return forest;
 	}
 
-	public DataframeForest bDFS(DataframeOperation leaf, Predicate<DataframeOperation> stop,
-			Predicate<DataframeEdge> follow) {
+	public DataframeForest bDFS(DataframeOperation leaf, 
+			Predicate<DataframeOperation> stop,
+			Predicate<DataframeEdge> followEdge) {
 		NodeList<DataframeForest, DataframeOperation,
 				DataframeEdge> list = new NodeList<>(new SimpleEdge(null, null), false);
 		DataframeForest forest = new DataframeForest(Collections.emptySet(), list, false);
@@ -526,7 +532,7 @@ public class DataframeForest
 			if (stop.test(current))
 				continue;
 			for (DataframeEdge edge : getIngoingEdges(current)) {
-				if (!follow.test(edge))
+				if (!followEdge.test(edge))
 					continue;
 				if (!ws.getSeen().contains(edge.getSource())) {
 					list.addNode(edge.getSource());

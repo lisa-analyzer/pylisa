@@ -33,6 +33,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.util.file.FileManager.WriteAction;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.dataframes.CollectingMapLattice;
@@ -120,15 +121,18 @@ public class DataframeDumper implements SemanticCheck<
 					DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
 					DataframeForest forest = dom.getGraph();
 					Collection<DataframeForest> subgraphs = forest.partitionByRoot();
+					Map<Identifier, DataframeForest> vargraphs = dom.partitionByVarialbe();
 					CollectingMapLattice<Identifier, NodeId> pointers = dom.getPointers();
 					CollectingMapLattice<NodeId, DataframeOperation> operations = dom.getOperations();
 
 					Map<DataframeOperation, Set<Identifier>> refs = new HashMap<>();
+					Map<Identifier, Set<Identifier>> reverseMap = new HashMap<>();
 					for (Entry<Identifier, SetLattice<NodeId>> pointer : pointers) {
 						Set<Identifier> ids = reverse(heap, pointer.getKey());
 						if (ids.isEmpty())
 							continue;
 
+						reverseMap.put(pointer.getKey(), ids);
 						for (NodeId n : pointer.getValue())
 							operations.getState(n).elements()
 									.forEach(op -> refs.computeIfAbsent(op, o -> new HashSet<>()).addAll(ids));
@@ -159,11 +163,30 @@ public class DataframeDumper implements SemanticCheck<
 							String name = "df" + i++ + "@" + node.getLocation();
 							if (!result.getId().isStartingId())
 								name += "_" + result.getId().hashCode();
-							tool.getFileManager().mkJsonFile(name, jsonFactory.apply(forest));
+							tool.getFileManager().mkJsonFile(name, jsonFactory.apply(sub));
 							tool.getFileManager().mkDotFile(name, dotFactory.apply(sub));
 						} catch (IOException e) {
 							throw new RuntimeException(e);
 						}
+
+					for (Entry<Identifier, DataframeForest> sub : vargraphs.entrySet()) {
+						Set<Identifier> ids;
+						if (reverseMap.containsKey(sub.getKey()))
+							ids = reverseMap.get(sub.getKey());
+						else
+							ids = Collections.singleton(sub.getKey());
+						for (Identifier id : ids)
+							if (id instanceof Variable)
+								try {
+									String name = "var_" + id.getName() + "@" + node.getLocation();
+									if (!result.getId().isStartingId())
+										name += "_" + result.getId().hashCode();
+									tool.getFileManager().mkJsonFile(name, jsonFactory.apply(sub.getValue()));
+									tool.getFileManager().mkDotFile(name, dotFactory.apply(sub.getValue()));
+								} catch (IOException e) {
+									throw new RuntimeException(e);
+								}
+					}
 				} catch (SemanticException e) {
 					throw new AnalysisExecutionException(e);
 				}
