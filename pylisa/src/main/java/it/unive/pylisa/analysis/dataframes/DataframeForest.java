@@ -45,7 +45,8 @@ import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 
-public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperation, DataframeEdge>
+public class DataframeForest
+		extends CodeGraph<DataframeForest, DataframeOperation, DataframeEdge>
 		implements Lattice<DataframeForest> {
 
 	private final boolean isTop;
@@ -111,9 +112,12 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 		Map<DataframeOperation, Integer> nodeIds = new HashMap<>();
 		SortedSet<SerializableNodeDescription> descrs = new TreeSet<>();
 		SortedSet<SerializableEdge> edges = new TreeSet<>();
-
+		
+		int counter = 0;
 		for (DataframeOperation node : getNodes()) {
-			nodeIds.put(node, addNode(nodes, descrs, node, descriptionGenerator));
+			addNode(counter, nodes, descrs, node, descriptionGenerator);
+			nodeIds.put(node, counter);
+			counter++;
 		}
 
 		for (DataframeOperation src : getNodes())
@@ -129,21 +133,19 @@ public class DataframeForest extends CodeGraph<DataframeForest, DataframeOperati
 		return new CustomSerializableGraph(name, null, nodes, edges, descrs);
 	}
 
-	private static int counter = 0;
-
-	private int addNode(
+	private void addNode(
+			int id,
 			SortedSet<SerializableNode> nodes,
 			SortedSet<SerializableNodeDescription> descrs,
 			DataframeOperation node,
 			BiFunction<DataframeForest, DataframeOperation, SerializableValue> descriptionGenerator) {
-		SerializableNode n = new SerializableNode(counter, Collections.emptyList(), node.toString());
+		SerializableNode n = new SerializableNode(id, Collections.emptyList(), node.toString());
 		nodes.add(n);
 		if (descriptionGenerator != null) {
 			SerializableValue value = descriptionGenerator.apply(this, node);
 			if (value != null)
-				descrs.add(new SerializableNodeDescription(counter, value));
+				descrs.add(new SerializableNodeDescription(id, value));
 		}
-		return counter++;
 	}
 
 	@Override
