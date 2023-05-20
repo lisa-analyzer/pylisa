@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.util.numeric.MathNumber;
+import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
@@ -36,6 +37,13 @@ public class SliceConstant extends Constant {
 				return new Interval(bound.get(), bound.get());
 			else
 				return new Interval(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
+		}
+		
+		public ConstantPropagation toConstant() {
+			if (bound.isPresent())
+				return new ConstantPropagation(bound.get());
+			else
+				return new ConstantPropagation().top();
 		}
 
 		@Override

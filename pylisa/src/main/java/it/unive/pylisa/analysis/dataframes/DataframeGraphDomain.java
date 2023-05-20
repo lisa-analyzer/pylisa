@@ -20,7 +20,6 @@ import it.unive.lisa.analysis.heap.pointbased.AllocationSite;
 import it.unive.lisa.analysis.heap.pointbased.HeapAllocationSite;
 import it.unive.lisa.analysis.heap.pointbased.StackAllocationSite;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.ObjectRepresentation;
 import it.unive.lisa.analysis.representation.SetRepresentation;
@@ -1148,8 +1147,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		else if (col.is(SliceConstant.class)) {
 			SliceConstant c = col.as(SliceConstant.class);
 			Slice slice = (Slice) c.getValue();
-			selection = new ColumnRangeSelection(new NumberSlice(slice.getStart().toInterval(),
-					slice.getEnd().toInterval(), slice.getSkip().toInterval()));
+			selection = new ColumnRangeSelection(new NumberSlice(
+					slice.getStart().toConstant(),
+					slice.getEnd().toConstant(),
+					slice.getSkip().toConstant()));
 		} else if (col.is(List.class)) {
 			List<ConstantPropagation> cs = col.as(List.class);
 			Set<String> accessedCols = new HashSet<>();
@@ -1306,8 +1307,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				colsSelection = new ColumnListSelection(accessedCols);
 		} else if (cols.is(ColumnSlice.class)) {
 			ColumnSlice slice = cols.as(ColumnSlice.class);
-			colsSelection = new ColumnRangeSelection(new NumberSlice(slice.getStart().getColumns().getBeginIndex(),
-					slice.getEnd().getColumns().getEndIndex(), slice.getSkip().toInterval()));
+			colsSelection = new ColumnRangeSelection(new NumberSlice(
+					slice.getStart().getColumns().getBeginIndex(),
+					slice.getEnd().getColumns().getEndIndex(),
+					slice.getSkip().toConstant()));
 			toConsume.addAll(slice.getStartNodes().elements());
 			toConsume.addAll(slice.getEndNodes().elements());
 		} else
@@ -1318,9 +1321,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			// middle is a slice
 			SliceConstant.Slice rowSlice = middle.constStack.as(SliceConstant.Slice.class);
 			NumberSlice numberSlice = new NumberSlice(
-					rowSlice.getStart() == null ? new Interval().bottom() : rowSlice.getStart().toInterval(),
-					rowSlice.getEnd() == null ? new Interval().bottom() : rowSlice.getEnd().toInterval(),
-					rowSlice.getSkip() == null ? new Interval().bottom() : rowSlice.getSkip().toInterval());
+					rowSlice.getStart() == null ? new ConstantPropagation().bottom() : rowSlice.getStart().toConstant(),
+					rowSlice.getEnd() == null ? new ConstantPropagation().bottom() : rowSlice.getEnd().toConstant(),
+					rowSlice.getSkip() == null ? new ConstantPropagation().bottom() : rowSlice.getSkip().toConstant());
 			DataframeSelection<?, ?> selection = new DataframeSelection(numberSlice, colsSelection);
 			DataframeOperation access = new AccessOperation<>(pp.getLocation(), selection);
 			forest.addNode(access);
@@ -1636,7 +1639,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				for (NodeId id : entry.getValue())
 					for (DataframeOperation op : operations.getState(id)) {
 						DataframeForest sub = graph.bDFS(op,
-								o -> false, 
+								o -> false,
 								edge -> true);
 						if (accumulator == null)
 							accumulator = sub;

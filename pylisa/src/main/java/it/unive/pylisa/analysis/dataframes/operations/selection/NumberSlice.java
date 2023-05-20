@@ -1,45 +1,49 @@
 package it.unive.pylisa.analysis.dataframes.operations.selection;
 
 import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.numeric.Interval;
+import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.Names;
 
 public class NumberSlice extends RowSelection<NumberSlice> {
 
-	public static final NumberSlice TOP = new NumberSlice(new Interval().top(), new Interval().top(),
-			new Interval().top());
-	public static final NumberSlice BOTTOM = new NumberSlice(new Interval().bottom(), new Interval().bottom(),
-			new Interval().bottom());
+	public static final NumberSlice TOP = new NumberSlice(
+			new ConstantPropagation().top(),
+			new ConstantPropagation().top(),
+			new ConstantPropagation().top());
+	public static final NumberSlice BOTTOM = new NumberSlice(
+			new ConstantPropagation().bottom(),
+			new ConstantPropagation().bottom(),
+			new ConstantPropagation().bottom());
 
-	private final Interval beginIndex, endIndex, skip;
+	private final ConstantPropagation beginIndex, endIndex, skip;
 
 	public NumberSlice(int beginIndex, int endIndex, int skip) {
-		this(new Interval(beginIndex, beginIndex), new Interval(endIndex, endIndex), new Interval(skip, skip));
+		this(new ConstantPropagation(beginIndex), new ConstantPropagation(endIndex), new ConstantPropagation(skip));
 	}
 
 	public NumberSlice(int beginIndex, int endIndex) {
-		this(new Interval(beginIndex, beginIndex), new Interval(endIndex, endIndex));
+		this(new ConstantPropagation(beginIndex), new ConstantPropagation(endIndex));
 	}
 
-	public NumberSlice(Interval beginIndex, Interval endIndex) {
-		this(beginIndex, endIndex, new Interval().bottom());
+	public NumberSlice(ConstantPropagation beginIndex, ConstantPropagation endIndex) {
+		this(beginIndex, endIndex, new ConstantPropagation().bottom());
 	}
 
-	public NumberSlice(Interval beginIndex, Interval endIndex, Interval skip) {
+	public NumberSlice(ConstantPropagation beginIndex, ConstantPropagation endIndex, ConstantPropagation skip) {
 		this.beginIndex = beginIndex;
 		this.endIndex = endIndex;
 		this.skip = skip;
 	}
 
-	public Interval getBeginIndex() {
+	public ConstantPropagation getBeginIndex() {
 		return beginIndex;
 	}
 
-	public Interval getEndIndex() {
+	public ConstantPropagation getEndIndex() {
 		return endIndex;
 	}
 
-	public Interval getSkip() {
+	public ConstantPropagation getSkip() {
 		return skip;
 	}
 
@@ -134,7 +138,7 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 		return compare(skip, other.skip);
 	}
 
-	private static int compare(Interval first, Interval second) {
+	private static int compare(ConstantPropagation first, ConstantPropagation second) {
 		if (first.isBottom() && !second.isBottom())
 			return -1;
 		else if (!first.isBottom() && second.isBottom())
@@ -149,15 +153,9 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 		else if (first.isTop())
 			return 0;
 
-		int cmp = first.interval.getLow().compareTo(second.interval.getLow());
-		if (cmp != 0)
-			return cmp;
-		cmp = first.interval.getHigh().compareTo(second.interval.getHigh());
-		if (cmp != 0)
-			return cmp;
-		return 0;
+		return Integer.compare(first.as(Integer.class), second.as(Integer.class));
 	}
-	
+
 	@Override
 	public Names extractColumnNames() {
 		return Names.BOTTOM;

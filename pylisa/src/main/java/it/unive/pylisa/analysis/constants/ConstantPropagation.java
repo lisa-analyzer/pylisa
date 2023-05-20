@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
+import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Float64Type;
@@ -35,6 +36,7 @@ import it.unive.pylisa.symbolic.operators.Power;
 import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
+
 public class ConstantPropagation implements
 		BaseNonRelationalValueDomain<ConstantPropagation>,
 		Comparable<ConstantPropagation> {
@@ -48,6 +50,10 @@ public class ConstantPropagation implements
 
 	public ConstantPropagation() {
 		this(null, true);
+	}
+
+	public ConstantPropagation(int value) {
+		this(new Constant(Int32Type.INSTANCE, value, SyntheticLocation.INSTANCE));
 	}
 
 	public ConstantPropagation(Constant constant) {
@@ -75,7 +81,7 @@ public class ConstantPropagation implements
 	public String toString() {
 		return representation().toString();
 	}
-	
+
 	public DomainRepresentation representation() {
 		if (isTop())
 			return Lattice.topRepresentation();
@@ -327,7 +333,6 @@ public class ConstantPropagation implements
 		return c;
 	}
 
-
 	private ConstantPropagation stringConcat(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
 
 		if (left.isTop() || right.isTop()) {
@@ -335,7 +340,8 @@ public class ConstantPropagation implements
 		}
 		if (left.constant.getStaticType().isStringType() && right.constant.getStaticType().isStringType()) {
 			return new ConstantPropagation(
-					new Constant(StringType.INSTANCE, left.as(String.class) + right.as(String.class),pp.getLocation()));
+					new Constant(StringType.INSTANCE, left.as(String.class) + right.as(String.class),
+							pp.getLocation()));
 		}
 		return TOP;
 	}
@@ -373,28 +379,37 @@ public class ConstantPropagation implements
 		}
 		// TODO: handle overflow (?)
 		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isNumericType()) {
-			NumericType superType = left.constant.getStaticType().asNumericType().supertype(right.constant.getStaticType().asNumericType());
-			//Class<? extends Number> type = getJavaClassFor(superType);
+			NumericType superType = left.constant.getStaticType().asNumericType()
+					.supertype(right.constant.getStaticType().asNumericType());
+			// Class<? extends Number> type = getJavaClassFor(superType);
 			if (superType.is8Bits()) {
 				return new ConstantPropagation(
-						new Constant(Int8Type.INSTANCE, (byte) (Math.pow((double)left.as(Byte.class), (double)right.as(Byte.class))), pp.getLocation()));
+						new Constant(Int8Type.INSTANCE,
+								(byte) (Math.pow((double) left.as(Byte.class), (double) right.as(Byte.class))),
+								pp.getLocation()));
 			}
 			if (superType.is16Bits()) {
 				return new ConstantPropagation(
-						new Constant(Int16Type.INSTANCE, (short) (Math.pow((double)left.as(Short.class), (double)right.as(Short.class))), pp.getLocation()));
+						new Constant(Int16Type.INSTANCE,
+								(short) (Math.pow((double) left.as(Short.class), (double) right.as(Short.class))),
+								pp.getLocation()));
 			}
 			if (superType.is32Bits()) {
 				if (!superType.isIntegral()) {
 					return new ConstantPropagation(
-							new Constant(Float32Type.INSTANCE, (float) (Math.pow((double)left.as(Float.class), (double)right.as(Float.class))), pp.getLocation()));
+							new Constant(Float32Type.INSTANCE,
+									(float) (Math.pow((double) left.as(Float.class), (double) right.as(Float.class))),
+									pp.getLocation()));
 				} else {
 					if (right.as(Integer.class) < 0) {
 						return new ConstantPropagation(
-								new Constant(Float32Type.INSTANCE, (float) (Math.pow((double)left.as(Integer.class), (double)right.as(Integer.class))), pp.getLocation()));
+								new Constant(Float32Type.INSTANCE, (float) (Math.pow((double) left.as(Integer.class),
+										(double) right.as(Integer.class))), pp.getLocation()));
 
 					} else {
 						return new ConstantPropagation(
-								new Constant(Int32Type.INSTANCE, (int) (Math.pow((double)left.as(Integer.class), (double)right.as(Integer.class))), pp.getLocation()));
+								new Constant(Int32Type.INSTANCE, (int) (Math.pow((double) left.as(Integer.class),
+										(double) right.as(Integer.class))), pp.getLocation()));
 
 					}
 				}
@@ -402,10 +417,13 @@ public class ConstantPropagation implements
 			if (superType.is64Bits()) {
 				if (!superType.isIntegral()) {
 					return new ConstantPropagation(
-							new Constant(Float64Type.INSTANCE, Math.pow(left.as(Double.class), right.as(Double.class)), pp.getLocation()));
+							new Constant(Float64Type.INSTANCE, Math.pow(left.as(Double.class), right.as(Double.class)),
+									pp.getLocation()));
 				} else {
 					return new ConstantPropagation(
-							new Constant(Int64Type.INSTANCE, (long) (Math.pow((double)left.as(Long.class), (double)right.as(Long.class))), pp.getLocation()));
+							new Constant(Int64Type.INSTANCE,
+									(long) (Math.pow((double) left.as(Long.class), (double) right.as(Long.class))),
+									pp.getLocation()));
 				}
 			}
 		}
@@ -419,6 +437,7 @@ public class ConstantPropagation implements
 		}
 		return sb.toString();
 	}
+
 	@Override
 	public int compareTo(ConstantPropagation other) {
 		if (isBottom() && !other.isBottom())
