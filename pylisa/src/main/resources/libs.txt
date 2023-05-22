@@ -98,8 +98,8 @@ library pandas:
 			type it.unive.lisa.type.Untyped::INSTANCE
 			param this libtype pandas.Series*
 			param function type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
-library geopandas:
-	location geopandas
+library geopandas.tools:
+	location geopandas.tools
 	method geocode: it.unive.pylisa.libraries.geopandas.Geocode
 		libtype pandas.DataFrame*
 		param strings libtype pandas.Series*

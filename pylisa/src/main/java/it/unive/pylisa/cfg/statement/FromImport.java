@@ -13,23 +13,26 @@ import it.unive.lisa.analysis.symbols.QualifiedNameSymbol;
 import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class FromImport extends Statement {
 
 	private final String lib;
 	private final Map<String, String> components;
 
-	// from component import <left> as <right>
-	public FromImport(String lib, Map<String, String> components, CFG cfg, CodeLocation loc) {
+	// from <lib> import <left> as <right>
+	public FromImport(Program program, String lib, Map<String, String> components, CFG cfg, CodeLocation loc) {
 		super(cfg, loc);
 		this.lib = lib;
 		this.components = components;
+		LibrarySpecificationProvider.importLibrary(program, lib);
 	}
 
 	@Override

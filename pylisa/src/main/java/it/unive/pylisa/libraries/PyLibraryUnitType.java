@@ -1,5 +1,6 @@
 package it.unive.pylisa.libraries;
 
+import it.unive.lisa.program.CodeUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
@@ -11,7 +12,7 @@ public class PyLibraryUnitType extends PyClassType {
 
 	private Integer hash = null;
 
-	public PyLibraryUnitType(CompilationUnit library, CompilationUnit unit) {
+	public PyLibraryUnitType(CodeUnit library, CompilationUnit unit) {
 		super(unit.getName(), unit);
 		this.libraryName = library.getName();
 

@@ -801,7 +801,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			name = ".";
 
 		if (ctx.import_as_names() == null)
-			return new FromImport(name, Map.of("*", "*"), currentCFG, getLocation(ctx));
+			return new FromImport(program, name, Map.of("*", "*"), currentCFG, getLocation(ctx));
 
 		Map<String, String> components = new HashMap<>();
 		for (Import_as_nameContext single : ctx.import_as_names().import_as_name()) {
@@ -809,7 +809,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			String as = single.NAME().size() == 2 ? single.NAME(1).getSymbol().getText() : null;
 			components.put(importedComponent, as);
 		}
-		return new FromImport(name, components, currentCFG, getLocation(ctx));
+		return new FromImport(program, name, components, currentCFG, getLocation(ctx));
 	}
 
 	@Override
@@ -820,7 +820,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			String as = single.NAME() != null ? single.NAME().getSymbol().getText() : null;
 			libs.put(importedLibrary, as);
 		}
-		return new Import(libs, currentCFG, getLocation(ctx));
+		return new Import(program, libs, currentCFG, getLocation(ctx));
 	}
 
 	private String dottedNameToString(Dotted_nameContext dotted_name) {
