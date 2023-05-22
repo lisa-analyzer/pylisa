@@ -12,6 +12,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.ScopeToken;
@@ -106,6 +108,8 @@ import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
 
 public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
+	
+	private static final Logger LOG = LogManager.getLogger(DataframeGraphDomain.class);
 
 	private static final SetLattice<NodeId> NO_IDS = new SetLattice<NodeId>().bottom();
 	private static final SetLattice<DataframeOperation> NO_NODES = new SetLattice<DataframeOperation>().bottom();
@@ -1243,37 +1247,40 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		if (right.constStack.isBottom())
 			return cleanStack(right, pp);
 		RangeBound skip = getRangeBound(right.constStack);
+		RangeBound rstart = null, rend = null;
+		ColumnRangeSelection cstart = null, cend = null;
+		SetLattice<DataframeOperation> l = null, m = null;
 
-		if (!left.constStack.isBottom()
-				&& !middle.constStack.isBottom()) {
-			// numeric slice
-			RangeBound start = getRangeBound(left.constStack);
-			RangeBound end = getRangeBound(middle.constStack);
-			SliceConstant slice = new SliceConstant(start, end, skip, pp.getLocation());
-			return new DataframeGraphDomain(
-					right.constants,
-					right.constStack.eval(slice, right.constants, pp),
-					right.graph,
-					right.pointers.setStack(NO_IDS),
-					right.operations);
-		} else if (!topOrBottom(left.pointers.lattice) && !topOrBottom(middle.pointers.lattice)) {
+		if (!left.constStack.isBottom())
+			rstart = getRangeBound(left.constStack);
+		else if (!topOrBottom(left.pointers.lattice)) {
+			l = resolvePointers(left);
+			cstart = getRangeBound(l);
+		}
+		
+		if (!middle.constStack.isBottom()) 
+			rend = getRangeBound(middle.constStack);
+		else if (!topOrBottom(middle.pointers.lattice)) {
 			// column slice
-			SetLattice<DataframeOperation> l = resolvePointers(left);
-			SetLattice<DataframeOperation> m = resolvePointers(middle);
+			m = resolvePointers(middle);
 			if (l.equals(m))
 				l = moveBackwards(right.graph, l);
-			ColumnRangeSelection start = getRangeBound(l);
-			ColumnRangeSelection end = getRangeBound(m);
-			DataframeColumnSlice slice = new DataframeColumnSlice(new ColumnSlice(start, end, skip, l, m),
-					pp.getLocation());
-			return new DataframeGraphDomain(
-					right.constants,
-					right.constStack.eval(slice, right.constants, pp),
-					right.graph,
-					right.pointers.setStack(NO_IDS),
-					right.operations);
-		} else
-			return cleanStack(right, pp);
+			cend = getRangeBound(m);
+		}
+		
+		Constant slice;
+		if (rstart != null && rend != null)
+			slice = new SliceConstant(rstart, rend, skip, pp.getLocation());
+		else
+			slice = new DataframeColumnSlice(new ColumnSlice(
+					rstart == null ? cstart : rstart, 
+					rend == null ? cend : rend, skip, l, m), pp.getLocation());
+		return new DataframeGraphDomain(
+				right.constants,
+				right.constStack.eval(slice, right.constants, pp),
+				right.graph,
+				right.pointers.setStack(NO_IDS),
+				right.operations);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -1308,11 +1315,15 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		} else if (cols.is(ColumnSlice.class)) {
 			ColumnSlice slice = cols.as(ColumnSlice.class);
 			colsSelection = new ColumnRangeSelection(new NumberSlice(
-					slice.getStart().getColumns().getBeginIndex(),
-					slice.getEnd().getColumns().getEndIndex(),
+					slice.getStart().getBeginIndex(),
+					slice.getEnd().getEndIndex(),
 					slice.getSkip().toConstant()));
-			toConsume.addAll(slice.getStartNodes().elements());
-			toConsume.addAll(slice.getEndNodes().elements());
+			if (slice.getStartNodes() != null)
+				// might be a numeric slice
+				toConsume.addAll(slice.getStartNodes().elements());
+			if (slice.getEndNodes() != null)
+				// might be a numeric slice
+				toConsume.addAll(slice.getEndNodes().elements());
 		} else
 			return cleanStack(right, pp);
 
@@ -1460,11 +1471,22 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	private static DataframeGraphDomain cleanStack(DataframeGraphDomain right, ProgramPoint pp)
 			throws SemanticException {
+		LOG.debug("Evaluation of " + pp + " in " + getCaller() + " caused the stack to be cleaned");
 		return new DataframeGraphDomain(
 				right.constants,
 				right.graph,
 				right.pointers.setStack(NO_IDS),
 				right.operations);
+	}
+	
+	private static String getCaller() {
+		StackTraceElement[] trace = Thread.getAllStackTraces().get(Thread.currentThread());
+		// 0: java.lang.Thread.dumpThreads()
+		// 1: java.lang.Thread.getAllStackTraces()
+		// 2: DataframeGraphDomain.getCaller()
+		// 3: DataframeGraphDomain.cleanStack()
+		// 4: caller
+		return trace[4].getClassName() + "::" + trace[4].getMethodName();
 	}
 
 	public DataframeGraphDomain visit(PushAny expression, ProgramPoint pp) throws SemanticException {

@@ -7,6 +7,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
+import it.unive.pylisa.analysis.dataframes.operations.SliceElement;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
@@ -20,7 +21,7 @@ public class SliceConstant extends Constant {
 		super(PyClassType.lookup(LibrarySpecificationProvider.SLICE), new Slice(start, end, skip), location);
 	}
 
-	public static class RangeBound {
+	public static class RangeBound implements SliceElement {
 
 		private final Optional<Integer> bound;
 
@@ -38,7 +39,7 @@ public class SliceConstant extends Constant {
 			else
 				return new Interval(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
 		}
-		
+
 		public ConstantPropagation toConstant() {
 			if (bound.isPresent())
 				return new ConstantPropagation(bound.get());
@@ -48,7 +49,7 @@ public class SliceConstant extends Constant {
 
 		@Override
 		public String toString() {
-			return toInterval().toString();
+			return toConstant().toString();
 		}
 
 		@Override
@@ -74,6 +75,18 @@ public class SliceConstant extends Constant {
 			} else if (!bound.equals(other.bound))
 				return false;
 			return true;
+		}
+
+		@Override
+		public ConstantPropagation getEndIndex() {
+			if (bound.isEmpty())
+				return new ConstantPropagation().top();
+			return new ConstantPropagation(bound.get());
+		}
+
+		@Override
+		public ConstantPropagation getBeginIndex() {
+			return getEndIndex();
 		}
 	}
 
