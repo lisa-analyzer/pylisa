@@ -1,6 +1,5 @@
 package it.unive.pylisa.checks.semantics;
 
-import it.unive.lisa.analysis.CFGWithAnalysisResults;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
@@ -48,8 +47,8 @@ public class RosTopicDeclarationFinder implements SemanticCheck<SimpleAbstractSt
     public boolean visit(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool, CFG graph, Statement node) {
         if (node instanceof Call) {
             Call call = (Call) node;
-
-            if (Objects.equals(call.getTargetName(), "create_subscription") || Objects.equals(call.getTargetName(), "create_publisher")) {
+        }
+           /* if (Objects.equals(call.getTargetName(), "create_subscription") || Objects.equals(call.getTargetName(), "create_publisher")) {
                 String nodeType = Objects.equals(call.getTargetName(), "create_subscription") ? "Subscriber" : "Publisher";
                 String messageType = call.getSubExpressions()[1].toString();
                 String topicName = "[undefined]";
@@ -68,7 +67,7 @@ public class RosTopicDeclarationFinder implements SemanticCheck<SimpleAbstractSt
                 }
                 tool.warnOn(graph, nodeType +" found: " + node + ". Read from topic: " + topicName + ", message type: " + messageType);
             }
-        }
+        }*/
         return true;
     }
 

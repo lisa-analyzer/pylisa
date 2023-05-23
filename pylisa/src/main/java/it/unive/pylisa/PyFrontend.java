@@ -603,9 +603,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					pars.add(visitTypedarg(def));
 				}
 			}
-
-
-				return pars.toArray(Parameter[]::new);
+			return pars.toArray(Parameter[]::new);
 	}
 
 	@Override

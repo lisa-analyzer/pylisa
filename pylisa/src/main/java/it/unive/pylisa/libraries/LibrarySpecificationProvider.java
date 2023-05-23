@@ -44,6 +44,9 @@ public class LibrarySpecificationProvider {
 	public static final String GEOPANDAS_TOOLS = "geopandas.tools";
 
 	public static final String NUMPY_ARRAY = "numpy.NDArray";
+	/*******	RCLPY	*******/
+	public static final String RCLPY_PUBLISHER = "rclpy.publisher.Publisher";
+	public static final String RCLPY_SUBSCRIPTION = "rclpy.subscription.Subscription";
 
 	private static final Map<String, Library> LIBS = new HashMap<>();
 
