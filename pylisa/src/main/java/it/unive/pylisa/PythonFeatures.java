@@ -10,12 +10,13 @@ import it.unive.lisa.program.language.resolution.PythonLikeMatchingStrategy;
 import it.unive.lisa.program.language.resolution.RuntimeTypesMatchingStrategy;
 import it.unive.lisa.program.language.validation.BaseValidationLogic;
 import it.unive.lisa.program.language.validation.ProgramValidationLogic;
+import it.unive.pylisa.program.language.resolution.RelaxedRuntimeTypesMatchingStrategy;
 
 public class PythonFeatures extends LanguageFeatures {
 
 	@Override
 	public ParameterMatchingStrategy getMatchingStrategy() {
-		return new PythonLikeMatchingStrategy(RuntimeTypesMatchingStrategy.INSTANCE);
+		return new PythonLikeMatchingStrategy(new RelaxedRuntimeTypesMatchingStrategy());
 	}
 
 	@Override

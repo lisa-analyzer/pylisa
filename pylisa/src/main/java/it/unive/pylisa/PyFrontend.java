@@ -226,6 +226,7 @@ import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
+import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -1528,7 +1529,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (ctx.arith_expr() == null)
 			return visitTerm(ctx.term());
 		else
-			return new Addition(currentCFG, getLocation(ctx),
+			return new PyAddition(currentCFG, getLocation(ctx),
 					visitTerm(ctx.term()),
 					visitArith_expr(ctx.arith_expr()));
 	}
@@ -1693,6 +1694,23 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								null,
 								method_name,
 								pars.toArray(Expression[]::new));
+						if (method_name.equals("super") && pars.size() == 0) {
+							// if super() is inside an instance method
+							if (this.currentCFG.getDescriptor().isInstance()) {
+								VariableTableEntry vte = currentCFG.getDescriptor().getVariables().get(0);
+
+								Expression[] expressions = new Expression[2];
+								expressions[0] = new PyTypeLiteral(this.currentCFG, getLocation(expr), this.currentUnit);
+								expressions[1] = new VariableRef(this.currentCFG, getLocation(expr), vte.getName());
+								access = new SimpleSuperUnresolvedCall(
+										currentCFG,
+										getLocation(expr),
+										instance ? CallType.UNKNOWN : CallType.STATIC,
+										null,
+										method_name,
+										expressions);
+							}
+						}
 					}
 					last_name = null;
 					previous_access = null;
