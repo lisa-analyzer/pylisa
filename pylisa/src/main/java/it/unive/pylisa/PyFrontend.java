@@ -224,6 +224,7 @@ import it.unive.pylisa.cfg.expression.comparison.PyLessOrEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
+import it.unive.pylisa.cfg.expression.PyTypeLiteral;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
