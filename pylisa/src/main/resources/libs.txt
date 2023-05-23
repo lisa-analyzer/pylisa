@@ -1,5 +1,8 @@
 method super: it.unive.pylisa.libraries.Super
     type it.unive.lisa.type.Untyped::INSTANCE
+    	type it.unive.lisa.type.Untyped::INSTANCE
+    	param arg1 type it.unive.lisa.type.Untyped::INSTANCE
+    	param arg2 type it.unive.lisa.type.Untyped::INSTANCE
 method print: it.unive.pylisa.libraries.NoOpFunction
 	type it.unive.lisa.type.VoidType::INSTANCE
 	param arg1 type it.unive.lisa.type.Untyped::INSTANCE
@@ -98,8 +101,8 @@ library pandas:
 			type it.unive.lisa.type.Untyped::INSTANCE
 			param this libtype pandas.Series*
 			param function type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
-library geopandas:
-	location geopandas
+library geopandas.tools:
+	location geopandas.tools
 	method geocode: it.unive.pylisa.libraries.geopandas.Geocode
 		libtype pandas.DataFrame*
 		param strings libtype pandas.Series*

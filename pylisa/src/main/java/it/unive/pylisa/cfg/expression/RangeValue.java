@@ -29,6 +29,11 @@ public class RangeValue extends TernaryExpression {
 	}
 
 	@Override
+	public String toString() {
+		return getLeft() + " : " + getMiddle() + " : " + getRight(); 
+	}
+	
+	@Override
 	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,

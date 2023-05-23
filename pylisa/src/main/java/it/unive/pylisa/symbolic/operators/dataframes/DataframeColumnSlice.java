@@ -4,7 +4,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.pylisa.analysis.dataframes.SetLattice;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
-import it.unive.pylisa.analysis.dataframes.operations.selection.ColumnRangeSelection;
+import it.unive.pylisa.analysis.dataframes.operations.SliceElement;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
@@ -16,13 +16,13 @@ public class DataframeColumnSlice extends Constant {
 	}
 
 	public static class ColumnSlice {
-		private ColumnRangeSelection start, end;
+		private SliceElement start, end;
 		private SetLattice<DataframeOperation> startNodes, endNodes;
 		private RangeBound skip;
 
 		public ColumnSlice(
-				ColumnRangeSelection start,
-				ColumnRangeSelection end,
+				SliceElement start,
+				SliceElement end,
 				RangeBound skip,
 				SetLattice<DataframeOperation> startNodes,
 				SetLattice<DataframeOperation> endNodes) {
@@ -33,7 +33,7 @@ public class DataframeColumnSlice extends Constant {
 			this.endNodes = endNodes;
 		}
 
-		public ColumnRangeSelection getStart() {
+		public SliceElement getStart() {
 			return start;
 		}
 
@@ -41,7 +41,7 @@ public class DataframeColumnSlice extends Constant {
 			return startNodes;
 		}
 
-		public ColumnRangeSelection getEnd() {
+		public SliceElement getEnd() {
 			return end;
 		}
 

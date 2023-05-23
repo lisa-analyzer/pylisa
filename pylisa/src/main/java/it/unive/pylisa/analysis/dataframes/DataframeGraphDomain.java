@@ -12,15 +12,19 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.heap.pointbased.AllocationSite;
+import it.unive.lisa.analysis.heap.pointbased.HeapAllocationSite;
+import it.unive.lisa.analysis.heap.pointbased.StackAllocationSite;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.ObjectRepresentation;
+import it.unive.lisa.analysis.representation.SetRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.program.SyntheticLocation;
@@ -104,6 +108,8 @@ import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
 
 public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
+	
+	private static final Logger LOG = LogManager.getLogger(DataframeGraphDomain.class);
 
 	private static final SetLattice<NodeId> NO_IDS = new SetLattice<NodeId>().bottom();
 	private static final SetLattice<DataframeOperation> NO_NODES = new SetLattice<DataframeOperation>().bottom();
@@ -111,7 +117,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public final ValueEnvironment<ConstantPropagation> constants;
 
 	public final ConstantPropagation constStack;
-	
+
 	public final DataframeForest graph;
 
 	public final CollectingMapLattice<Identifier, NodeId> pointers;
@@ -149,7 +155,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			CollectingMapLattice<NodeId, DataframeOperation> operations) {
 		this(constants, constants.lattice.bottom(), graph, pointers, operations);
 	}
-	
+
 	private DataframeGraphDomain(
 			ValueEnvironment<ConstantPropagation> constants,
 			ConstantPropagation constStack,
@@ -163,7 +169,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		this.pointers = pointers;
 
 		// cleanup unreachable nodes
-		Map<NodeId, SetLattice<DataframeOperation>> map = operations.getMap();
+		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(operations.getMap());
 		if (map != null && !map.isEmpty()) {
 			Set<NodeId> nodes = new HashSet<>(operations.getKeys());
 			for (SetLattice<NodeId> used : this.pointers.getValues())
@@ -200,7 +206,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return new DataframeGraphDomain(
 					sss.constants,
 					sss.graph,
-					sss.pointers.putState(id, sss.pointers.lattice),
+					sss.pointers.putState(id, sss.pointers.lattice).setStack(sss.pointers.lattice),
 					sss.operations);
 		else
 			return sss;
@@ -302,7 +308,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public DomainRepresentation representation() {
 		return new ObjectRepresentation(Map.of(
 				"constants", constants.representation(),
+				"constants-stack", constStack.representation(),
 				"pointers", pointers.representation(StringRepresentation::new),
+				"pointers-stack", new SetRepresentation(pointers.lattice.elements(), StringRepresentation::new),
 				"operations", operations.representation(StringRepresentation::new),
 				"graph", graph.representation()));
 	}
@@ -311,6 +319,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public DataframeGraphDomain lub(DataframeGraphDomain other) throws SemanticException {
 		return new DataframeGraphDomain(
 				constants.lub(other.constants),
+				constStack.lub(other.constStack),
 				graph.lub(other.graph),
 				pointers.lub(other.pointers),
 				operations.lub(other.operations));
@@ -320,6 +329,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public DataframeGraphDomain widening(DataframeGraphDomain other) throws SemanticException {
 		return new DataframeGraphDomain(
 				constants.widening(other.constants),
+				constStack.widening(other.constStack),
 				graph.widening(other.graph),
 				pointers.widening(other.pointers),
 				operations.widening(other.operations));
@@ -328,8 +338,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	@Override
 	public boolean lessOrEqual(DataframeGraphDomain other) throws SemanticException {
 		return constants.lessOrEqual(other.constants)
+				&& constStack.lessOrEqual(other.constStack)
 				&& graph.lessOrEqual(other.graph)
 				&& pointers.lessOrEqual(other.pointers)
+				// functional lattice does not check the partial order over the
+				// inner lattice instance
+				&& pointers.lattice.lessOrEqual(other.pointers.lattice)
 				&& operations.lessOrEqual(other.operations);
 	}
 
@@ -337,6 +351,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public DataframeGraphDomain top() {
 		return new DataframeGraphDomain(
 				constants.top(),
+				constStack.top(),
 				graph.top(),
 				pointers.top(),
 				operations.top());
@@ -344,13 +359,14 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	@Override
 	public boolean isTop() {
-		return constants.isTop() && graph.isTop() && pointers.isTop() && operations.isTop();
+		return constants.isTop() && constStack.isTop() && graph.isTop() && pointers.isTop() && operations.isTop();
 	}
 
 	@Override
 	public DataframeGraphDomain bottom() {
 		return new DataframeGraphDomain(
 				constants.bottom(),
+				constStack.bottom(),
 				graph.bottom(),
 				pointers.bottom(),
 				operations.bottom());
@@ -358,7 +374,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	@Override
 	public boolean isBottom() {
-		return constants.isBottom() && graph.isBottom() && pointers.isBottom() && operations.isBottom();
+		return constants.isBottom()
+				&& constStack.isBottom()
+				&& graph.isBottom()
+				&& pointers.isBottom()
+				&& operations.isBottom();
 	}
 
 	public static boolean isDataframeRelated(SymbolicExpression expression) {
@@ -1131,8 +1151,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		else if (col.is(SliceConstant.class)) {
 			SliceConstant c = col.as(SliceConstant.class);
 			Slice slice = (Slice) c.getValue();
-			selection = new ColumnRangeSelection(new NumberSlice(slice.getStart().toInterval(),
-					slice.getEnd().toInterval(), slice.getSkip().toInterval()));
+			selection = new ColumnRangeSelection(new NumberSlice(
+					slice.getStart().toConstant(),
+					slice.getEnd().toConstant(),
+					slice.getSkip().toConstant()));
 		} else if (col.is(List.class)) {
 			List<ConstantPropagation> cs = col.as(List.class);
 			Set<String> accessedCols = new HashSet<>();
@@ -1225,37 +1247,40 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		if (right.constStack.isBottom())
 			return cleanStack(right, pp);
 		RangeBound skip = getRangeBound(right.constStack);
+		RangeBound rstart = null, rend = null;
+		ColumnRangeSelection cstart = null, cend = null;
+		SetLattice<DataframeOperation> l = null, m = null;
 
-		if (!left.constStack.isBottom()
-				&& !middle.constStack.isBottom()) {
-			// numeric slice
-			RangeBound start = getRangeBound(left.constStack);
-			RangeBound end = getRangeBound(middle.constStack);
-			SliceConstant slice = new SliceConstant(start, end, skip, pp.getLocation());
-			return new DataframeGraphDomain(
-					right.constants,
-					right.constStack.eval(slice, right.constants, pp),
-					right.graph,
-					right.pointers.setStack(NO_IDS),
-					right.operations);
-		} else if (!topOrBottom(left.pointers.lattice) && !topOrBottom(middle.pointers.lattice)) {
+		if (!left.constStack.isBottom())
+			rstart = getRangeBound(left.constStack);
+		else if (!topOrBottom(left.pointers.lattice)) {
+			l = resolvePointers(left);
+			cstart = getRangeBound(l);
+		}
+		
+		if (!middle.constStack.isBottom()) 
+			rend = getRangeBound(middle.constStack);
+		else if (!topOrBottom(middle.pointers.lattice)) {
 			// column slice
-			SetLattice<DataframeOperation> l = resolvePointers(left);
-			SetLattice<DataframeOperation> m = resolvePointers(middle);
+			m = resolvePointers(middle);
 			if (l.equals(m))
 				l = moveBackwards(right.graph, l);
-			ColumnRangeSelection start = getRangeBound(l);
-			ColumnRangeSelection end = getRangeBound(m);
-			DataframeColumnSlice slice = new DataframeColumnSlice(new ColumnSlice(start, end, skip, l, m),
-					pp.getLocation());
-			return new DataframeGraphDomain(
-					right.constants,
-					right.constStack.eval(slice, right.constants, pp),
-					right.graph,
-					right.pointers.setStack(NO_IDS),
-					right.operations);
-		} else
-			return cleanStack(right, pp);
+			cend = getRangeBound(m);
+		}
+		
+		Constant slice;
+		if (rstart != null && rend != null)
+			slice = new SliceConstant(rstart, rend, skip, pp.getLocation());
+		else
+			slice = new DataframeColumnSlice(new ColumnSlice(
+					rstart == null ? cstart : rstart, 
+					rend == null ? cend : rend, skip, l, m), pp.getLocation());
+		return new DataframeGraphDomain(
+				right.constants,
+				right.constStack.eval(slice, right.constants, pp),
+				right.graph,
+				right.pointers.setStack(NO_IDS),
+				right.operations);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -1289,10 +1314,16 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				colsSelection = new ColumnListSelection(accessedCols);
 		} else if (cols.is(ColumnSlice.class)) {
 			ColumnSlice slice = cols.as(ColumnSlice.class);
-			colsSelection = new ColumnRangeSelection(new NumberSlice(slice.getStart().getColumns().getBeginIndex(),
-					slice.getEnd().getColumns().getEndIndex(), slice.getSkip().toInterval()));
-			toConsume.addAll(slice.getStartNodes().elements());
-			toConsume.addAll(slice.getEndNodes().elements());
+			colsSelection = new ColumnRangeSelection(new NumberSlice(
+					slice.getStart().getBeginIndex(),
+					slice.getEnd().getEndIndex(),
+					slice.getSkip().toConstant()));
+			if (slice.getStartNodes() != null)
+				// might be a numeric slice
+				toConsume.addAll(slice.getStartNodes().elements());
+			if (slice.getEndNodes() != null)
+				// might be a numeric slice
+				toConsume.addAll(slice.getEndNodes().elements());
 		} else
 			return cleanStack(right, pp);
 
@@ -1301,9 +1332,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			// middle is a slice
 			SliceConstant.Slice rowSlice = middle.constStack.as(SliceConstant.Slice.class);
 			NumberSlice numberSlice = new NumberSlice(
-					rowSlice.getStart() == null ? new Interval().bottom() : rowSlice.getStart().toInterval(),
-					rowSlice.getEnd() == null ? new Interval().bottom() : rowSlice.getEnd().toInterval(),
-					rowSlice.getSkip() == null ? new Interval().bottom() : rowSlice.getSkip().toInterval());
+					rowSlice.getStart() == null ? new ConstantPropagation().bottom() : rowSlice.getStart().toConstant(),
+					rowSlice.getEnd() == null ? new ConstantPropagation().bottom() : rowSlice.getEnd().toConstant(),
+					rowSlice.getSkip() == null ? new ConstantPropagation().bottom() : rowSlice.getSkip().toConstant());
 			DataframeSelection<?, ?> selection = new DataframeSelection(numberSlice, colsSelection);
 			DataframeOperation access = new AccessOperation<>(pp.getLocation(), selection);
 			forest.addNode(access);
@@ -1440,11 +1471,22 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	private static DataframeGraphDomain cleanStack(DataframeGraphDomain right, ProgramPoint pp)
 			throws SemanticException {
+		LOG.debug("Evaluation of " + pp + " in " + getCaller() + " caused the stack to be cleaned");
 		return new DataframeGraphDomain(
 				right.constants,
 				right.graph,
 				right.pointers.setStack(NO_IDS),
 				right.operations);
+	}
+	
+	private static String getCaller() {
+		StackTraceElement[] trace = Thread.getAllStackTraces().get(Thread.currentThread());
+		// 0: java.lang.Thread.dumpThreads()
+		// 1: java.lang.Thread.getAllStackTraces()
+		// 2: DataframeGraphDomain.getCaller()
+		// 3: DataframeGraphDomain.cleanStack()
+		// 4: caller
+		return trace[4].getClassName() + "::" + trace[4].getMethodName();
 	}
 
 	public DataframeGraphDomain visit(PushAny expression, ProgramPoint pp) throws SemanticException {
@@ -1503,8 +1545,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public static AllocationSite stripFields(AllocationSite as) {
 		if (as.getField() != null)
 			// we remove the name of the field using only location name
-			as = new AllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(),
-					as.getCodeLocation());
+			if (as instanceof HeapAllocationSite)
+				as = new HeapAllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(),
+						as.getCodeLocation());
+			else
+				as = new StackAllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(),
+						as.getCodeLocation());
 		return as;
 	}
 
@@ -1513,6 +1559,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((constants == null) ? 0 : constants.hashCode());
+		result = prime * result + ((constStack == null) ? 0 : constStack.hashCode());
 		result = prime * result + ((graph == null) ? 0 : graph.hashCode());
 		result = prime * result + ((operations == null) ? 0 : operations.hashCode());
 		result = prime * result + ((pointers == null) ? 0 : pointers.hashCode());
@@ -1532,6 +1579,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			if (other.constants != null)
 				return false;
 		} else if (!constants.equals(other.constants))
+			return false;
+		if (constStack == null) {
+			if (other.constStack != null)
+				return false;
+		} else if (!constStack.equals(other.constStack))
 			return false;
 		if (graph == null) {
 			if (other.graph != null)
@@ -1598,5 +1650,27 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		protected int compareToSameClassAndLocation(DataframeOperation o) {
 			return 0;
 		}
+	}
+
+	public Map<Identifier, DataframeForest> partitionByVarialbe() {
+		Map<Identifier, DataframeForest> result = new HashMap<>();
+
+		for (Entry<Identifier, SetLattice<NodeId>> entry : pointers.getMap().entrySet())
+			if (!entry.getValue().isTop() && !entry.getValue().isBottom()) {
+				DataframeForest accumulator = null;
+				for (NodeId id : entry.getValue())
+					for (DataframeOperation op : operations.getState(id)) {
+						DataframeForest sub = graph.bDFS(op,
+								o -> false,
+								edge -> true);
+						if (accumulator == null)
+							accumulator = sub;
+						else
+							accumulator = accumulator.union(sub);
+					}
+				result.put(entry.getKey(), accumulator);
+			}
+
+		return result;
 	}
 }

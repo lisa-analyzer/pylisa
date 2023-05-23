@@ -8,7 +8,8 @@ build
 target
 
 # throwaway folder for testing and running analyses
-*workdir
+py-outputs
 
 # gradle configuration for accessing the snapshot of lisa
 gradle.properties
+

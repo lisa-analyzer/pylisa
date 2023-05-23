@@ -1,9 +1,11 @@
 package it.unive.pylisa.analysis.dataframes.operations.selection;
 
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.Names;
+import it.unive.pylisa.analysis.dataframes.operations.SliceElement;
 
-public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> {
+public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> implements SliceElement {
 
 	public static final ColumnRangeSelection TOP = new ColumnRangeSelection(NumberSlice.TOP);
 	public static final ColumnRangeSelection BOTTOM = new ColumnRangeSelection(NumberSlice.BOTTOM);
@@ -90,9 +92,19 @@ public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> 
 		ColumnRangeSelection other = (ColumnRangeSelection) o;
 		return columns.compareTo(other.columns);
 	}
-	
+
 	@Override
 	public Names extractColumnNames() {
 		return Names.BOTTOM;
+	}
+
+	@Override
+	public ConstantPropagation getEndIndex() {
+		return columns.getEndIndex();
+	}
+
+	@Override
+	public ConstantPropagation getBeginIndex() {
+		return columns.getBeginIndex();
 	}
 }

@@ -12,21 +12,25 @@ import it.unive.lisa.analysis.symbols.QualifierSymbol;
 import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class Import extends Statement {
 
 	private final Map<String, String> libs;
 
 	// import <left> as <right>
-	public Import(Map<String, String> libs, CFG cfg, CodeLocation loc) {
+	public Import(Program program, Map<String, String> libs, CFG cfg, CodeLocation loc) {
 		super(cfg, loc);
 		this.libs = libs;
+		for (String lib : libs.keySet())
+			LibrarySpecificationProvider.importLibrary(program, lib);
 	}
 
 	@Override

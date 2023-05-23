@@ -1,7 +1,5 @@
 package it.unive.pylisa;
 
-import static it.unive.lisa.LiSAFactory.getDefaultFor;
-
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -20,9 +18,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import it.unive.lisa.program.*;
-import it.unive.lisa.type.*;
-import it.unive.pylisa.cfg.expression.*;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -37,17 +33,15 @@ import org.apache.logging.log4j.Logger;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
-import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
-import it.unive.lisa.LiSA;
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
-import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
-import it.unive.lisa.analysis.types.InferredTypes;
-import it.unive.lisa.conf.LiSAConfiguration;
-import it.unive.lisa.conf.LiSAConfiguration.GraphType;
-import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.logging.IterationLogger;
+import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.CodeUnit;
+import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Global;
+import it.unive.lisa.program.Program;
+import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -87,8 +81,12 @@ import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
+import it.unive.lisa.type.NullType;
+import it.unive.lisa.type.ReferenceType;
+import it.unive.lisa.type.TypeSystem;
+import it.unive.lisa.type.Untyped;
+import it.unive.lisa.type.VoidType;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
-import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
 import it.unive.pylisa.antlr.Python3Parser.AddContext;
@@ -189,6 +187,35 @@ import it.unive.pylisa.antlr.Python3Parser.Yield_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
 import it.unive.pylisa.antlr.Python3ParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
+import it.unive.pylisa.cfg.expression.DictionaryCreation;
+import it.unive.pylisa.cfg.expression.Empty;
+import it.unive.pylisa.cfg.expression.LambdaExpression;
+import it.unive.pylisa.cfg.expression.ListCreation;
+import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
+import it.unive.pylisa.cfg.expression.PyAddition;
+import it.unive.pylisa.cfg.expression.PyAssign;
+import it.unive.pylisa.cfg.expression.PyBitwiseAnd;
+import it.unive.pylisa.cfg.expression.PyBitwiseLeftShift;
+import it.unive.pylisa.cfg.expression.PyBitwiseNot;
+import it.unive.pylisa.cfg.expression.PyBitwiseOr;
+import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
+import it.unive.pylisa.cfg.expression.PyBitwiseXor;
+import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
+import it.unive.pylisa.cfg.expression.PyFloorDiv;
+import it.unive.pylisa.cfg.expression.PyIn;
+import it.unive.pylisa.cfg.expression.PyIs;
+import it.unive.pylisa.cfg.expression.PyMatMul;
+import it.unive.pylisa.cfg.expression.PyMultiplication;
+import it.unive.pylisa.cfg.expression.PyNewObj;
+import it.unive.pylisa.cfg.expression.PyPower;
+import it.unive.pylisa.cfg.expression.PyRemainder;
+import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
+import it.unive.pylisa.cfg.expression.PyStringLiteral;
+import it.unive.pylisa.cfg.expression.PyTernaryOperator;
+import it.unive.pylisa.cfg.expression.RangeValue;
+import it.unive.pylisa.cfg.expression.SetCreation;
+import it.unive.pylisa.cfg.expression.StarExpression;
+import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.expression.comparison.PyAnd;
 import it.unive.pylisa.cfg.expression.comparison.PyEquals;
 import it.unive.pylisa.cfg.expression.comparison.PyGreaterOrEqual;
@@ -197,13 +224,17 @@ import it.unive.pylisa.cfg.expression.comparison.PyLessOrEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
+import it.unive.pylisa.cfg.expression.PyTypeLiteral;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
+import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class PyFrontend extends Python3ParserBaseVisitor<Object> {
+
+	public static final String INSTRUMENTED_MAIN_FUNCTION_NAME = "$main";
 
 	private static final SequentialEdge SEQUENTIAL_SINGLETON = new SequentialEdge();
 
@@ -299,27 +330,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		return filePath;
 	}
 
-	public static void main(String[] args) throws IOException, AnalysisException {
-		String file = args[0];
-		String extension = FilenameUtils.getExtension(file);
-		PyFrontend translator = new PyFrontend(file, extension.equals("ipynb"));
-		Program program = translator.toLiSAProgram();
-
-		LiSAConfiguration conf = new LiSAConfiguration();
-		conf.workdir = "workdir";
-		conf.serializeResults = true;
-		conf.analysisGraphs = GraphType.HTML;
-		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
-
-		DataframeGraphDomain domain = new DataframeGraphDomain();
-		PointBasedHeap heap = new PointBasedHeap();
-		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
-		conf.abstractState = getDefaultFor(AbstractState.class, heap, domain, type);
-
-		LiSA lisa = new LiSA(conf);
-		lisa.run(program);
-	}
-
 	private static String transformToCode(List<String> code_list) {
 		StringBuilder result = new StringBuilder();
 		for (String s : code_list)
@@ -372,7 +382,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		PyClassType.all().forEach(types::registerType);
 
 		for (CFG cm : program.getAllCFGs())
-			if (cm.getDescriptor().getName().equals("$main"))
+			if (cm.getDescriptor().getName().equals(INSTRUMENTED_MAIN_FUNCTION_NAME))
 				program.addEntryPoint(cm);
 
 		return program;
@@ -506,10 +516,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	private CodeMemberDescriptor buildMainCFGDescriptor(SourceCodeLocation loc) {
-		String funcName = "$main";
 		Parameter[] cfgArgs = new Parameter[] {};
 
-		return new CodeMemberDescriptor(loc, currentUnit, false, funcName, cfgArgs);
+		return new CodeMemberDescriptor(loc, currentUnit, false, INSTRUMENTED_MAIN_FUNCTION_NAME, cfgArgs);
 	}
 
 	private CodeMemberDescriptor buildCFGDescriptor(FuncdefContext funcDecl) {
@@ -794,7 +803,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			name = ".";
 
 		if (ctx.import_as_names() == null)
-			return new FromImport(name, Map.of("*", "*"), currentCFG, getLocation(ctx));
+			return new FromImport(program, name, Map.of("*", "*"), currentCFG, getLocation(ctx));
 
 		Map<String, String> components = new HashMap<>();
 		for (Import_as_nameContext single : ctx.import_as_names().import_as_name()) {
@@ -802,7 +811,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			String as = single.NAME().size() == 2 ? single.NAME(1).getSymbol().getText() : null;
 			components.put(importedComponent, as);
 		}
-		return new FromImport(name, components, currentCFG, getLocation(ctx));
+		return new FromImport(program, name, components, currentCFG, getLocation(ctx));
 	}
 
 	@Override
@@ -813,7 +822,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			String as = single.NAME() != null ? single.NAME().getSymbol().getText() : null;
 			libs.put(importedLibrary, as);
 		}
-		return new Import(libs, currentCFG, getLocation(ctx));
+		return new Import(program, libs, currentCFG, getLocation(ctx));
 	}
 
 	private String dottedNameToString(Dotted_nameContext dotted_name) {
@@ -1521,7 +1530,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (ctx.arith_expr() == null)
 			return visitTerm(ctx.term());
 		else
-			return new Addition(currentCFG, getLocation(ctx),
+			return new PyAddition(currentCFG, getLocation(ctx),
 					visitTerm(ctx.term()),
 					visitArith_expr(ctx.arith_expr()));
 	}
@@ -1686,6 +1695,23 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								null,
 								method_name,
 								pars.toArray(Expression[]::new));
+						if (method_name.equals("super") && pars.size() == 0) {
+							// if super() is inside an instance method
+							if (this.currentCFG.getDescriptor().isInstance()) {
+								VariableTableEntry vte = currentCFG.getDescriptor().getVariables().get(0);
+
+								Expression[] expressions = new Expression[2];
+								expressions[0] = new PyTypeLiteral(this.currentCFG, getLocation(expr), this.currentUnit);
+								expressions[1] = new VariableRef(this.currentCFG, getLocation(expr), vte.getName());
+								access = new SimpleSuperUnresolvedCall(
+										currentCFG,
+										getLocation(expr),
+										instance ? CallType.UNKNOWN : CallType.STATIC,
+										null,
+										method_name,
+										expressions);
+							}
+						}
 					}
 					last_name = null;
 					previous_access = null;

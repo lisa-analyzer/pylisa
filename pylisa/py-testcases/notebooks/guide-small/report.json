@@ -1,0 +1,49 @@
+{
+  "warnings" : [ {
+    "message" : "[GENERIC] [TO_GEOCODE([País])] columns accessed before being assigned: [geometry]"
+  }, {
+    "message" : "[GENERIC] [mapa.csv] columns accessed before being assigned: [País, col2]"
+  }, {
+    "message" : "[GENERIC] [mapa.csv] columns accessed: [geometry]"
+  }, {
+    "message" : "[GENERIC] [mapa.csv] columns assigned: [cool-col, geometry, Latitude, Longitude]"
+  }, {
+    "message" : "[GENERIC] [temporal.csv] columns accessed before being assigned: [bar, foo, Mes]"
+  }, {
+    "message" : "[GENERIC] [temporal.csv] columns assigned: [Mes]"
+  } ],
+  "files" : [ "df1@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "df1@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "df2@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "df2@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "forest@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "forest@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "report.json", "var_df2@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "var_df2@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "var_df3@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "var_df3@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "var_df4@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "var_df4@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "var_df5@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "var_df5@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "var_df@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "var_df@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "696ms",
+    "end" : "2023-05-22T23:12:09.857+02:00",
+    "expressions" : "83",
+    "files" : "16",
+    "globals" : "0",
+    "members" : "21",
+    "programs" : "1",
+    "start" : "2023-05-22T23:12:09.161+02:00",
+    "statements" : "20",
+    "units" : "12",
+    "version" : "0.1b8",
+    "warnings" : "6"
+  },
+  "configuration" : {
+    "analysisGraphs" : "NONE",
+    "descendingPhaseType" : "NONE",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "DuplicateFreeFIFOWorkingSet",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "jsonOutput" : "true",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "optimize" : "true",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "DataframeDumper, DataframeStructureConstructor",
+    "serializeInputs" : "false",
+    "serializeResults" : "false",
+    "syntacticChecks" : "",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/notebooks/guide-small"
+  }
+}

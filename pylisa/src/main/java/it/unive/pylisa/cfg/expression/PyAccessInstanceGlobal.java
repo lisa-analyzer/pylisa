@@ -38,9 +38,9 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 					AnalysisState<A, H, V, T> state,
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions) throws SemanticException {
-		PyClassType type = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		Type typeref = ((PyClassType) type).getReference();
-		if (expr.getRuntimeTypes(getProgram().getTypes()).stream().anyMatch(t -> (t.equals(typeref)))) {
+		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = df.getReference();
+		if (expr.getRuntimeTypes(getProgram().getTypes()).stream().anyMatch(t -> (t.equals(dfref)))) {
 			String name = getTarget();
 			switch (name) {
 			case "loc":
