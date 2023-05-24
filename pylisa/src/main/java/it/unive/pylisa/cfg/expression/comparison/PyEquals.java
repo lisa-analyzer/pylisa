@@ -33,15 +33,18 @@ public class PyEquals extends Equal {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		AnalysisState<A, H, V, T> sem = PandasSemantics.compare(
-				state,
-				left,
-				right,
-				this,
-				ComparisonOperator.EQ);
-		if (sem != null)
-			return sem;
-
+		try {
+			AnalysisState<A, H, V, T> sem = PandasSemantics.compare(
+					state,
+					left,
+					right,
+					this,
+					ComparisonOperator.EQ);
+			if (sem != null)
+				return sem;
+		} catch (Exception e) {
+			return super.binarySemantics(interprocedural, state, left, right, expressions);
+		}
 		return super.binarySemantics(interprocedural, state, left, right, expressions);
 	}
 }

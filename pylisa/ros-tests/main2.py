@@ -1,24 +1,60 @@
 import rclpy
-#class MinimalPublisher(rclpy.node.Node):
-#    def __init__(self):
-#        self.x = 4
-#        self.publisher = self.create_publisher(String, "TEST_TOPIC")
-#        super().__init__("node_name")
+from rclpy.node import Node
 
-class MinimalSubscriber(rclpy.node.Node):
+from std_msgs.msg import String
+
+
+class MinimalPublisher(Node):
+
     def __init__(self):
-        super().__init__("ciao_name")
-        self.x = 10
-        self.subscription = self.create_subscription(String, "TEST_TOPIC")
-    def test(self):
-        self.a = "ciao!"
-#rclpy.init()
-#numpy.array([1,2])
-#p = rclpy.node.Node("test_obj")
-#publisher = MinimalPublisher()
-#pub = publisher.create_publisher(String, "CIAO")
-subscriber = MinimalSubscriber()
-subscriber.test()
-#sub = subscriber.create_subscription(String, "CIAO")
-#n = numpy.array([1,2])
-#n.reshape(1,1)
+        super().__init__('node_03')
+        self.publisher_ = self.create_publisher(String, 'topic_01', 10)
+        self.publisher2_ = self.create_publisher(String, 'topic_02', 10)
+        timer_period = 0.5  # seconds
+        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.i = 0
+
+    def timer_callback(self):
+        msg = String()
+        msg.data = 'Hello World: %d' % self.i
+        self.publisher_.publish(msg)
+        self.get_logger().info('Publishing: "%s"' % msg.data)
+        self.i += 1
+
+class MinimalSubscriber(Node):
+    def __init__(self):
+        super().__init__('node_02')
+        self.subscription = self.create_subscription(
+            String,
+            'topic_01',
+            self.listener_callback,
+            10)
+        self.subscription  # prevent unused variable warning
+
+    def listener_callback(self, msg):
+        self.get_logger().info('I heard: "%s"' % msg.data)
+
+class MinimalSubscriber2(Node):
+    def __init__(self):
+        super().__init__('node_01')
+        self.subscription = self.create_subscription(
+            String,
+            'topic_02',
+            self.listener_callback,
+            10)
+        self.subscription  # prevent unused variable warning
+        self.publisher2_ = self.create_publisher(Int, 'topic_02', 10)
+        self.publisher2_ = self.create_publisher(String, 'topic_01', 10)
+
+    def listener_callback(self, msg):
+        self.get_logger().info('I heard: "%s"' % msg.data)
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    minimal_publisher = MinimalPublisher()
+
+    rclpy.spin(minimal_publisher)
+
+if __name__ == '__main__':
+    main()

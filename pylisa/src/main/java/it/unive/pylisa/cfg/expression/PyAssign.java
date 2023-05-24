@@ -50,29 +50,31 @@ public class PyAssign extends Assignment {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-
-		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		Type dfref = ((PyClassType) dftype).getReference();
-		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-		Type seriesref = ((PyClassType) seriestype).getReference();
-
 		CodeLocation loc = getLocation();
-		if (PandasSemantics.isDataframePortionThatCanBeAssignedTo(left)) {
-			HeapDereference lderef = PandasSemantics.getDataframeDereference(left);
-			SymbolicExpression write;
-			TypeSystem types = getProgram().getTypes();
-			if (right.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
-				// asssigning part of a dataframe to another dataframe so get
-				// deref from right
-				if (PandasSemantics.isDataframePortionThatCanBeAssignedTo(right))
-					right = PandasSemantics.getDataframeDereference(right);
-				write = new BinaryExpression(dftype, lderef, right, WriteSelectionDataframe.INSTANCE, loc);
-			} else
-				// assigning a part of a dataframe to a constant
-				write = new BinaryExpression(dftype, lderef, right, WriteSelectionConstant.INSTANCE, loc);
+		try {
+			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+			Type dfref = ((PyClassType) dftype).getReference();
+			PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+			Type seriesref = ((PyClassType) seriestype).getReference();
+			if (PandasSemantics.isDataframePortionThatCanBeAssignedTo(left)) {
+				HeapDereference lderef = PandasSemantics.getDataframeDereference(left);
+				SymbolicExpression write;
+				TypeSystem types = getProgram().getTypes();
+				if (right.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
+					// asssigning part of a dataframe to another dataframe so get
+					// deref from right
+					if (PandasSemantics.isDataframePortionThatCanBeAssignedTo(right))
+						right = PandasSemantics.getDataframeDereference(right);
+					write = new BinaryExpression(dftype, lderef, right, WriteSelectionDataframe.INSTANCE, loc);
+				} else
+					// assigning a part of a dataframe to a constant
+					write = new BinaryExpression(dftype, lderef, right, WriteSelectionConstant.INSTANCE, loc);
 
-			// we leave on the stack the column that received the assignment
-			return state.smallStepSemantics(write, this).smallStepSemantics(left, this);
+				// we leave on the stack the column that received the assignment
+				return state.smallStepSemantics(write, this).smallStepSemantics(left, this);
+			}
+		} catch(Exception e) {
+			return super.binarySemantics(interprocedural, state, left, right, expressions);
 		}
 
 		Expression lefthand = getLeft();

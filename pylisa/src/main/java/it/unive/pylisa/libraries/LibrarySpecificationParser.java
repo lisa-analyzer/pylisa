@@ -138,7 +138,9 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 			runtime.getClasses().add(visitClassDef(cls));
 		for (LibraryContext lib : ctx.library())
 			libraries.add(visitLibrary(lib));
-
+		for (MethodContext meth : ctx.method()) {
+			runtime.getMethods().add(visitMethod(meth));
+		}
 		return Pair.of(runtime, libraries);
 	}
 
