@@ -52,6 +52,8 @@ public class PyLibraryUnitType extends PyClassType {
 	}
 
 	public static boolean is(Type t, String lib, boolean includeReferences) {
+		if (!LibrarySpecificationProvider.isLibraryLoaded(lib))
+			return false;
 		if (t instanceof PyLibraryUnitType)
 			return ((PyLibraryUnitType) t).getLibraryName().equals(lib);
 		else if (includeReferences && t instanceof ReferenceType)

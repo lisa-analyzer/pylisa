@@ -2,6 +2,7 @@ package it.unive.pylisa.symbolic.operators;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.type.ReferenceType;
@@ -24,10 +25,15 @@ public class SliceCreation implements TernaryOperator {
 
 	@Override
 	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> middle, Set<Type> right) {
-		ReferenceType seriesref = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES).getReference();
-		if (left.stream().noneMatch(t -> t.isNumericType() || t.isNullType() || t.equals(seriesref)))
+		Predicate<Type> accepted = t -> t.isNumericType() || t.isNullType();
+		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) { 
+			ReferenceType seriesreftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES).getReference();
+			accepted = accepted.or(t -> t.equals(seriesreftype));
+		}
+		
+		if (left.stream().noneMatch(accepted))
 			return Collections.emptySet();
-		if (middle.stream().noneMatch(t -> t.isNumericType() || t.isNullType() || t.equals(seriesref)))
+		if (middle.stream().noneMatch(accepted))
 			return Collections.emptySet();
 		if (right.stream().noneMatch(t -> t.isNumericType() || t.isNullType()))
 			return Collections.emptySet();

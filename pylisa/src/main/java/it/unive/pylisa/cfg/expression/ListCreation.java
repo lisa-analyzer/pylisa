@@ -47,19 +47,19 @@ public class ListCreation extends NaryExpression {
 		if (params.length == 0)
 			return state.smallStepSemantics(list, this);
 
-		Type type = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+		Type listtype = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		BinaryOperator append = ListAppend.INSTANCE;
 
 		Set<BinaryExpression> ws = new HashSet<>(), tmp = new HashSet<>();
 		for (SymbolicExpression firstelement : params[0])
-			ws.add(new BinaryExpression(type, list, firstelement, append, loc));
+			ws.add(new BinaryExpression(listtype, list, firstelement, append, loc));
 
 		for (int i = 1; i < params.length; i++) {
 			tmp.addAll(ws);
 			ws.clear();
 			for (SymbolicExpression element : params[i])
 				for (BinaryExpression listhead : tmp)
-					ws.add(new BinaryExpression(type, listhead, element, append, loc));
+					ws.add(new BinaryExpression(listtype, listhead, element, append, loc));
 			tmp.clear();
 		}
 
