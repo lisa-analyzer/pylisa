@@ -31,12 +31,12 @@ public class RosTest {
 
     @Test
     public void test() throws Exception {
-        PyFrontend translator = new PyFrontend("ros-tests/main2.py", false);
+        PyFrontend translator = new PyFrontend("ros-tests/main3.py", false);
 
         Program program = translator.toLiSAProgram();
 
         LiSAConfiguration conf = new LiSAConfiguration();
-        conf.workdir = "test-ros-output";
+        conf.workdir = "test-ros-output-3";
         conf.serializeResults = true;
         conf.jsonOutput = true;
         conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
@@ -46,9 +46,6 @@ public class RosTest {
         conf.optimize = false;
         //conf.openCallPolicy
         conf.semanticChecks.add(new ROSComputationGraphDumper());
-        //conf.semanticChecks.add(new DataframeDumper(conf));
-        //conf.semanticChecks.add(new BottomFinder<>());
-        //conf.semanticChecks.add(new DataframeStructureConstructor());
         FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs();
         TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
         //conf.interproceduralAnalysis = new ContextBasedAnalysis();

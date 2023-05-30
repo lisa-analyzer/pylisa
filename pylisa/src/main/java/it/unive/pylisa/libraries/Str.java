@@ -8,17 +8,26 @@ import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.lisa.symbolic.value.operator.binary.TypeConv;
+import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.type.TypeSystem;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.cfg.type.PyTypeTokenType;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
+
+import java.util.HashSet;
 
 public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
     protected Statement st;

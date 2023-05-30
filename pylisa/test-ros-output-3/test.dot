@@ -1,0 +1,1 @@
+digraph rosgraph {graph [pad="0.5", nodesep="1", ranksep="2"];"NODE_01"[shape=box];"TEST_TOPIC";"TEST_TOPIC" -> "NODE_01"[label="_|_, listener_callback"];}

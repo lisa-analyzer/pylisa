@@ -9,16 +9,25 @@ import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.value.TypeDomain;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.*;
+import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.HeapReference;
+import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Skip;
+import it.unive.lisa.symbolic.value.ValueExpression;
+import it.unive.lisa.type.ReferenceType;
+import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.NoOpFunction;
 
+import java.util.Arrays;
+import java.util.Collections;
 public class CreateSubscription extends NaryExpression implements PluggableStatement {
     protected Statement st;
 
@@ -33,9 +42,21 @@ public class CreateSubscription extends NaryExpression implements PluggableState
 
     @Override
     public <A extends AbstractState<A, H, V, T>, H extends HeapDomain<H>, V extends ValueDomain<V>, T extends TypeDomain<T>> AnalysisState<A, H, V, T> expressionSemantics(InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state, ExpressionSet<SymbolicExpression>[] params, StatementStore<A, H, V, T> expressions) throws SemanticException {
-        PushAny push = new PushAny(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_SUBSCRIPTION).getReference(),
-                getLocation());
-        return state.smallStepSemantics(push, st);
+        PyClassType subscriptionClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_SUBSCRIPTION);
+
+        PyNewObj publisherObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__", subscriptionClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
+        AnalysisState<A,H,V,T> newSubscriptionAS = publisherObj.expressionSemantics(interprocedural, state, params, expressions);
+        state =  state.lub(newSubscriptionAS);
+        // get _publishers list
+        AccessInstanceGlobal aig = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0], "_subscription");
+        AnalysisState<A,H,V,T> aigSemantics = aig.semantics(state, interprocedural, expressions);
+        for (SymbolicExpression e: aigSemantics.getComputedExpressions()) {
+            ExpressionSet<ValueExpression> ves = state.getState().getHeapState().rewrite(e, st);
+            for (ValueExpression ve: ves) {
+                System.out.println("e");
+            }
+        }
+        return state;
     }
 
     @Override

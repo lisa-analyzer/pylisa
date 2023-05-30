@@ -129,11 +129,24 @@ library rclpy:
         method init: it.unive.pylisa.libraries.rclpy.Init
             type it.unive.lisa.type.Untyped::INSTANCE
     class rclpy.publisher.Publisher:
-            instance method publish: it.unive.pylisa.libraries.rclpy.publisher.Publish
-                type it.unive.lisa.type.VoidType::INSTANCE
-                param self libtype rclpy.publisher.Publisher*
-                param msg type type it.unive.lisa.program.type.StringType::INSTANCE
+        instance method __init__: it.unive.pylisa.libraries.rclpy.publisher.Init
+            libtype rclpy.publisher.Publisher*
+            param self type it.unive.lisa.type.Untyped::INSTANCE
+            param msg_type type it.unive.lisa.type.Untyped::INSTANCE
+            param topic type it.unive.lisa.program.type.StringType::INSTANCE
+            param qos_profile type it.unive.lisa.type.Untyped::INSTANCE
+        instance method publish: it.unive.pylisa.libraries.rclpy.publisher.Publish
+            type it.unive.lisa.type.VoidType::INSTANCE
+            param self libtype rclpy.publisher.Publisher*
+            param msg type type it.unive.lisa.program.type.StringType::INSTANCE
     class rclpy.subscription.Subscription:
+        instance method __init__: it.unive.pylisa.libraries.rclpy.subscription.Init
+                libtype rclpy.subscription.Subscription*
+                param self type it.unive.lisa.type.Untyped::INSTANCE
+                param msg_type type it.unive.lisa.type.Untyped::INSTANCE
+                param topic type it.unive.lisa.program.type.StringType::INSTANCE
+                param callback_func type it.unive.lisa.type.Untyped::INSTANCE
+                param qos_profile type it.unive.lisa.type.Untyped::INSTANCE
     class rclpy.node.Node:
         instance method Node: it.unive.pylisa.libraries.rclpy.node.Init
             libtype rclpy.node.Node*

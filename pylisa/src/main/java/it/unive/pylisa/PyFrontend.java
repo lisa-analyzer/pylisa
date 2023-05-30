@@ -240,6 +240,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 	private static final Logger log = LogManager.getLogger(PyFrontend.class);
 
+	private Map<String, String> imports = new HashMap<>();
 	/**
 	 * Python program file path.
 	 */
@@ -808,7 +809,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			String importedComponent = single.NAME(0).getSymbol().getText();
 			String as = single.NAME().size() == 2 ? single.NAME(1).getSymbol().getText() : null;
 			components.put(importedComponent, as);
-		}
+		imports.put(importedComponent, name + "." + importedComponent);
+	}
 		return new FromImport(program, name, components, currentCFG, getLocation(ctx));
 	}
 
@@ -819,6 +821,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			String importedLibrary = dottedNameToString(single.dotted_name());
 			String as = single.NAME() != null ? single.NAME().getSymbol().getText() : null;
 			libs.put(importedLibrary, as);
+			imports.put(as == null ? importedLibrary : as, importedLibrary);
 		}
 		return new Import(program, libs, currentCFG, getLocation(ctx));
 	}
@@ -1929,8 +1932,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		// parse anchestors
 		for (ArgumentContext superclass : superclasses) {
 			// if exists a class unit in the program with name superclass.getText(): add it to the anchestors
+			String superClassName = imports.getOrDefault(superclass.getText(), superclass.getText());
 			for (Unit programCu : this.program.getUnits()) {
-				if (programCu instanceof CompilationUnit && programCu.getName().equals(superclass.getText())) {
+				if (programCu instanceof CompilationUnit && programCu.getName().equals(superClassName)) {
 					cu.addAncestor(((CompilationUnit) programCu));
 				}
 			}
