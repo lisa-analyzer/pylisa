@@ -138,7 +138,7 @@ library rclpy:
         instance method publish: it.unive.pylisa.libraries.rclpy.publisher.Publish
             type it.unive.lisa.type.VoidType::INSTANCE
             param self libtype rclpy.publisher.Publisher*
-            param msg type type it.unive.lisa.program.type.StringType::INSTANCE
+            param msg type it.unive.lisa.program.type.StringType::INSTANCE
     class rclpy.subscription.Subscription:
         instance method __init__: it.unive.pylisa.libraries.rclpy.subscription.Init
                 libtype rclpy.subscription.Subscription*
@@ -151,11 +151,11 @@ library rclpy:
         instance method Node: it.unive.pylisa.libraries.rclpy.node.Init
             libtype rclpy.node.Node*
             param self libtype rclpy.node.Node*
-            param node_name type type it.unive.lisa.program.type.StringType::INSTANCE
+            param node_name type it.unive.lisa.program.type.StringType::INSTANCE
         instance method __init__: it.unive.pylisa.libraries.rclpy.node.Init
             libtype rclpy.node.Node*
             param self libtype rclpy.node.Node*
-            param node_name type type it.unive.lisa.program.type.StringType::INSTANCE
+            param node_name type it.unive.lisa.program.type.StringType::INSTANCE
         instance method create_publisher: it.unive.pylisa.libraries.rclpy.node.CreatePublisher
             libtype rclpy.publisher.Publisher*
             param self libtype rclpy.node.Node*
