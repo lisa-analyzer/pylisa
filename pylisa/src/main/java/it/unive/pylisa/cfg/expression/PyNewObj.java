@@ -79,6 +79,7 @@ public class PyNewObj extends NaryExpression {
 
         UnresolvedCall call = new UnresolvedCall(getCFG(), getLocation(), CallType.INSTANCE, type.toString(),
                 getConstructName(), fullExpressions);
+        call.setOffset(getOffset());
         AnalysisState<A, H, V, T> sem = call.expressionSemantics(interprocedural, tmp, fullParams, expressions);
 
         if (!call.getMetaVariables().isEmpty())

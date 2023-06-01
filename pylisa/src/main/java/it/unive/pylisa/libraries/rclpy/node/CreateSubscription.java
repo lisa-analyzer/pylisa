@@ -45,6 +45,7 @@ public class CreateSubscription extends NaryExpression implements PluggableState
         PyClassType subscriptionClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_SUBSCRIPTION);
 
         PyNewObj publisherObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__", subscriptionClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
+        publisherObj.setOffset(st.getOffset());
         AnalysisState<A,H,V,T> newSubscriptionAS = publisherObj.expressionSemantics(interprocedural, state, params, expressions);
         state =  state.lub(newSubscriptionAS);
         // get _publishers list
