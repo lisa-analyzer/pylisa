@@ -63,6 +63,30 @@ public class RosComputationalGraph {
         }
         return topicUsers;
     }
+    
+    public Set<Subscription> getTopicSubscriptions(String topicName) {
+        Set<Subscription> topicSubs = new HashSet<>();
+        for (Node n : nodes) {
+            for (TopicUser tu :n.getAllNodeTopicsUsers()) {
+                if (tu.getTopic().getName().equals(topicName) && tu instanceof Subscription) {
+                    topicSubs.add((Subscription) tu);
+                }
+            }
+        }
+        return topicSubs;
+    }
+    
+    public Set<Publisher> getTopicPublishers(String topicName) {
+        Set<Publisher> topicPubs = new HashSet<>();
+        for (Node n : nodes) {
+            for (TopicUser tu :n.getAllNodeTopicsUsers()) {
+                if (tu.getTopic().getName().equals(topicName) && tu instanceof Publisher) {
+                    topicPubs.add((Publisher) tu);
+                }
+            }
+        }
+        return topicPubs;
+    }
 
     public Set<Topic> getTopics() {
         return topics;

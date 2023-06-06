@@ -42,7 +42,9 @@ import java.io.IOException;
 import java.io.Writer;
 import java.lang.annotation.Native;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> {
 
@@ -56,19 +58,47 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
     public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {
         StringBuilder dotGraph = new StringBuilder("digraph rosgraph {graph [pad=\"0.5\", nodesep=\"1\", ranksep=\"2\"];");
         for(Node n : rosGraph.getNodes()) {
-            dotGraph.append(n.getName()).append("[shape=box];");
+            dotGraph.append(n.getName()).append("[shape=box,style=filled,fillcolor=\"aquamarine\"];");
         }
         for (Topic t : rosGraph.getTopics()) {
-            dotGraph.append(t.getName()).append(";");
+            if (rosGraph.getTopicSubscriptions(t.getName()).size() == 0 || rosGraph.getTopicPublishers(t.getName()).size() == 0) {
+                dotGraph.append(t.getName()).append("[style=filled,fillcolor=\"tan1\"];");
+            } else {
+                dotGraph.append(t.getName()).append("[style=filled,fillcolor=\"khaki1\"];");
+            }
         }
         for(Node n : rosGraph.getNodes()) {
             for (Publisher p : n.getPublishers()) {
                 dotGraph.append(n.getName()).append(" -> ").append(p.getTopic().getName());
-                dotGraph.append("[label=\"").append(p.getMsgType()).append("\"];");
+                Boolean loop = false;
+                Set<Subscription> subs = rosGraph.getTopicSubscriptions(p.getTopic().getName());
+                for (Subscription s : subs) {
+                    if (s.getNode().equals(n)) {
+                        loop = true;
+                        break;
+                    }
+                }
+                if (loop) {
+                    dotGraph.append("[label=\"").append(p.getMsgType()).append("\",color=\"red\"];");
+                } else {
+                    dotGraph.append("[label=\"").append(p.getMsgType()).append("\"];");
+                }
             }
             for (Subscription s : n.getSubscribers()) {
                 dotGraph.append(s.getTopic().getName()).append(" -> ").append(n.getName());
-                dotGraph.append("[label=\"").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\"];");
+                Boolean loop = false;
+                Set<Publisher> pubs = rosGraph.getTopicPublishers(s.getTopic().getName());
+                for (Publisher p : pubs) {
+                    if (p.getNode().equals(n)) {
+                        loop = true;
+                        break;
+                    }
+                }
+                if (loop) {
+                    dotGraph.append("[label=\"").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\",color=\"red\"];");
+                } else {
+                    dotGraph.append("[label=\"").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\"];");
+                }
             }
         }
         dotGraph.append("}");
@@ -158,6 +188,9 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
                                             if (callback.startsWith("\"")) {
                                                 callback = new String(callback.toCharArray(), 1, callback.length()-2);
                                             }
+                                            for (SymbolicExpression e : result.getAnalysisStateAfter(((UnresolvedCall) node).getSubExpressions()[1]).getComputedExpressions()) {
+                                                msgType = ((Variable) e).toString();
+                                            }
                                             callbackFunction = callback;
                                         }
                                     }
@@ -165,10 +198,7 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
                                     for (SymbolicExpression expr : result.getAnalysisStateAfter(((UnresolvedCall) node).getSubExpressions()[2]).getComputedExpressions()) {
                                         topicName = ((Constant) expr).getValue().toString();
                                     }
-                                    String msgType = "<undefined>";
-                                    for (SymbolicExpression expr : result.getAnalysisStateAfter(((UnresolvedCall) node).getSubExpressions()[1]).getComputedExpressions()) {
-                                        msgType = ((Variable) expr).toString();
-                                    }
+                                    
                                     String callbackFunction = "<undefined>";
                                     for (SymbolicExpression expr : result.getAnalysisStateAfter(((UnresolvedCall) node).getSubExpressions()[3]).getComputedExpressions()) {
                                         callbackFunction = expr.toString();
@@ -191,7 +221,9 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
                                             access = new Variable(Untyped.INSTANCE, "msg_type", expr.getCodeLocation());
                                             has = new HeapAllocationSite(StringType.INSTANCE, expr.getCodeLocation().getCodeLocation(), access, false, expr.getCodeLocation());
                                             msgType = analysisState.getState().getValueState().eval(has, node).toString();
-                                            System.out.println(expr);
+                                            for (SymbolicExpression e : result.getAnalysisStateAfter(((UnresolvedCall) node).getSubExpressions()[1]).getComputedExpressions()) {
+                                                msgType = ((Variable) e).toString();
+                                            }
                                         }
                                     }
 

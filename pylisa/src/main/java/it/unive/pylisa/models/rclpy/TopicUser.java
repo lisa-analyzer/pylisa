@@ -13,6 +13,9 @@ public abstract class TopicUser {
     public Topic getTopic() {
         return topic;
     }
+    public Node getNode() {
+        return node;
+    }
 
     public String getMsgType() {
         return msgType;

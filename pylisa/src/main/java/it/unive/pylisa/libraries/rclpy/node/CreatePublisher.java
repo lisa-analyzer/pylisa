@@ -71,6 +71,7 @@ public class CreatePublisher extends NaryExpression implements PluggableStatemen
         PyClassType publisherClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_PUBLISHER);
 
         PyNewObj publisherObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__", publisherClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
+        publisherObj.setOffset(st.getOffset());
         AnalysisState<A,H,V,T> newPublisherAS = publisherObj.expressionSemantics(interprocedural, state, params, expressions);
         state =  state.lub(newPublisherAS);
         // get _publishers list
