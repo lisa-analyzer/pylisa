@@ -4,39 +4,41 @@ import java.util.HashSet;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.pylisa.analysis.dataframes.operations.selection.ColumnListSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnListSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSelection;
 
-public class DropColumns extends DataframeOperation {
-	private ColumnListSelection columns;
+public class DropColumns<C extends ColumnSelection<C>> extends DataframeOperation {
+	private C columns;
 
-	public DropColumns(CodeLocation where, ColumnListSelection columns) {
+	public DropColumns(CodeLocation where, C columns) {
 		super(where);
 		this.columns = columns;
 	}
-	
-	public ColumnListSelection getColumns() {
+
+	public C getColumns() {
 		return columns;
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
-		DropColumns o = (DropColumns) other;
+		DropColumns<?> o = (DropColumns<?>) other;
 		if (this.columns == null)
 			return o.columns == null;
 		else if (o.columns == null)
 			return false;
-		return columns.lessOrEqual(o.columns);
+		return columns.lessOrEqual((C) o.columns);
 	}
 
 	@Override
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
-		DropColumns o = (DropColumns) other;
+		DropColumns<?> o = (DropColumns<?>) other;
 		ColumnListSelection newColumns = new ColumnListSelection(new HashSet<>());
 		if (this.columns != null)
 			newColumns = newColumns.lub(this.columns);
 		if (o.columns != null)
 			newColumns = newColumns.lub(o.columns);
-		return new DropColumns(loc(other), newColumns);
+		return new DropColumns<>(loc(other), newColumns);
 	}
 
 	@Override
@@ -47,7 +49,7 @@ public class DropColumns extends DataframeOperation {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		DropColumns other = (DropColumns) obj;
+		DropColumns<?> other = (DropColumns<?>) obj;
 		if (columns == null) {
 			if (other.columns != null)
 				return false;
@@ -71,7 +73,7 @@ public class DropColumns extends DataframeOperation {
 
 	@Override
 	protected int compareToSameClassAndLocation(DataframeOperation o) {
-		DropColumns other = (DropColumns) o;
+		DropColumns<?> other = (DropColumns<?>) o;
 		return columns.compareTo(other.columns);
 	}
 }

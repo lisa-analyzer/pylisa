@@ -2,37 +2,39 @@ package it.unive.pylisa.analysis.dataframes.operations;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
 
-public class AssignDataframe<S extends Selection<S>> extends DataframeOperation {
+public class AssignDataframe<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
 
-	private final S selection;
+	private final DataframeSelection<R, C> selection;
 
-	public AssignDataframe(CodeLocation where, S selection) {
+	public AssignDataframe(CodeLocation where, DataframeSelection<R, C> selection) {
 		super(where);
 		this.selection = selection;
 	}
 
-	public S getSelection() {
+	public DataframeSelection<R, C> getSelection() {
 		return selection;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
-		AssignDataframe<?> o = (AssignDataframe<?>) other;
+		AssignDataframe<?, ?> o = (AssignDataframe<?, ?>) other;
 		if (selection.getClass() != o.selection.getClass())
 			return false;
-		return selection.lessOrEqual((S) o.selection);
+		return selection.lessOrEqual((DataframeSelection<R, C>) o.selection);
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
-		AssignDataframe<?> o = (AssignDataframe<?>) other;
+		AssignDataframe<?, ?> o = (AssignDataframe<?, ?>) other;
 		if (selection.getClass() != o.selection.getClass())
 			return top();
-		return new AccessOperation<>(loc(other), selection.lub((S) o.selection));
+		return new AssignDataframe<>(loc(other), selection.lub((DataframeSelection<R, C>) o.selection));
 	}
 
 	@Override
@@ -51,7 +53,7 @@ public class AssignDataframe<S extends Selection<S>> extends DataframeOperation 
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AssignDataframe<?> other = (AssignDataframe<?>) obj;
+		AssignDataframe<?, ?> other = (AssignDataframe<?, ?>) obj;
 		if (selection == null) {
 			if (other.selection != null)
 				return false;
@@ -67,7 +69,7 @@ public class AssignDataframe<S extends Selection<S>> extends DataframeOperation 
 
 	@Override
 	protected int compareToSameClassAndLocation(DataframeOperation o) {
-		AssignDataframe<?> other = (AssignDataframe<?>) o;
+		AssignDataframe<?, ?> other = (AssignDataframe<?, ?>) o;
 		return selection.compareTo(other.selection);
 	}
 }

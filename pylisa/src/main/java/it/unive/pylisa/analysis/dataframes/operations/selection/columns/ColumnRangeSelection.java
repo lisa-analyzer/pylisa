@@ -1,9 +1,11 @@
-package it.unive.pylisa.analysis.dataframes.operations.selection;
+package it.unive.pylisa.analysis.dataframes.operations.selection.columns;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.Names;
+import it.unive.pylisa.analysis.dataframes.NumberSlice;
 import it.unive.pylisa.analysis.dataframes.operations.SliceElement;
+import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 
 public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> implements SliceElement {
 
@@ -43,17 +45,17 @@ public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> 
 	}
 
 	@Override
-	public ColumnRangeSelection lubAux(ColumnRangeSelection other) throws SemanticException {
+	public ColumnRangeSelection lubSameClass(ColumnRangeSelection other) throws SemanticException {
 		return new ColumnRangeSelection(columns.lub(other.columns));
 	}
 
 	@Override
-	public ColumnRangeSelection wideningAux(ColumnRangeSelection other) throws SemanticException {
+	public ColumnRangeSelection wideningSameClass(ColumnRangeSelection other) throws SemanticException {
 		return new ColumnRangeSelection(columns.widening(other.columns));
 	}
 
 	@Override
-	public boolean lessOrEqualAux(ColumnRangeSelection other) throws SemanticException {
+	public boolean lessOrEqualSameClass(ColumnRangeSelection other) throws SemanticException {
 		return columns.lessOrEqual(other.columns);
 	}
 
@@ -84,7 +86,7 @@ public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> 
 
 	@Override
 	public String toString() {
-		return "cols_range:" + columns.toString();
+		return columns.toString();
 	}
 
 	@Override

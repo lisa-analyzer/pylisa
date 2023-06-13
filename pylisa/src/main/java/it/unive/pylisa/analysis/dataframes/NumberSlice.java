@@ -1,10 +1,10 @@
-package it.unive.pylisa.analysis.dataframes.operations.selection;
+package it.unive.pylisa.analysis.dataframes;
 
+import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
-import it.unive.pylisa.analysis.dataframes.Names;
 
-public class NumberSlice extends RowSelection<NumberSlice> {
+public class NumberSlice implements BaseLattice<NumberSlice>, Comparable<NumberSlice> {
 
 	public static final NumberSlice TOP = new NumberSlice(
 			new ConstantPropagation().top(),
@@ -127,15 +127,14 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
-		NumberSlice other = (NumberSlice) o;
-		int cmp = compare(beginIndex, other.beginIndex);
+	public int compareTo(NumberSlice o) {
+		int cmp = compare(beginIndex, o.beginIndex);
 		if (cmp != 0)
 			return cmp;
-		cmp = compare(endIndex, other.endIndex);
+		cmp = compare(endIndex, o.endIndex);
 		if (cmp != 0)
 			return cmp;
-		return compare(skip, other.skip);
+		return compare(skip, o.skip);
 	}
 
 	private static int compare(ConstantPropagation first, ConstantPropagation second) {
@@ -154,10 +153,5 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 			return 0;
 
 		return Integer.compare(first.as(Integer.class), second.as(Integer.class));
-	}
-
-	@Override
-	public Names extractColumnNames() {
-		return Names.BOTTOM;
 	}
 }

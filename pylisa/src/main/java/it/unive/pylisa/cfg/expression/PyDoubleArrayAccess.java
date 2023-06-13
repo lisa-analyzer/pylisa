@@ -21,7 +21,7 @@ import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.AccessRowsColumns;
+import it.unive.pylisa.symbolic.operators.dataframes.DataframeProjection;
 
 public class PyDoubleArrayAccess extends TernaryExpression {
 
@@ -55,7 +55,7 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 				it.unive.lisa.symbolic.value.TernaryExpression dfAccess = new it.unive.lisa.symbolic.value.TernaryExpression(
 						dftype,
 						deref, middle, right,
-						AccessRowsColumns.INSTANCE,
+						DataframeProjection.INSTANCE,
 						getLocation());
 				state = state.smallStepSemantics(dfAccess, this);
 				dereferencedType = dftype;

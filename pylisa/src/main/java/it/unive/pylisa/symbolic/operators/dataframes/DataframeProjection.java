@@ -9,11 +9,11 @@ import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class AccessRowsColumns implements TernaryOperator {
+public class DataframeProjection implements TernaryOperator {
 
-	public static final AccessRowsColumns INSTANCE = new AccessRowsColumns();
+	public static final DataframeProjection INSTANCE = new DataframeProjection();
 
-	private AccessRowsColumns() {
+	private DataframeProjection() {
 	}
 
 	@Override

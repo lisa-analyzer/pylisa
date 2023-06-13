@@ -4,21 +4,24 @@ import java.util.Optional;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
 import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
 
-public class Transform<S extends Selection<S>> extends DataframeOperation {
+public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
 
 	private final Kind type;
-	private final S selection;
+	private final DataframeSelection<R, C> selection;
 	private final boolean changeShape;
 	private final Optional<Object> arg;
 
-	public Transform(CodeLocation where, Kind type, boolean changeShape, S selection) {
+	public Transform(CodeLocation where, Kind type, boolean changeShape, DataframeSelection<R, C> selection) {
 		this(where, type, changeShape, selection, null);
 	}
 
-	public Transform(CodeLocation where, Kind type, boolean changeShape, S selection, Object arg) {
+	public Transform(CodeLocation where, Kind type, boolean changeShape, DataframeSelection<R, C> selection,
+			Object arg) {
 		super(where);
 		this.type = type;
 		this.selection = selection;
@@ -30,7 +33,7 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 		return type;
 	}
 
-	public S getSelection() {
+	public DataframeSelection<R, C> getSelection() {
 		return selection;
 	}
 
@@ -61,7 +64,7 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Transform<?> other = (Transform<?>) obj;
+		Transform<?, ?> other = (Transform<?, ?>) obj;
 		if (arg == null) {
 			if (other.arg != null)
 				return false;
@@ -90,26 +93,26 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 	@Override
 	@SuppressWarnings("unchecked")
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
-		Transform<?> o = (Transform<?>) other;
+		Transform<?, ?> o = (Transform<?, ?>) other;
 		if (type != o.type || selection.getClass() != o.selection.getClass() || !arg.equals(o.arg)
 				|| changeShape != o.changeShape)
 			return false;
-		return selection.lessOrEqual((S) o.selection);
+		return selection.lessOrEqual((DataframeSelection<R, C>) o.selection);
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
-		Transform<?> o = (Transform<?>) other;
+		Transform<?, ?> o = (Transform<?, ?>) other;
 		if (type != o.type || selection.getClass() != o.selection.getClass() || changeShape != o.changeShape)
 			return top();
-		return new Transform<>(loc(other), type, changeShape, selection.lub((S) o.selection),
+		return new Transform<>(loc(other), type, changeShape, selection.lub((DataframeSelection<R, C>) o.selection),
 				arg.equals(o.arg) ? arg : null);
 	}
 
 	@Override
 	protected int compareToSameClassAndLocation(DataframeOperation o) {
-		Transform<?> other = (Transform<?>) o;
+		Transform<?, ?> other = (Transform<?, ?>) o;
 		int cmp = type.compareTo(other.type);
 		if (cmp != 0)
 			return cmp;

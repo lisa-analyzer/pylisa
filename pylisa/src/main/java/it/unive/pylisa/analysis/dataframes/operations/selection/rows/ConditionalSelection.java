@@ -1,4 +1,4 @@
-package it.unive.pylisa.analysis.dataframes.operations.selection;
+package it.unive.pylisa.analysis.dataframes.operations.selection.rows;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
@@ -7,14 +7,16 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.Names;
+import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnListSelection;
 import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
 
-public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelection> {
+public class ConditionalSelection extends BooleanSelection<ConditionalSelection> {
 
-	static final AtomicBooleanSelection TOP = new AtomicBooleanSelection(new ColumnListSelection(new Names()).top(),
+	public static final ConditionalSelection TOP = new ConditionalSelection(new ColumnListSelection(new Names()).top(),
 			ComparisonOperator.TOP,
 			new ConstantPropagation().top());
-	static final AtomicBooleanSelection BOTTOM = new AtomicBooleanSelection(
+	public static final ConditionalSelection BOTTOM = new ConditionalSelection(
 			new ColumnListSelection(new Names()).bottom(),
 			ComparisonOperator.BOT, new ConstantPropagation().bottom());
 
@@ -22,13 +24,13 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 	private final ComparisonOperator op;
 	private final ConstantPropagation val;
 
-	public AtomicBooleanSelection(String colName, ComparisonOperator op, Object val) {
+	public ConditionalSelection(String colName, ComparisonOperator op, Object val) {
 		this.cols = new ColumnListSelection(new Names(colName));
 		this.op = op;
 		this.val = new ConstantPropagation(new Constant(Untyped.INSTANCE, val, SyntheticLocation.INSTANCE));
 	}
 
-	public AtomicBooleanSelection(ColumnListSelection cols, ComparisonOperator op, ConstantPropagation val) {
+	public ConditionalSelection(ColumnListSelection cols, ComparisonOperator op, ConstantPropagation val) {
 		this.cols = cols;
 		this.op = op;
 		this.val = val;
@@ -47,29 +49,29 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 	}
 
 	@Override
-	public AtomicBooleanSelection top() {
+	public ConditionalSelection top() {
 		return TOP;
 	}
 
 	@Override
-	public AtomicBooleanSelection bottom() {
+	public ConditionalSelection bottom() {
 		return BOTTOM;
 	}
 
 	@Override
-	public AtomicBooleanSelection lubAux(AtomicBooleanSelection other) throws SemanticException {
+	public ConditionalSelection lubSameClass(ConditionalSelection other) throws SemanticException {
 		return op != other.op ? top()
-				: new AtomicBooleanSelection(cols.lub(other.cols), op, val.lub(other.val));
+				: new ConditionalSelection(cols.lub(other.cols), op, val.lub(other.val));
 	}
 
 	@Override
-	public AtomicBooleanSelection wideningAux(AtomicBooleanSelection other) throws SemanticException {
+	public ConditionalSelection wideningSameClass(ConditionalSelection other) throws SemanticException {
 		return op != other.op ? top()
-				: new AtomicBooleanSelection(cols.widening(other.cols), op, val.widening(other.val));
+				: new ConditionalSelection(cols.widening(other.cols), op, val.widening(other.val));
 	}
 
 	@Override
-	public boolean lessOrEqualAux(AtomicBooleanSelection other) throws SemanticException {
+	public boolean lessOrEqualSameClass(ConditionalSelection other) throws SemanticException {
 		return op != other.op ? false
 				: cols.lessOrEqual(other.cols) && val.lessOrEqual(other.val);
 	}
@@ -92,7 +94,7 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AtomicBooleanSelection other = (AtomicBooleanSelection) obj;
+		ConditionalSelection other = (ConditionalSelection) obj;
 		if (cols == null) {
 			if (other.cols != null)
 				return false;
@@ -116,12 +118,12 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 		if (isBottom())
 			return Lattice.BOTTOM_STRING;
 
-		return cols + " " + op + " " + val;
+		return "filter:" + cols + op + val;
 	}
 
 	@Override
 	protected int compareToSameClass(Selection<?> o) {
-		AtomicBooleanSelection other = (AtomicBooleanSelection) o;
+		ConditionalSelection other = (ConditionalSelection) o;
 		int cmp = op.compareTo(other.op);
 		if (cmp != 0)
 			return cmp;
@@ -130,7 +132,7 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 			return cmp;
 		return cols.compareTo(other.cols);
 	}
-	
+
 	@Override
 	public Names extractColumnNames() {
 		return cols.extractColumnNames();

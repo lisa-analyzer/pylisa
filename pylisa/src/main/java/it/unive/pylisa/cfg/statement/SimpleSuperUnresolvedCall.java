@@ -59,7 +59,8 @@ public class SimpleSuperUnresolvedCall extends UnresolvedCall {
     @Override
     public <A extends AbstractState<A, H, V, T>, H extends HeapDomain<H>, V extends ValueDomain<V>, T extends TypeDomain<T>> AnalysisState<A, H, V, T> expressionSemantics(InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state, ExpressionSet<SymbolicExpression>[] params, StatementStore<A, H, V, T> expressions) throws SemanticException {
         Call resolved;
-        Set<Type>[] types = new Set[0];
+        @SuppressWarnings("unchecked")
+		Set<Type>[] types = new Set[0];
         try {
             resolved = interprocedural.resolve(call, types, state.getAliasing());
             if (resolved instanceof OpenCall) {

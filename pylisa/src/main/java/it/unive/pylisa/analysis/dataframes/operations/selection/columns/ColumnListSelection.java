@@ -1,9 +1,10 @@
-package it.unive.pylisa.analysis.dataframes.operations.selection;
+package it.unive.pylisa.analysis.dataframes.operations.selection.columns;
 
 import java.util.Set;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.dataframes.Names;
+import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 
 public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 
@@ -20,16 +21,8 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 		this(new Names(columns));
 	}
 
-	public ColumnListSelection(boolean allCols) {
-		this(allCols ? Names.TOP : Names.BOTTOM);
-	}
-
 	public Names getColumns() {
 		return columns;
-	}
-
-	public boolean isAllCols() {
-		return columns.isTop();
 	}
 
 	@Override
@@ -43,17 +36,17 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 	}
 
 	@Override
-	public ColumnListSelection lubAux(ColumnListSelection other) throws SemanticException {
+	public ColumnListSelection lubSameClass(ColumnListSelection other) throws SemanticException {
 		return new ColumnListSelection(columns.lub(other.columns));
 	}
 
 	@Override
-	public ColumnListSelection wideningAux(ColumnListSelection other) throws SemanticException {
+	public ColumnListSelection wideningSameClass(ColumnListSelection other) throws SemanticException {
 		return new ColumnListSelection(columns.widening(other.columns));
 	}
 
 	@Override
-	public boolean lessOrEqualAux(ColumnListSelection other) throws SemanticException {
+	public boolean lessOrEqualSameClass(ColumnListSelection other) throws SemanticException {
 		return columns.lessOrEqual(other.columns);
 	}
 

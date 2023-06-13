@@ -21,7 +21,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.pylisa.cfg.expression.NoneLiteral;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.ColumnAccess;
+import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
 
 public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg.statement.BinaryExpression
 		implements PluggableStatement {
@@ -82,7 +82,7 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		HeapDereference derefLeft = new HeapDereference(dftype, left, location);
 		BinaryExpression access = new BinaryExpression(dftype, derefLeft, right,
-				ColumnAccess.INSTANCE, location);
+				ColumnProjection.INSTANCE, location);
 		return state.smallStepSemantics(access, st).smallStepSemantics(left, st);
 	}
 }

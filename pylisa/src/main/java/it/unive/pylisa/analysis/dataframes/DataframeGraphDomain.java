@@ -49,10 +49,8 @@ import it.unive.pylisa.analysis.dataframes.edge.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.edge.ConsumeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
-import it.unive.pylisa.analysis.dataframes.operations.AccessOperation;
 import it.unive.pylisa.analysis.dataframes.operations.AssignDataframe;
 import it.unive.pylisa.analysis.dataframes.operations.AssignValue;
-import it.unive.pylisa.analysis.dataframes.operations.BooleanComparison;
 import it.unive.pylisa.analysis.dataframes.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.operations.CreateFromDict;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
@@ -63,17 +61,17 @@ import it.unive.pylisa.analysis.dataframes.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.operations.Keys;
 import it.unive.pylisa.analysis.dataframes.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.operations.ReadFromFile;
-import it.unive.pylisa.analysis.dataframes.operations.SelectionOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Transform;
-import it.unive.pylisa.analysis.dataframes.operations.selection.AtomicBooleanSelection;
-import it.unive.pylisa.analysis.dataframes.operations.selection.ColumnIteration;
-import it.unive.pylisa.analysis.dataframes.operations.selection.ColumnListSelection;
-import it.unive.pylisa.analysis.dataframes.operations.selection.ColumnRangeSelection;
-import it.unive.pylisa.analysis.dataframes.operations.selection.ColumnSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelection;
-import it.unive.pylisa.analysis.dataframes.operations.selection.NumberSlice;
-import it.unive.pylisa.analysis.dataframes.operations.selection.RowFilter;
-import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.AllColumns;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnIteration;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnListSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnRangeSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.rows.AllRows;
+import it.unive.pylisa.analysis.dataframes.operations.selection.rows.ConditionalSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowRangeSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyLibraryUnitType;
 import it.unive.pylisa.symbolic.DictConstant;
@@ -85,16 +83,15 @@ import it.unive.pylisa.symbolic.operators.DictPut;
 import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.dataframes.AccessKeys;
-import it.unive.pylisa.symbolic.operators.dataframes.AccessRows;
-import it.unive.pylisa.symbolic.operators.dataframes.AccessRowsColumns;
 import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
 import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
 import it.unive.pylisa.symbolic.operators.dataframes.AxisConcatenation;
-import it.unive.pylisa.symbolic.operators.dataframes.ColumnAccess;
+import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
 import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.CreateDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.DataframeColumnSlice;
 import it.unive.pylisa.symbolic.operators.dataframes.DataframeColumnSlice.ColumnSlice;
+import it.unive.pylisa.symbolic.operators.dataframes.DataframeProjection;
 import it.unive.pylisa.symbolic.operators.dataframes.DropCols;
 import it.unive.pylisa.symbolic.operators.dataframes.FillNull;
 import it.unive.pylisa.symbolic.operators.dataframes.FilterNull;
@@ -102,13 +99,13 @@ import it.unive.pylisa.symbolic.operators.dataframes.Iterate;
 import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
 import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
 import it.unive.pylisa.symbolic.operators.dataframes.PopSelection;
-import it.unive.pylisa.symbolic.operators.dataframes.ProjectRows;
 import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.RowProjection;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
 
 public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
-	
+
 	private static final Logger LOG = LogManager.getLogger(DataframeGraphDomain.class);
 
 	private static final SetLattice<NodeId> NO_IDS = new SetLattice<NodeId>().bottom();
@@ -457,10 +454,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		ColumnRangeSelection bound = ColumnRangeSelection.BOTTOM;
 
 		for (DataframeOperation op : ops) {
-			if (!(op instanceof AccessOperation<?>))
+			if (!(op instanceof ProjectionOperation<?, ?>))
 				return ColumnRangeSelection.TOP;
 
-			Selection<?> selection = ((AccessOperation<?>) op).getSelection();
+			ColumnSelection<?> selection = ((ProjectionOperation<?, ?>) op).getSelection().getColumnSelection();
 			if (!(selection instanceof ColumnRangeSelection))
 				return ColumnRangeSelection.TOP;
 
@@ -468,21 +465,6 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		}
 
 		return bound;
-	}
-
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static DataframeOperation toProjection(
-			DataframeGraphDomain domain,
-			DataframeForest forest,
-			Map<NodeId, SetLattice<DataframeOperation>> finalOperations,
-			DataframeOperation access) {
-		DataframeOperation tmp = new ProjectionOperation(access.getWhere(),
-				((AccessOperation) access).getSelection());
-		forest.replace(access, tmp);
-		for (Entry<NodeId, SetLattice<DataframeOperation>> entry : domain.operations)
-			if (entry.getValue().contains(access))
-				finalOperations.put(entry.getKey(), finalOperations.get(entry.getKey()).replace(access, tmp));
-		return tmp;
 	}
 
 	public DataframeGraphDomain visit(UnaryExpression expression, DataframeGraphDomain arg, ProgramPoint pp)
@@ -599,7 +581,6 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		forest.addNode(concatNode);
 
 		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(arg.operations.getMap());
-		Map<DataframeOperation, DataframeOperation> replacements = new HashMap<>();
 
 		// 1) if a leaf is an access it has to become a projection
 		// 2) the same leaf might appear multiple times as different
@@ -632,17 +613,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				FIFOWorkingSet<SetLattice<DataframeOperation>> ws = FIFOWorkingSet.mk();
 				for (int i = 0; i < value.size(); i++) {
 					Set<DataframeOperation> fixed = new HashSet<>();
-					for (DataframeOperation op : operand) {
-						if (op instanceof AccessOperation<?>)
-							if (replacements.containsKey(op)) {
-								op = replacements.get(op);
-							} else {
-								DataframeOperation tmp = toProjection(arg, forest, operations, op);
-								replacements.put(op, tmp);
-								op = tmp;
-							}
+					for (DataframeOperation op : operand)
 						fixed.add(op);
-					}
 
 					ws.push(new SetLattice<>(fixed, false));
 					operand = fixed.stream().flatMap(o -> forest.predecessorsOf(o).stream()).distinct()
@@ -681,7 +653,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Set<NodeId> ids = new HashSet<>();
 		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(arg.operations.getMap());
 		for (DataframeOperation op : ops) {
-			if (!(op instanceof SelectionOperation<?>))
+			if (!(op instanceof ProjectionOperation<?, ?>))
 				return cleanStack(arg, pp);
 
 			Collection<DataframeOperation> preds = forest.predecessorsOf(op);
@@ -744,14 +716,14 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
 		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(arg.operations.getMap());
 		for (DataframeOperation leaf : stack) {
-			if (!(leaf instanceof SelectionOperation<?>))
+			if (!(leaf instanceof ProjectionOperation<?, ?>))
 				return cleanStack(arg, pp);
 
 			Transform t = op.getArg().isPresent()
 					? new Transform(pp.getLocation(), kind, op.isChangeShape(),
-							((SelectionOperation<?>) leaf).getSelection(), op.getArg().get())
+							((ProjectionOperation<?, ?>) leaf).getSelection(), op.getArg().get())
 					: new Transform(pp.getLocation(), kind, op.isChangeShape(),
-							((SelectionOperation<?>) leaf).getSelection());
+							((ProjectionOperation<?, ?>) leaf).getSelection());
 
 			df.addNode(t);
 			df.addEdge(new ConsumeEdge(leaf, t));
@@ -856,7 +828,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		if (operator == ListAppend.INSTANCE)
 			return doListAppend(left, right, pp);
-		else if (operator == ColumnAccess.INSTANCE)
+		else if (operator == ColumnProjection.INSTANCE)
 			return doColumnAccess(left, right, pp);
 		else if (operator instanceof FillNull)
 			return doFillNull(left, right, operator, pp);
@@ -893,18 +865,17 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
 		for (DataframeOperation op : df1) {
-			if (!(op instanceof SelectionOperation))
+			if (!(op instanceof ProjectionOperation<?, ?>))
 				return cleanStack(right, pp);
 
-			SelectionOperation<?> projection = (SelectionOperation<?>) op;
-			if (!(projection.getSelection() instanceof ColumnListSelection))
+			ProjectionOperation<?, ?> projection = (ProjectionOperation<?, ?>) op;
+			if (!(projection.getSelection().getColumnSelection() instanceof ColumnListSelection))
 				return cleanStack(right, pp);
 
-			AtomicBooleanSelection booleanSelection = new AtomicBooleanSelection(
-					(ColumnListSelection) projection.getSelection(), seriesCompOp.getOp(), value);
-			BooleanComparison<
-					AtomicBooleanSelection> boolComp = new BooleanComparison<>(pp.getLocation(),
-							booleanSelection);
+			ConditionalSelection booleanSelection = new ConditionalSelection(
+					(ColumnListSelection) projection.getSelection().getColumnSelection(), seriesCompOp.getOp(), value);
+			ProjectionOperation<?, ?> boolComp = new ProjectionOperation<>(pp.getLocation(),
+					booleanSelection);
 
 			forest.addNode(boolComp);
 			forest.addEdge(new ConsumeEdge(op, boolComp));
@@ -937,14 +908,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
 		for (DataframeOperation op : df) {
-			if (!(op instanceof SelectionOperation))
+			if (!(op instanceof ProjectionOperation<?, ?>))
 				return cleanStack(right, pp);
 
-			SelectionOperation<?> access = (SelectionOperation<?>) op;
-			if (!(access.getSelection() instanceof DataframeSelection))
-				return cleanStack(right, pp);
-
-			DataframeSelection<?, ?> selection = (DataframeSelection<?, ?>) access.getSelection();
+			ProjectionOperation<?, ?> access = (ProjectionOperation<?, ?>) op;
+			DataframeSelection<?, ?> selection = access.getSelection();
 			DataframeOperation nodeToAdd = new AssignValue<>(pp.getLocation(), selection, c);
 			forest.addNode(nodeToAdd);
 			forest.addEdge(new ConsumeEdge(op, nodeToAdd));
@@ -978,24 +946,20 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
 		for (DataframeOperation op : df1) {
-			if (!(op instanceof SelectionOperation<?>))
+			if (!(op instanceof ProjectionOperation<?, ?>))
 				return cleanStack(right, pp);
 
 			AssignDataframe assign = new AssignDataframe(pp.getLocation(),
-					((SelectionOperation) op).getSelection());
+					((ProjectionOperation<?, ?>) op).getSelection());
 			forest.addNode(assign);
 			forest.addEdge(new ConsumeEdge(op, assign));
 			NodeId id = new NodeId(assign);
 			ids.put(id, assign);
 		}
 
-		for (DataframeOperation op : df2) {
-			if (op instanceof AccessOperation<?>)
-				op = toProjection(right, forest, operations, op);
-
+		for (DataframeOperation op : df2)
 			for (DataframeOperation assign : ids.values())
 				forest.addEdge(new AssignEdge(op, assign));
-		}
 
 		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
 		CollectingMapLattice<NodeId,
@@ -1024,19 +988,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		DataframeOperation concatNode = new Concat(pp.getLocation(), Concat.Axis.CONCAT_COLS);
 		forest.addNode(concatNode);
 
-		for (DataframeOperation op : df1) {
-			if (op instanceof AccessOperation<?>) {
-				op = toProjection(right, forest, operations, op);
-			}
+		for (DataframeOperation op : df1)
 			forest.addEdge(new ConcatEdge(op, concatNode, 0));
-		}
 
-		for (DataframeOperation op : df2) {
-			if (op instanceof AccessOperation<?>)
-				op = toProjection(right, forest, operations, op);
-
+		for (DataframeOperation op : df2)
 			forest.addEdge(new ConcatEdge(op, concatNode, 1));
-		}
 
 		// safety measure: remove edges if they exist
 		DataframeEdge edge;
@@ -1068,10 +1024,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		List<ConstantPropagation> cs = cols.as(List.class);
 		Set<String> accessedCols = new HashSet<>();
-		ColumnListSelection colsSelection = null;
+		ColumnSelection<?> colsSelection = null;
 		for (ConstantPropagation c : cs) {
 			if (topOrBottom(c) || !c.is(String.class)) {
-				colsSelection = new ColumnListSelection(true);
+				colsSelection = AllColumns.INSTANCE;
 				break;
 			}
 			accessedCols.add(c.as(String.class));
@@ -1079,7 +1035,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		if (colsSelection == null)
 			colsSelection = new ColumnListSelection(accessedCols);
 
-		DropColumns drop = new DropColumns(pp.getLocation(), colsSelection);
+		@SuppressWarnings("rawtypes")
+		DropColumns<?> drop = new DropColumns(pp.getLocation(), colsSelection);
 		DataframeForest forest = new DataframeForest(right.graph);
 		forest.addNode(drop);
 		for (DataframeOperation op : ops)
@@ -1130,28 +1087,35 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		if (topOrBottom(ops))
 			return cleanStack(right, pp);
 
-		Selection<?> selection = null;
+		ColumnSelection<?> columns = null;
+		RowSelection<?> rows = null;
 		if (!topOrBottom(args)) {
 			for (DataframeOperation arg : args)
 				if (arg instanceof Iteration)
-					selection = selection == null ? new ColumnIteration() : new ColumnListSelection(true);
-				else if (arg instanceof BooleanComparison<?>)
-					selection = selection == null ? new RowFilter(((BooleanComparison<?>) arg).getSelection())
-							: new ColumnListSelection(true);
-				else
+					columns = columns == null
+							? new ColumnIteration()
+							: columns.lub(new ColumnIteration());
+				else if (arg instanceof ProjectionOperation<?, ?>) {
+					columns = columns == null
+							? ((ProjectionOperation<?, ?>) arg).getSelection().getColumnSelection()
+							: columns.lub(((ProjectionOperation<?, ?>) arg).getSelection().getColumnSelection());
+					rows = rows == null
+							? ((ProjectionOperation<?, ?>) arg).getSelection().getRowSelection()
+							: rows.lub(((ProjectionOperation<?, ?>) arg).getSelection().getRowSelection());
+				} else
 					return cleanStack(right, pp);
 		} else if (topOrBottom(col))
-			selection = new ColumnListSelection(true);
+			columns = AllColumns.INSTANCE;
 		else if (col.is(String.class))
-			selection = new ColumnListSelection(new Names(col.as(String.class)));
+			columns = new ColumnListSelection(new Names(col.as(String.class)));
 		else if (col.is(Integer.class))
-			selection = new ColumnRangeSelection(col.as(Integer.class));
+			columns = new ColumnRangeSelection(col.as(Integer.class));
 		else if (col.is(NumberSlice.class))
-			selection = new ColumnRangeSelection(col.as(NumberSlice.class));
+			columns = new ColumnRangeSelection(col.as(NumberSlice.class));
 		else if (col.is(SliceConstant.class)) {
 			SliceConstant c = col.as(SliceConstant.class);
 			Slice slice = (Slice) c.getValue();
-			selection = new ColumnRangeSelection(new NumberSlice(
+			columns = new ColumnRangeSelection(new NumberSlice(
 					slice.getStart().toConstant(),
 					slice.getEnd().toConstant(),
 					slice.getSkip().toConstant()));
@@ -1160,16 +1124,20 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			Set<String> accessedCols = new HashSet<>();
 			for (ConstantPropagation c : cs) {
 				if (topOrBottom(c) || !c.is(String.class)) {
-					selection = new ColumnListSelection(true);
+					columns = AllColumns.INSTANCE;
 					break;
 				}
 				accessedCols.add(c.as(String.class));
 			}
-			selection = new ColumnListSelection(accessedCols);
+			columns = new ColumnListSelection(accessedCols);
 		} else
-			selection = new ColumnListSelection(true);
+			columns = AllColumns.INSTANCE;
 
-		AccessOperation access = new AccessOperation(pp.getLocation(), selection);
+		if (columns == null)
+			columns = AllColumns.INSTANCE;
+		if (rows == null)
+			rows = AllRows.INSTANCE;
+		ProjectionOperation<?, ?> access = new ProjectionOperation(pp.getLocation(), rows, columns);
 		DataframeForest forest = new DataframeForest(right.graph);
 		forest.addNode(access);
 		for (DataframeOperation op : ops)
@@ -1227,9 +1195,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		if (operator == DictPut.INSTANCE)
 			return doDictPut(left, middle, right, pp);
-		else if (operator == ProjectRows.INSTANCE || operator == AccessRows.INSTANCE)
-			return doAccessOrProjectRows(left, middle, right, pp, operator);
-		else if (operator instanceof AccessRowsColumns)
+		else if (operator == RowProjection.INSTANCE)
+			return doProjectRows(left, middle, right, pp, operator);
+		else if (operator instanceof DataframeProjection)
 			return doAccessRowsColumns(left, middle, right, pp);
 		else if (operator instanceof SliceCreation)
 			return doSliceCreation(left, middle, right, pp);
@@ -1257,8 +1225,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			l = resolvePointers(left);
 			cstart = getRangeBound(l);
 		}
-		
-		if (!middle.constStack.isBottom()) 
+
+		if (!middle.constStack.isBottom())
 			rend = getRangeBound(middle.constStack);
 		else if (!topOrBottom(middle.pointers.lattice)) {
 			// column slice
@@ -1267,13 +1235,13 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				l = moveBackwards(right.graph, l);
 			cend = getRangeBound(m);
 		}
-		
+
 		Constant slice;
 		if (rstart != null && rend != null)
 			slice = new SliceConstant(rstart, rend, skip, pp.getLocation());
 		else
 			slice = new DataframeColumnSlice(new ColumnSlice(
-					rstart == null ? cstart : rstart, 
+					rstart == null ? cstart : rstart,
 					rend == null ? cend : rend, skip, l, m), pp.getLocation());
 		return new DataframeGraphDomain(
 				right.constants,
@@ -1305,7 +1273,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			for (Lattice<?> c : cs) {
 				if (!(c instanceof ConstantPropagation) || topOrBottom(cc = (ConstantPropagation) c)
 						|| !cc.is(String.class)) {
-					colsSelection = new ColumnListSelection(true);
+					colsSelection = AllColumns.INSTANCE;
 					break;
 				}
 				accessedCols.add(cc.as(String.class));
@@ -1331,12 +1299,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		if (!topOrBottom(middle.constStack)) {
 			// middle is a slice
 			SliceConstant.Slice rowSlice = middle.constStack.as(SliceConstant.Slice.class);
-			NumberSlice numberSlice = new NumberSlice(
+			RowRangeSelection rowsSelection = new RowRangeSelection(new NumberSlice(
 					rowSlice.getStart() == null ? new ConstantPropagation().bottom() : rowSlice.getStart().toConstant(),
 					rowSlice.getEnd() == null ? new ConstantPropagation().bottom() : rowSlice.getEnd().toConstant(),
-					rowSlice.getSkip() == null ? new ConstantPropagation().bottom() : rowSlice.getSkip().toConstant());
-			DataframeSelection<?, ?> selection = new DataframeSelection(numberSlice, colsSelection);
-			DataframeOperation access = new AccessOperation<>(pp.getLocation(), selection);
+					rowSlice.getSkip() == null ? new ConstantPropagation().bottom() : rowSlice.getSkip().toConstant()));
+			DataframeSelection<?, ?> selection = new DataframeSelection(rowsSelection, colsSelection);
+			DataframeOperation access = new ProjectionOperation<>(pp.getLocation(), selection);
 			forest.addNode(access);
 			for (DataframeOperation op : df)
 				forest.addEdge(new SimpleEdge(op, access));
@@ -1359,22 +1327,23 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
 			for (DataframeOperation op : middleGraph) {
-				if (!(op instanceof BooleanComparison))
+				if (!(op instanceof ProjectionOperation<?, ?>))
 					return cleanStack(right, pp);
 
-				BooleanComparison<?> colCompare = (BooleanComparison<?>) op;
-				DataframeSelection<?,
-						?> selection = new DataframeSelection(colCompare.getSelection(), colsSelection);
-				DataframeOperation access = new AccessOperation<>(pp.getLocation(), selection);
+				ProjectionOperation<?, ?> colCompare = (ProjectionOperation<?, ?>) op;
+				DataframeSelection<?, ?> selection = new DataframeSelection(
+						colCompare.getSelection().getRowSelection(),
+						colsSelection);
+				DataframeOperation proj = new ProjectionOperation<>(pp.getLocation(), selection);
 
-				forest.addNode(access);
-				forest.addEdge(new ConsumeEdge(op, access));
+				forest.addNode(proj);
+				forest.addEdge(new ConsumeEdge(op, proj));
 
-				NodeId id = new NodeId(access);
-				ids.put(id, access);
+				NodeId id = new NodeId(proj);
+				ids.put(id, proj);
 
 				for (DataframeOperation opc : toConsume)
-					forest.addEdge(new ConsumeEdge(opc, access));
+					forest.addEdge(new ConsumeEdge(opc, proj));
 			}
 
 			SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
@@ -1391,7 +1360,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					ops);
 		} else {
 			DataframeSelection<?, ?> selection = new DataframeSelection<>(true);
-			DataframeOperation access = new AccessOperation<>(pp.getLocation(), selection);
+			DataframeOperation access = new ProjectionOperation<>(pp.getLocation(), selection);
 			forest.addNode(access);
 			for (DataframeOperation op : df)
 				forest.addEdge(new SimpleEdge(op, access));
@@ -1410,7 +1379,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		}
 	}
 
-	private static DataframeGraphDomain doAccessOrProjectRows(DataframeGraphDomain left, DataframeGraphDomain middle,
+	private static DataframeGraphDomain doProjectRows(DataframeGraphDomain left, DataframeGraphDomain middle,
 			DataframeGraphDomain right, ProgramPoint pp, TernaryOperator operator) throws SemanticException {
 		SetLattice<DataframeOperation> df = resolvePointers(left);
 		ConstantPropagation start = middle.constStack;
@@ -1418,13 +1387,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		if (topOrBottom(start) || topOrBottom(end) || topOrBottom(df))
 			return cleanStack(right, pp);
 
-		NumberSlice slice = new NumberSlice(start.as(Integer.class), end.as(Integer.class));
-		DataframeOperation node;
-		if (operator == ProjectRows.INSTANCE)
-			node = new ProjectionOperation<>(pp.getLocation(), slice);
-		else
-			node = new AccessOperation<>(pp.getLocation(), slice);
-
+		RowRangeSelection slice = new RowRangeSelection(
+				new NumberSlice(start.as(Integer.class), end.as(Integer.class)));
+		DataframeOperation node = new ProjectionOperation<>(pp.getLocation(), slice);
 		DataframeForest forest = new DataframeForest(right.graph);
 		forest.addNode(node);
 		for (DataframeOperation op : df)
@@ -1478,7 +1443,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				right.pointers.setStack(NO_IDS),
 				right.operations);
 	}
-	
+
 	private static String getCaller() {
 		StackTraceElement[] trace = Thread.getAllStackTraces().get(Thread.currentThread());
 		// 0: java.lang.Thread.dumpThreads()

@@ -9,11 +9,11 @@ import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class ColumnAccess implements BinaryOperator {
+public class ColumnProjection implements BinaryOperator {
 
-	public static final ColumnAccess INSTANCE = new ColumnAccess();
+	public static final ColumnProjection INSTANCE = new ColumnProjection();
 
-	private ColumnAccess() {
+	private ColumnProjection() {
 	}
 
 	@Override

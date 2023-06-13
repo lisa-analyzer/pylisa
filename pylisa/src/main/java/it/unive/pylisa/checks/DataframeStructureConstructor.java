@@ -38,7 +38,6 @@ import it.unive.pylisa.analysis.dataframes.edge.ConsumeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.operations.AssignDataframe;
 import it.unive.pylisa.analysis.dataframes.operations.AssignValue;
-import it.unive.pylisa.analysis.dataframes.operations.BooleanComparison;
 import it.unive.pylisa.analysis.dataframes.operations.BottomOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.operations.CreateFromDict;
@@ -48,8 +47,8 @@ import it.unive.pylisa.analysis.dataframes.operations.FillNullAxis;
 import it.unive.pylisa.analysis.dataframes.operations.FilterNullAxis;
 import it.unive.pylisa.analysis.dataframes.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.operations.Keys;
+import it.unive.pylisa.analysis.dataframes.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.operations.ReadFromFile;
-import it.unive.pylisa.analysis.dataframes.operations.SelectionOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Transform;
 
 public class DataframeStructureConstructor implements SemanticCheck<
@@ -204,18 +203,15 @@ public class DataframeStructureConstructor implements SemanticCheck<
 					public ColumnsDomain semantics(DataframeOperation node, ColumnsDomain entrystate) throws Exception {
 						Names sources = extractSources(node, graph);
 
-						if (node instanceof AssignDataframe<?>)
+						if (node instanceof AssignDataframe<?, ?>)
 							return entrystate.assign(sources,
-									((AssignDataframe<?>) node).getSelection().extractColumnNames());
+									((AssignDataframe<?, ?>) node).getSelection().extractColumnNames());
 						else if (node instanceof AssignValue<?, ?>)
 							return entrystate.assign(sources,
 									((AssignValue<?, ?>) node).getSelection().extractColumnNames());
-						else if (node instanceof BooleanComparison<?>)
-							return entrystate.access(sources,
-									((BooleanComparison<?>) node).getSelection().extractColumnNames());
 						else if (node instanceof DropColumns)
-							return entrystate.remove(sources, ((DropColumns) node).getColumns().extractColumnNames());
-						else if (node instanceof SelectionOperation<?>) {
+							return entrystate.remove(sources, ((DropColumns<?>) node).getColumns().extractColumnNames());
+						else if (node instanceof ProjectionOperation<?, ?>) {
 							boolean allConsume = true;
 							for (DataframeEdge edge : graph.getOutgoingEdges(node))
 								if (edge.getDestination().equals(exit))
@@ -229,13 +225,13 @@ public class DataframeStructureConstructor implements SemanticCheck<
 								// the consumer
 								return entrystate;
 							return entrystate.access(sources,
-									((SelectionOperation<?>) node).getSelection().extractColumnNames());
-						} else if (node instanceof Transform<?>)
-							if (((Transform<?>) node).isChangeShape())
+									((ProjectionOperation<?, ?>) node).getSelection().extractColumnNames());
+						} else if (node instanceof Transform<?, ?>)
+							if (((Transform<?, ?>) node).isChangeShape())
 								return entrystate.define(sources);
 							else
 								return entrystate.access(sources,
-										((Transform<?>) node).getSelection().extractColumnNames());
+										((Transform<?, ?>) node).getSelection().extractColumnNames());
 						else if (node instanceof ReadFromFile || node instanceof Concat)
 							return entrystate.define(sources);
 						else if (node instanceof CreateFromDict || node instanceof BottomOperation
@@ -248,7 +244,7 @@ public class DataframeStructureConstructor implements SemanticCheck<
 
 					private Names extractSources(DataframeOperation node, DataframeForest graph) {
 						DataframeForest cut = graph.bDFS(node,
-								op -> op instanceof Transform<?> && ((Transform<?>) op).isChangeShape(),
+								op -> op instanceof Transform<?, ?> && ((Transform<?, ?>) op).isChangeShape(),
 								edge -> !(edge instanceof AssignEdge));
 						Set<String> names = new HashSet<>();
 						for (DataframeOperation op : cut.getNodeList().getEntries())

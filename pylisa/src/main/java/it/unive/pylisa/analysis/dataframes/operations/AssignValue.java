@@ -3,9 +3,9 @@ package it.unive.pylisa.analysis.dataframes.operations;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
-import it.unive.pylisa.analysis.dataframes.operations.selection.ColumnSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelection;
-import it.unive.pylisa.analysis.dataframes.operations.selection.RowSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
 
 public class AssignValue<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
 

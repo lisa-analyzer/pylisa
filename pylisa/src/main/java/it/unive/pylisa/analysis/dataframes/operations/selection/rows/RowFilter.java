@@ -1,12 +1,13 @@
-package it.unive.pylisa.analysis.dataframes.operations.selection;
+package it.unive.pylisa.analysis.dataframes.operations.selection.rows;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.dataframes.Names;
+import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 
 public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFilter<B>> {
 
-	private static final RowFilter<?> TOP = new RowFilter<>(AtomicBooleanSelection.TOP);
-	private static final RowFilter<?> BOTTOM = new RowFilter<>(AtomicBooleanSelection.BOTTOM);
+	private static final RowFilter<?> TOP = new RowFilter<>(ConditionalSelection.TOP);
+	private static final RowFilter<?> BOTTOM = new RowFilter<>(ConditionalSelection.BOTTOM);
 
 	private B selection;
 
@@ -31,12 +32,12 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 	}
 
 	@Override
-	public RowFilter<B> wideningAux(RowFilter<B> other) throws SemanticException {
+	public RowFilter<B> wideningSameClass(RowFilter<B> other) throws SemanticException {
 		return lubAux(other);
 	}
 
 	@Override
-	public boolean lessOrEqualAux(RowFilter<B> other) throws SemanticException {
+	public boolean lessOrEqualSameClass(RowFilter<B> other) throws SemanticException {
 		if (this.equals(other))
 			return true;
 		if (!this.selection.getClass().equals(other.selection.getClass()))
@@ -46,7 +47,7 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public RowFilter<B> lubAux(RowFilter<B> other) throws SemanticException {
+	public RowFilter<B> lubSameClass(RowFilter<B> other) throws SemanticException {
 		if (!this.selection.getClass().equals(other.selection.getClass())) {
 			return (RowFilter<B>) TOP;
 		}

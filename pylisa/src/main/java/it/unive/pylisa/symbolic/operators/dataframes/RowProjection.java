@@ -9,11 +9,11 @@ import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class ProjectRows implements TernaryOperator {
+public class RowProjection implements TernaryOperator {
 
-	public static final ProjectRows INSTANCE = new ProjectRows();
+	public static final RowProjection INSTANCE = new RowProjection();
 
-	private ProjectRows() {
+	private RowProjection() {
 	}
 
 	@Override

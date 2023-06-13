@@ -1,18 +1,13 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.program.CodeUnit;
-import it.unive.lisa.program.CompilationUnit;
+import java.util.Collections;
+
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.literal.Literal;
-import it.unive.lisa.type.Type;
-import it.unive.lisa.type.TypeTokenType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyTypeTokenType;
-
-import java.util.Collection;
-import java.util.Collections;
 
 public class PyTypeLiteral extends Literal<Unit> {
 

@@ -1,11 +1,12 @@
-package it.unive.pylisa.analysis.dataframes.operations.selection;
+package it.unive.pylisa.analysis.dataframes.operations.selection.rows;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.dataframes.Names;
+import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 
-public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends BooleanSelection<R>>
-		extends BooleanSelection<BooleanSelectionExpression<L, R>> {
+public class CompositeConditionalSelection<L extends BooleanSelection<L>, R extends BooleanSelection<R>>
+		extends BooleanSelection<CompositeConditionalSelection<L, R>> {
 
 	public static enum Type {
 		UNKNOWN,
@@ -18,7 +19,7 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 	private final L left;
 	private final R right;
 
-	public BooleanSelectionExpression(Type type, L bs1, R bs2) {
+	public CompositeConditionalSelection(Type type, L bs1, R bs2) {
 		this.type = type;
 		this.left = bs1;
 		this.right = bs2;
@@ -37,8 +38,8 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 	}
 
 	@Override
-	public BooleanSelectionExpression<L, R> top() {
-		return new BooleanSelectionExpression<>(Type.UNKNOWN, null, null);
+	public CompositeConditionalSelection<L, R> top() {
+		return new CompositeConditionalSelection<>(Type.UNKNOWN, null, null);
 	}
 
 	@Override
@@ -47,8 +48,8 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 	}
 
 	@Override
-	public BooleanSelectionExpression<L, R> bottom() {
-		return new BooleanSelectionExpression<>(Type.BOTTOM, null, null);
+	public CompositeConditionalSelection<L, R> bottom() {
+		return new CompositeConditionalSelection<>(Type.BOTTOM, null, null);
 	}
 
 	@Override
@@ -57,20 +58,21 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 	}
 
 	@Override
-	public BooleanSelectionExpression<L, R> lubAux(BooleanSelectionExpression<L, R> other) throws SemanticException {
-		return type != other.type ? top()
-				: new BooleanSelectionExpression<>(type, left.lub(other.left), right.lub(other.right));
-	}
-
-	@Override
-	public BooleanSelectionExpression<L, R> wideningAux(BooleanSelectionExpression<L, R> other)
+	public CompositeConditionalSelection<L, R> lubSameClass(CompositeConditionalSelection<L, R> other)
 			throws SemanticException {
 		return type != other.type ? top()
-				: new BooleanSelectionExpression<>(type, left.widening(other.left), right.widening(other.right));
+				: new CompositeConditionalSelection<>(type, left.lub(other.left), right.lub(other.right));
 	}
 
 	@Override
-	public boolean lessOrEqualAux(BooleanSelectionExpression<L, R> other) throws SemanticException {
+	public CompositeConditionalSelection<L, R> wideningSameClass(CompositeConditionalSelection<L, R> other)
+			throws SemanticException {
+		return type != other.type ? top()
+				: new CompositeConditionalSelection<>(type, left.widening(other.left), right.widening(other.right));
+	}
+
+	@Override
+	public boolean lessOrEqualSameClass(CompositeConditionalSelection<L, R> other) throws SemanticException {
 		return type != other.type ? false
 				: left.lessOrEqual(other.left) && right.lessOrEqual(other.right);
 	}
@@ -93,7 +95,7 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		BooleanSelectionExpression<?, ?> other = (BooleanSelectionExpression<?, ?>) obj;
+		CompositeConditionalSelection<?, ?> other = (CompositeConditionalSelection<?, ?>) obj;
 		if (left == null) {
 			if (other.left != null)
 				return false;
@@ -122,7 +124,7 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 
 	@Override
 	protected int compareToSameClass(Selection<?> o) {
-		BooleanSelectionExpression<?, ?> other = (BooleanSelectionExpression<?, ?>) o;
+		CompositeConditionalSelection<?, ?> other = (CompositeConditionalSelection<?, ?>) o;
 		int cmp = type.compareTo(other.type);
 		if (cmp != 0)
 			return cmp;
@@ -131,7 +133,7 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 			return cmp;
 		return right.compareTo(other.right);
 	}
-	
+
 	@Override
 	public Names extractColumnNames() throws SemanticException {
 		return left.extractColumnNames().lub(right.extractColumnNames());

@@ -7,7 +7,6 @@ import it.unive.lisa.program.language.parameterassignment.ParameterAssigningStra
 import it.unive.lisa.program.language.parameterassignment.PythonLikeAssigningStrategy;
 import it.unive.lisa.program.language.resolution.ParameterMatchingStrategy;
 import it.unive.lisa.program.language.resolution.PythonLikeMatchingStrategy;
-import it.unive.lisa.program.language.resolution.RuntimeTypesMatchingStrategy;
 import it.unive.lisa.program.language.validation.BaseValidationLogic;
 import it.unive.lisa.program.language.validation.ProgramValidationLogic;
 import it.unive.pylisa.program.language.resolution.RelaxedRuntimeTypesMatchingStrategy;

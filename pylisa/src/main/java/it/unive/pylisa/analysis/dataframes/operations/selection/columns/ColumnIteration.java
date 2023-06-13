@@ -1,7 +1,8 @@
-package it.unive.pylisa.analysis.dataframes.operations.selection;
+package it.unive.pylisa.analysis.dataframes.operations.selection.columns;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.dataframes.Names;
+import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 
 public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 
@@ -16,17 +17,17 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 	}
 
 	@Override
-	public ColumnIteration lubAux(ColumnIteration other) throws SemanticException {
+	public ColumnIteration lubSameClass(ColumnIteration other) throws SemanticException {
 		return this;
 	}
 
 	@Override
-	public ColumnIteration wideningAux(ColumnIteration other) throws SemanticException {
+	public ColumnIteration wideningSameClass(ColumnIteration other) throws SemanticException {
 		return this;
 	}
 
 	@Override
-	public boolean lessOrEqualAux(ColumnIteration other) throws SemanticException {
+	public boolean lessOrEqualSameClass(ColumnIteration other) throws SemanticException {
 		return true;
 	}
 
@@ -48,7 +49,7 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 
 	@Override
 	public String toString() {
-		return "iterated_column";
+		return "iterated_col";
 	}
 
 	@Override

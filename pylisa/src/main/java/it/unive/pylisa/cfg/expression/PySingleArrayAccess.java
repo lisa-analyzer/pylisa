@@ -21,7 +21,7 @@ import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.ColumnAccess;
+import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
 
 public class PySingleArrayAccess extends BinaryExpression {
 
@@ -65,7 +65,7 @@ public class PySingleArrayAccess extends BinaryExpression {
 
 			if (left.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfref))) {
 				it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
-						seriestype, deref, right, ColumnAccess.INSTANCE, getLocation());
+						seriestype, deref, right, ColumnProjection.INSTANCE, getLocation());
 				result = result.smallStepSemantics(col, this);
 				childType = right.getRuntimeTypes(types).stream().anyMatch(dfref::equals) ? dfref : seriesref;
 			}

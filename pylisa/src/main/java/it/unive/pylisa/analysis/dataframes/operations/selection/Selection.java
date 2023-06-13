@@ -10,6 +10,16 @@ public abstract class Selection<S extends Selection<S>> implements BaseLattice<S
 	public S lub(Selection<?> other) throws SemanticException {
 		return lub((S) other);
 	}
+	
+	@SuppressWarnings("unchecked")
+	public S widening(Selection<?> other) throws SemanticException {
+		return widening((S) other);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public boolean lessOrEqual(Selection<?> other) throws SemanticException {
+		return lessOrEqual((S) other);
+	}
 
 	@Override
 	public final int compareTo(Selection<?> o) {
