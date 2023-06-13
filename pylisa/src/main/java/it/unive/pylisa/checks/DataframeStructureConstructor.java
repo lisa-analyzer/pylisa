@@ -37,19 +37,18 @@ import it.unive.pylisa.analysis.dataframes.edge.AssignEdge;
 import it.unive.pylisa.analysis.dataframes.edge.ConsumeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.operations.AssignDataframe;
-import it.unive.pylisa.analysis.dataframes.operations.AssignValue;
 import it.unive.pylisa.analysis.dataframes.operations.BottomOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.operations.CreateFromDict;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
-import it.unive.pylisa.analysis.dataframes.operations.DropColumns;
-import it.unive.pylisa.analysis.dataframes.operations.FillNullAxis;
-import it.unive.pylisa.analysis.dataframes.operations.FilterNullAxis;
 import it.unive.pylisa.analysis.dataframes.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.operations.Keys;
 import it.unive.pylisa.analysis.dataframes.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.operations.Transform;
+import it.unive.pylisa.analysis.dataframes.operations.selection.rows.BooleanSelection;
+import it.unive.pylisa.symbolic.operators.Enumerations.BinaryKind;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryKind;
 
 public class DataframeStructureConstructor implements SemanticCheck<
 		SimpleAbstractState<
@@ -206,13 +205,9 @@ public class DataframeStructureConstructor implements SemanticCheck<
 						if (node instanceof AssignDataframe<?, ?>)
 							return entrystate.assign(sources,
 									((AssignDataframe<?, ?>) node).getSelection().extractColumnNames());
-						else if (node instanceof AssignValue<?, ?>)
-							return entrystate.assign(sources,
-									((AssignValue<?, ?>) node).getSelection().extractColumnNames());
-						else if (node instanceof DropColumns)
-							return entrystate.remove(sources, ((DropColumns<?>) node).getColumns().extractColumnNames());
 						else if (node instanceof ProjectionOperation<?, ?>) {
 							boolean allConsume = true;
+							ProjectionOperation<?, ?> proj = (ProjectionOperation<?, ?>) node;
 							for (DataframeEdge edge : graph.getOutgoingEdges(node))
 								if (edge.getDestination().equals(exit))
 									continue;
@@ -220,23 +215,32 @@ public class DataframeStructureConstructor implements SemanticCheck<
 									allConsume = false;
 									break;
 								}
+							if (proj.getSelection().getRowSelection() instanceof BooleanSelection<?>)
+								// boolean selections are always used to produce
+								// the boolean masks, even when they are on the
+								// lhs of an assignment
+								entrystate = entrystate.access(sources,
+										proj.getSelection().getRowSelection().extractColumnNames());
+
 							if (allConsume)
 								// will be reported separately as selection of
 								// the consumer
 								return entrystate;
-							return entrystate.access(sources,
-									((ProjectionOperation<?, ?>) node).getSelection().extractColumnNames());
-						} else if (node instanceof Transform<?, ?>)
-							if (((Transform<?, ?>) node).isChangeShape())
+							return entrystate.access(sources, proj.getSelection().extractColumnNames());
+						} else if (node instanceof Transform<?, ?>) {
+							Transform<?, ?> transform = (Transform<?, ?>) node;
+							if (transform.yieldsNewStructure())
 								return entrystate.define(sources);
+							else if (transform.getType() == BinaryKind.ASSIGN)
+								return entrystate.assign(sources, transform.getSelection().extractColumnNames());
+							else if (transform.getType() == UnaryKind.DROP_COLS)
+								return entrystate.remove(sources, transform.getSelection().extractColumnNames());
 							else
-								return entrystate.access(sources,
-										((Transform<?, ?>) node).getSelection().extractColumnNames());
-						else if (node instanceof ReadFromFile || node instanceof Concat)
+								return entrystate.access(sources, transform.getSelection().extractColumnNames());
+						} else if (node instanceof ReadFromFile || node instanceof Concat)
 							return entrystate.define(sources);
 						else if (node instanceof CreateFromDict || node instanceof BottomOperation
-								|| node instanceof CloseOperation || node instanceof FillNullAxis
-								|| node instanceof FilterNullAxis || node instanceof Iteration || node instanceof Keys)
+								|| node instanceof CloseOperation || node instanceof Iteration || node instanceof Keys)
 							return entrystate;
 						else
 							return entrystate.top();
@@ -244,7 +248,7 @@ public class DataframeStructureConstructor implements SemanticCheck<
 
 					private Names extractSources(DataframeOperation node, DataframeForest graph) {
 						DataframeForest cut = graph.bDFS(node,
-								op -> op instanceof Transform<?, ?> && ((Transform<?, ?>) op).isChangeShape(),
+								op -> op instanceof Transform<?, ?> && ((Transform<?, ?>) op).yieldsNewStructure(),
 								edge -> !(edge instanceof AssignEdge));
 						Set<String> names = new HashSet<>();
 						for (DataframeOperation op : cut.getNodeList().getEntries())

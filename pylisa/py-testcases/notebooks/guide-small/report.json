@@ -1,7 +1,5 @@
 {
   "warnings" : [ {
-    "message" : "[GENERIC] [TO_GEOCODE([País])] columns accessed before being assigned: [geometry]"
-  }, {
     "message" : "[GENERIC] [mapa.csv] columns accessed before being assigned: [País, col2]"
   }, {
     "message" : "[GENERIC] [mapa.csv] columns accessed: [geometry]"
@@ -11,18 +9,20 @@
     "message" : "[GENERIC] [temporal.csv] columns accessed before being assigned: [bar, foo, Mes]"
   }, {
     "message" : "[GENERIC] [temporal.csv] columns assigned: [Mes]"
+  }, {
+    "message" : "[GENERIC] [transform ROWS: TO_GEOCODE([rows:all, cols:[País]]) *NEW_STRUCTURE*] columns accessed before being assigned: [geometry]"
   } ],
   "files" : [ "df1@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "df1@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "df2@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "df2@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "forest@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "forest@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "report.json", "var_df2@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "var_df2@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "var_df3@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "var_df3@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "var_df4@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "var_df4@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "var_df5@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "var_df5@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json", "var_df@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.dot", "var_df@'py-testcases_notebooks_guide-small_guide-small.py'_1_0.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "788ms",
-    "end" : "2023-06-13T11:12:49.762+02:00",
+    "duration" : "710ms",
+    "end" : "2023-06-13T16:50:25.893+02:00",
     "expressions" : "83",
     "files" : "16",
     "globals" : "0",
     "members" : "21",
     "programs" : "1",
-    "start" : "2023-06-13T11:12:48.974+02:00",
+    "start" : "2023-06-13T16:50:25.183+02:00",
     "statements" : "20",
     "units" : "12",
     "version" : "0.1b8",

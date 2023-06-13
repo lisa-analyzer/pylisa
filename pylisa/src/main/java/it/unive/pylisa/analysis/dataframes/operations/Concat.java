@@ -2,15 +2,9 @@ package it.unive.pylisa.analysis.dataframes.operations;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
 
 public class Concat extends DataframeOperation {
-
-	// we can concatenate along rows or columns
-	public static enum Axis {
-		CONCAT_ROWS,
-		CONCAT_COLS,
-		TOP
-	}
 
 	private final Axis axis;
 
@@ -63,14 +57,17 @@ public class Concat extends DataframeOperation {
 
 	@Override
 	public String toString() {
-		if (this.axis == Axis.CONCAT_COLS) {
+		switch (this.axis) {
+		case COLS:
 			return "concat_cols";
-		} else if (this.axis == Axis.CONCAT_ROWS) {
+		case ROWS:
 			return "concat_rows";
-		} else if (this.axis == Axis.TOP) {
+		case BOTH:
+		case TOP:
+		default:
 			return "concat_TOP";
+
 		}
-		return "concat";
 	}
 
 	@Override

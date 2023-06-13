@@ -17,7 +17,9 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
-import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryKind;
+import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 
 public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 
@@ -47,7 +49,7 @@ public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		ApplyTransformation op = new ApplyTransformation(ApplyTransformation.Kind.TO_GEOCODE, true);
+		UnaryTransform op = new UnaryTransform(UnaryKind.TO_GEOCODE, Axis.ROWS, true);
 		return PandasSemantics.transform(state, expr, st, op);
 	}
 }

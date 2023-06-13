@@ -50,13 +50,9 @@ import it.unive.pylisa.analysis.dataframes.edge.ConsumeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.operations.AssignDataframe;
-import it.unive.pylisa.analysis.dataframes.operations.AssignValue;
 import it.unive.pylisa.analysis.dataframes.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.operations.CreateFromDict;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
-import it.unive.pylisa.analysis.dataframes.operations.DropColumns;
-import it.unive.pylisa.analysis.dataframes.operations.FillNullAxis;
-import it.unive.pylisa.analysis.dataframes.operations.FilterNullAxis;
 import it.unive.pylisa.analysis.dataframes.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.operations.Keys;
 import it.unive.pylisa.analysis.dataframes.operations.ProjectionOperation;
@@ -80,12 +76,14 @@ import it.unive.pylisa.symbolic.SliceConstant;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
 import it.unive.pylisa.symbolic.SliceConstant.Slice;
 import it.unive.pylisa.symbolic.operators.DictPut;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
+import it.unive.pylisa.symbolic.operators.Enumerations.BinaryKind;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryKind;
 import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.dataframes.AccessKeys;
-import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
-import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
 import it.unive.pylisa.symbolic.operators.dataframes.AxisConcatenation;
+import it.unive.pylisa.symbolic.operators.dataframes.BinaryTransform;
 import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
 import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.CreateDataframe;
@@ -93,14 +91,12 @@ import it.unive.pylisa.symbolic.operators.dataframes.DataframeColumnSlice;
 import it.unive.pylisa.symbolic.operators.dataframes.DataframeColumnSlice.ColumnSlice;
 import it.unive.pylisa.symbolic.operators.dataframes.DataframeProjection;
 import it.unive.pylisa.symbolic.operators.dataframes.DropCols;
-import it.unive.pylisa.symbolic.operators.dataframes.FillNull;
-import it.unive.pylisa.symbolic.operators.dataframes.FilterNull;
 import it.unive.pylisa.symbolic.operators.dataframes.Iterate;
 import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
 import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
-import it.unive.pylisa.symbolic.operators.dataframes.PopSelection;
 import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.RowProjection;
+import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
 
@@ -479,12 +475,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return doCreateDataframe(arg, pp);
 		else if (operator == CopyDataframe.INSTANCE)
 			return doCopyDataframe(arg, pp);
-		else if (operator instanceof ApplyTransformation)
-			return doApplyTransformation(arg, operator, pp);
-		else if (operator instanceof FilterNull)
-			return doFilterNull(arg, operator, pp);
-		else if (operator instanceof PopSelection)
-			return doPopSelection(arg, pp);
+		else if (operator instanceof UnaryTransform)
+			return doUnaryTransformation(arg, operator, pp);
 		else if (operator instanceof AxisConcatenation)
 			return doAxisConcatenation(arg, operator, pp);
 		else if (operator == AccessKeys.INSTANCE)
@@ -577,7 +569,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		DataframeForest forest = new DataframeForest(arg.graph);
 		DataframeOperation concatNode = new Concat(pp.getLocation(),
-				operator == JoinCols.INSTANCE ? Concat.Axis.CONCAT_COLS : Concat.Axis.CONCAT_ROWS);
+				operator == JoinCols.INSTANCE ? Axis.COLS : Axis.ROWS);
 		forest.addNode(concatNode);
 
 		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(arg.operations.getMap());
@@ -643,90 +635,36 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				ops.putState(id, new SetLattice<>(concatNode)));
 	}
 
-	private static DataframeGraphDomain doPopSelection(DataframeGraphDomain arg, ProgramPoint pp)
-			throws SemanticException {
-		SetLattice<DataframeOperation> ops = resolvePointers(arg);
-		if (topOrBottom(ops))
-			return cleanStack(arg, pp);
-
-		DataframeForest forest = new DataframeForest(arg.graph);
-		Set<NodeId> ids = new HashSet<>();
-		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(arg.operations.getMap());
-		for (DataframeOperation op : ops) {
-			if (!(op instanceof ProjectionOperation<?, ?>))
-				return cleanStack(arg, pp);
-
-			Collection<DataframeOperation> preds = forest.predecessorsOf(op);
-			if (preds.size() != 1)
-				throw new SemanticException("Not supported yet");
-			DataframeOperation pred = preds.iterator().next();
-			forest.getNodeList().removeNode(op);
-			for (Entry<NodeId, SetLattice<DataframeOperation>> entry : arg.operations)
-				if (entry.getValue().contains(op)) {
-					operations.put(entry.getKey(), entry.getValue().replace(op, pred));
-					ids.add(entry.getKey());
-				} else if (entry.getValue().contains(pred))
-					ids.add(entry.getKey());
-		}
-
-		SetLattice<NodeId> idsLattice = new SetLattice<>(ids, false);
-		CollectingMapLattice<Identifier,
-				NodeId> pointers = shift(arg.pointers, arg.pointers.lattice, idsLattice);
-		return new DataframeGraphDomain(
-				arg.constants,
-				forest,
-				pointers.setStack(idsLattice),
-				new CollectingMapLattice<>(arg.operations.lattice, operations));
-	}
-
-	private static DataframeGraphDomain doFilterNull(DataframeGraphDomain arg, UnaryOperator operator, ProgramPoint pp)
-			throws SemanticException {
-		SetLattice<DataframeOperation> ops = resolvePointers(arg);
-		if (topOrBottom(ops))
-			return cleanStack(arg, pp);
-
-		FilterNullAxis filter = new FilterNullAxis(pp.getLocation(), ((FilterNull) operator).getAxis());
-
-		DataframeForest forest = new DataframeForest(arg.graph);
-		forest.addNode(filter);
-		for (DataframeOperation op : ops)
-			forest.addEdge(new SimpleEdge(op, filter));
-
-		NodeId id = new NodeId(filter);
-		SetLattice<NodeId> ids = new SetLattice<>(id);
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(arg.pointers, arg.pointers.lattice, ids);
-		return new DataframeGraphDomain(
-				arg.constants,
-				forest,
-				pointers.setStack(ids),
-				arg.operations.putState(id, new SetLattice<>(filter)));
-	}
-
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static DataframeGraphDomain doApplyTransformation(DataframeGraphDomain arg, UnaryOperator operator,
+	private static DataframeGraphDomain doUnaryTransformation(DataframeGraphDomain arg, UnaryOperator operator,
 			ProgramPoint pp) throws SemanticException {
 		SetLattice<DataframeOperation> stack = resolvePointers(arg);
 		if (topOrBottom(stack))
 			return cleanStack(arg, pp);
 
-		ApplyTransformation op = (ApplyTransformation) operator;
-		Kind kind = op.getKind();
+		UnaryTransform op = (UnaryTransform) operator;
 
 		DataframeForest df = new DataframeForest(arg.graph);
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
 		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(arg.operations.getMap());
 		for (DataframeOperation leaf : stack) {
-			if (!(leaf instanceof ProjectionOperation<?, ?>))
-				return cleanStack(arg, pp);
+			DataframeSelection<?, ?> selection;
+			if (leaf instanceof ProjectionOperation<?, ?>)
+				selection = ((ProjectionOperation<?, ?>) leaf).getSelection();
+			else
+				selection = new DataframeSelection<>(true);
 
-			Transform t = op.getArg().isPresent()
-					? new Transform(pp.getLocation(), kind, op.isChangeShape(),
-							((ProjectionOperation<?, ?>) leaf).getSelection(), op.getArg().get())
-					: new Transform(pp.getLocation(), kind, op.isChangeShape(),
-							((ProjectionOperation<?, ?>) leaf).getSelection());
+			Transform<?, ?> t = op.getArg().isPresent()
+					? new Transform(pp.getLocation(), op.getKind(), op.getAxis(), op.isChangeShape(),
+							selection, op.getArg().get())
+					: new Transform(pp.getLocation(), op.getKind(), op.getAxis(), op.isChangeShape(),
+							selection);
 
 			df.addNode(t);
-			df.addEdge(new ConsumeEdge(leaf, t));
+			if (leaf instanceof ProjectionOperation<?, ?>)
+				df.addEdge(new ConsumeEdge(leaf, t));
+			else
+				df.addEdge(new SimpleEdge(leaf, t));
 			NodeId id = new NodeId(t);
 			ids.put(id, t);
 		}
@@ -830,8 +768,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return doListAppend(left, right, pp);
 		else if (operator == ColumnProjection.INSTANCE)
 			return doColumnAccess(left, right, pp);
-		else if (operator instanceof FillNull)
-			return doFillNull(left, right, operator, pp);
+		else if (operator instanceof BinaryTransform)
+			return doBinaryTransformation(left, right, operator, pp);
 		else if (operator == DropCols.INSTANCE)
 			return doDropColumns(left, right, pp);
 		else if (operator == JoinCols.INSTANCE)
@@ -913,7 +851,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 			ProjectionOperation<?, ?> access = (ProjectionOperation<?, ?>) op;
 			DataframeSelection<?, ?> selection = access.getSelection();
-			DataframeOperation nodeToAdd = new AssignValue<>(pp.getLocation(), selection, c);
+			DataframeOperation nodeToAdd = new Transform<>(pp.getLocation(), BinaryKind.ASSIGN, Axis.ROWS, false,
+					selection, c);
 			forest.addNode(nodeToAdd);
 			forest.addEdge(new ConsumeEdge(op, nodeToAdd));
 			NodeId id = new NodeId(nodeToAdd);
@@ -985,7 +924,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		DataframeForest forest = new DataframeForest(right.graph);
 		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(right.operations.getMap());
 
-		DataframeOperation concatNode = new Concat(pp.getLocation(), Concat.Axis.CONCAT_COLS);
+		DataframeOperation concatNode = new Concat(pp.getLocation(), Axis.COLS);
 		forest.addNode(concatNode);
 
 		for (DataframeOperation op : df1)
@@ -1036,7 +975,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			colsSelection = new ColumnListSelection(accessedCols);
 
 		@SuppressWarnings("rawtypes")
-		DropColumns<?> drop = new DropColumns(pp.getLocation(), colsSelection);
+		Transform<?, ?> drop = new Transform(pp.getLocation(), UnaryKind.DROP_COLS, Axis.COLS, false,
+				new DataframeSelection(colsSelection));
 		DataframeForest forest = new DataframeForest(right.graph);
 		forest.addNode(drop);
 		for (DataframeOperation op : ops)
@@ -1052,29 +992,49 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				right.operations.putState(id, new SetLattice<>(drop)));
 	}
 
-	private static DataframeGraphDomain doFillNull(DataframeGraphDomain left,
+	private static DataframeGraphDomain doBinaryTransformation(DataframeGraphDomain left,
 			DataframeGraphDomain right, BinaryOperator operator, ProgramPoint pp)
 			throws SemanticException {
-		SetLattice<DataframeOperation> ops = resolvePointers(left);
+		SetLattice<DataframeOperation> stack = resolvePointers(left);
 		ConstantPropagation value = right.constStack;
-		if (topOrBottom(ops))
+		if (topOrBottom(stack))
 			return cleanStack(right, pp);
 
-		FillNullAxis filler = new FillNullAxis(pp.getLocation(), ((FillNull) operator).getAxis(), value);
-
+		BinaryTransform op = (BinaryTransform) operator;
 		DataframeForest forest = new DataframeForest(right.graph);
-		forest.addNode(filler);
-		for (DataframeOperation op : ops)
-			forest.addEdge(new SimpleEdge(op, filler));
+		Map<NodeId, DataframeOperation> ids = new HashMap<>();
+		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(left.operations.getMap());
+		for (DataframeOperation leaf : stack) {
+			DataframeSelection<?, ?> selection;
+			if (leaf instanceof ProjectionOperation<?, ?>)
+				selection = ((ProjectionOperation<?, ?>) leaf).getSelection();
+			else
+				selection = new DataframeSelection<>(true);
 
-		NodeId id = new NodeId(filler);
-		SetLattice<NodeId> ids = new SetLattice<>(id);
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointers.lattice, ids);
+			if (op.getArg().isPresent())
+				throw new SemanticException("duplicate argument not supported");
+			Transform<?, ?> t = new Transform<>(pp.getLocation(), op.getKind(), op.getAxis(), op.isChangeShape(),
+					selection, value);
+
+			forest.addNode(t);
+			if (leaf instanceof ProjectionOperation<?, ?>)
+				forest.addEdge(new ConsumeEdge(leaf, t));
+			else
+				forest.addEdge(new SimpleEdge(leaf, t));
+			NodeId id = new NodeId(t);
+			ids.put(id, t);
+		}
+
+		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointers.lattice, idsLattice);
+		CollectingMapLattice<NodeId, DataframeOperation> ops = new CollectingMapLattice<>(left.operations.lattice, map);
+		for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
+			ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
 		return new DataframeGraphDomain(
 				right.constants,
 				forest,
-				pointers.setStack(ids),
-				right.operations.putState(id, new SetLattice<>(filler)));
+				pointers.setStack(idsLattice),
+				ops);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

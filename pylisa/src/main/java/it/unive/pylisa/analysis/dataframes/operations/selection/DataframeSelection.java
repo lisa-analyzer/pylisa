@@ -162,9 +162,11 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 			return cmp;
 		return rowSelection.compareTo(other.rowSelection);
 	}
-	
+
 	@Override
 	public Names extractColumnNames() throws SemanticException {
+		// we do not extract column names from row filters intentionally, as
+		// they are handled ad-hoc
 		return columnSelection == null ? Names.TOP : columnSelection.extractColumnNames();
 	}
 }

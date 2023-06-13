@@ -7,30 +7,38 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
-import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
+import it.unive.pylisa.symbolic.operators.Enumerations.TransformKind;
 
 public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
 
-	private final Kind type;
+	private final TransformKind type;
+	private final Axis axis;
 	private final DataframeSelection<R, C> selection;
-	private final boolean changeShape;
+	private final boolean yieldsNewStructure;
 	private final Optional<Object> arg;
 
-	public Transform(CodeLocation where, Kind type, boolean changeShape, DataframeSelection<R, C> selection) {
-		this(where, type, changeShape, selection, null);
+	public Transform(CodeLocation where, TransformKind type, Axis axis, boolean yieldsNewStructure,
+			DataframeSelection<R, C> selection) {
+		this(where, type, axis, yieldsNewStructure, selection, null);
 	}
 
-	public Transform(CodeLocation where, Kind type, boolean changeShape, DataframeSelection<R, C> selection,
+	public Transform(CodeLocation where, TransformKind type, Axis axis, boolean yieldsNewStructure, DataframeSelection<R, C> selection,
 			Object arg) {
 		super(where);
 		this.type = type;
+		this.axis = axis;
 		this.selection = selection;
-		this.changeShape = changeShape;
+		this.yieldsNewStructure = yieldsNewStructure;
 		this.arg = Optional.ofNullable(arg);
 	}
 
-	public Kind getType() {
+	public TransformKind getType() {
 		return type;
+	}
+
+	public Axis getAxis() {
+		return axis;
 	}
 
 	public DataframeSelection<R, C> getSelection() {
@@ -41,8 +49,8 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 		return arg;
 	}
 
-	public boolean isChangeShape() {
-		return changeShape;
+	public boolean yieldsNewStructure() {
+		return yieldsNewStructure;
 	}
 
 	@Override
@@ -50,9 +58,10 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + ((arg == null) ? 0 : arg.hashCode());
-		result = prime * result + (changeShape ? 1231 : 1237);
+		result = prime * result + (yieldsNewStructure ? 1231 : 1237);
 		result = prime * result + ((selection == null) ? 0 : selection.hashCode());
 		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		result = prime * result + ((axis == null) ? 0 : axis.hashCode());
 		return result;
 	}
 
@@ -70,7 +79,7 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 				return false;
 		} else if (!arg.equals(other.arg))
 			return false;
-		if (changeShape != other.changeShape)
+		if (yieldsNewStructure != other.yieldsNewStructure)
 			return false;
 		if (selection == null) {
 			if (other.selection != null)
@@ -79,23 +88,28 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 			return false;
 		if (type != other.type)
 			return false;
+		if (axis != other.axis)
+			return false;
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		if (arg.isEmpty())
-			return type + "(" + selection + ")";
-		else
-			return type + "(" + selection + ", " + arg.get() + ")";
+		String ret = "transform " + axis + ": " + type + "(" + selection;
+		if (arg.isPresent())
+			ret += ", " + arg.get();
+		ret += ")";
+		if (yieldsNewStructure)
+			ret += " *NEW_STRUCTURE*";
+		return ret;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
 		Transform<?, ?> o = (Transform<?, ?>) other;
-		if (type != o.type || selection.getClass() != o.selection.getClass() || !arg.equals(o.arg)
-				|| changeShape != o.changeShape)
+		if (type != o.type || axis != o.axis || selection.getClass() != o.selection.getClass() || !arg.equals(o.arg)
+				|| yieldsNewStructure != o.yieldsNewStructure)
 			return false;
 		return selection.lessOrEqual((DataframeSelection<R, C>) o.selection);
 	}
@@ -104,19 +118,24 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 	@SuppressWarnings("unchecked")
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
 		Transform<?, ?> o = (Transform<?, ?>) other;
-		if (type != o.type || selection.getClass() != o.selection.getClass() || changeShape != o.changeShape)
+		if (type != o.type || axis != o.axis || selection.getClass() != o.selection.getClass()
+				|| yieldsNewStructure != o.yieldsNewStructure)
 			return top();
-		return new Transform<>(loc(other), type, changeShape, selection.lub((DataframeSelection<R, C>) o.selection),
+		return new Transform<>(loc(other), type, axis, yieldsNewStructure,
+				selection.lub((DataframeSelection<R, C>) o.selection),
 				arg.equals(o.arg) ? arg : null);
 	}
 
 	@Override
 	protected int compareToSameClassAndLocation(DataframeOperation o) {
 		Transform<?, ?> other = (Transform<?, ?>) o;
-		int cmp = type.compareTo(other.type);
+		int cmp = type.compare(other.type);
 		if (cmp != 0)
 			return cmp;
-		cmp = Boolean.compare(changeShape, other.changeShape);
+		cmp = axis.compareTo(other.axis);
+		if (cmp != 0)
+			return cmp;
+		cmp = Boolean.compare(yieldsNewStructure, other.yieldsNewStructure);
 		if (cmp != 0)
 			return cmp;
 		cmp = selection.compareTo(other.selection);

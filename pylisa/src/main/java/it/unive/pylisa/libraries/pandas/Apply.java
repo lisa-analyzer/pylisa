@@ -15,7 +15,9 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryKind;
+import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 
 public class Apply extends BinaryExpression implements PluggableStatement {
 
@@ -45,7 +47,7 @@ public class Apply extends BinaryExpression implements PluggableStatement {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		ApplyTransformation op = new ApplyTransformation(ApplyTransformation.Kind.LAMBDA, false, right);
+		UnaryTransform op = new UnaryTransform(UnaryKind.LAMBDA, Axis.ROWS, false, right);
 		return PandasSemantics.transform(state, left, st, op);
 	}
 }

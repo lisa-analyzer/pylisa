@@ -20,7 +20,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
+import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
 import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
@@ -89,7 +89,7 @@ public class PandasSemantics {
 					AnalysisState<A, H, V, T> state,
 					SymbolicExpression dataframe,
 					ProgramPoint pp,
-					ApplyTransformation op)
+					UnaryTransform op)
 					throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		AnalysisState<A, H, V, T> result = state.bottom();
