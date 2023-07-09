@@ -45,21 +45,10 @@ public class Init extends it.unive.lisa.program.cfg.statement.BinaryExpression i
         AnalysisState<A,H,V,T> result = state;
         ExpressionSet<SymbolicExpression>[] expr = new ExpressionSet[0];
 
-        AccessInstanceGlobal nodeName = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0], "node_name"); // super(MinimalSubscriber, self)::node_name
+        AccessInstanceGlobal nodeName = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0], "node_name");
         PyAssign pyAssign = new PyAssign(getCFG(), getLocation(), nodeName, getSubExpressions()[1]);
         result = result.lub(pyAssign.semantics(result, interprocedural, expressions));
-        // new empy List of Publishers
-        AccessInstanceGlobal _publishers = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0], "_publishers");
-        ListCreation _publishersList = new ListCreation(getCFG(), getLocation());
-        pyAssign = new PyAssign(getCFG(), getLocation(), _publishers, _publishersList);
-        result = result.lub(pyAssign.semantics(result, interprocedural, expressions));
-
-        // new empty list of Subscribers
-        AccessInstanceGlobal _subscribers = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0], "_subscribers");
-        ListCreation _subscribersList = new ListCreation(getCFG(), getLocation());
-        pyAssign = new PyAssign(getCFG(), getLocation(), _subscribers, _subscribersList);
-        result = result.lub(pyAssign.semantics(result, interprocedural, expressions));
-
-        return result.lub(pyAssign.semantics(result, interprocedural, expressions));
+        
+        return result;
     }
 }

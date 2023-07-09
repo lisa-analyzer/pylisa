@@ -1,1 +1,0 @@
-{"name":"untyped ~LiSAProgram::LiSA$init()","description":null,"nodes":[{"id":0,"text":"ret"}],"edges":[],"descriptions":[{"nodeId":0,"description":{"expressions":["skip"],"state":{"heap":"#TOP#","type":{"map":"empty","stack":"_|_"},"value":{"map":"empty","stack":"_|_"}}}}]}

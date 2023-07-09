@@ -28,6 +28,7 @@ dependencies {
     implementation 'io.github.lisa-analyzer:lisa-sdk:0.1b8'
     implementation 'io.github.lisa-analyzer:lisa-program:0.1b8'
     implementation 'io.github.lisa-analyzer:lisa-analyses:0.1b8'
+    implementation group: 'org.jdom', name: 'jdom2', version: '2.0.5'
     antlr 'org.antlr:antlr4:4.8-1'    
     testImplementation 'junit:junit:4.12'
     implementation 'com.google.code.gson:gson:2.8.7'

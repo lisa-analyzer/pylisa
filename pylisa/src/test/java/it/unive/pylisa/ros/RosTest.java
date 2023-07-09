@@ -31,12 +31,12 @@ public class RosTest {
 
     @Test
     public void test() throws Exception {
-        PyFrontend translator = new PyFrontend("ros-tests/main2.py", false);
+        PyFrontend translator = new PyFrontend("ros-tests/minimal.py", false);
 
         Program program = translator.toLiSAProgram();
 
         LiSAConfiguration conf = new LiSAConfiguration();
-        conf.workdir = "test-ros-output-2";
+        conf.workdir = "test-ros-output-main-minimal-new";
         conf.serializeResults = true;
         conf.jsonOutput = true;
         conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;

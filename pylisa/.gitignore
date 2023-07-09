@@ -12,4 +12,3 @@ py-outputs
 
 # gradle configuration for accessing the snapshot of lisa
 gradle.properties
-

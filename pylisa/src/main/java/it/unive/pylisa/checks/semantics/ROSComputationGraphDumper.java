@@ -45,32 +45,124 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.io.*;
+import java.util.*;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> {
 
     RosComputationalGraph rosGraph = new RosComputationalGraph();
-
+    
+    PermissionsGraph permGraph = new PermissionsGraph();
     @Override
     public void beforeExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {
     }
 
     @Override
     public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {
+        
+        // validate against .XML
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    
+        try {
+        
+            // optional, but recommended
+            // process XML securely, avoid attacks like XML External Entities (XXE)
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        
+            // parse XML file
+            DocumentBuilder db = dbf.newDocumentBuilder();
+        
+            Document doc = db.parse(new File("ros-tests/permissions.xml"));
+        
+            // optional, but recommended
+            // http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
+            doc.getDocumentElement().normalize();
+            NodeList grants = doc.getElementsByTagName("grant");
+            for (int j = 0; j < grants.getLength(); j++) {
+                String nodeId = "\"" + grants.item(j).getAttributes().getNamedItem("name").getNodeValue() + "\"";
+                permGraph.addNode(new Node(nodeId, null));
+                for (int i = 0; i < grants.item(j).getChildNodes().getLength(); i++) {
+                    org.w3c.dom.Node n = grants.item(j).getChildNodes().item(i);
+                    if (n.getNodeName().equals("publish")) {
+                        // get topics
+                        for (int k = 0; k < n.getChildNodes().getLength(); k++) {
+                            org.w3c.dom.Node m = n.getChildNodes().item(k);
+                            if (m.getNodeName().equals("topics")) {
+                                for (int l = 0; l < m.getChildNodes().getLength(); l++) {
+                                    org.w3c.dom.Node o = m.getChildNodes().item(l);
+                                    String topic = "\"" + o.getTextContent() + "\"";
+                                    if (o.getNodeName().equals("topic")) {
+                                        System.out.println(o.getTextContent());
+                                        Topic t = permGraph.addOrGetTopic("\"" + o.getTextContent() + "\"");
+                                        //Publisher p = new Publisher(permGraph.getNodeByName(nodeId),t, "");
+                                        permGraph.getNodeByName(nodeId).addNewPublisher(t, "");
+                                    }
+                                }
+                                System.out.println("PUBLISH");
+                            }
+                        }
+                    }
+                    if (n.getNodeName().equals("subscribe")) {
+                        for (int k = 0; k < n.getChildNodes().getLength(); k++) {
+                            org.w3c.dom.Node m = n.getChildNodes().item(k);
+                            if (m.getNodeName().equals("topics")) {
+                                for (int l = 0; l < m.getChildNodes().getLength(); l++) {
+                                    org.w3c.dom.Node o = m.getChildNodes().item(l);
+                                    String topic = o.getTextContent();
+                                    if (o.getNodeName().equals("topic")) {
+                                        System.out.println(o.getTextContent());
+                                        Topic t = permGraph.addOrGetTopic("\"" + o.getTextContent() + "\"");
+                                        //Publisher p = new Publisher(permGraph.getNodeByName(nodeId),t, "");
+                                        permGraph.getNodeByName(nodeId).addNewSubscriber(t, "", "");
+                                    }
+                                }
+                            }
+                        }
+                        System.out.println("SUBSCRIBER");
+                    }
+                    int x = 3;
+                }
+                //org.w3c.dom.Node node = list.item(temp);
+            }
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+        
+        
+        
         StringBuilder dotGraph = new StringBuilder("digraph rosgraph {graph [pad=\"0.5\", nodesep=\"1\", ranksep=\"2\"];");
         for(Node n : rosGraph.getNodes()) {
-            dotGraph.append(n.getName()).append("[shape=box,style=filled,fillcolor=\"aquamarine\"];");
+            dotGraph.append(n.getName()).append("[style=filled,fillcolor=\"aquamarine\"];");
         }
         for (Topic t : rosGraph.getTopics()) {
             if (rosGraph.getTopicSubscriptions(t.getName()).size() == 0 || rosGraph.getTopicPublishers(t.getName()).size() == 0) {
-                dotGraph.append(t.getName()).append("[style=filled,fillcolor=\"tan1\"];");
+                dotGraph.append(t.getName()).append("[shape=box,style=filled,fillcolor=\"tan1\"];");
             } else {
-                dotGraph.append(t.getName()).append("[style=filled,fillcolor=\"khaki1\"];");
+                dotGraph.append(t.getName()).append("[shape=box,style=filled,fillcolor=\"khaki1\"];");
             }
         }
         for(Node n : rosGraph.getNodes()) {
             for (Publisher p : n.getPublishers()) {
                 dotGraph.append(n.getName()).append(" -> ").append(p.getTopic().getName());
                 Boolean loop = false;
+                Boolean perm = true;
+                /*Node _n = permGraph.getNodeByName(n.getName());
+                if (_n != null) {
+                    for (Publisher _p : permGraph.getNodeByName(n.getName()).getPublishers()) {
+                        if (_p.getTopic().getName().equals(p.getTopic().getName())) {
+                            perm = true;
+                            break;
+                        }
+                    }
+                }*/
                 Set<Subscription> subs = rosGraph.getTopicSubscriptions(p.getTopic().getName());
                 for (Subscription s : subs) {
                     if (s.getNode().equals(n)) {
@@ -79,14 +171,35 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
                     }
                 }
                 if (loop) {
-                    dotGraph.append("[label=\"").append(p.getMsgType()).append("\",color=\"red\"];");
+                    if (perm) {
+                        dotGraph.append("[shape=box,label=\"").append(p.getMsgType()).append("\",color=\"red\"];");
+                    } else {
+                        dotGraph.append("[shape=box,label=\"⚠️").append(p.getMsgType()).append("\",color=\"red\",style=\"dotted\",penwidth=3];");
+                    }
+                    
                 } else {
-                    dotGraph.append("[label=\"").append(p.getMsgType()).append("\"];");
+                    if (perm) {
+                        dotGraph.append("[shape=box,label=\"").append(p.getMsgType()).append("\"];");
+                    } else {
+                        dotGraph.append("[shape=box,label=\"⚠️").append(p.getMsgType()).append("\",style=\"dotted\",penwidth=3];");
+                    }
+                    
                 }
             }
             for (Subscription s : n.getSubscribers()) {
                 dotGraph.append(s.getTopic().getName()).append(" -> ").append(n.getName());
                 Boolean loop = false;
+                Boolean perm = true;
+                /*Node _n = permGraph.getNodeByName(n.getName());
+                if (_n != null) {
+                    for (Subscription _s : permGraph.getNodeByName(n.getName()).getSubscribers()) {
+                        if (_s.getTopic().getName().equals(s.getTopic().getName())) {
+                            perm = true;
+                            break;
+                        }
+                    }
+                }*/
+                
                 Set<Publisher> pubs = rosGraph.getTopicPublishers(s.getTopic().getName());
                 for (Publisher p : pubs) {
                     if (p.getNode().equals(n)) {
@@ -95,25 +208,29 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
                     }
                 }
                 if (loop) {
-                    dotGraph.append("[label=\"").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\",color=\"red\"];");
+                    if (perm) {
+                        dotGraph.append("[shape=box,label=\"").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\",color=\"red\"];");
+                    } else {
+                        dotGraph.append("[shape=box,label=\"⚠️").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\",color=\"red\",style=\"dotted\",penwidth=3];");
+                    }
                 } else {
-                    dotGraph.append("[label=\"").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\"];");
-                }
+                    if (perm) {
+                        dotGraph.append("[shape=box,label=\"").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\"];");
+                    } else {
+                        dotGraph.append("[shape=box,label=\"⚠️").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\",style=\"dotted\",penwidth=3];");
+                    }
+               }
             }
         }
         dotGraph.append("}");
         tool.warn(dotGraph.toString());
-        FileManager.WriteAction w = new FileManager.WriteAction() {
-            @Override
-            public void perform(Writer writer) throws IOException {
-                writer.write(dotGraph.toString());
-            }
-        };
+        FileManager.WriteAction w = writer -> writer.write(dotGraph.toString());
         try {
-            tool.getFileManager().mkDotFile("test", w);
+            tool.getFileManager().mkDotFile("graph", w);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        int z = 3;
     }
 
     @Override
