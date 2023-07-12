@@ -65,7 +65,7 @@ public class PySingleArrayAccess extends BinaryExpression {
 
 			if (left.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfref))) {
 				it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
-						seriestype, deref, right, ColumnProjection.INSTANCE, getLocation());
+						seriestype, deref, right, new ColumnProjection(0), getLocation());
 				result = result.smallStepSemantics(col, this);
 				childType = right.getRuntimeTypes(types).stream().anyMatch(dfref::equals) ? dfref : seriesref;
 			}

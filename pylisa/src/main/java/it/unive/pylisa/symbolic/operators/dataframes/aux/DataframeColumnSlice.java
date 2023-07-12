@@ -1,4 +1,4 @@
-package it.unive.pylisa.symbolic.operators.dataframes;
+package it.unive.pylisa.symbolic.operators.dataframes.aux;
 
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;

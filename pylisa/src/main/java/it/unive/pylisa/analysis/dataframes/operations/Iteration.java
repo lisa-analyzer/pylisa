@@ -1,11 +1,12 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
+import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 
 public class Iteration extends DataframeOperation {
 
-	public Iteration(CodeLocation where) {
-		super(where);
+	public Iteration(CodeLocation where, int index) {
+		super(where, index);
 	}
 
 	@Override
@@ -15,7 +16,7 @@ public class Iteration extends DataframeOperation {
 
 	@Override
 	protected DataframeOperation lubSameOperation(DataframeOperation other) {
-		return new Iteration(loc(other));
+		return this;
 	}
 
 	@Override
@@ -24,7 +25,12 @@ public class Iteration extends DataframeOperation {
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameOperation(DataframeOperation o) {
 		return 0;
+	}
+
+	@Override
+	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+		return this;
 	}
 }

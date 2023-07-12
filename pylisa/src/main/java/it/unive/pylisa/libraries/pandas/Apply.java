@@ -47,7 +47,7 @@ public class Apply extends BinaryExpression implements PluggableStatement {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		UnaryTransform op = new UnaryTransform(UnaryKind.LAMBDA, Axis.ROWS, false, right);
+		UnaryTransform op = new UnaryTransform(0, UnaryKind.LAMBDA, Axis.ROWS, false, right);
 		return PandasSemantics.transform(state, left, st, op);
 	}
 }

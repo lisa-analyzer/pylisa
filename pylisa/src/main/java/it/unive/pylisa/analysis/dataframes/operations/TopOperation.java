@@ -8,26 +8,16 @@ import it.unive.lisa.program.cfg.CodeLocation;
 public class TopOperation extends DataframeOperation {
 
 	public TopOperation() {
-		super(SyntheticLocation.INSTANCE);
+		super(SyntheticLocation.INSTANCE, -1);
 	}
 
 	public TopOperation(CodeLocation where) {
-		super(where);
+		super(where, -1);
 	}
 
 	@Override
 	public String toString() {
 		return Lattice.TOP_STRING;
-	}
-
-	@Override
-	public DataframeOperation lubAux(DataframeOperation other) throws SemanticException {
-		return where.equals(other.where) ? this : DataframeOperation.TOP;
-	}
-
-	@Override
-	public boolean lessOrEqualAux(DataframeOperation other) throws SemanticException {
-		return other instanceof TopOperation;
 	}
 
 	@Override
@@ -57,7 +47,12 @@ public class TopOperation extends DataframeOperation {
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameOperation(DataframeOperation o) {
 		return 0;
+	}
+
+	@Override
+	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+		return this;
 	}
 }

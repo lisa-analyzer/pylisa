@@ -104,7 +104,7 @@ public class FillNA extends it.unive.lisa.program.cfg.statement.BinaryExpression
 		}
 
 		AnalysisState<A, H, V, T> filtered = state.bottom();
-		BinaryTransform op = new BinaryTransform(BinaryKind.FILL_NA, axis, false);
+		BinaryTransform op = new BinaryTransform(0, BinaryKind.FILL_NA, axis, false);
 		for (SymbolicExpression loc : targets) {
 			BinaryExpression filter = new BinaryExpression(dftype, loc, right, op, location);
 			SymbolicExpression ref = loc instanceof HeapDereference

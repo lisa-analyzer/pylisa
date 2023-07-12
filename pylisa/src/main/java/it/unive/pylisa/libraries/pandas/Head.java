@@ -73,7 +73,7 @@ public class Head extends BinaryExpression implements PluggableStatement {
 		for (SymbolicExpression id : copied.getComputedExpressions()) {
 			// the new dataframe will have its rows projected
 			TernaryExpression projection = new TernaryExpression(dftype, id, start, right,
-					RowProjection.INSTANCE, location);
+					new RowProjection(0), location);
 			AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(projection, st);
 
 			// we leave a reference to the fresh dataframe on the stack

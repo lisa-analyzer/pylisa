@@ -1,18 +1,5 @@
 package it.unive.pylisa.libraries;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.apache.commons.lang3.tuple.Pair;
-
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.program.CodeUnit;
 import it.unive.lisa.program.CompilationUnit;
@@ -25,11 +12,22 @@ import it.unive.pylisa.antlr.LibraryDefinitionLexer;
 import it.unive.pylisa.antlr.LibraryDefinitionParser;
 import it.unive.pylisa.libraries.loader.Library;
 import it.unive.pylisa.libraries.loader.Runtime;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class LibrarySpecificationProvider {
 
 	private static final String LIBS_FILE = "/libs.txt";
-	
+
 	public static final String SET = "Set";
 	public static final String DICT = "Dict";
 	public static final String LIST = "List";
@@ -53,7 +51,7 @@ public class LibrarySpecificationProvider {
 	public static CompilationUnit hierarchyRoot;
 
 	private static CFG init;
-	
+
 	private static final Collection<String> LOADED_LIBS = new HashSet<>();
 
 	public static void load(Program program) throws AnalysisSetupException {
@@ -95,10 +93,11 @@ public class LibrarySpecificationProvider {
 	public static void importLibrary(Program program, String name) {
 		if (LOADED_LIBS.contains(name))
 			return;
-		
+
 		Library library = AVAILABLE_LIBS.get(name);
 		if (library == null)
-			// TODO do we log? could also be imports to other files under analysis...
+			// TODO do we log? could also be imports to other files under
+			// analysis...
 			return;
 		CodeUnit lib = library.toLiSAUnit(program, new AtomicReference<>(hierarchyRoot));
 		library.populateUnit(init, hierarchyRoot, lib);
@@ -112,7 +111,7 @@ public class LibrarySpecificationProvider {
 	public static Library getLibraryUnit(String name) {
 		return AVAILABLE_LIBS.get(name);
 	}
-	
+
 	public static boolean isLibraryLoaded(String name) {
 		return LOADED_LIBS.contains(name);
 	}

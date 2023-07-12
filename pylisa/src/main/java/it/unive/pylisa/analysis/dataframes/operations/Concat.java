@@ -8,8 +8,8 @@ public class Concat extends DataframeOperation {
 
 	private final Axis axis;
 
-	public Concat(CodeLocation where, Axis axis) {
-		super(where);
+	public Concat(CodeLocation where, int index, Axis axis) {
+		super(where, index);
 		this.axis = axis;
 	}
 
@@ -26,11 +26,10 @@ public class Concat extends DataframeOperation {
 	@Override
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
 		Concat o = (Concat) other;
-		if (o.axis != this.axis) {
-			return new Concat(loc(other), Axis.TOP);
-		}
+		if (o.axis != this.axis)
+			return new Concat(where, index, Axis.TOP);
 
-		return new Concat(loc(other), this.axis);
+		return new Concat(where, index, this.axis);
 	}
 
 	@Override
@@ -71,9 +70,18 @@ public class Concat extends DataframeOperation {
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameOperation(DataframeOperation o) {
 		Concat other = (Concat) o;
 		return axis.compareTo(other.axis);
+	}
+
+	@Override
+	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+		Concat o = (Concat) other;
+		if (o.axis != this.axis)
+			return new Concat(where, index, Axis.TOP);
+
+		return new Concat(where, index, this.axis);
 	}
 
 }

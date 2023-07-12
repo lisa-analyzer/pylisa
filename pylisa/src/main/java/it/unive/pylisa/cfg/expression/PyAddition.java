@@ -20,46 +20,50 @@ import it.unive.pylisa.symbolic.operators.StringAdd;
 
 public class PyAddition extends Addition {
 
-    /**
-     * Builds the addition.
-     *
-     * @param cfg      the {@link CFG} where this operation lies
-     * @param location the location where this literal is defined
-     * @param left     the left-hand side of this operation
-     * @param right    the right-hand side of this operation
-     */
-    public PyAddition(CFG cfg, CodeLocation location, Expression left, Expression right) {
-        super(cfg, location, left, right);
-    }
+	/**
+	 * Builds the addition.
+	 *
+	 * @param cfg      the {@link CFG} where this operation lies
+	 * @param location the location where this literal is defined
+	 * @param left     the left-hand side of this operation
+	 * @param right    the right-hand side of this operation
+	 */
+	public PyAddition(CFG cfg, CodeLocation location, Expression left, Expression right) {
+		super(cfg, location, left, right);
+	}
 
-    @Override
-    public <A extends AbstractState<A, H, V, T>,
-            H extends HeapDomain<H>,
-            V extends ValueDomain<V>,
-            T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
-            InterproceduralAnalysis<A, H, V, T> interprocedural,
-            AnalysisState<A, H, V, T> state,
-            SymbolicExpression left,
-            SymbolicExpression right,
-            StatementStore<A, H, V, T> expressions)
-            throws SemanticException {
-        TypeSystem types = getProgram().getTypes();
-        // STRING ADD (CONCATENATION)
-        if (left.getRuntimeTypes(types).stream().anyMatch(Type::isStringType) && right.getRuntimeTypes(types).stream().anyMatch(Type::isStringType)) {
-            return state.smallStepSemantics(
-                    new BinaryExpression(
-                            getStaticType(),
-                            left,
-                            right,
-                            StringAdd.INSTANCE,
-                            getLocation()),
-                    this);
-        }
-        // TODO: OTHER CASES:
-        // - List (The + operator returns a list containing all the elements of the first and the second list (second list appended to first)
-        // - Tuple (The + operator works like List, i.e. it returns a Tuple of M = n1+n2 elements where the first n1 elements are all the elements of the first (right) tuple
-        //      and the last n2 are all the elements of the second (right) tuple.
-        // Set and Dict does not support operand +
-        return super.binarySemantics(interprocedural, state, left, right, expressions);
-    }
+	@Override
+	public <A extends AbstractState<A, H, V, T>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					AnalysisState<A, H, V, T> state,
+					SymbolicExpression left,
+					SymbolicExpression right,
+					StatementStore<A, H, V, T> expressions)
+					throws SemanticException {
+		TypeSystem types = getProgram().getTypes();
+		// STRING ADD (CONCATENATION)
+		if (left.getRuntimeTypes(types).stream().anyMatch(Type::isStringType)
+				&& right.getRuntimeTypes(types).stream().anyMatch(Type::isStringType)) {
+			return state.smallStepSemantics(
+					new BinaryExpression(
+							getStaticType(),
+							left,
+							right,
+							StringAdd.INSTANCE,
+							getLocation()),
+					this);
+		}
+		// TODO: OTHER CASES:
+		// - List (The + operator returns a list containing all the elements of
+		// the first and the second list (second list appended to first)
+		// - Tuple (The + operator works like List, i.e. it returns a Tuple of M
+		// = n1+n2 elements where the first n1 elements are all the elements of
+		// the first (right) tuple
+		// and the last n2 are all the elements of the second (right) tuple.
+		// Set and Dict does not support operand +
+		return super.binarySemantics(interprocedural, state, left, right, expressions);
+	}
 }

@@ -89,7 +89,7 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 		RowFilter<?> other = (RowFilter<?>) o;
 		return selection.compareTo(other.selection);
 	}
-	
+
 	@Override
 	public Names extractColumnNames() {
 		return Names.BOTTOM;

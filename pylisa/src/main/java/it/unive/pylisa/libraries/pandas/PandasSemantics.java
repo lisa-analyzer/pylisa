@@ -20,10 +20,10 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
-import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
 import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
+import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
+import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
 public class PandasSemantics {
 
@@ -74,7 +74,7 @@ public class PandasSemantics {
 		AnalysisState<A, H, V, T> allocated = state.smallStepSemantics(allocation, pp);
 
 		AnalysisState<A, H, V, T> copy = state.bottom();
-		UnaryExpression cp = new UnaryExpression(dftype, dataframe, CopyDataframe.INSTANCE, location);
+		UnaryExpression cp = new UnaryExpression(dftype, dataframe, new CopyDataframe(0), location);
 		for (SymbolicExpression loc : allocated.getComputedExpressions())
 			// copy the dataframe
 			copy = copy.lub(allocated.smallStepSemantics(cp, pp).assign(loc, cp, pp));
@@ -173,7 +173,7 @@ public class PandasSemantics {
 			CodeLocation loc = pp.getLocation();
 			for (SymbolicExpression id : copied.getComputedExpressions()) {
 				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, right,
-						new PandasSeriesComparison(op), loc);
+						new PandasSeriesComparison(0, op), loc);
 				AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(seriesComp, pp);
 
 				HeapReference ref = new HeapReference(seriesref, id, loc);
@@ -194,7 +194,7 @@ public class PandasSemantics {
 			CodeLocation loc = pp.getLocation();
 			for (SymbolicExpression id : copied.getComputedExpressions()) {
 				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, left,
-						new PandasSeriesComparison(op), loc);
+						new PandasSeriesComparison(0, op), loc);
 				AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(seriesComp, pp);
 
 				HeapReference ref = new HeapReference(seriesref, id, loc);

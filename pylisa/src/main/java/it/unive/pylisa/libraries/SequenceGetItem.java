@@ -59,7 +59,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		CodeLocation loc = getLocation();
 		if (left.getRuntimeTypes(getProgram().getTypes()).stream().anyMatch(dfref::equals)) {
 			HeapDereference deref = new HeapDereference(dftype, left, loc);
-			UnaryExpression iterate = new UnaryExpression(seriestype, deref, Iterate.INSTANCE, loc);
+			UnaryExpression iterate = new UnaryExpression(seriestype, deref, new Iterate(0), loc);
 			return state.smallStepSemantics(iterate, st);
 		}
 

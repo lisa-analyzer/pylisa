@@ -1,9 +1,5 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
@@ -11,8 +7,11 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
 import it.unive.pylisa.symbolic.operators.Enumerations.BinaryKind;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
 
-public class BinaryTransform implements BinaryOperator {
+public class BinaryTransform implements BinaryOperator, DataframeOperator {
 
 	private final BinaryKind type;
 
@@ -22,21 +21,29 @@ public class BinaryTransform implements BinaryOperator {
 
 	private final boolean changeShape;
 
-	public BinaryTransform(BinaryKind type, Axis axis, boolean changeShape) {
-		this(type, axis, changeShape, null);
+	private final int index;
+
+	public BinaryTransform(int index, BinaryKind type, Axis axis, boolean changeShape) {
+		this(index, type, axis, changeShape, null);
 	}
 
-	public BinaryTransform(BinaryKind type, Axis axis, boolean changeShape, Object arg) {
+	public BinaryTransform(int index, BinaryKind type, Axis axis, boolean changeShape, Object arg) {
+		this.index = index;
 		this.type = type;
 		this.axis = axis;
 		this.changeShape = changeShape;
 		this.arg = Optional.ofNullable(arg);
 	}
 
+	@Override
+	public int getIndex() {
+		return index;
+	}
+
 	public BinaryKind getKind() {
 		return type;
 	}
-	
+
 	public Axis getAxis() {
 		return axis;
 	}
@@ -44,7 +51,7 @@ public class BinaryTransform implements BinaryOperator {
 	public Optional<Object> getArg() {
 		return arg;
 	}
-	
+
 	public boolean isChangeShape() {
 		return changeShape;
 	}
@@ -62,7 +69,8 @@ public class BinaryTransform implements BinaryOperator {
 		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		if (left.stream().noneMatch(t -> t.equals(series)))
 			return Collections.emptySet();
-		// TODO do we need conditions on right? We might have an expected type in the constructor...
+		// TODO do we need conditions on right? We might have an expected type
+		// in the constructor...
 		return Collections.singleton(series);
 	}
 

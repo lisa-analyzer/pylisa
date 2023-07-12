@@ -10,8 +10,8 @@ public class AssignDataframe<R extends RowSelection<R>, C extends ColumnSelectio
 
 	private final DataframeSelection<R, C> selection;
 
-	public AssignDataframe(CodeLocation where, DataframeSelection<R, C> selection) {
-		super(where);
+	public AssignDataframe(CodeLocation where, int index, DataframeSelection<R, C> selection) {
+		super(where, index);
 		this.selection = selection;
 	}
 
@@ -34,7 +34,7 @@ public class AssignDataframe<R extends RowSelection<R>, C extends ColumnSelectio
 		AssignDataframe<?, ?> o = (AssignDataframe<?, ?>) other;
 		if (selection.getClass() != o.selection.getClass())
 			return top();
-		return new AssignDataframe<>(loc(other), selection.lub((DataframeSelection<R, C>) o.selection));
+		return new AssignDataframe<>(where, index, selection.lub((DataframeSelection<R, C>) o.selection));
 	}
 
 	@Override
@@ -68,8 +68,17 @@ public class AssignDataframe<R extends RowSelection<R>, C extends ColumnSelectio
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameOperation(DataframeOperation o) {
 		AssignDataframe<?, ?> other = (AssignDataframe<?, ?>) o;
 		return selection.compareTo(other.selection);
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+		AssignDataframe<?, ?> o = (AssignDataframe<?, ?>) other;
+		if (selection.getClass() != o.selection.getClass())
+			return top();
+		return new AssignDataframe<>(where, index, selection.lub((DataframeSelection<R, C>) o.selection));
 	}
 }

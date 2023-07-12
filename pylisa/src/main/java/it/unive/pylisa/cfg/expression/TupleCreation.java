@@ -1,7 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import org.apache.commons.lang3.StringUtils;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -26,6 +24,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import org.apache.commons.lang3.StringUtils;
 
 public class TupleCreation extends NaryExpression {
 

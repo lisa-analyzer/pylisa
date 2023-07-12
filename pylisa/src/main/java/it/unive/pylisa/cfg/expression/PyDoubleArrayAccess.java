@@ -55,7 +55,7 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 				it.unive.lisa.symbolic.value.TernaryExpression dfAccess = new it.unive.lisa.symbolic.value.TernaryExpression(
 						dftype,
 						deref, middle, right,
-						DataframeProjection.INSTANCE,
+						new DataframeProjection(0),
 						getLocation());
 				state = state.smallStepSemantics(dfAccess, this);
 				dereferencedType = dftype;

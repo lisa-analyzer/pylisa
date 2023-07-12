@@ -1,9 +1,5 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.lattices.FunctionalLattice;
@@ -11,6 +7,9 @@ import it.unive.lisa.analysis.representation.DomainRepresentation;
 import it.unive.lisa.analysis.representation.MapRepresentation;
 import it.unive.lisa.analysis.representation.SetRepresentation;
 import it.unive.lisa.analysis.representation.StringRepresentation;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
 public class CollectingMapLattice<K, V>
 		extends FunctionalLattice<CollectingMapLattice<K, V>, K, SetLattice<V>> {

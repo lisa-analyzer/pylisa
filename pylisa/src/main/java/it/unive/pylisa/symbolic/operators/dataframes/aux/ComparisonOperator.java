@@ -1,4 +1,4 @@
-package it.unive.pylisa.symbolic.operators.dataframes;
+package it.unive.pylisa.symbolic.operators.dataframes.aux;
 
 import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.Lattice;

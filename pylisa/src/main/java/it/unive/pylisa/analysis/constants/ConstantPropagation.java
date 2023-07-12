@@ -1,7 +1,5 @@
 package it.unive.pylisa.analysis.constants;
 
-import java.util.Objects;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -36,6 +34,7 @@ import it.unive.pylisa.symbolic.operators.Power;
 import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
+import java.util.Objects;
 
 public class ConstantPropagation implements
 		BaseNonRelationalValueDomain<ConstantPropagation>,

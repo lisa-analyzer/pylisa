@@ -82,7 +82,7 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		HeapDereference derefLeft = new HeapDereference(dftype, left, location);
 		BinaryExpression access = new BinaryExpression(dftype, derefLeft, right,
-				ColumnProjection.INSTANCE, location);
+				new ColumnProjection(0), location);
 		return state.smallStepSemantics(access, st).smallStepSemantics(left, st);
 	}
 }

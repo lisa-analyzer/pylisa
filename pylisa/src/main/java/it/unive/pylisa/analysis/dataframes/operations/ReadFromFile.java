@@ -1,6 +1,7 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
 import it.unive.lisa.analysis.Lattice;
+import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 
 public class ReadFromFile extends DataframeOperation {
@@ -10,8 +11,8 @@ public class ReadFromFile extends DataframeOperation {
 	 */
 	private final String file;
 
-	public ReadFromFile(CodeLocation where, String file) {
-		super(where);
+	public ReadFromFile(CodeLocation where, int index, String file) {
+		super(where, index);
 		this.file = file;
 	}
 
@@ -32,9 +33,7 @@ public class ReadFromFile extends DataframeOperation {
 
 	@Override
 	protected DataframeOperation lubSameOperation(DataframeOperation other) {
-		return lessOrEqualSameOperation(other)
-				? (where.equals(other.where) ? this : new ReadFromFile(loc(other), file(other)))
-				: top();
+		return new ReadFromFile(where, index, file(other));
 	}
 
 	private String file(DataframeOperation other) {
@@ -80,7 +79,7 @@ public class ReadFromFile extends DataframeOperation {
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameOperation(DataframeOperation o) {
 		ReadFromFile other = (ReadFromFile) o;
 		if (file == null && other.file != null)
 			return 1;
@@ -90,5 +89,10 @@ public class ReadFromFile extends DataframeOperation {
 			return 0;
 		else
 			return file.compareTo(other.file);
+	}
+
+	@Override
+	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+		return new ReadFromFile(where, index, file(other));
 	}
 }

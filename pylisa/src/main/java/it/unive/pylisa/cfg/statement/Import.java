@@ -1,8 +1,5 @@
 package it.unive.pylisa.cfg.statement;
 
-import java.util.Map;
-import java.util.Map.Entry;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -20,6 +17,8 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class Import extends Statement {
 

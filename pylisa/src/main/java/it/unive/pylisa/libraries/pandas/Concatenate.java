@@ -73,7 +73,7 @@ public class Concatenate extends it.unive.lisa.program.cfg.statement.UnaryExpres
 					throws SemanticException {
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		UnaryExpression concat = new UnaryExpression(dftype, expr, new AxisConcatenation(axis), location);
+		UnaryExpression concat = new UnaryExpression(dftype, expr, new AxisConcatenation(0, axis), location);
 		return PandasSemantics.createAndInitDataframe(state, concat, st);
 	}
 }

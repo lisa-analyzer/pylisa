@@ -1,13 +1,12 @@
 package it.unive.pylisa.symbolic.operators.compare;
 
-import java.util.Collections;
-import java.util.Set;
-
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.value.operator.ComparisonOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
+import java.util.Collections;
+import java.util.Set;
 
 public class PyComparisonGe implements ComparisonOperator, BinaryOperator {
 

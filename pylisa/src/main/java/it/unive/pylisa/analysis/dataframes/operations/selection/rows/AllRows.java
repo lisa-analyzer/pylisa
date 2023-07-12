@@ -20,7 +20,7 @@ public class AllRows extends RowSelection<AllRows> {
 	protected AllRows wideningSameClass(AllRows other) throws SemanticException {
 		return this;
 	}
-	
+
 	@Override
 	public boolean lessOrEqualSameClass(AllRows other) throws SemanticException {
 		return true;

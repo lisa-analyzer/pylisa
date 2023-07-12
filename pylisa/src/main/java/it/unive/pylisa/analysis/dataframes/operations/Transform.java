@@ -1,7 +1,5 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
-import java.util.Optional;
-
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelection;
@@ -9,6 +7,7 @@ import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSe
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
 import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
 import it.unive.pylisa.symbolic.operators.Enumerations.TransformKind;
+import java.util.Optional;
 
 public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
 
@@ -18,14 +17,23 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 	private final boolean yieldsNewStructure;
 	private final Optional<Object> arg;
 
-	public Transform(CodeLocation where, TransformKind type, Axis axis, boolean yieldsNewStructure,
+	public Transform(CodeLocation where,
+			int index,
+			TransformKind type,
+			Axis axis,
+			boolean yieldsNewStructure,
 			DataframeSelection<R, C> selection) {
-		this(where, type, axis, yieldsNewStructure, selection, null);
+		this(where, index, type, axis, yieldsNewStructure, selection, null);
 	}
 
-	public Transform(CodeLocation where, TransformKind type, Axis axis, boolean yieldsNewStructure, DataframeSelection<R, C> selection,
+	public Transform(CodeLocation where,
+			int index,
+			TransformKind type,
+			Axis axis,
+			boolean yieldsNewStructure,
+			DataframeSelection<R, C> selection,
 			Object arg) {
-		super(where);
+		super(where, index);
 		this.type = type;
 		this.axis = axis;
 		this.selection = selection;
@@ -121,13 +129,13 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 		if (type != o.type || axis != o.axis || selection.getClass() != o.selection.getClass()
 				|| yieldsNewStructure != o.yieldsNewStructure)
 			return top();
-		return new Transform<>(loc(other), type, axis, yieldsNewStructure,
+		return new Transform<>(where, index, type, axis, yieldsNewStructure,
 				selection.lub((DataframeSelection<R, C>) o.selection),
 				arg.equals(o.arg) ? arg : null);
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameOperation(DataframeOperation o) {
 		Transform<?, ?> other = (Transform<?, ?>) o;
 		int cmp = type.compare(other.type);
 		if (cmp != 0)
@@ -143,5 +151,17 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 			return cmp;
 		// not much we can do here..
 		return Integer.compare(arg.hashCode(), other.arg.hashCode());
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+		Transform<?, ?> o = (Transform<?, ?>) other;
+		if (type != o.type || axis != o.axis || selection.getClass() != o.selection.getClass()
+				|| yieldsNewStructure != o.yieldsNewStructure)
+			return top();
+		return new Transform<>(where, index, type, axis, yieldsNewStructure,
+				selection.widening((DataframeSelection<R, C>) o.selection),
+				arg.equals(o.arg) ? arg : null);
 	}
 }

@@ -1,31 +1,5 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.function.BiFunction;
-import java.util.function.Predicate;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.graphstream.graph.Edge;
-import org.graphstream.graph.Element;
-import org.graphstream.graph.implementations.MultiGraph;
-import org.graphstream.stream.file.FileSinkDOT;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.representation.DomainRepresentation;
@@ -44,6 +18,30 @@ import it.unive.pylisa.analysis.dataframes.edge.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.function.BiFunction;
+import java.util.function.Predicate;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.graphstream.graph.Edge;
+import org.graphstream.graph.Element;
+import org.graphstream.graph.implementations.MultiGraph;
+import org.graphstream.stream.file.FileSinkDOT;
 
 public class DataframeForest
 		extends CodeGraph<DataframeForest, DataframeOperation, DataframeEdge>
@@ -112,7 +110,7 @@ public class DataframeForest
 		Map<DataframeOperation, Integer> nodeIds = new HashMap<>();
 		SortedSet<SerializableNodeDescription> descrs = new TreeSet<>();
 		SortedSet<SerializableEdge> edges = new TreeSet<>();
-		
+
 		int counter = 0;
 		for (DataframeOperation node : getNodes()) {
 			addNode(counter, nodes, descrs, node, descriptionGenerator);
@@ -516,7 +514,7 @@ public class DataframeForest
 		return forest;
 	}
 
-	public DataframeForest bDFS(DataframeOperation leaf, 
+	public DataframeForest bDFS(DataframeOperation leaf,
 			Predicate<DataframeOperation> stop,
 			Predicate<DataframeEdge> followEdge) {
 		NodeList<DataframeForest, DataframeOperation,

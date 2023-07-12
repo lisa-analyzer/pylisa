@@ -17,7 +17,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonGt;
-import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
+import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
 public class PyGreaterThan extends GreaterThan {
 

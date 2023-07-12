@@ -10,23 +10,23 @@ public class ProjectionOperation<R extends RowSelection<R>, C extends ColumnSele
 
 	private final DataframeSelection<R, C> selection;
 
-	public ProjectionOperation(CodeLocation where, DataframeSelection<R, C> selection) {
-		super(where);
+	public ProjectionOperation(CodeLocation where, int index, DataframeSelection<R, C> selection) {
+		super(where, index);
 		this.selection = selection;
 	}
 
-	public ProjectionOperation(CodeLocation where, C selection) {
-		super(where);
+	public ProjectionOperation(CodeLocation where, int index, C selection) {
+		super(where, index);
 		this.selection = new DataframeSelection<>(selection);
 	}
 
-	public ProjectionOperation(CodeLocation where, R selection) {
-		super(where);
+	public ProjectionOperation(CodeLocation where, int index, R selection) {
+		super(where, index);
 		this.selection = new DataframeSelection<>(selection);
 	}
 
-	public ProjectionOperation(CodeLocation where, R rows, C columns) {
-		super(where);
+	public ProjectionOperation(CodeLocation where, int index, R rows, C columns) {
+		super(where, index);
 		this.selection = new DataframeSelection<>(rows, columns);
 	}
 
@@ -54,7 +54,7 @@ public class ProjectionOperation<R extends RowSelection<R>, C extends ColumnSele
 		ProjectionOperation<?, ?> o = (ProjectionOperation<?, ?>) other;
 		if (selection.getClass() != o.selection.getClass())
 			return top();
-		return new ProjectionOperation<>(loc(other), selection.lub((DataframeSelection<R, C>) o.selection));
+		return new ProjectionOperation<>(where, index, selection.lub((DataframeSelection<R, C>) o.selection));
 	}
 
 	@Override
@@ -83,8 +83,17 @@ public class ProjectionOperation<R extends RowSelection<R>, C extends ColumnSele
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameOperation(DataframeOperation o) {
 		ProjectionOperation<?, ?> other = (ProjectionOperation<?, ?>) o;
 		return selection.compareTo(other.selection);
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+		ProjectionOperation<?, ?> o = (ProjectionOperation<?, ?>) other;
+		if (selection.getClass() != o.selection.getClass())
+			return top();
+		return new ProjectionOperation<>(where, index, selection.lub((DataframeSelection<R, C>) o.selection));
 	}
 }

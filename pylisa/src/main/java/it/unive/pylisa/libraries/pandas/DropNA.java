@@ -103,7 +103,7 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		}
 
 		AnalysisState<A, H, V, T> filtered = state.bottom();
-		UnaryTransform op = new UnaryTransform(UnaryKind.DROP_NA, axis, false);
+		UnaryTransform op = new UnaryTransform(0, UnaryKind.DROP_NA, axis, false);
 		for (SymbolicExpression loc : targets) {
 			UnaryExpression filter = new UnaryExpression(dftype, loc, op, location);
 			SymbolicExpression ref = loc instanceof HeapDereference

@@ -1,9 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -32,6 +28,9 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PyAssign extends Assignment {
 
@@ -65,14 +64,13 @@ public class PyAssign extends Assignment {
 				if (right.getRuntimeTypes(types).stream()
 						.anyMatch(t -> t.equals(dfreftype) || t.equals(seriesreftype))) {
 					// asssigning part of a dataframe to another dataframe so
-					// get
-					// deref from right
+					// get deref from right
 					if (PandasSemantics.isDataframePortionThatCanBeAssignedTo(right))
 						right = PandasSemantics.getDataframeDereference(right);
-					write = new BinaryExpression(dftype, lderef, right, WriteSelectionDataframe.INSTANCE, loc);
+					write = new BinaryExpression(dftype, lderef, right, new WriteSelectionDataframe(0), loc);
 				} else
 					// assigning a part of a dataframe to a constant
-					write = new BinaryExpression(dftype, lderef, right, WriteSelectionConstant.INSTANCE, loc);
+					write = new BinaryExpression(dftype, lderef, right, new WriteSelectionConstant(0), loc);
 
 				// we leave on the stack the column that received the assignment
 				return state.smallStepSemantics(write, this).smallStepSemantics(left, this);

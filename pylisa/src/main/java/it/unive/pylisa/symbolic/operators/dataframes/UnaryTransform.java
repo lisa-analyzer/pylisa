@@ -1,9 +1,5 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
@@ -11,8 +7,11 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
 import it.unive.pylisa.symbolic.operators.Enumerations.UnaryKind;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
 
-public class UnaryTransform implements UnaryOperator {
+public class UnaryTransform implements UnaryOperator, DataframeOperator {
 
 	private final UnaryKind type;
 
@@ -22,11 +21,19 @@ public class UnaryTransform implements UnaryOperator {
 
 	private final boolean changeShape;
 
-	public UnaryTransform(UnaryKind type, Axis axis, boolean changeShape) {
-		this(type, axis, changeShape, null);
+	private final int index;
+
+	@Override
+	public int getIndex() {
+		return index;
 	}
 
-	public UnaryTransform(UnaryKind type, Axis axis, boolean changeShape, Object arg) {
+	public UnaryTransform(int index, UnaryKind type, Axis axis, boolean changeShape) {
+		this(index, type, axis, changeShape, null);
+	}
+
+	public UnaryTransform(int index, UnaryKind type, Axis axis, boolean changeShape, Object arg) {
+		this.index = index;
 		this.type = type;
 		this.axis = axis;
 		this.changeShape = changeShape;
@@ -36,7 +43,7 @@ public class UnaryTransform implements UnaryOperator {
 	public UnaryKind getKind() {
 		return type;
 	}
-	
+
 	public Axis getAxis() {
 		return axis;
 	}
@@ -44,7 +51,7 @@ public class UnaryTransform implements UnaryOperator {
 	public Optional<Object> getArg() {
 		return arg;
 	}
-	
+
 	public boolean isChangeShape() {
 		return changeShape;
 	}

@@ -45,7 +45,7 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		UnaryTransform op = new UnaryTransform(UnaryKind.TO_DATETIME, Axis.ROWS, false);
+		UnaryTransform op = new UnaryTransform(0, UnaryKind.TO_DATETIME, Axis.ROWS, false);
 		return PandasSemantics.transform(state, expr, st, op);
 	}
 }

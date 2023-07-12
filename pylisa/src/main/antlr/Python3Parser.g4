@@ -79,12 +79,12 @@ parameters
    ;
 
 typedargslist
-   : ( typedarg (',' typedarg)* (',' ('*' (tfpdef)? (',' typedarg)* (',' ('**' tfpdef (',')?)?)? | '**' tfpdef (',')?)?)? | '*' (tfpdef)? (',' typedarg)* (',' ('**' tfpdef (',')?)?)? | '**' tfpdef (',')?)
+   : (typedarg (',' typedarg)* (',' ('*' (tfpdef)? (',' typedarg)* (',' ('**' tfpdef (',')?)?)? | '**' tfpdef (',')?)?)? | '*' (tfpdef)? (',' typedarg)* (',' ('**' tfpdef (',')?)?)? | '**' tfpdef (',')?)
    ;
 
 typedarg
-	: tfpdef ('=' test)?
-	;
+   : tfpdef ('=' test)?
+   ;
 
 tfpdef
    : NAME (':' test)?

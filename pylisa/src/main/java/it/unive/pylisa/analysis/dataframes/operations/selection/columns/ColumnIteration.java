@@ -56,7 +56,7 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 	protected int compareToSameClass(Selection<?> o) {
 		return 0;
 	}
-	
+
 	@Override
 	public Names extractColumnNames() {
 		return Names.BOTTOM;

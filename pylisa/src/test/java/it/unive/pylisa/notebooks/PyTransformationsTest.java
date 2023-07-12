@@ -1,7 +1,5 @@
 package it.unive.pylisa.notebooks;
 
-import org.junit.Test;
-
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
@@ -15,6 +13,7 @@ import it.unive.pylisa.checks.BottomFinder;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
 import it.unive.pylisa.checks.OpenCallsFinder;
+import org.junit.Test;
 
 public class PyTransformationsTest extends AnalysisTestExecutor {
 
@@ -24,8 +23,9 @@ public class PyTransformationsTest extends AnalysisTestExecutor {
 
 	private CronConfiguration buildConfig(boolean findOpenCalls) {
 		CronConfiguration conf = new CronConfiguration();
-		//conf.serializeResults = true;
-		//conf.analysisGraphs = it.unive.lisa.conf.LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
+		// conf.serializeResults = true;
+		// conf.analysisGraphs =
+		// it.unive.lisa.conf.LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
 		conf.optimize = true;
 		conf.jsonOutput = true;
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();

@@ -2,12 +2,12 @@ package it.unive.pylisa.analysis.dataframes.operations;
 
 import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.lisa.util.datastructures.graph.code.CodeNode;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
+import java.util.Objects;
 
 public abstract class DataframeOperation implements
 		BaseLattice<DataframeOperation>,
@@ -20,14 +20,25 @@ public abstract class DataframeOperation implements
 
 	protected final CodeLocation where;
 
+	protected final int index;
+
+	/**
+	 * Internal field for the graph class, not involved in equality/semantic
+	 * operations
+	 */
 	protected int offset;
 
-	protected DataframeOperation(CodeLocation where) {
+	protected DataframeOperation(CodeLocation where, int index) {
 		this.where = where;
+		this.index = index;
 	}
 
 	public CodeLocation getWhere() {
 		return where;
+	}
+
+	public int getIndex() {
+		return index;
 	}
 
 	@Override
@@ -42,48 +53,48 @@ public abstract class DataframeOperation implements
 
 	@Override
 	public boolean isTop() {
-		return BaseLattice.super.isTop() || TOP.equals(this);
+		return BaseLattice.super.isTop() || TOP == this || TOP.equals(this);
 	}
 
 	@Override
 	public boolean isBottom() {
-		return BaseLattice.super.isBottom() || BOTTOM.equals(this);
+		return BaseLattice.super.isBottom() || BOTTOM == this || BOTTOM.equals(this);
+	}
+
+	public boolean similar(DataframeOperation other) {
+		return getClass() == other.getClass() && where.equals(other.where) && index == other.index;
+	}
+
+	@Override
+	public boolean lessOrEqualAux(DataframeOperation other) throws SemanticException {
+		return similar(other) ? lessOrEqualSameOperation(other) : false;
 	}
 
 	@Override
 	public DataframeOperation lubAux(DataframeOperation other) throws SemanticException {
-		if (getClass() == other.getClass())
+		if (similar(other))
 			return lubSameOperation(other);
-		else if (where.equals(other.where))
-			return new TopOperation(where);
 		else
 			return TOP;
 	}
 
 	@Override
 	public final DataframeOperation wideningAux(DataframeOperation other) throws SemanticException {
-		return lubAux(other);
-	}
-
-	@Override
-	public boolean lessOrEqualAux(DataframeOperation other) throws SemanticException {
-		return getClass() == other.getClass() ? lessOrEqualSameOperation(other) : false;
-	}
-
-	public CodeLocation loc(DataframeOperation other) {
-		return where.equals(other.where) ? where : SyntheticLocation.INSTANCE;
+		if (similar(other))
+			return wideningSameOperation(other);
+		else
+			return TOP;
 	}
 
 	protected abstract boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException;
 
 	protected abstract DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException;
 
+	protected abstract DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException;
+
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((where == null) ? 0 : where.hashCode());
-		return result;
+		return Objects.hash(index, where);
 	}
 
 	@Override
@@ -95,12 +106,7 @@ public abstract class DataframeOperation implements
 		if (getClass() != obj.getClass())
 			return false;
 		DataframeOperation other = (DataframeOperation) obj;
-		if (where == null) {
-			if (other.where != null)
-				return false;
-		} else if (!where.equals(other.where))
-			return false;
-		return true;
+		return index == other.index && Objects.equals(where, other.where);
 	}
 
 	@Override
@@ -111,12 +117,14 @@ public abstract class DataframeOperation implements
 		int cmp;
 		if ((cmp = where.compareTo(o.where)) != 0)
 			return cmp;
+		if ((cmp = Integer.compare(index, o.index)) != 0)
+			return cmp;
 		if ((cmp = getClass().getName().compareTo(o.getClass().getName())) != 0)
 			return cmp;
-		return compareToSameClassAndLocation(o);
+		return compareToSameOperation(o);
 	}
 
-	protected abstract int compareToSameClassAndLocation(DataframeOperation o);
+	protected abstract int compareToSameOperation(DataframeOperation o);
 
 	@Override
 	public <V> boolean accept(GraphVisitor<DataframeForest, DataframeOperation, DataframeEdge, V> visitor, V tool) {

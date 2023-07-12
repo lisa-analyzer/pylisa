@@ -1,38 +1,7 @@
 package it.unive.pylisa;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.logging.IterationLogger;
 import it.unive.lisa.program.ClassUnit;
@@ -230,6 +199,34 @@ import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
@@ -525,7 +522,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		Parameter[] cfgArgs = visitParameters(funcDecl.parameters());
 
-		return new CodeMemberDescriptor(getLocation(funcDecl), currentUnit, currentUnit instanceof ClassUnit ? true : false, funcName, cfgArgs);
+		return new CodeMemberDescriptor(getLocation(funcDecl), currentUnit,
+				currentUnit instanceof ClassUnit ? true : false, funcName, cfgArgs);
 	}
 
 	@Override
@@ -566,7 +564,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		cfs.forEach(currentCFG::addControlFlowStructure);
 		currentCFG.simplify();
 		if (currentUnit instanceof ClassUnit) {
-			((ClassUnit)currentUnit).addInstanceCodeMember(currentCFG);
+			((ClassUnit) currentUnit).addInstanceCodeMember(currentCFG);
 		} else {
 			currentUnit.addCodeMember(currentCFG);
 		}
@@ -593,7 +591,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			for (TypedargContext def : ctx.typedarg()) {
 				if (firstParam) {
 					if (currentUnit instanceof ClassUnit) {
-						pars.add(new Parameter(getLocation(ctx), def.tfpdef().NAME().getText(), new ReferenceType(PyClassType.lookup(currentUnit.getName(), (ClassUnit) currentUnit))));
+						pars.add(new Parameter(getLocation(ctx), def.tfpdef().NAME().getText(),
+								new ReferenceType(PyClassType.lookup(currentUnit.getName(), (ClassUnit) currentUnit))));
 					} else {
 						pars.add(visitTypedarg(def));
 					}
@@ -603,8 +602,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				}
 			}
 
-
-				return pars.toArray(Parameter[]::new);
+		return pars.toArray(Parameter[]::new);
 	}
 
 	@Override
@@ -614,7 +612,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (ctx.test() == null)
 			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText());
 		else
-			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText(), Untyped.INSTANCE, visitTest(ctx.test()), new Annotations());
+			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText(), Untyped.INSTANCE,
+					visitTest(ctx.test()), new Annotations());
 	}
 
 	@Override
@@ -1028,7 +1027,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			variable = exprs.get(0);
 		else
 			variable = new TupleCreation(currentCFG, getLocation(ctx), exprs.toArray(Expression[]::new));
-		
+
 		List<Expression> list = visitTestlist(ctx.testlist());
 		if (list.size() != 1)
 			throw new UnsupportedStatementException("for loops with more than one test are not supported");
@@ -1700,7 +1699,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								VariableTableEntry vte = currentCFG.getDescriptor().getVariables().get(0);
 
 								Expression[] expressions = new Expression[2];
-								expressions[0] = new PyTypeLiteral(this.currentCFG, getLocation(expr), this.currentUnit);
+								expressions[0] = new PyTypeLiteral(this.currentCFG, getLocation(expr),
+										this.currentUnit);
 								expressions[1] = new VariableRef(this.currentCFG, getLocation(expr), vte.getName());
 								access = new SimpleSuperUnresolvedCall(
 										currentCFG,
@@ -1926,10 +1926,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		String name = ctx.NAME().getSymbol().getText();
 		// TODO inheritance
 		ClassUnit cu = new ClassUnit(new SourceCodeLocation(name, 0, 0), program, name, true);
-		ArrayList<ArgumentContext> superclasses = ctx.arglist() != null ? new ArrayList<>(ctx.arglist().argument()) : new ArrayList<>();
+		ArrayList<ArgumentContext> superclasses = ctx.arglist() != null ? new ArrayList<>(ctx.arglist().argument())
+				: new ArrayList<>();
 		// parse anchestors
 		for (ArgumentContext superclass : superclasses) {
-			// if exists a class unit in the program with name superclass.getText(): add it to the anchestors
+			// if exists a class unit in the program with name
+			// superclass.getText(): add it to the anchestors
 			for (Unit programCu : this.program.getUnits()) {
 				if (programCu instanceof CompilationUnit && programCu.getName().equals(superclass.getText())) {
 					cu.addAncestor(((CompilationUnit) programCu));
