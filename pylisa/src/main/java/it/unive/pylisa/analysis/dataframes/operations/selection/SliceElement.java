@@ -1,4 +1,4 @@
-package it.unive.pylisa.analysis.dataframes.operations;
+package it.unive.pylisa.analysis.dataframes.operations.selection;
 
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 

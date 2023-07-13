@@ -41,7 +41,7 @@ import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.operations.Keys;
 import it.unive.pylisa.analysis.dataframes.operations.ProjectionOperation;
-import it.unive.pylisa.analysis.dataframes.operations.ReadFromFile;
+import it.unive.pylisa.analysis.dataframes.operations.Read;
 import it.unive.pylisa.analysis.dataframes.operations.Transform;
 import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.columns.AllColumns;
@@ -351,7 +351,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	@Override
 	public boolean isTop() {
-		return constants.isTop() && constStack.isTop() && graph.isTop() && pointers.isTop() && operations.isTop();
+		return constants.isTop() 
+				&& constStack.isTop() 
+				&& graph.isTop() 
+				&& pointers.isTop() 
+				&& operations.isTop();
 	}
 
 	@Override
@@ -712,7 +716,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return cleanStack(arg, pp);
 
 		DataframeForest df = new DataframeForest(arg.graph);
-		ReadFromFile op = new ReadFromFile(pp.getLocation(), index, filename.as(String.class));
+		Read op = new Read(pp.getLocation(), index, filename);
 		df.addNode(op);
 
 		NodeId id = new NodeId(op);

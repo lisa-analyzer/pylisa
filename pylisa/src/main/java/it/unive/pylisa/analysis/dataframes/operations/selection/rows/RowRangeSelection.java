@@ -4,8 +4,8 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.Names;
 import it.unive.pylisa.analysis.dataframes.NumberSlice;
-import it.unive.pylisa.analysis.dataframes.operations.SliceElement;
 import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.SliceElement;
 
 public class RowRangeSelection extends RowSelection<RowRangeSelection> implements SliceElement {
 

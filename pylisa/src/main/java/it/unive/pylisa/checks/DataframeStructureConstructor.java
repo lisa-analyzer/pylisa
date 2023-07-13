@@ -37,7 +37,7 @@ import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.operations.Keys;
 import it.unive.pylisa.analysis.dataframes.operations.ProjectionOperation;
-import it.unive.pylisa.analysis.dataframes.operations.ReadFromFile;
+import it.unive.pylisa.analysis.dataframes.operations.Read;
 import it.unive.pylisa.analysis.dataframes.operations.Transform;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.BooleanSelection;
 import it.unive.pylisa.symbolic.operators.Enumerations.BinaryKind;
@@ -236,7 +236,7 @@ public class DataframeStructureConstructor implements SemanticCheck<
 								return entrystate.remove(sources, transform.getSelection().extractColumnNames());
 							else
 								return entrystate.access(sources, transform.getSelection().extractColumnNames());
-						} else if (node instanceof ReadFromFile || node instanceof Concat)
+						} else if (node instanceof Read || node instanceof Concat)
 							return entrystate.define(sources);
 						else if (node instanceof CreateFromDict || node instanceof BottomOperation
 								|| node instanceof CloseOperation || node instanceof Iteration || node instanceof Keys)
@@ -251,8 +251,10 @@ public class DataframeStructureConstructor implements SemanticCheck<
 								edge -> !(edge instanceof AssignEdge));
 						Set<String> names = new HashSet<>();
 						for (DataframeOperation op : cut.getNodeList().getEntries())
-							if (op instanceof ReadFromFile && ((ReadFromFile) op).getFile() != null)
-								names.add(((ReadFromFile) op).getFile());
+							if (op instanceof Read 
+									&& !((Read) op).getFile().isTop()
+									&& !((Read) op).getFile().isBottom())
+								names.add(((Read) op).getFile().as(String.class));
 							else
 								names.add(op.toString());
 						return new Names(names);
