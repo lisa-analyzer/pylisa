@@ -6,11 +6,11 @@ import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelecti
 import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
 
-public class AssignDataframe<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
+public class Assign<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
 
 	private final DataframeSelection<R, C> selection;
 
-	public AssignDataframe(CodeLocation where, int index, DataframeSelection<R, C> selection) {
+	public Assign(CodeLocation where, int index, DataframeSelection<R, C> selection) {
 		super(where, index);
 		this.selection = selection;
 	}
@@ -20,21 +20,27 @@ public class AssignDataframe<R extends RowSelection<R>, C extends ColumnSelectio
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
-		AssignDataframe<?, ?> o = (AssignDataframe<?, ?>) other;
-		if (selection.getClass() != o.selection.getClass())
-			return false;
-		return selection.lessOrEqual((DataframeSelection<R, C>) o.selection);
+		Assign<?, ?> o = (Assign<?, ?>) other;
+		return selection.lessOrEqual(o.selection);
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
-		AssignDataframe<?, ?> o = (AssignDataframe<?, ?>) other;
-		if (selection.getClass() != o.selection.getClass())
-			return top();
-		return new AssignDataframe<>(where, index, selection.lub((DataframeSelection<R, C>) o.selection));
+		Assign<?, ?> o = (Assign<?, ?>) other;
+		return new Assign<>(where, index, selection.lub(o.selection));
+	}
+
+	@Override
+	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+		Assign<?, ?> o = (Assign<?, ?>) other;
+		return new Assign<>(where, index, selection.lub(o.selection));
+	}
+
+	@Override
+	protected int compareToSameOperation(DataframeOperation o) {
+		Assign<?, ?> other = (Assign<?, ?>) o;
+		return selection.compareTo(other.selection);
 	}
 
 	@Override
@@ -53,7 +59,7 @@ public class AssignDataframe<R extends RowSelection<R>, C extends ColumnSelectio
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AssignDataframe<?, ?> other = (AssignDataframe<?, ?>) obj;
+		Assign<?, ?> other = (Assign<?, ?>) obj;
 		if (selection == null) {
 			if (other.selection != null)
 				return false;
@@ -65,20 +71,5 @@ public class AssignDataframe<R extends RowSelection<R>, C extends ColumnSelectio
 	@Override
 	public String toString() {
 		return "assign_to:" + selection;
-	}
-
-	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
-		AssignDataframe<?, ?> other = (AssignDataframe<?, ?>) o;
-		return selection.compareTo(other.selection);
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
-		AssignDataframe<?, ?> o = (AssignDataframe<?, ?>) other;
-		if (selection.getClass() != o.selection.getClass())
-			return top();
-		return new AssignDataframe<>(where, index, selection.lub((DataframeSelection<R, C>) o.selection));
 	}
 }

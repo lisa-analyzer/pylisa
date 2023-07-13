@@ -29,7 +29,7 @@ import it.unive.pylisa.analysis.dataframes.Names;
 import it.unive.pylisa.analysis.dataframes.edge.AssignEdge;
 import it.unive.pylisa.analysis.dataframes.edge.ConsumeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
-import it.unive.pylisa.analysis.dataframes.operations.AssignDataframe;
+import it.unive.pylisa.analysis.dataframes.operations.Assign;
 import it.unive.pylisa.analysis.dataframes.operations.BottomOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.operations.Init;
@@ -202,9 +202,9 @@ public class DataframeStructureConstructor implements SemanticCheck<
 					public ColumnsDomain semantics(DataframeOperation node, ColumnsDomain entrystate) throws Exception {
 						Names sources = extractSources(node, graph);
 
-						if (node instanceof AssignDataframe<?, ?>)
+						if (node instanceof Assign<?, ?>)
 							return entrystate.assign(sources,
-									((AssignDataframe<?, ?>) node).getSelection().extractColumnNames());
+									((Assign<?, ?>) node).getSelection().extractColumnNames());
 						else if (node instanceof Project<?, ?>) {
 							boolean allConsume = true;
 							Project<?, ?> proj = (Project<?, ?>) node;

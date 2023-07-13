@@ -34,7 +34,7 @@ import it.unive.pylisa.analysis.dataframes.edge.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.edge.ConsumeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
-import it.unive.pylisa.analysis.dataframes.operations.AssignDataframe;
+import it.unive.pylisa.analysis.dataframes.operations.Assign;
 import it.unive.pylisa.analysis.dataframes.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.operations.Init;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
@@ -949,7 +949,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			if (!(op instanceof Project<?, ?>))
 				return cleanStack(right, pp);
 
-			AssignDataframe assign = new AssignDataframe(pp.getLocation(), index,
+			Assign assign = new Assign(pp.getLocation(), index,
 					((Project<?, ?>) op).getSelection());
 			forest.addNode(assign);
 			forest.addEdge(new ConsumeEdge(op, assign));
