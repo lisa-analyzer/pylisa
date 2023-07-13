@@ -14,30 +14,26 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 	private final TransformKind type;
 	private final Axis axis;
 	private final DataframeSelection<R, C> selection;
-	private final boolean yieldsNewStructure;
 	private final Optional<Object> arg;
 
 	public Transform(CodeLocation where,
 			int index,
 			TransformKind type,
 			Axis axis,
-			boolean yieldsNewStructure,
 			DataframeSelection<R, C> selection) {
-		this(where, index, type, axis, yieldsNewStructure, selection, null);
+		this(where, index, type, axis, selection, null);
 	}
 
 	public Transform(CodeLocation where,
 			int index,
 			TransformKind type,
 			Axis axis,
-			boolean yieldsNewStructure,
 			DataframeSelection<R, C> selection,
 			Object arg) {
 		super(where, index);
 		this.type = type;
 		this.axis = axis;
 		this.selection = selection;
-		this.yieldsNewStructure = yieldsNewStructure;
 		this.arg = Optional.ofNullable(arg);
 	}
 
@@ -57,16 +53,11 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 		return arg;
 	}
 
-	public boolean yieldsNewStructure() {
-		return yieldsNewStructure;
-	}
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + ((arg == null) ? 0 : arg.hashCode());
-		result = prime * result + (yieldsNewStructure ? 1231 : 1237);
 		result = prime * result + ((selection == null) ? 0 : selection.hashCode());
 		result = prime * result + ((type == null) ? 0 : type.hashCode());
 		result = prime * result + ((axis == null) ? 0 : axis.hashCode());
@@ -87,8 +78,6 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 				return false;
 		} else if (!arg.equals(other.arg))
 			return false;
-		if (yieldsNewStructure != other.yieldsNewStructure)
-			return false;
 		if (selection == null) {
 			if (other.selection != null)
 				return false;
@@ -107,31 +96,23 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 		if (arg.isPresent())
 			ret += ", " + arg.get();
 		ret += ")";
-		if (yieldsNewStructure)
-			ret += " *NEW_STRUCTURE*";
 		return ret;
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
 		Transform<?, ?> o = (Transform<?, ?>) other;
-		if (type != o.type || axis != o.axis || selection.getClass() != o.selection.getClass() || !arg.equals(o.arg)
-				|| yieldsNewStructure != o.yieldsNewStructure)
+		if (type != o.type || !arg.equals(o.arg))
 			return false;
-		return selection.lessOrEqual((DataframeSelection<R, C>) o.selection);
+		return axis.lessOrEqual(o.axis) && selection.lessOrEqual(o.selection);
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
 		Transform<?, ?> o = (Transform<?, ?>) other;
-		if (type != o.type || axis != o.axis || selection.getClass() != o.selection.getClass()
-				|| yieldsNewStructure != o.yieldsNewStructure)
+		if (type != o.type || !arg.equals(o.arg))
 			return top();
-		return new Transform<>(where, index, type, axis, yieldsNewStructure,
-				selection.lub((DataframeSelection<R, C>) o.selection),
-				arg.equals(o.arg) ? arg : null);
+		return new Transform<>(where, index, type, axis.lub(o.axis), selection.lub(o.selection), arg);
 	}
 
 	@Override
@@ -143,9 +124,6 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 		cmp = axis.compareTo(other.axis);
 		if (cmp != 0)
 			return cmp;
-		cmp = Boolean.compare(yieldsNewStructure, other.yieldsNewStructure);
-		if (cmp != 0)
-			return cmp;
 		cmp = selection.compareTo(other.selection);
 		if (cmp != 0)
 			return cmp;
@@ -154,14 +132,10 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
 		Transform<?, ?> o = (Transform<?, ?>) other;
-		if (type != o.type || axis != o.axis || selection.getClass() != o.selection.getClass()
-				|| yieldsNewStructure != o.yieldsNewStructure)
+		if (type != o.type || !arg.equals(o.arg))
 			return top();
-		return new Transform<>(where, index, type, axis, yieldsNewStructure,
-				selection.widening((DataframeSelection<R, C>) o.selection),
-				arg.equals(o.arg) ? arg : null);
+		return new Transform<>(where, index, type, axis.widening(o.axis), selection.widening(o.selection), arg);
 	}
 }

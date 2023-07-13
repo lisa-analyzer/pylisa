@@ -15,7 +15,7 @@ import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
-import it.unive.pylisa.symbolic.operators.Enumerations.UnaryKind;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
 import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 
 public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
@@ -45,7 +45,7 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 					SymbolicExpression expr,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		UnaryTransform op = new UnaryTransform(0, UnaryKind.TO_DATETIME, Axis.ROWS, false);
-		return PandasSemantics.transform(state, expr, st, op);
+		UnaryTransform op = new UnaryTransform(0, UnaryTransformKind.TO_DATETIME, Axis.ROWS, false);
+		return PandasSemantics.applyUnary(state, expr, st, op);
 	}
 }

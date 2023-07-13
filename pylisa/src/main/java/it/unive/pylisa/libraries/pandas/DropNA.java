@@ -26,7 +26,7 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
-import it.unive.pylisa.symbolic.operators.Enumerations.UnaryKind;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
 import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 
 public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
@@ -103,7 +103,7 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		}
 
 		AnalysisState<A, H, V, T> filtered = state.bottom();
-		UnaryTransform op = new UnaryTransform(0, UnaryKind.DROP_NA, axis, false);
+		UnaryTransform op = new UnaryTransform(0, UnaryTransformKind.DROP_NA, axis, false);
 		for (SymbolicExpression loc : targets) {
 			UnaryExpression filter = new UnaryExpression(dftype, loc, op, location);
 			SymbolicExpression ref = loc instanceof HeapDereference

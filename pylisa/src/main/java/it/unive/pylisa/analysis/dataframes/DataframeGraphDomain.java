@@ -42,6 +42,7 @@ import it.unive.pylisa.analysis.dataframes.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.operations.Keys;
 import it.unive.pylisa.analysis.dataframes.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Read;
+import it.unive.pylisa.analysis.dataframes.operations.Reshape;
 import it.unive.pylisa.analysis.dataframes.operations.Transform;
 import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.columns.AllColumns;
@@ -62,8 +63,8 @@ import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
 import it.unive.pylisa.symbolic.SliceConstant.Slice;
 import it.unive.pylisa.symbolic.operators.DictPut;
 import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
-import it.unive.pylisa.symbolic.operators.Enumerations.BinaryKind;
-import it.unive.pylisa.symbolic.operators.Enumerations.UnaryKind;
+import it.unive.pylisa.symbolic.operators.Enumerations.BinaryTransformKind;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
 import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.dataframes.AccessKeys;
@@ -80,6 +81,7 @@ import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
 import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
 import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.RowProjection;
+import it.unive.pylisa.symbolic.operators.dataframes.UnaryReshape;
 import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
@@ -482,6 +484,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return doCopyDataframe(index, arg, pp);
 		else if (operator instanceof UnaryTransform)
 			return doUnaryTransformation(index, arg, operator, pp);
+		else if (operator instanceof UnaryReshape)
+			return doUnaryReshape(index, arg, operator, pp);
 		else if (operator instanceof AxisConcatenation)
 			return doAxisConcatenation(index, arg, operator, pp);
 		else if (operator instanceof AccessKeys)
@@ -661,9 +665,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				selection = new DataframeSelection<>(true);
 
 			Transform<?, ?> t = op.getArg().isPresent()
-					? new Transform(pp.getLocation(), index, op.getKind(), op.getAxis(), op.isChangeShape(),
+					? new Transform(pp.getLocation(), index, op.getKind(), op.getAxis(),
 							selection, op.getArg().get())
-					: new Transform(pp.getLocation(), index, op.getKind(), op.getAxis(), op.isChangeShape(),
+					: new Transform(pp.getLocation(), index, op.getKind(), op.getAxis(),
 							selection);
 
 			df.addNode(t);
@@ -673,6 +677,50 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				df.addEdge(new SimpleEdge(leaf, t));
 			NodeId id = new NodeId(t);
 			ids.put(id, t);
+		}
+
+		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
+		CollectingMapLattice<NodeId,
+				DataframeOperation> ops = new CollectingMapLattice<>(arg.operations.lattice, map);
+		for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
+			ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(arg.pointers, arg.pointers.lattice, idsLattice);
+		return new DataframeGraphDomain(
+				arg.constants,
+				df,
+				pointers.setStack(idsLattice),
+				ops);
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private static DataframeGraphDomain doUnaryReshape(int index, DataframeGraphDomain arg,
+			UnaryOperator operator,
+			ProgramPoint pp) throws SemanticException {
+		SetLattice<DataframeOperation> stack = resolvePointers(arg);
+		if (topOrBottom(stack))
+			return cleanStack(arg, pp);
+
+		UnaryReshape op = (UnaryReshape) operator;
+
+		DataframeForest df = new DataframeForest(arg.graph);
+		Map<NodeId, DataframeOperation> ids = new HashMap<>();
+		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(arg.operations.getMap());
+		for (DataframeOperation leaf : stack) {
+			DataframeSelection<?, ?> selection;
+			if (leaf instanceof ProjectionOperation<?, ?>)
+				selection = ((ProjectionOperation<?, ?>) leaf).getSelection();
+			else
+				selection = new DataframeSelection<>(true);
+
+			Reshape<?, ?> r = new Reshape(pp.getLocation(), index, op.getKind(), selection);
+
+			df.addNode(r);
+			if (leaf instanceof ProjectionOperation<?, ?>)
+				df.addEdge(new ConsumeEdge(leaf, r));
+			else
+				df.addEdge(new SimpleEdge(leaf, r));
+			NodeId id = new NodeId(r);
+			ids.put(id, r);
 		}
 
 		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
@@ -863,8 +911,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 			ProjectionOperation<?, ?> access = (ProjectionOperation<?, ?>) op;
 			DataframeSelection<?, ?> selection = access.getSelection();
-			DataframeOperation nodeToAdd = new Transform<>(pp.getLocation(), index, BinaryKind.ASSIGN, Axis.ROWS, false,
-					selection, c);
+			DataframeOperation nodeToAdd = new Transform<>(pp.getLocation(), index, BinaryTransformKind.ASSIGN,
+					Axis.ROWS, selection, c);
 			forest.addNode(nodeToAdd);
 			forest.addEdge(new ConsumeEdge(op, nodeToAdd));
 			NodeId id = new NodeId(nodeToAdd);
@@ -988,7 +1036,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			colsSelection = new ColumnListSelection(accessedCols);
 
 		@SuppressWarnings("rawtypes")
-		Transform<?, ?> drop = new Transform(pp.getLocation(), index, UnaryKind.DROP_COLS, Axis.COLS, false,
+		Transform<?, ?> drop = new Transform(pp.getLocation(), index, UnaryTransformKind.DROP_COLS, Axis.COLS,
 				new DataframeSelection(colsSelection));
 		DataframeForest forest = new DataframeForest(right.graph);
 		forest.addNode(drop);
@@ -1026,8 +1074,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 			if (op.getArg().isPresent())
 				throw new SemanticException("duplicate argument not supported");
-			Transform<?, ?> t = new Transform<>(pp.getLocation(), index, op.getKind(), op.getAxis(), op.isChangeShape(),
-					selection, value);
+			Transform<?, ?> t = new Transform<>(pp.getLocation(), index, op.getKind(), op.getAxis(), selection, value);
 
 			forest.addNode(t);
 			if (leaf instanceof ProjectionOperation<?, ?>)

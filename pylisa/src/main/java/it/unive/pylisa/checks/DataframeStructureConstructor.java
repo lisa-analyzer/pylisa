@@ -38,10 +38,11 @@ import it.unive.pylisa.analysis.dataframes.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.operations.Keys;
 import it.unive.pylisa.analysis.dataframes.operations.ProjectionOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Read;
+import it.unive.pylisa.analysis.dataframes.operations.Reshape;
 import it.unive.pylisa.analysis.dataframes.operations.Transform;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.BooleanSelection;
-import it.unive.pylisa.symbolic.operators.Enumerations.BinaryKind;
-import it.unive.pylisa.symbolic.operators.Enumerations.UnaryKind;
+import it.unive.pylisa.symbolic.operators.Enumerations.BinaryTransformKind;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -228,15 +229,15 @@ public class DataframeStructureConstructor implements SemanticCheck<
 							return entrystate.access(sources, proj.getSelection().extractColumnNames());
 						} else if (node instanceof Transform<?, ?>) {
 							Transform<?, ?> transform = (Transform<?, ?>) node;
-							if (transform.yieldsNewStructure())
-								return entrystate.define(sources);
-							else if (transform.getType() == BinaryKind.ASSIGN)
+							if (transform.getType() == BinaryTransformKind.ASSIGN)
 								return entrystate.assign(sources, transform.getSelection().extractColumnNames());
-							else if (transform.getType() == UnaryKind.DROP_COLS)
+							else if (transform.getType() == UnaryTransformKind.DROP_COLS)
 								return entrystate.remove(sources, transform.getSelection().extractColumnNames());
 							else
 								return entrystate.access(sources, transform.getSelection().extractColumnNames());
-						} else if (node instanceof Read || node instanceof Concat)
+						} else if (node instanceof Reshape<?, ?>)
+							return entrystate.define(sources);
+						else if (node instanceof Read || node instanceof Concat)
 							return entrystate.define(sources);
 						else if (node instanceof Init || node instanceof BottomOperation
 								|| node instanceof CloseOperation || node instanceof Iteration || node instanceof Keys)
@@ -247,11 +248,11 @@ public class DataframeStructureConstructor implements SemanticCheck<
 
 					private Names extractSources(DataframeOperation node, DataframeForest graph) {
 						DataframeForest cut = graph.bDFS(node,
-								op -> op instanceof Transform<?, ?> && ((Transform<?, ?>) op).yieldsNewStructure(),
+								op -> op instanceof Reshape<?, ?>,
 								edge -> !(edge instanceof AssignEdge));
 						Set<String> names = new HashSet<>();
 						for (DataframeOperation op : cut.getNodeList().getEntries())
-							if (op instanceof Read 
+							if (op instanceof Read
 									&& !((Read) op).getFile().isTop()
 									&& !((Read) op).getFile().isBottom())
 								names.add(((Read) op).getFile().as(String.class));

@@ -16,13 +16,13 @@ import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
-import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
 public class PandasSemantics {
@@ -85,11 +85,11 @@ public class PandasSemantics {
 	public static <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> transform(
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> applyUnary(
 					AnalysisState<A, H, V, T> state,
 					SymbolicExpression dataframe,
 					ProgramPoint pp,
-					UnaryTransform op)
+					UnaryOperator op)
 					throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		AnalysisState<A, H, V, T> result = state.bottom();

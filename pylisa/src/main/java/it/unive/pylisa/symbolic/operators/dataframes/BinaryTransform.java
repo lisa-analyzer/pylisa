@@ -6,32 +6,29 @@ import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
-import it.unive.pylisa.symbolic.operators.Enumerations.BinaryKind;
+import it.unive.pylisa.symbolic.operators.Enumerations.BinaryTransformKind;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
 public class BinaryTransform implements BinaryOperator, DataframeOperator {
 
-	private final BinaryKind type;
+	private final BinaryTransformKind type;
 
 	private final Axis axis;
 
 	private final Optional<Object> arg;
 
-	private final boolean changeShape;
-
 	private final int index;
 
-	public BinaryTransform(int index, BinaryKind type, Axis axis, boolean changeShape) {
-		this(index, type, axis, changeShape, null);
+	public BinaryTransform(int index, BinaryTransformKind type, Axis axis) {
+		this(index, type, axis, null);
 	}
 
-	public BinaryTransform(int index, BinaryKind type, Axis axis, boolean changeShape, Object arg) {
+	public BinaryTransform(int index, BinaryTransformKind type, Axis axis, Object arg) {
 		this.index = index;
 		this.type = type;
 		this.axis = axis;
-		this.changeShape = changeShape;
 		this.arg = Optional.ofNullable(arg);
 	}
 
@@ -40,7 +37,7 @@ public class BinaryTransform implements BinaryOperator, DataframeOperator {
 		return index;
 	}
 
-	public BinaryKind getKind() {
+	public BinaryTransformKind getKind() {
 		return type;
 	}
 
@@ -50,10 +47,6 @@ public class BinaryTransform implements BinaryOperator, DataframeOperator {
 
 	public Optional<Object> getArg() {
 		return arg;
-	}
-
-	public boolean isChangeShape() {
-		return changeShape;
 	}
 
 	@Override
@@ -79,7 +72,6 @@ public class BinaryTransform implements BinaryOperator, DataframeOperator {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((arg == null) ? 0 : arg.hashCode());
-		result = prime * result + (changeShape ? 1231 : 1237);
 		result = prime * result + ((type == null) ? 0 : type.hashCode());
 		result = prime * result + ((axis == null) ? 0 : axis.hashCode());
 		return result;
@@ -98,8 +90,6 @@ public class BinaryTransform implements BinaryOperator, DataframeOperator {
 			if (other.arg != null)
 				return false;
 		} else if (!arg.equals(other.arg))
-			return false;
-		if (changeShape != other.changeShape)
 			return false;
 		if (type != other.type)
 			return false;

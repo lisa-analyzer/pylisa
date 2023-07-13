@@ -26,7 +26,7 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
-import it.unive.pylisa.symbolic.operators.Enumerations.BinaryKind;
+import it.unive.pylisa.symbolic.operators.Enumerations.BinaryTransformKind;
 import it.unive.pylisa.symbolic.operators.dataframes.BinaryTransform;
 
 public class FillNA extends it.unive.lisa.program.cfg.statement.BinaryExpression implements PluggableStatement {
@@ -104,7 +104,7 @@ public class FillNA extends it.unive.lisa.program.cfg.statement.BinaryExpression
 		}
 
 		AnalysisState<A, H, V, T> filtered = state.bottom();
-		BinaryTransform op = new BinaryTransform(0, BinaryKind.FILL_NA, axis, false);
+		BinaryTransform op = new BinaryTransform(0, BinaryTransformKind.FILL_NA, axis, false);
 		for (SymbolicExpression loc : targets) {
 			BinaryExpression filter = new BinaryExpression(dftype, loc, right, op, location);
 			SymbolicExpression ref = loc instanceof HeapDereference

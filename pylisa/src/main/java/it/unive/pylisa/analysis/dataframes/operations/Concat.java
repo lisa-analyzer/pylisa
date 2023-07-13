@@ -61,7 +61,6 @@ public class Concat extends DataframeOperation {
 			return "concat_cols";
 		case ROWS:
 			return "concat_rows";
-		case BOTH:
 		case TOP:
 		default:
 			return "concat_TOP";
