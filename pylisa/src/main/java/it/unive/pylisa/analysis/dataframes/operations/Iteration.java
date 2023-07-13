@@ -20,8 +20,8 @@ public class Iteration extends DataframeOperation {
 	}
 
 	@Override
-	public String toString() {
-		return "iterate";
+	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+		return this;
 	}
 
 	@Override
@@ -30,7 +30,7 @@ public class Iteration extends DataframeOperation {
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
-		return this;
+	public String toString() {
+		return "iterate";
 	}
 }
