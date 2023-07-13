@@ -39,7 +39,7 @@ import it.unive.pylisa.analysis.dataframes.operations.Concat;
 import it.unive.pylisa.analysis.dataframes.operations.Init;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Iteration;
-import it.unive.pylisa.analysis.dataframes.operations.Keys;
+import it.unive.pylisa.analysis.dataframes.operations.GetAxis;
 import it.unive.pylisa.analysis.dataframes.operations.Project;
 import it.unive.pylisa.analysis.dataframes.operations.Read;
 import it.unive.pylisa.analysis.dataframes.operations.Reshape;
@@ -515,7 +515,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		if (topOrBottom(ops))
 			return cleanStack(arg, pp);
 
-		Keys access = new Keys(pp.getLocation(), index);
+		GetAxis access = new GetAxis(pp.getLocation(), index, Axis.COLS);
 		DataframeForest forest = new DataframeForest(arg.graph);
 		forest.addNode(access);
 		for (DataframeOperation op : ops)
