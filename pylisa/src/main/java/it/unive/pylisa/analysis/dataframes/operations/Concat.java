@@ -16,20 +16,25 @@ public class Concat extends DataframeOperation {
 	@Override
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
 		Concat o = (Concat) other;
-		if (o.axis != this.axis) {
-			return false;
-		}
-
-		return true;
+		return axis.lessOrEqual(o.axis);
 	}
 
 	@Override
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
 		Concat o = (Concat) other;
-		if (o.axis != this.axis)
-			return new Concat(where, index, Axis.TOP);
+		return new Concat(where, index, axis.lub(o.axis));
+	}
 
-		return new Concat(where, index, this.axis);
+	@Override
+	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+		Concat o = (Concat) other;
+		return new Concat(where, index, axis.widening(o.axis));
+	}
+
+	@Override
+	protected int compareToSameOperation(DataframeOperation o) {
+		Concat other = (Concat) o;
+		return axis.compareTo(other.axis);
 	}
 
 	@Override
@@ -56,31 +61,6 @@ public class Concat extends DataframeOperation {
 
 	@Override
 	public String toString() {
-		switch (this.axis) {
-		case COLS:
-			return "concat_cols";
-		case ROWS:
-			return "concat_rows";
-		case TOP:
-		default:
-			return "concat_TOP";
-
-		}
+		return "concat:" + axis;
 	}
-
-	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
-		Concat other = (Concat) o;
-		return axis.compareTo(other.axis);
-	}
-
-	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
-		Concat o = (Concat) other;
-		if (o.axis != this.axis)
-			return new Concat(where, index, Axis.TOP);
-
-		return new Concat(where, index, this.axis);
-	}
-
 }
