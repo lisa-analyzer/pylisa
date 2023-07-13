@@ -54,6 +54,10 @@ public class Enumerations {
 		}
 	}
 
+	public interface ReduceKind {
+		int compare(ReduceKind o);
+	};
+
 	public enum Axis implements BaseLattice<Axis> {
 		BOTTOM,
 		ROWS,
