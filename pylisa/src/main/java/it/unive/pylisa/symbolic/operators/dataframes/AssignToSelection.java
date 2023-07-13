@@ -8,11 +8,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collections;
 import java.util.Set;
 
-public class WriteSelectionDataframe implements BinaryOperator, DataframeOperator {
+public class AssignToSelection implements BinaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public WriteSelectionDataframe(int index) {
+	public AssignToSelection(int index) {
 		this.index = index;
 	}
 

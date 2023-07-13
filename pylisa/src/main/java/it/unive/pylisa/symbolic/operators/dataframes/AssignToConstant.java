@@ -8,11 +8,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collections;
 import java.util.Set;
 
-public class WriteSelectionConstant implements BinaryOperator, DataframeOperator {
+public class AssignToConstant implements BinaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public WriteSelectionConstant(int index) {
+	public AssignToConstant(int index) {
 		this.index = index;
 	}
 

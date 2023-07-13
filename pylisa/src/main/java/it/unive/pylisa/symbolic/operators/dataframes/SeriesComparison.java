@@ -9,13 +9,13 @@ import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 import java.util.Collections;
 import java.util.Set;
 
-public class PandasSeriesComparison implements BinaryOperator, DataframeOperator {
+public class SeriesComparison implements BinaryOperator, DataframeOperator {
 
 	private final ComparisonOperator op;
 
 	private final int index;
 
-	public PandasSeriesComparison(int index, ComparisonOperator op) {
+	public SeriesComparison(int index, ComparisonOperator op) {
 		this.index = index;
 		this.op = op;
 	}

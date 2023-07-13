@@ -22,7 +22,7 @@ import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
-import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
+import it.unive.pylisa.symbolic.operators.dataframes.SeriesComparison;
 import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
 public class PandasSemantics {
@@ -173,7 +173,7 @@ public class PandasSemantics {
 			CodeLocation loc = pp.getLocation();
 			for (SymbolicExpression id : copied.getComputedExpressions()) {
 				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, right,
-						new PandasSeriesComparison(0, op), loc);
+						new SeriesComparison(0, op), loc);
 				AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(seriesComp, pp);
 
 				HeapReference ref = new HeapReference(seriesref, id, loc);
@@ -194,7 +194,7 @@ public class PandasSemantics {
 			CodeLocation loc = pp.getLocation();
 			for (SymbolicExpression id : copied.getComputedExpressions()) {
 				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, left,
-						new PandasSeriesComparison(0, op), loc);
+						new SeriesComparison(0, op), loc);
 				AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(seriesComp, pp);
 
 				HeapReference ref = new HeapReference(seriesref, id, loc);

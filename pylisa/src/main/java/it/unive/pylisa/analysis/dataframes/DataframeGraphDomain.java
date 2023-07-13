@@ -78,13 +78,13 @@ import it.unive.pylisa.symbolic.operators.dataframes.DataframeProjection;
 import it.unive.pylisa.symbolic.operators.dataframes.DropCols;
 import it.unive.pylisa.symbolic.operators.dataframes.Iterate;
 import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
-import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
+import it.unive.pylisa.symbolic.operators.dataframes.SeriesComparison;
 import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.RowProjection;
 import it.unive.pylisa.symbolic.operators.dataframes.UnaryReshape;
 import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
-import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
-import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.AssignToConstant;
+import it.unive.pylisa.symbolic.operators.dataframes.AssignToSelection;
 import it.unive.pylisa.symbolic.operators.dataframes.aux.DataframeColumnSlice;
 import it.unive.pylisa.symbolic.operators.dataframes.aux.DataframeColumnSlice.ColumnSlice;
 import java.util.Collection;
@@ -832,11 +832,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return doDropColumns(index, left, right, pp);
 		else if (operator instanceof JoinCols)
 			return doJoinColumns(index, left, right, pp);
-		else if (operator instanceof WriteSelectionDataframe)
+		else if (operator instanceof AssignToSelection)
 			return doWriteSelectionDataframe(index, left, right, pp);
-		else if (operator instanceof WriteSelectionConstant)
+		else if (operator instanceof AssignToConstant)
 			return doWriteSelectionConstant(index, left, right, pp);
-		else if (operator instanceof PandasSeriesComparison)
+		else if (operator instanceof SeriesComparison)
 			return doPandasSeriesComparison(index, left, right, pp, operator);
 		else if (!left.constStack.isBottom()
 				&& !right.constStack.isBottom()
@@ -858,7 +858,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		DataframeForest forest = new DataframeForest(right.graph);
 		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(right.operations.getMap());
-		PandasSeriesComparison seriesCompOp = (PandasSeriesComparison) operator;
+		SeriesComparison seriesCompOp = (SeriesComparison) operator;
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
 		for (DataframeOperation op : df1) {
