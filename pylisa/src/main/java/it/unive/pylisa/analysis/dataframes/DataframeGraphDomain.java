@@ -40,7 +40,7 @@ import it.unive.pylisa.analysis.dataframes.operations.Init;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.operations.Keys;
-import it.unive.pylisa.analysis.dataframes.operations.ProjectionOperation;
+import it.unive.pylisa.analysis.dataframes.operations.Project;
 import it.unive.pylisa.analysis.dataframes.operations.Read;
 import it.unive.pylisa.analysis.dataframes.operations.Reshape;
 import it.unive.pylisa.analysis.dataframes.operations.Transform;
@@ -455,10 +455,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		ColumnRangeSelection bound = ColumnRangeSelection.BOTTOM;
 
 		for (DataframeOperation op : ops) {
-			if (!(op instanceof ProjectionOperation<?, ?>))
+			if (!(op instanceof Project<?, ?>))
 				return ColumnRangeSelection.TOP;
 
-			ColumnSelection<?> selection = ((ProjectionOperation<?, ?>) op).getSelection().getColumnSelection();
+			ColumnSelection<?> selection = ((Project<?, ?>) op).getSelection().getColumnSelection();
 			if (!(selection instanceof ColumnRangeSelection))
 				return ColumnRangeSelection.TOP;
 
@@ -659,8 +659,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(arg.operations.getMap());
 		for (DataframeOperation leaf : stack) {
 			DataframeSelection<?, ?> selection;
-			if (leaf instanceof ProjectionOperation<?, ?>)
-				selection = ((ProjectionOperation<?, ?>) leaf).getSelection();
+			if (leaf instanceof Project<?, ?>)
+				selection = ((Project<?, ?>) leaf).getSelection();
 			else
 				selection = new DataframeSelection<>(true);
 
@@ -671,7 +671,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 							selection);
 
 			df.addNode(t);
-			if (leaf instanceof ProjectionOperation<?, ?>)
+			if (leaf instanceof Project<?, ?>)
 				df.addEdge(new ConsumeEdge(leaf, t));
 			else
 				df.addEdge(new SimpleEdge(leaf, t));
@@ -707,15 +707,15 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(arg.operations.getMap());
 		for (DataframeOperation leaf : stack) {
 			DataframeSelection<?, ?> selection;
-			if (leaf instanceof ProjectionOperation<?, ?>)
-				selection = ((ProjectionOperation<?, ?>) leaf).getSelection();
+			if (leaf instanceof Project<?, ?>)
+				selection = ((Project<?, ?>) leaf).getSelection();
 			else
 				selection = new DataframeSelection<>(true);
 
 			Reshape<?, ?> r = new Reshape(pp.getLocation(), index, op.getKind(), selection);
 
 			df.addNode(r);
-			if (leaf instanceof ProjectionOperation<?, ?>)
+			if (leaf instanceof Project<?, ?>)
 				df.addEdge(new ConsumeEdge(leaf, r));
 			else
 				df.addEdge(new SimpleEdge(leaf, r));
@@ -862,16 +862,16 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
 		for (DataframeOperation op : df1) {
-			if (!(op instanceof ProjectionOperation<?, ?>))
+			if (!(op instanceof Project<?, ?>))
 				return cleanStack(right, pp);
 
-			ProjectionOperation<?, ?> projection = (ProjectionOperation<?, ?>) op;
+			Project<?, ?> projection = (Project<?, ?>) op;
 			if (!(projection.getSelection().getColumnSelection() instanceof ColumnListSelection))
 				return cleanStack(right, pp);
 
 			ConditionalSelection booleanSelection = new ConditionalSelection(
 					(ColumnListSelection) projection.getSelection().getColumnSelection(), seriesCompOp.getOp(), value);
-			ProjectionOperation<?, ?> boolComp = new ProjectionOperation<>(pp.getLocation(), index,
+			Project<?, ?> boolComp = new Project<>(pp.getLocation(), index,
 					booleanSelection);
 
 			forest.addNode(boolComp);
@@ -906,10 +906,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
 		for (DataframeOperation op : df) {
-			if (!(op instanceof ProjectionOperation<?, ?>))
+			if (!(op instanceof Project<?, ?>))
 				return cleanStack(right, pp);
 
-			ProjectionOperation<?, ?> access = (ProjectionOperation<?, ?>) op;
+			Project<?, ?> access = (Project<?, ?>) op;
 			DataframeSelection<?, ?> selection = access.getSelection();
 			DataframeOperation nodeToAdd = new Transform<>(pp.getLocation(), index, BinaryTransformKind.ASSIGN,
 					Axis.ROWS, selection, c);
@@ -946,11 +946,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
 		for (DataframeOperation op : df1) {
-			if (!(op instanceof ProjectionOperation<?, ?>))
+			if (!(op instanceof Project<?, ?>))
 				return cleanStack(right, pp);
 
 			AssignDataframe assign = new AssignDataframe(pp.getLocation(), index,
-					((ProjectionOperation<?, ?>) op).getSelection());
+					((Project<?, ?>) op).getSelection());
 			forest.addNode(assign);
 			forest.addEdge(new ConsumeEdge(op, assign));
 			NodeId id = new NodeId(assign);
@@ -1067,8 +1067,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(left.operations.getMap());
 		for (DataframeOperation leaf : stack) {
 			DataframeSelection<?, ?> selection;
-			if (leaf instanceof ProjectionOperation<?, ?>)
-				selection = ((ProjectionOperation<?, ?>) leaf).getSelection();
+			if (leaf instanceof Project<?, ?>)
+				selection = ((Project<?, ?>) leaf).getSelection();
 			else
 				selection = new DataframeSelection<>(true);
 
@@ -1077,7 +1077,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			Transform<?, ?> t = new Transform<>(pp.getLocation(), index, op.getKind(), op.getAxis(), selection, value);
 
 			forest.addNode(t);
-			if (leaf instanceof ProjectionOperation<?, ?>)
+			if (leaf instanceof Project<?, ?>)
 				forest.addEdge(new ConsumeEdge(leaf, t));
 			else
 				forest.addEdge(new SimpleEdge(leaf, t));
@@ -1115,13 +1115,13 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					columns = columns == null
 							? new ColumnIteration()
 							: columns.lub(new ColumnIteration());
-				else if (arg instanceof ProjectionOperation<?, ?>) {
+				else if (arg instanceof Project<?, ?>) {
 					columns = columns == null
-							? ((ProjectionOperation<?, ?>) arg).getSelection().getColumnSelection()
-							: columns.lub(((ProjectionOperation<?, ?>) arg).getSelection().getColumnSelection());
+							? ((Project<?, ?>) arg).getSelection().getColumnSelection()
+							: columns.lub(((Project<?, ?>) arg).getSelection().getColumnSelection());
 					rows = rows == null
-							? ((ProjectionOperation<?, ?>) arg).getSelection().getRowSelection()
-							: rows.lub(((ProjectionOperation<?, ?>) arg).getSelection().getRowSelection());
+							? ((Project<?, ?>) arg).getSelection().getRowSelection()
+							: rows.lub(((Project<?, ?>) arg).getSelection().getRowSelection());
 				} else
 					return cleanStack(right, pp);
 		} else if (topOrBottom(col))
@@ -1157,7 +1157,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			columns = AllColumns.INSTANCE;
 		if (rows == null)
 			rows = AllRows.INSTANCE;
-		ProjectionOperation<?, ?> access = new ProjectionOperation(pp.getLocation(), index, rows, columns);
+		Project<?, ?> access = new Project(pp.getLocation(), index, rows, columns);
 		DataframeForest forest = new DataframeForest(right.graph);
 		forest.addNode(access);
 		for (DataframeOperation op : ops)
@@ -1327,7 +1327,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					rowSlice.getEnd() == null ? new ConstantPropagation().bottom() : rowSlice.getEnd().toConstant(),
 					rowSlice.getSkip() == null ? new ConstantPropagation().bottom() : rowSlice.getSkip().toConstant()));
 			DataframeSelection<?, ?> selection = new DataframeSelection(rowsSelection, colsSelection);
-			DataframeOperation access = new ProjectionOperation<>(pp.getLocation(), index, selection);
+			DataframeOperation access = new Project<>(pp.getLocation(), index, selection);
 			forest.addNode(access);
 			for (DataframeOperation op : df)
 				forest.addEdge(new SimpleEdge(op, access));
@@ -1350,14 +1350,14 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
 			for (DataframeOperation op : middleGraph) {
-				if (!(op instanceof ProjectionOperation<?, ?>))
+				if (!(op instanceof Project<?, ?>))
 					return cleanStack(right, pp);
 
-				ProjectionOperation<?, ?> colCompare = (ProjectionOperation<?, ?>) op;
+				Project<?, ?> colCompare = (Project<?, ?>) op;
 				DataframeSelection<?, ?> selection = new DataframeSelection(
 						colCompare.getSelection().getRowSelection(),
 						colsSelection);
-				DataframeOperation proj = new ProjectionOperation<>(pp.getLocation(), index, selection);
+				DataframeOperation proj = new Project<>(pp.getLocation(), index, selection);
 
 				forest.addNode(proj);
 				forest.addEdge(new ConsumeEdge(op, proj));
@@ -1383,7 +1383,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					ops);
 		} else {
 			DataframeSelection<?, ?> selection = new DataframeSelection<>(true);
-			DataframeOperation access = new ProjectionOperation<>(pp.getLocation(), index, selection);
+			DataframeOperation access = new Project<>(pp.getLocation(), index, selection);
 			forest.addNode(access);
 			for (DataframeOperation op : df)
 				forest.addEdge(new SimpleEdge(op, access));
@@ -1412,7 +1412,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		RowRangeSelection slice = new RowRangeSelection(
 				new NumberSlice(start.as(Integer.class), end.as(Integer.class)));
-		DataframeOperation node = new ProjectionOperation<>(pp.getLocation(), index, slice);
+		DataframeOperation node = new Project<>(pp.getLocation(), index, slice);
 		DataframeForest forest = new DataframeForest(right.graph);
 		forest.addNode(node);
 		for (DataframeOperation op : df)

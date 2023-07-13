@@ -6,26 +6,26 @@ import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelecti
 import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
 
-public class ProjectionOperation<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
+public class Project<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
 
 	private final DataframeSelection<R, C> selection;
 
-	public ProjectionOperation(CodeLocation where, int index, DataframeSelection<R, C> selection) {
+	public Project(CodeLocation where, int index, DataframeSelection<R, C> selection) {
 		super(where, index);
 		this.selection = selection;
 	}
 
-	public ProjectionOperation(CodeLocation where, int index, C selection) {
+	public Project(CodeLocation where, int index, C selection) {
 		super(where, index);
 		this.selection = new DataframeSelection<>(selection);
 	}
 
-	public ProjectionOperation(CodeLocation where, int index, R selection) {
+	public Project(CodeLocation where, int index, R selection) {
 		super(where, index);
 		this.selection = new DataframeSelection<>(selection);
 	}
 
-	public ProjectionOperation(CodeLocation where, int index, R rows, C columns) {
+	public Project(CodeLocation where, int index, R rows, C columns) {
 		super(where, index);
 		this.selection = new DataframeSelection<>(rows, columns);
 	}
@@ -40,21 +40,27 @@ public class ProjectionOperation<R extends RowSelection<R>, C extends ColumnSele
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
-		ProjectionOperation<?, ?> o = (ProjectionOperation<?, ?>) other;
-		if (selection.getClass() != o.selection.getClass())
-			return false;
-		return selection.lessOrEqual((DataframeSelection<R, C>) o.selection);
+		Project<?, ?> o = (Project<?, ?>) other;
+		return selection.lessOrEqual(o.selection);
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
-		ProjectionOperation<?, ?> o = (ProjectionOperation<?, ?>) other;
-		if (selection.getClass() != o.selection.getClass())
-			return top();
-		return new ProjectionOperation<>(where, index, selection.lub((DataframeSelection<R, C>) o.selection));
+		Project<?, ?> o = (Project<?, ?>) other;
+		return new Project<>(where, index, selection.lub(o.selection));
+	}
+
+	@Override
+	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+		Project<?, ?> o = (Project<?, ?>) other;
+		return new Project<>(where, index, selection.lub(o.selection));
+	}
+
+	@Override
+	protected int compareToSameOperation(DataframeOperation o) {
+		Project<?, ?> other = (Project<?, ?>) o;
+		return selection.compareTo(other.selection);
 	}
 
 	@Override
@@ -73,27 +79,12 @@ public class ProjectionOperation<R extends RowSelection<R>, C extends ColumnSele
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		ProjectionOperation<?, ?> other = (ProjectionOperation<?, ?>) obj;
+		Project<?, ?> other = (Project<?, ?>) obj;
 		if (selection == null) {
 			if (other.selection != null)
 				return false;
 		} else if (!selection.equals(other.selection))
 			return false;
 		return true;
-	}
-
-	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
-		ProjectionOperation<?, ?> other = (ProjectionOperation<?, ?>) o;
-		return selection.compareTo(other.selection);
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
-		ProjectionOperation<?, ?> o = (ProjectionOperation<?, ?>) other;
-		if (selection.getClass() != o.selection.getClass())
-			return top();
-		return new ProjectionOperation<>(where, index, selection.lub((DataframeSelection<R, C>) o.selection));
 	}
 }

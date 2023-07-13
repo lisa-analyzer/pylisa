@@ -36,7 +36,7 @@ import it.unive.pylisa.analysis.dataframes.operations.Init;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.operations.Keys;
-import it.unive.pylisa.analysis.dataframes.operations.ProjectionOperation;
+import it.unive.pylisa.analysis.dataframes.operations.Project;
 import it.unive.pylisa.analysis.dataframes.operations.Read;
 import it.unive.pylisa.analysis.dataframes.operations.Reshape;
 import it.unive.pylisa.analysis.dataframes.operations.Transform;
@@ -205,9 +205,9 @@ public class DataframeStructureConstructor implements SemanticCheck<
 						if (node instanceof AssignDataframe<?, ?>)
 							return entrystate.assign(sources,
 									((AssignDataframe<?, ?>) node).getSelection().extractColumnNames());
-						else if (node instanceof ProjectionOperation<?, ?>) {
+						else if (node instanceof Project<?, ?>) {
 							boolean allConsume = true;
-							ProjectionOperation<?, ?> proj = (ProjectionOperation<?, ?>) node;
+							Project<?, ?> proj = (Project<?, ?>) node;
 							for (DataframeEdge edge : graph.getOutgoingEdges(node))
 								if (edge.getDestination().equals(exit))
 									continue;
