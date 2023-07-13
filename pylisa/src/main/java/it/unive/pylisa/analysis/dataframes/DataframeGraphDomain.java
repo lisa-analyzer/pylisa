@@ -744,7 +744,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Set<NodeId> ids = new HashSet<>();
 		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(arg.operations.getMap());
 		for (NodeId id : arg.pointers.lattice) {
-			NodeId copy = new NodeId(id);
+			NodeId copy = new NodeId(id, index);
 			ids.add(copy);
 			operations.put(copy, arg.operations.getState(id));
 		}
