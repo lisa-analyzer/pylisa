@@ -26,6 +26,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class LibrarySpecificationProvider {
 
+	private static final String SDTLIB_FILE = "/stdlib.txt";
 	private static final String LIBS_FILE = "/libs.txt";
 
 	public static final String SET = "Set";
@@ -61,25 +62,32 @@ public class LibrarySpecificationProvider {
 		LOADED_LIBS.clear();
 
 		LibraryDefinitionLexer lexer = null;
-		try (InputStream stream = LibrarySpecificationParser.class.getResourceAsStream(LIBS_FILE);) {
+		try (InputStream stream = LibrarySpecificationParser.class.getResourceAsStream(SDTLIB_FILE);) {
 			lexer = new LibraryDefinitionLexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
 		} catch (IOException e) {
-			throw new AnalysisSetupException("Unable to parse '" + LIBS_FILE + "'", e);
+			throw new AnalysisSetupException("Unable to parse '" + SDTLIB_FILE + "'", e);
 		}
 
 		LibraryDefinitionParser parser = new LibraryDefinitionParser(new CommonTokenStream(lexer));
-		LibrarySpecificationParser libParser = new LibrarySpecificationParser(LIBS_FILE);
-		Pair<Runtime, Collection<Library>> parsed = libParser.visitFile(parser.file());
+		LibrarySpecificationParser stdlibParser = new LibrarySpecificationParser(SDTLIB_FILE);
+		Pair<Runtime, Collection<Library>> stdlib = stdlibParser.visitFile(parser.file());
 
 		AtomicReference<CompilationUnit> root = new AtomicReference<CompilationUnit>(null);
-		parsed.getLeft().fillProgram(program, root);
+		stdlib.getLeft().fillProgram(program, root);
 		if (root.get() == null)
 			throw new AnalysisSetupException("Runtime does not contain a hierarchy root");
 		hierarchyRoot = root.get();
 		makeInit(program);
-		parsed.getLeft().populateProgram(program, init, hierarchyRoot);
+		stdlib.getLeft().populateProgram(program, init, hierarchyRoot);
 
-		for (Library lib : parsed.getValue())
+		LibrarySpecificationParser libsParser = new LibrarySpecificationParser(LIBS_FILE);
+		Pair<Runtime, Collection<Library>> libs = libsParser.visitFile(parser.file());
+		libs.getLeft().fillProgram(program, root);
+		libs.getLeft().populateProgram(program, init, hierarchyRoot);
+		
+		for (Library lib : stdlib.getValue())
+			AVAILABLE_LIBS.put(lib.getName(), lib);
+		for (Library lib : libs.getValue())
 			AVAILABLE_LIBS.put(lib.getName(), lib);
 	}
 

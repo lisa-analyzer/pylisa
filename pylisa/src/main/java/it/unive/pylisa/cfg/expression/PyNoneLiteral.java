@@ -12,11 +12,11 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.literal.Literal;
 import it.unive.lisa.type.NullType;
-import it.unive.pylisa.symbolic.NoneConstant;
+import it.unive.pylisa.symbolic.PyNoneConstant;
 
-public class NoneLiteral extends Literal<Object> {
+public class PyNoneLiteral extends Literal<Object> {
 
-	public NoneLiteral(CFG cfg, CodeLocation location) {
+	public PyNoneLiteral(CFG cfg, CodeLocation location) {
 		super(cfg, location, null, NullType.INSTANCE);
 	}
 
@@ -28,6 +28,6 @@ public class NoneLiteral extends Literal<Object> {
 					AnalysisState<A, H, V, T> entryState, InterproceduralAnalysis<A, H, V, T> interprocedural,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		return entryState.smallStepSemantics(new NoneConstant(getLocation()), this);
+		return entryState.smallStepSemantics(new PyNoneConstant(getLocation()), this);
 	}
 }

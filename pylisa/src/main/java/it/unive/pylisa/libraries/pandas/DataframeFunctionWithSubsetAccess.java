@@ -18,7 +18,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.pylisa.cfg.expression.NoneLiteral;
+import it.unive.pylisa.cfg.expression.PyNoneLiteral;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
@@ -41,7 +41,7 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 					break;
 
 		if (subset == null)
-			subset = new NoneLiteral(cfg, location);
+			subset = new PyNoneLiteral(cfg, location);
 		return new DataframeFunctionWithSubsetAccess(cfg, location, exprs[0], subset);
 	}
 
