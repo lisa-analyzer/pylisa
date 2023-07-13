@@ -32,7 +32,7 @@ import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.operations.AssignDataframe;
 import it.unive.pylisa.analysis.dataframes.operations.BottomOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Concat;
-import it.unive.pylisa.analysis.dataframes.operations.CreateFromDict;
+import it.unive.pylisa.analysis.dataframes.operations.Init;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.operations.Keys;
@@ -238,7 +238,7 @@ public class DataframeStructureConstructor implements SemanticCheck<
 								return entrystate.access(sources, transform.getSelection().extractColumnNames());
 						} else if (node instanceof Read || node instanceof Concat)
 							return entrystate.define(sources);
-						else if (node instanceof CreateFromDict || node instanceof BottomOperation
+						else if (node instanceof Init || node instanceof BottomOperation
 								|| node instanceof CloseOperation || node instanceof Iteration || node instanceof Keys)
 							return entrystate;
 						else

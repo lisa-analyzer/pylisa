@@ -36,7 +36,7 @@ import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.operations.AssignDataframe;
 import it.unive.pylisa.analysis.dataframes.operations.Concat;
-import it.unive.pylisa.analysis.dataframes.operations.CreateFromDict;
+import it.unive.pylisa.analysis.dataframes.operations.Init;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Iteration;
 import it.unive.pylisa.analysis.dataframes.operations.Keys;
@@ -351,10 +351,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	@Override
 	public boolean isTop() {
-		return constants.isTop() 
-				&& constStack.isTop() 
-				&& graph.isTop() 
-				&& pointers.isTop() 
+		return constants.isTop()
+				&& constStack.isTop()
+				&& graph.isTop()
+				&& pointers.isTop()
 				&& operations.isTop();
 	}
 
@@ -748,7 +748,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			if (!topOrBottom(name) && name instanceof ConstantPropagation
 					&& ((ConstantPropagation) name).is(String.class))
 				cols.add(((ConstantPropagation) name).as(String.class));
-		CreateFromDict op = new CreateFromDict(pp.getLocation(), index, new Names(cols));
+		// TODO rows
+		Init op = new Init(pp.getLocation(), index, new Names(cols),
+				new NumberSlice(new ConstantPropagation(0), new ConstantPropagation().top()));
 		df.addNode(op);
 
 		NodeId id = new NodeId(op);
