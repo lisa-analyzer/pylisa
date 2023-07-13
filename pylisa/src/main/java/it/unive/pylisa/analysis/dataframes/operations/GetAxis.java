@@ -1,10 +1,9 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
-import java.util.Objects;
-
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
+import java.util.Objects;
 
 public class GetAxis extends DataframeOperation {
 
