@@ -1,10 +1,10 @@
-package it.unive.pylisa.libraries;
+package it.unive.pylisa.cfg.type;
 
 import it.unive.lisa.program.CodeUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
-import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class PyLibraryUnitType extends PyClassType {
 

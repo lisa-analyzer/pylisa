@@ -41,6 +41,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		ClassDef cls = new ClassDef(
 				ctx.ROOT() != null,
 				ctx.SEALED() != null,
+				ctx.type_name == null ? null : ctx.type_name.getText(),
 				ctx.name.getText(),
 				ctx.base == null ? null : ctx.base.getText());
 		for (MethodContext mtd : ctx.method())

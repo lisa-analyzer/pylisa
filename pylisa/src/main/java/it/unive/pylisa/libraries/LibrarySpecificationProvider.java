@@ -61,17 +61,7 @@ public class LibrarySpecificationProvider {
 		AVAILABLE_LIBS.clear();
 		LOADED_LIBS.clear();
 
-		LibraryDefinitionLexer lexer = null;
-		try (InputStream stream = LibrarySpecificationParser.class.getResourceAsStream(SDTLIB_FILE);) {
-			lexer = new LibraryDefinitionLexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
-		} catch (IOException e) {
-			throw new AnalysisSetupException("Unable to parse '" + SDTLIB_FILE + "'", e);
-		}
-
-		LibraryDefinitionParser parser = new LibraryDefinitionParser(new CommonTokenStream(lexer));
-		LibrarySpecificationParser stdlibParser = new LibrarySpecificationParser(SDTLIB_FILE);
-		Pair<Runtime, Collection<Library>> stdlib = stdlibParser.visitFile(parser.file());
-
+		Pair<Runtime, Collection<Library>> stdlib = readFile(SDTLIB_FILE);
 		AtomicReference<CompilationUnit> root = new AtomicReference<CompilationUnit>(null);
 		stdlib.getLeft().fillProgram(program, root);
 		if (root.get() == null)
@@ -80,8 +70,7 @@ public class LibrarySpecificationProvider {
 		makeInit(program);
 		stdlib.getLeft().populateProgram(program, init, hierarchyRoot);
 
-		LibrarySpecificationParser libsParser = new LibrarySpecificationParser(LIBS_FILE);
-		Pair<Runtime, Collection<Library>> libs = libsParser.visitFile(parser.file());
+		Pair<Runtime, Collection<Library>> libs = readFile(LIBS_FILE);
 		libs.getLeft().fillProgram(program, root);
 		libs.getLeft().populateProgram(program, init, hierarchyRoot);
 		
@@ -89,6 +78,19 @@ public class LibrarySpecificationProvider {
 			AVAILABLE_LIBS.put(lib.getName(), lib);
 		for (Library lib : libs.getValue())
 			AVAILABLE_LIBS.put(lib.getName(), lib);
+	}
+	
+	private static Pair<Runtime, Collection<Library>> readFile(String file) throws AnalysisSetupException {
+		LibraryDefinitionLexer lexer = null;
+		try (InputStream stream = LibrarySpecificationParser.class.getResourceAsStream(file)) {
+			lexer = new LibraryDefinitionLexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			throw new AnalysisSetupException("Unable to parse '" + file + "'", e);
+		}
+
+		LibraryDefinitionParser parser = new LibraryDefinitionParser(new CommonTokenStream(lexer));
+		LibrarySpecificationParser libParser = new LibrarySpecificationParser(SDTLIB_FILE);
+		return libParser.visitFile(parser.file());
 	}
 
 	private static CFG makeInit(Program program) {

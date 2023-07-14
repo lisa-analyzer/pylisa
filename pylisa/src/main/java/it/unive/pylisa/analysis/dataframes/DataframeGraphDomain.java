@@ -1,5 +1,20 @@
 package it.unive.pylisa.analysis.dataframes;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
@@ -54,8 +69,8 @@ import it.unive.pylisa.analysis.dataframes.operations.selection.rows.AllRows;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.ConditionalSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowRangeSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
+import it.unive.pylisa.cfg.type.PyLibraryUnitType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.libraries.PyLibraryUnitType;
 import it.unive.pylisa.symbolic.DictConstant;
 import it.unive.pylisa.symbolic.ListConstant;
 import it.unive.pylisa.symbolic.SliceConstant;
@@ -68,6 +83,8 @@ import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
 import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.dataframes.AccessKeys;
+import it.unive.pylisa.symbolic.operators.dataframes.AssignToConstant;
+import it.unive.pylisa.symbolic.operators.dataframes.AssignToSelection;
 import it.unive.pylisa.symbolic.operators.dataframes.AxisConcatenation;
 import it.unive.pylisa.symbolic.operators.dataframes.BinaryTransform;
 import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
@@ -78,28 +95,13 @@ import it.unive.pylisa.symbolic.operators.dataframes.DataframeProjection;
 import it.unive.pylisa.symbolic.operators.dataframes.DropCols;
 import it.unive.pylisa.symbolic.operators.dataframes.Iterate;
 import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
-import it.unive.pylisa.symbolic.operators.dataframes.SeriesComparison;
 import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.RowProjection;
+import it.unive.pylisa.symbolic.operators.dataframes.SeriesComparison;
 import it.unive.pylisa.symbolic.operators.dataframes.UnaryReshape;
 import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
-import it.unive.pylisa.symbolic.operators.dataframes.AssignToConstant;
-import it.unive.pylisa.symbolic.operators.dataframes.AssignToSelection;
 import it.unive.pylisa.symbolic.operators.dataframes.aux.DataframeColumnSlice;
 import it.unive.pylisa.symbolic.operators.dataframes.aux.DataframeColumnSlice.ColumnSlice;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
@@ -474,29 +476,32 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return arg;
 
 		UnaryOperator operator = expression.getOperator();
-		int index = ((DataframeOperator) operator).getIndex();
 
+		if (!(operator instanceof DataframeOperator))
+			throw new SemanticException(operator.getClass() + " is not a dataframe operator");
+
+		int index = ((DataframeOperator) operator).getIndex();
 		if (operator instanceof ReadDataframe)
 			return doReadDataframe(index, arg, pp);
 		if (operator instanceof CreateDataframe)
 			return doCreateDataframe(index, arg, pp);
-		else if (operator instanceof CopyDataframe)
+		if (operator instanceof CopyDataframe)
 			return doCopyDataframe(index, arg, pp);
-		else if (operator instanceof UnaryTransform)
+		if (operator instanceof UnaryTransform)
 			return doUnaryTransformation(index, arg, operator, pp);
-		else if (operator instanceof UnaryReshape)
+		if (operator instanceof UnaryReshape)
 			return doUnaryReshape(index, arg, operator, pp);
-		else if (operator instanceof AxisConcatenation)
+		if (operator instanceof AxisConcatenation)
 			return doAxisConcatenation(index, arg, operator, pp);
-		else if (operator instanceof AccessKeys)
+		if (operator instanceof AccessKeys)
 			return doAccessKeys(index, arg, pp);
-		else if (operator instanceof Iterate)
+		if (operator instanceof Iterate)
 			return doIterate(index, arg, pp);
-		else if (!arg.constStack.isBottom()
+		if (!arg.constStack.isBottom()
 				&& arg.constants.lattice.canProcess(expression))
 			return delegateToConstants(expression, arg, pp);
-		else
-			return cleanStack(arg, pp);
+
+		return cleanStack(arg, pp);
 	}
 
 	private static DataframeGraphDomain delegateToConstants(ValueExpression expression, DataframeGraphDomain arg,
@@ -820,30 +825,34 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return right;
 
 		BinaryOperator operator = expression.getOperator();
-		int index = ((DataframeOperator) operator).getIndex();
 
 		if (operator == ListAppend.INSTANCE)
-			return doListAppend(index, left, right, pp);
-		else if (operator instanceof ColumnProjection)
+			return doListAppend(left, right, pp);
+
+		if (!(operator instanceof DataframeOperator))
+			throw new SemanticException(operator.getClass() + " is not a dataframe operator");
+
+		int index = ((DataframeOperator) operator).getIndex();
+		if (operator instanceof ColumnProjection)
 			return doColumnAccess(index, left, right, pp);
-		else if (operator instanceof BinaryTransform)
+		if (operator instanceof BinaryTransform)
 			return doBinaryTransformation(index, left, right, operator, pp);
-		else if (operator instanceof DropCols)
+		if (operator instanceof DropCols)
 			return doDropColumns(index, left, right, pp);
-		else if (operator instanceof JoinCols)
+		if (operator instanceof JoinCols)
 			return doJoinColumns(index, left, right, pp);
-		else if (operator instanceof AssignToSelection)
+		if (operator instanceof AssignToSelection)
 			return doWriteSelectionDataframe(index, left, right, pp);
-		else if (operator instanceof AssignToConstant)
+		if (operator instanceof AssignToConstant)
 			return doWriteSelectionConstant(index, left, right, pp);
-		else if (operator instanceof SeriesComparison)
+		if (operator instanceof SeriesComparison)
 			return doPandasSeriesComparison(index, left, right, pp, operator);
-		else if (!left.constStack.isBottom()
+		if (!left.constStack.isBottom()
 				&& !right.constStack.isBottom()
 				&& right.constants.lattice.canProcess(expression))
 			return delegateToConstants(expression, right, pp);
-		else
-			return cleanStack(right, pp);
+
+		return cleanStack(right, pp);
 	}
 
 	private static DataframeGraphDomain doPandasSeriesComparison(int index, DataframeGraphDomain left,
@@ -1177,7 +1186,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static DataframeGraphDomain doListAppend(int index, DataframeGraphDomain left, DataframeGraphDomain right,
+	private static DataframeGraphDomain doListAppend(DataframeGraphDomain left, DataframeGraphDomain right,
 			ProgramPoint pp)
 			throws SemanticException {
 		ConstantPropagation list = left.constStack;
@@ -1212,28 +1221,35 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return right;
 
 		TernaryOperator operator = expression.getOperator();
-		int index = ((DataframeOperator) operator).getIndex();
 
 		if (operator == DictPut.INSTANCE)
 			return doDictPut(left, middle, right, pp);
-		else if (operator instanceof RowProjection)
+		if (operator instanceof SliceCreation)
+			return doSliceCreation(left, middle, right, pp);
+
+		if (!(operator instanceof DataframeOperator))
+			throw new SemanticException(operator.getClass() + " is not a dataframe operator");
+
+		int index = ((DataframeOperator) operator).getIndex();
+		if (operator instanceof RowProjection)
 			return doProjectRows(index, left, middle, right, pp, operator);
-		else if (operator instanceof DataframeProjection)
+		if (operator instanceof DataframeProjection)
 			return doAccessRowsColumns(index, left, middle, right, pp);
-		else if (operator instanceof SliceCreation)
-			return doSliceCreation(index, left, middle, right, pp);
-		else if (!left.constStack.isBottom()
+		if (!left.constStack.isBottom()
 				&& !middle.constStack.isBottom()
 				&& !right.constStack.isBottom()
 				&& right.constants.lattice.canProcess(expression))
 			return delegateToConstants(expression, right, pp);
-		else
-			return cleanStack(right, pp);
+
+		return cleanStack(right, pp);
 	}
 
-	private static DataframeGraphDomain doSliceCreation(int index, DataframeGraphDomain left,
+	private static DataframeGraphDomain doSliceCreation(
+			DataframeGraphDomain left,
 			DataframeGraphDomain middle,
-			DataframeGraphDomain right, ProgramPoint pp) throws SemanticException {
+			DataframeGraphDomain right,
+			ProgramPoint pp)
+			throws SemanticException {
 		if (right.constStack.isBottom())
 			return cleanStack(right, pp);
 		RangeBound skip = getRangeBound(right.constStack);

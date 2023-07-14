@@ -16,8 +16,8 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
+import it.unive.pylisa.cfg.type.PyLibraryUnitType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.libraries.PyLibraryUnitType;
 import it.unive.pylisa.symbolic.operators.StringMult;
 
 public class PyMultiplication extends Multiplication {

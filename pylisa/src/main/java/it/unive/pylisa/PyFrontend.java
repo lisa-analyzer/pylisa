@@ -68,15 +68,12 @@ import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.comparison.LessThan;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
-import it.unive.lisa.program.cfg.statement.literal.Float32Literal;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.cfg.statement.logic.Not;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
-import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.type.NullType;
@@ -199,14 +196,12 @@ import it.unive.pylisa.cfg.expression.PyBitwiseOr;
 import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
 import it.unive.pylisa.cfg.expression.PyBitwiseXor;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
-import it.unive.pylisa.cfg.expression.PyEllipsisLiteral;
 import it.unive.pylisa.cfg.expression.PyFloorDiv;
 import it.unive.pylisa.cfg.expression.PyIn;
 import it.unive.pylisa.cfg.expression.PyIs;
 import it.unive.pylisa.cfg.expression.PyMatMul;
 import it.unive.pylisa.cfg.expression.PyMultiplication;
 import it.unive.pylisa.cfg.expression.PyNewObj;
-import it.unive.pylisa.cfg.expression.PyNoneLiteral;
 import it.unive.pylisa.cfg.expression.PyPower;
 import it.unive.pylisa.cfg.expression.PyRemainder;
 import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
@@ -225,6 +220,10 @@ import it.unive.pylisa.cfg.expression.comparison.PyLessOrEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
+import it.unive.pylisa.cfg.expression.literal.PyEllipsisLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyFloatLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyIntLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
@@ -355,10 +354,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		TypeSystem types = program.getTypes();
 		types.registerType(PyLambdaType.INSTANCE);
-		types.registerType(BoolType.INSTANCE);
 		types.registerType(StringType.INSTANCE);
-		types.registerType(Int32Type.INSTANCE);
-		types.registerType(Float32Type.INSTANCE);
 		types.registerType(NullType.INSTANCE);
 		types.registerType(VoidType.INSTANCE);
 		types.registerType(Untyped.INSTANCE);
@@ -596,7 +592,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				if (firstParam) {
 					if (currentUnit instanceof ClassUnit) {
 						pars.add(new Parameter(getLocation(ctx), def.tfpdef().NAME().getText(),
-								new ReferenceType(PyClassType.lookup(currentUnit.getName(), (ClassUnit) currentUnit))));
+								new ReferenceType(PyClassType.register(currentUnit.getName(), (ClassUnit) currentUnit))));
 					} else {
 						pars.add(visitTypedarg(def));
 					}
@@ -1687,7 +1683,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								currentCFG,
 								getLocation(expr),
 								"__init__",
-								PyClassType.lookup(cu.getName(), (ClassUnit) cu),
+								PyClassType.register(cu.getName(), (ClassUnit) cu),
 								pars.toArray(Expression[]::new));
 					} else {
 						access = new UnresolvedCall(
@@ -1773,10 +1769,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 			if (text.contains("e") || text.contains("."))
 				// floating point
-				return new Float32Literal(currentCFG, getLocation(ctx), Float.parseFloat(text));
+				return new PyFloatLiteral(currentCFG, getLocation(ctx), Float.parseFloat(text));
 
 			// integer
-			return new Int32Literal(currentCFG, getLocation(ctx), Integer.parseInt(text));
+			return new PyIntLiteral(currentCFG, getLocation(ctx), Integer.parseInt(text));
 		} else if (ctx.FALSE() != null)
 			// create a literal false
 			return new FalseLiteral(currentCFG, getLocation(ctx));

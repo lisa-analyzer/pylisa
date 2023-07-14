@@ -25,3 +25,13 @@ sealed class Set extends Sequence
 sealed class Dict extends Sequence
 sealed class Tuple extends Sequence
 sealed class Slice extends Sequence
+class numbers.Number: it.unive.pylisa.cfg.type.PyNumberType
+class numbers.Complex extends numbers.Number: it.unive.pylisa.cfg.type.PyComplexType
+	instance field real type it.unive.lisa.type.Untyped::INSTANCE
+	instance field imag type it.unive.lisa.type.Untyped::INSTANCE
+class numbers.Real extends numbers.Complex: it.unive.pylisa.cfg.type.PyRealType
+class numbers.Rational extends numbers.Real: it.unive.pylisa.cfg.type.PyRationalType
+	instance field denominator type it.unive.lisa.type.Untyped::INSTANCE
+	instance field numerator type it.unive.lisa.type.Untyped::INSTANCE
+class numbers.Integral extends numbers.Rational: it.unive.pylisa.cfg.type.PyIntegralType
+class numbers.Boolean extends numbers.Rational: it.unive.pylisa.cfg.type.PyBooleanType
