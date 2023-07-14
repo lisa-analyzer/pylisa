@@ -189,7 +189,6 @@ import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import it.unive.pylisa.cfg.expression.Empty;
 import it.unive.pylisa.cfg.expression.LambdaExpression;
 import it.unive.pylisa.cfg.expression.ListCreation;
-import it.unive.pylisa.cfg.expression.PyNoneLiteral;
 import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
 import it.unive.pylisa.cfg.expression.PyAddition;
 import it.unive.pylisa.cfg.expression.PyAssign;
@@ -200,12 +199,14 @@ import it.unive.pylisa.cfg.expression.PyBitwiseOr;
 import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
 import it.unive.pylisa.cfg.expression.PyBitwiseXor;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
+import it.unive.pylisa.cfg.expression.PyEllipsisLiteral;
 import it.unive.pylisa.cfg.expression.PyFloorDiv;
 import it.unive.pylisa.cfg.expression.PyIn;
 import it.unive.pylisa.cfg.expression.PyIs;
 import it.unive.pylisa.cfg.expression.PyMatMul;
 import it.unive.pylisa.cfg.expression.PyMultiplication;
 import it.unive.pylisa.cfg.expression.PyNewObj;
+import it.unive.pylisa.cfg.expression.PyNoneLiteral;
 import it.unive.pylisa.cfg.expression.PyPower;
 import it.unive.pylisa.cfg.expression.PyRemainder;
 import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
@@ -1807,7 +1808,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			DictionaryCreation r = new DictionaryCreation(currentCFG, getLocation(ctx),
 					values.toArray(Pair[]::new));
 			return r;
-		}
+		} else if (ctx.ELLIPSIS() != null)
+			return new PyEllipsisLiteral(currentCFG, getLocation(ctx));
 		throw new UnsupportedStatementException();
 	}
 
