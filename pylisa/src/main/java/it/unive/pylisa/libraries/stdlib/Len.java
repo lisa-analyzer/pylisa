@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries;
+package it.unive.pylisa.libraries.stdlib;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -42,13 +42,12 @@ public class Len extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		TypeSystem types = getProgram().getTypes();
-		if (expr.getRuntimeTypes(types).stream().anyMatch(Type::isStringType)) {
+		if (expr.getRuntimeTypes(types).stream().anyMatch(Type::isStringType))
 			// String len
 			return state.smallStepSemantics(
 					new UnaryExpression(Int32Type.INSTANCE, expr, StringLength.INSTANCE, getLocation()), this);
-		}
 		// TODO handle other cases
-		return state;
+		return state.top();
 	}
 
 	@Override

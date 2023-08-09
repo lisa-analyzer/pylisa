@@ -8,7 +8,7 @@ method print: it.unive.pylisa.libraries.NoOpFunction
 method str: it.unive.pylisa.libraries.Str
     type it.unive.lisa.program.type.StringType::INSTANCE
     param arg1 type it.unive.lisa.type.Untyped::INSTANCE
-method len: it.unive.pylisa.libraries.Len
+method len: it.unive.pylisa.libraries.stdlib.Len
     type it.unive.lisa.program.type.Int32Type::INSTANCE
     param arg1 type it.unive.lisa.type.Untyped::INSTANCE
 root class Object
