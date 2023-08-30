@@ -1,4 +1,4 @@
-package it.unive.pylisa.cfg.expression.comparison;
+package it.unive.pylisa.libraries.stdlib.object;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -10,19 +10,27 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.comparison.GreaterOrEqual;
-import it.unive.lisa.program.type.BoolType;
+import it.unive.lisa.program.cfg.statement.PluggableStatement;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.BinaryExpression;
-import it.unive.pylisa.libraries.pandas.PandasSemantics;
-import it.unive.pylisa.symbolic.operators.compare.PyComparisonGe;
-import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonNe;
 
-public class PyGreaterOrEqual extends GreaterOrEqual {
+public class ObjectNe extends BinaryExpression implements PluggableStatement {
+	protected Statement st;
 
-	public PyGreaterOrEqual(CFG cfg, CodeLocation location, Expression left, Expression right) {
-		super(cfg, location, left, right);
+	public ObjectNe(CFG cfg, CodeLocation location, Expression left, Expression right) {
+		super(cfg, location, "__ne__", cfg.getDescriptor().getUnit().getProgram().getTypes().getBooleanType(), left, right);
+	}
+
+	public static ObjectNe build(CFG cfg, CodeLocation location, Expression[] exprs) {
+		return new ObjectNe(cfg, location, exprs[0], exprs[1]);
+	}
+
+	@Override
+	public void setOriginatingStatement(Statement st) {
+		this.st = st;
 	}
 
 	@Override
@@ -36,24 +44,13 @@ public class PyGreaterOrEqual extends GreaterOrEqual {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		AnalysisState<A, H, V, T> sem = PandasSemantics.compare(
-				state,
-				left,
-				right,
-				this,
-				ComparisonOperator.GEQ);
-		if (sem != null)
-			return sem;
-
-		// python does not require the types to be numeric
 		return state.smallStepSemantics(
-				new BinaryExpression(
-						BoolType.INSTANCE,
+				new it.unive.lisa.symbolic.value.BinaryExpression(
+						getStaticType(),
 						left,
 						right,
-						PyComparisonGe.INSTANCE,
+						ComparisonNe.INSTANCE,
 						getLocation()),
-				this);
+				st);
 	}
-
 }

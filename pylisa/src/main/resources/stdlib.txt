@@ -1,37 +1,392 @@
 method super: it.unive.pylisa.libraries.Super
-    type it.unive.lisa.type.Untyped::INSTANCE
-    param arg1 type it.unive.lisa.type.Untyped::INSTANCE
-    param arg2 type it.unive.lisa.type.Untyped::INSTANCE
+    libtype object*
+    param arg1 libtype object*
+    param arg2 libtype object*
+
 method print: it.unive.pylisa.libraries.NoOpFunction
 	type it.unive.lisa.type.VoidType::INSTANCE
-	param arg1 type it.unive.lisa.type.Untyped::INSTANCE
+	param arg1 libtype object*
+
 method str: it.unive.pylisa.libraries.Str
-    type it.unive.lisa.program.type.StringType::INSTANCE
-    param arg1 type it.unive.lisa.type.Untyped::INSTANCE
+    libtype String* ###################################################
+    param arg1 libtype object*
+
 method len: it.unive.pylisa.libraries.stdlib.Len
-    type it.unive.lisa.program.type.Int32Type::INSTANCE
-    param arg1 type it.unive.lisa.type.Untyped::INSTANCE
-root class Object
+    libtype numbers.Integral 
+    param arg1 libtype object*
+
+root class object:
+	field __match_args__ libtype object*
+	instance method __init__: it.unive.pylisa.libraries.stdlib.object.ObjectInit
+		type it.unive.lisa.type.VoidType::INSTANCE
+		param self libtype object* 
+	instance method __del__: it.unive.pylisa.libraries.stdlib.object.ObjectDel
+		type it.unive.lisa.type.VoidType::INSTANCE
+		param self libtype object* 
+	instance method __repr__: it.unive.pylisa.libraries.stdlib.object.ObjectRepr
+		libtype String* ###################################################
+		param self libtype object* 
+	instance method __str__: it.unive.pylisa.libraries.stdlib.object.ObjectStr
+		libtype String* ###################################################
+		param self libtype object* 
+	instance method __bytes__: it.unive.pylisa.libraries.stdlib.object.ObjectBytes
+		libtype bytes* 
+		param self libtype object* 
+	instance method __format__: it.unive.pylisa.libraries.stdlib.object.ObjectFormat
+		libtype String* ###################################################
+		param self libtype object* 
+		param format_spec libtype String* ###################################################
+	instance method __lt__: it.unive.pylisa.libraries.stdlib.object.ObjectLt
+		libtype numbers.Boolean
+		param self libtype object* 
+		param other libtype object*
+	instance method __le__: it.unive.pylisa.libraries.stdlib.object.ObjectLe
+		libtype numbers.Boolean
+		param self libtype object* 
+		param other libtype object*
+	instance method __eq__: it.unive.pylisa.libraries.stdlib.object.ObjectEq
+		libtype numbers.Boolean
+		param self libtype object* 
+		param other libtype object*
+	instance method __ne__: it.unive.pylisa.libraries.stdlib.object.ObjectNe
+		libtype numbers.Boolean
+		param self libtype object* 
+		param other libtype object*
+	instance method __gt__: it.unive.pylisa.libraries.stdlib.object.ObjectGt
+		libtype numbers.Boolean
+		param self libtype object* 
+		param other libtype object*
+	instance method __ge__: it.unive.pylisa.libraries.stdlib.object.ObjectGe
+		libtype numbers.Boolean 
+		param self libtype object* 
+		param other libtype object* 
+	instance method __hash__: it.unive.pylisa.libraries.stdlib.object.ObjectHash
+		libtype numbers.Integral 
+		param self libtype object* 
+	instance method __bool__: it.unive.pylisa.libraries.stdlib.object.ObjectBool
+		libtype numbers.Boolean 
+		param self libtype object* 
+	instance method __getattr__: it.unive.pylisa.libraries.stdlib.object.ObjectGetAttr
+		libtype object*
+		param self libtype object* 
+		param name libtype String* ###################################################
+	instance method __getattribute__: it.unive.pylisa.libraries.stdlib.object.ObjectGetAttribute
+		libtype object*
+		param self libtype object* 
+		param name libtype String* ###################################################
+	instance method __setattr__: it.unive.pylisa.libraries.stdlib.object.ObjectSetAttr
+		libtype object*
+		param self libtype object* 
+		param name libtype String* ###################################################
+		param value libtype object* 
+	instance method __delattr__: it.unive.pylisa.libraries.stdlib.object.ObjectDelAttr
+		libtype object*
+		param self libtype object* 
+		param name libtype String* ###################################################
+	instance method __dir__: it.unive.pylisa.libraries.stdlib.object.ObjectDir
+		libtype List* 
+		param self libtype object* 
+	instance method __len__: it.unive.pylisa.libraries.stdlib.object.ObjectLen
+		libtype numbers.Integral 
+		param self libtype object* 
+	instance method __length_hint__: it.unive.pylisa.libraries.stdlib.object.ObjectLenHint
+		libtype numbers.Integral 
+		param self libtype object* 
+	instance method __getitem__: it.unive.pylisa.libraries.stdlib.object.ObjectGetItem
+		libtype object*
+		param self libtype object* 
+		param key libtype object* 
+	instance method __setitem__: it.unive.pylisa.libraries.stdlib.object.ObjectSetItem
+		libtype object*
+		param self libtype object* 
+		param key libtype object* 
+		param value libtype object* 
+	instance method __delitem__: it.unive.pylisa.libraries.stdlib.object.ObjectDelItem
+		libtype object*
+		param self libtype object* 
+		param key libtype object* 
+	instance method __missing__: it.unive.pylisa.libraries.stdlib.object.ObjectMissing
+		libtype object*
+		param self libtype object* 
+		param key libtype object* 
+	instance method __iter__: it.unive.pylisa.libraries.stdlib.object.ObjectIter
+		libtype object*
+		param self libtype object*
+	instance method __next__: it.unive.pylisa.libraries.stdlib.object.ObjectNext
+		libtype object*
+		param self libtype object*
+	instance method __reversed__: it.unive.pylisa.libraries.stdlib.object.ObjectReversed
+		libtype object*
+		param self libtype object*
+	instance method __contains__: it.unive.pylisa.libraries.stdlib.object.ObjectContains
+		libtype numbers.Boolean 
+		param self libtype object* 
+		param item libtype object* 
+	instance method __add__: it.unive.pylisa.libraries.stdlib.object.ObjectAdd
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __sub__: it.unive.pylisa.libraries.stdlib.object.ObjectSub
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __mul__: it.unive.pylisa.libraries.stdlib.object.ObjectMul
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __matmul__: it.unive.pylisa.libraries.stdlib.object.ObjectMatMul
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __truediv__: it.unive.pylisa.libraries.stdlib.object.ObjectTrueDiv
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __floordiv__: it.unive.pylisa.libraries.stdlib.object.ObjectFloorDiv
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __mod__: it.unive.pylisa.libraries.stdlib.object.ObjectMod
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __divmod__: it.unive.pylisa.libraries.stdlib.object.ObjectDivMod
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __pow__: it.unive.pylisa.libraries.stdlib.object.ObjectPow
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+		param modulo libtype object* default none
+	instance method __lshift__: it.unive.pylisa.libraries.stdlib.object.ObjectLShift
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __rshift__: it.unive.pylisa.libraries.stdlib.object.ObjectRShift
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __and__: it.unive.pylisa.libraries.stdlib.object.ObjectAnd
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __xor__: it.unive.pylisa.libraries.stdlib.object.ObjectXor
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __or__: it.unive.pylisa.libraries.stdlib.object.ObjectOr
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __radd__: it.unive.pylisa.libraries.stdlib.object.ObjectRAdd
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __rsub__: it.unive.pylisa.libraries.stdlib.object.ObjectRSub
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __rmul__: it.unive.pylisa.libraries.stdlib.object.ObjectRMul
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __rmatmul__: it.unive.pylisa.libraries.stdlib.object.ObjectRMatMul
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __rtruediv__: it.unive.pylisa.libraries.stdlib.object.ObjectRTrueDiv
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __rfloordiv__: it.unive.pylisa.libraries.stdlib.object.ObjectRFloorDiv
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __rmod__: it.unive.pylisa.libraries.stdlib.object.ObjectRMod
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __rdivmod__: it.unive.pylisa.libraries.stdlib.object.ObjectRDivMod
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __rpow__: it.unive.pylisa.libraries.stdlib.object.ObjectRPow
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+		param modulo libtype object* default none
+	instance method __rlshift__: it.unive.pylisa.libraries.stdlib.object.ObjectRLShift
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __rrshift__: it.unive.pylisa.libraries.stdlib.object.ObjectRRShift
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __rand__: it.unive.pylisa.libraries.stdlib.object.ObjectRAnd
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __rxor__: it.unive.pylisa.libraries.stdlib.object.ObjectRXor
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __ror__: it.unive.pylisa.libraries.stdlib.object.ObjectROr
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __iadd__: it.unive.pylisa.libraries.stdlib.object.ObjectIAdd
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __isub__: it.unive.pylisa.libraries.stdlib.object.ObjectISub
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __imul__: it.unive.pylisa.libraries.stdlib.object.ObjectIMul
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __imatmul__: it.unive.pylisa.libraries.stdlib.object.ObjectIMatMul
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __itruediv__: it.unive.pylisa.libraries.stdlib.object.ObjectITrueDiv
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __ifloordiv__: it.unive.pylisa.libraries.stdlib.object.ObjectIFloorDiv
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __imod__: it.unive.pylisa.libraries.stdlib.object.ObjectIMod
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __ipow__: it.unive.pylisa.libraries.stdlib.object.ObjectIPow
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+		param modulo libtype object* default none
+	instance method __ilshift__: it.unive.pylisa.libraries.stdlib.object.ObjectILShift
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __irshift__: it.unive.pylisa.libraries.stdlib.object.ObjectIRShift
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __iand__: it.unive.pylisa.libraries.stdlib.object.ObjectIAnd
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __ixor__: it.unive.pylisa.libraries.stdlib.object.ObjectIXor
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __ior__: it.unive.pylisa.libraries.stdlib.object.ObjectIOr
+		libtype object*
+		param self libtype object*
+		param other libtype object*
+	instance method __neg__: it.unive.pylisa.libraries.stdlib.object.ObjectNeg
+		libtype object*
+		param self libtype object*
+	instance method __pos__: it.unive.pylisa.libraries.stdlib.object.ObjectPos
+		libtype object*
+		param self libtype object*
+	instance method __abs__: it.unive.pylisa.libraries.stdlib.object.ObjectAbs
+		libtype object*
+		param self libtype object*
+	instance method __invert__: it.unive.pylisa.libraries.stdlib.object.ObjectInvert
+		libtype object*
+		param self libtype object*
+	instance method __complex__: it.unive.pylisa.libraries.stdlib.object.ObjectComplex
+		libtype object*
+		param self libtype object*
+	instance method __int__: it.unive.pylisa.libraries.stdlib.object.ObjectInt
+		libtype object*
+		param self libtype object*
+	instance method __float__: it.unive.pylisa.libraries.stdlib.object.ObjectFloat
+		libtype object*
+		param self libtype object*
+	instance method __index__: it.unive.pylisa.libraries.stdlib.object.ObjectIndex
+		libtype object*
+		param self libtype object*
+	instance method __round__: it.unive.pylisa.libraries.stdlib.object.ObjectRound
+		libtype object*
+		param self libtype object*
+		param ndigits libtype object* default none
+	instance method __trunc__: it.unive.pylisa.libraries.stdlib.object.ObjectTrunc
+		libtype object*
+		param self libtype object*
+	instance method __floor__: it.unive.pylisa.libraries.stdlib.object.ObjectFloor
+		libtype object*
+		param self libtype object*
+	instance method __ceil__: it.unive.pylisa.libraries.stdlib.object.ObjectCeil
+		libtype object*
+		param self libtype object*
+	instance method __enter__: it.unive.pylisa.libraries.stdlib.object.ObjectEnter
+		type it.unive.lisa.type.VoidType::INSTANCE
+		param self libtype object*
+	instance method __exit__: it.unive.pylisa.libraries.stdlib.object.ObjectExit
+		type it.unive.lisa.type.VoidType::INSTANCE
+		param self libtype object*
+		param exc_type libtype object*
+		param exc_value libtype object*
+		param traceback libtype object*
+	instance method __await__: it.unive.pylisa.libraries.stdlib.object.ObjectAwait
+		type it.unive.lisa.type.VoidType::INSTANCE
+		param self libtype object*
+	instance method __aenter__: it.unive.pylisa.libraries.stdlib.object.ObjectAEnter
+		type it.unive.lisa.type.VoidType::INSTANCE
+		param self libtype object*
+	instance method __aexit__: it.unive.pylisa.libraries.stdlib.object.ObjectAExit
+		type it.unive.lisa.type.VoidType::INSTANCE
+		param self libtype object*
+		param exc_type libtype object*
+		param exc_value libtype object*
+		param traceback libtype object*
+	instance method __aiter__: it.unive.pylisa.libraries.stdlib.object.ObjectAIter
+		libtype object*
+		param self libtype object*
+	instance method __anext__: it.unive.pylisa.libraries.stdlib.object.ObjectANext
+		libtype object*
+		param self libtype object*
+
 class Sequence:
 	instance method __getitem__: it.unive.pylisa.libraries.SequenceGetItem
-		libtype Object*
-		param this libtype Sequence*
-		param index type it.unive.lisa.program.type.Int32Type::INSTANCE
+		libtype object*
+		param self libtype Sequence*
+		param index libtype numbers.Integral 
 	instance method __len__: it.unive.pylisa.libraries.SequenceLen
-		type it.unive.lisa.program.type.Int32Type::INSTANCE
-		param this libtype Sequence*
+		libtype numbers.Integral 
+		param self libtype Sequence*
+
+class bytes
+
 sealed class List extends Sequence 
+
 sealed class Set extends Sequence
+
 sealed class Dict extends Sequence
+
 sealed class Tuple extends Sequence
+
 sealed class Slice extends Sequence
+
 class numbers.Number: it.unive.pylisa.cfg.type.PyNumberType
+
 class numbers.Complex extends numbers.Number: it.unive.pylisa.cfg.type.PyComplexType
-	instance field real type it.unive.lisa.type.Untyped::INSTANCE
-	instance field imag type it.unive.lisa.type.Untyped::INSTANCE
+	instance field real libtype object*
+	instance field imag libtype object*
+
 class numbers.Real extends numbers.Complex: it.unive.pylisa.cfg.type.PyRealType
+
 class numbers.Rational extends numbers.Real: it.unive.pylisa.cfg.type.PyRationalType
-	instance field denominator type it.unive.lisa.type.Untyped::INSTANCE
-	instance field numerator type it.unive.lisa.type.Untyped::INSTANCE
+	instance field denominator libtype object*
+	instance field numerator libtype object*
+
 class numbers.Integral extends numbers.Rational: it.unive.pylisa.cfg.type.PyIntegralType
+
 class numbers.Boolean extends numbers.Rational: it.unive.pylisa.cfg.type.PyBooleanType

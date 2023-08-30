@@ -1,4 +1,4 @@
-package it.unive.pylisa.cfg.expression.comparison;
+package it.unive.pylisa.libraries.stdlib.object;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -10,19 +10,27 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.comparison.LessThan;
-import it.unive.lisa.program.type.BoolType;
+import it.unive.lisa.program.cfg.statement.PluggableStatement;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.BinaryExpression;
-import it.unive.pylisa.libraries.pandas.PandasSemantics;
-import it.unive.pylisa.symbolic.operators.compare.PyComparisonLt;
-import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
+import it.unive.pylisa.cfg.expression.literal.PyNotImplementedLiteral;
 
-public class PyLessThan extends LessThan {
+public class ObjectGe extends BinaryExpression implements PluggableStatement {
+	protected Statement st;
 
-	public PyLessThan(CFG cfg, CodeLocation location, Expression left, Expression right) {
-		super(cfg, location, left, right);
+	public ObjectGe(CFG cfg, CodeLocation location, Expression left, Expression right) {
+		super(cfg, location, "__ge__", cfg.getDescriptor().getUnit().getProgram().getTypes().getBooleanType(), left, right);
+	}
+
+	public static ObjectGe build(CFG cfg, CodeLocation location, Expression[] exprs) {
+		return new ObjectGe(cfg, location, exprs[0], exprs[1]);
+	}
+
+	@Override
+	public void setOriginatingStatement(Statement st) {
+		this.st = st;
 	}
 
 	@Override
@@ -36,24 +44,6 @@ public class PyLessThan extends LessThan {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		AnalysisState<A, H, V, T> sem = PandasSemantics.compare(
-				state,
-				left,
-				right,
-				this,
-				ComparisonOperator.LT);
-		if (sem != null)
-			return sem;
-
-		// python does not require the types to be numeric
-		return state.smallStepSemantics(
-				new BinaryExpression(
-						BoolType.INSTANCE,
-						left,
-						right,
-						PyComparisonLt.INSTANCE,
-						getLocation()),
-				this);
+		return new PyNotImplementedLiteral(getCFG(), getLocation()).semantics(state, interprocedural, expressions);
 	}
-
 }

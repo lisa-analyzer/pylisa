@@ -34,7 +34,8 @@ public class LibrarySpecificationProvider {
 	public static final String LIST = "List";
 	public static final String TUPLE = "Tuple";
 	public static final String SLICE = "Slice";
-	public static final String OBJECT = "Object";
+	public static final String OBJECT = "object";
+	public static final String BYTES = "bytes";
 
 	public static final String WARNINGS = "warnings";
 

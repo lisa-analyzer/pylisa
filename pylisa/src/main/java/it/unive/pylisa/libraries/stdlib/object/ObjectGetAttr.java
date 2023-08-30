@@ -1,4 +1,4 @@
-package it.unive.pylisa.cfg.expression.comparison;
+package it.unive.pylisa.libraries.stdlib.object;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -10,16 +10,33 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.comparison.Equal;
+import it.unive.lisa.program.cfg.statement.PluggableStatement;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.libraries.pandas.PandasSemantics;
-import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class PyEquals extends Equal {
+public class ObjectGetAttr extends BinaryExpression implements PluggableStatement {
+	protected Statement st;
 
-	public PyEquals(CFG cfg, CodeLocation location, Expression left, Expression right) {
-		super(cfg, location, left, right);
+	public ObjectGetAttr(CFG cfg, CodeLocation location, Expression left, Expression right) {
+		super(cfg,
+				location,
+				"__getattr__",
+				PyClassType.lookup(LibrarySpecificationProvider.OBJECT),
+				left,
+				right);
+	}
+
+	public static ObjectGetAttr build(CFG cfg, CodeLocation location, Expression[] exprs) {
+		return new ObjectGetAttr(cfg, location, exprs[0], exprs[1]);
+	}
+
+	@Override
+	public void setOriginatingStatement(Statement st) {
+		this.st = st;
 	}
 
 	@Override
@@ -33,15 +50,7 @@ public class PyEquals extends Equal {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-		AnalysisState<A, H, V, T> sem = PandasSemantics.compare(
-				state,
-				left,
-				right,
-				this,
-				ComparisonOperator.EQ);
-		if (sem != null)
-			return sem;
-
-		return super.binarySemantics(interprocedural, state, left, right, expressions);
+		// getattr is called when getattribute fails, and it throws an exception
+		return state.bottom();
 	}
 }
