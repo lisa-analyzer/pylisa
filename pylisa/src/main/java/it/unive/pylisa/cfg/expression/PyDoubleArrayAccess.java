@@ -42,25 +42,26 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 					SymbolicExpression right,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
-
-		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		Type dfref = ((PyClassType) dftype).getReference();
-
 		Type dereferencedType = Untyped.INSTANCE;
 		Type firstAccessedType = Untyped.INSTANCE;
 		Type childType = Untyped.INSTANCE;
-		TypeSystem types = getProgram().getTypes();
-		if (left.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfref))) {
-			HeapDereference deref = new HeapDereference(dftype, left, getLocation());
-			it.unive.lisa.symbolic.value.TernaryExpression dfAccess = new it.unive.lisa.symbolic.value.TernaryExpression(
-					dftype,
-					deref, middle, right,
-					AccessRowsColumns.INSTANCE,
-					getLocation());
-			state = state.smallStepSemantics(dfAccess, this);
-			dereferencedType = dftype;
-			firstAccessedType = dftype;
-			childType = dfref;
+
+		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
+			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+			Type dfreftype = dftype.getReference();
+			TypeSystem types = getProgram().getTypes();
+			if (left.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfreftype))) {
+				HeapDereference deref = new HeapDereference(dftype, left, getLocation());
+				it.unive.lisa.symbolic.value.TernaryExpression dfAccess = new it.unive.lisa.symbolic.value.TernaryExpression(
+						dftype,
+						deref, middle, right,
+						AccessRowsColumns.INSTANCE,
+						getLocation());
+				state = state.smallStepSemantics(dfAccess, this);
+				dereferencedType = dftype;
+				firstAccessedType = dftype;
+				childType = dfreftype;
+			}
 		}
 
 		HeapDereference deref = new HeapDereference(dereferencedType, left, getLocation());

@@ -60,13 +60,13 @@ public class DictionaryCreation extends NaryExpression {
 		if (params.length == 0)
 			return state.smallStepSemantics(dict, this);
 
-		Type type = PyClassType.lookup(LibrarySpecificationProvider.DICT);
+		Type dicttype = PyClassType.lookup(LibrarySpecificationProvider.DICT);
 		TernaryOperator append = DictPut.INSTANCE;
 
 		Set<TernaryExpression> ws = new HashSet<>(), tmp = new HashSet<>();
 		for (SymbolicExpression firstkey : params[0])
 			for (SymbolicExpression firstvalue : params[1])
-				ws.add(new TernaryExpression(type, dict, firstkey, firstvalue, append, loc));
+				ws.add(new TernaryExpression(dicttype, dict, firstkey, firstvalue, append, loc));
 
 		for (int i = 2; i < params.length - 1; i += 2) {
 			ExpressionSet<SymbolicExpression> key = params[i];
@@ -77,7 +77,7 @@ public class DictionaryCreation extends NaryExpression {
 			for (TernaryExpression dicthead : tmp)
 				for (SymbolicExpression field : key)
 					for (SymbolicExpression init : value)
-						ws.add(new TernaryExpression(type, dicthead, field, init, append, loc));
+						ws.add(new TernaryExpression(dicttype, dicthead, field, init, append, loc));
 			tmp.clear();
 		}
 

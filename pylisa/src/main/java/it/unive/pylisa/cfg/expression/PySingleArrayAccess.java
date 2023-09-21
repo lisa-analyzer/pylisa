@@ -56,16 +56,19 @@ public class PySingleArrayAccess extends BinaryExpression {
 			dereferencedType = Untyped.INSTANCE;
 
 		HeapDereference deref = new HeapDereference(dereferencedType, left, getLocation());
-		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		Type dfref = ((PyClassType) dftype).getReference();
-		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-		Type seriesref = ((PyClassType) seriestype).getReference();
 
-		if (left.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfref))) {
-			it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
-					seriestype, deref, right, ColumnAccess.INSTANCE, getLocation());
-			result = result.smallStepSemantics(col, this);
-			childType = right.getRuntimeTypes(types).stream().anyMatch(dfref::equals) ? dfref : seriesref;
+		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
+			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+			Type dfref = dftype.getReference();
+			PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+			Type seriesref = seriestype.getReference();
+
+			if (left.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfref))) {
+				it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
+						seriestype, deref, right, ColumnAccess.INSTANCE, getLocation());
+				result = result.smallStepSemantics(col, this);
+				childType = right.getRuntimeTypes(types).stream().anyMatch(dfref::equals) ? dfref : seriesref;
+			}
 		}
 
 		if (childType.isPointerType()) {
