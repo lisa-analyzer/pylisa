@@ -34,16 +34,15 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural,
-					AnalysisState<A, H, V, T> state,
-					SymbolicExpression expr,
-					StatementStore<A, H, V, T> expressions) throws SemanticException {
-		try {
-			PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-			Type dfref = df.getReference();
-			if (expr.getRuntimeTypes(getProgram().getTypes()).stream().anyMatch(t -> (t.equals(dfref)))) {
-				String name = getTarget();
-				switch (name) {
+			InterproceduralAnalysis<A, H, V, T> interprocedural,
+			AnalysisState<A, H, V, T> state,
+			SymbolicExpression expr,
+			StatementStore<A, H, V, T> expressions) throws SemanticException {
+		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
+			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+			Type dfreftype = dftype.getReference();
+			if (expr.getRuntimeTypes(getProgram().getTypes()).stream().anyMatch(t -> (t.equals(dfreftype))))
+				switch (getTarget()) {
 					case "loc":
 					case "iloc":
 					case "style":
@@ -56,8 +55,8 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 						keys.setOriginatingStatement(this);
 						return keys.unarySemantics(interprocedural, state, expr, expressions);
 				}
-			}
-		} catch(Exception e) {}
+		}
+
 		// FIXME
 		AnalysisState<A, H, V, T> sup = super.unarySemantics(interprocedural, state, expr, expressions);
 		if (!sup.isBottom())

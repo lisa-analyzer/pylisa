@@ -44,24 +44,28 @@ public class PyAssign extends Assignment {
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural,
-					AnalysisState<A, H, V, T> state,
-					SymbolicExpression left,
-					SymbolicExpression right,
-					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
+			InterproceduralAnalysis<A, H, V, T> interprocedural,
+			AnalysisState<A, H, V, T> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A, H, V, T> expressions)
+			throws SemanticException {
 		CodeLocation loc = getLocation();
-		try {
+
+		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-			Type dfref = ((PyClassType) dftype).getReference();
+			Type dfreftype = dftype.getReference();
 			PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-			Type seriesref = ((PyClassType) seriestype).getReference();
+			Type seriesreftype = seriestype.getReference();
+
 			if (PandasSemantics.isDataframePortionThatCanBeAssignedTo(left)) {
 				HeapDereference lderef = PandasSemantics.getDataframeDereference(left);
 				SymbolicExpression write;
 				TypeSystem types = getProgram().getTypes();
-				if (right.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfref) || t.equals(seriesref))) {
-					// asssigning part of a dataframe to another dataframe so get
+				if (right.getRuntimeTypes(types).stream()
+						.anyMatch(t -> t.equals(dfreftype) || t.equals(seriesreftype))) {
+					// asssigning part of a dataframe to another dataframe so
+					// get
 					// deref from right
 					if (PandasSemantics.isDataframePortionThatCanBeAssignedTo(right))
 						right = PandasSemantics.getDataframeDereference(right);
@@ -73,8 +77,6 @@ public class PyAssign extends Assignment {
 				// we leave on the stack the column that received the assignment
 				return state.smallStepSemantics(write, this).smallStepSemantics(left, this);
 			}
-		} catch(Exception e) {
-			return super.binarySemantics(interprocedural, state, left, right, expressions);
 		}
 
 		Expression lefthand = getLeft();
