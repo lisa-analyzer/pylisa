@@ -10,7 +10,10 @@ public class FillNullAxis extends DataframeOperation {
 	private final Axis axis;
 	private final ConstantPropagation value;
 
-	public FillNullAxis(CodeLocation where, Axis axis, ConstantPropagation value) {
+	public FillNullAxis(
+			CodeLocation where,
+			Axis axis,
+			ConstantPropagation value) {
 		super(where);
 		this.axis = axis;
 		this.value = value;
@@ -21,7 +24,9 @@ public class FillNullAxis extends DataframeOperation {
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		FillNullAxis o = (FillNullAxis) other;
 		if (!value.lessOrEqual(o.value))
 			return false;
@@ -36,7 +41,9 @@ public class FillNullAxis extends DataframeOperation {
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		FillNullAxis o = (FillNullAxis) other;
 		Axis ax;
 		if (axis == Axis.TOP || o.axis == Axis.TOP || axis != o.axis)
@@ -56,7 +63,8 @@ public class FillNullAxis extends DataframeOperation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -75,7 +83,8 @@ public class FillNullAxis extends DataframeOperation {
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameClassAndLocation(
+			DataframeOperation o) {
 		FillNullAxis other = (FillNullAxis) o;
 		return axis.compareTo(other.axis);
 	}

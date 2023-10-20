@@ -17,19 +17,29 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 
 	private final ConstantPropagation beginIndex, endIndex, skip;
 
-	public NumberSlice(int beginIndex, int endIndex, int skip) {
+	public NumberSlice(
+			int beginIndex,
+			int endIndex,
+			int skip) {
 		this(new ConstantPropagation(beginIndex), new ConstantPropagation(endIndex), new ConstantPropagation(skip));
 	}
 
-	public NumberSlice(int beginIndex, int endIndex) {
+	public NumberSlice(
+			int beginIndex,
+			int endIndex) {
 		this(new ConstantPropagation(beginIndex), new ConstantPropagation(endIndex));
 	}
 
-	public NumberSlice(ConstantPropagation beginIndex, ConstantPropagation endIndex) {
+	public NumberSlice(
+			ConstantPropagation beginIndex,
+			ConstantPropagation endIndex) {
 		this(beginIndex, endIndex, new ConstantPropagation().bottom());
 	}
 
-	public NumberSlice(ConstantPropagation beginIndex, ConstantPropagation endIndex, ConstantPropagation skip) {
+	public NumberSlice(
+			ConstantPropagation beginIndex,
+			ConstantPropagation endIndex,
+			ConstantPropagation skip) {
 		this.beginIndex = beginIndex;
 		this.endIndex = endIndex;
 		this.skip = skip;
@@ -58,7 +68,8 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -110,24 +121,31 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 	}
 
 	@Override
-	public NumberSlice lubAux(NumberSlice other) throws SemanticException {
+	public NumberSlice lubAux(
+			NumberSlice other)
+			throws SemanticException {
 		return new NumberSlice(beginIndex.lub(other.beginIndex), endIndex.lub(other.endIndex), skip.lub(other.skip));
 	}
 
 	@Override
-	public NumberSlice wideningAux(NumberSlice other) throws SemanticException {
+	public NumberSlice wideningAux(
+			NumberSlice other)
+			throws SemanticException {
 		return new NumberSlice(beginIndex.widening(other.beginIndex), endIndex.widening(other.endIndex),
 				skip.widening(other.skip));
 	}
 
 	@Override
-	public boolean lessOrEqualAux(NumberSlice other) throws SemanticException {
+	public boolean lessOrEqualAux(
+			NumberSlice other)
+			throws SemanticException {
 		return beginIndex.lessOrEqual(other.beginIndex) && endIndex.lessOrEqual(other.endIndex)
 				&& skip.lessOrEqual(other.skip);
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		NumberSlice other = (NumberSlice) o;
 		int cmp = compare(beginIndex, other.beginIndex);
 		if (cmp != 0)
@@ -138,7 +156,9 @@ public class NumberSlice extends RowSelection<NumberSlice> {
 		return compare(skip, other.skip);
 	}
 
-	private static int compare(ConstantPropagation first, ConstantPropagation second) {
+	private static int compare(
+			ConstantPropagation first,
+			ConstantPropagation second) {
 		if (first.isBottom() && !second.isBottom())
 			return -1;
 		else if (!first.isBottom() && second.isBottom())

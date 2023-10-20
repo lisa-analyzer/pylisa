@@ -1,15 +1,15 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Objects;
-
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
+import java.util.Objects;
 
 public class StringValue implements Value {
 	private final String value;
 
-	public StringValue(String value) {
+	public StringValue(
+			String value) {
 		this.value = value;
 	}
 
@@ -23,7 +23,8 @@ public class StringValue implements Value {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -40,11 +41,13 @@ public class StringValue implements Value {
 	}
 
 	@Override
-	public Expression toLiSAExpression(CFG init) {
+	public Expression toLiSAExpression(
+			CFG init) {
 		return new StringLiteral(init, init.getDescriptor().getLocation(), clean(this.value));
 	}
 
-	private String clean(String text) {
+	private String clean(
+			String text) {
 		return text.substring(1, text.length() - 1);
 	}
 }

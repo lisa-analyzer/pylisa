@@ -5,7 +5,9 @@ import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 
 public class ProjectionOperation<S extends Selection<S>> extends SelectionOperation<S> {
 
-	public ProjectionOperation(CodeLocation where, S selection) {
+	public ProjectionOperation(
+			CodeLocation where,
+			S selection) {
 		super(where, selection);
 	}
 
@@ -15,7 +17,9 @@ public class ProjectionOperation<S extends Selection<S>> extends SelectionOperat
 	}
 
 	@Override
-	public SelectionOperation<S> mk(CodeLocation where, S selection) {
+	public SelectionOperation<S> mk(
+			CodeLocation where,
+			S selection) {
 		return new ProjectionOperation<>(where, selection);
 	}
 }

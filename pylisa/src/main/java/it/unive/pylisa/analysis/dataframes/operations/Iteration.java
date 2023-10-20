@@ -4,17 +4,20 @@ import it.unive.lisa.program.cfg.CodeLocation;
 
 public class Iteration extends DataframeOperation {
 
-	public Iteration(CodeLocation where) {
+	public Iteration(
+			CodeLocation where) {
 		super(where);
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other) {
 		return true;
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other) {
 		return new Iteration(loc(other));
 	}
 
@@ -24,7 +27,8 @@ public class Iteration extends DataframeOperation {
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameClassAndLocation(
+			DataframeOperation o) {
 		return 0;
 	}
 }

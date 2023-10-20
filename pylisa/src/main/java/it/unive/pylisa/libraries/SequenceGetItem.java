@@ -4,9 +4,6 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.heap.HeapDomain;
-import it.unive.lisa.analysis.value.TypeDomain;
-import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -22,42 +19,49 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.symbolic.operators.dataframes.Iterate;
+import java.util.Set;
 
 public class SequenceGetItem extends BinaryExpression implements PluggableStatement {
 
 	protected Statement st;
 
-	protected SequenceGetItem(CFG cfg, CodeLocation location, String constructName,
-			Expression sequence, Expression index) {
+	protected SequenceGetItem(
+			CFG cfg,
+			CodeLocation location,
+			String constructName,
+			Expression sequence,
+			Expression index) {
 		super(cfg, location, constructName, sequence, index);
 	}
 
-	public static SequenceGetItem build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static SequenceGetItem build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new SequenceGetItem(cfg, location, "__getitem__", exprs[0], exprs[1]);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>,
-			H extends HeapDomain<H>,
-			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural,
-					AnalysisState<A, H, V, T> state,
-					SymbolicExpression left,
-					SymbolicExpression right,
-					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
+	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 
 		CodeLocation loc = getLocation();
-		if (left.getRuntimeTypes(getProgram().getTypes()).stream().anyMatch(dfref::equals)) {
+		Set<Type> rts = state.getState().getRuntimeTypesOf(left, this, state.getState());
+		if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(dfref::equals)) {
 			HeapDereference deref = new HeapDereference(dftype, left, loc);
 			UnaryExpression iterate = new UnaryExpression(seriestype, deref, Iterate.INSTANCE, loc);
 			return state.smallStepSemantics(iterate, st);

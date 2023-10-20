@@ -6,7 +6,8 @@ import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Token;
 
 abstract class Python3LexerBase extends Lexer {
-	protected Python3LexerBase(CharStream input) {
+	protected Python3LexerBase(
+			CharStream input) {
 		super(input);
 	}
 
@@ -20,7 +21,8 @@ abstract class Python3LexerBase extends Lexer {
 	private Token lastToken = null;
 
 	@Override
-	public void emit(Token t) {
+	public void emit(
+			Token t) {
 		super.setToken(t);
 		tokens.offer(t);
 	}
@@ -67,7 +69,9 @@ abstract class Python3LexerBase extends Lexer {
 		return dedent;
 	}
 
-	private CommonToken commonToken(int type, String text) {
+	private CommonToken commonToken(
+			int type,
+			String text) {
 		int stop = this.getCharIndex() - 1;
 		int start = text.isEmpty() ? stop : stop - text.length() + 1;
 		return new CommonToken(this._tokenFactorySourcePair, type, DEFAULT_TOKEN_CHANNEL, start, stop);
@@ -82,7 +86,8 @@ abstract class Python3LexerBase extends Lexer {
 	//
 	// --
 	// https://docs.python.org/3.1/reference/lexical_analysis.html#indentation
-	static int getIndentationCount(String spaces) {
+	static int getIndentationCount(
+			String spaces) {
 		int count = 0;
 		for (char ch : spaces.toCharArray()) {
 			switch (ch) {

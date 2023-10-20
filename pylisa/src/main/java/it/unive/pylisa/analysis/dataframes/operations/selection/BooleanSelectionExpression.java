@@ -5,7 +5,8 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.dataframes.Names;
 
 public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends BooleanSelection<R>>
-		extends BooleanSelection<BooleanSelectionExpression<L, R>> {
+		extends
+		BooleanSelection<BooleanSelectionExpression<L, R>> {
 
 	public static enum Type {
 		UNKNOWN,
@@ -18,7 +19,10 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 	private final L left;
 	private final R right;
 
-	public BooleanSelectionExpression(Type type, L bs1, R bs2) {
+	public BooleanSelectionExpression(
+			Type type,
+			L bs1,
+			R bs2) {
 		this.type = type;
 		this.left = bs1;
 		this.right = bs2;
@@ -57,20 +61,25 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 	}
 
 	@Override
-	public BooleanSelectionExpression<L, R> lubAux(BooleanSelectionExpression<L, R> other) throws SemanticException {
+	public BooleanSelectionExpression<L, R> lubAux(
+			BooleanSelectionExpression<L, R> other)
+			throws SemanticException {
 		return type != other.type ? top()
 				: new BooleanSelectionExpression<>(type, left.lub(other.left), right.lub(other.right));
 	}
 
 	@Override
-	public BooleanSelectionExpression<L, R> wideningAux(BooleanSelectionExpression<L, R> other)
+	public BooleanSelectionExpression<L, R> wideningAux(
+			BooleanSelectionExpression<L, R> other)
 			throws SemanticException {
 		return type != other.type ? top()
 				: new BooleanSelectionExpression<>(type, left.widening(other.left), right.widening(other.right));
 	}
 
 	@Override
-	public boolean lessOrEqualAux(BooleanSelectionExpression<L, R> other) throws SemanticException {
+	public boolean lessOrEqualAux(
+			BooleanSelectionExpression<L, R> other)
+			throws SemanticException {
 		return type != other.type ? false
 				: left.lessOrEqual(other.left) && right.lessOrEqual(other.right);
 	}
@@ -86,7 +95,8 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -121,7 +131,8 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		BooleanSelectionExpression<?, ?> other = (BooleanSelectionExpression<?, ?>) o;
 		int cmp = type.compareTo(other.type);
 		if (cmp != 0)
@@ -131,7 +142,7 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 			return cmp;
 		return right.compareTo(other.right);
 	}
-	
+
 	@Override
 	public Names extractColumnNames() throws SemanticException {
 		return left.extractColumnNames().lub(right.extractColumnNames());

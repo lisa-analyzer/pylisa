@@ -1,10 +1,5 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
-
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
@@ -13,6 +8,10 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.pylisa.cfg.type.PyClassType;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ClassDef {
 	private final boolean root;
@@ -22,7 +21,11 @@ public class ClassDef {
 	private final Collection<Method> methods = new HashSet<>();
 	private final Collection<Field> fields = new HashSet<>();
 
-	public ClassDef(boolean root, boolean sealed, String name, String base) {
+	public ClassDef(
+			boolean root,
+			boolean sealed,
+			String name,
+			String base) {
 		this.root = root;
 		this.sealed = sealed;
 		this.name = name;
@@ -59,7 +62,8 @@ public class ClassDef {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -78,7 +82,9 @@ public class ClassDef {
 				+ methods + ", fields=" + fields + "]";
 	}
 
-	public ClassUnit toLiSAUnit(CodeLocation location, Program program,
+	public ClassUnit toLiSAUnit(
+			CodeLocation location,
+			Program program,
 			AtomicReference<CompilationUnit> rootHolder) {
 		ClassUnit unit = new ClassUnit(location, program, name, this.sealed);
 		if (this.root)
@@ -89,7 +95,10 @@ public class ClassDef {
 		return unit;
 	}
 
-	public ClassUnit populateUnit(CodeLocation location, CFG init, CompilationUnit root) {
+	public ClassUnit populateUnit(
+			CodeLocation location,
+			CFG init,
+			CompilationUnit root) {
 		ClassUnit unit = (ClassUnit) PyClassType.lookup(this.name).getUnit();
 
 		if (this.base != null)
@@ -112,7 +121,7 @@ public class ClassDef {
 			else
 				unit.addGlobal(field);
 		}
-		
+
 		return unit;
 	}
 }

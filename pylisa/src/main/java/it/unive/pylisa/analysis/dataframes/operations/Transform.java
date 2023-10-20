@@ -1,11 +1,10 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
-import java.util.Optional;
-
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
+import java.util.Optional;
 
 public class Transform<S extends Selection<S>> extends DataframeOperation {
 
@@ -14,11 +13,20 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 	private final boolean changeShape;
 	private final Optional<Object> arg;
 
-	public Transform(CodeLocation where, Kind type, boolean changeShape, S selection) {
+	public Transform(
+			CodeLocation where,
+			Kind type,
+			boolean changeShape,
+			S selection) {
 		this(where, type, changeShape, selection, null);
 	}
 
-	public Transform(CodeLocation where, Kind type, boolean changeShape, S selection, Object arg) {
+	public Transform(
+			CodeLocation where,
+			Kind type,
+			boolean changeShape,
+			S selection,
+			Object arg) {
 		super(where);
 		this.type = type;
 		this.selection = selection;
@@ -54,7 +62,8 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -89,7 +98,9 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Transform<?> o = (Transform<?>) other;
 		if (type != o.type || selection.getClass() != o.selection.getClass() || !arg.equals(o.arg)
 				|| changeShape != o.changeShape)
@@ -99,7 +110,9 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Transform<?> o = (Transform<?>) other;
 		if (type != o.type || selection.getClass() != o.selection.getClass() || changeShape != o.changeShape)
 			return top();
@@ -108,7 +121,8 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameClassAndLocation(
+			DataframeOperation o) {
 		Transform<?> other = (Transform<?>) o;
 		int cmp = type.compareTo(other.type);
 		if (cmp != 0)

@@ -10,13 +10,17 @@ public class BooleanComparison<B extends BooleanSelection<B>> extends DataframeO
 
 	private B selection;
 
-	public BooleanComparison(CodeLocation where, B selection) {
+	public BooleanComparison(
+			CodeLocation where,
+			B selection) {
 		super(where);
 		this.selection = selection;
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		BooleanComparison<?> o = (BooleanComparison<?>) other;
 		if (this.equals(o))
 			return true;
@@ -26,7 +30,9 @@ public class BooleanComparison<B extends BooleanSelection<B>> extends DataframeO
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		BooleanComparison<?> o = (BooleanComparison<?>) other;
 		if (!this.selection.getClass().equals(o.selection.getClass())) {
 			return DataframeOperation.TOP;
@@ -43,7 +49,8 @@ public class BooleanComparison<B extends BooleanSelection<B>> extends DataframeO
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -69,7 +76,8 @@ public class BooleanComparison<B extends BooleanSelection<B>> extends DataframeO
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameClassAndLocation(
+			DataframeOperation o) {
 		BooleanComparison<?> other = (BooleanComparison<?>) o;
 		return selection.compareTo(other.selection);
 	}

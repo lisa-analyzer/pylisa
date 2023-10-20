@@ -12,18 +12,23 @@ public class AssignValue<R extends RowSelection<R>, C extends ColumnSelection<C>
 	private final DataframeSelection<R, C> selection;
 	private final ConstantPropagation value;
 
-	public AssignValue(CodeLocation where, DataframeSelection<R, C> selection, ConstantPropagation value) {
+	public AssignValue(
+			CodeLocation where,
+			DataframeSelection<R, C> selection,
+			ConstantPropagation value) {
 		super(where);
 		this.selection = selection;
 		this.value = value;
 	}
-	
+
 	public DataframeSelection<R, C> getSelection() {
 		return selection;
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		if (!(other instanceof AssignValue))
 			return false;
 		@SuppressWarnings("unchecked")
@@ -32,7 +37,9 @@ public class AssignValue<R extends RowSelection<R>, C extends ColumnSelection<C>
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		if (lessOrEqual(other)) {
 			return this;
 		}
@@ -40,7 +47,8 @@ public class AssignValue<R extends RowSelection<R>, C extends ColumnSelection<C>
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -77,7 +85,8 @@ public class AssignValue<R extends RowSelection<R>, C extends ColumnSelection<C>
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameClassAndLocation(
+			DataframeOperation o) {
 		AssignValue<?, ?> other = (AssignValue<?, ?>) o;
 		int cmp = selection.compareTo(other.selection);
 		if (cmp != 0)

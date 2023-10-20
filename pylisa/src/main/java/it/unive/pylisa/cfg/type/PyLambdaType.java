@@ -1,10 +1,9 @@
 package it.unive.pylisa.cfg.type;
 
-import java.util.Set;
-
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
+import java.util.Set;
 
 public class PyLambdaType implements Type {
 
@@ -22,12 +21,14 @@ public class PyLambdaType implements Type {
 	}
 
 	@Override
-	public boolean canBeAssignedTo(Type other) {
+	public boolean canBeAssignedTo(
+			Type other) {
 		return other instanceof PyLambdaType || other instanceof Untyped;
 	}
 
 	@Override
-	public Type commonSupertype(Type other) {
+	public Type commonSupertype(
+			Type other) {
 		if (other == this)
 			return this;
 		else
@@ -35,7 +36,8 @@ public class PyLambdaType implements Type {
 	}
 
 	@Override
-	public Set<Type> allInstances(TypeSystem types) {
+	public Set<Type> allInstances(
+			TypeSystem types) {
 		return Set.of(INSTANCE);
 	}
 }

@@ -3,6 +3,8 @@ package it.unive.pylisa.symbolic.operators.dataframes;
 import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 
 public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comparable<ComparisonOperator> {
 
@@ -18,7 +20,8 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 
 		private final String symbol;
 
-		private Operator(String symbol) {
+		private Operator(
+				String symbol) {
 			this.symbol = symbol;
 		}
 
@@ -30,7 +33,8 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 
 	private Operator op;
 
-	public ComparisonOperator(Operator op) {
+	public ComparisonOperator(
+			Operator op) {
 		this.op = op;
 	}
 
@@ -54,7 +58,9 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 	}
 
 	@Override
-	public ComparisonOperator lubAux(ComparisonOperator other) throws SemanticException {
+	public ComparisonOperator lubAux(
+			ComparisonOperator other)
+			throws SemanticException {
 		if (lessOrEqual(other)) {
 			return other;
 		}
@@ -62,12 +68,16 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 	}
 
 	@Override
-	public ComparisonOperator wideningAux(ComparisonOperator other) throws SemanticException {
+	public ComparisonOperator wideningAux(
+			ComparisonOperator other)
+			throws SemanticException {
 		return lub(other);
 	}
 
 	@Override
-	public boolean lessOrEqualAux(ComparisonOperator other) throws SemanticException {
+	public boolean lessOrEqualAux(
+			ComparisonOperator other)
+			throws SemanticException {
 		if (this.op == Operator.BOTTOM) {
 			return true;
 		} else if (this.op == other.op) {
@@ -77,7 +87,8 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (obj == null || !(obj instanceof ComparisonOperator))
 			return false;
 		ComparisonOperator o = (ComparisonOperator) obj;
@@ -100,8 +111,14 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 	}
 
 	@Override
-	public int compareTo(ComparisonOperator other) {
+	public int compareTo(
+			ComparisonOperator other) {
 		return op.compareTo(other.op);
+	}
+
+	@Override
+	public StructuredRepresentation representation() {
+		return new StringRepresentation(toString());
 	}
 
 }

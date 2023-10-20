@@ -8,7 +8,9 @@ public class CreateFromDict extends DataframeOperation {
 
 	private final Names knownColumns;
 
-	public CreateFromDict(CodeLocation where, Names knownColumns) {
+	public CreateFromDict(
+			CodeLocation where,
+			Names knownColumns) {
 		super(where);
 		this.knownColumns = knownColumns;
 	}
@@ -18,13 +20,17 @@ public class CreateFromDict extends DataframeOperation {
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		CreateFromDict o = (CreateFromDict) other;
 		return knownColumns.lessOrEqual(o.knownColumns);
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		CreateFromDict o = (CreateFromDict) other;
 		return new CreateFromDict(loc(other), knownColumns.lub(o.knownColumns));
 	}
@@ -38,7 +44,8 @@ public class CreateFromDict extends DataframeOperation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -60,7 +67,8 @@ public class CreateFromDict extends DataframeOperation {
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameClassAndLocation(
+			DataframeOperation o) {
 		CreateFromDict other = (CreateFromDict) o;
 		return knownColumns.compareTo(other.knownColumns);
 	}

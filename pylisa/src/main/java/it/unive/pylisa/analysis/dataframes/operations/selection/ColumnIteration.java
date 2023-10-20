@@ -16,17 +16,23 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 	}
 
 	@Override
-	public ColumnIteration lubAux(ColumnIteration other) throws SemanticException {
+	public ColumnIteration lubAux(
+			ColumnIteration other)
+			throws SemanticException {
 		return this;
 	}
 
 	@Override
-	public ColumnIteration wideningAux(ColumnIteration other) throws SemanticException {
+	public ColumnIteration wideningAux(
+			ColumnIteration other)
+			throws SemanticException {
 		return this;
 	}
 
 	@Override
-	public boolean lessOrEqualAux(ColumnIteration other) throws SemanticException {
+	public boolean lessOrEqualAux(
+			ColumnIteration other)
+			throws SemanticException {
 		return true;
 	}
 
@@ -36,7 +42,8 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -52,10 +59,11 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		return 0;
 	}
-	
+
 	@Override
 	public Names extractColumnNames() {
 		return Names.BOTTOM;

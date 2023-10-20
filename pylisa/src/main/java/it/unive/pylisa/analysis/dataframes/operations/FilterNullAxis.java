@@ -7,7 +7,9 @@ public class FilterNullAxis extends DataframeOperation {
 
 	private final Axis axis;
 
-	public FilterNullAxis(CodeLocation where, Axis axis) {
+	public FilterNullAxis(
+			CodeLocation where,
+			Axis axis) {
 		super(where);
 		this.axis = axis;
 	}
@@ -17,7 +19,8 @@ public class FilterNullAxis extends DataframeOperation {
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other) {
 		FilterNullAxis o = (FilterNullAxis) other;
 		if (axis == Axis.TOP)
 			return o.axis == Axis.TOP;
@@ -29,7 +32,8 @@ public class FilterNullAxis extends DataframeOperation {
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other) {
 		FilterNullAxis o = (FilterNullAxis) other;
 		Axis ax;
 		if (axis == Axis.TOP || o.axis == Axis.TOP || axis != o.axis)
@@ -49,7 +53,8 @@ public class FilterNullAxis extends DataframeOperation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -68,7 +73,8 @@ public class FilterNullAxis extends DataframeOperation {
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameClassAndLocation(
+			DataframeOperation o) {
 		FilterNullAxis other = (FilterNullAxis) o;
 		return axis.compareTo(other.axis);
 	}

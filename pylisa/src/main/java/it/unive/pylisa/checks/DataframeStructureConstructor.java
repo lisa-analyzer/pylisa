@@ -1,12 +1,5 @@
 package it.unive.pylisa.checks;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import it.unive.lisa.AnalysisExecutionException;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.AnalyzedCFG;
@@ -28,6 +21,8 @@ import it.unive.lisa.util.collections.workset.FIFOWorkingSet;
 import it.unive.lisa.util.datastructures.graph.algorithms.Fixpoint;
 import it.unive.lisa.util.datastructures.graph.algorithms.Fixpoint.FixpointImplementation;
 import it.unive.lisa.util.datastructures.graph.algorithms.FixpointException;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
@@ -51,33 +46,37 @@ import it.unive.pylisa.analysis.dataframes.operations.Keys;
 import it.unive.pylisa.analysis.dataframes.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.operations.SelectionOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Transform;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
-public class DataframeStructureConstructor implements SemanticCheck<
-		SimpleAbstractState<
-				PointBasedHeap,
-				DataframeGraphDomain,
-				TypeEnvironment<InferredTypes>>,
-		PointBasedHeap,
-		DataframeGraphDomain,
-		TypeEnvironment<InferredTypes>> {
+public class DataframeStructureConstructor
+		implements
+		SemanticCheck<
+				SimpleAbstractState<
+						PointBasedHeap,
+						DataframeGraphDomain,
+						TypeEnvironment<InferredTypes>>> {
 
 	@Override
-	public void beforeExecution(CheckToolWithAnalysisResults<
-			SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-			PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool) {
+	public void beforeExecution(
+			CheckToolWithAnalysisResults<
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool) {
 	}
 
 	@Override
-	public void afterExecution(CheckToolWithAnalysisResults<
-			SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-			PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool) {
+	public void afterExecution(
+			CheckToolWithAnalysisResults<
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool) {
 	}
 
 	@Override
 	public boolean visitUnit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
 			Unit unit) {
 		return true;
 	}
@@ -85,54 +84,52 @@ public class DataframeStructureConstructor implements SemanticCheck<
 	@Override
 	public void visitGlobal(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
-			Unit unit, Global global, boolean instance) {
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			Unit unit,
+			Global global,
+			boolean instance) {
 	}
 
 	@Override
-	public boolean visit(CheckToolWithAnalysisResults<
-			SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-			PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool, CFG graph) {
+	public boolean visit(
+			CheckToolWithAnalysisResults<
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			CFG graph) {
 		return true;
 	}
 
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
-			CFG graph, Edge edge) {
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			CFG graph,
+			Edge edge) {
 		return true;
 	}
 
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
-			CFG graph, Statement node) {
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			CFG graph,
+			Statement node) {
 		if (!graph.getDescriptor().getName().equals(PyFrontend.INSTRUMENTED_MAIN_FUNCTION_NAME))
 			return true;
 
 		if (node.stopsExecution()) {
 			Collection<AnalyzedCFG<
 					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-							TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain,
-					TypeEnvironment<InferredTypes>>> results = tool.getResultOf(graph);
+							TypeEnvironment<InferredTypes>>>> results = tool.getResultOf(graph);
 
 			for (AnalyzedCFG<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> result : results)
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
+							TypeEnvironment<InferredTypes>>> result : results)
 				try {
 					AnalysisState<
 							SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-									TypeEnvironment<InferredTypes>>,
-							PointBasedHeap, DataframeGraphDomain,
-							TypeEnvironment<InferredTypes>> post = result.getAnalysisStateAfter(node);
+									TypeEnvironment<InferredTypes>>> post = result.getAnalysisStateAfter(node);
 
-					DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
+					DataframeGraphDomain dom = post.getState().getDomainInstance(DataframeGraphDomain.class);
 					DataframeForest forest = dom.close();
 					Collection<DataframeOperation> exits = forest.getNodeList().getExits();
 					if (exits.size() != 1)
@@ -170,7 +167,9 @@ public class DataframeStructureConstructor implements SemanticCheck<
 		return true;
 	}
 
-	private ColumnsDomain process(DataframeForest graph, DataframeOperation exit)
+	private ColumnsDomain process(
+			DataframeForest graph,
+			DataframeOperation exit)
 			throws FixpointException {
 		Fixpoint<DataframeForest, DataframeOperation, DataframeEdge, ColumnsDomain> fix = new Fixpoint<>(graph, false);
 		ColumnsDomain beginning = new ColumnsDomain(Columns.TOP).bottom();
@@ -184,24 +183,36 @@ public class DataframeStructureConstructor implements SemanticCheck<
 						DataframeStructureConstructor.ColumnsDomain>() {
 
 					@Override
-					public ColumnsDomain union(DataframeOperation node, ColumnsDomain left, ColumnsDomain right)
+					public ColumnsDomain union(
+							DataframeOperation node,
+							ColumnsDomain left,
+							ColumnsDomain right)
 							throws Exception {
 						return operation(node, left, right);
 					}
 
 					@Override
-					public ColumnsDomain traverse(DataframeEdge edge, ColumnsDomain entrystate) throws Exception {
+					public ColumnsDomain traverse(
+							DataframeEdge edge,
+							ColumnsDomain entrystate)
+							throws Exception {
 						return entrystate;
 					}
 
 					@Override
-					public boolean equality(DataframeOperation node, ColumnsDomain approx, ColumnsDomain old)
+					public boolean equality(
+							DataframeOperation node,
+							ColumnsDomain approx,
+							ColumnsDomain old)
 							throws Exception {
 						return approx.lessOrEqual(old);
 					}
 
 					@Override
-					public ColumnsDomain semantics(DataframeOperation node, ColumnsDomain entrystate) throws Exception {
+					public ColumnsDomain semantics(
+							DataframeOperation node,
+							ColumnsDomain entrystate)
+							throws Exception {
 						Names sources = extractSources(node, graph);
 
 						if (node instanceof AssignDataframe<?>)
@@ -246,7 +257,9 @@ public class DataframeStructureConstructor implements SemanticCheck<
 							return entrystate.top();
 					}
 
-					private Names extractSources(DataframeOperation node, DataframeForest graph) {
+					private Names extractSources(
+							DataframeOperation node,
+							DataframeForest graph) {
 						DataframeForest cut = graph.bDFS(node,
 								op -> op instanceof Transform<?> && ((Transform<?>) op).isChangeShape(),
 								edge -> !(edge instanceof AssignEdge));
@@ -260,7 +273,10 @@ public class DataframeStructureConstructor implements SemanticCheck<
 					}
 
 					@Override
-					public ColumnsDomain operation(DataframeOperation node, ColumnsDomain approx, ColumnsDomain old)
+					public ColumnsDomain operation(
+							DataframeOperation node,
+							ColumnsDomain approx,
+							ColumnsDomain old)
 							throws Exception {
 						return approx.lub(old);
 					}
@@ -271,27 +287,40 @@ public class DataframeStructureConstructor implements SemanticCheck<
 
 	private static class ColumnsDomain extends FunctionalLattice<ColumnsDomain, Names, Columns> {
 
-		public ColumnsDomain(Columns lattice, Map<Names, Columns> function) {
+		public ColumnsDomain(
+				Columns lattice,
+				Map<Names, Columns> function) {
 			super(lattice, function);
 		}
 
-		public ColumnsDomain define(Names sources) {
+		public ColumnsDomain define(
+				Names sources) {
 			return putState(sources, Columns.BOTTOM);
 		}
 
-		public ColumnsDomain(Columns lattice) {
+		public ColumnsDomain(
+				Columns lattice) {
 			super(lattice);
 		}
 
-		public ColumnsDomain assign(Names key, Names names) throws SemanticException {
+		public ColumnsDomain assign(
+				Names key,
+				Names names)
+				throws SemanticException {
 			return putState(key, getState(key).assign(names));
 		}
 
-		public ColumnsDomain remove(Names key, Names names) throws SemanticException {
+		public ColumnsDomain remove(
+				Names key,
+				Names names)
+				throws SemanticException {
 			return putState(key, getState(key).remove(names));
 		}
 
-		public ColumnsDomain access(Names key, Names names) throws SemanticException {
+		public ColumnsDomain access(
+				Names key,
+				Names names)
+				throws SemanticException {
 			return putState(key, getState(key).access(names));
 		}
 
@@ -306,8 +335,16 @@ public class DataframeStructureConstructor implements SemanticCheck<
 		}
 
 		@Override
-		public ColumnsDomain mk(Columns lattice, Map<Names, Columns> function) {
+		public ColumnsDomain mk(
+				Columns lattice,
+				Map<Names, Columns> function) {
 			return new ColumnsDomain(lattice, function);
+		}
+
+		@Override
+		public Columns stateOfUnknown(
+				Names key) {
+			return lattice.bottom();
 		}
 	}
 
@@ -336,17 +373,23 @@ public class DataframeStructureConstructor implements SemanticCheck<
 			this.removed = removed;
 		}
 
-		public Columns assign(Names names) throws SemanticException {
+		public Columns assign(
+				Names names)
+				throws SemanticException {
 			Names assigned = this.assigned.lub(names);
 			return new Columns(accessed, assigned, removed, accessedBeforeAssigned, accessedAfterRemoved);
 		}
 
-		public Columns remove(Names names) throws SemanticException {
+		public Columns remove(
+				Names names)
+				throws SemanticException {
 			Names removed = this.removed.lub(names);
 			return new Columns(accessed, removed, removed, accessedBeforeAssigned, accessedAfterRemoved);
 		}
 
-		public Columns access(Names names) throws SemanticException {
+		public Columns access(
+				Names names)
+				throws SemanticException {
 			Names accessedAndRemoved = this.removed.intersection(names);
 			Names accessedAndAssigned = this.assigned.intersection(names);
 
@@ -369,7 +412,9 @@ public class DataframeStructureConstructor implements SemanticCheck<
 		}
 
 		@Override
-		public Columns lubAux(Columns other) throws SemanticException {
+		public Columns lubAux(
+				Columns other)
+				throws SemanticException {
 			Names accessed = this.accessed.lub(other.accessed);
 			Names assigned = this.assigned.lub(other.assigned);
 			Names removed = this.removed.lub(other.removed);
@@ -380,12 +425,16 @@ public class DataframeStructureConstructor implements SemanticCheck<
 		}
 
 		@Override
-		public Columns wideningAux(Columns other) throws SemanticException {
+		public Columns wideningAux(
+				Columns other)
+				throws SemanticException {
 			return lubAux(other);
 		}
 
 		@Override
-		public boolean lessOrEqualAux(Columns other) throws SemanticException {
+		public boolean lessOrEqualAux(
+				Columns other)
+				throws SemanticException {
 			return accessed.lessOrEqual(other.accessed)
 					&& assigned.lessOrEqual(other.assigned)
 					&& removed.lessOrEqual(other.removed)
@@ -406,7 +455,8 @@ public class DataframeStructureConstructor implements SemanticCheck<
 		}
 
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(
+				Object obj) {
 			if (this == obj)
 				return true;
 			if (obj == null)
@@ -449,6 +499,11 @@ public class DataframeStructureConstructor implements SemanticCheck<
 					+ "accessed=" + accessed + "\n"
 					+ "assigned=" + assigned + "\n"
 					+ "removed=" + removed;
+		}
+
+		@Override
+		public StructuredRepresentation representation() {
+			return new StringRepresentation(toString());
 		}
 	}
 }

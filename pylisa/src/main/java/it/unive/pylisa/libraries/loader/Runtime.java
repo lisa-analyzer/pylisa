@@ -1,10 +1,5 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
-
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Program;
@@ -14,6 +9,10 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Runtime {
 
@@ -39,7 +38,8 @@ public class Runtime {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -51,7 +51,9 @@ public class Runtime {
 				&& Objects.equals(methods, other.methods);
 	}
 
-	public void fillProgram(Program program, AtomicReference<CompilationUnit> rootHolder) {
+	public void fillProgram(
+			Program program,
+			AtomicReference<CompilationUnit> rootHolder) {
 		CodeLocation location = new SourceCodeLocation("standard_python_library", 0, 0);
 
 		for (ClassDef cls : this.classes) {
@@ -62,7 +64,10 @@ public class Runtime {
 		}
 	}
 
-	public void populateProgram(Program program, CFG init, CompilationUnit root) {
+	public void populateProgram(
+			Program program,
+			CFG init,
+			CompilationUnit root) {
 		CodeLocation location = new SourceCodeLocation("standard_python_library", 0, 0);
 
 		for (Method mtd : this.methods) {

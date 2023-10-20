@@ -8,7 +8,8 @@ public class NoneConstant extends Constant {
 
 	private static final Object NULL_CONST = new Object();
 
-	public NoneConstant(CodeLocation location) {
+	public NoneConstant(
+			CodeLocation location) {
 		super(NullType.INSTANCE, NULL_CONST, location);
 	}
 
@@ -18,7 +19,8 @@ public class NoneConstant extends Constant {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))

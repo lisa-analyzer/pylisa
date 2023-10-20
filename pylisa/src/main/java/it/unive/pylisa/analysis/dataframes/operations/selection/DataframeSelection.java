@@ -5,29 +5,38 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.dataframes.Names;
 
 public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelection<C>>
-		extends Selection<DataframeSelection<R, C>> {
+		extends
+		Selection<DataframeSelection<R, C>> {
 
 	private final R rowSelection;
 	private final C columnSelection;
 	private final boolean isTop;
 
-	public DataframeSelection(R rowSelection, C columnSelection) {
+	public DataframeSelection(
+			R rowSelection,
+			C columnSelection) {
 		this(rowSelection, columnSelection, false);
 	}
 
-	public DataframeSelection(R rowSelection) {
+	public DataframeSelection(
+			R rowSelection) {
 		this(rowSelection, null, false);
 	}
 
-	public DataframeSelection(C columnSelection) {
+	public DataframeSelection(
+			C columnSelection) {
 		this(null, columnSelection, false);
 	}
 
-	public DataframeSelection(boolean isTop) {
+	public DataframeSelection(
+			boolean isTop) {
 		this(null, null, isTop);
 	}
 
-	public DataframeSelection(R rowSelection, C columnSelection, boolean isTop) {
+	public DataframeSelection(
+			R rowSelection,
+			C columnSelection,
+			boolean isTop) {
 		this.rowSelection = rowSelection;
 		this.columnSelection = columnSelection;
 		this.isTop = isTop;
@@ -70,19 +79,25 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 	}
 
 	@Override
-	public DataframeSelection<R, C> lubAux(DataframeSelection<R, C> other) throws SemanticException {
+	public DataframeSelection<R, C> lubAux(
+			DataframeSelection<R, C> other)
+			throws SemanticException {
 		return new DataframeSelection<>(nullSafe(rowSelection, other.rowSelection, Lattice::lub),
 				nullSafe(columnSelection, other.columnSelection, Lattice::lub));
 	}
 
 	@Override
-	public DataframeSelection<R, C> wideningAux(DataframeSelection<R, C> other) throws SemanticException {
+	public DataframeSelection<R, C> wideningAux(
+			DataframeSelection<R, C> other)
+			throws SemanticException {
 		return new DataframeSelection<>(nullSafe(rowSelection, other.rowSelection, Lattice::widening),
 				nullSafe(columnSelection, other.columnSelection, Lattice::widening));
 	}
 
 	@Override
-	public boolean lessOrEqualAux(DataframeSelection<R, C> other) throws SemanticException {
+	public boolean lessOrEqualAux(
+			DataframeSelection<R, C> other)
+			throws SemanticException {
 		if (nullSafe(rowSelection, other.rowSelection, Lattice::lub) == null)
 			return false;
 
@@ -94,10 +109,16 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 
 	@FunctionalInterface
 	public interface BiSemanticFunction<T, U, R> {
-		R apply(T t, U u) throws SemanticException;
+		R apply(
+				T t,
+				U u)
+				throws SemanticException;
 	}
 
-	private static <L extends Lattice<L>> L nullSafe(L left, L right, BiSemanticFunction<L, L, L> func)
+	private static <L extends Lattice<L>> L nullSafe(
+			L left,
+			L right,
+			BiSemanticFunction<L, L, L> func)
 			throws SemanticException {
 		if (left == null)
 			return null;
@@ -109,7 +130,8 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -145,7 +167,8 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		DataframeSelection<?, ?> other = (DataframeSelection<?, ?>) o;
 		int cmp = Boolean.compare(isTop, other.isTop);
 		if (cmp != 0)
@@ -155,7 +178,7 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 			return cmp;
 		return rowSelection.compareTo(other.rowSelection);
 	}
-	
+
 	@Override
 	public Names extractColumnNames() throws SemanticException {
 		return columnSelection == null ? Names.TOP : columnSelection.extractColumnNames();

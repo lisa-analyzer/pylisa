@@ -22,13 +22,19 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 	private final ComparisonOperator op;
 	private final ConstantPropagation val;
 
-	public AtomicBooleanSelection(String colName, ComparisonOperator op, Object val) {
+	public AtomicBooleanSelection(
+			String colName,
+			ComparisonOperator op,
+			Object val) {
 		this.cols = new ColumnListSelection(new Names(colName));
 		this.op = op;
 		this.val = new ConstantPropagation(new Constant(Untyped.INSTANCE, val, SyntheticLocation.INSTANCE));
 	}
 
-	public AtomicBooleanSelection(ColumnListSelection cols, ComparisonOperator op, ConstantPropagation val) {
+	public AtomicBooleanSelection(
+			ColumnListSelection cols,
+			ComparisonOperator op,
+			ConstantPropagation val) {
 		this.cols = cols;
 		this.op = op;
 		this.val = val;
@@ -57,19 +63,25 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 	}
 
 	@Override
-	public AtomicBooleanSelection lubAux(AtomicBooleanSelection other) throws SemanticException {
+	public AtomicBooleanSelection lubAux(
+			AtomicBooleanSelection other)
+			throws SemanticException {
 		return op != other.op ? top()
 				: new AtomicBooleanSelection(cols.lub(other.cols), op, val.lub(other.val));
 	}
 
 	@Override
-	public AtomicBooleanSelection wideningAux(AtomicBooleanSelection other) throws SemanticException {
+	public AtomicBooleanSelection wideningAux(
+			AtomicBooleanSelection other)
+			throws SemanticException {
 		return op != other.op ? top()
 				: new AtomicBooleanSelection(cols.widening(other.cols), op, val.widening(other.val));
 	}
 
 	@Override
-	public boolean lessOrEqualAux(AtomicBooleanSelection other) throws SemanticException {
+	public boolean lessOrEqualAux(
+			AtomicBooleanSelection other)
+			throws SemanticException {
 		return op != other.op ? false
 				: cols.lessOrEqual(other.cols) && val.lessOrEqual(other.val);
 	}
@@ -85,7 +97,8 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -120,7 +133,8 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		AtomicBooleanSelection other = (AtomicBooleanSelection) o;
 		int cmp = op.compareTo(other.op);
 		if (cmp != 0)
@@ -130,7 +144,7 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 			return cmp;
 		return cols.compareTo(other.cols);
 	}
-	
+
 	@Override
 	public Names extractColumnNames() {
 		return cols.extractColumnNames();

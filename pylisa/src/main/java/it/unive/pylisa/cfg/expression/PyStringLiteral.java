@@ -8,7 +8,11 @@ public class PyStringLiteral extends StringLiteral {
 
 	private String delimiter;
 
-	public PyStringLiteral(CFG cfg, CodeLocation location, String value, String delimiter) {
+	public PyStringLiteral(
+			CFG cfg,
+			CodeLocation location,
+			String value,
+			String delimiter) {
 		super(cfg, location, value);
 		this.delimiter = delimiter;
 	}

@@ -1,5 +1,23 @@
 package it.unive.pylisa.analysis.dataframes;
 
+import it.unive.lisa.analysis.Lattice;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.outputs.DotGraph;
+import it.unive.lisa.outputs.serializableGraph.SerializableEdge;
+import it.unive.lisa.outputs.serializableGraph.SerializableGraph;
+import it.unive.lisa.outputs.serializableGraph.SerializableNode;
+import it.unive.lisa.outputs.serializableGraph.SerializableNodeDescription;
+import it.unive.lisa.outputs.serializableGraph.SerializableValue;
+import it.unive.lisa.util.collections.workset.VisitOnceLIFOWorkingSet;
+import it.unive.lisa.util.collections.workset.VisitOnceWorkingSet;
+import it.unive.lisa.util.datastructures.graph.code.CodeGraph;
+import it.unive.lisa.util.datastructures.graph.code.NodeList;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
+import it.unive.pylisa.analysis.dataframes.edge.ConcatEdge;
+import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
+import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
+import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -18,7 +36,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.graphstream.graph.Edge;
@@ -26,50 +43,38 @@ import org.graphstream.graph.Element;
 import org.graphstream.graph.implementations.MultiGraph;
 import org.graphstream.stream.file.FileSinkDOT;
 
-import it.unive.lisa.analysis.Lattice;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.representation.DomainRepresentation;
-import it.unive.lisa.analysis.representation.StringRepresentation;
-import it.unive.lisa.outputs.DotGraph;
-import it.unive.lisa.outputs.serializableGraph.SerializableEdge;
-import it.unive.lisa.outputs.serializableGraph.SerializableGraph;
-import it.unive.lisa.outputs.serializableGraph.SerializableNode;
-import it.unive.lisa.outputs.serializableGraph.SerializableNodeDescription;
-import it.unive.lisa.outputs.serializableGraph.SerializableValue;
-import it.unive.lisa.util.collections.workset.VisitOnceLIFOWorkingSet;
-import it.unive.lisa.util.collections.workset.VisitOnceWorkingSet;
-import it.unive.lisa.util.datastructures.graph.code.CodeGraph;
-import it.unive.lisa.util.datastructures.graph.code.NodeList;
-import it.unive.pylisa.analysis.dataframes.edge.ConcatEdge;
-import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
-import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
-import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
-
 public class DataframeForest
-		extends CodeGraph<DataframeForest, DataframeOperation, DataframeEdge>
-		implements Lattice<DataframeForest> {
+		extends
+		CodeGraph<DataframeForest, DataframeOperation, DataframeEdge>
+		implements
+		Lattice<DataframeForest> {
 
 	private final boolean isTop;
 
-	public DataframeForest(boolean isTop) {
+	public DataframeForest(
+			boolean isTop) {
 		super(new SimpleEdge(null, null));
 		this.isTop = isTop;
 	}
 
-	public DataframeForest(Collection<DataframeOperation> entrypoints,
+	public DataframeForest(
+			Collection<DataframeOperation> entrypoints,
 			NodeList<DataframeForest, DataframeOperation, DataframeEdge> adjacencyMatrix,
 			boolean isTop) {
 		super(entrypoints, adjacencyMatrix);
 		this.isTop = isTop;
 	}
 
-	public DataframeForest(DataframeForest other) {
+	public DataframeForest(
+			DataframeForest other) {
 		super(other);
 		this.isTop = other.isTop;
 	}
 
 	@Override
-	public void addNode(DataframeOperation node, boolean entrypoint) {
+	public void addNode(
+			DataframeOperation node,
+			boolean entrypoint) {
 		if (containsNode(node))
 			for (DataframeOperation op : list)
 				if (op.equals(node)) {
@@ -81,7 +86,8 @@ public class DataframeForest
 	}
 
 	@Override
-	public void addEdge(DataframeEdge edge) {
+	public void addEdge(
+			DataframeEdge edge) {
 		if (edge.getSource().equals(edge.getDestination()))
 			// no self loops
 			return;
@@ -94,7 +100,9 @@ public class DataframeForest
 		super.addEdge(edge);
 	}
 
-	public void replace(DataframeOperation origin, DataframeOperation target) {
+	public void replace(
+			DataframeOperation origin,
+			DataframeOperation target) {
 		addNode(target);
 		for (DataframeEdge in : getIngoingEdges(origin))
 			addEdge(in.newInstance(in.getSource(), target));
@@ -112,7 +120,7 @@ public class DataframeForest
 		Map<DataframeOperation, Integer> nodeIds = new HashMap<>();
 		SortedSet<SerializableNodeDescription> descrs = new TreeSet<>();
 		SortedSet<SerializableEdge> edges = new TreeSet<>();
-		
+
 		int counter = 0;
 		for (DataframeOperation node : getNodes()) {
 			addNode(counter, nodes, descrs, node, descriptionGenerator);
@@ -149,7 +157,9 @@ public class DataframeForest
 	}
 
 	@Override
-	public DataframeForest lub(DataframeForest other) throws SemanticException {
+	public DataframeForest lub(
+			DataframeForest other)
+			throws SemanticException {
 		if (other == null || other.isBottom() || this.isTop() || this == other || this.equals(other))
 			return this;
 
@@ -160,7 +170,8 @@ public class DataframeForest
 		return forest;
 	}
 
-	public DataframeForest union(DataframeForest other) {
+	public DataframeForest union(
+			DataframeForest other) {
 		NodeList<DataframeForest, DataframeOperation, DataframeEdge> res = new NodeList<>(this.list);
 		res.mergeWith(other.list);
 		DataframeForest forest = new DataframeForest(Collections.emptySet(), res, false);
@@ -168,12 +179,16 @@ public class DataframeForest
 	}
 
 	@Override
-	public DataframeForest widening(DataframeForest other) throws SemanticException {
+	public DataframeForest widening(
+			DataframeForest other)
+			throws SemanticException {
 		return lub(other); // TODO only temporary
 	}
 
 	@Override
-	public boolean lessOrEqual(DataframeForest other) throws SemanticException {
+	public boolean lessOrEqual(
+			DataframeForest other)
+			throws SemanticException {
 		if (other == null)
 			return false;
 
@@ -210,7 +225,8 @@ public class DataframeForest
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -235,7 +251,7 @@ public class DataframeForest
 		return result;
 	}
 
-	public DomainRepresentation representation() {
+	public StructuredRepresentation representation() {
 		if (isTop())
 			return Lattice.topRepresentation();
 		if (isBottom())
@@ -273,7 +289,11 @@ public class DataframeForest
 	static class ConcatSerializableEdge extends SerializableEdge {
 		private final int index;
 
-		public ConcatSerializableEdge(int sourceId, int destId, String kind, int index) {
+		public ConcatSerializableEdge(
+				int sourceId,
+				int destId,
+				String kind,
+				int index) {
 			super(sourceId, destId, kind);
 			this.index = index;
 		}
@@ -285,8 +305,12 @@ public class DataframeForest
 
 	static class CustomSerializableGraph extends SerializableGraph {
 
-		public CustomSerializableGraph(String name, String description, SortedSet<SerializableNode> nodes,
-				SortedSet<SerializableEdge> edges, SortedSet<SerializableNodeDescription> descriptions) {
+		public CustomSerializableGraph(
+				String name,
+				String description,
+				SortedSet<SerializableNode> nodes,
+				SortedSet<SerializableEdge> edges,
+				SortedSet<SerializableNodeDescription> descriptions) {
 			super(name, description, nodes, edges, descriptions);
 		}
 
@@ -321,12 +345,14 @@ public class DataframeForest
 
 	static class CustomDotGraph extends DotGraph {
 
-		public CustomDotGraph(String title) {
+		public CustomDotGraph(
+				String title) {
 			super(title);
 		}
 
 		@Override
-		public void addEdge(SerializableEdge edge) {
+		public void addEdge(
+				SerializableEdge edge) {
 			long id = edge.getSourceId();
 			long id1 = edge.getDestId();
 
@@ -352,7 +378,10 @@ public class DataframeForest
 			}
 		}
 
-		protected static String edgeName(long src, long dest, SerializableEdge edge) {
+		protected static String edgeName(
+				long src,
+				long dest,
+				SerializableEdge edge) {
 			return "edge-" + src + "-" + dest + "-" + edge.getKind();
 		}
 
@@ -365,7 +394,10 @@ public class DataframeForest
 			}
 
 			@Override
-			protected String outputAttribute(String key, Object value, boolean first) {
+			protected String outputAttribute(
+					String key,
+					Object value,
+					boolean first) {
 				boolean quote = true;
 
 				if (value instanceof Number || key.equals(LABEL))
@@ -378,7 +410,8 @@ public class DataframeForest
 			}
 
 			@Override
-			protected String outputAttributes(Element e) {
+			protected String outputAttributes(
+					Element e) {
 				if (e.getAttributeCount() == 0)
 					return "";
 
@@ -402,7 +435,9 @@ public class DataframeForest
 		}
 
 		@Override
-		public void dump(Writer writer) throws IOException {
+		public void dump(
+				Writer writer)
+				throws IOException {
 			FileSinkDOT sink = new CustomDotSink() {
 				@Override
 				protected void outputEndOfFile() throws IOException {
@@ -490,7 +525,8 @@ public class DataframeForest
 		return result;
 	}
 
-	private DataframeForest dfs(DataframeOperation entry) {
+	private DataframeForest dfs(
+			DataframeOperation entry) {
 		NodeList<DataframeForest, DataframeOperation,
 				DataframeEdge> list = new NodeList<>(new SimpleEdge(null, null), false);
 		DataframeForest forest = new DataframeForest(Collections.singleton(entry), list, false);
@@ -516,7 +552,8 @@ public class DataframeForest
 		return forest;
 	}
 
-	public DataframeForest bDFS(DataframeOperation leaf, 
+	public DataframeForest bDFS(
+			DataframeOperation leaf,
 			Predicate<DataframeOperation> stop,
 			Predicate<DataframeEdge> followEdge) {
 		NodeList<DataframeForest, DataframeOperation,

@@ -1,14 +1,9 @@
 package it.unive.pylisa;
 
-import java.io.IOException;
-
-import org.apache.commons.io.FilenameUtils;
-
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAReport;
 import it.unive.lisa.analysis.SimpleAbstractState;
-import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.warnings.Warning;
@@ -20,10 +15,15 @@ import it.unive.lisa.program.Program;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
+import java.io.IOException;
+import org.apache.commons.io.FilenameUtils;
 
 public class PyLiSA {
 
-	public static void main(String[] args) throws IOException, AnalysisException {
+	public static void main(
+			String[] args)
+			throws IOException,
+			AnalysisException {
 		if (args.length < 2) {
 			System.err.println("PyLiSA needs two arguments: the file to analyze and the working directory");
 			System.exit(-1);
@@ -45,7 +45,7 @@ public class PyLiSA {
 		conf.semanticChecks.add(new DataframeDumper());
 		conf.semanticChecks.add(new DataframeStructureConstructor());
 
-		PointBasedHeap heap = new PyFieldSensitivePointBasedHeap();
+		PyFieldSensitivePointBasedHeap heap = new PyFieldSensitivePointBasedHeap();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		DataframeGraphDomain df = new DataframeGraphDomain();
 		conf.abstractState = new SimpleAbstractState<>(heap, df, type);

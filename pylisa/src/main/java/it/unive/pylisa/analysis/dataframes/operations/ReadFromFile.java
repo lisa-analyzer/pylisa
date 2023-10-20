@@ -10,7 +10,9 @@ public class ReadFromFile extends DataframeOperation {
 	 */
 	private final String file;
 
-	public ReadFromFile(CodeLocation where, String file) {
+	public ReadFromFile(
+			CodeLocation where,
+			String file) {
 		super(where);
 		this.file = file;
 	}
@@ -20,7 +22,8 @@ public class ReadFromFile extends DataframeOperation {
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other) {
 		ReadFromFile o = (ReadFromFile) other;
 		if (file == null)
 			return o.file == null;
@@ -31,13 +34,15 @@ public class ReadFromFile extends DataframeOperation {
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other) {
 		return lessOrEqualSameOperation(other)
 				? (where.equals(other.where) ? this : new ReadFromFile(loc(other), file(other)))
 				: top();
 	}
 
-	private String file(DataframeOperation other) {
+	private String file(
+			DataframeOperation other) {
 		ReadFromFile o = (ReadFromFile) other;
 		if (file == null)
 			return null;
@@ -58,7 +63,8 @@ public class ReadFromFile extends DataframeOperation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -80,7 +86,8 @@ public class ReadFromFile extends DataframeOperation {
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameClassAndLocation(
+			DataframeOperation o) {
 		ReadFromFile other = (ReadFromFile) o;
 		if (file == null && other.file != null)
 			return 1;

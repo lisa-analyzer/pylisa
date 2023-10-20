@@ -4,10 +4,7 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
-import it.unive.lisa.analysis.value.TypeDomain;
-import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -36,12 +33,18 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 
 	private boolean inplace = false;
 
-	public DropNA(CFG cfg, CodeLocation location, Expression series) {
+	public DropNA(
+			CFG cfg,
+			CodeLocation location,
+			Expression series) {
 		super(cfg, location, "dropna", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
 				series);
 	}
 
-	public static DropNA build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static DropNA build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		DropNA drop = new DropNA(cfg, location, exprs[0]);
 		if (exprs.length > 1)
 			for (int i = 1; i < exprs.length; i++)
@@ -49,7 +52,9 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		return drop;
 	}
 
-	private static void setOptional(DropNA drop, Expression expression) {
+	private static void setOptional(
+			DropNA drop,
+			Expression expression) {
 		if (!(expression instanceof NamedParameterExpression))
 			return;
 
@@ -74,34 +79,32 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>,
-			H extends HeapDomain<H>,
-			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural,
-					AnalysisState<A, H, V, T> state,
-					SymbolicExpression expr,
-					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
+	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		CodeLocation location = getLocation();
-		AnalysisState<A, H, V, T> base = state;
+		AnalysisState<A> base = state;
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 
 		HeapDereference deref = new HeapDereference(dftype, expr, location);
-		ExpressionSet<SymbolicExpression> targets = new ExpressionSet<>(deref);
+		ExpressionSet targets = new ExpressionSet(deref);
 
 		if (!inplace) {
 			base = PandasSemantics.copyDataframe(base, deref, st);
 			targets = base.getComputedExpressions();
 		}
 
-		AnalysisState<A, H, V, T> filtered = state.bottom();
+		AnalysisState<A> filtered = state.bottom();
 		FilterNull op = new FilterNull(axis);
 		for (SymbolicExpression loc : targets) {
 			UnaryExpression filter = new UnaryExpression(dftype, loc, op, location);

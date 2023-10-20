@@ -5,7 +5,9 @@ import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 
 public class AccessOperation<S extends Selection<S>> extends SelectionOperation<S> {
 
-	public AccessOperation(CodeLocation where, S selection) {
+	public AccessOperation(
+			CodeLocation where,
+			S selection) {
 		super(where, selection);
 	}
 
@@ -15,7 +17,9 @@ public class AccessOperation<S extends Selection<S>> extends SelectionOperation<
 	}
 
 	@Override
-	public SelectionOperation<S> mk(CodeLocation where, S selection) {
+	public SelectionOperation<S> mk(
+			CodeLocation where,
+			S selection) {
 		return new AccessOperation<>(where, selection);
 	}
 }

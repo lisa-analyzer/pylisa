@@ -1,12 +1,5 @@
 package it.unive.pylisa.cfg.type;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.type.InMemoryType;
@@ -17,6 +10,12 @@ import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.collections.workset.FIFOWorkingSet;
 import it.unive.lisa.util.collections.workset.WorkingSet;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 public class PyClassType implements InMemoryType, UnitType {
 
@@ -30,11 +29,14 @@ public class PyClassType implements InMemoryType, UnitType {
 		return types.values();
 	}
 
-	public static PyClassType lookup(String name) {
+	public static PyClassType lookup(
+			String name) {
 		return lookup(name, null);
 	}
 
-	public static PyClassType lookup(String name, CompilationUnit unit) {
+	public static PyClassType lookup(
+			String name,
+			CompilationUnit unit) {
 		return types.computeIfAbsent(name, x -> new PyClassType(name, unit));
 	}
 
@@ -44,7 +46,9 @@ public class PyClassType implements InMemoryType, UnitType {
 
 	private final CompilationUnit unit;
 
-	protected PyClassType(String name, CompilationUnit unit) {
+	protected PyClassType(
+			String name,
+			CompilationUnit unit) {
 		Objects.requireNonNull(name, "The name of a class type cannot be null");
 		Objects.requireNonNull(unit, "The unit of a class type cannot be null");
 		this.name = name;
@@ -61,16 +65,19 @@ public class PyClassType implements InMemoryType, UnitType {
 	}
 
 	@Override
-	public final boolean canBeAssignedTo(Type other) {
+	public final boolean canBeAssignedTo(
+			Type other) {
 		return other instanceof PyClassType && subclass((PyClassType) other);
 	}
 
-	private boolean subclass(PyClassType other) {
+	private boolean subclass(
+			PyClassType other) {
 		return this == other || unit.isInstanceOf(other.unit);
 	}
 
 	@Override
-	public Type commonSupertype(Type other) {
+	public Type commonSupertype(
+			Type other) {
 		if (other.isNullType())
 			return this;
 
@@ -86,7 +93,8 @@ public class PyClassType implements InMemoryType, UnitType {
 		return scanForSupertypeOf((UnitType) other);
 	}
 
-	private Type scanForSupertypeOf(UnitType other) {
+	private Type scanForSupertypeOf(
+			UnitType other) {
 		WorkingSet<PyClassType> ws = FIFOWorkingSet.mk();
 		Set<PyClassType> seen = new HashSet<>();
 		ws.push(this);
@@ -124,7 +132,8 @@ public class PyClassType implements InMemoryType, UnitType {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -146,7 +155,8 @@ public class PyClassType implements InMemoryType, UnitType {
 	}
 
 	@Override
-	public Set<Type> allInstances(TypeSystem types) {
+	public Set<Type> allInstances(
+			TypeSystem types) {
 		Set<Type> instances = new HashSet<>();
 		for (Unit in : unit.getInstances())
 			instances.add(lookup(in.getName(), null));

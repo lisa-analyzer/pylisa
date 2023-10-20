@@ -1,16 +1,16 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Objects;
-
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
+import java.util.Objects;
 
 public class BooleanValue implements Value {
 	private final boolean value;
 
-	public BooleanValue(boolean value) {
+	public BooleanValue(
+			boolean value) {
 		this.value = value;
 	}
 
@@ -24,7 +24,8 @@ public class BooleanValue implements Value {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -41,7 +42,8 @@ public class BooleanValue implements Value {
 	}
 
 	@Override
-	public Expression toLiSAExpression(CFG init) {
+	public Expression toLiSAExpression(
+			CFG init) {
 		if (value)
 			return new TrueLiteral(init, init.getDescriptor().getLocation());
 		else

@@ -1,17 +1,5 @@
 package it.unive.pylisa.checks;
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.function.Function;
-
 import it.unive.lisa.AnalysisExecutionException;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.AnalyzedCFG;
@@ -42,36 +30,45 @@ import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.NodeId;
 import it.unive.pylisa.analysis.dataframes.SetLattice;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Function;
 
-public class DataframeDumper implements SemanticCheck<
-		SimpleAbstractState<
-				PointBasedHeap,
-				DataframeGraphDomain,
-				TypeEnvironment<InferredTypes>>,
-		PointBasedHeap,
-		DataframeGraphDomain,
-		TypeEnvironment<InferredTypes>> {
+public class DataframeDumper
+		implements
+		SemanticCheck<
+				SimpleAbstractState<
+						PointBasedHeap,
+						DataframeGraphDomain,
+						TypeEnvironment<InferredTypes>>> {
 
 	public DataframeDumper() {
 	}
 
 	@Override
-	public void beforeExecution(CheckToolWithAnalysisResults<
-			SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-			PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool) {
+	public void beforeExecution(
+			CheckToolWithAnalysisResults<
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool) {
 	}
 
 	@Override
-	public void afterExecution(CheckToolWithAnalysisResults<
-			SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-			PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool) {
+	public void afterExecution(
+			CheckToolWithAnalysisResults<
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool) {
 	}
 
 	@Override
 	public boolean visitUnit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
 			Unit unit) {
 		return true;
 	}
@@ -79,24 +76,26 @@ public class DataframeDumper implements SemanticCheck<
 	@Override
 	public void visitGlobal(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
-			Unit unit, Global global, boolean instance) {
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			Unit unit,
+			Global global,
+			boolean instance) {
 	}
 
 	@Override
-	public boolean visit(CheckToolWithAnalysisResults<
-			SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-			PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool, CFG graph) {
+	public boolean visit(
+			CheckToolWithAnalysisResults<
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			CFG graph) {
 		return true;
 	}
 
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
-			CFG graph, Statement node) {
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			CFG graph,
+			Statement node) {
 		if (!graph.getDescriptor().getName().equals(PyFrontend.INSTRUMENTED_MAIN_FUNCTION_NAME))
 			return true;
 
@@ -104,21 +103,16 @@ public class DataframeDumper implements SemanticCheck<
 			Collection<
 					AnalyzedCFG<
 							SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-									TypeEnvironment<InferredTypes>>,
-							PointBasedHeap, DataframeGraphDomain,
-							TypeEnvironment<InferredTypes>>> results = tool.getResultOf(graph);
+									TypeEnvironment<InferredTypes>>>> results = tool.getResultOf(graph);
 
-			for (AnalyzedCFG<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> result : results)
+			for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
+					TypeEnvironment<InferredTypes>>> result : results)
 				try {
 					AnalysisState<
 							SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-									TypeEnvironment<InferredTypes>>,
-							PointBasedHeap, DataframeGraphDomain,
-							TypeEnvironment<InferredTypes>> post = result.getAnalysisStateAfter(node);
-					PointBasedHeap heap = post.getDomainInstance(PointBasedHeap.class);
-					DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
+									TypeEnvironment<InferredTypes>>> post = result.getAnalysisStateAfter(node);
+					PointBasedHeap heap = post.getState().getDomainInstance(PointBasedHeap.class);
+					DataframeGraphDomain dom = post.getState().getDomainInstance(DataframeGraphDomain.class);
 					DataframeForest forest = dom.getGraph();
 					Collection<DataframeForest> subgraphs = forest.partitionByRoot();
 					Map<Identifier, DataframeForest> vargraphs = dom.partitionByVarialbe();
@@ -140,11 +134,15 @@ public class DataframeDumper implements SemanticCheck<
 
 					Function<DataframeForest,
 							WriteAction> jsonFactory = _forest -> writer -> _forest
-									.toSerializableGraph((f, op) -> label(op, refs))
+									.toSerializableGraph((
+											f,
+											op) -> label(op, refs))
 									.dump(writer);
 					Function<DataframeForest,
 							WriteAction> dotFactory = _forest -> writer -> _forest
-									.toSerializableGraph((f, op) -> label(op, refs))
+									.toSerializableGraph((
+											f,
+											op) -> label(op, refs))
 									.toDot()
 									.dump(writer);
 					try {
@@ -195,16 +193,23 @@ public class DataframeDumper implements SemanticCheck<
 		return true;
 	}
 
-	private SerializableValue label(DataframeOperation op, Map<DataframeOperation, Set<Identifier>> refs) {
+	private SerializableValue label(
+			DataframeOperation op,
+			Map<DataframeOperation, Set<Identifier>> refs) {
 		String extra = refs.containsKey(op)
 				? "\nPointed by: " + refs.get(op).stream().map(id -> id.toString()).sorted()
-						.reduce("", (res, s) -> res + s + "\n").trim()
+						.reduce("", (
+								res,
+								s) -> res + s + "\n")
+						.trim()
 				: "";
 		return new SerializableString(new TreeMap<>(), "at: " + op.getWhere().getCodeLocation() + extra);
 	}
 
 	@SuppressWarnings("unchecked")
-	private Set<Identifier> reverse(PointBasedHeap heap, Identifier key) {
+	private Set<Identifier> reverse(
+			PointBasedHeap heap,
+			Identifier key) {
 		if (!(key instanceof AllocationSite))
 			return Collections.emptySet();
 
@@ -226,9 +231,9 @@ public class DataframeDumper implements SemanticCheck<
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
-			CFG graph, Edge edge) {
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			CFG graph,
+			Edge edge) {
 		return true;
 	}
 }

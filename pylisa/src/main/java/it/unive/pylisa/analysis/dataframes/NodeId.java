@@ -6,11 +6,13 @@ public class NodeId {
 
 	private final String id;
 
-	public NodeId(DataframeOperation node) {
+	public NodeId(
+			DataframeOperation node) {
 		this.id = "node" + node.getOffset() + "-" + node.getWhere().getCodeLocation().hashCode();
 	}
 
-	public NodeId(NodeId other) {
+	public NodeId(
+			NodeId other) {
 		// we converge by only allowing one level of copies
 		this.id = other.id.startsWith("copy") ? other.id : "copy-" + other.id;
 	}
@@ -29,7 +31,8 @@ public class NodeId {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)

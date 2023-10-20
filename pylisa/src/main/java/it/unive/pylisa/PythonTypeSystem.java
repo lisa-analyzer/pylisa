@@ -26,7 +26,8 @@ public class PythonTypeSystem extends TypeSystem {
 	}
 
 	@Override
-	public boolean canBeReferenced(Type type) {
+	public boolean canBeReferenced(
+			Type type) {
 		return type.isInMemoryType();
 	}
 

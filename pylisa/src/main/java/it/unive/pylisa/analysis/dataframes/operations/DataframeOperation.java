@@ -6,10 +6,13 @@ import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.lisa.util.datastructures.graph.code.CodeNode;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 
-public abstract class DataframeOperation implements
+public abstract class DataframeOperation
+		implements
 		BaseLattice<DataframeOperation>,
 		Comparable<DataframeOperation>,
 		CodeNode<DataframeForest, DataframeOperation, DataframeEdge> {
@@ -22,7 +25,8 @@ public abstract class DataframeOperation implements
 
 	protected int offset;
 
-	protected DataframeOperation(CodeLocation where) {
+	protected DataframeOperation(
+			CodeLocation where) {
 		this.where = where;
 	}
 
@@ -51,7 +55,9 @@ public abstract class DataframeOperation implements
 	}
 
 	@Override
-	public DataframeOperation lubAux(DataframeOperation other) throws SemanticException {
+	public DataframeOperation lubAux(
+			DataframeOperation other)
+			throws SemanticException {
 		if (getClass() == other.getClass())
 			return lubSameOperation(other);
 		else if (where.equals(other.where))
@@ -61,22 +67,31 @@ public abstract class DataframeOperation implements
 	}
 
 	@Override
-	public final DataframeOperation wideningAux(DataframeOperation other) throws SemanticException {
+	public final DataframeOperation wideningAux(
+			DataframeOperation other)
+			throws SemanticException {
 		return lubAux(other);
 	}
 
 	@Override
-	public boolean lessOrEqualAux(DataframeOperation other) throws SemanticException {
+	public boolean lessOrEqualAux(
+			DataframeOperation other)
+			throws SemanticException {
 		return getClass() == other.getClass() ? lessOrEqualSameOperation(other) : false;
 	}
 
-	public CodeLocation loc(DataframeOperation other) {
+	public CodeLocation loc(
+			DataframeOperation other) {
 		return where.equals(other.where) ? where : SyntheticLocation.INSTANCE;
 	}
 
-	protected abstract boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException;
+	protected abstract boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException;
 
-	protected abstract DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException;
+	protected abstract DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException;
 
 	@Override
 	public int hashCode() {
@@ -87,7 +102,8 @@ public abstract class DataframeOperation implements
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -107,7 +123,13 @@ public abstract class DataframeOperation implements
 	public abstract String toString();
 
 	@Override
-	public final int compareTo(DataframeOperation o) {
+	public StructuredRepresentation representation() {
+		return new StringRepresentation(toString());
+	}
+
+	@Override
+	public final int compareTo(
+			DataframeOperation o) {
 		int cmp;
 		if ((cmp = where.compareTo(o.where)) != 0)
 			return cmp;
@@ -116,15 +138,19 @@ public abstract class DataframeOperation implements
 		return compareToSameClassAndLocation(o);
 	}
 
-	protected abstract int compareToSameClassAndLocation(DataframeOperation o);
+	protected abstract int compareToSameClassAndLocation(
+			DataframeOperation o);
 
 	@Override
-	public <V> boolean accept(GraphVisitor<DataframeForest, DataframeOperation, DataframeEdge, V> visitor, V tool) {
+	public <V> boolean accept(
+			GraphVisitor<DataframeForest, DataframeOperation, DataframeEdge, V> visitor,
+			V tool) {
 		return visitor.visit(tool, null, this);
 	}
 
 	@Override
-	public int setOffset(int offset) {
+	public int setOffset(
+			int offset) {
 		return this.offset = offset;
 	}
 

@@ -11,7 +11,8 @@ public class TopOperation extends DataframeOperation {
 		super(SyntheticLocation.INSTANCE);
 	}
 
-	public TopOperation(CodeLocation where) {
+	public TopOperation(
+			CodeLocation where) {
 		super(where);
 	}
 
@@ -21,12 +22,16 @@ public class TopOperation extends DataframeOperation {
 	}
 
 	@Override
-	public DataframeOperation lubAux(DataframeOperation other) throws SemanticException {
+	public DataframeOperation lubAux(
+			DataframeOperation other)
+			throws SemanticException {
 		return where.equals(other.where) ? this : DataframeOperation.TOP;
 	}
 
 	@Override
-	public boolean lessOrEqualAux(DataframeOperation other) throws SemanticException {
+	public boolean lessOrEqualAux(
+			DataframeOperation other)
+			throws SemanticException {
 		return other instanceof TopOperation;
 	}
 
@@ -36,7 +41,8 @@ public class TopOperation extends DataframeOperation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -47,17 +53,20 @@ public class TopOperation extends DataframeOperation {
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other) {
 		return true;
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other) {
 		return this;
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameClassAndLocation(
+			DataframeOperation o) {
 		return 0;
 	}
 }

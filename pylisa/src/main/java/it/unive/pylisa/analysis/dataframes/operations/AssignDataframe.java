@@ -8,7 +8,9 @@ public class AssignDataframe<S extends Selection<S>> extends DataframeOperation 
 
 	private final S selection;
 
-	public AssignDataframe(CodeLocation where, S selection) {
+	public AssignDataframe(
+			CodeLocation where,
+			S selection) {
 		super(where);
 		this.selection = selection;
 	}
@@ -19,7 +21,9 @@ public class AssignDataframe<S extends Selection<S>> extends DataframeOperation 
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		AssignDataframe<?> o = (AssignDataframe<?>) other;
 		if (selection.getClass() != o.selection.getClass())
 			return false;
@@ -28,7 +32,9 @@ public class AssignDataframe<S extends Selection<S>> extends DataframeOperation 
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		AssignDataframe<?> o = (AssignDataframe<?>) other;
 		if (selection.getClass() != o.selection.getClass())
 			return top();
@@ -44,7 +50,8 @@ public class AssignDataframe<S extends Selection<S>> extends DataframeOperation 
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -66,7 +73,8 @@ public class AssignDataframe<S extends Selection<S>> extends DataframeOperation 
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameClassAndLocation(
+			DataframeOperation o) {
 		AssignDataframe<?> other = (AssignDataframe<?>) o;
 		return selection.compareTo(other.selection);
 	}

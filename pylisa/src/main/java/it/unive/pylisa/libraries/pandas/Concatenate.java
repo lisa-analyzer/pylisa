@@ -4,9 +4,6 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.heap.HeapDomain;
-import it.unive.lisa.analysis.value.TypeDomain;
-import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -28,11 +25,17 @@ public class Concatenate extends it.unive.lisa.program.cfg.statement.UnaryExpres
 
 	private Axis axis = Axis.ROWS;
 
-	public Concatenate(CFG cfg, CodeLocation location, Expression list) {
+	public Concatenate(
+			CFG cfg,
+			CodeLocation location,
+			Expression list) {
 		super(cfg, location, "concat", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(), list);
 	}
 
-	public static Concatenate build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static Concatenate build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		Concatenate concat = new Concatenate(cfg, location, exprs[0]);
 		if (exprs.length > 1)
 			for (int i = 1; i < exprs.length; i++)
@@ -40,7 +43,9 @@ public class Concatenate extends it.unive.lisa.program.cfg.statement.UnaryExpres
 		return concat;
 	}
 
-	private static void setOptional(Concatenate concat, Expression expression) {
+	private static void setOptional(
+			Concatenate concat,
+			Expression expression) {
 		if (!(expression instanceof NamedParameterExpression))
 			return;
 
@@ -57,20 +62,18 @@ public class Concatenate extends it.unive.lisa.program.cfg.statement.UnaryExpres
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>,
-			H extends HeapDomain<H>,
-			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural,
-					AnalysisState<A, H, V, T> state,
-					SymbolicExpression expr,
-					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
+	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		UnaryExpression concat = new UnaryExpression(dftype, expr, new AxisConcatenation(axis), location);

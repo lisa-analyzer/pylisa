@@ -8,7 +8,9 @@ public abstract class SelectionOperation<S extends Selection<S>> extends Datafra
 
 	private final S selection;
 
-	public SelectionOperation(CodeLocation where, S selection) {
+	public SelectionOperation(
+			CodeLocation where,
+			S selection) {
 		super(where);
 		this.selection = selection;
 	}
@@ -19,7 +21,9 @@ public abstract class SelectionOperation<S extends Selection<S>> extends Datafra
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		SelectionOperation<?> o = (SelectionOperation<?>) other;
 		if (selection.getClass() != o.selection.getClass())
 			return false;
@@ -28,14 +32,18 @@ public abstract class SelectionOperation<S extends Selection<S>> extends Datafra
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		SelectionOperation<?> o = (SelectionOperation<?>) other;
 		if (selection.getClass() != o.selection.getClass())
 			return top();
 		return mk(loc(other), selection.lub((S) o.selection));
 	}
 
-	protected abstract SelectionOperation<S> mk(CodeLocation where, S selection);
+	protected abstract SelectionOperation<S> mk(
+			CodeLocation where,
+			S selection);
 
 	@Override
 	public int hashCode() {
@@ -46,7 +54,8 @@ public abstract class SelectionOperation<S extends Selection<S>> extends Datafra
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -63,7 +72,8 @@ public abstract class SelectionOperation<S extends Selection<S>> extends Datafra
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameClassAndLocation(
+			DataframeOperation o) {
 		SelectionOperation<?> other = (SelectionOperation<?>) o;
 		return selection.compareTo(other.selection);
 	}

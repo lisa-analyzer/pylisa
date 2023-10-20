@@ -1,25 +1,28 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
-import java.util.HashSet;
-
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.operations.selection.ColumnListSelection;
+import java.util.HashSet;
 
 public class DropColumns extends DataframeOperation {
 	private ColumnListSelection columns;
 
-	public DropColumns(CodeLocation where, ColumnListSelection columns) {
+	public DropColumns(
+			CodeLocation where,
+			ColumnListSelection columns) {
 		super(where);
 		this.columns = columns;
 	}
-	
+
 	public ColumnListSelection getColumns() {
 		return columns;
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		DropColumns o = (DropColumns) other;
 		if (this.columns == null)
 			return o.columns == null;
@@ -29,7 +32,9 @@ public class DropColumns extends DataframeOperation {
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		DropColumns o = (DropColumns) other;
 		ColumnListSelection newColumns = new ColumnListSelection(new HashSet<>());
 		if (this.columns != null)
@@ -40,7 +45,8 @@ public class DropColumns extends DataframeOperation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -70,7 +76,8 @@ public class DropColumns extends DataframeOperation {
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
+	protected int compareToSameClassAndLocation(
+			DataframeOperation o) {
 		DropColumns other = (DropColumns) o;
 		return columns.compareTo(other.columns);
 	}

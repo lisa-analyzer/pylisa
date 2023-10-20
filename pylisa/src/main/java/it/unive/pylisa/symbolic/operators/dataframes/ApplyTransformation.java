@@ -1,14 +1,13 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
 
 public class ApplyTransformation implements UnaryOperator {
 
@@ -26,11 +25,16 @@ public class ApplyTransformation implements UnaryOperator {
 
 	private final boolean changeShape;
 
-	public ApplyTransformation(Kind type, boolean changeShape) {
+	public ApplyTransformation(
+			Kind type,
+			boolean changeShape) {
 		this(type, changeShape, null);
 	}
 
-	public ApplyTransformation(Kind type, boolean changeShape, Object arg) {
+	public ApplyTransformation(
+			Kind type,
+			boolean changeShape,
+			Object arg) {
 		this.type = type;
 		this.changeShape = changeShape;
 		this.arg = Optional.ofNullable(arg);
@@ -43,7 +47,7 @@ public class ApplyTransformation implements UnaryOperator {
 	public Optional<Object> getArg() {
 		return arg;
 	}
-	
+
 	public boolean isChangeShape() {
 		return changeShape;
 	}
@@ -57,7 +61,9 @@ public class ApplyTransformation implements UnaryOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> argument) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> argument) {
 		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		if (argument.stream().noneMatch(t -> t.equals(series)))
 			return Collections.emptySet();
@@ -75,7 +81,8 @@ public class ApplyTransformation implements UnaryOperator {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
