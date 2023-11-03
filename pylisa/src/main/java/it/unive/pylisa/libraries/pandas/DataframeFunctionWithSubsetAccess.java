@@ -24,16 +24,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
 
 public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg.statement.BinaryExpression
-		implements PluggableStatement {
+		implements
+		PluggableStatement {
 
 	protected Statement st;
 
-	public DataframeFunctionWithSubsetAccess(CFG cfg, CodeLocation location, Expression dataframe,
+	public DataframeFunctionWithSubsetAccess(
+			CFG cfg,
+			CodeLocation location,
+			Expression dataframe,
 			Expression subset) {
 		super(cfg, location, "subset-access", dataframe, subset);
 	}
 
-	public static DataframeFunctionWithSubsetAccess build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static DataframeFunctionWithSubsetAccess build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		Expression subset = null;
 		if (exprs.length > 1)
 			for (int i = 1; i < exprs.length; i++)
@@ -45,7 +52,8 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 		return new DataframeFunctionWithSubsetAccess(cfg, location, exprs[0], subset);
 	}
 
-	private static Expression getOptional(Expression expression) {
+	private static Expression getOptional(
+			Expression expression) {
 		if (!(expression instanceof NamedParameterExpression))
 			return null;
 
@@ -59,7 +67,8 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

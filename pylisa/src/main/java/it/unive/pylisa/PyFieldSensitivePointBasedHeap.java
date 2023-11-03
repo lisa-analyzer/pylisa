@@ -13,22 +13,28 @@ public class PyFieldSensitivePointBasedHeap extends FieldSensitivePointBasedHeap
 		super();
 	}
 
-	private PyFieldSensitivePointBasedHeap(HeapEnvironment<AllocationSites> allocationSites) {
+	private PyFieldSensitivePointBasedHeap(
+			HeapEnvironment<AllocationSites> allocationSites) {
 		super(allocationSites);
 	}
 
 	@Override
-	public PyFieldSensitivePointBasedHeap from(PointBasedHeap original) {
+	public PyFieldSensitivePointBasedHeap from(
+			PointBasedHeap original) {
 		return new PyFieldSensitivePointBasedHeap(original.heapEnv);
 	}
 
 	@Override
-	public PyFieldSensitivePointBasedHeap popScope(ScopeToken scope) throws SemanticException {
+	public PyFieldSensitivePointBasedHeap popScope(
+			ScopeToken scope)
+			throws SemanticException {
 		return this;
 	}
 
 	@Override
-	public PyFieldSensitivePointBasedHeap pushScope(ScopeToken scope) throws SemanticException {
+	public PyFieldSensitivePointBasedHeap pushScope(
+			ScopeToken scope)
+			throws SemanticException {
 		return this;
 	}
 }

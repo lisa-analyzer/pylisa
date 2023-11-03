@@ -20,16 +20,23 @@ import it.unive.lisa.symbolic.value.PushAny;
 public class ObjectRepr extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectRepr(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectRepr(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__repr__", cfg.getDescriptor().getUnit().getProgram().getTypes().getStringType(), arg);
 	}
 
-	public static ObjectRepr build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectRepr build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectRepr(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

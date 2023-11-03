@@ -21,7 +21,11 @@ import java.util.function.Predicate;
 
 public class PyRemainder extends Remainder {
 
-	public PyRemainder(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public PyRemainder(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg, location, left, right);
 	}
 
@@ -30,8 +34,11 @@ public class PyRemainder extends Remainder {
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state,
-					SymbolicExpression left, SymbolicExpression right, StatementStore<A, H, V, T> expressions)
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					AnalysisState<A, H, V, T> state,
+					SymbolicExpression left,
+					SymbolicExpression right,
+					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		AnalysisState<A, H, V, T> result = state.bottom();
 		TypeSystem types = getProgram().getTypes();

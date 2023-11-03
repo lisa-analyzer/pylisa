@@ -8,7 +8,10 @@ import it.unive.pylisa.cfg.type.PyIntegralType;
 
 public class PyIntLiteral extends Literal<Integer> {
 
-	public PyIntLiteral(CFG cfg, CodeLocation location, int value) {
+	public PyIntLiteral(
+			CFG cfg,
+			CodeLocation location,
+			int value) {
 		super(cfg, location, value, PyClassType.lookup(PyIntegralType.NAME));
 	}
 }

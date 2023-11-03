@@ -5,11 +5,12 @@ import it.unive.lisa.type.NumericType;
 
 public class PyNumberType extends PyClassType implements NumericType {
 
-	public PyNumberType(CompilationUnit unit) {
+	public PyNumberType(
+			CompilationUnit unit) {
 		super("numbers.Number", unit);
 		types.put(unit.getName(), this);
 	}
-	
+
 	@Override
 	public boolean is8Bits() {
 		return false;

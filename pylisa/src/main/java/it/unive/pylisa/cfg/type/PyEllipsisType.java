@@ -1,11 +1,10 @@
 package it.unive.pylisa.cfg.type;
 
-import java.util.Collections;
-import java.util.Set;
-
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
+import java.util.Collections;
+import java.util.Set;
 
 public class PyEllipsisType implements Type {
 
@@ -20,7 +19,8 @@ public class PyEllipsisType implements Type {
 	}
 
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(
+			Object other) {
 		return other instanceof PyEllipsisType;
 	}
 
@@ -30,17 +30,20 @@ public class PyEllipsisType implements Type {
 	}
 
 	@Override
-	public boolean canBeAssignedTo(Type other) {
+	public boolean canBeAssignedTo(
+			Type other) {
 		return equals(other);
 	}
 
 	@Override
-	public Type commonSupertype(Type other) {
+	public Type commonSupertype(
+			Type other) {
 		return other == this ? this : Untyped.INSTANCE;
 	}
 
 	@Override
-	public Set<Type> allInstances(TypeSystem types) {
+	public Set<Type> allInstances(
+			TypeSystem types) {
 		return Collections.singleton(this);
 	}
 }

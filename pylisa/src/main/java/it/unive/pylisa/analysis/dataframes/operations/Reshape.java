@@ -12,7 +12,8 @@ public class Reshape<R extends RowSelection<R>, C extends ColumnSelection<C>> ex
 	private final ReshapeKind type;
 	private final DataframeSelection<R, C> selection;
 
-	public Reshape(CodeLocation where,
+	public Reshape(
+			CodeLocation where,
 			int index,
 			ReshapeKind type,
 			DataframeSelection<R, C> selection) {
@@ -39,7 +40,8 @@ public class Reshape<R extends RowSelection<R>, C extends ColumnSelection<C>> ex
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -63,7 +65,9 @@ public class Reshape<R extends RowSelection<R>, C extends ColumnSelection<C>> ex
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Reshape<?, ?> o = (Reshape<?, ?>) other;
 		if (type != o.type)
 			return false;
@@ -71,7 +75,9 @@ public class Reshape<R extends RowSelection<R>, C extends ColumnSelection<C>> ex
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Reshape<?, ?> o = (Reshape<?, ?>) other;
 		if (type != o.type)
 			return top();
@@ -79,7 +85,9 @@ public class Reshape<R extends RowSelection<R>, C extends ColumnSelection<C>> ex
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Reshape<?, ?> o = (Reshape<?, ?>) other;
 		if (type != o.type)
 			return top();
@@ -87,7 +95,8 @@ public class Reshape<R extends RowSelection<R>, C extends ColumnSelection<C>> ex
 	}
 
 	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
+	protected int compareToSameOperation(
+			DataframeOperation o) {
 		Reshape<?, ?> other = (Reshape<?, ?>) o;
 		int cmp = type.compare(other.type);
 		if (cmp != 0)

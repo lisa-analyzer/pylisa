@@ -22,7 +22,11 @@ import it.unive.pylisa.symbolic.operators.StringMult;
 
 public class PyMultiplication extends Multiplication {
 
-	public PyMultiplication(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public PyMultiplication(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg, location, left, right);
 	}
 

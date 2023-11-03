@@ -18,7 +18,11 @@ import it.unive.lisa.type.Untyped;
 
 public class PyBitwiseXor extends BinaryExpression {
 
-	public PyBitwiseXor(CFG cfg, CodeLocation loc, Expression left, Expression right) {
+	public PyBitwiseXor(
+			CFG cfg,
+			CodeLocation loc,
+			Expression left,
+			Expression right) {
 		super(cfg, loc, "^", Untyped.INSTANCE, left, right);
 	}
 

@@ -35,7 +35,12 @@ public class PyNewObj extends NaryExpression {
 	 * @param type       the type of the object that is being created
 	 * @param parameters the parameters of the constructor call
 	 */
-	public PyNewObj(CFG cfg, SourceCodeLocation location, String constructName, Type type, Expression... parameters) {
+	public PyNewObj(
+			CFG cfg,
+			SourceCodeLocation location,
+			String constructName,
+			Type type,
+			Expression... parameters) {
 		super(cfg, location, constructName, type, parameters);
 	}
 

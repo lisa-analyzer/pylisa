@@ -20,16 +20,25 @@ import it.unive.lisa.symbolic.value.operator.binary.ComparisonNe;
 public class ObjectNe extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectNe(CFG cfg, CodeLocation location, Expression left, Expression right) {
-		super(cfg, location, "__ne__", cfg.getDescriptor().getUnit().getProgram().getTypes().getBooleanType(), left, right);
+	public ObjectNe(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
+		super(cfg, location, "__ne__", cfg.getDescriptor().getUnit().getProgram().getTypes().getBooleanType(), left,
+				right);
 	}
 
-	public static ObjectNe build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectNe build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectNe(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

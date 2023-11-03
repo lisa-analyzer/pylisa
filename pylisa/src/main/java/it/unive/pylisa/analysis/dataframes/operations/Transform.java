@@ -16,7 +16,8 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 	private final DataframeSelection<R, C> selection;
 	private final Optional<Object> arg;
 
-	public Transform(CodeLocation where,
+	public Transform(
+			CodeLocation where,
 			int index,
 			TransformKind type,
 			Axis axis,
@@ -24,7 +25,8 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 		this(where, index, type, axis, selection, null);
 	}
 
-	public Transform(CodeLocation where,
+	public Transform(
+			CodeLocation where,
 			int index,
 			TransformKind type,
 			Axis axis,
@@ -65,7 +67,8 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -100,7 +103,9 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Transform<?, ?> o = (Transform<?, ?>) other;
 		if (type != o.type || !arg.equals(o.arg))
 			return false;
@@ -108,7 +113,9 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Transform<?, ?> o = (Transform<?, ?>) other;
 		if (type != o.type || !arg.equals(o.arg))
 			return top();
@@ -116,7 +123,8 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 	}
 
 	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
+	protected int compareToSameOperation(
+			DataframeOperation o) {
 		Transform<?, ?> other = (Transform<?, ?>) o;
 		int cmp = type.compare(other.type);
 		if (cmp != 0)
@@ -132,7 +140,9 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Transform<?, ?> o = (Transform<?, ?>) other;
 		if (type != o.type || !arg.equals(o.arg))
 			return top();

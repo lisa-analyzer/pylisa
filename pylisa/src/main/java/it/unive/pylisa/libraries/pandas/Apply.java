@@ -23,16 +23,24 @@ public class Apply extends BinaryExpression implements PluggableStatement {
 
 	private Statement st;
 
-	public Apply(CFG cfg, CodeLocation location, Expression dataframe, Expression lambda) {
+	public Apply(
+			CFG cfg,
+			CodeLocation location,
+			Expression dataframe,
+			Expression lambda) {
 		super(cfg, location, "apply", dataframe.getStaticType(), dataframe, lambda);
 	}
 
-	public static Apply build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static Apply build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new Apply(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

@@ -7,29 +7,37 @@ import it.unive.pylisa.analysis.dataframes.Names;
 public abstract class Selection<S extends Selection<S>> implements BaseLattice<S>, Comparable<Selection<?>> {
 
 	@SuppressWarnings("unchecked")
-	public S lub(Selection<?> other) throws SemanticException {
+	public S lub(
+			Selection<?> other)
+			throws SemanticException {
 		return lub((S) other);
 	}
 
 	@SuppressWarnings("unchecked")
-	public S widening(Selection<?> other) throws SemanticException {
+	public S widening(
+			Selection<?> other)
+			throws SemanticException {
 		return widening((S) other);
 	}
 
 	@SuppressWarnings("unchecked")
-	public boolean lessOrEqual(Selection<?> other) throws SemanticException {
+	public boolean lessOrEqual(
+			Selection<?> other)
+			throws SemanticException {
 		return lessOrEqual((S) other);
 	}
 
 	@Override
-	public final int compareTo(Selection<?> o) {
+	public final int compareTo(
+			Selection<?> o) {
 		int cmp;
 		if ((cmp = getClass().getName().compareTo(o.getClass().getName())) != 0)
 			return cmp;
 		return compareToSameClass(o);
 	}
 
-	protected abstract int compareToSameClass(Selection<?> o);
+	protected abstract int compareToSameClass(
+			Selection<?> o);
 
 	public abstract Names extractColumnNames() throws SemanticException;
 }

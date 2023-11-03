@@ -20,16 +20,23 @@ import it.unive.lisa.type.VoidType;
 public class ObjectAEnter extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectAEnter(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectAEnter(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__aenter__", VoidType.INSTANCE, arg);
 	}
 
-	public static ObjectAEnter build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectAEnter build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectAEnter(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

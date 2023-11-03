@@ -20,16 +20,25 @@ import it.unive.pylisa.cfg.expression.literal.PyNotImplementedLiteral;
 public class ObjectLt extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectLt(CFG cfg, CodeLocation location, Expression left, Expression right) {
-		super(cfg, location, "__lt__", cfg.getDescriptor().getUnit().getProgram().getTypes().getBooleanType(), left, right);
+	public ObjectLt(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
+		super(cfg, location, "__lt__", cfg.getDescriptor().getUnit().getProgram().getTypes().getBooleanType(), left,
+				right);
 	}
 
-	public static ObjectLt build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectLt build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectLt(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

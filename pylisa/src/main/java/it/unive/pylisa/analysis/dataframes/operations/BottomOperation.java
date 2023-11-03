@@ -11,7 +11,8 @@ public class BottomOperation extends DataframeOperation {
 		super(SyntheticLocation.INSTANCE, -2);
 	}
 
-	public BottomOperation(CodeLocation where) {
+	public BottomOperation(
+			CodeLocation where) {
 		super(where, -2);
 	}
 
@@ -26,7 +27,8 @@ public class BottomOperation extends DataframeOperation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -37,22 +39,27 @@ public class BottomOperation extends DataframeOperation {
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other) {
 		return true;
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other) {
 		return this;
 	}
 
 	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
+	protected int compareToSameOperation(
+			DataframeOperation o) {
 		return 0;
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		return this;
 	}
 }

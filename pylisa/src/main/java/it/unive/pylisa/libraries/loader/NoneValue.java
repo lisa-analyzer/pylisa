@@ -12,7 +12,8 @@ public class NoneValue implements Value {
 	}
 
 	@Override
-	public Expression toLiSAExpression(CFG init) {
+	public Expression toLiSAExpression(
+			CFG init) {
 		return new PyNoneLiteral(init, init.getDescriptor().getLocation());
 	}
 }

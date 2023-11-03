@@ -15,7 +15,9 @@ public class SeriesComparison implements BinaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public SeriesComparison(int index, ComparisonOperator op) {
+	public SeriesComparison(
+			int index,
+			ComparisonOperator op) {
 		this.index = index;
 		this.op = op;
 	}
@@ -35,7 +37,10 @@ public class SeriesComparison implements BinaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
 		if (left.stream().noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF))))
 			return Collections.emptySet();
 		if (right.stream().noneMatch(t -> t.isStringType()))

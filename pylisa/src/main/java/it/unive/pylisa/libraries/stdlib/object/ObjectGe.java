@@ -20,16 +20,25 @@ import it.unive.pylisa.cfg.expression.literal.PyNotImplementedLiteral;
 public class ObjectGe extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectGe(CFG cfg, CodeLocation location, Expression left, Expression right) {
-		super(cfg, location, "__ge__", cfg.getDescriptor().getUnit().getProgram().getTypes().getBooleanType(), left, right);
+	public ObjectGe(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
+		super(cfg, location, "__ge__", cfg.getDescriptor().getUnit().getProgram().getTypes().getBooleanType(), left,
+				right);
 	}
 
-	public static ObjectGe build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectGe build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectGe(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

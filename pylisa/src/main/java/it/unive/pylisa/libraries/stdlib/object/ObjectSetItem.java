@@ -22,7 +22,12 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectSetItem extends TernaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectSetItem(CFG cfg, CodeLocation location, Expression left, Expression middle, Expression right) {
+	public ObjectSetItem(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression middle,
+			Expression right) {
 		super(cfg,
 				location,
 				"__setitem__",
@@ -32,12 +37,16 @@ public class ObjectSetItem extends TernaryExpression implements PluggableStateme
 				right);
 	}
 
-	public static ObjectSetItem build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectSetItem build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectSetItem(cfg, location, exprs[0], exprs[1], exprs[2]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

@@ -4,7 +4,9 @@ import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 
 public class AssignEdge extends DataframeEdge {
 
-	public AssignEdge(DataframeOperation source, DataframeOperation destination) {
+	public AssignEdge(
+			DataframeOperation source,
+			DataframeOperation destination) {
 		super(source, destination);
 	}
 
@@ -14,7 +16,9 @@ public class AssignEdge extends DataframeEdge {
 	}
 
 	@Override
-	public DataframeEdge newInstance(DataframeOperation source, DataframeOperation destination) {
+	public DataframeEdge newInstance(
+			DataframeOperation source,
+			DataframeOperation destination) {
 		return new AssignEdge(source, destination);
 	}
 }

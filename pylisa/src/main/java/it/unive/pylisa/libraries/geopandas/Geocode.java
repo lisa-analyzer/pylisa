@@ -24,17 +24,24 @@ public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression
 
 	private Statement st;
 
-	public Geocode(CFG cfg, CodeLocation location, Expression dataframe) {
+	public Geocode(
+			CFG cfg,
+			CodeLocation location,
+			Expression dataframe) {
 		super(cfg, location, "geocode", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
 				dataframe);
 	}
 
-	public static Geocode build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static Geocode build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new Geocode(cfg, location, exprs[0]);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

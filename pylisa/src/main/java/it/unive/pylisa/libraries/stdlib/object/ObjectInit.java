@@ -21,16 +21,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectInit extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectInit(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectInit(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__init__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectInit build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectInit build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectInit(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

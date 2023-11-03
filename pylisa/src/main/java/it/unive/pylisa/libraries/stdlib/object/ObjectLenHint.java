@@ -20,16 +20,24 @@ import it.unive.lisa.symbolic.value.PushAny;
 public class ObjectLenHint extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectLenHint(CFG cfg, CodeLocation location, Expression arg) {
-		super(cfg, location, "__length_hint__", cfg.getDescriptor().getUnit().getProgram().getTypes().getIntegerType(), arg);
+	public ObjectLenHint(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
+		super(cfg, location, "__length_hint__", cfg.getDescriptor().getUnit().getProgram().getTypes().getIntegerType(),
+				arg);
 	}
 
-	public static ObjectLenHint build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectLenHint build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectLenHint(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

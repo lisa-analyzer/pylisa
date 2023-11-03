@@ -7,11 +7,12 @@ public class PyIntegralType extends PyClassType implements NumericType {
 
 	public static final String NAME = "numbers.Integral";
 
-	public PyIntegralType(CompilationUnit unit) {
+	public PyIntegralType(
+			CompilationUnit unit) {
 		super(NAME, unit);
 		types.put(unit.getName(), this);
 	}
-	
+
 	@Override
 	public boolean is8Bits() {
 		return false;

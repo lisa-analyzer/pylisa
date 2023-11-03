@@ -20,7 +20,11 @@ import it.unive.lisa.type.VoidType;
 public class ObjectDelAttr extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectDelAttr(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectDelAttr(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__delattr__",
@@ -29,12 +33,16 @@ public class ObjectDelAttr extends BinaryExpression implements PluggableStatemen
 				right);
 	}
 
-	public static ObjectDelAttr build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectDelAttr build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectDelAttr(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

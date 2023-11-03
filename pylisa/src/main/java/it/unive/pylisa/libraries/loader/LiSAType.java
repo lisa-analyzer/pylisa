@@ -8,7 +8,9 @@ public class LiSAType implements Type {
 	private final String name;
 	private final String field;
 
-	public LiSAType(String name, String field) {
+	public LiSAType(
+			String name,
+			String field) {
 		this.name = name;
 		this.field = field;
 	}
@@ -27,7 +29,8 @@ public class LiSAType implements Type {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)

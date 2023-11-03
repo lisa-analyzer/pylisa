@@ -20,7 +20,11 @@ import it.unive.lisa.symbolic.value.PushAny;
 public class ObjectFormat extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectFormat(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectFormat(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__format__",
@@ -29,12 +33,16 @@ public class ObjectFormat extends BinaryExpression implements PluggableStatement
 				right);
 	}
 
-	public static ObjectFormat build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectFormat build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectFormat(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

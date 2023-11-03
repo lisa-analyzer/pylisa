@@ -7,11 +7,12 @@ public class PyRealType extends PyClassType implements NumericType {
 
 	public static final String NAME = "numbers.Real";
 
-	public PyRealType(CompilationUnit unit) {
+	public PyRealType(
+			CompilationUnit unit) {
 		super(NAME, unit);
 		types.put(unit.getName(), this);
 	}
-	
+
 	@Override
 	public boolean is8Bits() {
 		return false;

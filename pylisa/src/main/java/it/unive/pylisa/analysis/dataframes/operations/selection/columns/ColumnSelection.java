@@ -7,7 +7,9 @@ public abstract class ColumnSelection<C extends ColumnSelection<C>> extends Sele
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public final C lubAux(C other) throws SemanticException {
+	public final C lubAux(
+			C other)
+			throws SemanticException {
 		if (getClass() != other.getClass())
 			return (C) AllColumns.INSTANCE;
 		return lubSameClass(other);
@@ -15,22 +17,32 @@ public abstract class ColumnSelection<C extends ColumnSelection<C>> extends Sele
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public final C wideningAux(C other) throws SemanticException {
+	public final C wideningAux(
+			C other)
+			throws SemanticException {
 		if (getClass() != other.getClass())
 			return (C) AllColumns.INSTANCE;
 		return wideningSameClass(other);
 	}
 
 	@Override
-	public final boolean lessOrEqualAux(C other) throws SemanticException {
+	public final boolean lessOrEqualAux(
+			C other)
+			throws SemanticException {
 		if (getClass() != other.getClass())
 			return false;
 		return lessOrEqualSameClass(other);
 	}
 
-	protected abstract boolean lessOrEqualSameClass(C other) throws SemanticException;
+	protected abstract boolean lessOrEqualSameClass(
+			C other)
+			throws SemanticException;
 
-	protected abstract C wideningSameClass(C other) throws SemanticException;
+	protected abstract C wideningSameClass(
+			C other)
+			throws SemanticException;
 
-	protected abstract C lubSameClass(C other) throws SemanticException;
+	protected abstract C lubSameClass(
+			C other)
+			throws SemanticException;
 }

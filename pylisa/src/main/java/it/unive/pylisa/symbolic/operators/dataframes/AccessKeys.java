@@ -12,7 +12,8 @@ public class AccessKeys implements UnaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public AccessKeys(int index) {
+	public AccessKeys(
+			int index) {
 		this.index = index;
 	}
 
@@ -27,7 +28,9 @@ public class AccessKeys implements UnaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> arg) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> arg) {
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		if (arg.stream().noneMatch(t -> t.equals(df)))
 			return Collections.emptySet();

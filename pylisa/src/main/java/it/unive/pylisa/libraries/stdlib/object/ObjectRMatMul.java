@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectRMatMul extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectRMatMul(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectRMatMul(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__rmatmul__",
@@ -31,12 +35,16 @@ public class ObjectRMatMul extends BinaryExpression implements PluggableStatemen
 				right);
 	}
 
-	public static ObjectRMatMul build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectRMatMul build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectRMatMul(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

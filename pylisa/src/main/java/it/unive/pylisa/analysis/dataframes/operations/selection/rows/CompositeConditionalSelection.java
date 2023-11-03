@@ -6,7 +6,8 @@ import it.unive.pylisa.analysis.dataframes.Names;
 import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 
 public class CompositeConditionalSelection<L extends BooleanSelection<L>, R extends BooleanSelection<R>>
-		extends BooleanSelection<CompositeConditionalSelection<L, R>> {
+		extends
+		BooleanSelection<CompositeConditionalSelection<L, R>> {
 
 	public static enum Type {
 		UNKNOWN,
@@ -19,7 +20,10 @@ public class CompositeConditionalSelection<L extends BooleanSelection<L>, R exte
 	private final L left;
 	private final R right;
 
-	public CompositeConditionalSelection(Type type, L bs1, R bs2) {
+	public CompositeConditionalSelection(
+			Type type,
+			L bs1,
+			R bs2) {
 		this.type = type;
 		this.left = bs1;
 		this.right = bs2;
@@ -58,21 +62,25 @@ public class CompositeConditionalSelection<L extends BooleanSelection<L>, R exte
 	}
 
 	@Override
-	public CompositeConditionalSelection<L, R> lubSameClass(CompositeConditionalSelection<L, R> other)
+	public CompositeConditionalSelection<L, R> lubSameClass(
+			CompositeConditionalSelection<L, R> other)
 			throws SemanticException {
 		return type != other.type ? top()
 				: new CompositeConditionalSelection<>(type, left.lub(other.left), right.lub(other.right));
 	}
 
 	@Override
-	public CompositeConditionalSelection<L, R> wideningSameClass(CompositeConditionalSelection<L, R> other)
+	public CompositeConditionalSelection<L, R> wideningSameClass(
+			CompositeConditionalSelection<L, R> other)
 			throws SemanticException {
 		return type != other.type ? top()
 				: new CompositeConditionalSelection<>(type, left.widening(other.left), right.widening(other.right));
 	}
 
 	@Override
-	public boolean lessOrEqualSameClass(CompositeConditionalSelection<L, R> other) throws SemanticException {
+	public boolean lessOrEqualSameClass(
+			CompositeConditionalSelection<L, R> other)
+			throws SemanticException {
 		return type != other.type ? false
 				: left.lessOrEqual(other.left) && right.lessOrEqual(other.right);
 	}
@@ -88,7 +96,8 @@ public class CompositeConditionalSelection<L extends BooleanSelection<L>, R exte
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -123,7 +132,8 @@ public class CompositeConditionalSelection<L extends BooleanSelection<L>, R exte
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		CompositeConditionalSelection<?, ?> other = (CompositeConditionalSelection<?, ?>) o;
 		int cmp = type.compareTo(other.type);
 		if (cmp != 0)

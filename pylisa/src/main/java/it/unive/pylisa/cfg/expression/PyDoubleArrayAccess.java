@@ -25,7 +25,12 @@ import it.unive.pylisa.symbolic.operators.dataframes.DataframeProjection;
 
 public class PyDoubleArrayAccess extends TernaryExpression {
 
-	public PyDoubleArrayAccess(CFG cfg, CodeLocation loc, Type staticType, Expression receiver, Expression index1,
+	public PyDoubleArrayAccess(
+			CFG cfg,
+			CodeLocation loc,
+			Type staticType,
+			Expression receiver,
+			Expression index1,
 			Expression index2) {
 		super(cfg, loc, "[]", staticType, receiver, index1, index2);
 	}

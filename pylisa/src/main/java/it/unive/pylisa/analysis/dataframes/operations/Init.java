@@ -12,7 +12,11 @@ public class Init extends DataframeOperation {
 
 	private final NumberSlice existingRows;
 
-	public Init(CodeLocation where, int index, Names knownColumns, NumberSlice existingRows) {
+	public Init(
+			CodeLocation where,
+			int index,
+			Names knownColumns,
+			NumberSlice existingRows) {
 		super(where, index);
 		this.knownColumns = knownColumns;
 		this.existingRows = existingRows;
@@ -27,25 +31,32 @@ public class Init extends DataframeOperation {
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Init o = (Init) other;
 		return knownColumns.lessOrEqual(o.knownColumns) && existingRows.lessOrEqual(o.existingRows);
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Init o = (Init) other;
 		return new Init(where, index, knownColumns.lub(o.knownColumns), existingRows.lub(existingRows));
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Init o = (Init) other;
 		return new Init(where, index, knownColumns.widening(o.knownColumns), existingRows.widening(existingRows));
 	}
 
 	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
+	protected int compareToSameOperation(
+			DataframeOperation o) {
 		Init other = (Init) o;
 		int cmp;
 		if ((cmp = knownColumns.compareTo(other.knownColumns)) != 0)
@@ -62,7 +73,8 @@ public class Init extends DataframeOperation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))

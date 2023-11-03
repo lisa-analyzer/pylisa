@@ -21,12 +21,14 @@ public class PyLambdaType implements Type {
 	}
 
 	@Override
-	public boolean canBeAssignedTo(Type other) {
+	public boolean canBeAssignedTo(
+			Type other) {
 		return other instanceof PyLambdaType || other instanceof Untyped;
 	}
 
 	@Override
-	public Type commonSupertype(Type other) {
+	public Type commonSupertype(
+			Type other) {
 		if (other == this)
 			return this;
 		else
@@ -34,7 +36,8 @@ public class PyLambdaType implements Type {
 	}
 
 	@Override
-	public Set<Type> allInstances(TypeSystem types) {
+	public Set<Type> allInstances(
+			TypeSystem types) {
 		return Set.of(INSTANCE);
 	}
 }

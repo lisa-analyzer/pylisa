@@ -27,17 +27,25 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 
 	protected Statement st;
 
-	protected SequenceGetItem(CFG cfg, CodeLocation location, String constructName,
-			Expression sequence, Expression index) {
+	protected SequenceGetItem(
+			CFG cfg,
+			CodeLocation location,
+			String constructName,
+			Expression sequence,
+			Expression index) {
 		super(cfg, location, constructName, sequence, index);
 	}
 
-	public static SequenceGetItem build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static SequenceGetItem build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new SequenceGetItem(cfg, location, "__getitem__", exprs[0], exprs[1]);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

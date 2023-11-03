@@ -20,7 +20,9 @@ public class UnaryReshape implements UnaryOperator, DataframeOperator {
 		return index;
 	}
 
-	public UnaryReshape(int index, UnaryReshapeKind type) {
+	public UnaryReshape(
+			int index,
+			UnaryReshapeKind type) {
 		this.index = index;
 		this.type = type;
 	}
@@ -35,7 +37,9 @@ public class UnaryReshape implements UnaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> argument) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> argument) {
 		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		if (argument.stream().noneMatch(t -> t.equals(series)))
 			return Collections.emptySet();
@@ -51,7 +55,8 @@ public class UnaryReshape implements UnaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)

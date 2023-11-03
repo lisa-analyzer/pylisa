@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectIAnd extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectIAnd(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectIAnd(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__iand__",
@@ -31,12 +35,16 @@ public class ObjectIAnd extends BinaryExpression implements PluggableStatement {
 				right);
 	}
 
-	public static ObjectIAnd build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectIAnd build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectIAnd(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

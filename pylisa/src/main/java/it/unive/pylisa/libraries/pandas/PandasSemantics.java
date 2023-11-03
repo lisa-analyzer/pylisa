@@ -116,7 +116,8 @@ public class PandasSemantics {
 		return result;
 	}
 
-	public static boolean isDataframePortionThatCanBeAssignedTo(SymbolicExpression left) {
+	public static boolean isDataframePortionThatCanBeAssignedTo(
+			SymbolicExpression left) {
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		if (!(left instanceof HeapReference))
@@ -130,7 +131,9 @@ public class PandasSemantics {
 						: expression.getStaticType().equals(seriestype) || expression.getStaticType().equals(dftype));
 	}
 
-	public static HeapDereference getDataframeDereference(SymbolicExpression expr) throws SemanticException {
+	public static HeapDereference getDataframeDereference(
+			SymbolicExpression expr)
+			throws SemanticException {
 		if (isDataframePortionThatCanBeAssignedTo(expr)) {
 			HeapDereference firstDeref = (HeapDereference) ((AccessChild) ((HeapReference) expr).getExpression())
 					.getContainer();

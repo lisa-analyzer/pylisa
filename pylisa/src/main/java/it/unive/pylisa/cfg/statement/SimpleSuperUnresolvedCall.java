@@ -29,29 +29,49 @@ import java.util.Set;
 public class SimpleSuperUnresolvedCall extends UnresolvedCall {
 	UnresolvedCall call;
 
-	public SimpleSuperUnresolvedCall(CFG cfg, CodeLocation location, CallType callType, String qualifier,
+	public SimpleSuperUnresolvedCall(
+			CFG cfg,
+			CodeLocation location,
+			CallType callType,
+			String qualifier,
 			String targetName,
-			EvaluationOrder order, Type staticType, Expression... parameters) {
+			EvaluationOrder order,
+			Type staticType,
+			Expression... parameters) {
 		super(cfg, location, callType, qualifier, targetName, order, staticType, parameters);
 		Expression[] expr = new Expression[0];
 		call = new UnresolvedCall(cfg, location, callType, qualifier, targetName, order, staticType, expr);
 	}
 
-	public SimpleSuperUnresolvedCall(CFG cfg, CodeLocation location, CallType callType, String qualifier,
+	public SimpleSuperUnresolvedCall(
+			CFG cfg,
+			CodeLocation location,
+			CallType callType,
+			String qualifier,
 			String targetName,
 			Expression... parameters) {
 		this(cfg, location, callType, qualifier, targetName, Untyped.INSTANCE, parameters);
 	}
 
-	public SimpleSuperUnresolvedCall(CFG cfg, CodeLocation location, CallType callType, String qualifier,
+	public SimpleSuperUnresolvedCall(
+			CFG cfg,
+			CodeLocation location,
+			CallType callType,
+			String qualifier,
 			String targetName,
-			Type staticType, Expression... parameters) {
+			Type staticType,
+			Expression... parameters) {
 		this(cfg, location, callType, qualifier, targetName, LeftToRightEvaluation.INSTANCE, staticType, parameters);
 	}
 
-	public SimpleSuperUnresolvedCall(CFG cfg, CodeLocation location, CallType callType, String qualifier,
+	public SimpleSuperUnresolvedCall(
+			CFG cfg,
+			CodeLocation location,
+			CallType callType,
+			String qualifier,
 			String targetName,
-			EvaluationOrder order, Expression... parameters) {
+			EvaluationOrder order,
+			Expression... parameters) {
 		this(cfg, location, callType, qualifier, targetName, order, Untyped.INSTANCE, parameters);
 	}
 
@@ -60,8 +80,10 @@ public class SimpleSuperUnresolvedCall extends UnresolvedCall {
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> expressionSemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state,
-					ExpressionSet<SymbolicExpression>[] params, StatementStore<A, H, V, T> expressions)
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					AnalysisState<A, H, V, T> state,
+					ExpressionSet<SymbolicExpression>[] params,
+					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		Call resolved;
 		@SuppressWarnings("unchecked")

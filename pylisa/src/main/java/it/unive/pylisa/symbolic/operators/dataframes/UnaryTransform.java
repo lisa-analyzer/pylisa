@@ -26,11 +26,18 @@ public class UnaryTransform implements UnaryOperator, DataframeOperator {
 		return index;
 	}
 
-	public UnaryTransform(int index, UnaryTransformKind type, Axis axis) {
+	public UnaryTransform(
+			int index,
+			UnaryTransformKind type,
+			Axis axis) {
 		this(index, type, axis, null);
 	}
 
-	public UnaryTransform(int index, UnaryTransformKind type, Axis axis, Object arg) {
+	public UnaryTransform(
+			int index,
+			UnaryTransformKind type,
+			Axis axis,
+			Object arg) {
 		this.index = index;
 		this.type = type;
 		this.axis = axis;
@@ -58,7 +65,9 @@ public class UnaryTransform implements UnaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> argument) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> argument) {
 		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		if (argument.stream().noneMatch(t -> t.equals(series)))
 			return Collections.emptySet();
@@ -76,7 +85,8 @@ public class UnaryTransform implements UnaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)

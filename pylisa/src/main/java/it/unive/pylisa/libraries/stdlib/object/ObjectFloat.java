@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectFloat extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectFloat(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectFloat(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__float__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectFloat build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectFloat build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectFloat(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

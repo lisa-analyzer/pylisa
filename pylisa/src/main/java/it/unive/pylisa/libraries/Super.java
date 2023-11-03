@@ -24,12 +24,18 @@ import java.util.HashSet;
 public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	protected Super(CFG cfg, CodeLocation location, String constructName,
+	protected Super(
+			CFG cfg,
+			CodeLocation location,
+			String constructName,
 			Expression[] expressions) {
 		super(cfg, location, constructName, expressions[0], expressions[1]);
 	}
 
-	public static Super build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static Super build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new Super(cfg, location, "super", exprs);
 	}
 
@@ -43,8 +49,11 @@ public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression 
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state,
-					SymbolicExpression left, SymbolicExpression right, StatementStore<A, H, V, T> expressions)
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					AnalysisState<A, H, V, T> state,
+					SymbolicExpression left,
+					SymbolicExpression right,
+					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 
 		CompilationUnit superObj = ((CompilationUnit) ((Constant) left).getValue()).getImmediateAncestors().iterator()
@@ -64,7 +73,8 @@ public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression 
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 }

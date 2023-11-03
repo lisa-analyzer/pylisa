@@ -19,7 +19,11 @@ import it.unive.pylisa.symbolic.operators.Power;
 
 public class PyPower extends BinaryExpression {
 
-	public PyPower(CFG cfg, CodeLocation loc, Expression left, Expression right) {
+	public PyPower(
+			CFG cfg,
+			CodeLocation loc,
+			Expression left,
+			Expression right) {
 		super(cfg, loc, "**", left, right);
 	}
 

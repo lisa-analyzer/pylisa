@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectComplex extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectComplex(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectComplex(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__complex__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectComplex build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectComplex build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectComplex(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

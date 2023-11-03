@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectInvert extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectInvert(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectInvert(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__invert__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectInvert build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectInvert build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectInvert(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

@@ -18,7 +18,8 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 
 		private final String symbol;
 
-		private Operator(String symbol) {
+		private Operator(
+				String symbol) {
 			this.symbol = symbol;
 		}
 
@@ -30,7 +31,8 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 
 	private Operator op;
 
-	public ComparisonOperator(Operator op) {
+	public ComparisonOperator(
+			Operator op) {
 		this.op = op;
 	}
 
@@ -54,7 +56,9 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 	}
 
 	@Override
-	public ComparisonOperator lubAux(ComparisonOperator other) throws SemanticException {
+	public ComparisonOperator lubAux(
+			ComparisonOperator other)
+			throws SemanticException {
 		if (lessOrEqual(other)) {
 			return other;
 		}
@@ -62,12 +66,16 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 	}
 
 	@Override
-	public ComparisonOperator wideningAux(ComparisonOperator other) throws SemanticException {
+	public ComparisonOperator wideningAux(
+			ComparisonOperator other)
+			throws SemanticException {
 		return lub(other);
 	}
 
 	@Override
-	public boolean lessOrEqualAux(ComparisonOperator other) throws SemanticException {
+	public boolean lessOrEqualAux(
+			ComparisonOperator other)
+			throws SemanticException {
 		if (this.op == Operator.BOTTOM) {
 			return true;
 		} else if (this.op == other.op) {
@@ -77,7 +85,8 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (obj == null || !(obj instanceof ComparisonOperator))
 			return false;
 		ComparisonOperator o = (ComparisonOperator) obj;
@@ -100,7 +109,8 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 	}
 
 	@Override
-	public int compareTo(ComparisonOperator other) {
+	public int compareTo(
+			ComparisonOperator other) {
 		return op.compareTo(other.op);
 	}
 

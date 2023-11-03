@@ -30,12 +30,19 @@ public class Head extends BinaryExpression implements PluggableStatement {
 
 	private Statement st;
 
-	public Head(CFG cfg, CodeLocation location, Expression dataframe, Expression n) {
+	public Head(
+			CFG cfg,
+			CodeLocation location,
+			Expression dataframe,
+			Expression n) {
 		super(cfg, location, "head", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
 				dataframe, n);
 	}
 
-	public static Head build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static Head build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		if (exprs.length == 2)
 			return new Head(cfg, location, exprs[0], exprs[1]);
 		else
@@ -44,7 +51,8 @@ public class Head extends BinaryExpression implements PluggableStatement {
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

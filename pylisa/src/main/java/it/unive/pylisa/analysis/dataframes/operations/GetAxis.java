@@ -9,28 +9,38 @@ public class GetAxis extends DataframeOperation {
 
 	private final Axis axis;
 
-	public GetAxis(CodeLocation where, int index, Axis axis) {
+	public GetAxis(
+			CodeLocation where,
+			int index,
+			Axis axis) {
 		super(where, index);
 		this.axis = axis;
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		return axis.lessOrEqual(((GetAxis) other).axis);
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		return new GetAxis(where, index, axis.lub(((GetAxis) other).axis));
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		return new GetAxis(where, index, axis.widening(((GetAxis) other).axis));
 	}
 
 	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
+	protected int compareToSameOperation(
+			DataframeOperation o) {
 		return axis.compareTo(((GetAxis) o).axis);
 	}
 
@@ -48,7 +58,8 @@ public class GetAxis extends DataframeOperation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))

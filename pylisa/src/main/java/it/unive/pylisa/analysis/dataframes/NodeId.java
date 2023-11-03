@@ -1,8 +1,7 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.util.Objects;
-
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
+import java.util.Objects;
 
 public class NodeId {
 
@@ -12,13 +11,16 @@ public class NodeId {
 
 	private final int locHash;
 
-	public NodeId(DataframeOperation node) {
+	public NodeId(
+			DataframeOperation node) {
 		this.op = node.getClass().getSimpleName();
 		this.locHash = node.getWhere().getCodeLocation().hashCode();
 		this.index = node.getIndex();
 	}
 
-	public NodeId(NodeId other, int index) {
+	public NodeId(
+			NodeId other,
+			int index) {
 		this.op = other.op;
 		this.locHash = other.locHash;
 		this.index = index;
@@ -35,7 +37,8 @@ public class NodeId {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)

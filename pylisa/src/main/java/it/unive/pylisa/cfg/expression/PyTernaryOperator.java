@@ -24,7 +24,11 @@ public class PyTernaryOperator extends Expression {
 	private final Expression ifTrue;
 	private final Expression ifFalse;
 
-	public PyTernaryOperator(CFG cfg, CodeLocation location, Expression condition, Expression ifTrue,
+	public PyTernaryOperator(
+			CFG cfg,
+			CodeLocation location,
+			Expression condition,
+			Expression ifTrue,
 			Expression ifFalse) {
 		super(cfg, location, ifTrue.getStaticType().commonSupertype(ifFalse.getStaticType()));
 		this.condition = condition;
@@ -55,7 +59,8 @@ public class PyTernaryOperator extends Expression {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -87,7 +92,8 @@ public class PyTernaryOperator extends Expression {
 	}
 
 	@Override
-	public int setOffset(int offset) {
+	public int setOffset(
+			int offset) {
 		this.offset = offset;
 		int off = ifTrue.setOffset(this.offset + 1);
 		off = condition.setOffset(off + 1);
@@ -96,7 +102,9 @@ public class PyTernaryOperator extends Expression {
 	}
 
 	@Override
-	public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
+	public <V> boolean accept(
+			GraphVisitor<CFG, Statement, Edge, V> visitor,
+			V tool) {
 		if (!ifTrue.accept(visitor, tool))
 			return false;
 		if (!condition.accept(visitor, tool))

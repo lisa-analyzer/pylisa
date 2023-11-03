@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectDivMod extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectDivMod(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectDivMod(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__divmod__",
@@ -31,12 +35,16 @@ public class ObjectDivMod extends BinaryExpression implements PluggableStatement
 				right);
 	}
 
-	public static ObjectDivMod build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectDivMod build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectDivMod(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

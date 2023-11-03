@@ -34,7 +34,11 @@ import java.util.stream.Collectors;
 
 public class PyAssign extends Assignment {
 
-	public PyAssign(CFG cfg, CodeLocation location, Expression target, Expression expression) {
+	public PyAssign(
+			CFG cfg,
+			CodeLocation location,
+			Expression target,
+			Expression expression) {
 		super(cfg, location, target, expression);
 	}
 

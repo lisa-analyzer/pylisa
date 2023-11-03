@@ -12,7 +12,8 @@ public class Iterate implements UnaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public Iterate(int index) {
+	public Iterate(
+			int index) {
 		this.index = index;
 	}
 
@@ -27,7 +28,9 @@ public class Iterate implements UnaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> arg) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> arg) {
 		if (arg.stream().noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF))))
 			return Collections.emptySet();
 		return Collections.singleton(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES));

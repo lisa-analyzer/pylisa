@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectRAdd extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectRAdd(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectRAdd(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__radd__",
@@ -31,12 +35,16 @@ public class ObjectRAdd extends BinaryExpression implements PluggableStatement {
 				right);
 	}
 
-	public static ObjectRAdd build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectRAdd build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectRAdd(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

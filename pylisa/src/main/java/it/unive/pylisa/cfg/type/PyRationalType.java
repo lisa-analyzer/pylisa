@@ -5,11 +5,12 @@ import it.unive.lisa.type.NumericType;
 
 public class PyRationalType extends PyClassType implements NumericType {
 
-	public PyRationalType(CompilationUnit unit) {
+	public PyRationalType(
+			CompilationUnit unit) {
 		super("numbers.Rational", unit);
 		types.put(unit.getName(), this);
 	}
-	
+
 	@Override
 	public boolean is8Bits() {
 		return false;

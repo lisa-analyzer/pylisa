@@ -18,7 +18,11 @@ import it.unive.pylisa.UnsupportedStatementException;
 
 public class PyIs extends BinaryExpression {
 
-	public PyIs(CFG cfg, CodeLocation loc, Expression left, Expression right) {
+	public PyIs(
+			CFG cfg,
+			CodeLocation loc,
+			Expression left,
+			Expression right) {
 		super(cfg, loc, "is", BoolType.INSTANCE, left, right);
 	}
 

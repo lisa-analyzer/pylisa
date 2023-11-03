@@ -24,16 +24,23 @@ public class Reshape extends NaryExpression implements PluggableStatement {
 
 	protected Statement st;
 
-	public Reshape(CFG cfg, CodeLocation location, Expression[] params) {
+	public Reshape(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] params) {
 		super(cfg, location, "reshape", params);
 	}
 
-	public static Reshape build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static Reshape build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new Reshape(cfg, location, exprs);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

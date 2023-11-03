@@ -37,12 +37,18 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 
 	private boolean inplace = false;
 
-	public DropNA(CFG cfg, CodeLocation location, Expression series) {
+	public DropNA(
+			CFG cfg,
+			CodeLocation location,
+			Expression series) {
 		super(cfg, location, "dropna", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
 				series);
 	}
 
-	public static DropNA build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static DropNA build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		DropNA drop = new DropNA(cfg, location, exprs[0]);
 		if (exprs.length > 1)
 			for (int i = 1; i < exprs.length; i++)
@@ -50,7 +56,9 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		return drop;
 	}
 
-	private static void setOptional(DropNA drop, Expression expression) {
+	private static void setOptional(
+			DropNA drop,
+			Expression expression) {
 		if (!(expression instanceof NamedParameterExpression))
 			return;
 
@@ -75,7 +83,8 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

@@ -8,7 +8,8 @@ public class PyEllipsisConstant extends Constant {
 
 	private static final Object ELL_CONST = new Object();
 
-	public PyEllipsisConstant(CodeLocation location) {
+	public PyEllipsisConstant(
+			CodeLocation location) {
 		super(PyEllipsisType.INSTANCE, ELL_CONST, location);
 	}
 
@@ -18,7 +19,8 @@ public class PyEllipsisConstant extends Constant {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))

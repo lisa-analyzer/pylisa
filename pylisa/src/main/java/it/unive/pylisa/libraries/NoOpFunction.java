@@ -22,17 +22,24 @@ public class NoOpFunction extends NaryExpression implements PluggableStatement {
 
 	protected Statement st;
 
-	protected NoOpFunction(CFG cfg, CodeLocation location, String constructName,
+	protected NoOpFunction(
+			CFG cfg,
+			CodeLocation location,
+			String constructName,
 			Expression... parameters) {
 		super(cfg, location, constructName, parameters);
 	}
 
-	public static NoOpFunction build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static NoOpFunction build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new NoOpFunction(cfg, location, "noop-func", exprs);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 
@@ -44,7 +51,8 @@ public class NoOpFunction extends NaryExpression implements PluggableStatement {
 					InterproceduralAnalysis<A, H, V, T> interprocedural,
 					AnalysisState<A, H, V, T> state,
 					ExpressionSet<SymbolicExpression>[] params,
-					StatementStore<A, H, V, T> expressions) throws SemanticException {
+					StatementStore<A, H, V, T> expressions)
+					throws SemanticException {
 		return new NoOp(getCFG(), getLocation()).semantics(state, interprocedural, expressions);
 	}
 }

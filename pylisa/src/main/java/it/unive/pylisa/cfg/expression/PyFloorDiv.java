@@ -17,7 +17,11 @@ import it.unive.pylisa.UnsupportedStatementException;
 
 public class PyFloorDiv extends BinaryExpression {
 
-	public PyFloorDiv(CFG cfg, CodeLocation loc, Expression left, Expression right) {
+	public PyFloorDiv(
+			CFG cfg,
+			CodeLocation loc,
+			Expression left,
+			Expression right) {
 		super(cfg, loc, "//", left, right);
 	}
 

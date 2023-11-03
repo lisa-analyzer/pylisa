@@ -20,16 +20,23 @@ import it.unive.lisa.symbolic.value.PushAny;
 public class ObjectHash extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectHash(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectHash(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__hash__", cfg.getDescriptor().getUnit().getProgram().getTypes().getIntegerType(), arg);
 	}
 
-	public static ObjectHash build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectHash build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectHash(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

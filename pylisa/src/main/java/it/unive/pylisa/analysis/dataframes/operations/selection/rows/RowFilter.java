@@ -11,7 +11,8 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 
 	private B selection;
 
-	public RowFilter(B selection) {
+	public RowFilter(
+			B selection) {
 		this.selection = selection;
 	}
 
@@ -32,12 +33,16 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 	}
 
 	@Override
-	public RowFilter<B> wideningSameClass(RowFilter<B> other) throws SemanticException {
+	public RowFilter<B> wideningSameClass(
+			RowFilter<B> other)
+			throws SemanticException {
 		return lubAux(other);
 	}
 
 	@Override
-	public boolean lessOrEqualSameClass(RowFilter<B> other) throws SemanticException {
+	public boolean lessOrEqualSameClass(
+			RowFilter<B> other)
+			throws SemanticException {
 		if (this.equals(other))
 			return true;
 		if (!this.selection.getClass().equals(other.selection.getClass()))
@@ -47,7 +52,9 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public RowFilter<B> lubSameClass(RowFilter<B> other) throws SemanticException {
+	public RowFilter<B> lubSameClass(
+			RowFilter<B> other)
+			throws SemanticException {
 		if (!this.selection.getClass().equals(other.selection.getClass())) {
 			return (RowFilter<B>) TOP;
 		}
@@ -63,7 +70,8 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -85,7 +93,8 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		RowFilter<?> other = (RowFilter<?>) o;
 		return selection.compareTo(other.selection);
 	}

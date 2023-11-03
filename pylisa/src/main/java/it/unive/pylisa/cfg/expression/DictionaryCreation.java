@@ -28,11 +28,15 @@ import org.apache.commons.lang3.tuple.Pair;
 public class DictionaryCreation extends NaryExpression {
 
 	@SafeVarargs
-	public DictionaryCreation(CFG cfg, CodeLocation loc, Pair<Expression, Expression>... values) {
+	public DictionaryCreation(
+			CFG cfg,
+			CodeLocation loc,
+			Pair<Expression, Expression>... values) {
 		super(cfg, loc, "dict", toFlatArray(values));
 	}
 
-	private static Expression[] toFlatArray(Pair<Expression, Expression>[] values) {
+	private static Expression[] toFlatArray(
+			Pair<Expression, Expression>[] values) {
 		Expression[] result = new Expression[values.length * 2];
 		for (int i = 0; i < values.length; i++) {
 			int idx = 2 * i;

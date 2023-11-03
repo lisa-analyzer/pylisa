@@ -20,7 +20,11 @@ import it.unive.pylisa.libraries.pandas.Keys;
 
 public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 
-	public PyAccessInstanceGlobal(CFG cfg, CodeLocation location, Expression receiver, String target) {
+	public PyAccessInstanceGlobal(
+			CFG cfg,
+			CodeLocation location,
+			Expression receiver,
+			String target) {
 		super(cfg, location, receiver, target);
 	}
 
@@ -32,7 +36,8 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 					InterproceduralAnalysis<A, H, V, T> interprocedural,
 					AnalysisState<A, H, V, T> state,
 					SymbolicExpression expr,
-					StatementStore<A, H, V, T> expressions) throws SemanticException {
+					StatementStore<A, H, V, T> expressions)
+					throws SemanticException {
 		// TODO pandas-to-move
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
@@ -52,7 +57,7 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 					return keys.unarySemantics(interprocedural, state, expr, expressions);
 				}
 		}
-		
+
 		return null;
 	}
 }

@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectIRShift extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectIRShift(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectIRShift(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__irshift__",
@@ -31,12 +35,16 @@ public class ObjectIRShift extends BinaryExpression implements PluggableStatemen
 				right);
 	}
 
-	public static ObjectIRShift build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectIRShift build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectIRShift(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

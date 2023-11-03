@@ -20,18 +20,26 @@ import it.unive.pylisa.cfg.expression.literal.PyNotImplementedLiteral;
 public class ObjectContains extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectContains(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectContains(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg, location, "__contains__", cfg.getDescriptor().getUnit().getProgram().getTypes().getBooleanType(),
 				left,
 				right);
 	}
 
-	public static ObjectContains build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectContains build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectContains(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

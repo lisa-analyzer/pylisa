@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectNext extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectNext(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectNext(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__next__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectNext build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectNext build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectNext(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

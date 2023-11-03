@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectTrunc extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectTrunc(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectTrunc(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__trunc__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectTrunc build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectTrunc build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectTrunc(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

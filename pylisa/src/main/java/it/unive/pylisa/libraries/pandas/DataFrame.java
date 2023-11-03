@@ -22,17 +22,24 @@ import it.unive.pylisa.symbolic.operators.dataframes.CreateDataframe;
 public class DataFrame extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	private Statement st;
 
-	public DataFrame(CFG cfg, CodeLocation location, Expression arg) {
+	public DataFrame(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "DataFrame", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
 				arg);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 
-	public static DataFrame build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static DataFrame build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new DataFrame(cfg, location, exprs[0]);
 	}
 

@@ -18,17 +18,22 @@ import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 
 public class Empty extends Expression {
 
-	public Empty(CFG cfg, CodeLocation location) {
+	public Empty(
+			CFG cfg,
+			CodeLocation location) {
 		super(cfg, location);
 	}
 
 	@Override
-	public int setOffset(int offset) {
+	public int setOffset(
+			int offset) {
 		return this.offset = offset;
 	}
 
 	@Override
-	public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
+	public <V> boolean accept(
+			GraphVisitor<CFG, Statement, Edge, V> visitor,
+			V tool) {
 		return visitor.visit(tool, getCFG(), this);
 	}
 

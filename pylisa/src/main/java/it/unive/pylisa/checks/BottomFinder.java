@@ -23,35 +23,51 @@ public class BottomFinder<A extends AbstractState<A, H, V, T>,
 		T extends TypeDomain<T>> implements SemanticCheck<A, H, V, T> {
 
 	@Override
-	public void beforeExecution(CheckToolWithAnalysisResults<A, H, V, T> tool) {
+	public void beforeExecution(
+			CheckToolWithAnalysisResults<A, H, V, T> tool) {
 	}
 
 	@Override
-	public void afterExecution(CheckToolWithAnalysisResults<A, H, V, T> tool) {
+	public void afterExecution(
+			CheckToolWithAnalysisResults<A, H, V, T> tool) {
 	}
 
 	@Override
-	public boolean visitUnit(CheckToolWithAnalysisResults<A, H, V, T> tool, Unit unit) {
+	public boolean visitUnit(
+			CheckToolWithAnalysisResults<A, H, V, T> tool,
+			Unit unit) {
 		return true;
 	}
 
 	@Override
-	public void visitGlobal(CheckToolWithAnalysisResults<A, H, V, T> tool, Unit unit, Global global, boolean instance) {
+	public void visitGlobal(
+			CheckToolWithAnalysisResults<A, H, V, T> tool,
+			Unit unit,
+			Global global,
+			boolean instance) {
 	}
 
 	@Override
-	public boolean visit(CheckToolWithAnalysisResults<A, H, V, T> tool, CFG graph) {
+	public boolean visit(
+			CheckToolWithAnalysisResults<A, H, V, T> tool,
+			CFG graph) {
 		return true;
 	}
 
 	@Override
-	public boolean visit(CheckToolWithAnalysisResults<A, H, V, T> tool, CFG graph, Statement node) {
+	public boolean visit(
+			CheckToolWithAnalysisResults<A, H, V, T> tool,
+			CFG graph,
+			Statement node) {
 		return true;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public boolean visit(CheckToolWithAnalysisResults<A, H, V, T> tool, CFG graph, Edge edge) {
+	public boolean visit(
+			CheckToolWithAnalysisResults<A, H, V, T> tool,
+			CFG graph,
+			Edge edge) {
 		Statement source = edge.getSource();
 		Statement dest = edge.getDestination();
 
@@ -77,7 +93,8 @@ public class BottomFinder<A extends AbstractState<A, H, V, T>,
 		return true;
 	}
 
-	private static boolean topOrBottom(DataframeGraphDomain dgd) {
+	private static boolean topOrBottom(
+			DataframeGraphDomain dgd) {
 		return dgd.graph.isTop() || dgd.graph.isBottom()
 				|| dgd.constants.isTop() || dgd.constants.isBottom()
 				|| dgd.pointers.isTop() || dgd.pointers.isBottom() || dgd.pointers.getMap().isEmpty()

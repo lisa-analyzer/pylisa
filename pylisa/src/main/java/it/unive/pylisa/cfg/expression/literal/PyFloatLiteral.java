@@ -8,7 +8,10 @@ import it.unive.pylisa.cfg.type.PyRealType;
 
 public class PyFloatLiteral extends Literal<Float> {
 
-	public PyFloatLiteral(CFG cfg, CodeLocation location, float value) {
+	public PyFloatLiteral(
+			CFG cfg,
+			CodeLocation location,
+			float value) {
 		super(cfg, location, value, PyClassType.lookup(PyRealType.NAME));
 	}
 }

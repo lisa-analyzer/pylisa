@@ -26,7 +26,10 @@ import java.util.Set;
 
 public class ListCreation extends NaryExpression {
 
-	public ListCreation(CFG cfg, CodeLocation loc, Expression... values) {
+	public ListCreation(
+			CFG cfg,
+			CodeLocation loc,
+			Expression... values) {
 		super(cfg, loc, "list", values);
 	}
 

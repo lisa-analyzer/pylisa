@@ -23,12 +23,18 @@ import it.unive.pylisa.symbolic.operators.StringConstructor;
 public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	protected Str(CFG cfg, CodeLocation location, String constructName,
+	protected Str(
+			CFG cfg,
+			CodeLocation location,
+			String constructName,
 			Expression sequence) {
 		super(cfg, location, constructName, sequence);
 	}
 
-	public static Str build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static Str build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new Str(cfg, location, "str", exprs[0]);
 	}
 
@@ -37,8 +43,11 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state,
-					SymbolicExpression expr, StatementStore<A, H, V, T> expressions) throws SemanticException {
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					AnalysisState<A, H, V, T> state,
+					SymbolicExpression expr,
+					StatementStore<A, H, V, T> expressions)
+					throws SemanticException {
 		TypeSystem types = getProgram().getTypes();
 		if (expr.getRuntimeTypes(types).stream().anyMatch(Type::isStringType)
 				|| expr.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType)) {
@@ -55,7 +64,8 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 }

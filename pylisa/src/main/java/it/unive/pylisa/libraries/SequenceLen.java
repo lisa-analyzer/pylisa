@@ -22,17 +22,24 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 
 	protected Statement st;
 
-	protected SequenceLen(CFG cfg, CodeLocation location, String constructName,
+	protected SequenceLen(
+			CFG cfg,
+			CodeLocation location,
+			String constructName,
 			Expression sequence) {
 		super(cfg, location, constructName, sequence);
 	}
 
-	public static SequenceLen build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static SequenceLen build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new SequenceLen(cfg, location, "__len__", exprs[0]);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

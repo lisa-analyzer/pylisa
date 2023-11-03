@@ -24,7 +24,12 @@ import it.unive.pylisa.symbolic.operators.SliceCreation;
 
 public class RangeValue extends TernaryExpression {
 
-	public RangeValue(CFG cfg, CodeLocation loc, Expression left, Expression middle, Expression right) {
+	public RangeValue(
+			CFG cfg,
+			CodeLocation loc,
+			Expression left,
+			Expression middle,
+			Expression right) {
 		super(cfg, loc, "[::]", left, middle, right);
 	}
 

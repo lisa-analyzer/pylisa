@@ -12,7 +12,8 @@ public class RowProjection implements TernaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public RowProjection(int index) {
+	public RowProjection(
+			int index) {
 		this.index = index;
 	}
 
@@ -27,7 +28,11 @@ public class RowProjection implements TernaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> middle, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> middle,
+			Set<Type> right) {
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		if (left.stream().noneMatch(t -> t.equals(df)))
 			return Collections.emptySet();

@@ -18,7 +18,11 @@ import it.unive.pylisa.symbolic.operators.compare.PyLogicalAnd;
 
 public class PyAnd extends And {
 
-	public PyAnd(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public PyAnd(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg, location, left, right);
 	}
 

@@ -15,7 +15,9 @@ public class AxisConcatenation implements UnaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public AxisConcatenation(int index, Axis axis) {
+	public AxisConcatenation(
+			int index,
+			Axis axis) {
 		this.index = index;
 		this.axis = axis;
 	}
@@ -30,7 +32,9 @@ public class AxisConcatenation implements UnaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> arg) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> arg) {
 		PyClassType list = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		if (arg.stream().noneMatch(t -> t.equals(list)))
@@ -52,7 +56,8 @@ public class AxisConcatenation implements UnaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)

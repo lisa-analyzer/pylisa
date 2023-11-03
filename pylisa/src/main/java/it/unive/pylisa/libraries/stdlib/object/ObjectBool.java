@@ -20,16 +20,23 @@ import it.unive.lisa.symbolic.value.PushAny;
 public class ObjectBool extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectBool(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectBool(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__bool__", cfg.getDescriptor().getUnit().getProgram().getTypes().getBooleanType(), arg);
 	}
 
-	public static ObjectBool build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectBool build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectBool(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

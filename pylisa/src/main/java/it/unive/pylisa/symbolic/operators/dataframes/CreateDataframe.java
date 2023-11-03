@@ -12,7 +12,8 @@ public class CreateDataframe implements UnaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public CreateDataframe(int index) {
+	public CreateDataframe(
+			int index) {
 		this.index = index;
 	}
 
@@ -27,7 +28,9 @@ public class CreateDataframe implements UnaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> argument) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> argument) {
 		if (argument.stream().noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.DICT))))
 			return Collections.emptySet();
 		return Collections.singleton(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF));

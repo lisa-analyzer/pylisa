@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectAbs extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectAbs(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectAbs(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__abs__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectAbs build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectAbs build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectAbs(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

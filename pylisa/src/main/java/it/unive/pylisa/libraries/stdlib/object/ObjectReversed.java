@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectReversed extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectReversed(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectReversed(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__reversed__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectReversed build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectReversed build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectReversed(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectMatMul extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectMatMul(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectMatMul(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__matmul__",
@@ -31,12 +35,16 @@ public class ObjectMatMul extends BinaryExpression implements PluggableStatement
 				right);
 	}
 
-	public static ObjectMatMul build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectMatMul build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectMatMul(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectMissing extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectMissing(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectMissing(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__missing__",
@@ -31,12 +35,16 @@ public class ObjectMissing extends BinaryExpression implements PluggableStatemen
 				right);
 	}
 
-	public static ObjectMissing build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectMissing build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectMissing(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

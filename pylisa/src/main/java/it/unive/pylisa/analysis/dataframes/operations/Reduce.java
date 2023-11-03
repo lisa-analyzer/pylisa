@@ -12,7 +12,8 @@ public class Reduce<R extends RowSelection<R>, C extends ColumnSelection<C>> ext
 	private final ReduceKind type;
 	private final DataframeSelection<R, C> selection;
 
-	public Reduce(CodeLocation where,
+	public Reduce(
+			CodeLocation where,
 			int index,
 			ReduceKind type,
 			DataframeSelection<R, C> selection) {
@@ -39,7 +40,8 @@ public class Reduce<R extends RowSelection<R>, C extends ColumnSelection<C>> ext
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -63,7 +65,9 @@ public class Reduce<R extends RowSelection<R>, C extends ColumnSelection<C>> ext
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Reduce<?, ?> o = (Reduce<?, ?>) other;
 		if (type != o.type)
 			return false;
@@ -71,7 +75,9 @@ public class Reduce<R extends RowSelection<R>, C extends ColumnSelection<C>> ext
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Reduce<?, ?> o = (Reduce<?, ?>) other;
 		if (type != o.type)
 			return top();
@@ -79,7 +85,9 @@ public class Reduce<R extends RowSelection<R>, C extends ColumnSelection<C>> ext
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Reduce<?, ?> o = (Reduce<?, ?>) other;
 		if (type != o.type)
 			return top();
@@ -87,7 +95,8 @@ public class Reduce<R extends RowSelection<R>, C extends ColumnSelection<C>> ext
 	}
 
 	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
+	protected int compareToSameOperation(
+			DataframeOperation o) {
 		Reduce<?, ?> other = (Reduce<?, ?>) o;
 		int cmp = type.compare(other.type);
 		if (cmp != 0)

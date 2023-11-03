@@ -17,17 +17,23 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 	}
 
 	@Override
-	public ColumnIteration lubSameClass(ColumnIteration other) throws SemanticException {
+	public ColumnIteration lubSameClass(
+			ColumnIteration other)
+			throws SemanticException {
 		return this;
 	}
 
 	@Override
-	public ColumnIteration wideningSameClass(ColumnIteration other) throws SemanticException {
+	public ColumnIteration wideningSameClass(
+			ColumnIteration other)
+			throws SemanticException {
 		return this;
 	}
 
 	@Override
-	public boolean lessOrEqualSameClass(ColumnIteration other) throws SemanticException {
+	public boolean lessOrEqualSameClass(
+			ColumnIteration other)
+			throws SemanticException {
 		return true;
 	}
 
@@ -37,7 +43,8 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -53,7 +60,8 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		return 0;
 	}
 

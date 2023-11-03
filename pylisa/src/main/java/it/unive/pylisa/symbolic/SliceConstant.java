@@ -12,11 +12,17 @@ import java.util.Optional;
 
 public class SliceConstant extends Constant {
 
-	public SliceConstant(Slice slice, CodeLocation location) {
+	public SliceConstant(
+			Slice slice,
+			CodeLocation location) {
 		super(PyClassType.lookup(LibrarySpecificationProvider.SLICE), slice, location);
 	}
 
-	public SliceConstant(RangeBound start, RangeBound end, RangeBound skip, CodeLocation location) {
+	public SliceConstant(
+			RangeBound start,
+			RangeBound end,
+			RangeBound skip,
+			CodeLocation location) {
 		super(PyClassType.lookup(LibrarySpecificationProvider.SLICE), new Slice(start, end, skip), location);
 	}
 
@@ -28,7 +34,8 @@ public class SliceConstant extends Constant {
 			this.bound = Optional.empty();
 		}
 
-		public RangeBound(int value) {
+		public RangeBound(
+				int value) {
 			this.bound = Optional.of(value);
 		}
 
@@ -60,7 +67,8 @@ public class SliceConstant extends Constant {
 		}
 
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(
+				Object obj) {
 			if (this == obj)
 				return true;
 			if (obj == null)
@@ -92,7 +100,10 @@ public class SliceConstant extends Constant {
 	public static class Slice {
 		private RangeBound start, end, skip;
 
-		public Slice(RangeBound start, RangeBound end, RangeBound skip) {
+		public Slice(
+				RangeBound start,
+				RangeBound end,
+				RangeBound skip) {
 			this.start = start;
 			this.end = end;
 			this.skip = skip;
@@ -111,7 +122,8 @@ public class SliceConstant extends Constant {
 		}
 
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(
+				Object obj) {
 			if (!(obj instanceof Slice))
 				return false;
 			Slice o = (Slice) obj;

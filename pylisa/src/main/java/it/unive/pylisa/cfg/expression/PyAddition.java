@@ -28,7 +28,11 @@ public class PyAddition extends Addition {
 	 * @param left     the left-hand side of this operation
 	 * @param right    the right-hand side of this operation
 	 */
-	public PyAddition(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public PyAddition(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg, location, left, right);
 	}
 

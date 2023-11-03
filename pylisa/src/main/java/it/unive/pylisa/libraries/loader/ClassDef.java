@@ -22,7 +22,12 @@ public class ClassDef {
 	private final Collection<Method> methods = new HashSet<>();
 	private final Collection<Field> fields = new HashSet<>();
 
-	public ClassDef(boolean root, boolean sealed, String typeName, String name, String base) {
+	public ClassDef(
+			boolean root,
+			boolean sealed,
+			String typeName,
+			String name,
+			String base) {
 		this.root = root;
 		this.sealed = sealed;
 		this.typeName = typeName;
@@ -64,7 +69,8 @@ public class ClassDef {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -83,7 +89,9 @@ public class ClassDef {
 				+ base + ", methods=" + methods + ", fields=" + fields + "]";
 	}
 
-	public ClassUnit toLiSAUnit(CodeLocation location, Program program,
+	public ClassUnit toLiSAUnit(
+			CodeLocation location,
+			Program program,
 			AtomicReference<CompilationUnit> rootHolder) {
 		ClassUnit unit = new ClassUnit(location, program, name, this.sealed);
 		if (this.root)
@@ -94,7 +102,10 @@ public class ClassDef {
 		return unit;
 	}
 
-	public ClassUnit populateUnit(CodeLocation location, CFG init, CompilationUnit root) {
+	public ClassUnit populateUnit(
+			CodeLocation location,
+			CFG init,
+			CompilationUnit root) {
 		ClassUnit unit = (ClassUnit) PyClassType.lookup(this.name).getUnit();
 
 		if (this.base != null)

@@ -18,7 +18,11 @@ import it.unive.pylisa.UnsupportedStatementException;
 
 public class PyIn extends BinaryExpression {
 
-	public PyIn(CFG cfg, CodeLocation loc, Expression left, Expression right) {
+	public PyIn(
+			CFG cfg,
+			CodeLocation loc,
+			Expression left,
+			Expression right) {
 		super(cfg, loc, "in", BoolType.INSTANCE, left, right);
 	}
 

@@ -23,16 +23,23 @@ public class Array extends UnaryExpression implements PluggableStatement {
 
 	protected Statement st;
 
-	public Array(CFG cfg, CodeLocation location, Expression arraylike) {
+	public Array(
+			CFG cfg,
+			CodeLocation location,
+			Expression arraylike) {
 		super(cfg, location, "array", arraylike);
 	}
 
-	public static Array build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static Array build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new Array(cfg, location, exprs[0]);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

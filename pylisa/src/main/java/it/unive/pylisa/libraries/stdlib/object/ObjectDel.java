@@ -21,16 +21,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectDel extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectDel(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectDel(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__del__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectDel build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectDel build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectDel(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

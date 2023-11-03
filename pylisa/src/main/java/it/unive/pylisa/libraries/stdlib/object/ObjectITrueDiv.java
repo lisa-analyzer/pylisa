@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectITrueDiv extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectITrueDiv(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectITrueDiv(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__itruediv__",
@@ -31,12 +35,16 @@ public class ObjectITrueDiv extends BinaryExpression implements PluggableStateme
 				right);
 	}
 
-	public static ObjectITrueDiv build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectITrueDiv build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectITrueDiv(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

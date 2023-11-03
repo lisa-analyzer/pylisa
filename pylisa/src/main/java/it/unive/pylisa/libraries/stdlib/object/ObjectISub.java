@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectISub extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectISub(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectISub(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__isub__",
@@ -31,12 +35,16 @@ public class ObjectISub extends BinaryExpression implements PluggableStatement {
 				right);
 	}
 
-	public static ObjectISub build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectISub build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectISub(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

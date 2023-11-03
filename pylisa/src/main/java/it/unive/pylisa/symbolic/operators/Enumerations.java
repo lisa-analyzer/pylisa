@@ -6,10 +6,13 @@ import it.unive.lisa.analysis.SemanticException;
 public class Enumerations {
 
 	public interface TransformKind {
-		int compare(TransformKind o);
+		int compare(
+				TransformKind o);
 	};
 
-	public enum UnaryTransformKind implements TransformKind {
+	public enum UnaryTransformKind
+			implements
+			TransformKind {
 		UNKNOWN,
 		BOTTOM,
 		TO_DATETIME,
@@ -18,21 +21,25 @@ public class Enumerations {
 		DROP_COLS;
 
 		@Override
-		public int compare(TransformKind o) {
+		public int compare(
+				TransformKind o) {
 			if (o instanceof UnaryTransformKind)
 				return this.compareTo((UnaryTransformKind) o);
 			return UnaryTransformKind.class.getName().compareTo(o.getClass().getName());
 		}
 	}
 
-	public enum BinaryTransformKind implements TransformKind {
+	public enum BinaryTransformKind
+			implements
+			TransformKind {
 		UNKNOWN,
 		BOTTOM,
 		FILL_NA,
 		ASSIGN;
 
 		@Override
-		public int compare(TransformKind o) {
+		public int compare(
+				TransformKind o) {
 			if (o instanceof BinaryTransformKind)
 				return this.compareTo((BinaryTransformKind) o);
 			return UnaryTransformKind.class.getName().compareTo(o.getClass().getName());
@@ -40,14 +47,18 @@ public class Enumerations {
 	}
 
 	public interface ReshapeKind {
-		int compare(ReshapeKind o);
+		int compare(
+				ReshapeKind o);
 	};
 
-	public enum UnaryReshapeKind implements ReshapeKind {
+	public enum UnaryReshapeKind
+			implements
+			ReshapeKind {
 		TO_GEOCODE;
 
 		@Override
-		public int compare(ReshapeKind o) {
+		public int compare(
+				ReshapeKind o) {
 			if (o instanceof UnaryReshapeKind)
 				return this.compareTo((UnaryReshapeKind) o);
 			return UnaryReshapeKind.class.getName().compareTo(o.getClass().getName());
@@ -55,10 +66,13 @@ public class Enumerations {
 	}
 
 	public interface ReduceKind {
-		int compare(ReduceKind o);
+		int compare(
+				ReduceKind o);
 	};
 
-	public enum Axis implements BaseLattice<Axis> {
+	public enum Axis
+			implements
+			BaseLattice<Axis> {
 		BOTTOM,
 		ROWS,
 		COLS,
@@ -75,13 +89,17 @@ public class Enumerations {
 		}
 
 		@Override
-		public Axis lubAux(Axis other) throws SemanticException {
+		public Axis lubAux(
+				Axis other)
+				throws SemanticException {
 			// they can only be rows and cols
 			return TOP;
 		}
 
 		@Override
-		public boolean lessOrEqualAux(Axis other) throws SemanticException {
+		public boolean lessOrEqualAux(
+				Axis other)
+				throws SemanticException {
 			// they can only be rows and cols
 			return false;
 		}

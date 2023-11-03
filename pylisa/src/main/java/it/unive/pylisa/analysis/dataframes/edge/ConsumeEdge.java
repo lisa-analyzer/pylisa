@@ -4,7 +4,9 @@ import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 
 public class ConsumeEdge extends DataframeEdge {
 
-	public ConsumeEdge(DataframeOperation source, DataframeOperation destination) {
+	public ConsumeEdge(
+			DataframeOperation source,
+			DataframeOperation destination) {
 		super(source, destination);
 	}
 
@@ -14,7 +16,9 @@ public class ConsumeEdge extends DataframeEdge {
 	}
 
 	@Override
-	public DataframeEdge newInstance(DataframeOperation source, DataframeOperation destination) {
+	public DataframeEdge newInstance(
+			DataframeOperation source,
+			DataframeOperation destination) {
 		return new ConsumeEdge(source, destination);
 	}
 }

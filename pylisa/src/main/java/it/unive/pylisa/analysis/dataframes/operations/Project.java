@@ -10,22 +10,35 @@ public class Project<R extends RowSelection<R>, C extends ColumnSelection<C>> ex
 
 	private final DataframeSelection<R, C> selection;
 
-	public Project(CodeLocation where, int index, DataframeSelection<R, C> selection) {
+	public Project(
+			CodeLocation where,
+			int index,
+			DataframeSelection<R, C> selection) {
 		super(where, index);
 		this.selection = selection;
 	}
 
-	public Project(CodeLocation where, int index, C selection) {
+	public Project(
+			CodeLocation where,
+			int index,
+			C selection) {
 		super(where, index);
 		this.selection = new DataframeSelection<>(selection);
 	}
 
-	public Project(CodeLocation where, int index, R selection) {
+	public Project(
+			CodeLocation where,
+			int index,
+			R selection) {
 		super(where, index);
 		this.selection = new DataframeSelection<>(selection);
 	}
 
-	public Project(CodeLocation where, int index, R rows, C columns) {
+	public Project(
+			CodeLocation where,
+			int index,
+			R rows,
+			C columns) {
 		super(where, index);
 		this.selection = new DataframeSelection<>(rows, columns);
 	}
@@ -40,25 +53,32 @@ public class Project<R extends RowSelection<R>, C extends ColumnSelection<C>> ex
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Project<?, ?> o = (Project<?, ?>) other;
 		return selection.lessOrEqual(o.selection);
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Project<?, ?> o = (Project<?, ?>) other;
 		return new Project<>(where, index, selection.lub(o.selection));
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Project<?, ?> o = (Project<?, ?>) other;
 		return new Project<>(where, index, selection.lub(o.selection));
 	}
 
 	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
+	protected int compareToSameOperation(
+			DataframeOperation o) {
 		Project<?, ?> other = (Project<?, ?>) o;
 		return selection.compareTo(other.selection);
 	}
@@ -72,7 +92,8 @@ public class Project<R extends RowSelection<R>, C extends ColumnSelection<C>> ex
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))

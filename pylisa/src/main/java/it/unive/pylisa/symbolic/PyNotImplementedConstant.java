@@ -8,7 +8,8 @@ public class PyNotImplementedConstant extends Constant {
 
 	private static final Object NI_CONST = new Object();
 
-	public PyNotImplementedConstant(CodeLocation location) {
+	public PyNotImplementedConstant(
+			CodeLocation location) {
 		super(PyNotImplementedType.INSTANCE, NI_CONST, location);
 	}
 
@@ -18,7 +19,8 @@ public class PyNotImplementedConstant extends Constant {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))

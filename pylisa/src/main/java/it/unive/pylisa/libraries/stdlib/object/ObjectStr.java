@@ -20,16 +20,23 @@ import it.unive.lisa.symbolic.value.PushAny;
 public class ObjectStr extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectStr(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectStr(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__str__", cfg.getDescriptor().getUnit().getProgram().getTypes().getStringType(), arg);
 	}
 
-	public static ObjectStr build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectStr build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectStr(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

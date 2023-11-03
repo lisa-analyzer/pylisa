@@ -20,16 +20,23 @@ public class UninterestingDataframeFunction extends UnaryExpression implements P
 
 	protected Statement st;
 
-	public UninterestingDataframeFunction(CFG cfg, CodeLocation location, Expression dataframe) {
+	public UninterestingDataframeFunction(
+			CFG cfg,
+			CodeLocation location,
+			Expression dataframe) {
 		super(cfg, location, "uninteresting-func", dataframe);
 	}
 
-	public static UninterestingDataframeFunction build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static UninterestingDataframeFunction build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new UninterestingDataframeFunction(cfg, location, exprs[0]);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

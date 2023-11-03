@@ -22,17 +22,24 @@ import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
 public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	private Statement st;
 
-	public ReadCsv(CFG cfg, CodeLocation location, Expression arg) {
+	public ReadCsv(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "read_csv", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
 				arg);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 
-	public static ReadCsv build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ReadCsv build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ReadCsv(cfg, location, exprs[0]);
 	}
 

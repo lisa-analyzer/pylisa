@@ -8,31 +8,41 @@ public class Concat extends DataframeOperation {
 
 	private final Axis axis;
 
-	public Concat(CodeLocation where, int index, Axis axis) {
+	public Concat(
+			CodeLocation where,
+			int index,
+			Axis axis) {
 		super(where, index);
 		this.axis = axis;
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Concat o = (Concat) other;
 		return axis.lessOrEqual(o.axis);
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Concat o = (Concat) other;
 		return new Concat(where, index, axis.lub(o.axis));
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Concat o = (Concat) other;
 		return new Concat(where, index, axis.widening(o.axis));
 	}
 
 	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
+	protected int compareToSameOperation(
+			DataframeOperation o) {
 		Concat other = (Concat) o;
 		return axis.compareTo(other.axis);
 	}
@@ -46,7 +56,8 @@ public class Concat extends DataframeOperation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))

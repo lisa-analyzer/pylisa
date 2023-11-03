@@ -18,7 +18,10 @@ import it.unive.lisa.type.Untyped;
 
 public class PyBitwiseNot extends UnaryExpression {
 
-	public PyBitwiseNot(CFG cfg, CodeLocation loc, Expression expression) {
+	public PyBitwiseNot(
+			CFG cfg,
+			CodeLocation loc,
+			Expression expression) {
 		super(cfg, loc, "~", Untyped.INSTANCE, expression);
 	}
 

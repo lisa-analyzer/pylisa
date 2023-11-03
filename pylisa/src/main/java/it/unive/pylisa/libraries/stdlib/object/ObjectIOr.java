@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectIOr extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectIOr(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectIOr(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__ior__",
@@ -31,12 +35,16 @@ public class ObjectIOr extends BinaryExpression implements PluggableStatement {
 				right);
 	}
 
-	public static ObjectIOr build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectIOr build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectIOr(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

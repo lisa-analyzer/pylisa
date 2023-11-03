@@ -11,7 +11,9 @@ import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
 
 public class DataframeColumnSlice extends Constant {
 
-	public DataframeColumnSlice(ColumnSlice slice, CodeLocation location) {
+	public DataframeColumnSlice(
+			ColumnSlice slice,
+			CodeLocation location) {
 		super(PyClassType.lookup(LibrarySpecificationProvider.SLICE), slice, location);
 	}
 
@@ -66,7 +68,8 @@ public class DataframeColumnSlice extends Constant {
 		}
 
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(
+				Object obj) {
 			if (this == obj)
 				return true;
 			if (obj == null)

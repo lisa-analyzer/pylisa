@@ -20,16 +20,25 @@ import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 public class ObjectEq extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectEq(CFG cfg, CodeLocation location, Expression left, Expression right) {
-		super(cfg, location, "__eq__", cfg.getDescriptor().getUnit().getProgram().getTypes().getBooleanType(), left, right);
+	public ObjectEq(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
+		super(cfg, location, "__eq__", cfg.getDescriptor().getUnit().getProgram().getTypes().getBooleanType(), left,
+				right);
 	}
 
-	public static ObjectEq build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectEq build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectEq(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

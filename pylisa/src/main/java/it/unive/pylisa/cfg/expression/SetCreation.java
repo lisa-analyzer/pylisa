@@ -17,7 +17,10 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 
 public class SetCreation extends NaryExpression {
 
-	public SetCreation(CFG cfg, CodeLocation loc, Expression... values) {
+	public SetCreation(
+			CFG cfg,
+			CodeLocation loc,
+			Expression... values) {
 		super(cfg, loc, "set", values);
 	}
 

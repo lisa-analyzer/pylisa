@@ -12,7 +12,8 @@ public class ReadDataframe implements UnaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public ReadDataframe(int index) {
+	public ReadDataframe(
+			int index) {
 		this.index = index;
 	}
 
@@ -27,7 +28,9 @@ public class ReadDataframe implements UnaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> argument) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> argument) {
 		if (argument.stream().noneMatch(Type::isStringType))
 			return Collections.emptySet();
 		return Collections.singleton(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF));

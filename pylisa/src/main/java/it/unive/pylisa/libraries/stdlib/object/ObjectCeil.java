@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectCeil extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectCeil(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectCeil(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__ceil__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectCeil build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectCeil build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectCeil(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

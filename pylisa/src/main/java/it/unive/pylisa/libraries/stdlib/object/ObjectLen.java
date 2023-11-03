@@ -20,16 +20,23 @@ import it.unive.lisa.symbolic.value.PushAny;
 public class ObjectLen extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectLen(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectLen(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__len__", cfg.getDescriptor().getUnit().getProgram().getTypes().getIntegerType(), arg);
 	}
 
-	public static ObjectLen build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectLen build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectLen(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

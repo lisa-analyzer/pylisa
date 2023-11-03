@@ -12,13 +12,17 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class CollectingMapLattice<K, V>
-		extends FunctionalLattice<CollectingMapLattice<K, V>, K, SetLattice<V>> {
+		extends
+		FunctionalLattice<CollectingMapLattice<K, V>, K, SetLattice<V>> {
 
-	public CollectingMapLattice(SetLattice<V> lattice) {
+	public CollectingMapLattice(
+			SetLattice<V> lattice) {
 		super(lattice, null);
 	}
 
-	public CollectingMapLattice(SetLattice<V> lattice, Map<K, SetLattice<V>> function) {
+	public CollectingMapLattice(
+			SetLattice<V> lattice,
+			Map<K, SetLattice<V>> function) {
 		super(lattice, function);
 	}
 
@@ -44,16 +48,22 @@ public class CollectingMapLattice<K, V>
 	}
 
 	@Override
-	public CollectingMapLattice<K, V> mk(SetLattice<V> lattice, Map<K, SetLattice<V>> function) {
+	public CollectingMapLattice<K, V> mk(
+			SetLattice<V> lattice,
+			Map<K, SetLattice<V>> function) {
 		return new CollectingMapLattice<>(lattice, function);
 	}
 
 	@FunctionalInterface
 	public interface Lifter<T> {
-		T apply(T value) throws SemanticException;
+		T apply(
+				T value)
+				throws SemanticException;
 	}
 
-	public CollectingMapLattice<K, V> lift(Lifter<K> keyLifter, Lifter<SetLattice<V>> valueLifter)
+	public CollectingMapLattice<K, V> lift(
+			Lifter<K> keyLifter,
+			Lifter<SetLattice<V>> valueLifter)
 			throws SemanticException {
 		if (isBottom() || isTop() || function == null)
 			return this;
@@ -72,7 +82,8 @@ public class CollectingMapLattice<K, V>
 		return mk(lattice, function);
 	}
 
-	public DomainRepresentation representation(Function<V, DomainRepresentation> valueMapper) {
+	public DomainRepresentation representation(
+			Function<V, DomainRepresentation> valueMapper) {
 		if (isTop())
 			return Lattice.topRepresentation();
 
@@ -86,7 +97,8 @@ public class CollectingMapLattice<K, V>
 				set -> new SetRepresentation(set.elements(), valueMapper));
 	}
 
-	public CollectingMapLattice<K, V> setStack(SetLattice<V> stack) {
+	public CollectingMapLattice<K, V> setStack(
+			SetLattice<V> stack) {
 		return mk(stack, function == null ? null : mkNewFunction(function, false));
 	}
 }

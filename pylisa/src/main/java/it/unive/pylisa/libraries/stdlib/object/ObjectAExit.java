@@ -21,17 +21,26 @@ import it.unive.lisa.type.VoidType;
 public class ObjectAExit extends NaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectAExit(CFG cfg, CodeLocation location, Expression self, Expression exc_type, Expression exc_value,
+	public ObjectAExit(
+			CFG cfg,
+			CodeLocation location,
+			Expression self,
+			Expression exc_type,
+			Expression exc_value,
 			Expression traceback) {
 		super(cfg, location, "__aexit__", VoidType.INSTANCE, self, exc_type, exc_value, traceback);
 	}
 
-	public static ObjectAExit build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectAExit build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectAExit(cfg, location, exprs[0], exprs[1], exprs[2], exprs[3]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

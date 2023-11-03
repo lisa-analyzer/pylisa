@@ -7,7 +7,9 @@ public abstract class RowSelection<R extends RowSelection<R>> extends Selection<
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public final R lubAux(R other) throws SemanticException {
+	public final R lubAux(
+			R other)
+			throws SemanticException {
 		if (getClass() != other.getClass())
 			return (R) AllRows.INSTANCE;
 		return lubSameClass(other);
@@ -15,22 +17,32 @@ public abstract class RowSelection<R extends RowSelection<R>> extends Selection<
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public final R wideningAux(R other) throws SemanticException {
+	public final R wideningAux(
+			R other)
+			throws SemanticException {
 		if (getClass() != other.getClass())
 			return (R) AllRows.INSTANCE;
 		return wideningSameClass(other);
 	}
 
 	@Override
-	public final boolean lessOrEqualAux(R other) throws SemanticException {
+	public final boolean lessOrEqualAux(
+			R other)
+			throws SemanticException {
 		if (getClass() != other.getClass())
 			return false;
 		return lessOrEqualSameClass(other);
 	}
 
-	protected abstract boolean lessOrEqualSameClass(R other) throws SemanticException;
+	protected abstract boolean lessOrEqualSameClass(
+			R other)
+			throws SemanticException;
 
-	protected abstract R wideningSameClass(R other) throws SemanticException;
+	protected abstract R wideningSameClass(
+			R other)
+			throws SemanticException;
 
-	protected abstract R lubSameClass(R other) throws SemanticException;
+	protected abstract R lubSameClass(
+			R other)
+			throws SemanticException;
 }

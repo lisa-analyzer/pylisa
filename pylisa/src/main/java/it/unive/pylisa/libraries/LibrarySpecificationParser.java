@@ -32,12 +32,14 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 
 	private final String file;
 
-	public LibrarySpecificationParser(String file) {
+	public LibrarySpecificationParser(
+			String file) {
 		this.file = file;
 	}
 
 	@Override
-	public ClassDef visitClassDef(ClassDefContext ctx) {
+	public ClassDef visitClassDef(
+			ClassDefContext ctx) {
 		ClassDef cls = new ClassDef(
 				ctx.ROOT() != null,
 				ctx.SEALED() != null,
@@ -53,7 +55,8 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	}
 
 	@Override
-	public Field visitField(FieldContext ctx) {
+	public Field visitField(
+			FieldContext ctx) {
 		return new Field(
 				ctx.INSTANCE() != null,
 				ctx.name.getText(),
@@ -61,7 +64,8 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	}
 
 	@Override
-	public Parameter visitParam(ParamContext ctx) {
+	public Parameter visitParam(
+			ParamContext ctx) {
 		Type type = visitType(ctx.type());
 		String name = ctx.name.getText();
 		if (ctx.DEFAULT() == null)
@@ -83,7 +87,8 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	}
 
 	@Override
-	public Type visitType(TypeContext ctx) {
+	public Type visitType(
+			TypeContext ctx) {
 		if (ctx.libtype() != null)
 			return visitLibtype(ctx.libtype());
 		else
@@ -91,17 +96,20 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	}
 
 	@Override
-	public Type visitLibtype(LibtypeContext ctx) {
+	public Type visitLibtype(
+			LibtypeContext ctx) {
 		return new LibType(ctx.type_name.getText(), ctx.STAR() != null);
 	}
 
 	@Override
-	public Type visitLisatype(LisatypeContext ctx) {
+	public Type visitLisatype(
+			LisatypeContext ctx) {
 		return new LiSAType(ctx.type_name.getText(), ctx.type_field.getText());
 	}
 
 	@Override
-	public Method visitMethod(MethodContext ctx) {
+	public Method visitMethod(
+			MethodContext ctx) {
 		Method mtd = new Method(
 				ctx.INSTANCE() != null,
 				ctx.SEALED() != null,
@@ -114,7 +122,8 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	}
 
 	@Override
-	public Library visitLibrary(LibraryContext ctx) {
+	public Library visitLibrary(
+			LibraryContext ctx) {
 		Library lib = new Library(ctx.name.getText(), ctx.loc.getText());
 		for (MethodContext mtd : ctx.method())
 			lib.getMethods().add(visitMethod(mtd));
@@ -129,7 +138,8 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	}
 
 	@Override
-	public Pair<Runtime, Collection<Library>> visitFile(FileContext ctx) {
+	public Pair<Runtime, Collection<Library>> visitFile(
+			FileContext ctx) {
 		Runtime runtime = new Runtime();
 		Collection<Library> libraries = new LinkedList<>();
 
@@ -145,11 +155,15 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 
 		private static final long serialVersionUID = 719012473263650111L;
 
-		public LibraryParsingException(String file, String reason) {
+		public LibraryParsingException(
+				String file,
+				String reason) {
 			super("Error while parsing library definitions from " + file + ": " + reason);
 		}
 
-		public LibraryParsingException(String file, Throwable cause) {
+		public LibraryParsingException(
+				String file,
+				Throwable cause) {
 			super("Error while parsing library definitions from " + file, cause);
 		}
 	}
@@ -162,7 +176,8 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 			super();
 		}
 
-		public LibraryCreationException(Throwable cause) {
+		public LibraryCreationException(
+				Throwable cause) {
 			super("Creating part of a library", cause);
 		}
 	}

@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectBytes extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectBytes(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectBytes(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__bytes__", PyClassType.lookup(LibrarySpecificationProvider.BYTES), arg);
 	}
 
-	public static ObjectBytes build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectBytes build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectBytes(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

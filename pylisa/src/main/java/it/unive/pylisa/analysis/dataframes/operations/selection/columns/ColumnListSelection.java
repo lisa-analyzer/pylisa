@@ -12,11 +12,13 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 
 	private final Names columns;
 
-	public ColumnListSelection(Names columns) {
+	public ColumnListSelection(
+			Names columns) {
 		this.columns = columns;
 	}
 
-	public ColumnListSelection(Set<String> columns) {
+	public ColumnListSelection(
+			Set<String> columns) {
 		this(new Names(columns));
 	}
 
@@ -35,17 +37,23 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 	}
 
 	@Override
-	public ColumnListSelection lubSameClass(ColumnListSelection other) throws SemanticException {
+	public ColumnListSelection lubSameClass(
+			ColumnListSelection other)
+			throws SemanticException {
 		return new ColumnListSelection(columns.lub(other.columns));
 	}
 
 	@Override
-	public ColumnListSelection wideningSameClass(ColumnListSelection other) throws SemanticException {
+	public ColumnListSelection wideningSameClass(
+			ColumnListSelection other)
+			throws SemanticException {
 		return new ColumnListSelection(columns.widening(other.columns));
 	}
 
 	@Override
-	public boolean lessOrEqualSameClass(ColumnListSelection other) throws SemanticException {
+	public boolean lessOrEqualSameClass(
+			ColumnListSelection other)
+			throws SemanticException {
 		return columns.lessOrEqual(other.columns);
 	}
 
@@ -58,7 +66,8 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -80,7 +89,8 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		ColumnListSelection other = (ColumnListSelection) o;
 		return columns.compareTo(other.columns);
 	}

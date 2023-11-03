@@ -14,15 +14,18 @@ public class RowRangeSelection extends RowSelection<RowRangeSelection> implement
 
 	private final NumberSlice rows;
 
-	public RowRangeSelection(NumberSlice rows) {
+	public RowRangeSelection(
+			NumberSlice rows) {
 		this.rows = rows;
 	}
 
-	public RowRangeSelection(int row) {
+	public RowRangeSelection(
+			int row) {
 		this(new NumberSlice(row, row));
 	}
 
-	public RowRangeSelection(boolean allRows) {
+	public RowRangeSelection(
+			boolean allRows) {
 		this(allRows ? NumberSlice.TOP : NumberSlice.BOTTOM);
 	}
 
@@ -45,17 +48,23 @@ public class RowRangeSelection extends RowSelection<RowRangeSelection> implement
 	}
 
 	@Override
-	public RowRangeSelection lubSameClass(RowRangeSelection other) throws SemanticException {
+	public RowRangeSelection lubSameClass(
+			RowRangeSelection other)
+			throws SemanticException {
 		return new RowRangeSelection(rows.lub(other.rows));
 	}
 
 	@Override
-	public RowRangeSelection wideningSameClass(RowRangeSelection other) throws SemanticException {
+	public RowRangeSelection wideningSameClass(
+			RowRangeSelection other)
+			throws SemanticException {
 		return new RowRangeSelection(rows.widening(other.rows));
 	}
 
 	@Override
-	public boolean lessOrEqualSameClass(RowRangeSelection other) throws SemanticException {
+	public boolean lessOrEqualSameClass(
+			RowRangeSelection other)
+			throws SemanticException {
 		return rows.lessOrEqual(other.rows);
 	}
 
@@ -68,7 +77,8 @@ public class RowRangeSelection extends RowSelection<RowRangeSelection> implement
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -90,7 +100,8 @@ public class RowRangeSelection extends RowSelection<RowRangeSelection> implement
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		RowRangeSelection other = (RowRangeSelection) o;
 		return rows.compareTo(other.rows);
 	}

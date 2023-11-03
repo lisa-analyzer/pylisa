@@ -12,7 +12,8 @@ public class AssignToSelection implements BinaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public AssignToSelection(int index) {
+	public AssignToSelection(
+			int index) {
 		this.index = index;
 	}
 
@@ -27,7 +28,10 @@ public class AssignToSelection implements BinaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
 		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		if (left.stream().noneMatch(t -> t.equals(series)))
 			return Collections.emptySet();

@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectNeg extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectNeg(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectNeg(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__neg__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectNeg build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectNeg build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectNeg(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

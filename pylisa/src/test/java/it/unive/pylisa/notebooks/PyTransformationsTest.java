@@ -21,7 +21,8 @@ public class PyTransformationsTest extends AnalysisTestExecutor {
 		return buildConfig(false);
 	}
 
-	private CronConfiguration buildConfig(boolean findOpenCalls) {
+	private CronConfiguration buildConfig(
+			boolean findOpenCalls) {
 		CronConfiguration conf = new CronConfiguration();
 		// conf.serializeResults = true;
 		// conf.analysisGraphs =

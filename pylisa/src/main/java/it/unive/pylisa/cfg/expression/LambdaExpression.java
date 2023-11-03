@@ -23,7 +23,11 @@ public class LambdaExpression extends Expression {
 	private final List<Expression> arguments;
 	private final Expression body;
 
-	public LambdaExpression(List<Expression> arguments, Expression body, CFG cfg, CodeLocation loc) {
+	public LambdaExpression(
+			List<Expression> arguments,
+			Expression body,
+			CFG cfg,
+			CodeLocation loc) {
 		super(cfg, loc, PyLambdaType.INSTANCE);
 
 		this.body = body;
@@ -31,7 +35,8 @@ public class LambdaExpression extends Expression {
 	}
 
 	@Override
-	public final int setOffset(int offset) {
+	public final int setOffset(
+			int offset) {
 		this.offset = offset;
 		int off = offset;
 		for (Expression sub : arguments)
@@ -41,7 +46,9 @@ public class LambdaExpression extends Expression {
 	}
 
 	@Override
-	public final <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
+	public final <V> boolean accept(
+			GraphVisitor<CFG, Statement, Edge, V> visitor,
+			V tool) {
 		for (Expression sub : arguments)
 			if (!sub.accept(visitor, tool))
 				return false;

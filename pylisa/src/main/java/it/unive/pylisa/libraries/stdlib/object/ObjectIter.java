@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectIter extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectIter(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectIter(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__iter__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectIter build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectIter build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectIter(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

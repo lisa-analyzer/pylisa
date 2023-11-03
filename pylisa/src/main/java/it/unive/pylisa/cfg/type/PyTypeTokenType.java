@@ -11,12 +11,14 @@ public class PyTypeTokenType extends TypeTokenType {
 	 *
 	 * @param types the types
 	 */
-	public PyTypeTokenType(Set<Type> types) {
+	public PyTypeTokenType(
+			Set<Type> types) {
 		super(types);
 	}
 
 	@Override
-	public boolean canBeAssignedTo(Type other) {
+	public boolean canBeAssignedTo(
+			Type other) {
 		return super.canBeAssignedTo(other) || other instanceof Untyped;
 	}
 

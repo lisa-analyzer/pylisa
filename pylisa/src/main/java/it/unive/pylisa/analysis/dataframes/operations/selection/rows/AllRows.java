@@ -12,17 +12,23 @@ public class AllRows extends RowSelection<AllRows> {
 	}
 
 	@Override
-	public AllRows lubSameClass(AllRows other) throws SemanticException {
+	public AllRows lubSameClass(
+			AllRows other)
+			throws SemanticException {
 		return this;
 	}
 
 	@Override
-	protected AllRows wideningSameClass(AllRows other) throws SemanticException {
+	protected AllRows wideningSameClass(
+			AllRows other)
+			throws SemanticException {
 		return this;
 	}
 
 	@Override
-	public boolean lessOrEqualSameClass(AllRows other) throws SemanticException {
+	public boolean lessOrEqualSameClass(
+			AllRows other)
+			throws SemanticException {
 		return true;
 	}
 
@@ -37,7 +43,8 @@ public class AllRows extends RowSelection<AllRows> {
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		return 0;
 	}
 

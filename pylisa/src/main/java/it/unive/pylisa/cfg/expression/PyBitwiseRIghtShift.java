@@ -18,7 +18,11 @@ import it.unive.lisa.type.Untyped;
 
 public class PyBitwiseRIghtShift extends BinaryExpression {
 
-	public PyBitwiseRIghtShift(CFG cfg, CodeLocation loc, Expression left, Expression right) {
+	public PyBitwiseRIghtShift(
+			CFG cfg,
+			CodeLocation loc,
+			Expression left,
+			Expression right) {
 		super(cfg, loc, ">>", Untyped.INSTANCE, left, right);
 	}
 

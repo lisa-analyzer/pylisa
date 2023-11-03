@@ -18,7 +18,11 @@ import it.unive.lisa.type.Untyped;
 
 public class PyBitwiseAnd extends BinaryExpression {
 
-	public PyBitwiseAnd(CFG cfg, CodeLocation loc, Expression left, Expression right) {
+	public PyBitwiseAnd(
+			CFG cfg,
+			CodeLocation loc,
+			Expression left,
+			Expression right) {
 		super(cfg, loc, "&", Untyped.INSTANCE, left, right);
 	}
 

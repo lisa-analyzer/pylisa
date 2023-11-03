@@ -23,12 +23,18 @@ import it.unive.lisa.type.TypeSystem;
 public class Len extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	protected Len(CFG cfg, CodeLocation location, String constructName,
+	protected Len(
+			CFG cfg,
+			CodeLocation location,
+			String constructName,
 			Expression sequence) {
 		super(cfg, location, constructName, sequence);
 	}
 
-	public static Len build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static Len build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new Len(cfg, location, "len", exprs[0]);
 	}
 
@@ -56,7 +62,8 @@ public class Len extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 }

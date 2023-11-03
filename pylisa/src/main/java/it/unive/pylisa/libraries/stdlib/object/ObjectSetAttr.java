@@ -21,7 +21,12 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectSetAttr extends TernaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectSetAttr(CFG cfg, CodeLocation location, Expression left, Expression middle, Expression right) {
+	public ObjectSetAttr(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression middle,
+			Expression right) {
 		super(cfg,
 				location,
 				"__setattr__",
@@ -31,12 +36,16 @@ public class ObjectSetAttr extends TernaryExpression implements PluggableStateme
 				right);
 	}
 
-	public static ObjectSetAttr build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectSetAttr build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectSetAttr(cfg, location, exprs[0], exprs[1], exprs[2]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

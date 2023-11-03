@@ -37,12 +37,19 @@ public class FillNA extends it.unive.lisa.program.cfg.statement.BinaryExpression
 
 	private boolean inplace = false;
 
-	public FillNA(CFG cfg, CodeLocation location, Expression series, Expression value) {
+	public FillNA(
+			CFG cfg,
+			CodeLocation location,
+			Expression series,
+			Expression value) {
 		super(cfg, location, "fillna", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
 				series, value);
 	}
 
-	public static FillNA build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static FillNA build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		FillNA drop = new FillNA(cfg, location, exprs[0], exprs[1]);
 		if (exprs.length > 2)
 			for (int i = 2; i < exprs.length; i++)
@@ -50,7 +57,9 @@ public class FillNA extends it.unive.lisa.program.cfg.statement.BinaryExpression
 		return drop;
 	}
 
-	private static void setOptional(FillNA drop, Expression expression) {
+	private static void setOptional(
+			FillNA drop,
+			Expression expression) {
 		if (!(expression instanceof NamedParameterExpression))
 			return;
 
@@ -75,7 +84,8 @@ public class FillNA extends it.unive.lisa.program.cfg.statement.BinaryExpression
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

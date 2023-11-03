@@ -18,7 +18,11 @@ import it.unive.lisa.type.Untyped;
 
 public class PyBitwiseOr extends BinaryExpression {
 
-	public PyBitwiseOr(CFG cfg, CodeLocation loc, Expression left, Expression right) {
+	public PyBitwiseOr(
+			CFG cfg,
+			CodeLocation loc,
+			Expression left,
+			Expression right) {
 		super(cfg, loc, "|", Untyped.INSTANCE, left, right);
 	}
 

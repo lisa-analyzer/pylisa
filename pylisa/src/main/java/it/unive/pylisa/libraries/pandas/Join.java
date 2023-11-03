@@ -26,17 +26,25 @@ public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression i
 
 	private Statement st;
 
-	public Join(CFG cfg, CodeLocation location, Expression receiver, Expression other) {
+	public Join(
+			CFG cfg,
+			CodeLocation location,
+			Expression receiver,
+			Expression other) {
 		super(cfg, location, "join", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
 				receiver, other);
 	}
 
-	public static Join build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static Join build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new Join(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

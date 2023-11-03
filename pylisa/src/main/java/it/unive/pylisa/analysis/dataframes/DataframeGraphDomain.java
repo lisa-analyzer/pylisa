@@ -1,20 +1,5 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
@@ -102,6 +87,19 @@ import it.unive.pylisa.symbolic.operators.dataframes.UnaryReshape;
 import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 import it.unive.pylisa.symbolic.operators.dataframes.aux.DataframeColumnSlice;
 import it.unive.pylisa.symbolic.operators.dataframes.aux.DataframeColumnSlice.ColumnSlice;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
@@ -184,7 +182,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@Override
-	public DataframeGraphDomain assign(Identifier id, ValueExpression expression, ProgramPoint pp)
+	public DataframeGraphDomain assign(
+			Identifier id,
+			ValueExpression expression,
+			ProgramPoint pp)
 			throws SemanticException {
 		DataframeGraphDomain sss = smallStepSemantics(expression, pp);
 		TypeSystem types = pp.getProgram().getTypes();
@@ -209,7 +210,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@Override
-	public DataframeGraphDomain smallStepSemantics(ValueExpression expression, ProgramPoint pp)
+	public DataframeGraphDomain smallStepSemantics(
+			ValueExpression expression,
+			ProgramPoint pp)
 			throws SemanticException {
 		if (expression instanceof Identifier)
 			return visit((Identifier) expression, pp);
@@ -237,7 +240,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@Override
-	public DataframeGraphDomain assume(ValueExpression expression, ProgramPoint src, ProgramPoint dest)
+	public DataframeGraphDomain assume(
+			ValueExpression expression,
+			ProgramPoint src,
+			ProgramPoint dest)
 			throws SemanticException {
 		return new DataframeGraphDomain(
 				constants.assume(expression, src, dest),
@@ -247,7 +253,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@Override
-	public DataframeGraphDomain forgetIdentifier(Identifier id) throws SemanticException {
+	public DataframeGraphDomain forgetIdentifier(
+			Identifier id)
+			throws SemanticException {
 		CollectingMapLattice<Identifier, NodeId> pointers = this.pointers.lift(i -> id.equals(i) ? null : i, e -> e);
 		return new DataframeGraphDomain(
 				constants.forgetIdentifier(id),
@@ -256,7 +264,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				operations.lift(i -> reverseSearch(i, pointers) ? i : null, e -> e));
 	}
 
-	private boolean reverseSearch(NodeId id, CollectingMapLattice<Identifier, NodeId> map) {
+	private boolean reverseSearch(
+			NodeId id,
+			CollectingMapLattice<Identifier, NodeId> map) {
 		for (Entry<Identifier, SetLattice<NodeId>> entry : map)
 			if (entry.getValue().contains(id))
 				return true;
@@ -265,7 +275,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@Override
-	public DataframeGraphDomain forgetIdentifiersIf(Predicate<Identifier> test) throws SemanticException {
+	public DataframeGraphDomain forgetIdentifiersIf(
+			Predicate<Identifier> test)
+			throws SemanticException {
 		CollectingMapLattice<Identifier, NodeId> pointers = this.pointers.lift(id -> test.test(id) ? null : id, e -> e);
 		return new DataframeGraphDomain(
 				constants.forgetIdentifiersIf(test),
@@ -275,7 +287,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@Override
-	public Satisfiability satisfies(ValueExpression expression, ProgramPoint pp) throws SemanticException {
+	public Satisfiability satisfies(
+			ValueExpression expression,
+			ProgramPoint pp)
+			throws SemanticException {
 		Satisfiability c = constants.satisfies(expression, pp);
 		if (c == Satisfiability.SATISFIED || c == Satisfiability.NOT_SATISFIED)
 			return c;
@@ -283,7 +298,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@Override
-	public DataframeGraphDomain pushScope(ScopeToken token) throws SemanticException {
+	public DataframeGraphDomain pushScope(
+			ScopeToken token)
+			throws SemanticException {
 		return this;/*
 					 * new DataframeGraphDomain( constants.pushScope(token),
 					 * graph, pointers.lift(id -> (Identifier)
@@ -292,7 +309,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@Override
-	public DataframeGraphDomain popScope(ScopeToken token) throws SemanticException {
+	public DataframeGraphDomain popScope(
+			ScopeToken token)
+			throws SemanticException {
 		return this;/*
 					 * new DataframeGraphDomain( constants.popScope(token),
 					 * graph, pointers.lift(id -> (Identifier)
@@ -312,7 +331,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@Override
-	public DataframeGraphDomain lub(DataframeGraphDomain other) throws SemanticException {
+	public DataframeGraphDomain lub(
+			DataframeGraphDomain other)
+			throws SemanticException {
 		return new DataframeGraphDomain(
 				constants.lub(other.constants),
 				constStack.lub(other.constStack),
@@ -322,7 +343,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@Override
-	public DataframeGraphDomain widening(DataframeGraphDomain other) throws SemanticException {
+	public DataframeGraphDomain widening(
+			DataframeGraphDomain other)
+			throws SemanticException {
 		return new DataframeGraphDomain(
 				constants.widening(other.constants),
 				constStack.widening(other.constStack),
@@ -332,7 +355,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@Override
-	public boolean lessOrEqual(DataframeGraphDomain other) throws SemanticException {
+	public boolean lessOrEqual(
+			DataframeGraphDomain other)
+			throws SemanticException {
 		return constants.lessOrEqual(other.constants)
 				&& constStack.lessOrEqual(other.constStack)
 				&& graph.lessOrEqual(other.graph)
@@ -381,7 +406,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				&& operations.isBottom();
 	}
 
-	public static boolean isDataframeRelated(SymbolicExpression expression) {
+	public static boolean isDataframeRelated(
+			SymbolicExpression expression) {
 		return expression.hasRuntimeTypes()
 				? expression.getRuntimeTypes(null).stream()
 						.anyMatch(t -> PyLibraryUnitType.is(t, LibrarySpecificationProvider.PANDAS, false))
@@ -389,11 +415,13 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 						|| expression.getStaticType().isUntyped();
 	}
 
-	private static boolean topOrBottom(Lattice<?> l) {
+	private static boolean topOrBottom(
+			Lattice<?> l) {
 		return l.isTop() || l.isBottom();
 	}
 
-	private static SetLattice<DataframeOperation> resolvePointers(DataframeGraphDomain domain) {
+	private static SetLattice<DataframeOperation> resolvePointers(
+			DataframeGraphDomain domain) {
 		return resolvePointers(domain.operations, domain.pointers.lattice);
 	}
 
@@ -442,7 +470,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return new CollectingMapLattice<>(pointers.lattice, map);
 	}
 
-	private static RangeBound getRangeBound(ConstantPropagation c) {
+	private static RangeBound getRangeBound(
+			ConstantPropagation c) {
 		RangeBound bound;
 		if (c.isTop())
 			bound = null;
@@ -453,7 +482,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return bound;
 	}
 
-	private static ColumnRangeSelection getRangeBound(SetLattice<DataframeOperation> ops) throws SemanticException {
+	private static ColumnRangeSelection getRangeBound(
+			SetLattice<DataframeOperation> ops)
+			throws SemanticException {
 		ColumnRangeSelection bound = ColumnRangeSelection.BOTTOM;
 
 		for (DataframeOperation op : ops) {
@@ -470,7 +501,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return bound;
 	}
 
-	public DataframeGraphDomain visit(UnaryExpression expression, DataframeGraphDomain arg, ProgramPoint pp)
+	public DataframeGraphDomain visit(
+			UnaryExpression expression,
+			DataframeGraphDomain arg,
+			ProgramPoint pp)
 			throws SemanticException {
 		if (arg.isBottom())
 			return arg;
@@ -504,8 +538,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return cleanStack(arg, pp);
 	}
 
-	private static DataframeGraphDomain delegateToConstants(ValueExpression expression, DataframeGraphDomain arg,
-			ProgramPoint pp) throws SemanticException {
+	private static DataframeGraphDomain delegateToConstants(
+			ValueExpression expression,
+			DataframeGraphDomain arg,
+			ProgramPoint pp)
+			throws SemanticException {
 		return new DataframeGraphDomain(
 				arg.constants,
 				arg.constStack.eval(expression, arg.constants, pp),
@@ -514,7 +551,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				arg.operations);
 	}
 
-	private static DataframeGraphDomain doAccessKeys(int index, DataframeGraphDomain arg, ProgramPoint pp)
+	private static DataframeGraphDomain doAccessKeys(
+			int index,
+			DataframeGraphDomain arg,
+			ProgramPoint pp)
 			throws SemanticException {
 		SetLattice<DataframeOperation> ops = resolvePointers(arg);
 		if (topOrBottom(ops))
@@ -536,7 +576,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				arg.operations.putState(id, new SetLattice<>(access)));
 	}
 
-	private static DataframeGraphDomain doIterate(int index, DataframeGraphDomain arg, ProgramPoint pp)
+	private static DataframeGraphDomain doIterate(
+			int index,
+			DataframeGraphDomain arg,
+			ProgramPoint pp)
 			throws SemanticException {
 		SetLattice<DataframeOperation> ops = resolvePointers(arg);
 		if (topOrBottom(ops))
@@ -559,7 +602,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static DataframeGraphDomain doAxisConcatenation(int index, DataframeGraphDomain arg, UnaryOperator operator,
+	private static DataframeGraphDomain doAxisConcatenation(
+			int index,
+			DataframeGraphDomain arg,
+			UnaryOperator operator,
 			ProgramPoint pp)
 			throws SemanticException {
 		ConstantPropagation list = arg.constStack;
@@ -650,9 +696,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static DataframeGraphDomain doUnaryTransformation(int index, DataframeGraphDomain arg,
+	private static DataframeGraphDomain doUnaryTransformation(
+			int index,
+			DataframeGraphDomain arg,
 			UnaryOperator operator,
-			ProgramPoint pp) throws SemanticException {
+			ProgramPoint pp)
+			throws SemanticException {
 		SetLattice<DataframeOperation> stack = resolvePointers(arg);
 		if (topOrBottom(stack))
 			return cleanStack(arg, pp);
@@ -698,9 +747,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static DataframeGraphDomain doUnaryReshape(int index, DataframeGraphDomain arg,
+	private static DataframeGraphDomain doUnaryReshape(
+			int index,
+			DataframeGraphDomain arg,
 			UnaryOperator operator,
-			ProgramPoint pp) throws SemanticException {
+			ProgramPoint pp)
+			throws SemanticException {
 		SetLattice<DataframeOperation> stack = resolvePointers(arg);
 		if (topOrBottom(stack))
 			return cleanStack(arg, pp);
@@ -741,7 +793,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				ops);
 	}
 
-	private static DataframeGraphDomain doCopyDataframe(int index, DataframeGraphDomain arg, ProgramPoint pp)
+	private static DataframeGraphDomain doCopyDataframe(
+			int index,
+			DataframeGraphDomain arg,
+			ProgramPoint pp)
 			throws SemanticException {
 		if (topOrBottom(arg.pointers.lattice))
 			return cleanStack(arg, pp);
@@ -762,7 +817,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				new CollectingMapLattice<>(arg.operations.lattice, operations));
 	}
 
-	private static DataframeGraphDomain doReadDataframe(int index, DataframeGraphDomain arg, ProgramPoint pp)
+	private static DataframeGraphDomain doReadDataframe(
+			int index,
+			DataframeGraphDomain arg,
+			ProgramPoint pp)
 			throws SemanticException {
 		ConstantPropagation filename = arg.constStack;
 		if (topOrBottom(filename))
@@ -784,7 +842,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static DataframeGraphDomain doCreateDataframe(int index, DataframeGraphDomain arg, ProgramPoint pp)
+	private static DataframeGraphDomain doCreateDataframe(
+			int index,
+			DataframeGraphDomain arg,
+			ProgramPoint pp)
 			throws SemanticException {
 		ConstantPropagation dict = arg.constStack;
 		if (topOrBottom(dict))
@@ -817,8 +878,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				arg.operations.putState(id, operations));
 	}
 
-	public DataframeGraphDomain visit(BinaryExpression expression, DataframeGraphDomain left,
-			DataframeGraphDomain right, ProgramPoint pp) throws SemanticException {
+	public DataframeGraphDomain visit(
+			BinaryExpression expression,
+			DataframeGraphDomain left,
+			DataframeGraphDomain right,
+			ProgramPoint pp)
+			throws SemanticException {
 		if (left.isBottom())
 			return left;
 		if (right.isBottom())
@@ -855,9 +920,13 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return cleanStack(right, pp);
 	}
 
-	private static DataframeGraphDomain doPandasSeriesComparison(int index, DataframeGraphDomain left,
+	private static DataframeGraphDomain doPandasSeriesComparison(
+			int index,
+			DataframeGraphDomain left,
 			DataframeGraphDomain right,
-			ProgramPoint pp, BinaryOperator operator) throws SemanticException {
+			ProgramPoint pp,
+			BinaryOperator operator)
+			throws SemanticException {
 		SetLattice<DataframeOperation> df1 = resolvePointers(left);
 		ConstantPropagation value = right.constStack;
 		if (topOrBottom(df1))
@@ -902,9 +971,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				ops);
 	}
 
-	private static DataframeGraphDomain doWriteSelectionConstant(int index, DataframeGraphDomain left,
+	private static DataframeGraphDomain doWriteSelectionConstant(
+			int index,
+			DataframeGraphDomain left,
 			DataframeGraphDomain right,
-			ProgramPoint pp) throws SemanticException {
+			ProgramPoint pp)
+			throws SemanticException {
 		SetLattice<DataframeOperation> df = resolvePointers(left);
 		ConstantPropagation c = right.constStack;
 		if (topOrBottom(df) || topOrBottom(c))
@@ -942,9 +1014,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private static DataframeGraphDomain doWriteSelectionDataframe(int index, DataframeGraphDomain left,
+	private static DataframeGraphDomain doWriteSelectionDataframe(
+			int index,
+			DataframeGraphDomain left,
 			DataframeGraphDomain right,
-			ProgramPoint pp) throws SemanticException {
+			ProgramPoint pp)
+			throws SemanticException {
 		SetLattice<DataframeOperation> df1 = resolvePointers(left);
 		SetLattice<DataframeOperation> df2 = resolvePointers(right);
 		if (topOrBottom(df1) || topOrBottom(df2))
@@ -983,7 +1058,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				ops);
 	}
 
-	private static DataframeGraphDomain doJoinColumns(int index, DataframeGraphDomain left, DataframeGraphDomain right,
+	private static DataframeGraphDomain doJoinColumns(
+			int index,
+			DataframeGraphDomain left,
+			DataframeGraphDomain right,
 			ProgramPoint pp)
 			throws SemanticException {
 		SetLattice<DataframeOperation> df1 = resolvePointers(left);
@@ -1023,7 +1101,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static DataframeGraphDomain doDropColumns(int index, DataframeGraphDomain left, DataframeGraphDomain right,
+	private static DataframeGraphDomain doDropColumns(
+			int index,
+			DataframeGraphDomain left,
+			DataframeGraphDomain right,
 			ProgramPoint pp)
 			throws SemanticException {
 		SetLattice<DataframeOperation> ops = resolvePointers(left);
@@ -1062,8 +1143,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				right.operations.putState(id, new SetLattice<>(drop)));
 	}
 
-	private static DataframeGraphDomain doBinaryTransformation(int index, DataframeGraphDomain left,
-			DataframeGraphDomain right, BinaryOperator operator, ProgramPoint pp)
+	private static DataframeGraphDomain doBinaryTransformation(
+			int index,
+			DataframeGraphDomain left,
+			DataframeGraphDomain right,
+			BinaryOperator operator,
+			ProgramPoint pp)
 			throws SemanticException {
 		SetLattice<DataframeOperation> stack = resolvePointers(left);
 		ConstantPropagation value = right.constStack;
@@ -1107,7 +1192,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static DataframeGraphDomain doColumnAccess(int index, DataframeGraphDomain left, DataframeGraphDomain right,
+	private static DataframeGraphDomain doColumnAccess(
+			int index,
+			DataframeGraphDomain left,
+			DataframeGraphDomain right,
 			ProgramPoint pp)
 			throws SemanticException {
 		SetLattice<DataframeOperation> ops = resolvePointers(left);
@@ -1186,7 +1274,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static DataframeGraphDomain doListAppend(DataframeGraphDomain left, DataframeGraphDomain right,
+	private static DataframeGraphDomain doListAppend(
+			DataframeGraphDomain left,
+			DataframeGraphDomain right,
 			ProgramPoint pp)
 			throws SemanticException {
 		ConstantPropagation list = left.constStack;
@@ -1210,8 +1300,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				right.operations);
 	}
 
-	public DataframeGraphDomain visit(TernaryExpression expression, DataframeGraphDomain left,
-			DataframeGraphDomain middle, DataframeGraphDomain right, ProgramPoint pp)
+	public DataframeGraphDomain visit(
+			TernaryExpression expression,
+			DataframeGraphDomain left,
+			DataframeGraphDomain middle,
+			DataframeGraphDomain right,
+			ProgramPoint pp)
 			throws SemanticException {
 		if (left.isBottom())
 			return left;
@@ -1290,9 +1384,13 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static DataframeGraphDomain doAccessRowsColumns(int index, DataframeGraphDomain left,
+	private static DataframeGraphDomain doAccessRowsColumns(
+			int index,
+			DataframeGraphDomain left,
 			DataframeGraphDomain middle,
-			DataframeGraphDomain right, ProgramPoint pp) throws SemanticException {
+			DataframeGraphDomain right,
+			ProgramPoint pp)
+			throws SemanticException {
 		// left[middle, right]
 		// df[row_slice | column_comparison, columns]
 		SetLattice<DataframeOperation> df = resolvePointers(left);
@@ -1418,8 +1516,14 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		}
 	}
 
-	private static DataframeGraphDomain doProjectRows(int index, DataframeGraphDomain left, DataframeGraphDomain middle,
-			DataframeGraphDomain right, ProgramPoint pp, TernaryOperator operator) throws SemanticException {
+	private static DataframeGraphDomain doProjectRows(
+			int index,
+			DataframeGraphDomain left,
+			DataframeGraphDomain middle,
+			DataframeGraphDomain right,
+			ProgramPoint pp,
+			TernaryOperator operator)
+			throws SemanticException {
 		SetLattice<DataframeOperation> df = resolvePointers(left);
 		ConstantPropagation start = middle.constStack;
 		ConstantPropagation end = right.constStack;
@@ -1444,8 +1548,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static DataframeGraphDomain doDictPut(DataframeGraphDomain left, DataframeGraphDomain middle,
-			DataframeGraphDomain right, ProgramPoint pp) throws SemanticException {
+	private static DataframeGraphDomain doDictPut(
+			DataframeGraphDomain left,
+			DataframeGraphDomain middle,
+			DataframeGraphDomain right,
+			ProgramPoint pp)
+			throws SemanticException {
 		ConstantPropagation dict = left.constStack;
 		if (topOrBottom(dict) || topOrBottom(middle) || topOrBottom(right) || !dict.is(Map.class))
 			return cleanStack(right, pp);
@@ -1473,7 +1581,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				right.operations);
 	}
 
-	private static DataframeGraphDomain cleanStack(DataframeGraphDomain right, ProgramPoint pp)
+	private static DataframeGraphDomain cleanStack(
+			DataframeGraphDomain right,
+			ProgramPoint pp)
 			throws SemanticException {
 		LOG.debug("Evaluation of " + pp + " in " + getCaller() + " caused the stack to be cleaned");
 		return new DataframeGraphDomain(
@@ -1493,7 +1603,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return trace[4].getClassName() + "::" + trace[4].getMethodName();
 	}
 
-	public DataframeGraphDomain visit(PushAny expression, ProgramPoint pp) throws SemanticException {
+	public DataframeGraphDomain visit(
+			PushAny expression,
+			ProgramPoint pp)
+			throws SemanticException {
 		if (isDataframeRelated(expression))
 			return new DataframeGraphDomain(
 					constants,
@@ -1509,7 +1622,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					operations);
 	}
 
-	public DataframeGraphDomain visit(Constant expression, ProgramPoint pp) throws SemanticException {
+	public DataframeGraphDomain visit(
+			Constant expression,
+			ProgramPoint pp)
+			throws SemanticException {
 		return new DataframeGraphDomain(
 				constants,
 				constStack.eval(expression, constants, pp),
@@ -1518,7 +1634,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				operations);
 	}
 
-	public DataframeGraphDomain visit(Identifier expression, ProgramPoint pp) throws SemanticException {
+	public DataframeGraphDomain visit(
+			Identifier expression,
+			ProgramPoint pp)
+			throws SemanticException {
 		if (expression instanceof MemoryPointer)
 			expression = ((MemoryPointer) expression).getReferencedLocation();
 
@@ -1546,7 +1665,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					operations);
 	}
 
-	public static AllocationSite stripFields(AllocationSite as) {
+	public static AllocationSite stripFields(
+			AllocationSite as) {
 		if (as.getField() != null)
 			// we remove the name of the field using only location name
 			if (as instanceof HeapAllocationSite)
@@ -1571,7 +1691,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -1641,22 +1762,29 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		}
 
 		@Override
-		protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+		protected DataframeOperation lubSameOperation(
+				DataframeOperation other)
+				throws SemanticException {
 			return this;
 		}
 
 		@Override
-		protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+		protected boolean lessOrEqualSameOperation(
+				DataframeOperation other)
+				throws SemanticException {
 			return false;
 		}
 
 		@Override
-		protected int compareToSameOperation(DataframeOperation o) {
+		protected int compareToSameOperation(
+				DataframeOperation o) {
 			return 0;
 		}
 
 		@Override
-		protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+		protected DataframeOperation wideningSameOperation(
+				DataframeOperation other)
+				throws SemanticException {
 			return this;
 		}
 	}

@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectIndex extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectIndex(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectIndex(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__index__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectIndex build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectIndex build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectIndex(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

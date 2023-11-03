@@ -8,7 +8,8 @@ public class PyBooleanType extends PyClassType implements NumericType, BooleanTy
 
 	public static final String NAME = "numbers.Boolean";
 
-	public PyBooleanType(CompilationUnit unit) {
+	public PyBooleanType(
+			CompilationUnit unit) {
 		super(NAME, unit);
 		types.put(unit.getName(), this);
 	}

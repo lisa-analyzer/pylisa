@@ -43,7 +43,8 @@ public class FieldSensitivePointBasedHeapWithConvAs extends PointBasedHeap {
 	 *
 	 * @param heapEnv the heap environment that this instance tracks
 	 */
-	public FieldSensitivePointBasedHeapWithConvAs(HeapEnvironment<AllocationSites> heapEnv) {
+	public FieldSensitivePointBasedHeapWithConvAs(
+			HeapEnvironment<AllocationSites> heapEnv) {
 		this(heapEnv, Collections.emptyMap());
 	}
 
@@ -55,7 +56,8 @@ public class FieldSensitivePointBasedHeapWithConvAs extends PointBasedHeap {
 	 * @param fields  the mapping between allocation sites and their fields that
 	 *                    this instance tracks
 	 */
-	public FieldSensitivePointBasedHeapWithConvAs(HeapEnvironment<AllocationSites> heapEnv,
+	public FieldSensitivePointBasedHeapWithConvAs(
+			HeapEnvironment<AllocationSites> heapEnv,
 			Map<AllocationSite, Set<SymbolicExpression>> fields) {
 		super(heapEnv);
 		this.fields = fields;
@@ -70,7 +72,8 @@ public class FieldSensitivePointBasedHeapWithConvAs extends PointBasedHeap {
 	 * @param fields       the mapping between allocation sites and their fields
 	 *                         that this instance tracks
 	 */
-	public FieldSensitivePointBasedHeapWithConvAs(HeapEnvironment<AllocationSites> heapEnv,
+	public FieldSensitivePointBasedHeapWithConvAs(
+			HeapEnvironment<AllocationSites> heapEnv,
 			List<HeapReplacement> replacements,
 			Map<AllocationSite, Set<SymbolicExpression>> fields) {
 		super(heapEnv, replacements);
@@ -78,16 +81,20 @@ public class FieldSensitivePointBasedHeapWithConvAs extends PointBasedHeap {
 	}
 
 	@Override
-	protected FieldSensitivePointBasedHeapWithConvAs buildHeapAfterAssignment(PointBasedHeap sss,
+	protected FieldSensitivePointBasedHeapWithConvAs buildHeapAfterAssignment(
+			PointBasedHeap sss,
 			List<HeapReplacement> replacements) {
 		return new FieldSensitivePointBasedHeapWithConvAs(sss.heapEnv, replacements,
 				((FieldSensitivePointBasedHeapWithConvAs) sss).fields);
 	}
 
 	@Override
-	public FieldSensitivePointBasedHeapWithConvAs nonAliasedAssignment(Identifier id, StackAllocationSite site,
+	public FieldSensitivePointBasedHeapWithConvAs nonAliasedAssignment(
+			Identifier id,
+			StackAllocationSite site,
 			PointBasedHeap pb,
-			ProgramPoint pp, List<HeapReplacement> replacements)
+			ProgramPoint pp,
+			List<HeapReplacement> replacements)
 			throws SemanticException {
 		// no aliasing: star_y must be cloned and the clone must
 		// be assigned to id
@@ -132,18 +139,23 @@ public class FieldSensitivePointBasedHeapWithConvAs extends PointBasedHeap {
 	}
 
 	@Override
-	public FieldSensitivePointBasedHeapWithConvAs from(PointBasedHeap original) {
+	public FieldSensitivePointBasedHeapWithConvAs from(
+			PointBasedHeap original) {
 		return new FieldSensitivePointBasedHeapWithConvAs(original.heapEnv, fields);
 	}
 
 	@Override
-	public ExpressionSet<ValueExpression> rewrite(SymbolicExpression expression, ProgramPoint pp)
+	public ExpressionSet<ValueExpression> rewrite(
+			SymbolicExpression expression,
+			ProgramPoint pp)
 			throws SemanticException {
 		return expression.accept(new Rewriter());
 	}
 
 	@Override
-	public FieldSensitivePointBasedHeapWithConvAs smallStepSemantics(SymbolicExpression expression, ProgramPoint pp)
+	public FieldSensitivePointBasedHeapWithConvAs smallStepSemantics(
+			SymbolicExpression expression,
+			ProgramPoint pp)
 			throws SemanticException {
 		if (expression instanceof AccessChild) {
 			FieldSensitivePointBasedHeapWithConvAs sss = (FieldSensitivePointBasedHeapWithConvAs) super.smallStepSemantics(
@@ -186,8 +198,12 @@ public class FieldSensitivePointBasedHeapWithConvAs extends PointBasedHeap {
 	public class Rewriter extends PointBasedHeap.Rewriter {
 
 		@Override
-		public ExpressionSet<ValueExpression> visit(AccessChild expression, ExpressionSet<ValueExpression> receiver,
-				ExpressionSet<ValueExpression> child, Object... params) throws SemanticException {
+		public ExpressionSet<ValueExpression> visit(
+				AccessChild expression,
+				ExpressionSet<ValueExpression> receiver,
+				ExpressionSet<ValueExpression> child,
+				Object... params)
+				throws SemanticException {
 			Set<ValueExpression> result = new HashSet<>();
 
 			for (ValueExpression rec : receiver) {
@@ -206,8 +222,11 @@ public class FieldSensitivePointBasedHeapWithConvAs extends PointBasedHeap {
 			return new ExpressionSet<>(result);
 		}
 
-		private void populate(AccessChild expression, ExpressionSet<ValueExpression> child,
-				Set<ValueExpression> result, AllocationSite site) {
+		private void populate(
+				AccessChild expression,
+				ExpressionSet<ValueExpression> child,
+				Set<ValueExpression> result,
+				AllocationSite site) {
 			for (SymbolicExpression target : child) {
 				AllocationSite e;
 
@@ -233,7 +252,9 @@ public class FieldSensitivePointBasedHeapWithConvAs extends PointBasedHeap {
 		}
 
 		@Override
-		public ExpressionSet<ValueExpression> visit(MemoryAllocation expression, Object... params)
+		public ExpressionSet<ValueExpression> visit(
+				MemoryAllocation expression,
+				Object... params)
 				throws SemanticException {
 			String pp = expression.getCodeLocation().getCodeLocation();
 
@@ -256,7 +277,8 @@ public class FieldSensitivePointBasedHeapWithConvAs extends PointBasedHeap {
 	}
 
 	@Override
-	public FieldSensitivePointBasedHeapWithConvAs mk(PointBasedHeap reference) {
+	public FieldSensitivePointBasedHeapWithConvAs mk(
+			PointBasedHeap reference) {
 		if (reference instanceof FieldSensitivePointBasedHeapWithConvAs)
 			return new FieldSensitivePointBasedHeapWithConvAs(reference.heapEnv,
 					((FieldSensitivePointBasedHeapWithConvAs) reference).fields);
@@ -273,7 +295,8 @@ public class FieldSensitivePointBasedHeapWithConvAs extends PointBasedHeap {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -284,7 +307,9 @@ public class FieldSensitivePointBasedHeapWithConvAs extends PointBasedHeap {
 		return Objects.equals(fields, other.fields);
 	}
 
-	private void addField(AllocationSite site, SymbolicExpression field,
+	private void addField(
+			AllocationSite site,
+			SymbolicExpression field,
 			Map<AllocationSite, Set<SymbolicExpression>> mapping) {
 		if (!mapping.containsKey(site))
 			mapping.put(site, new HashSet<>());
@@ -292,12 +317,16 @@ public class FieldSensitivePointBasedHeapWithConvAs extends PointBasedHeap {
 	}
 
 	@Override
-	public FieldSensitivePointBasedHeapWithConvAs popScope(ScopeToken scope) throws SemanticException {
+	public FieldSensitivePointBasedHeapWithConvAs popScope(
+			ScopeToken scope)
+			throws SemanticException {
 		return new FieldSensitivePointBasedHeapWithConvAs(heapEnv.popScope(scope), fields);
 	}
 
 	@Override
-	public FieldSensitivePointBasedHeapWithConvAs pushScope(ScopeToken scope) throws SemanticException {
+	public FieldSensitivePointBasedHeapWithConvAs pushScope(
+			ScopeToken scope)
+			throws SemanticException {
 		return new FieldSensitivePointBasedHeapWithConvAs(heapEnv.pushScope(scope), fields);
 	}
 }

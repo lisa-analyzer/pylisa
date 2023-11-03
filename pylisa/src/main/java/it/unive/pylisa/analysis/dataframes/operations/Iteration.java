@@ -5,27 +5,34 @@ import it.unive.lisa.program.cfg.CodeLocation;
 
 public class Iteration extends DataframeOperation {
 
-	public Iteration(CodeLocation where, int index) {
+	public Iteration(
+			CodeLocation where,
+			int index) {
 		super(where, index);
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other) {
 		return true;
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other) {
 		return this;
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		return this;
 	}
 
 	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
+	protected int compareToSameOperation(
+			DataframeOperation o) {
 		return 0;
 	}
 

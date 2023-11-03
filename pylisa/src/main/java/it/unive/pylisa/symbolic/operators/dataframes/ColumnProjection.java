@@ -12,7 +12,8 @@ public class ColumnProjection implements BinaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public ColumnProjection(int index) {
+	public ColumnProjection(
+			int index) {
 		this.index = index;
 	}
 
@@ -27,7 +28,10 @@ public class ColumnProjection implements BinaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
 		if (left.stream().noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF))))
 			return Collections.emptySet();
 		if (right.stream()

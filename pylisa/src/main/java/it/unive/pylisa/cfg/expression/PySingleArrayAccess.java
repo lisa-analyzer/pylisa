@@ -25,7 +25,12 @@ import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
 
 public class PySingleArrayAccess extends BinaryExpression {
 
-	public PySingleArrayAccess(CFG cfg, CodeLocation loc, Type staticType, Expression receiver, Expression index) {
+	public PySingleArrayAccess(
+			CFG cfg,
+			CodeLocation loc,
+			Type staticType,
+			Expression receiver,
+			Expression index) {
 		super(cfg, loc, "[]", staticType, receiver, index);
 	}
 

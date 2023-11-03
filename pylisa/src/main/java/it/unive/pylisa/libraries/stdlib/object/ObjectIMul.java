@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectIMul extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectIMul(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectIMul(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__imul__",
@@ -31,12 +35,16 @@ public class ObjectIMul extends BinaryExpression implements PluggableStatement {
 				right);
 	}
 
-	public static ObjectIMul build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectIMul build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectIMul(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

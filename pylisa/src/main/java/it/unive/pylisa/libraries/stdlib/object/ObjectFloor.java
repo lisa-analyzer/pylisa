@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectFloor extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectFloor(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectFloor(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__floor__", PyClassType.lookup(LibrarySpecificationProvider.OBJECT), arg);
 	}
 
-	public static ObjectFloor build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectFloor build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectFloor(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

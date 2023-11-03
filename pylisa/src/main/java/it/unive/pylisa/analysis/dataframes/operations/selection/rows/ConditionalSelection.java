@@ -24,13 +24,19 @@ public class ConditionalSelection extends BooleanSelection<ConditionalSelection>
 	private final ComparisonOperator op;
 	private final ConstantPropagation val;
 
-	public ConditionalSelection(String colName, ComparisonOperator op, Object val) {
+	public ConditionalSelection(
+			String colName,
+			ComparisonOperator op,
+			Object val) {
 		this.cols = new ColumnListSelection(new Names(colName));
 		this.op = op;
 		this.val = new ConstantPropagation(new Constant(Untyped.INSTANCE, val, SyntheticLocation.INSTANCE));
 	}
 
-	public ConditionalSelection(ColumnListSelection cols, ComparisonOperator op, ConstantPropagation val) {
+	public ConditionalSelection(
+			ColumnListSelection cols,
+			ComparisonOperator op,
+			ConstantPropagation val) {
 		this.cols = cols;
 		this.op = op;
 		this.val = val;
@@ -59,19 +65,25 @@ public class ConditionalSelection extends BooleanSelection<ConditionalSelection>
 	}
 
 	@Override
-	public ConditionalSelection lubSameClass(ConditionalSelection other) throws SemanticException {
+	public ConditionalSelection lubSameClass(
+			ConditionalSelection other)
+			throws SemanticException {
 		return op != other.op ? top()
 				: new ConditionalSelection(cols.lub(other.cols), op, val.lub(other.val));
 	}
 
 	@Override
-	public ConditionalSelection wideningSameClass(ConditionalSelection other) throws SemanticException {
+	public ConditionalSelection wideningSameClass(
+			ConditionalSelection other)
+			throws SemanticException {
 		return op != other.op ? top()
 				: new ConditionalSelection(cols.widening(other.cols), op, val.widening(other.val));
 	}
 
 	@Override
-	public boolean lessOrEqualSameClass(ConditionalSelection other) throws SemanticException {
+	public boolean lessOrEqualSameClass(
+			ConditionalSelection other)
+			throws SemanticException {
 		return op != other.op ? false
 				: cols.lessOrEqual(other.cols) && val.lessOrEqual(other.val);
 	}
@@ -87,7 +99,8 @@ public class ConditionalSelection extends BooleanSelection<ConditionalSelection>
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -122,7 +135,8 @@ public class ConditionalSelection extends BooleanSelection<ConditionalSelection>
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		ConditionalSelection other = (ConditionalSelection) o;
 		int cmp = op.compareTo(other.op);
 		if (cmp != 0)

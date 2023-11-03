@@ -21,7 +21,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectGetAttr extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectGetAttr(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectGetAttr(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__getattr__",
@@ -30,12 +34,16 @@ public class ObjectGetAttr extends BinaryExpression implements PluggableStatemen
 				right);
 	}
 
-	public static ObjectGetAttr build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectGetAttr build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectGetAttr(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

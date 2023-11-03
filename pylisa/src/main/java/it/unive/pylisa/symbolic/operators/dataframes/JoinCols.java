@@ -12,7 +12,8 @@ public class JoinCols implements BinaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public JoinCols(int index) {
+	public JoinCols(
+			int index) {
 		this.index = index;
 	}
 
@@ -22,7 +23,10 @@ public class JoinCols implements BinaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		if (left.stream().noneMatch(t -> t.equals(df)))
 			return Collections.emptySet();

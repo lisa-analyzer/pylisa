@@ -10,7 +10,10 @@ public class Assign<R extends RowSelection<R>, C extends ColumnSelection<C>> ext
 
 	private final DataframeSelection<R, C> selection;
 
-	public Assign(CodeLocation where, int index, DataframeSelection<R, C> selection) {
+	public Assign(
+			CodeLocation where,
+			int index,
+			DataframeSelection<R, C> selection) {
 		super(where, index);
 		this.selection = selection;
 	}
@@ -20,25 +23,32 @@ public class Assign<R extends RowSelection<R>, C extends ColumnSelection<C>> ext
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Assign<?, ?> o = (Assign<?, ?>) other;
 		return selection.lessOrEqual(o.selection);
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Assign<?, ?> o = (Assign<?, ?>) other;
 		return new Assign<>(where, index, selection.lub(o.selection));
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Assign<?, ?> o = (Assign<?, ?>) other;
 		return new Assign<>(where, index, selection.lub(o.selection));
 	}
 
 	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
+	protected int compareToSameOperation(
+			DataframeOperation o) {
 		Assign<?, ?> other = (Assign<?, ?>) o;
 		return selection.compareTo(other.selection);
 	}
@@ -52,7 +62,8 @@ public class Assign<R extends RowSelection<R>, C extends ColumnSelection<C>> ext
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))

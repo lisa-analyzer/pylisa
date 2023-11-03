@@ -28,7 +28,10 @@ import org.apache.commons.lang3.StringUtils;
 
 public class TupleCreation extends NaryExpression {
 
-	public TupleCreation(CFG cfg, CodeLocation loc, Expression... values) {
+	public TupleCreation(
+			CFG cfg,
+			CodeLocation loc,
+			Expression... values) {
 		super(cfg, loc, "tuple", values);
 	}
 

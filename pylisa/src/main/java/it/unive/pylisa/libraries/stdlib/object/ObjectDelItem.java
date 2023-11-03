@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectDelItem extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectDelItem(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectDelItem(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__delitem__",
@@ -31,12 +35,16 @@ public class ObjectDelItem extends BinaryExpression implements PluggableStatemen
 				right);
 	}
 
-	public static ObjectDelItem build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectDelItem build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectDelItem(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

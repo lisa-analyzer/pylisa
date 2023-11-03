@@ -19,7 +19,11 @@ import it.unive.pylisa.symbolic.operators.compare.PyLogicalOr;
 
 public class PyOr extends And {
 
-	public PyOr(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public PyOr(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg, location, left, right);
 	}
 

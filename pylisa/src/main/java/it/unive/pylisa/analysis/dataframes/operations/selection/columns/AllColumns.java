@@ -12,17 +12,23 @@ public class AllColumns extends ColumnSelection<AllColumns> {
 	}
 
 	@Override
-	public AllColumns lubSameClass(AllColumns other) throws SemanticException {
+	public AllColumns lubSameClass(
+			AllColumns other)
+			throws SemanticException {
 		return this;
 	}
 
 	@Override
-	protected AllColumns wideningSameClass(AllColumns other) throws SemanticException {
+	protected AllColumns wideningSameClass(
+			AllColumns other)
+			throws SemanticException {
 		return this;
 	}
 
 	@Override
-	public boolean lessOrEqualSameClass(AllColumns other) throws SemanticException {
+	public boolean lessOrEqualSameClass(
+			AllColumns other)
+			throws SemanticException {
 		return true;
 	}
 
@@ -37,7 +43,8 @@ public class AllColumns extends ColumnSelection<AllColumns> {
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		return 0;
 	}
 

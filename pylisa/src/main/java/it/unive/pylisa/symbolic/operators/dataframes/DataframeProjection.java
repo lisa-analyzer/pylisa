@@ -12,7 +12,8 @@ public class DataframeProjection implements TernaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public DataframeProjection(int index) {
+	public DataframeProjection(
+			int index) {
 		this.index = index;
 	}
 
@@ -27,7 +28,11 @@ public class DataframeProjection implements TernaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> middle, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> middle,
+			Set<Type> right) {
 		if (left.stream().noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF))))
 			return Collections.emptySet();
 		if (middle.stream().noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.SLICE))

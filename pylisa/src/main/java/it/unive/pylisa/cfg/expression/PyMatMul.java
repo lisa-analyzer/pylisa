@@ -17,7 +17,11 @@ import it.unive.pylisa.UnsupportedStatementException;
 
 public class PyMatMul extends BinaryExpression {
 
-	public PyMatMul(CFG cfg, CodeLocation loc, Expression left, Expression right) {
+	public PyMatMul(
+			CFG cfg,
+			CodeLocation loc,
+			Expression left,
+			Expression right) {
 		super(cfg, loc, "@", left, right);
 	}
 

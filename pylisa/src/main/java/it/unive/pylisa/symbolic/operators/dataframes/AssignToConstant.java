@@ -12,7 +12,8 @@ public class AssignToConstant implements BinaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public AssignToConstant(int index) {
+	public AssignToConstant(
+			int index) {
 		this.index = index;
 	}
 
@@ -22,7 +23,10 @@ public class AssignToConstant implements BinaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
 		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		if (left.stream().noneMatch(t -> t.equals(df) || t.equals(series)))

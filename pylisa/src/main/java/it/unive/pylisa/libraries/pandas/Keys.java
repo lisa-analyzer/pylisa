@@ -26,17 +26,24 @@ public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression im
 
 	private Statement st;
 
-	public Keys(CFG cfg, CodeLocation location, Expression dataframe) {
+	public Keys(
+			CFG cfg,
+			CodeLocation location,
+			Expression dataframe) {
 		super(cfg, location, "keys", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
 				dataframe);
 	}
 
-	public static Keys build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static Keys build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new Keys(cfg, location, exprs[0]);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

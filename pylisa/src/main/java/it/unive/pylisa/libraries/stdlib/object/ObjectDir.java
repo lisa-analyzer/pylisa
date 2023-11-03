@@ -22,16 +22,23 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectDir extends UnaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectDir(CFG cfg, CodeLocation location, Expression arg) {
+	public ObjectDir(
+			CFG cfg,
+			CodeLocation location,
+			Expression arg) {
 		super(cfg, location, "__dir__", PyClassType.lookup(LibrarySpecificationProvider.LIST), arg);
 	}
 
-	public static ObjectDir build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectDir build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectDir(cfg, location, exprs[0]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

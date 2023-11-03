@@ -7,11 +7,12 @@ public class PyComplexType extends PyClassType implements NumericType {
 
 	public static final String NAME = "numbers.Complex";
 
-	public PyComplexType(CompilationUnit unit) {
+	public PyComplexType(
+			CompilationUnit unit) {
 		super(NAME, unit);
 		types.put(unit.getName(), this);
 	}
-	
+
 	@Override
 	public boolean is8Bits() {
 		return false;

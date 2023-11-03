@@ -8,7 +8,10 @@ public class Read extends DataframeOperation {
 
 	private final ConstantPropagation file;
 
-	public Read(CodeLocation where, int index, ConstantPropagation file) {
+	public Read(
+			CodeLocation where,
+			int index,
+			ConstantPropagation file) {
 		super(where, index);
 		this.file = file;
 	}
@@ -18,25 +21,32 @@ public class Read extends DataframeOperation {
 	}
 
 	@Override
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Read o = (Read) other;
 		return file.lessOrEqual(o.file);
 	}
 
 	@Override
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Read o = (Read) other;
 		return new Read(where, index, file.lub(o.file));
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException {
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
 		Read o = (Read) other;
 		return new Read(where, index, file.widening(o.file));
 	}
 
 	@Override
-	protected int compareToSameOperation(DataframeOperation o) {
+	protected int compareToSameOperation(
+			DataframeOperation o) {
 		Read other = (Read) o;
 		return file.compareTo(other.file);
 	}
@@ -50,7 +60,8 @@ public class Read extends DataframeOperation {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))

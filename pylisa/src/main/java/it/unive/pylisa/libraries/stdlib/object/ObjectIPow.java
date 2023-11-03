@@ -22,7 +22,12 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectIPow extends TernaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectIPow(CFG cfg, CodeLocation location, Expression left, Expression middle, Expression right) {
+	public ObjectIPow(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression middle,
+			Expression right) {
 		super(cfg,
 				location,
 				"__ipow__",
@@ -32,12 +37,16 @@ public class ObjectIPow extends TernaryExpression implements PluggableStatement 
 				right);
 	}
 
-	public static ObjectIPow build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectIPow build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectIPow(cfg, location, exprs[0], exprs[1], exprs[2]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

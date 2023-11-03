@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectRAnd extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectRAnd(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectRAnd(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__rand__",
@@ -31,12 +35,16 @@ public class ObjectRAnd extends BinaryExpression implements PluggableStatement {
 				right);
 	}
 
-	public static ObjectRAnd build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectRAnd build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectRAnd(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

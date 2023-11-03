@@ -27,7 +27,12 @@ public class FromImport extends Statement {
 	private final Map<String, String> components;
 
 	// from <lib> import <left> as <right>
-	public FromImport(Program program, String lib, Map<String, String> components, CFG cfg, CodeLocation loc) {
+	public FromImport(
+			Program program,
+			String lib,
+			Map<String, String> components,
+			CFG cfg,
+			CodeLocation loc) {
 		super(cfg, loc);
 		this.lib = lib;
 		this.components = components;
@@ -35,13 +40,16 @@ public class FromImport extends Statement {
 	}
 
 	@Override
-	public int setOffset(int i) {
+	public int setOffset(
+			int i) {
 		super.offset = i;
 		return i;
 	}
 
 	@Override
-	public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
+	public <V> boolean accept(
+			GraphVisitor<CFG, Statement, Edge, V> visitor,
+			V tool) {
 		return visitor.visit(tool, getCFG(), this);
 	}
 
@@ -67,7 +75,8 @@ public class FromImport extends Statement {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -82,8 +91,10 @@ public class FromImport extends Statement {
 	public <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> semantics(AnalysisState<A, H, V, T> entryState,
-					InterproceduralAnalysis<A, H, V, T> interprocedural, StatementStore<A, H, V, T> expressions)
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> semantics(
+					AnalysisState<A, H, V, T> entryState,
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		AnalysisState<A, H, V, T> result = entryState.smallStepSemantics(new Skip(getLocation()), this);
 

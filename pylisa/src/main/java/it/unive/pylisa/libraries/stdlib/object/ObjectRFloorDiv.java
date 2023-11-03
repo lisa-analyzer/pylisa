@@ -22,7 +22,11 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 public class ObjectRFloorDiv extends BinaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public ObjectRFloorDiv(CFG cfg, CodeLocation location, Expression left, Expression right) {
+	public ObjectRFloorDiv(
+			CFG cfg,
+			CodeLocation location,
+			Expression left,
+			Expression right) {
 		super(cfg,
 				location,
 				"__rfloordiv__",
@@ -31,12 +35,16 @@ public class ObjectRFloorDiv extends BinaryExpression implements PluggableStatem
 				right);
 	}
 
-	public static ObjectRFloorDiv build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static ObjectRFloorDiv build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new ObjectRFloorDiv(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

@@ -21,11 +21,18 @@ public class BinaryTransform implements BinaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public BinaryTransform(int index, BinaryTransformKind type, Axis axis) {
+	public BinaryTransform(
+			int index,
+			BinaryTransformKind type,
+			Axis axis) {
 		this(index, type, axis, null);
 	}
 
-	public BinaryTransform(int index, BinaryTransformKind type, Axis axis, Object arg) {
+	public BinaryTransform(
+			int index,
+			BinaryTransformKind type,
+			Axis axis,
+			Object arg) {
 		this.index = index;
 		this.type = type;
 		this.axis = axis;
@@ -58,7 +65,10 @@ public class BinaryTransform implements BinaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
 		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		if (left.stream().noneMatch(t -> t.equals(series)))
 			return Collections.emptySet();
@@ -78,7 +88,8 @@ public class BinaryTransform implements BinaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)

@@ -12,7 +12,8 @@ public class CopyDataframe implements UnaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public CopyDataframe(int index) {
+	public CopyDataframe(
+			int index) {
 		this.index = index;
 	}
 
@@ -27,7 +28,9 @@ public class CopyDataframe implements UnaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> arg) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> arg) {
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		boolean notdf = arg.stream().noneMatch(t -> t.equals(df));

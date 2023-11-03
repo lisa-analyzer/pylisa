@@ -14,15 +14,18 @@ public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> 
 
 	private final NumberSlice columns;
 
-	public ColumnRangeSelection(NumberSlice columns) {
+	public ColumnRangeSelection(
+			NumberSlice columns) {
 		this.columns = columns;
 	}
 
-	public ColumnRangeSelection(int column) {
+	public ColumnRangeSelection(
+			int column) {
 		this(new NumberSlice(column, column));
 	}
 
-	public ColumnRangeSelection(boolean allCols) {
+	public ColumnRangeSelection(
+			boolean allCols) {
 		this(allCols ? NumberSlice.TOP : NumberSlice.BOTTOM);
 	}
 
@@ -45,17 +48,23 @@ public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> 
 	}
 
 	@Override
-	public ColumnRangeSelection lubSameClass(ColumnRangeSelection other) throws SemanticException {
+	public ColumnRangeSelection lubSameClass(
+			ColumnRangeSelection other)
+			throws SemanticException {
 		return new ColumnRangeSelection(columns.lub(other.columns));
 	}
 
 	@Override
-	public ColumnRangeSelection wideningSameClass(ColumnRangeSelection other) throws SemanticException {
+	public ColumnRangeSelection wideningSameClass(
+			ColumnRangeSelection other)
+			throws SemanticException {
 		return new ColumnRangeSelection(columns.widening(other.columns));
 	}
 
 	@Override
-	public boolean lessOrEqualSameClass(ColumnRangeSelection other) throws SemanticException {
+	public boolean lessOrEqualSameClass(
+			ColumnRangeSelection other)
+			throws SemanticException {
 		return columns.lessOrEqual(other.columns);
 	}
 
@@ -68,7 +77,8 @@ public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> 
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -90,7 +100,8 @@ public class ColumnRangeSelection extends ColumnSelection<ColumnRangeSelection> 
 	}
 
 	@Override
-	protected int compareToSameClass(Selection<?> o) {
+	protected int compareToSameClass(
+			Selection<?> o) {
 		ColumnRangeSelection other = (ColumnRangeSelection) o;
 		return columns.compareTo(other.columns);
 	}

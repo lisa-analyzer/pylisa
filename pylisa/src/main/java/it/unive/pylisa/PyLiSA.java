@@ -21,7 +21,10 @@ import org.apache.commons.io.FilenameUtils;
 
 public class PyLiSA {
 
-	public static void main(String[] args) throws IOException, AnalysisException {
+	public static void main(
+			String[] args)
+			throws IOException,
+			AnalysisException {
 		if (args.length < 2) {
 			System.err.println("PyLiSA needs two arguments: the file to analyze and the working directory");
 			System.exit(-1);

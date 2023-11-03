@@ -16,7 +16,9 @@ import it.unive.pylisa.symbolic.PyNoneConstant;
 
 public class PyNoneLiteral extends Literal<Object> {
 
-	public PyNoneLiteral(CFG cfg, CodeLocation location) {
+	public PyNoneLiteral(
+			CFG cfg,
+			CodeLocation location) {
 		super(cfg, location, null, NullType.INSTANCE);
 	}
 
@@ -25,7 +27,8 @@ public class PyNoneLiteral extends Literal<Object> {
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> semantics(
-					AnalysisState<A, H, V, T> entryState, InterproceduralAnalysis<A, H, V, T> interprocedural,
+					AnalysisState<A, H, V, T> entryState,
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		return entryState.smallStepSemantics(new PyNoneConstant(getLocation()), this);

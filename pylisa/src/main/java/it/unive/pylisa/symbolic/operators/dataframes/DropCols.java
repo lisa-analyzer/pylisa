@@ -12,7 +12,8 @@ public class DropCols implements BinaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public DropCols(int index) {
+	public DropCols(
+			int index) {
 		this.index = index;
 	}
 
@@ -27,7 +28,10 @@ public class DropCols implements BinaryOperator, DataframeOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		if (left.stream().noneMatch(t -> t.equals(df)))
 			return Collections.emptySet();

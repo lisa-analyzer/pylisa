@@ -17,7 +17,10 @@ import it.unive.pylisa.UnsupportedStatementException;
 
 public class StarExpression extends UnaryExpression {
 
-	public StarExpression(CFG cfg, CodeLocation loc, Expression expr) {
+	public StarExpression(
+			CFG cfg,
+			CodeLocation loc,
+			Expression expr) {
 		super(cfg, loc, "*", expr);
 	}
 

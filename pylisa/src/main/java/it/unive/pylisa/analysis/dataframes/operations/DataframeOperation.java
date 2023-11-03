@@ -9,7 +9,8 @@ import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import java.util.Objects;
 
-public abstract class DataframeOperation implements
+public abstract class DataframeOperation
+		implements
 		BaseLattice<DataframeOperation>,
 		Comparable<DataframeOperation>,
 		CodeNode<DataframeForest, DataframeOperation, DataframeEdge> {
@@ -28,7 +29,9 @@ public abstract class DataframeOperation implements
 	 */
 	protected int offset;
 
-	protected DataframeOperation(CodeLocation where, int index) {
+	protected DataframeOperation(
+			CodeLocation where,
+			int index) {
 		this.where = where;
 		this.index = index;
 	}
@@ -61,17 +64,22 @@ public abstract class DataframeOperation implements
 		return BaseLattice.super.isBottom() || BOTTOM == this || BOTTOM.equals(this);
 	}
 
-	public boolean similar(DataframeOperation other) {
+	public boolean similar(
+			DataframeOperation other) {
 		return getClass() == other.getClass() && where.equals(other.where) && index == other.index;
 	}
 
 	@Override
-	public boolean lessOrEqualAux(DataframeOperation other) throws SemanticException {
+	public boolean lessOrEqualAux(
+			DataframeOperation other)
+			throws SemanticException {
 		return similar(other) ? lessOrEqualSameOperation(other) : false;
 	}
 
 	@Override
-	public DataframeOperation lubAux(DataframeOperation other) throws SemanticException {
+	public DataframeOperation lubAux(
+			DataframeOperation other)
+			throws SemanticException {
 		if (similar(other))
 			return lubSameOperation(other);
 		else
@@ -79,18 +87,26 @@ public abstract class DataframeOperation implements
 	}
 
 	@Override
-	public final DataframeOperation wideningAux(DataframeOperation other) throws SemanticException {
+	public final DataframeOperation wideningAux(
+			DataframeOperation other)
+			throws SemanticException {
 		if (similar(other))
 			return wideningSameOperation(other);
 		else
 			return TOP;
 	}
 
-	protected abstract boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException;
+	protected abstract boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException;
 
-	protected abstract DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException;
+	protected abstract DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException;
 
-	protected abstract DataframeOperation wideningSameOperation(DataframeOperation other) throws SemanticException;
+	protected abstract DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException;
 
 	@Override
 	public int hashCode() {
@@ -98,7 +114,8 @@ public abstract class DataframeOperation implements
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -113,7 +130,8 @@ public abstract class DataframeOperation implements
 	public abstract String toString();
 
 	@Override
-	public final int compareTo(DataframeOperation o) {
+	public final int compareTo(
+			DataframeOperation o) {
 		int cmp;
 		if ((cmp = where.compareTo(o.where)) != 0)
 			return cmp;
@@ -124,15 +142,19 @@ public abstract class DataframeOperation implements
 		return compareToSameOperation(o);
 	}
 
-	protected abstract int compareToSameOperation(DataframeOperation o);
+	protected abstract int compareToSameOperation(
+			DataframeOperation o);
 
 	@Override
-	public <V> boolean accept(GraphVisitor<DataframeForest, DataframeOperation, DataframeEdge, V> visitor, V tool) {
+	public <V> boolean accept(
+			GraphVisitor<DataframeForest, DataframeOperation, DataframeEdge, V> visitor,
+			V tool) {
 		return visitor.visit(tool, null, this);
 	}
 
 	@Override
-	public int setOffset(int offset) {
+	public int setOffset(
+			int offset) {
 		return this.offset = offset;
 	}
 

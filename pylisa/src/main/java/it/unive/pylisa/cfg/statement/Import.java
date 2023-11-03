@@ -25,7 +25,11 @@ public class Import extends Statement {
 	private final Map<String, String> libs;
 
 	// import <left> as <right>
-	public Import(Program program, Map<String, String> libs, CFG cfg, CodeLocation loc) {
+	public Import(
+			Program program,
+			Map<String, String> libs,
+			CFG cfg,
+			CodeLocation loc) {
 		super(cfg, loc);
 		this.libs = libs;
 		for (String lib : libs.keySet())
@@ -33,13 +37,16 @@ public class Import extends Statement {
 	}
 
 	@Override
-	public int setOffset(int i) {
+	public int setOffset(
+			int i) {
 		super.offset = i;
 		return i;
 	}
 
 	@Override
-	public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
+	public <V> boolean accept(
+			GraphVisitor<CFG, Statement, Edge, V> visitor,
+			V tool) {
 		return visitor.visit(tool, getCFG(), this);
 	}
 
@@ -65,7 +72,8 @@ public class Import extends Statement {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
