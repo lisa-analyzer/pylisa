@@ -5,6 +5,8 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.lisa.util.datastructures.graph.code.CodeNode;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import java.util.Objects;
@@ -64,20 +66,20 @@ public abstract class DataframeOperation
 		return BaseLattice.super.isBottom() || BOTTOM == this || BOTTOM.equals(this);
 	}
 
-	public boolean similar(
+	public final boolean similar(
 			DataframeOperation other) {
 		return getClass() == other.getClass() && where.equals(other.where) && index == other.index;
 	}
 
 	@Override
-	public boolean lessOrEqualAux(
+	public final boolean lessOrEqualAux(
 			DataframeOperation other)
 			throws SemanticException {
 		return similar(other) ? lessOrEqualSameOperation(other) : false;
 	}
 
 	@Override
-	public DataframeOperation lubAux(
+	public final DataframeOperation lubAux(
 			DataframeOperation other)
 			throws SemanticException {
 		if (similar(other))
@@ -128,6 +130,11 @@ public abstract class DataframeOperation
 
 	@Override
 	public abstract String toString();
+
+	@Override
+	public StructuredRepresentation representation() {
+		return new StringRepresentation(toString());
+	}
 
 	@Override
 	public final int compareTo(

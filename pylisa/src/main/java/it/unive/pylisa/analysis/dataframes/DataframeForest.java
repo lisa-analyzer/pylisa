@@ -1,23 +1,5 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import it.unive.lisa.analysis.Lattice;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.representation.DomainRepresentation;
-import it.unive.lisa.analysis.representation.StringRepresentation;
-import it.unive.lisa.outputs.DotGraph;
-import it.unive.lisa.outputs.serializableGraph.SerializableEdge;
-import it.unive.lisa.outputs.serializableGraph.SerializableGraph;
-import it.unive.lisa.outputs.serializableGraph.SerializableNode;
-import it.unive.lisa.outputs.serializableGraph.SerializableNodeDescription;
-import it.unive.lisa.outputs.serializableGraph.SerializableValue;
-import it.unive.lisa.util.collections.workset.VisitOnceLIFOWorkingSet;
-import it.unive.lisa.util.collections.workset.VisitOnceWorkingSet;
-import it.unive.lisa.util.datastructures.graph.code.CodeGraph;
-import it.unive.lisa.util.datastructures.graph.code.NodeList;
-import it.unive.pylisa.analysis.dataframes.edge.ConcatEdge;
-import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
-import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
-import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -36,12 +18,32 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Element;
 import org.graphstream.graph.implementations.MultiGraph;
 import org.graphstream.stream.file.FileSinkDOT;
+
+import it.unive.lisa.analysis.Lattice;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.outputs.DotGraph;
+import it.unive.lisa.outputs.serializableGraph.SerializableEdge;
+import it.unive.lisa.outputs.serializableGraph.SerializableGraph;
+import it.unive.lisa.outputs.serializableGraph.SerializableNode;
+import it.unive.lisa.outputs.serializableGraph.SerializableNodeDescription;
+import it.unive.lisa.outputs.serializableGraph.SerializableValue;
+import it.unive.lisa.util.collections.workset.VisitOnceLIFOWorkingSet;
+import it.unive.lisa.util.collections.workset.VisitOnceWorkingSet;
+import it.unive.lisa.util.datastructures.graph.code.CodeGraph;
+import it.unive.lisa.util.datastructures.graph.code.NodeList;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
+import it.unive.pylisa.analysis.dataframes.edge.ConcatEdge;
+import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
+import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
+import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 
 public class DataframeForest
 		extends
@@ -251,7 +253,7 @@ public class DataframeForest
 		return result;
 	}
 
-	public DomainRepresentation representation() {
+	public StructuredRepresentation representation() {
 		if (isTop())
 			return Lattice.topRepresentation();
 		if (isBottom())

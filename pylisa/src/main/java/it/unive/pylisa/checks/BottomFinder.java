@@ -6,8 +6,6 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.heap.HeapDomain;
-import it.unive.lisa.analysis.value.TypeDomain;
-import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.program.Global;
@@ -17,31 +15,30 @@ import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 
-public class BottomFinder<A extends AbstractState<A, H, V, T>,
-		H extends HeapDomain<H>,
-		V extends ValueDomain<V>,
-		T extends TypeDomain<T>> implements SemanticCheck<A, H, V, T> {
+public class BottomFinder<A extends AbstractState<A>>
+		implements
+		SemanticCheck<A> {
 
 	@Override
 	public void beforeExecution(
-			CheckToolWithAnalysisResults<A, H, V, T> tool) {
+			CheckToolWithAnalysisResults<A> tool) {
 	}
 
 	@Override
 	public void afterExecution(
-			CheckToolWithAnalysisResults<A, H, V, T> tool) {
+			CheckToolWithAnalysisResults<A> tool) {
 	}
 
 	@Override
 	public boolean visitUnit(
-			CheckToolWithAnalysisResults<A, H, V, T> tool,
+			CheckToolWithAnalysisResults<A> tool,
 			Unit unit) {
 		return true;
 	}
 
 	@Override
 	public void visitGlobal(
-			CheckToolWithAnalysisResults<A, H, V, T> tool,
+			CheckToolWithAnalysisResults<A> tool,
 			Unit unit,
 			Global global,
 			boolean instance) {
@@ -49,14 +46,14 @@ public class BottomFinder<A extends AbstractState<A, H, V, T>,
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<A, H, V, T> tool,
+			CheckToolWithAnalysisResults<A> tool,
 			CFG graph) {
 		return true;
 	}
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<A, H, V, T> tool,
+			CheckToolWithAnalysisResults<A> tool,
 			CFG graph,
 			Statement node) {
 		return true;
@@ -65,24 +62,24 @@ public class BottomFinder<A extends AbstractState<A, H, V, T>,
 	@Override
 	@SuppressWarnings("unchecked")
 	public boolean visit(
-			CheckToolWithAnalysisResults<A, H, V, T> tool,
+			CheckToolWithAnalysisResults<A> tool,
 			CFG graph,
 			Edge edge) {
 		Statement source = edge.getSource();
 		Statement dest = edge.getDestination();
 
-		for (AnalyzedCFG<A, H, V, T> res : tool.getResultOf(graph))
+		for (AnalyzedCFG<A> res : tool.getResultOf(graph))
 			try {
-				AnalysisState<A, H, V, T> pre = res.getAnalysisStateAfter(source);
-				AnalysisState<A, H, V, T> post = res.getAnalysisStateAfter(dest);
+				AnalysisState<A> pre = res.getAnalysisStateAfter(source);
+				AnalysisState<A> post = res.getAnalysisStateAfter(dest);
 
 				if (!pre.isBottom() && post.isBottom())
 					tool.warnOn(dest, "State goes to bottom after " + edge.getClass().getSimpleName() + " in " + dest);
-				else if (!pre.getDomainInstance(HeapDomain.class).isBottom()
-						&& post.getDomainInstance(HeapDomain.class).isBottom())
+				else if (!pre.getState().getDomainInstance(HeapDomain.class).isBottom()
+						&& post.getState().getDomainInstance(HeapDomain.class).isBottom())
 					tool.warnOn(dest, "Heap goes to bottom after " + edge.getClass().getSimpleName() + " in " + dest);
-				else if (!topOrBottom(pre.getDomainInstance(DataframeGraphDomain.class))
-						&& topOrBottom(post.getDomainInstance(DataframeGraphDomain.class)))
+				else if (!topOrBottom(pre.getState().getDomainInstance(DataframeGraphDomain.class))
+						&& topOrBottom(post.getState().getDomainInstance(DataframeGraphDomain.class)))
 					tool.warnOn(dest,
 							"DataframeGraphDomain goes to bottom after " + edge.getClass().getSimpleName() + " in "
 									+ dest);

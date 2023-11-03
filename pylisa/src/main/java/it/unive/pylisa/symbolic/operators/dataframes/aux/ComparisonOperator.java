@@ -3,6 +3,8 @@ package it.unive.pylisa.symbolic.operators.dataframes.aux;
 import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 
 public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comparable<ComparisonOperator> {
 
@@ -112,6 +114,11 @@ public class ComparisonOperator implements BaseLattice<ComparisonOperator>, Comp
 	public int compareTo(
 			ComparisonOperator other) {
 		return op.compareTo(other.op);
+	}
+
+	@Override
+	public StructuredRepresentation representation() {
+		return new StringRepresentation(toString());
 	}
 
 }

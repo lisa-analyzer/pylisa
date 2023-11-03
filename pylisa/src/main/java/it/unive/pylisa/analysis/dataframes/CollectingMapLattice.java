@@ -1,15 +1,16 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import it.unive.lisa.analysis.Lattice;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.lattices.FunctionalLattice;
-import it.unive.lisa.analysis.representation.DomainRepresentation;
-import it.unive.lisa.analysis.representation.MapRepresentation;
-import it.unive.lisa.analysis.representation.SetRepresentation;
-import it.unive.lisa.analysis.representation.StringRepresentation;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+
+import it.unive.lisa.analysis.Lattice;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.lattices.FunctionalLattice;
+import it.unive.lisa.util.representation.MapRepresentation;
+import it.unive.lisa.util.representation.SetRepresentation;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 
 public class CollectingMapLattice<K, V>
 		extends
@@ -82,8 +83,8 @@ public class CollectingMapLattice<K, V>
 		return mk(lattice, function);
 	}
 
-	public DomainRepresentation representation(
-			Function<V, DomainRepresentation> valueMapper) {
+	public StructuredRepresentation representation(
+			Function<V, StructuredRepresentation> valueMapper) {
 		if (isTop())
 			return Lattice.topRepresentation();
 
@@ -100,5 +101,11 @@ public class CollectingMapLattice<K, V>
 	public CollectingMapLattice<K, V> setStack(
 			SetLattice<V> stack) {
 		return mk(stack, function == null ? null : mkNewFunction(function, false));
+	}
+
+	@Override
+	public SetLattice<V> stateOfUnknown(
+			K key) {
+		return lattice.bottom();
 	}
 }

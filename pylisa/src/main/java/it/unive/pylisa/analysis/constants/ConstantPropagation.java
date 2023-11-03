@@ -1,10 +1,12 @@
 package it.unive.pylisa.analysis.constants;
 
+import java.util.Objects;
+import java.util.Set;
+
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
-import it.unive.lisa.analysis.representation.DomainRepresentation;
-import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.type.Float32Type;
@@ -16,7 +18,7 @@ import it.unive.lisa.program.type.Int8Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.PushInv;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.ArithmeticOperator;
 import it.unive.lisa.symbolic.value.operator.DivisionOperator;
@@ -29,12 +31,13 @@ import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.Power;
 import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
-import java.util.Objects;
 
 public class ConstantPropagation
 		implements
@@ -88,7 +91,7 @@ public class ConstantPropagation
 		return representation().toString();
 	}
 
-	public DomainRepresentation representation() {
+	public StructuredRepresentation representation() {
 		if (isTop())
 			return Lattice.topRepresentation();
 		if (isBottom())
@@ -176,22 +179,38 @@ public class ConstantPropagation
 	}
 
 	@Override
-	public boolean tracksIdentifiers(
-			Identifier id) {
-		return canProcess(id);
+	public boolean canProcess(
+			SymbolicExpression expression,
+			ProgramPoint pp,
+			SemanticOracle oracle) {
+		if (expression instanceof PushInv)
+			// the type approximation of a pushinv is bottom, so the below check
+			// will always fail regardless of the kind of value we are tracking
+			return isAccepted(expression.getStaticType());
+
+		Set<Type> rts = null;
+		try {
+			rts = oracle.getRuntimeTypesOf(expression, pp, oracle);
+		} catch (SemanticException e) {
+			return false;
+		}
+
+		if (rts == null || rts.isEmpty())
+			// if we have no runtime types, either the type domain has no type
+			// information for the given expression (thus it can be anything,
+			// also something that we can track) or the computation returned
+			// bottom (and the whole state is likely going to go to bottom
+			// anyway).
+			return true;
+
+		return rts.stream().anyMatch(ConstantPropagation::isAccepted);
 	}
 
-	@Override
-	public boolean canProcess(
-			SymbolicExpression expression) {
-		return expression.hasRuntimeTypes()
-				? expression.getRuntimeTypes(null).stream().anyMatch(ConstantPropagation::isAccepted)
-				: isAccepted(expression.getStaticType());
-	}
 
 	@Override
 	public ConstantPropagation evalNullConstant(
-			ProgramPoint pp)
+			ProgramPoint pp,
+			SemanticOracle oracle)
 			throws SemanticException {
 		return TOP;
 	}
@@ -199,7 +218,8 @@ public class ConstantPropagation
 	@Override
 	public ConstantPropagation evalNonNullConstant(
 			Constant constant,
-			ProgramPoint pp)
+			ProgramPoint pp,
+			SemanticOracle oracle)
 			throws SemanticException {
 		if (isAccepted(constant.getStaticType()))
 			return new ConstantPropagation(constant);
@@ -210,7 +230,8 @@ public class ConstantPropagation
 	public ConstantPropagation evalUnaryExpression(
 			UnaryOperator operator,
 			ConstantPropagation arg,
-			ProgramPoint pp) {
+			ProgramPoint pp,
+			SemanticOracle oracle) {
 		if (arg.isTop())
 			return top();
 		if (operator == NumericNegation.INSTANCE)
@@ -237,7 +258,8 @@ public class ConstantPropagation
 			BinaryOperator operator,
 			ConstantPropagation left,
 			ConstantPropagation right,
-			ProgramPoint pp) {
+			ProgramPoint pp,
+			SemanticOracle oracle) {
 		if (operator instanceof ArithmeticOperator) {
 			if (left.isTop() || right.isTop() || !left.constant.getStaticType().isNumericType()
 					|| !right.constant.getStaticType().isNumericType())

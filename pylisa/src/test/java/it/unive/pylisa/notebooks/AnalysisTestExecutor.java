@@ -39,8 +39,7 @@ public abstract class AnalysisTestExecutor {
 	/**
 	 * Performs a test, running an analysis. The test will fail if:
 	 * <ul>
-	 * <li>The python file cannot be parsed (i.e. a {@link ParsingException} is
-	 * thrown)</li>
+	 * <li>The python file cannot be parsed</li>
 	 * <li>The previous working directory using for the test execution cannot be
 	 * deleted</li>
 	 * <li>The analysis run terminates with an {@link AnalysisException}</li>

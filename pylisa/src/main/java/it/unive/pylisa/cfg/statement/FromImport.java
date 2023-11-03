@@ -4,10 +4,8 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.symbols.QualifiedNameSymbol;
-import it.unive.lisa.analysis.value.TypeDomain;
-import it.unive.lisa.analysis.value.ValueDomain;
+import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
@@ -88,25 +86,27 @@ public class FromImport extends Statement {
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>,
-			H extends HeapDomain<H>,
-			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> semantics(
-					AnalysisState<A, H, V, T> entryState,
-					InterproceduralAnalysis<A, H, V, T> interprocedural,
-					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
-		AnalysisState<A, H, V, T> result = entryState.smallStepSemantics(new Skip(getLocation()), this);
+	public <A extends AbstractState<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		AnalysisState<A> result = entryState.smallStepSemantics(new Skip(getLocation()), this);
+
+		if (result.getInfo(SymbolAliasing.INFO_KEY) == null)
+			result = result.storeInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
 
 		for (Entry<String, String> component : components.entrySet()) {
 			if (component.getValue() != null)
-				result = result.alias(
-						new QualifiedNameSymbol(lib, component.getKey()),
-						new QualifiedNameSymbol(null, component.getValue()));
+				result = result.storeInfo(SymbolAliasing.INFO_KEY,
+						result.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).alias(
+								new QualifiedNameSymbol(lib, component.getKey()),
+								new QualifiedNameSymbol(null, component.getValue())));
 			else
-				result = result.alias(
-						new QualifiedNameSymbol(lib, component.getKey()),
-						new QualifiedNameSymbol(null, component.getKey()));
+				result = result.storeInfo(SymbolAliasing.INFO_KEY,
+						result.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).alias(
+								new QualifiedNameSymbol(lib, component.getKey()),
+								new QualifiedNameSymbol(null, component.getKey())));
 		}
 
 		return result;

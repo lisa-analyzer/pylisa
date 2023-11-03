@@ -21,6 +21,8 @@ import it.unive.lisa.util.collections.workset.FIFOWorkingSet;
 import it.unive.lisa.util.datastructures.graph.algorithms.Fixpoint;
 import it.unive.lisa.util.datastructures.graph.algorithms.Fixpoint.FixpointImplementation;
 import it.unive.lisa.util.datastructures.graph.algorithms.FixpointException;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
@@ -56,30 +58,24 @@ public class DataframeStructureConstructor
 				SimpleAbstractState<
 						PointBasedHeap,
 						DataframeGraphDomain,
-						TypeEnvironment<InferredTypes>>,
-				PointBasedHeap,
-				DataframeGraphDomain,
-				TypeEnvironment<InferredTypes>> {
+						TypeEnvironment<InferredTypes>>> {
 
 	@Override
 	public void beforeExecution(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool) {
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool) {
 	}
 
 	@Override
 	public void afterExecution(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool) {
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool) {
 	}
 
 	@Override
 	public boolean visitUnit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
 			Unit unit) {
 		return true;
 	}
@@ -87,8 +83,7 @@ public class DataframeStructureConstructor
 	@Override
 	public void visitGlobal(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
 			Unit unit,
 			Global global,
 			boolean instance) {
@@ -97,8 +92,7 @@ public class DataframeStructureConstructor
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph) {
 		return true;
 	}
@@ -106,8 +100,7 @@ public class DataframeStructureConstructor
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph,
 			Edge edge) {
 		return true;
@@ -116,8 +109,7 @@ public class DataframeStructureConstructor
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph,
 			Statement node) {
 		if (!graph.getDescriptor().getName().equals(PyFrontend.INSTRUMENTED_MAIN_FUNCTION_NAME))
@@ -126,21 +118,17 @@ public class DataframeStructureConstructor
 		if (node.stopsExecution()) {
 			Collection<AnalyzedCFG<
 					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-							TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain,
-					TypeEnvironment<InferredTypes>>> results = tool.getResultOf(graph);
+							TypeEnvironment<InferredTypes>>>> results = tool.getResultOf(graph);
 
 			for (AnalyzedCFG<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> result : results)
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
+							TypeEnvironment<InferredTypes>>> result : results)
 				try {
 					AnalysisState<
 							SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-									TypeEnvironment<InferredTypes>>,
-							PointBasedHeap, DataframeGraphDomain,
-							TypeEnvironment<InferredTypes>> post = result.getAnalysisStateAfter(node);
+									TypeEnvironment<InferredTypes>>> post = result.getAnalysisStateAfter(node);
 
-					DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
+					DataframeGraphDomain dom = post.getState().getDomainInstance(DataframeGraphDomain.class);
 					DataframeForest forest = dom.close();
 					Collection<DataframeOperation> exits = forest.getNodeList().getExits();
 					if (exits.size() != 1)
@@ -356,6 +344,12 @@ public class DataframeStructureConstructor
 				Map<Names, Columns> function) {
 			return new ColumnsDomain(lattice, function);
 		}
+
+		@Override
+		public Columns stateOfUnknown(
+				Names key) {
+			return lattice.bottom();
+		}
 	}
 
 	private static class Columns implements BaseLattice<Columns> {
@@ -509,6 +503,11 @@ public class DataframeStructureConstructor
 					+ "accessed=" + accessed + "\n"
 					+ "assigned=" + assigned + "\n"
 					+ "removed=" + removed;
+		}
+
+		@Override
+		public StructuredRepresentation representation() {
+			return new StringRepresentation(toString());
 		}
 	}
 }

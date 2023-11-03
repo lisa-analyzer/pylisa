@@ -2,6 +2,8 @@ package it.unive.pylisa.analysis.dataframes.operations.selection;
 
 import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.analysis.dataframes.Names;
 
 public abstract class Selection<S extends Selection<S>> implements BaseLattice<S>, Comparable<Selection<?>> {
@@ -40,4 +42,9 @@ public abstract class Selection<S extends Selection<S>> implements BaseLattice<S
 			Selection<?> o);
 
 	public abstract Names extractColumnNames() throws SemanticException;
+
+	@Override
+	public StructuredRepresentation representation() {
+		return new StringRepresentation(toString());
+	}
 }

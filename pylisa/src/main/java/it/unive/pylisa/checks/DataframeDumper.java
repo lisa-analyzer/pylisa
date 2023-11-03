@@ -48,10 +48,7 @@ public class DataframeDumper
 				SimpleAbstractState<
 						PointBasedHeap,
 						DataframeGraphDomain,
-						TypeEnvironment<InferredTypes>>,
-				PointBasedHeap,
-				DataframeGraphDomain,
-				TypeEnvironment<InferredTypes>> {
+						TypeEnvironment<InferredTypes>>> {
 
 	public DataframeDumper() {
 	}
@@ -59,22 +56,19 @@ public class DataframeDumper
 	@Override
 	public void beforeExecution(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool) {
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool) {
 	}
 
 	@Override
 	public void afterExecution(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool) {
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool) {
 	}
 
 	@Override
 	public boolean visitUnit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
 			Unit unit) {
 		return true;
 	}
@@ -82,8 +76,7 @@ public class DataframeDumper
 	@Override
 	public void visitGlobal(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
 			Unit unit,
 			Global global,
 			boolean instance) {
@@ -92,8 +85,7 @@ public class DataframeDumper
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph) {
 		return true;
 	}
@@ -101,8 +93,7 @@ public class DataframeDumper
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph,
 			Statement node) {
 		if (!graph.getDescriptor().getName().equals(PyFrontend.INSTRUMENTED_MAIN_FUNCTION_NAME))
@@ -112,21 +103,16 @@ public class DataframeDumper
 			Collection<
 					AnalyzedCFG<
 							SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-									TypeEnvironment<InferredTypes>>,
-							PointBasedHeap, DataframeGraphDomain,
-							TypeEnvironment<InferredTypes>>> results = tool.getResultOf(graph);
+									TypeEnvironment<InferredTypes>>>> results = tool.getResultOf(graph);
 
-			for (AnalyzedCFG<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> result : results)
+			for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
+					TypeEnvironment<InferredTypes>>> result : results)
 				try {
 					AnalysisState<
 							SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-									TypeEnvironment<InferredTypes>>,
-							PointBasedHeap, DataframeGraphDomain,
-							TypeEnvironment<InferredTypes>> post = result.getAnalysisStateAfter(node);
-					PointBasedHeap heap = post.getDomainInstance(PointBasedHeap.class);
-					DataframeGraphDomain dom = post.getDomainInstance(DataframeGraphDomain.class);
+									TypeEnvironment<InferredTypes>>> post = result.getAnalysisStateAfter(node);
+					PointBasedHeap heap = post.getState().getDomainInstance(PointBasedHeap.class);
+					DataframeGraphDomain dom = post.getState().getDomainInstance(DataframeGraphDomain.class);
 					DataframeForest forest = dom.getGraph();
 					Collection<DataframeForest> subgraphs = forest.partitionByRoot();
 					Map<Identifier, DataframeForest> vargraphs = dom.partitionByVarialbe();
@@ -245,8 +231,7 @@ public class DataframeDumper
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>> tool,
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph,
 			Edge edge) {
 		return true;

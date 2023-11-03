@@ -2,6 +2,8 @@ package it.unive.pylisa.symbolic.operators;
 
 import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 
 public class Enumerations {
 
@@ -102,6 +104,11 @@ public class Enumerations {
 				throws SemanticException {
 			// they can only be rows and cols
 			return false;
+		}
+
+		@Override
+		public StructuredRepresentation representation() {
+			return new StringRepresentation(toString());
 		}
 	}
 }

@@ -4,9 +4,6 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.heap.HeapDomain;
-import it.unive.lisa.analysis.value.TypeDomain;
-import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -48,27 +45,24 @@ public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression im
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>,
-			H extends HeapDomain<H>,
-			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural,
-					AnalysisState<A, H, V, T> state,
-					SymbolicExpression arg,
-					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
+	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression arg,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		CodeLocation loc = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		Type seriesref = ((PyClassType) seriestype).getReference();
 
 		HeapDereference deref = new HeapDereference(dftype, arg, loc);
-		AnalysisState<A, H, V, T> copied = PandasSemantics.copyDataframe(state, deref, st);
+		AnalysisState<A> copied = PandasSemantics.copyDataframe(state, deref, st);
 
-		AnalysisState<A, H, V, T> result = state.bottom();
+		AnalysisState<A> result = state.bottom();
 		for (SymbolicExpression id : copied.getComputedExpressions()) {
 			UnaryExpression transform = new UnaryExpression(seriestype, id, new AccessKeys(0), loc);
-			AnalysisState<A, H, V, T> tmp = copied.smallStepSemantics(transform, st);
+			AnalysisState<A> tmp = copied.smallStepSemantics(transform, st);
 
 			HeapReference ref = new HeapReference(seriesref, id, loc);
 			result = result.lub(tmp.smallStepSemantics(ref, st));

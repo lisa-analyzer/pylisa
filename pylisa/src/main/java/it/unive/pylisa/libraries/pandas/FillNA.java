@@ -4,10 +4,7 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
-import it.unive.lisa.analysis.value.TypeDomain;
-import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -90,30 +87,27 @@ public class FillNA extends it.unive.lisa.program.cfg.statement.BinaryExpression
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>,
-			H extends HeapDomain<H>,
-			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural,
-					AnalysisState<A, H, V, T> state,
-					SymbolicExpression left,
-					SymbolicExpression right,
-					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
+	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		CodeLocation location = getLocation();
-		AnalysisState<A, H, V, T> base = state;
+		AnalysisState<A> base = state;
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 
 		HeapDereference deref = new HeapDereference(dftype, left, location);
-		ExpressionSet<SymbolicExpression> targets = new ExpressionSet<>(deref);
+		ExpressionSet targets = new ExpressionSet(deref);
 
 		if (!inplace) {
 			base = PandasSemantics.copyDataframe(base, deref, st);
 			targets = base.getComputedExpressions();
 		}
 
-		AnalysisState<A, H, V, T> filtered = state.bottom();
+		AnalysisState<A> filtered = state.bottom();
 		BinaryTransform op = new BinaryTransform(0, BinaryTransformKind.FILL_NA, axis, false);
 		for (SymbolicExpression loc : targets) {
 			BinaryExpression filter = new BinaryExpression(dftype, loc, right, op, location);

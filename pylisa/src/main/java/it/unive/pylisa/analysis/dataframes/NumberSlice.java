@@ -2,6 +2,8 @@ package it.unive.pylisa.analysis.dataframes;
 
 import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 
 public class NumberSlice implements BaseLattice<NumberSlice>, Comparable<NumberSlice> {
@@ -108,6 +110,11 @@ public class NumberSlice implements BaseLattice<NumberSlice>, Comparable<NumberS
 			res += skip;
 		res += "]";
 		return res;
+	}
+
+	@Override
+	public StructuredRepresentation representation() {
+		return new StringRepresentation(toString());
 	}
 
 	@Override

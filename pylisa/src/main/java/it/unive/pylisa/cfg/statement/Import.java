@@ -4,10 +4,8 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.symbols.QualifierSymbol;
-import it.unive.lisa.analysis.value.TypeDomain;
-import it.unive.lisa.analysis.value.ValueDomain;
+import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
@@ -90,19 +88,21 @@ public class Import extends Statement {
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>,
-			H extends HeapDomain<H>,
-			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> semantics(
-					AnalysisState<A, H, V, T> entryState,
-					InterproceduralAnalysis<A, H, V, T> interprocedural,
-					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
-		AnalysisState<A, H, V, T> result = entryState.smallStepSemantics(new Skip(getLocation()), this);
+	public <A extends AbstractState<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		AnalysisState<A> result = entryState.smallStepSemantics(new Skip(getLocation()), this);
+
+		if (result.getInfo(SymbolAliasing.INFO_KEY) == null)
+			result = result.storeInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
 
 		for (Entry<String, String> lib : libs.entrySet()) {
 			if (lib.getValue() != null)
-				result = result.alias(new QualifierSymbol(lib.getKey()), new QualifierSymbol(lib.getValue()));
+				result = result.storeInfo(SymbolAliasing.INFO_KEY,
+						result.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class)
+								.alias(new QualifierSymbol(lib.getKey()), new QualifierSymbol(lib.getValue())));
 		}
 
 		return result;
