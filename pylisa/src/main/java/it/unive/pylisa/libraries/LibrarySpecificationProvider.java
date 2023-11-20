@@ -51,6 +51,10 @@ public class LibrarySpecificationProvider {
 	/*******	RCLPY	*******/
 	public static final String RCLPY_PUBLISHER = "rclpy.publisher.Publisher";
 	public static final String RCLPY_SUBSCRIPTION = "rclpy.subscription.Subscription";
+
+	public static final String RCLPY_SERVICE = "rclpy.service.Service";
+
+	public static final String RCLPY_CLIENT = "rclpy.client.Client";
 	public static final String RCLPY_NODE = "rclpy.node.Node";
 
 	private static final Map<String, Library> AVAILABLE_LIBS = new HashMap<>();

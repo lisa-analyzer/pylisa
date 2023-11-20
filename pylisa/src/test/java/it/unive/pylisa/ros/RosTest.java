@@ -3,14 +3,11 @@ package it.unive.pylisa.ros;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.SimpleAbstractState;
-import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.traces.TracePartitioning;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
-import it.unive.lisa.interprocedural.callgraph.CHACallGraph;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.program.Program;
@@ -19,9 +16,9 @@ import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataflow.rospropagation.RosTopic;
-import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
-import it.unive.pylisa.checks.RosTopicDeclarationFinder;
-import it.unive.pylisa.checks.semantics.ROSComputationGraphDumper;
+import it.unive.ros.lisa.checks.semantics.ROSComputationGraphDumper;
+import it.unive.ros.models.rclpy.RosComputationalGraph;
+
 import org.junit.Test;
 
 import static it.unive.lisa.LiSAFactory.getDefaultFor;
@@ -31,7 +28,7 @@ public class RosTest {
 
     @Test
     public void test() throws Exception {
-        PyFrontend translator = new PyFrontend("ros-tests/minimal.py", false);
+        PyFrontend translator = new PyFrontend("ros-tests/git-repos/Turtle_pong/src/ping_pong/ping_pong/ball.py", false);
 
         Program program = translator.toLiSAProgram();
 
@@ -45,7 +42,7 @@ public class RosTest {
         conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
         conf.optimize = false;
         //conf.openCallPolicy
-        conf.semanticChecks.add(new ROSComputationGraphDumper());
+        //conf.semanticChecks.add(new ROSComputationGraphDumper(new RosComputationalGraph()));
         FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs();
         TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
         //conf.interproceduralAnalysis = new ContextBasedAnalysis();
@@ -70,13 +67,14 @@ public class RosTest {
         conf.callGraph = new RTACallGraph();
         //conf.openCallPolicy
         RosTopic rt = new RosTopic();
-
-        PyFieldSensitivePointBasedHeap heap = new PyFieldSensitivePointBasedHeap();
-        InferredTypes type = new InferredTypes();
-        //conf.interproceduralAnalysis = new ContextBasedAnalysis();
+        conf.optimize = false;
+        FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs();
+        TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
+        conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
         ConstantPropagation constantPropagation = new ConstantPropagation();
         //conf.semanticChecks.add(new it.unive.pylisa.checks.semantics.RosTopicDeclarationFinder());
-        conf.abstractState = getDefaultFor(AbstractState.class, heap, constantPropagation, type);
+        ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
+        conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
         LiSA lisa = new LiSA(conf);
         lisa.run(program);
     }

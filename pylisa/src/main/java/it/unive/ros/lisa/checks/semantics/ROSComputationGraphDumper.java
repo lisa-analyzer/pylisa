@@ -1,7 +1,6 @@
-package it.unive.pylisa.checks.semantics;
+package it.unive.ros.lisa.checks.semantics;
 
 import it.unive.lisa.analysis.*;
-import it.unive.lisa.analysis.heap.pointbased.AllocationSite;
 import it.unive.lisa.analysis.heap.pointbased.HeapAllocationSite;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
@@ -9,11 +8,11 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
+import it.unive.lisa.interprocedural.ScopeId;
+import it.unive.lisa.interprocedural.context.LastCallToken;
 import it.unive.lisa.program.Global;
-import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
-import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -23,215 +22,33 @@ import it.unive.lisa.program.cfg.statement.call.NativeCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.lisa.symbolic.heap.HeapReference;
-import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Untyped;
-import it.unive.lisa.util.file.FileManager;
-import it.unive.pylisa.analysis.constants.ConstantPropagation;
-import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
+import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.models.rclpy.*;
+import it.unive.ros.models.rclpy.*;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.lang.annotation.Native;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.io.*;
-import java.util.*;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> {
 
-    RosComputationalGraph rosGraph = new RosComputationalGraph();
-    
-    PermissionsGraph permGraph = new PermissionsGraph();
-    @Override
-    public void beforeExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {
+    private RosComputationalGraph rosGraph;
+
+    private ScopeId currentNodeScopeId;
+    public ROSComputationGraphDumper(RosComputationalGraph rosGraph) {
+        this.rosGraph = rosGraph;
     }
 
     @Override
-    public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {
-        
-        // validate against .XML
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-    
-        try {
-        
-            // optional, but recommended
-            // process XML securely, avoid attacks like XML External Entities (XXE)
-            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        
-            // parse XML file
-            DocumentBuilder db = dbf.newDocumentBuilder();
-        
-            Document doc = db.parse(new File("ros-tests/permissions.xml"));
-        
-            // optional, but recommended
-            // http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
-            doc.getDocumentElement().normalize();
-            NodeList grants = doc.getElementsByTagName("grant");
-            for (int j = 0; j < grants.getLength(); j++) {
-                String nodeId = "\"" + grants.item(j).getAttributes().getNamedItem("name").getNodeValue() + "\"";
-                permGraph.addNode(new Node(nodeId, null));
-                for (int i = 0; i < grants.item(j).getChildNodes().getLength(); i++) {
-                    org.w3c.dom.Node n = grants.item(j).getChildNodes().item(i);
-                    if (n.getNodeName().equals("publish")) {
-                        // get topics
-                        for (int k = 0; k < n.getChildNodes().getLength(); k++) {
-                            org.w3c.dom.Node m = n.getChildNodes().item(k);
-                            if (m.getNodeName().equals("topics")) {
-                                for (int l = 0; l < m.getChildNodes().getLength(); l++) {
-                                    org.w3c.dom.Node o = m.getChildNodes().item(l);
-                                    String topic = "\"" + o.getTextContent() + "\"";
-                                    if (o.getNodeName().equals("topic")) {
-                                        System.out.println(o.getTextContent());
-                                        Topic t = permGraph.addOrGetTopic("\"" + o.getTextContent() + "\"");
-                                        //Publisher p = new Publisher(permGraph.getNodeByName(nodeId),t, "");
-                                        permGraph.getNodeByName(nodeId).addNewPublisher(t, "");
-                                    }
-                                }
-                                System.out.println("PUBLISH");
-                            }
-                        }
-                    }
-                    if (n.getNodeName().equals("subscribe")) {
-                        for (int k = 0; k < n.getChildNodes().getLength(); k++) {
-                            org.w3c.dom.Node m = n.getChildNodes().item(k);
-                            if (m.getNodeName().equals("topics")) {
-                                for (int l = 0; l < m.getChildNodes().getLength(); l++) {
-                                    org.w3c.dom.Node o = m.getChildNodes().item(l);
-                                    String topic = o.getTextContent();
-                                    if (o.getNodeName().equals("topic")) {
-                                        System.out.println(o.getTextContent());
-                                        Topic t = permGraph.addOrGetTopic("\"" + o.getTextContent() + "\"");
-                                        //Publisher p = new Publisher(permGraph.getNodeByName(nodeId),t, "");
-                                        permGraph.getNodeByName(nodeId).addNewSubscriber(t, "", "");
-                                    }
-                                }
-                            }
-                        }
-                        System.out.println("SUBSCRIBER");
-                    }
-                    int x = 3;
-                }
-                //org.w3c.dom.Node node = list.item(temp);
-            }
-        } catch(Exception e) {
-            throw new RuntimeException(e);
-        }
-        
-        
-        
-        StringBuilder dotGraph = new StringBuilder("digraph rosgraph {graph [pad=\"0.5\", nodesep=\"1\", ranksep=\"2\"];");
-        for(Node n : rosGraph.getNodes()) {
-            dotGraph.append(n.getName()).append("[style=filled,fillcolor=\"aquamarine\"];");
-        }
-        for (Topic t : rosGraph.getTopics()) {
-            if (rosGraph.getTopicSubscriptions(t.getName()).size() == 0 || rosGraph.getTopicPublishers(t.getName()).size() == 0) {
-                dotGraph.append(t.getName()).append("[shape=box,style=filled,fillcolor=\"tan1\"];");
-            } else {
-                dotGraph.append(t.getName()).append("[shape=box,style=filled,fillcolor=\"khaki1\"];");
-            }
-        }
-        for(Node n : rosGraph.getNodes()) {
-            for (Publisher p : n.getPublishers()) {
-                dotGraph.append(n.getName()).append(" -> ").append(p.getTopic().getName());
-                Boolean loop = false;
-                Boolean perm = true;
-                /*Node _n = permGraph.getNodeByName(n.getName());
-                if (_n != null) {
-                    for (Publisher _p : permGraph.getNodeByName(n.getName()).getPublishers()) {
-                        if (_p.getTopic().getName().equals(p.getTopic().getName())) {
-                            perm = true;
-                            break;
-                        }
-                    }
-                }*/
-                Set<Subscription> subs = rosGraph.getTopicSubscriptions(p.getTopic().getName());
-                for (Subscription s : subs) {
-                    if (s.getNode().equals(n)) {
-                        loop = true;
-                        break;
-                    }
-                }
-                if (loop) {
-                    if (perm) {
-                        dotGraph.append("[shape=box,label=\"").append(p.getMsgType()).append("\",color=\"red\"];");
-                    } else {
-                        dotGraph.append("[shape=box,label=\"⚠️").append(p.getMsgType()).append("\",color=\"red\",style=\"dotted\",penwidth=3];");
-                    }
-                    
-                } else {
-                    if (perm) {
-                        dotGraph.append("[shape=box,label=\"").append(p.getMsgType()).append("\"];");
-                    } else {
-                        dotGraph.append("[shape=box,label=\"⚠️").append(p.getMsgType()).append("\",style=\"dotted\",penwidth=3];");
-                    }
-                    
-                }
-            }
-            for (Subscription s : n.getSubscribers()) {
-                dotGraph.append(s.getTopic().getName()).append(" -> ").append(n.getName());
-                Boolean loop = false;
-                Boolean perm = true;
-                /*Node _n = permGraph.getNodeByName(n.getName());
-                if (_n != null) {
-                    for (Subscription _s : permGraph.getNodeByName(n.getName()).getSubscribers()) {
-                        if (_s.getTopic().getName().equals(s.getTopic().getName())) {
-                            perm = true;
-                            break;
-                        }
-                    }
-                }*/
-                
-                Set<Publisher> pubs = rosGraph.getTopicPublishers(s.getTopic().getName());
-                for (Publisher p : pubs) {
-                    if (p.getNode().equals(n)) {
-                        loop = true;
-                        break;
-                    }
-                }
-                if (loop) {
-                    if (perm) {
-                        dotGraph.append("[shape=box,label=\"").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\",color=\"red\"];");
-                    } else {
-                        dotGraph.append("[shape=box,label=\"⚠️").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\",color=\"red\",style=\"dotted\",penwidth=3];");
-                    }
-                } else {
-                    if (perm) {
-                        dotGraph.append("[shape=box,label=\"").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\"];");
-                    } else {
-                        dotGraph.append("[shape=box,label=\"⚠️").append(s.getMsgType()).append(", ").append(s.getCallbackFunction()).append("\",style=\"dotted\",penwidth=3];");
-                    }
-               }
-            }
-        }
-        dotGraph.append("}");
-        tool.warn(dotGraph.toString());
-        FileManager.WriteAction w = writer -> writer.write(dotGraph.toString());
-        try {
-            tool.getFileManager().mkDotFile("graph", w);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        int z = 3;
-    }
+    public void beforeExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {}
+
+
+    @Override
+    public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {}
 
     @Override
     public boolean visitUnit(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool, Unit unit) {
@@ -271,6 +88,7 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
                                 NativeCFG nativeCFG = (NativeCFG) codeMember;
                                 if (nativeCFG.getDescriptor().getName().equals("__init__") && nativeCFG.getDescriptor().getUnit().getName().equals(LibrarySpecificationProvider.RCLPY_NODE)) {
                                     String name = "<undefined>";
+                                    String namespace = "";
                                     AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
                                             TypeEnvironment<InferredTypes>>,
                                             PointBasedHeap, ValueEnvironment<ConstantPropagation>,
@@ -279,9 +97,18 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
                                         if (expr instanceof HeapAllocationSite && ((HeapAllocationSite) expr).getField().equals("node_name")) {
                                             //name = analysisState.getState().getValueState().eval(expr, node);
                                             name = analysisState.getState().getValueState().eval((ValueExpression)expr, node).toString();
+                                            name = name.substring(1, name.length()-1);
+                                        }
+                                        if (expr instanceof HeapAllocationSite && ((HeapAllocationSite) expr).getField().equals("namespace")) {
+                                            namespace = analysisState.getState().getValueState().eval((ValueExpression)expr, node).toString();
+                                            if (namespace.length() > 0 ) {
+                                                namespace = namespace.substring(1, namespace.length()-1);
+                                            }
+
                                         }
                                     }
-                                    rosGraph.addNode(new Node(name, result.getId()));
+                                    rosGraph.addNode(new Node(name, namespace, result.getId()));
+                                    currentNodeScopeId = result.getId();
                                 }
                                 if (nativeCFG.getDescriptor().getName().equals("create_subscription") && nativeCFG.getDescriptor().getUnit().getName().equals(LibrarySpecificationProvider.RCLPY_NODE)) {
                                     AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
@@ -296,6 +123,7 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
                                             Variable access = new Variable(Untyped.INSTANCE, "topic_name", expr.getCodeLocation());
                                             HeapAllocationSite has = new HeapAllocationSite(StringType.INSTANCE, expr.getCodeLocation().getCodeLocation(), access, false, expr.getCodeLocation());
                                             topicName = analysisState.getState().getValueState().eval(has, node).toString();
+                                            topicName = topicName.substring(1, topicName.length()-1);
                                             access = new Variable(Untyped.INSTANCE, "msg_type", expr.getCodeLocation());
                                             has = new HeapAllocationSite(StringType.INSTANCE, expr.getCodeLocation().getCodeLocation(), access, false, expr.getCodeLocation());
                                             msgType = analysisState.getState().getValueState().eval(has, node).toString();
@@ -321,7 +149,7 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
                                         callbackFunction = expr.toString();
                                     }*/
                                     Topic topic = rosGraph.addOrGetTopic(topicName);
-                                    rosGraph.getNodeByScopeId(result.getId()).addNewSubscriber(topic, msgType, callbackFunction);
+                                    rosGraph.getNodeByScopeId(currentNodeScopeId).addNewSubscriber(topic, msgType, callbackFunction);
                                 }
                                 if (nativeCFG.getDescriptor().getName().equals("create_publisher") && nativeCFG.getDescriptor().getUnit().getName().equals(LibrarySpecificationProvider.RCLPY_NODE)) {
                                     AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
@@ -335,6 +163,7 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
                                             Variable access = new Variable(Untyped.INSTANCE, "topic_name", expr.getCodeLocation());
                                             HeapAllocationSite has = new HeapAllocationSite(StringType.INSTANCE, expr.getCodeLocation().getCodeLocation(), access, false, expr.getCodeLocation());
                                             topicName = analysisState.getState().getValueState().eval(has, node).toString();
+                                            topicName = topicName.substring(1, topicName.length()-1);
                                             access = new Variable(Untyped.INSTANCE, "msg_type", expr.getCodeLocation());
                                             has = new HeapAllocationSite(StringType.INSTANCE, expr.getCodeLocation().getCodeLocation(), access, false, expr.getCodeLocation());
                                             msgType = analysisState.getState().getValueState().eval(has, node).toString();
@@ -348,7 +177,63 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
                                         msgType = ((Variable) expr).toString();
                                     }*/
                                     Topic topic = rosGraph.addOrGetTopic(topicName);
-                                    rosGraph.getNodeByScopeId(result.getId()).addNewPublisher(topic, msgType);
+                                    rosGraph.getNodeByScopeId(currentNodeScopeId).addNewPublisher(topic, msgType);
+                                }
+                                if (nativeCFG.getDescriptor().getName().equals("create_service") && nativeCFG.getDescriptor().getUnit().getName().equals(LibrarySpecificationProvider.RCLPY_NODE)) {
+                                    AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+                                            TypeEnvironment<InferredTypes>>,
+                                            PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+                                            TypeEnvironment<InferredTypes>> analysisState = result.getAnalysisStateAfter(node);
+                                    String topicName = "<undefined>";
+                                    String msgType = "<undefined>";
+                                    for (SymbolicExpression expr : analysisState.getComputedExpressions()) {
+                                        if (expr instanceof HeapReference && ((HeapReference) expr).getStaticType().equals(new ReferenceType(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_SERVICE)))) {
+                                            Variable access = new Variable(Untyped.INSTANCE, "srv_name", expr.getCodeLocation());
+                                            HeapAllocationSite has = new HeapAllocationSite(StringType.INSTANCE, expr.getCodeLocation().getCodeLocation(), access, false, expr.getCodeLocation());
+                                            topicName = analysisState.getState().getValueState().eval(has, node).toString();
+                                            topicName = topicName.substring(1, topicName.length()-1);
+                                            access = new Variable(Untyped.INSTANCE, "srv_type", expr.getCodeLocation());
+                                            has = new HeapAllocationSite(StringType.INSTANCE, expr.getCodeLocation().getCodeLocation(), access, false, expr.getCodeLocation());
+                                            msgType = analysisState.getState().getValueState().eval(has, node).toString();
+                                            for (SymbolicExpression e : result.getAnalysisStateAfter(((UnresolvedCall) node).getSubExpressions()[1]).getComputedExpressions()) {
+                                                msgType = ((Variable) e).toString();
+                                            }
+                                        }
+                                    }
+                                    rosGraph.getNodeByScopeId(result.getId()).addNewService(new Service(topicName, msgType,""));
+                                    Topic t = rosGraph.addOrGetTopic(topicName + "Reply");
+                                    rosGraph.getNodeByScopeId(result.getId()).addNewPublisher(t, msgType);
+                                    t = rosGraph.addOrGetTopic(topicName + "Request");
+                                    rosGraph.getNodeByScopeId(currentNodeScopeId).addNewSubscriber(t, msgType, "");
+                                }
+                                if (nativeCFG.getDescriptor().getName().equals("create_client") && nativeCFG.getDescriptor().getUnit().getName().equals(LibrarySpecificationProvider.RCLPY_NODE)) {
+                                    AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+                                            TypeEnvironment<InferredTypes>>,
+                                            PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+                                            TypeEnvironment<InferredTypes>> analysisState = result.getAnalysisStateAfter(node);
+                                    String topicName = "<undefined>";
+                                    String msgType = "<undefined>";
+                                    for (SymbolicExpression expr : analysisState.getComputedExpressions()) {
+                                        if (expr instanceof HeapReference && ((HeapReference) expr).getStaticType().equals(new ReferenceType(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_CLIENT)))) {
+                                            Variable access = new Variable(Untyped.INSTANCE, "srv_name", expr.getCodeLocation());
+                                            HeapAllocationSite has = new HeapAllocationSite(StringType.INSTANCE, expr.getCodeLocation().getCodeLocation(), access, false, expr.getCodeLocation());
+                                            topicName = analysisState.getState().getValueState().eval(has, node).toString();
+                                            topicName = topicName.substring(1, topicName.length()-1);
+                                            access = new Variable(Untyped.INSTANCE, "srv_type", expr.getCodeLocation());
+                                            has = new HeapAllocationSite(StringType.INSTANCE, expr.getCodeLocation().getCodeLocation(), access, false, expr.getCodeLocation());
+                                            msgType = analysisState.getState().getValueState().eval(has, node).toString();
+                                            for (SymbolicExpression e : result.getAnalysisStateAfter(((UnresolvedCall) node).getSubExpressions()[1]).getComputedExpressions()) {
+                                                msgType = ((Variable) e).toString();
+                                            }
+                                        }
+                                    }
+
+                                    rosGraph.getNodeByScopeId(currentNodeScopeId).addNewService(new Service(topicName, msgType, ""));
+                                    Topic t = rosGraph.addOrGetTopic(topicName + "Reply");
+                                    rosGraph.getNodeByScopeId(currentNodeScopeId).addNewSubscriber(t, msgType, "");
+                                    t = rosGraph.addOrGetTopic(topicName + "Request");
+                                    rosGraph.getNodeByScopeId(currentNodeScopeId).addNewPublisher(t, msgType);
+                                    //rosGraph.getNodeByScopeId(result.getId()).addNewServicePublisher(topic, msgType);
                                 }
                             }
                         }
@@ -358,7 +243,7 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
 
                 }
 
-                }
+        }
         return true;
     }
 
@@ -367,12 +252,8 @@ public class ROSComputationGraphDumper implements SemanticCheck<SimpleAbstractSt
         return true;
     }
 
-    private String getValue(AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-            TypeEnvironment<InferredTypes>>,
-            PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-            TypeEnvironment<InferredTypes>> analysisState, ValueExpression expression, Statement node) {
-
-        return "";
+    public RosComputationalGraph getRosGraph() {
+        return rosGraph;
     }
 }
 

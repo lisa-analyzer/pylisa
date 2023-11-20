@@ -57,7 +57,7 @@ value
    ;
 
 param
-   : PARAM name = IDENTIFIER type (DEFAULT val = value)?
+   : PARAM (STAR? | POWER? | AMP?)name = IDENTIFIER type (DEFAULT val = value)?
    ;
 
 field
@@ -79,4 +79,3 @@ library
 file
    : (method | field | classDef | library)*
    ;
-

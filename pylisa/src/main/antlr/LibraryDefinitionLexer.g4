@@ -88,6 +88,13 @@ STAR
    : '*'
    ;
 
+POWER
+   : '**'
+   ;
+
+AMP
+   : '&'
+   ;
 WHITESPACE
    : [ \t\r\n\u000C]+ -> channel (HIDDEN)
    ;

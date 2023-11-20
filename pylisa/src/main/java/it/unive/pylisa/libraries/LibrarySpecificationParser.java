@@ -3,6 +3,8 @@ package it.unive.pylisa.libraries;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import it.unive.pylisa.libraries.loader.*;
+import it.unive.pylisa.libraries.loader.Runtime;
 import org.apache.commons.lang3.tuple.Pair;
 
 import it.unive.pylisa.antlr.LibraryDefinitionParser.ClassDefContext;
@@ -15,20 +17,6 @@ import it.unive.pylisa.antlr.LibraryDefinitionParser.MethodContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.ParamContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.TypeContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParserBaseVisitor;
-import it.unive.pylisa.libraries.loader.BooleanValue;
-import it.unive.pylisa.libraries.loader.ClassDef;
-import it.unive.pylisa.libraries.loader.Field;
-import it.unive.pylisa.libraries.loader.LiSAType;
-import it.unive.pylisa.libraries.loader.LibType;
-import it.unive.pylisa.libraries.loader.Library;
-import it.unive.pylisa.libraries.loader.Method;
-import it.unive.pylisa.libraries.loader.NoneValue;
-import it.unive.pylisa.libraries.loader.NumberValue;
-import it.unive.pylisa.libraries.loader.Parameter;
-import it.unive.pylisa.libraries.loader.Runtime;
-import it.unive.pylisa.libraries.loader.StringValue;
-import it.unive.pylisa.libraries.loader.Type;
-import it.unive.pylisa.libraries.loader.Value;
 
 public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisitor<Object> {
 
@@ -66,7 +54,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		Type type = visitType(ctx.type());
 		String name = ctx.name.getText();
 		if (ctx.DEFAULT() == null)
-			return new Parameter(name, type);
+			return new Parameter(name, type, ctx.STAR() != null ? Parameter.ParameterType.VAR_ARGS : ctx.POWER() != null ? Parameter.ParameterType.KW_ARGS : ctx.AMP() != null ? Parameter.ParameterType.KW_ONLY : Parameter.ParameterType.STANDARD);
 
 		Value def;
 		if (ctx.val.NONE() != null)
@@ -80,7 +68,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		else
 			throw new LibraryParsingException(file, "Unsupported default parameter type: " + type);
 
-		return new Parameter(name, type, def);
+		return new Parameter(name, type, def, ctx.STAR() != null ? Parameter.ParameterType.VAR_ARGS : ctx.POWER() != null ? Parameter.ParameterType.KW_ARGS : ctx.AMP() != null ? Parameter.ParameterType.KW_ONLY : Parameter.ParameterType.STANDARD);
 	}
 
 	@Override
