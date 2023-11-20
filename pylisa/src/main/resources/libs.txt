@@ -128,7 +128,16 @@ library rclpy:
     location rclpy
         method init: it.unive.pylisa.libraries.rclpy.Init
             type it.unive.lisa.type.Untyped::INSTANCE
-    class rclpy.publisher.Publisher:
+    class rclpy.qos.QoSProfile:
+		instance method __init__: it.unive.pylisa.libraries.rclpy.qos.Init
+			libtype rclpy.qos.QoSProfile*
+			param self type it.unive.lisa.type.Untyped::INSTANCE
+			param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+		instance method QosProfile: it.unive.pylisa.libraries.rclpy.qos.Init
+            libtype rclpy.qos.QoSProfile*
+            param self type it.unive.lisa.type.Untyped::INSTANCE
+            param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+	class rclpy.publisher.Publisher:
         instance method __init__: it.unive.pylisa.libraries.rclpy.publisher.Init
             libtype rclpy.publisher.Publisher*
             param self type it.unive.lisa.type.Untyped::INSTANCE
@@ -137,25 +146,62 @@ library rclpy:
             param qos_profile type it.unive.lisa.type.Untyped::INSTANCE
         instance method publish: it.unive.pylisa.libraries.rclpy.publisher.Publish
             type it.unive.lisa.type.VoidType::INSTANCE
-            param self libtype rclpy.publisher.Publisher*
-            param msg type it.unive.lisa.program.type.StringType::INSTANCE
+            param self type it.unive.lisa.type.Untyped::INSTANCE
+            param msg type it.unive.lisa.type.Untyped::INSTANCE
     class rclpy.subscription.Subscription:
         instance method __init__: it.unive.pylisa.libraries.rclpy.subscription.Init
-                libtype rclpy.subscription.Subscription*
-                param self type it.unive.lisa.type.Untyped::INSTANCE
-                param msg_type type it.unive.lisa.type.Untyped::INSTANCE
-                param topic type it.unive.lisa.program.type.StringType::INSTANCE
-                param callback_func type it.unive.lisa.type.Untyped::INSTANCE
-                param qos_profile type it.unive.lisa.type.Untyped::INSTANCE
+            libtype rclpy.subscription.Subscription*
+            param self type it.unive.lisa.type.Untyped::INSTANCE
+            param msg_type type it.unive.lisa.type.Untyped::INSTANCE
+            param topic type it.unive.lisa.program.type.StringType::INSTANCE
+            param callback_func type it.unive.lisa.type.Untyped::INSTANCE
+            param qos_profile type it.unive.lisa.type.Untyped::INSTANCE
+    class rclpy.service.Service:
+        instance method __init__: it.unive.pylisa.libraries.rclpy.service.Init
+            libtype rclpy.service.Service*
+            param self type it.unive.lisa.type.Untyped::INSTANCE
+            param srv_type type it.unive.lisa.type.Untyped::INSTANCE
+            param srv_name type it.unive.lisa.program.type.StringType::INSTANCE
+            param callback type it.unive.lisa.type.Untyped::INSTANCE
+            param qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param callback_group type it.unive.lisa.type.Untyped::INSTANCE default none
+    class rclpy.client.Client:
+        instance method __init__: it.unive.pylisa.libraries.rclpy.client.Init
+            libtype rclpy.client.Client*
+            param self type it.unive.lisa.type.Untyped::INSTANCE
+            param srv_type type it.unive.lisa.type.Untyped::INSTANCE
+            param srv_name type it.unive.lisa.program.type.StringType::INSTANCE
+            param qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param callback_group type it.unive.lisa.type.Untyped::INSTANCE default none
     class rclpy.node.Node:
+        instance field namespace type it.unive.lisa.program.type.StringType::INSTANCE
+        instance field name type it.unive.lisa.program.type.StringType::INSTANCE
         instance method Node: it.unive.pylisa.libraries.rclpy.node.Init
             libtype rclpy.node.Node*
             param self libtype rclpy.node.Node*
             param node_name type it.unive.lisa.program.type.StringType::INSTANCE
+            param &context type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &cli_args type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &namespace type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &use_global_arguments type it.unive.lisa.program.type.BoolType::INSTANCE default true
+            param &enable_rosout type it.unive.lisa.program.type.BoolType::INSTANCE default true
+            param &start_parameter_services type it.unive.lisa.program.type.BoolType::INSTANCE default true
+            param &parameter_overrides type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &parameter_overrides type it.unive.lisa.program.type.BoolType::INSTANCE default false
+            param &automatically_declare_parameters_from_overrides type it.unive.lisa.program.type.BoolType::INSTANCE default false
         instance method __init__: it.unive.pylisa.libraries.rclpy.node.Init
             libtype rclpy.node.Node*
             param self libtype rclpy.node.Node*
             param node_name type it.unive.lisa.program.type.StringType::INSTANCE
+            param &context type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &cli_args type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &namespace type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &use_global_arguments type it.unive.lisa.program.type.BoolType::INSTANCE default true
+            param &enable_rosout type it.unive.lisa.program.type.BoolType::INSTANCE default true
+            param &start_parameter_services type it.unive.lisa.program.type.BoolType::INSTANCE default true
+            param &parameter_overrides type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &parameter_overrides type it.unive.lisa.program.type.BoolType::INSTANCE default false
+            param &automatically_declare_parameters_from_overrides type it.unive.lisa.program.type.BoolType::INSTANCE default false
         instance method create_publisher: it.unive.pylisa.libraries.rclpy.node.CreatePublisher
             libtype rclpy.publisher.Publisher*
             param self libtype rclpy.node.Node*
@@ -169,3 +215,18 @@ library rclpy:
             param topic type it.unive.lisa.program.type.StringType::INSTANCE
             param callback type it.unive.lisa.type.Untyped::INSTANCE
             param qos_profile type it.unive.lisa.type.Untyped::INSTANCE
+        instance method create_service: it.unive.pylisa.libraries.rclpy.node.CreateService
+            libtype rclpy.service.Service*
+            param self libtype rclpy.node.Node*
+            param srv_type type it.unive.lisa.type.Untyped::INSTANCE
+            param srv_name type it.unive.lisa.program.type.StringType::INSTANCE
+            param callback type it.unive.lisa.type.Untyped::INSTANCE
+            param &qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &callback_group type it.unive.lisa.type.Untyped::INSTANCE default none
+        instance method create_client: it.unive.pylisa.libraries.rclpy.node.CreateClient
+            libtype rclpy.client.Client*
+            param self libtype rclpy.node.Node*
+            param srv_type type it.unive.lisa.type.Untyped::INSTANCE
+            param srv_name type it.unive.lisa.program.type.StringType::INSTANCE
+            param &qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &callback_group type it.unive.lisa.type.Untyped::INSTANCE default none
