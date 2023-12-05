@@ -89,16 +89,6 @@ public class PyTernaryOperator extends Expression {
 	}
 
 	@Override
-	public int setOffset(
-			int offset) {
-		this.offset = offset;
-		int off = ifTrue.setOffset(this.offset + 1);
-		off = condition.setOffset(off + 1);
-		off = ifFalse.setOffset(off + 1);
-		return off;
-	}
-
-	@Override
 	public <V> boolean accept(
 			GraphVisitor<CFG, Statement, Edge, V> visitor,
 			V tool) {

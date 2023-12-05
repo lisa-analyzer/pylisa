@@ -35,13 +35,6 @@ public class Import extends Statement {
 	}
 
 	@Override
-	public int setOffset(
-			int i) {
-		super.offset = i;
-		return i;
-	}
-
-	@Override
 	public <V> boolean accept(
 			GraphVisitor<CFG, Statement, Edge, V> visitor,
 			V tool) {

@@ -32,17 +32,6 @@ public class LambdaExpression extends Expression {
 	}
 
 	@Override
-	public final int setOffset(
-			int offset) {
-		this.offset = offset;
-		int off = offset;
-		for (Expression sub : arguments)
-			off = sub.setOffset(off + 1);
-		off = body.setOffset(off + 1);
-		return off;
-	}
-
-	@Override
 	public final <V> boolean accept(
 			GraphVisitor<CFG, Statement, Edge, V> visitor,
 			V tool) {
