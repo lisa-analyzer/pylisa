@@ -1880,7 +1880,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
 			return new TupleCreation(currentCFG, getLocation(ctx), sts.toArray(Expression[]::new));
 		} else if (ctx.OPEN_BRACE() != null) {
-			List<Pair<Expression, Expression>> values = extractPairsFromDictorSet(ctx.dictorsetmaker());
+			// check if it is a dict or a set
+			if (!isADict(ctx.dictorsetmaker())) {
+				List<Expression> values = extractElementsFromSet(ctx.dictorsetmaker());
+				SetCreation s = new SetCreation(currentCFG, getLocation(ctx), values.toArray(Expression[]::new));
+				return s;
+			}
+
+			List<Pair<Expression, Expression>> values = extractPairsFromDict(ctx.dictorsetmaker());
 			@SuppressWarnings("unchecked")
 			DictionaryCreation r = new DictionaryCreation(currentCFG, getLocation(ctx),
 					values.toArray(Pair[]::new));
@@ -1905,8 +1912,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		return new PyStringLiteral(currentCFG, location, string, "\"");
 	}
 
-	private List<Pair<Expression, Expression>> extractPairsFromDictorSet(
-			DictorsetmakerContext ctx) {
+	private Boolean isADict(DictorsetmakerContext ctx) {
+		return ctx == null || ctx.test().size() == 2 * ctx.COLON().size();
+	}
+
+	private List<Pair<Expression, Expression>> extractPairsFromDict(DictorsetmakerContext ctx) {
 		if (ctx == null)
 			return new ArrayList<>();
 		List<Pair<Expression, Expression>> result = new ArrayList<>();
@@ -1917,6 +1927,17 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			Expression left = visitTest(ctx.test(2 * i));
 			Expression right = visitTest(ctx.test(2 * i + 1));
 			result.add(Pair.of(left, right));
+		}
+		return result;
+	}
+
+	private List<Expression> extractElementsFromSet(DictorsetmakerContext ctx) {
+		if (ctx == null)
+			return new ArrayList<>();
+		List<Expression> result = new ArrayList<>();
+		for (int i = 0; i < ctx.test().size(); i++) {
+			Expression e = visitTest(ctx.test(i));
+			result.add(e);
 		}
 		return result;
 	}
