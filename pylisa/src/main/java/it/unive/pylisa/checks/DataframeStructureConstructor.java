@@ -31,21 +31,20 @@ import it.unive.pylisa.analysis.dataframes.Names;
 import it.unive.pylisa.analysis.dataframes.edge.AssignEdge;
 import it.unive.pylisa.analysis.dataframes.edge.ConsumeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
-import it.unive.pylisa.analysis.dataframes.operations.AssignDataframe;
-import it.unive.pylisa.analysis.dataframes.operations.AssignValue;
-import it.unive.pylisa.analysis.dataframes.operations.BooleanComparison;
+import it.unive.pylisa.analysis.dataframes.operations.Assign;
 import it.unive.pylisa.analysis.dataframes.operations.BottomOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Concat;
-import it.unive.pylisa.analysis.dataframes.operations.CreateFromDict;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
-import it.unive.pylisa.analysis.dataframes.operations.DropColumns;
-import it.unive.pylisa.analysis.dataframes.operations.FillNullAxis;
-import it.unive.pylisa.analysis.dataframes.operations.FilterNullAxis;
+import it.unive.pylisa.analysis.dataframes.operations.GetAxis;
+import it.unive.pylisa.analysis.dataframes.operations.Init;
 import it.unive.pylisa.analysis.dataframes.operations.Iteration;
-import it.unive.pylisa.analysis.dataframes.operations.Keys;
-import it.unive.pylisa.analysis.dataframes.operations.ReadFromFile;
-import it.unive.pylisa.analysis.dataframes.operations.SelectionOperation;
+import it.unive.pylisa.analysis.dataframes.operations.Project;
+import it.unive.pylisa.analysis.dataframes.operations.Read;
+import it.unive.pylisa.analysis.dataframes.operations.Reshape;
 import it.unive.pylisa.analysis.dataframes.operations.Transform;
+import it.unive.pylisa.analysis.dataframes.operations.selection.rows.BooleanSelection;
+import it.unive.pylisa.symbolic.operators.Enumerations.BinaryTransformKind;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -215,19 +214,12 @@ public class DataframeStructureConstructor
 							throws Exception {
 						Names sources = extractSources(node, graph);
 
-						if (node instanceof AssignDataframe<?>)
+						if (node instanceof Assign<?, ?>)
 							return entrystate.assign(sources,
-									((AssignDataframe<?>) node).getSelection().extractColumnNames());
-						else if (node instanceof AssignValue<?, ?>)
-							return entrystate.assign(sources,
-									((AssignValue<?, ?>) node).getSelection().extractColumnNames());
-						else if (node instanceof BooleanComparison<?>)
-							return entrystate.access(sources,
-									((BooleanComparison<?>) node).getSelection().extractColumnNames());
-						else if (node instanceof DropColumns)
-							return entrystate.remove(sources, ((DropColumns) node).getColumns().extractColumnNames());
-						else if (node instanceof SelectionOperation<?>) {
+									((Assign<?, ?>) node).getSelection().extractColumnNames());
+						else if (node instanceof Project<?, ?>) {
 							boolean allConsume = true;
+							Project<?, ?> proj = (Project<?, ?>) node;
 							for (DataframeEdge edge : graph.getOutgoingEdges(node))
 								if (edge.getDestination().equals(exit))
 									continue;
@@ -235,23 +227,33 @@ public class DataframeStructureConstructor
 									allConsume = false;
 									break;
 								}
+							if (proj.getSelection().getRowSelection() instanceof BooleanSelection<?>)
+								// boolean selections are always used to produce
+								// the boolean masks, even when they are on the
+								// lhs of an assignment
+								entrystate = entrystate.access(sources,
+										proj.getSelection().getRowSelection().extractColumnNames());
+
 							if (allConsume)
 								// will be reported separately as selection of
 								// the consumer
 								return entrystate;
-							return entrystate.access(sources,
-									((SelectionOperation<?>) node).getSelection().extractColumnNames());
-						} else if (node instanceof Transform<?>)
-							if (((Transform<?>) node).isChangeShape())
-								return entrystate.define(sources);
+							return entrystate.access(sources, proj.getSelection().extractColumnNames());
+						} else if (node instanceof Transform<?, ?>) {
+							Transform<?, ?> transform = (Transform<?, ?>) node;
+							if (transform.getType() == BinaryTransformKind.ASSIGN)
+								return entrystate.assign(sources, transform.getSelection().extractColumnNames());
+							else if (transform.getType() == UnaryTransformKind.DROP_COLS)
+								return entrystate.remove(sources, transform.getSelection().extractColumnNames());
 							else
-								return entrystate.access(sources,
-										((Transform<?>) node).getSelection().extractColumnNames());
-						else if (node instanceof ReadFromFile || node instanceof Concat)
+								return entrystate.access(sources, transform.getSelection().extractColumnNames());
+						} else if (node instanceof Reshape<?, ?>)
 							return entrystate.define(sources);
-						else if (node instanceof CreateFromDict || node instanceof BottomOperation
-								|| node instanceof CloseOperation || node instanceof FillNullAxis
-								|| node instanceof FilterNullAxis || node instanceof Iteration || node instanceof Keys)
+						else if (node instanceof Read || node instanceof Concat)
+							return entrystate.define(sources);
+						else if (node instanceof Init || node instanceof BottomOperation
+								|| node instanceof CloseOperation || node instanceof Iteration
+								|| node instanceof GetAxis)
 							return entrystate;
 						else
 							return entrystate.top();
@@ -261,12 +263,14 @@ public class DataframeStructureConstructor
 							DataframeOperation node,
 							DataframeForest graph) {
 						DataframeForest cut = graph.bDFS(node,
-								op -> op instanceof Transform<?> && ((Transform<?>) op).isChangeShape(),
+								op -> op instanceof Reshape<?, ?>,
 								edge -> !(edge instanceof AssignEdge));
 						Set<String> names = new HashSet<>();
 						for (DataframeOperation op : cut.getNodeList().getEntries())
-							if (op instanceof ReadFromFile && ((ReadFromFile) op).getFile() != null)
-								names.add(((ReadFromFile) op).getFile());
+							if (op instanceof Read
+									&& !((Read) op).getFile().isTop()
+									&& !((Read) op).getFile().isBottom())
+								names.add(((Read) op).getFile().as(String.class));
 							else
 								names.add(op.toString());
 						return new Names(names);

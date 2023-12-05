@@ -8,8 +8,10 @@ import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.NativeCFG;
+import it.unive.pylisa.cfg.type.PyLibraryUnitType;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
-import it.unive.pylisa.libraries.PyLibraryUnitType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -85,7 +87,22 @@ public class Library {
 			CompilationUnit c = cls.toLiSAUnit(location, program, rootHolder);
 			program.addUnit(c);
 			// type registration is a side effect of the constructor
-			new PyLibraryUnitType(unit, c);
+			if (cls.getTypeName() == null)
+				new PyLibraryUnitType(unit, c);
+			else
+				try {
+					Class<?> type = Class.forName(cls.getTypeName());
+					Constructor<?> constructor = type.getConstructor(CompilationUnit.class);
+					constructor.newInstance(c);
+				} catch (ClassNotFoundException
+						| SecurityException
+						| IllegalArgumentException
+						| IllegalAccessException
+						| NoSuchMethodException
+						| InstantiationException
+						| InvocationTargetException e) {
+					throw new LibraryCreationException(e);
+				}
 		}
 
 		return unit;

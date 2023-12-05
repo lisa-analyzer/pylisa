@@ -8,11 +8,18 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collections;
 import java.util.Set;
 
-public class ReadDataframe implements UnaryOperator {
+public class ReadDataframe implements UnaryOperator, DataframeOperator {
 
-	public static final ReadDataframe INSTANCE = new ReadDataframe();
+	private final int index;
 
-	private ReadDataframe() {
+	public ReadDataframe(
+			int index) {
+		this.index = index;
+	}
+
+	@Override
+	public int getIndex() {
+		return index;
 	}
 
 	@Override

@@ -1,7 +1,38 @@
 package it.unive.pylisa;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.logging.IterationLogger;
 import it.unive.lisa.program.ClassUnit;
@@ -34,19 +65,13 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.cfg.statement.comparison.LessThan;
-import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
-import it.unive.lisa.program.cfg.statement.literal.Float32Literal;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
-import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.cfg.statement.logic.Not;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
-import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.type.NullType;
@@ -186,47 +211,17 @@ import it.unive.pylisa.cfg.expression.SetCreation;
 import it.unive.pylisa.cfg.expression.StarExpression;
 import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.expression.comparison.PyAnd;
-import it.unive.pylisa.cfg.expression.comparison.PyEquals;
-import it.unive.pylisa.cfg.expression.comparison.PyGreaterOrEqual;
-import it.unive.pylisa.cfg.expression.comparison.PyGreaterThan;
-import it.unive.pylisa.cfg.expression.comparison.PyLessOrEqual;
-import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
-import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
+import it.unive.pylisa.cfg.expression.literal.PyEllipsisLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyFloatLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyIntLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
@@ -360,10 +355,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		TypeSystem types = program.getTypes();
 		types.registerType(PyLambdaType.INSTANCE);
-		types.registerType(BoolType.INSTANCE);
 		types.registerType(StringType.INSTANCE);
-		types.registerType(Int32Type.INSTANCE);
-		types.registerType(Float32Type.INSTANCE);
 		types.registerType(NullType.INSTANCE);
 		types.registerType(VoidType.INSTANCE);
 		types.registerType(Untyped.INSTANCE);
@@ -617,7 +609,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				if (firstParam) {
 					if (currentUnit instanceof ClassUnit) {
 						pars.add(new Parameter(getLocation(ctx), def.tfpdef().NAME().getText(),
-								new ReferenceType(PyClassType.lookup(currentUnit.getName(), (ClassUnit) currentUnit))));
+								new ReferenceType(
+										PyClassType.register(currentUnit.getName(), (ClassUnit) currentUnit))));
 					} else {
 						pars.add(visitTypedarg(def));
 					}
@@ -1092,7 +1085,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (list.size() != 1)
 			throw new UnsupportedStatementException("for loops with more than one test are not supported");
 		Expression collection = list.iterator().next();
-		Expression[] collection_pars = { collection };
 
 		VariableRef counter = new VariableRef(
 				currentCFG,
@@ -1109,9 +1101,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		block.addNode(counter_init);
 
 		// counter < collection.size()
-		LessThan condition = new PyLessThan(
+		UnresolvedCall condition = new UnresolvedCall(
 				currentCFG,
 				getLocation(ctx),
+				CallType.INSTANCE,
+				null,
+				"__lt__",
 				counter,
 				new UnresolvedCall(
 						currentCFG,
@@ -1119,7 +1114,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						CallType.INSTANCE,
 						null,
 						"__len__",
-						collection_pars));
+						collection));
 		block.addNode(condition);
 
 		// element = collection.at(counter)
@@ -1416,45 +1411,29 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			Comp_opContext operator = ctx.comp_op(0);
 			Expression left = visitExpr(ctx.expr(0));
 			Expression right = visitExpr(ctx.expr(1));
+			String op = null;
+
 			if (operator.EQUALS() != null)
-				result = new PyEquals(currentCFG, getLocation(ctx), left, right);
-
-			// Python greater (>)
-			if (operator.GREATER_THAN() != null) {
-				result = new PyGreaterThan(currentCFG, getLocation(ctx), left, right);
-			}
-			// Python greater equal (>=)
-			if (operator.GT_EQ() != null)
-				result = new PyGreaterOrEqual(currentCFG, getLocation(ctx), left, right);
-
-			// Python in (in)
-			if (operator.IN() != null)
+				op = "__eq__";
+			else if (operator.GREATER_THAN() != null)
+				op = "__gt__";
+			else if (operator.GT_EQ() != null)
+				op = "__ge__";
+			else if (operator.LESS_THAN() != null)
+				op = "__lt__";
+			else if (operator.LT_EQ() != null)
+				op = "__le__";
+			else if (operator.NOT_EQ_1() != null || operator.NOT_EQ_2() != null)
+				op = "__ne__";
+			else if (operator.IN() != null)
 				result = new PyIn(currentCFG, getLocation(ctx), left, right);
-
-			// Python is (is)
-			if (operator.IS() != null)
+			else if (operator.IS() != null)
 				result = new PyIs(currentCFG, getLocation(ctx), left, right);
-
-			// Python less (<)
-			if (operator.LESS_THAN() != null)
-				result = new PyLessThan(currentCFG, getLocation(ctx), left, right);
-
-			// Python less equal (<=)
-			if (operator.LT_EQ() != null)
-				result = new PyLessOrEqual(currentCFG, getLocation(ctx), left, right);
-
-			// Python not (not)
-			if (operator.NOT() != null)
+			else if (operator.NOT() != null)
 				result = new Not(currentCFG, getLocation(ctx), left);
 
-			// Python not equals (<>)
-			if (operator.NOT_EQ_1() != null)
-				result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
-
-			// Python not equals (!=)
-			if (operator.NOT_EQ_2() != null)
-				result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
-
+			if (op != null)
+				result = new UnresolvedCall(currentCFG, getLocation(ctx), CallType.INSTANCE, null, op, left, right);
 			break;
 		default:
 			throw new UnsupportedStatementException();
@@ -1745,14 +1724,21 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				if (expr.NAME() != null) {
 					last_name = expr.NAME().getSymbol().getText();
 					previous_access = access;
-					access = new PyAccessInstanceGlobal(currentCFG, getLocation(expr), access, last_name);
+					access = new UnresolvedCall(
+							currentCFG,
+							getLocation(expr),
+							CallType.INSTANCE,
+							null,
+							"__getattribute__",
+							access,
+							new PyStringLiteral(currentCFG, getLocation(expr), last_name, "'"));
 				} else if (expr.OPEN_PAREN() != null) {
 					if (last_name == null)
 						throw new UnsupportedStatementException(
 								"When invoking a method we need to have always the name before the parentheses");
 					List<Expression> pars = new ArrayList<>();
 					String method_name = last_name;
-					boolean instance = access instanceof AccessInstanceGlobal;
+					boolean instance = access instanceof PyAccessInstanceGlobal;
 					if (instance)
 						pars.add(previous_access);
 					if (expr.arglist() != null)
@@ -1766,7 +1752,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						cu = program.getUnit(access.toString().replace("::", "."));
 						if (cu != null) {
 							for (Expression par : pars) {
-								if (par instanceof AccessInstanceGlobal) {
+								if (par instanceof PyAccessInstanceGlobal) {
 									pars.remove(par);
 								}
 							}
@@ -1777,7 +1763,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								currentCFG,
 								getLocation(expr),
 								"__init__",
-								PyClassType.lookup(cu.getName(), (ClassUnit) cu),
+								PyClassType.register(cu.getName(), (ClassUnit) cu),
 								pars.toArray(Expression[]::new));
 					} else {
 						access = new UnresolvedCall(
@@ -1865,10 +1851,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 			if (text.contains("e") || text.contains("."))
 				// floating point
-				return new Float32Literal(currentCFG, getLocation(ctx), Float.parseFloat(text));
+				return new PyFloatLiteral(currentCFG, getLocation(ctx), Float.parseFloat(text));
 
 			// integer
-			return new Int32Literal(currentCFG, getLocation(ctx), Integer.parseInt(text));
+			return new PyIntLiteral(currentCFG, getLocation(ctx), Integer.parseInt(text));
 		} else if (ctx.FALSE() != null)
 			// create a literal false
 			return new FalseLiteral(currentCFG, getLocation(ctx));
@@ -1877,7 +1863,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return new TrueLiteral(currentCFG, getLocation(ctx));
 		else if (ctx.NONE() != null)
 			// create a literal false
-			return new NullLiteral(currentCFG, getLocation(ctx));
+			return new PyNoneLiteral(currentCFG, getLocation(ctx));
 		else if (ctx.STRING().size() > 0)
 			// create a string
 			return strip(getLocation(ctx), ctx.STRING(0).getText());
@@ -1900,7 +1886,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			DictionaryCreation r = new DictionaryCreation(currentCFG, getLocation(ctx),
 					values.toArray(Pair[]::new));
 			return r;
-		}
+		} else if (ctx.ELLIPSIS() != null)
+			return new PyEllipsisLiteral(currentCFG, getLocation(ctx));
 		throw new UnsupportedStatementException();
 	}
 

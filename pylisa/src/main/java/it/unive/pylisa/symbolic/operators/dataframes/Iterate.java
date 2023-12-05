@@ -8,11 +8,18 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collections;
 import java.util.Set;
 
-public class Iterate implements UnaryOperator {
+public class Iterate implements UnaryOperator, DataframeOperator {
 
-	public static final Iterate INSTANCE = new Iterate();
+	private final int index;
 
-	private Iterate() {
+	public Iterate(
+			int index) {
+		this.index = index;
+	}
+
+	@Override
+	public int getIndex() {
+		return index;
 	}
 
 	@Override

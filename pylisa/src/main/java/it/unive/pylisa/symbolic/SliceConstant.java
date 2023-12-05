@@ -5,7 +5,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
-import it.unive.pylisa.analysis.dataframes.operations.SliceElement;
+import it.unive.pylisa.analysis.dataframes.operations.selection.SliceElement;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Optional;

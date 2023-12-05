@@ -5,17 +5,12 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.AccessChild;
-import it.unive.lisa.symbolic.heap.HeapDereference;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.Keys;
@@ -38,6 +33,7 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		// TODO pandas-to-move
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 			Type dfreftype = dftype.getReference();
@@ -58,14 +54,6 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 				}
 		}
 
-		// FIXME
-		AnalysisState<A> sup = super.fwdUnarySemantics(interprocedural, state, expr, expressions);
-		if (!sup.isBottom())
-			return sup;
-
-		Variable var = new Variable(Untyped.INSTANCE, getTarget(), new Annotations(), getLocation());
-		HeapDereference container = new HeapDereference(Untyped.INSTANCE, expr, getLocation());
-		AccessChild access = new AccessChild(Untyped.INSTANCE, container, var, getLocation());
-		return state.smallStepSemantics(access, this);
+		return null;
 	}
 }

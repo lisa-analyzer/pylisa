@@ -1,5 +1,7 @@
 package it.unive.pylisa.libraries;
 
+import java.util.Set;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -19,7 +21,6 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.symbolic.operators.dataframes.Iterate;
-import java.util.Set;
 
 public class SequenceGetItem extends BinaryExpression implements PluggableStatement {
 
@@ -63,7 +64,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		Set<Type> rts = state.getState().getRuntimeTypesOf(left, this, state.getState());
 		if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(dfref::equals)) {
 			HeapDereference deref = new HeapDereference(dftype, left, loc);
-			UnaryExpression iterate = new UnaryExpression(seriestype, deref, Iterate.INSTANCE, loc);
+			UnaryExpression iterate = new UnaryExpression(seriestype, deref, new Iterate(0), loc);
 			return state.smallStepSemantics(iterate, st);
 		}
 

@@ -31,10 +31,14 @@ public class PyClassType implements InMemoryType, UnitType {
 
 	public static PyClassType lookup(
 			String name) {
-		return lookup(name, null);
+		PyClassType ct = types.get(name);
+		if (ct == null)
+			throw new IllegalStateException("The requested type '" + name + "' has not been registered before");
+
+		return ct;
 	}
 
-	public static PyClassType lookup(
+	public static PyClassType register(
 			String name,
 			CompilationUnit unit) {
 		return types.computeIfAbsent(name, x -> new PyClassType(name, unit));
@@ -108,7 +112,7 @@ public class PyClassType implements InMemoryType, UnitType {
 				return current;
 
 			// null since we do not want to create new types here
-			current.unit.getImmediateAncestors().forEach(u -> ws.push(lookup(u.getName(), null)));
+			current.unit.getImmediateAncestors().forEach(u -> ws.push(register(u.getName(), null)));
 		}
 
 		return Untyped.INSTANCE;
@@ -159,7 +163,7 @@ public class PyClassType implements InMemoryType, UnitType {
 			TypeSystem types) {
 		Set<Type> instances = new HashSet<>();
 		for (Unit in : unit.getInstances())
-			instances.add(lookup(in.getName(), null));
+			instances.add(register(in.getName(), null));
 		return instances;
 	}
 }

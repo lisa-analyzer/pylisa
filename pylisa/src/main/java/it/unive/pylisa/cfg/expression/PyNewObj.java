@@ -1,5 +1,10 @@
 package it.unive.pylisa.cfg.expression;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.commons.lang3.ArrayUtils;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -19,8 +24,6 @@ import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
-import java.util.HashSet;
-import org.apache.commons.lang3.ArrayUtils;
 
 public class PyNewObj extends NaryExpression {
 
@@ -59,7 +62,7 @@ public class PyNewObj extends NaryExpression {
 		// we also have to add the receiver inside the state
 		AnalysisState<A> callstate = paramThis.forwardSemantics(state, interprocedural, expressions);
 		AnalysisState<A> tmp = state.bottom();
-		HashSet<SymbolicExpression> expr = new HashSet<>();
+		Set<SymbolicExpression> expr = new HashSet<>();
 		for (SymbolicExpression v : callstate.getComputedExpressions()) {
 			tmp = tmp.lub(callstate.assign(v, ref, paramThis));
 			expr.add(v);

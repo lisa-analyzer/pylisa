@@ -5,17 +5,26 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.FilterNull.Axis;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
 import java.util.Collections;
 import java.util.Set;
 
-public class AxisConcatenation implements UnaryOperator {
+public class AxisConcatenation implements UnaryOperator, DataframeOperator {
 
 	private final Axis axis;
 
+	private final int index;
+
 	public AxisConcatenation(
+			int index,
 			Axis axis) {
+		this.index = index;
 		this.axis = axis;
+	}
+
+	@Override
+	public int getIndex() {
+		return index;
 	}
 
 	public Axis getAxis() {

@@ -1,5 +1,10 @@
 package it.unive.pylisa.libraries;
 
+import java.util.Collection;
+import java.util.LinkedList;
+
+import org.apache.commons.lang3.tuple.Pair;
+
 import it.unive.pylisa.antlr.LibraryDefinitionParser.ClassDefContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.FieldContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.FileContext;
@@ -24,9 +29,6 @@ import it.unive.pylisa.libraries.loader.Runtime;
 import it.unive.pylisa.libraries.loader.StringValue;
 import it.unive.pylisa.libraries.loader.Type;
 import it.unive.pylisa.libraries.loader.Value;
-import java.util.Collection;
-import java.util.LinkedList;
-import org.apache.commons.lang3.tuple.Pair;
 
 public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisitor<Object> {
 
@@ -43,6 +45,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		ClassDef cls = new ClassDef(
 				ctx.ROOT() != null,
 				ctx.SEALED() != null,
+				ctx.type_name == null ? null : ctx.type_name.getText(),
 				ctx.name.getText(),
 				ctx.base == null ? null : ctx.base.getText());
 		for (MethodContext mtd : ctx.method())

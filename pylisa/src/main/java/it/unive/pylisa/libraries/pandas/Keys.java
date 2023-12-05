@@ -61,7 +61,7 @@ public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression im
 
 		AnalysisState<A> result = state.bottom();
 		for (SymbolicExpression id : copied.getComputedExpressions()) {
-			UnaryExpression transform = new UnaryExpression(seriestype, id, AccessKeys.INSTANCE, loc);
+			UnaryExpression transform = new UnaryExpression(seriestype, id, new AccessKeys(0), loc);
 			AnalysisState<A> tmp = copied.smallStepSemantics(transform, st);
 
 			HeapReference ref = new HeapReference(seriesref, id, loc);

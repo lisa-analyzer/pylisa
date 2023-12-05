@@ -1,5 +1,8 @@
 package it.unive.pylisa.analysis.constants;
 
+import java.util.Objects;
+import java.util.Set;
+
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
@@ -35,8 +38,6 @@ import it.unive.pylisa.symbolic.operators.Power;
 import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
-import java.util.Objects;
-import java.util.Set;
 
 public class ConstantPropagation
 		implements
@@ -204,6 +205,7 @@ public class ConstantPropagation
 
 		return rts.stream().anyMatch(ConstantPropagation::isAccepted);
 	}
+
 
 	@Override
 	public ConstantPropagation evalNullConstant(

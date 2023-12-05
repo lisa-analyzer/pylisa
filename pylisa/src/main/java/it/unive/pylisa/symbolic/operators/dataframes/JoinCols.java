@@ -8,11 +8,18 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collections;
 import java.util.Set;
 
-public class JoinCols implements BinaryOperator {
+public class JoinCols implements BinaryOperator, DataframeOperator {
 
-	public static final JoinCols INSTANCE = new JoinCols();
+	private final int index;
 
-	private JoinCols() {
+	public JoinCols(
+			int index) {
+		this.index = index;
+	}
+
+	@Override
+	public int getIndex() {
+		return index;
 	}
 
 	@Override

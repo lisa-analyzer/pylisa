@@ -9,6 +9,8 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -60,7 +62,22 @@ public class Runtime {
 			CompilationUnit c = cls.toLiSAUnit(location, program, rootHolder);
 			program.addUnit(c);
 			// create the corresponding type
-			PyClassType.lookup(c.getName(), c);
+			if (cls.getTypeName() == null)
+				PyClassType.register(c.getName(), c);
+			else
+				try {
+					Class<?> type = Class.forName(cls.getTypeName());
+					Constructor<?> constructor = type.getConstructor(CompilationUnit.class);
+					constructor.newInstance(c);
+				} catch (ClassNotFoundException
+						| SecurityException
+						| IllegalArgumentException
+						| IllegalAccessException
+						| NoSuchMethodException
+						| InstantiationException
+						| InvocationTargetException e) {
+					throw new LibraryCreationException(e);
+				}
 		}
 	}
 

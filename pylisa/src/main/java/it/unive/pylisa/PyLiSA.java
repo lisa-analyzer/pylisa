@@ -1,5 +1,9 @@
 package it.unive.pylisa;
 
+import java.io.IOException;
+
+import org.apache.commons.io.FilenameUtils;
+
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAReport;
@@ -15,8 +19,6 @@ import it.unive.lisa.program.Program;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
-import java.io.IOException;
-import org.apache.commons.io.FilenameUtils;
 
 public class PyLiSA {
 

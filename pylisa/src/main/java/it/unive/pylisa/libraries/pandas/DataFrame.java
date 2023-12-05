@@ -49,7 +49,7 @@ public class DataFrame extends it.unive.lisa.program.cfg.statement.UnaryExpressi
 			throws SemanticException {
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		UnaryExpression read = new UnaryExpression(dftype, arg, CreateDataframe.INSTANCE, location);
+		UnaryExpression read = new UnaryExpression(dftype, arg, new CreateDataframe(0), location);
 		return PandasSemantics.createAndInitDataframe(state, read, st);
 	}
 }

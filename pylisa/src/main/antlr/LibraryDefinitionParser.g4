@@ -69,7 +69,7 @@ method
    ;
 
 classDef
-   : ROOT? SEALED? CLASS name = IDENTIFIER (EXTENDS base = IDENTIFIER)? (COLON (method | field)+)?
+   : ROOT? SEALED? CLASS name = IDENTIFIER (EXTENDS base = IDENTIFIER)? (COLON (type_name = IDENTIFIER)? (method | field)*)?
    ;
 
 library
