@@ -6,19 +6,6 @@ import static java.nio.file.Files.delete;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-
-import org.apache.commons.io.FilenameUtils;
-
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
@@ -32,6 +19,17 @@ import it.unive.lisa.outputs.json.JsonReport;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.PyFrontend;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import org.apache.commons.io.FilenameUtils;
 
 public abstract class AnalysisTestExecutor {
 
@@ -41,8 +39,7 @@ public abstract class AnalysisTestExecutor {
 	/**
 	 * Performs a test, running an analysis. The test will fail if:
 	 * <ul>
-	 * <li>The python file cannot be parsed (i.e. a {@link ParsingException} is
-	 * thrown)</li>
+	 * <li>The python file cannot be parsed</li>
 	 * <li>The previous working directory using for the test execution cannot be
 	 * deleted</li>
 	 * <li>The analysis run terminates with an {@link AnalysisException}</li>
@@ -57,7 +54,8 @@ public abstract class AnalysisTestExecutor {
 	 *                 present into the configuration will be ignored, as it
 	 *                 will be overwritten by the computed workdir)
 	 */
-	public void perform(CronConfiguration conf) {
+	public void perform(
+			CronConfiguration conf) {
 		String testMethod = getCaller();
 		System.out.println("### Testing " + testMethod);
 		Objects.requireNonNull(conf);
@@ -195,7 +193,12 @@ public abstract class AnalysisTestExecutor {
 		}
 	}
 
-	private void regen(Path expectedPath, Path actualPath, File expFile, File actFile, Accumulator acc)
+	private void regen(
+			Path expectedPath,
+			Path actualPath,
+			File expFile,
+			File actFile,
+			Accumulator acc)
 			throws IOException {
 		boolean updateReport = acc.changedWarnings || acc.changedConf || acc.changedInfos
 				|| !acc.addedFilePaths.isEmpty() || !acc.removedFilePaths.isEmpty()
@@ -224,7 +227,9 @@ public abstract class AnalysisTestExecutor {
 		}
 	}
 
-	private Program readProgram(Path target, CronConfiguration conf) {
+	private Program readProgram(
+			Path target,
+			CronConfiguration conf) {
 		String kind = FilenameUtils.getExtension(target.toString());
 		PyFrontend translator = conf.cellOrder == null
 				? new PyFrontend(target.toString(), kind.equals("ipynb"))
@@ -240,7 +245,9 @@ public abstract class AnalysisTestExecutor {
 		return program;
 	}
 
-	private void run(LiSAConfiguration configuration, Program program) {
+	private void run(
+			LiSAConfiguration configuration,
+			Program program) {
 		LiSA lisa = new LiSA(configuration);
 		try {
 			lisa.run(program);
@@ -250,7 +257,9 @@ public abstract class AnalysisTestExecutor {
 		}
 	}
 
-	private void setupWorkdir(LiSAConfiguration configuration, Path actualPath) {
+	private void setupWorkdir(
+			LiSAConfiguration configuration,
+			Path actualPath) {
 		File workdir = actualPath.toFile();
 		try {
 			FileManager.forceDeleteFolder(workdir.toString());
@@ -272,12 +281,16 @@ public abstract class AnalysisTestExecutor {
 
 		private final Path exp;
 
-		public Accumulator(Path exp) {
+		public Accumulator(
+				Path exp) {
 			this.exp = exp;
 		}
 
 		@Override
-		public void report(REPORTED_COMPONENT component, REPORT_TYPE type, Collection<?> reported) {
+		public void report(
+				REPORTED_COMPONENT component,
+				REPORT_TYPE type,
+				Collection<?> reported) {
 			switch (type) {
 			case ONLY_FIRST:
 				switch (component) {
@@ -323,18 +336,27 @@ public abstract class AnalysisTestExecutor {
 		}
 
 		@Override
-		public void fileDiff(String first, String second, String message) {
+		public void fileDiff(
+				String first,
+				String second,
+				String message) {
 			Path file = Paths.get(first);
 			changedFileName.add(exp.relativize(file));
 		}
 
 		@Override
-		public void infoDiff(String key, String first, String second) {
+		public void infoDiff(
+				String key,
+				String first,
+				String second) {
 			changedInfos = true;
 		}
 
 		@Override
-		public void configurationDiff(String key, String first, String second) {
+		public void configurationDiff(
+				String key,
+				String first,
+				String second) {
 			changedConf = true;
 		}
 	}

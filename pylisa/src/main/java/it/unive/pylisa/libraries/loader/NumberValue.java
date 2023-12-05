@@ -1,15 +1,15 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Objects;
-
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
+import java.util.Objects;
 
 public class NumberValue implements Value {
 	private final int value;
 
-	public NumberValue(int value) {
+	public NumberValue(
+			int value) {
 		this.value = value;
 	}
 
@@ -23,7 +23,8 @@ public class NumberValue implements Value {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -40,7 +41,8 @@ public class NumberValue implements Value {
 	}
 
 	@Override
-	public Expression toLiSAExpression(CFG init) {
+	public Expression toLiSAExpression(
+			CFG init) {
 		return new Int32Literal(init, init.getDescriptor().getLocation(), value);
 	}
 }

@@ -4,10 +4,7 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
-import it.unive.lisa.analysis.value.TypeDomain;
-import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -26,40 +23,45 @@ public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression i
 
 	private Statement st;
 
-	public Join(CFG cfg, CodeLocation location, Expression receiver, Expression other) {
+	public Join(
+			CFG cfg,
+			CodeLocation location,
+			Expression receiver,
+			Expression other) {
 		super(cfg, location, "join", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
 				receiver, other);
 	}
 
-	public static Join build(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public static Join build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		return new Join(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
-	final public void setOriginatingStatement(Statement st) {
+	final public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>,
-			H extends HeapDomain<H>,
-			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural,
-					AnalysisState<A, H, V, T> state,
-					SymbolicExpression left,
-					SymbolicExpression right,
-					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
+	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		CodeLocation loc = getLocation();
-		AnalysisState<A, H, V, T> result = state.bottom();
+		AnalysisState<A> result = state.bottom();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 
-		AnalysisState<A, H, V, T> copy = PandasSemantics.copyDataframe(state, left, st);
-		ExpressionSet<SymbolicExpression> recs = copy.getComputedExpressions();
+		AnalysisState<A> copy = PandasSemantics.copyDataframe(state, left, st);
+		ExpressionSet recs = copy.getComputedExpressions();
 		for (SymbolicExpression rec : recs) {
-			BinaryExpression cat = new BinaryExpression(dftype, rec, right, JoinCols.INSTANCE, loc);
+			BinaryExpression cat = new BinaryExpression(dftype, rec, right, new JoinCols(0), loc);
 			HeapReference ref = new HeapReference(dfref, rec, loc);
 			result = result.lub(copy.smallStepSemantics(cat, st).smallStepSemantics(ref, st));
 		}

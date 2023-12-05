@@ -4,9 +4,6 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.heap.HeapDomain;
-import it.unive.lisa.analysis.value.TypeDomain;
-import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -17,31 +14,33 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.AccessRowsColumns;
+import it.unive.pylisa.symbolic.operators.dataframes.DataframeProjection;
+import java.util.Set;
 
 public class PyDoubleArrayAccess extends TernaryExpression {
 
-	public PyDoubleArrayAccess(CFG cfg, CodeLocation loc, Type staticType, Expression receiver, Expression index1,
+	public PyDoubleArrayAccess(
+			CFG cfg,
+			CodeLocation loc,
+			Type staticType,
+			Expression receiver,
+			Expression index1,
 			Expression index2) {
 		super(cfg, loc, "[]", staticType, receiver, index1, index2);
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>,
-			H extends HeapDomain<H>,
-			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> ternarySemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural,
-					AnalysisState<A, H, V, T> state,
-					SymbolicExpression left,
-					SymbolicExpression middle,
-					SymbolicExpression right,
-					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
+	public <A extends AbstractState<A>> AnalysisState<A> fwdTernarySemantics(
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression middle,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Type dereferencedType = Untyped.INSTANCE;
 		Type firstAccessedType = Untyped.INSTANCE;
 		Type childType = Untyped.INSTANCE;
@@ -49,13 +48,13 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 			Type dfreftype = dftype.getReference();
-			TypeSystem types = getProgram().getTypes();
-			if (left.getRuntimeTypes(types).stream().anyMatch(t -> t.equals(dfreftype))) {
+			Set<Type> rts = state.getState().getRuntimeTypesOf(left, this, state.getState());
+			if (rts.stream().anyMatch(t -> t.equals(dfreftype))) {
 				HeapDereference deref = new HeapDereference(dftype, left, getLocation());
 				it.unive.lisa.symbolic.value.TernaryExpression dfAccess = new it.unive.lisa.symbolic.value.TernaryExpression(
 						dftype,
 						deref, middle, right,
-						AccessRowsColumns.INSTANCE,
+						new DataframeProjection(0),
 						getLocation());
 				state = state.smallStepSemantics(dfAccess, this);
 				dereferencedType = dftype;
@@ -66,8 +65,8 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 
 		HeapDereference deref = new HeapDereference(dereferencedType, left, getLocation());
 		AccessChild firstAccess = new AccessChild(firstAccessedType, deref, middle, getLocation());
-		AnalysisState<A, H, V, T> tmp = state.smallStepSemantics(firstAccess, this);
-		AnalysisState<A, H, V, T> result = state.bottom();
+		AnalysisState<A> tmp = state.smallStepSemantics(firstAccess, this);
+		AnalysisState<A> result = state.bottom();
 		for (SymbolicExpression accessed : tmp.getComputedExpressions()) {
 			SymbolicExpression cont;
 			if (accessed instanceof HeapReference)

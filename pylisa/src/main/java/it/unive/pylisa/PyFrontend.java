@@ -65,20 +65,13 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.cfg.statement.comparison.LessThan;
-import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
-import it.unive.lisa.program.cfg.statement.literal.Float32Literal;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
-import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.cfg.statement.logic.Not;
-import it.unive.lisa.program.cfg.statement.numeric.Addition;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
-import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.type.NullType;
@@ -212,19 +205,17 @@ import it.unive.pylisa.cfg.expression.PyRemainder;
 import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
 import it.unive.pylisa.cfg.expression.PyStringLiteral;
 import it.unive.pylisa.cfg.expression.PyTernaryOperator;
+import it.unive.pylisa.cfg.expression.PyTypeLiteral;
 import it.unive.pylisa.cfg.expression.RangeValue;
 import it.unive.pylisa.cfg.expression.SetCreation;
 import it.unive.pylisa.cfg.expression.StarExpression;
 import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.expression.comparison.PyAnd;
-import it.unive.pylisa.cfg.expression.comparison.PyEquals;
-import it.unive.pylisa.cfg.expression.comparison.PyGreaterOrEqual;
-import it.unive.pylisa.cfg.expression.comparison.PyGreaterThan;
-import it.unive.pylisa.cfg.expression.comparison.PyLessOrEqual;
-import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
-import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
-import it.unive.pylisa.cfg.expression.PyTypeLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyEllipsisLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyFloatLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyIntLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
@@ -281,7 +272,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 * @param notebook whether or not {@code filePath} points to a Jupyter
 	 *                     notebook file
 	 */
-	public PyFrontend(String filePath, boolean notebook) {
+	public PyFrontend(
+			String filePath,
+			boolean notebook) {
 		this(filePath, notebook, Collections.emptyList());
 	}
 
@@ -296,7 +289,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 *                      in the order they are to be executed. Only valid if
 	 *                      {@code notebook} is {@code true}.
 	 */
-	public PyFrontend(String filePath, boolean notebook, Integer... cellOrder) {
+	public PyFrontend(
+			String filePath,
+			boolean notebook,
+			Integer... cellOrder) {
 		this(filePath, notebook, List.of(cellOrder));
 	}
 
@@ -311,7 +307,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 *                      the order they are to be executed. Only valid if
 	 *                      {@code notebook} is {@code true}.
 	 */
-	public PyFrontend(String filePath, boolean notebook, List<Integer> cellOrder) {
+	public PyFrontend(
+			String filePath,
+			boolean notebook,
+			List<Integer> cellOrder) {
 		this.program = new Program(new PythonFeatures(), new PythonTypeSystem());
 		this.filePath = filePath;
 		this.notebook = notebook;
@@ -330,7 +329,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		return filePath;
 	}
 
-	private static String transformToCode(List<String> code_list) {
+	private static String transformToCode(
+			List<String> code_list) {
 		StringBuilder result = new StringBuilder();
 		for (String s : code_list)
 			result.append(s).append("\n");
@@ -355,10 +355,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		TypeSystem types = program.getTypes();
 		types.registerType(PyLambdaType.INSTANCE);
-		types.registerType(BoolType.INSTANCE);
 		types.registerType(StringType.INSTANCE);
-		types.registerType(Int32Type.INSTANCE);
-		types.registerType(Float32Type.INSTANCE);
 		types.registerType(NullType.INSTANCE);
 		types.registerType(VoidType.INSTANCE);
 		types.registerType(Untyped.INSTANCE);
@@ -428,7 +425,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visit(ParseTree tree) {
+	public Object visit(
+			ParseTree tree) {
 
 		if (tree instanceof File_inputContext)
 			return visitFile_input((File_inputContext) tree);
@@ -437,12 +435,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitSingle_input(Single_inputContext ctx) {
+	public Object visitSingle_input(
+			Single_inputContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public PyCFG visitFile_input(File_inputContext ctx) {
+	public PyCFG visitFile_input(
+			File_inputContext ctx) {
 		currentCFG = new PyCFG(buildMainCFGDescriptor(getLocation(ctx)));
 		cfs = new HashSet<>();
 		currentUnit.addCodeMember(currentCFG);
@@ -503,59 +503,71 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		}
 	}
 
-	private int getLine(ParserRuleContext ctx) {
+	private int getLine(
+			ParserRuleContext ctx) {
 		return ctx.getStart().getLine();
 	}
 
-	private int getCol(ParserRuleContext ctx) {
+	private int getCol(
+			ParserRuleContext ctx) {
 		return ctx.getStop().getCharPositionInLine();
 	}
 
-	public SourceCodeLocation getLocation(ParserRuleContext ctx) {
+	public SourceCodeLocation getLocation(
+			ParserRuleContext ctx) {
 		return new SourceCodeLocation(this.getFilePath(), getLine(ctx), getCol(ctx));
 	}
 
-	private CodeMemberDescriptor buildMainCFGDescriptor(SourceCodeLocation loc) {
+	private CodeMemberDescriptor buildMainCFGDescriptor(
+			SourceCodeLocation loc) {
 		Parameter[] cfgArgs = new Parameter[] {};
 
 		return new CodeMemberDescriptor(loc, currentUnit, false, INSTRUMENTED_MAIN_FUNCTION_NAME, cfgArgs);
 	}
 
-	private CodeMemberDescriptor buildCFGDescriptor(FuncdefContext funcDecl) {
+	private CodeMemberDescriptor buildCFGDescriptor(
+			FuncdefContext funcDecl) {
 		String funcName = funcDecl.NAME().getText();
 
 		Parameter[] cfgArgs = visitParameters(funcDecl.parameters());
 
-		return new CodeMemberDescriptor(getLocation(funcDecl), currentUnit, currentUnit instanceof ClassUnit ? true : false, funcName, cfgArgs);
+		return new CodeMemberDescriptor(getLocation(funcDecl), currentUnit,
+				currentUnit instanceof ClassUnit ? true : false, funcName, cfgArgs);
 	}
 
 	@Override
-	public Object visitEval_input(Eval_inputContext ctx) {
+	public Object visitEval_input(
+			Eval_inputContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitDecorator(DecoratorContext ctx) {
+	public Object visitDecorator(
+			DecoratorContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitDecorators(DecoratorsContext ctx) {
+	public Object visitDecorators(
+			DecoratorsContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitDecorated(DecoratedContext ctx) {
+	public Object visitDecorated(
+			DecoratedContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitAsync_funcdef(Async_funcdefContext ctx) {
+	public Object visitAsync_funcdef(
+			Async_funcdefContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public PyCFG visitFuncdef(FuncdefContext ctx) {
+	public PyCFG visitFuncdef(
+			FuncdefContext ctx) {
 		PyCFG oldCFG = currentCFG;
 		Collection<ControlFlowStructure> oldCfs = cfs;
 		PyCFG newCFG = currentCFG = new PyCFG(buildCFGDescriptor(ctx));
@@ -567,7 +579,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		cfs.forEach(currentCFG::addControlFlowStructure);
 		currentCFG.simplify();
 		if (currentUnit instanceof ClassUnit) {
-			((ClassUnit)currentUnit).addInstanceCodeMember(currentCFG);
+			((ClassUnit) currentUnit).addInstanceCodeMember(currentCFG);
 		} else {
 			currentUnit.addCodeMember(currentCFG);
 		}
@@ -577,14 +589,16 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Parameter[] visitParameters(ParametersContext ctx) {
+	public Parameter[] visitParameters(
+			ParametersContext ctx) {
 		if (ctx.typedargslist() == null)
 			return new Parameter[0];
 		return visitTypedargslist(ctx.typedargslist());
 	}
 
 	@Override
-	public Parameter[] visitTypedargslist(TypedargslistContext ctx) {
+	public Parameter[] visitTypedargslist(
+			TypedargslistContext ctx) {
 		if (ctx.STAR() != null || ctx.POWER() != null)
 			throw new UnsupportedStatementException();
 		boolean firstParam = true;
@@ -594,7 +608,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			for (TypedargContext def : ctx.typedarg()) {
 				if (firstParam) {
 					if (currentUnit instanceof ClassUnit) {
-						pars.add(new Parameter(getLocation(ctx), def.tfpdef().NAME().getText(), new ReferenceType(PyClassType.lookup(currentUnit.getName(), (ClassUnit) currentUnit))));
+						pars.add(new Parameter(getLocation(ctx), def.tfpdef().NAME().getText(),
+								new ReferenceType(
+										PyClassType.register(currentUnit.getName(), (ClassUnit) currentUnit))));
 					} else {
 						pars.add(visitTypedarg(def));
 					}
@@ -604,37 +620,42 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				}
 			}
 
-
-				return pars.toArray(Parameter[]::new);
+		return pars.toArray(Parameter[]::new);
 	}
 
 	@Override
-	public Parameter visitTypedarg(TypedargContext ctx) {
+	public Parameter visitTypedarg(
+			TypedargContext ctx) {
 		if (ctx.tfpdef().test() != null)
 			throw new UnsupportedStatementException();
 		if (ctx.test() == null)
 			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText());
 		else
-			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText(), Untyped.INSTANCE, visitTest(ctx.test()), new Annotations());
+			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText(), Untyped.INSTANCE,
+					visitTest(ctx.test()), new Annotations());
 	}
 
 	@Override
-	public Object visitTfpdef(TfpdefContext ctx) {
+	public Object visitTfpdef(
+			TfpdefContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitVarargslist(VarargslistContext ctx) {
+	public Object visitVarargslist(
+			VarargslistContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public String visitVfpdef(VfpdefContext ctx) {
+	public String visitVfpdef(
+			VfpdefContext ctx) {
 		return ctx.NAME().getText();
 	}
 
 	@Override
-	public Object visitStmt(StmtContext ctx) {
+	public Object visitStmt(
+			StmtContext ctx) {
 		if (ctx.simple_stmt() != null)
 			return visitSimple_stmt(ctx.simple_stmt());
 		else
@@ -642,7 +663,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitSimple_stmt(Simple_stmtContext ctx) {
+	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitSimple_stmt(
+			Simple_stmtContext ctx) {
 		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 		Statement first = null, last = null;
 		for (int i = 0; i < ctx.small_stmt().size(); i++) {
@@ -659,7 +681,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Statement visitSmall_stmt(Small_stmtContext ctx) {
+	public Statement visitSmall_stmt(
+			Small_stmtContext ctx) {
 		if (ctx.expr_stmt() != null)
 			return visitExpr_stmt(ctx.expr_stmt());
 		else if (ctx.del_stmt() != null)
@@ -677,7 +700,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitExpr_stmt(Expr_stmtContext ctx) {
+	public Expression visitExpr_stmt(
+			Expr_stmtContext ctx) {
 		if (ctx.ASSIGN().size() == 0)
 			if (ctx.testlist_star_expr().size() != 1)
 				// augassign or annassign have been used, both not supported
@@ -692,7 +716,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitAnnassign(AnnassignContext ctx) {
+	public Object visitAnnassign(
+			AnnassignContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
@@ -709,12 +734,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitAugassign(AugassignContext ctx) {
+	public Object visitAugassign(
+			AugassignContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Statement visitDel_stmt(Del_stmtContext ctx) {
+	public Statement visitDel_stmt(
+			Del_stmtContext ctx) {
 		if (ctx.exprlist().star_expr().size() > 0)
 			throw new UnsupportedStatementException("We support only expressions withou * in del statements");
 		Statement result = new UnresolvedCall(
@@ -728,12 +755,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Statement visitPass_stmt(Pass_stmtContext ctx) {
+	public Statement visitPass_stmt(
+			Pass_stmtContext ctx) {
 		return new NoOp(currentCFG, getLocation(ctx));
 	}
 
 	@Override
-	public Statement visitFlow_stmt(Flow_stmtContext ctx) {
+	public Statement visitFlow_stmt(
+			Flow_stmtContext ctx) {
 		if (ctx.return_stmt() != null)
 			return visitReturn_stmt(ctx.return_stmt());
 		if (ctx.raise_stmt() != null) {
@@ -755,17 +784,20 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitBreak_stmt(Break_stmtContext ctx) {
+	public Object visitBreak_stmt(
+			Break_stmtContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitContinue_stmt(Continue_stmtContext ctx) {
+	public Object visitContinue_stmt(
+			Continue_stmtContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Statement visitReturn_stmt(Return_stmtContext ctx) {
+	public Statement visitReturn_stmt(
+			Return_stmtContext ctx) {
 		if (ctx.testlist() == null)
 			return new Ret(currentCFG, getLocation(ctx));
 		if (ctx.testlist().test().size() == 1)
@@ -777,17 +809,20 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitYield_stmt(Yield_stmtContext ctx) {
+	public Object visitYield_stmt(
+			Yield_stmtContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitRaise_stmt(Raise_stmtContext ctx) {
+	public Object visitRaise_stmt(
+			Raise_stmtContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Statement visitImport_stmt(Import_stmtContext ctx) {
+	public Statement visitImport_stmt(
+			Import_stmtContext ctx) {
 		if (ctx.import_from() != null)
 			return visitImport_from(ctx.import_from());
 		else
@@ -795,7 +830,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Statement visitImport_from(Import_fromContext ctx) {
+	public Statement visitImport_from(
+			Import_fromContext ctx) {
 		String name;
 		if (ctx.dotted_name() != null)
 			name = dottedNameToString(ctx.dotted_name());
@@ -815,7 +851,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Statement visitImport_name(Import_nameContext ctx) {
+	public Statement visitImport_name(
+			Import_nameContext ctx) {
 		Map<String, String> libs = new HashMap<>();
 		for (Dotted_as_nameContext single : ctx.dotted_as_names().dotted_as_name()) {
 			String importedLibrary = dottedNameToString(single.dotted_name());
@@ -825,7 +862,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		return new Import(program, libs, currentCFG, getLocation(ctx));
 	}
 
-	private String dottedNameToString(Dotted_nameContext dotted_name) {
+	private String dottedNameToString(
+			Dotted_nameContext dotted_name) {
 		StringBuilder result = new StringBuilder();
 		boolean first = true;
 		for (TerminalNode name : dotted_name.NAME()) {
@@ -839,42 +877,50 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitImport_as_name(Import_as_nameContext ctx) {
+	public Object visitImport_as_name(
+			Import_as_nameContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitDotted_as_name(Dotted_as_nameContext ctx) {
+	public Object visitDotted_as_name(
+			Dotted_as_nameContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitImport_as_names(Import_as_namesContext ctx) {
+	public Object visitImport_as_names(
+			Import_as_namesContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitDotted_as_names(Dotted_as_namesContext ctx) {
+	public Object visitDotted_as_names(
+			Dotted_as_namesContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitDotted_name(Dotted_nameContext ctx) {
+	public Object visitDotted_name(
+			Dotted_nameContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitGlobal_stmt(Global_stmtContext ctx) {
+	public Object visitGlobal_stmt(
+			Global_stmtContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitNonlocal_stmt(Nonlocal_stmtContext ctx) {
+	public Object visitNonlocal_stmt(
+			Nonlocal_stmtContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Expression visitAssert_stmt(Assert_stmtContext ctx) {
+	public Expression visitAssert_stmt(
+			Assert_stmtContext ctx) {
 		return new UnresolvedCall(
 				currentCFG,
 				getLocation(ctx),
@@ -886,7 +932,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitCompound_stmt(Compound_stmtContext ctx) {
+	public Object visitCompound_stmt(
+			Compound_stmtContext ctx) {
 		if (ctx.funcdef() != null) {
 			return this.visitFuncdef(ctx.funcdef());
 		} else if (ctx.if_stmt() != null)
@@ -908,12 +955,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitAsync_stmt(Async_stmtContext ctx) {
+	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitAsync_stmt(
+			Async_stmtContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitIf_stmt(If_stmtContext ctx) {
+	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitIf_stmt(
+			If_stmtContext ctx) {
 		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 		Statement booleanGuard = visitTest(ctx.test(0));
 		block.addNode(booleanGuard);
@@ -985,7 +1034,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitWhile_stmt(While_stmtContext ctx) {
+	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitWhile_stmt(
+			While_stmtContext ctx) {
 		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 		// create and add exit point of while
 		NoOp whileExitNode = new NoOp(currentCFG, getLocation(ctx));
@@ -1017,7 +1067,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitFor_stmt(For_stmtContext ctx) {
+	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitFor_stmt(
+			For_stmtContext ctx) {
 		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 		// create and add exit point of for
 		NoOp exit = new NoOp(currentCFG, getLocation(ctx));
@@ -1029,12 +1080,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			variable = exprs.get(0);
 		else
 			variable = new TupleCreation(currentCFG, getLocation(ctx), exprs.toArray(Expression[]::new));
-		
+
 		List<Expression> list = visitTestlist(ctx.testlist());
 		if (list.size() != 1)
 			throw new UnsupportedStatementException("for loops with more than one test are not supported");
 		Expression collection = list.iterator().next();
-		Expression[] collection_pars = { collection };
 
 		VariableRef counter = new VariableRef(
 				currentCFG,
@@ -1051,9 +1101,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		block.addNode(counter_init);
 
 		// counter < collection.size()
-		LessThan condition = new PyLessThan(
+		UnresolvedCall condition = new UnresolvedCall(
 				currentCFG,
 				getLocation(ctx),
+				CallType.INSTANCE,
+				null,
+				"__lt__",
 				counter,
 				new UnresolvedCall(
 						currentCFG,
@@ -1061,7 +1114,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						CallType.INSTANCE,
 						null,
 						"__len__",
-						collection_pars));
+						collection));
 		block.addNode(condition);
 
 		// element = collection.at(counter)
@@ -1111,14 +1164,16 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitTry_stmt(Try_stmtContext ctx) {
+	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitTry_stmt(
+			Try_stmtContext ctx) {
 		log.warn("Exceptions are not yet supported. The try block at line " + getLine(ctx) + " of file " + getFilePath()
 				+ " is unsoundly translated considering only the code in the try block");
 		return visitSuite(ctx.suite(0));
 	}
 
 	@Override
-	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitWith_stmt(With_stmtContext ctx) {
+	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitWith_stmt(
+			With_stmtContext ctx) {
 		int withSize = ctx.with_item().size();
 		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> curr = visitWith_item(ctx.with_item(0));
@@ -1141,7 +1196,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitWith_item(With_itemContext ctx) {
+	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitWith_item(
+			With_itemContext ctx) {
 		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 		Statement test = visitTest(ctx.test());
 		block.addNode(test);
@@ -1155,12 +1211,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitExcept_clause(Except_clauseContext ctx) {
+	public Object visitExcept_clause(
+			Except_clauseContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public List<Expression> visitTestlist(TestlistContext ctx) {
+	public List<Expression> visitTestlist(
+			TestlistContext ctx) {
 		List<Expression> result = new ArrayList<>(ctx.test().size());
 		if (ctx.test().size() == 0)
 			return result;
@@ -1170,7 +1228,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public List<Expression> visitExprlist(ExprlistContext ctx) {
+	public List<Expression> visitExprlist(
+			ExprlistContext ctx) {
 		if (!ctx.star_expr().isEmpty())
 			// star expr is not supported
 			throw new UnsupportedStatementException();
@@ -1184,7 +1243,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitSuite(SuiteContext ctx) {
+	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitSuite(
+			SuiteContext ctx) {
 		if (ctx.simple_stmt() != null)
 			return visitSimple_stmt(ctx.simple_stmt());
 		else {
@@ -1216,7 +1276,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitTest(TestContext ctx) {
+	public Expression visitTest(
+			TestContext ctx) {
 		// no if into the condition
 		if (ctx.IF() != null) {
 			// visit the if into the condition
@@ -1234,7 +1295,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return visitOr_test(ctx.or_test(0));
 	}
 
-	private List<Expression> extractNamesFromVarArgList(VarargslistContext varargslist) {
+	private List<Expression> extractNamesFromVarArgList(
+			VarargslistContext varargslist) {
 		List<VfpdefContext> names = varargslist.vfpdef();
 		List<Expression> result = new ArrayList<>();
 		if (names.size() == 0)
@@ -1245,7 +1307,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitTest_nocond(Test_nocondContext ctx) {
+	public Expression visitTest_nocond(
+			Test_nocondContext ctx) {
 		if (ctx.or_test() != null)
 			return visitOr_test(ctx.or_test());
 		else
@@ -1254,7 +1317,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitLambdef(LambdefContext ctx) {
+	public Expression visitLambdef(
+			LambdefContext ctx) {
 		List<Expression> args = extractNamesFromVarArgList(ctx.varargslist());
 		Expression body = visitTest(ctx.test());
 		return new LambdaExpression(
@@ -1265,7 +1329,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitLambdef_nocond(Lambdef_nocondContext ctx) {
+	public Expression visitLambdef_nocond(
+			Lambdef_nocondContext ctx) {
 		List<Expression> args = extractNamesFromVarArgList(ctx.varargslist());
 		Expression body = visitTest_nocond(ctx.test_nocond());
 		return new LambdaExpression(
@@ -1276,7 +1341,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitOr_test(Or_testContext ctx) {
+	public Expression visitOr_test(
+			Or_testContext ctx) {
 		int nAndTest = ctx.and_test().size();
 		if (nAndTest == 1) {
 			return visitAnd_test(ctx.and_test(0));
@@ -1299,7 +1365,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitAnd_test(And_testContext ctx) {
+	public Expression visitAnd_test(
+			And_testContext ctx) {
 		int nNotTest = ctx.not_test().size();
 		if (nNotTest == 1) {
 			return visitNot_test(ctx.not_test(0));
@@ -1323,7 +1390,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitNot_test(Not_testContext ctx) {
+	public Expression visitNot_test(
+			Not_testContext ctx) {
 		if (ctx.NOT() != null)
 			return new Not(currentCFG, getLocation(ctx), visitNot_test(ctx.not_test()));
 		else
@@ -1331,7 +1399,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitComparison(ComparisonContext ctx) {
+	public Expression visitComparison(
+			ComparisonContext ctx) {
 		int nExpr = ctx.expr().size();
 		Expression result = null;
 		switch (nExpr) {
@@ -1342,45 +1411,29 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			Comp_opContext operator = ctx.comp_op(0);
 			Expression left = visitExpr(ctx.expr(0));
 			Expression right = visitExpr(ctx.expr(1));
+			String op = null;
+
 			if (operator.EQUALS() != null)
-				result = new PyEquals(currentCFG, getLocation(ctx), left, right);
-
-			// Python greater (>)
-			if (operator.GREATER_THAN() != null) {
-				result = new PyGreaterThan(currentCFG, getLocation(ctx), left, right);
-			}
-			// Python greater equal (>=)
-			if (operator.GT_EQ() != null)
-				result = new PyGreaterOrEqual(currentCFG, getLocation(ctx), left, right);
-
-			// Python in (in)
-			if (operator.IN() != null)
+				op = "__eq__";
+			else if (operator.GREATER_THAN() != null)
+				op = "__gt__";
+			else if (operator.GT_EQ() != null)
+				op = "__ge__";
+			else if (operator.LESS_THAN() != null)
+				op = "__lt__";
+			else if (operator.LT_EQ() != null)
+				op = "__le__";
+			else if (operator.NOT_EQ_1() != null || operator.NOT_EQ_2() != null)
+				op = "__ne__";
+			else if (operator.IN() != null)
 				result = new PyIn(currentCFG, getLocation(ctx), left, right);
-
-			// Python is (is)
-			if (operator.IS() != null)
+			else if (operator.IS() != null)
 				result = new PyIs(currentCFG, getLocation(ctx), left, right);
-
-			// Python less (<)
-			if (operator.LESS_THAN() != null)
-				result = new PyLessThan(currentCFG, getLocation(ctx), left, right);
-
-			// Python less equal (<=)
-			if (operator.LT_EQ() != null)
-				result = new PyLessOrEqual(currentCFG, getLocation(ctx), left, right);
-
-			// Python not (not)
-			if (operator.NOT() != null)
+			else if (operator.NOT() != null)
 				result = new Not(currentCFG, getLocation(ctx), left);
 
-			// Python not equals (<>)
-			if (operator.NOT_EQ_1() != null)
-				result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
-
-			// Python not equals (!=)
-			if (operator.NOT_EQ_2() != null)
-				result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
-
+			if (op != null)
+				result = new UnresolvedCall(currentCFG, getLocation(ctx), CallType.INSTANCE, null, op, left, right);
 			break;
 		default:
 			throw new UnsupportedStatementException();
@@ -1390,11 +1443,13 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitStar_expr(Star_exprContext ctx) {
+	public Object visitStar_expr(
+			Star_exprContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
-	public Expression visitExpr(ExprContext ctx) {
+	public Expression visitExpr(
+			ExprContext ctx) {
 		int nXor = ctx.xor_expr().size();
 		if (nXor == 1)
 			// only one Xor
@@ -1420,7 +1475,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitXor_expr(Xor_exprContext ctx) {
+	public Expression visitXor_expr(
+			Xor_exprContext ctx) {
 		int nAnd = ctx.and_expr().size();
 		if (nAnd == 1)
 			return visitAnd_expr(ctx.and_expr(0));
@@ -1444,7 +1500,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitAnd_expr(And_exprContext ctx) {
+	public Expression visitAnd_expr(
+			And_exprContext ctx) {
 		int nShift = ctx.left_shift().size();
 		if (nShift == 1)
 			return visitLeft_shift(ctx.left_shift(0));
@@ -1468,7 +1525,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitLeft_shift(Left_shiftContext ctx) {
+	public Expression visitLeft_shift(
+			Left_shiftContext ctx) {
 		int nShift = ctx.left_shift().size() + 1;
 		if (nShift == 1)
 			return visitRight_shift(ctx.right_shift());
@@ -1492,7 +1550,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitRight_shift(Right_shiftContext ctx) {
+	public Expression visitRight_shift(
+			Right_shiftContext ctx) {
 		int nShift = ctx.right_shift().size() + 1;
 		if (nShift == 1)
 			return visitArith_expr(ctx.arith_expr());
@@ -1516,7 +1575,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitMinus(MinusContext ctx) {
+	public Expression visitMinus(
+			MinusContext ctx) {
 		if (ctx.arith_expr() == null)
 			return visitTerm(ctx.term());
 		else
@@ -1526,7 +1586,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitAdd(AddContext ctx) {
+	public Expression visitAdd(
+			AddContext ctx) {
 		if (ctx.arith_expr() == null)
 			return visitTerm(ctx.term());
 		else
@@ -1536,7 +1597,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitArith_expr(Arith_exprContext ctx) {
+	public Expression visitArith_expr(
+			Arith_exprContext ctx) {
 		// check if there is minus(-) or an add(+)
 		if (ctx.minus() != null)
 			return visitMinus(ctx.minus());
@@ -1547,7 +1609,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitMul(MulContext ctx) {
+	public Expression visitMul(
+			MulContext ctx) {
 		if (ctx.term() == null)
 			return visitFactor(ctx.factor());
 		else
@@ -1556,7 +1619,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					visitTerm(ctx.term()));
 	}
 
-	public Expression visitMat_mul(Mat_mulContext ctx) {
+	public Expression visitMat_mul(
+			Mat_mulContext ctx) {
 		if (ctx.term() == null)
 			return visitFactor(ctx.factor());
 		else
@@ -1565,7 +1629,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					visitTerm(ctx.term()));
 	}
 
-	public Expression visitDiv(DivContext ctx) {
+	public Expression visitDiv(
+			DivContext ctx) {
 		if (ctx.term() == null)
 			return visitFactor(ctx.factor());
 		else
@@ -1574,7 +1639,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					visitTerm(ctx.term()));
 	}
 
-	public Expression visitMod(ModContext ctx) {
+	public Expression visitMod(
+			ModContext ctx) {
 		if (ctx.term() == null)
 			return visitFactor(ctx.factor());
 		else
@@ -1583,7 +1649,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					visitTerm(ctx.term()));
 	}
 
-	public Expression visitFloorDiv(FloorDivContext ctx) {
+	public Expression visitFloorDiv(
+			FloorDivContext ctx) {
 		if (ctx.term() == null)
 			return visitFactor(ctx.factor());
 		else
@@ -1593,7 +1660,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitTerm(TermContext ctx) {
+	public Expression visitTerm(
+			TermContext ctx) {
 		// check what's the operation in the context
 		if (ctx.mul() != null)
 			return visitMul(ctx.mul());
@@ -1611,7 +1679,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitFactor(FactorContext ctx) {
+	public Expression visitFactor(
+			FactorContext ctx) {
 		if (ctx.power() != null)
 			return visitPower(ctx.power());
 		else if (ctx.NOT_OP() != null)
@@ -1625,7 +1694,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitPower(PowerContext ctx) {
+	public Expression visitPower(
+			PowerContext ctx) {
 		if (ctx.POWER() != null)
 			return new PyPower(currentCFG, getLocation(ctx),
 					visitAtom_expr(ctx.atom_expr()),
@@ -1635,7 +1705,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitAtom_expr(Atom_exprContext ctx) {
+	public Expression visitAtom_expr(
+			Atom_exprContext ctx) {
 		/*
 		 * atom_expr: (AWAIT)? atom trailer*; atom: ('('
 		 * (yield_expr|testlist_comp)? ')' | '[' (testlist_comp)? ']' | '{'
@@ -1653,14 +1724,21 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				if (expr.NAME() != null) {
 					last_name = expr.NAME().getSymbol().getText();
 					previous_access = access;
-					access = new PyAccessInstanceGlobal(currentCFG, getLocation(expr), access, last_name);
+					access = new UnresolvedCall(
+							currentCFG,
+							getLocation(expr),
+							CallType.INSTANCE,
+							null,
+							"__getattribute__",
+							access,
+							new PyStringLiteral(currentCFG, getLocation(expr), last_name, "'"));
 				} else if (expr.OPEN_PAREN() != null) {
 					if (last_name == null)
 						throw new UnsupportedStatementException(
 								"When invoking a method we need to have always the name before the parentheses");
 					List<Expression> pars = new ArrayList<>();
 					String method_name = last_name;
-					boolean instance = access instanceof AccessInstanceGlobal;
+					boolean instance = access instanceof PyAccessInstanceGlobal;
 					if (instance)
 						pars.add(previous_access);
 					if (expr.arglist() != null)
@@ -1674,7 +1752,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						cu = program.getUnit(access.toString().replace("::", "."));
 						if (cu != null) {
 							for (Expression par : pars) {
-								if (par instanceof AccessInstanceGlobal) {
+								if (par instanceof PyAccessInstanceGlobal) {
 									pars.remove(par);
 								}
 							}
@@ -1685,7 +1763,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								currentCFG,
 								getLocation(expr),
 								"__init__",
-								PyClassType.lookup(cu.getName(), (ClassUnit) cu),
+								PyClassType.register(cu.getName(), (ClassUnit) cu),
 								pars.toArray(Expression[]::new));
 					} else {
 						access = new UnresolvedCall(
@@ -1701,7 +1779,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								VariableTableEntry vte = currentCFG.getDescriptor().getVariables().get(0);
 
 								Expression[] expressions = new Expression[2];
-								expressions[0] = new PyTypeLiteral(this.currentCFG, getLocation(expr), this.currentUnit);
+								expressions[0] = new PyTypeLiteral(this.currentCFG, getLocation(expr),
+										this.currentUnit);
 								expressions[1] = new VariableRef(this.currentCFG, getLocation(expr), vte.getName());
 								access = new SimpleSuperUnresolvedCall(
 										currentCFG,
@@ -1745,7 +1824,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return visitAtom(ctx.atom());
 	}
 
-	private List<Expression> convertAssignmentsToByNameParameters(List<Expression> pars) {
+	private List<Expression> convertAssignmentsToByNameParameters(
+			List<Expression> pars) {
 		List<Expression> converted = new ArrayList<>(pars.size());
 		for (Expression e : pars)
 			if (!(e instanceof Assignment))
@@ -1757,7 +1837,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitAtom(AtomContext ctx) {
+	public Expression visitAtom(
+			AtomContext ctx) {
 		if (ctx.NAME() != null)
 			// crete a variable
 			return new VariableRef(currentCFG, getLocation(ctx), ctx.NAME().getText());
@@ -1770,10 +1851,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 			if (text.contains("e") || text.contains("."))
 				// floating point
-				return new Float32Literal(currentCFG, getLocation(ctx), Float.parseFloat(text));
+				return new PyFloatLiteral(currentCFG, getLocation(ctx), Float.parseFloat(text));
 
 			// integer
-			return new Int32Literal(currentCFG, getLocation(ctx), Integer.parseInt(text));
+			return new PyIntLiteral(currentCFG, getLocation(ctx), Integer.parseInt(text));
 		} else if (ctx.FALSE() != null)
 			// create a literal false
 			return new FalseLiteral(currentCFG, getLocation(ctx));
@@ -1782,7 +1863,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return new TrueLiteral(currentCFG, getLocation(ctx));
 		else if (ctx.NONE() != null)
 			// create a literal false
-			return new NullLiteral(currentCFG, getLocation(ctx));
+			return new PyNoneLiteral(currentCFG, getLocation(ctx));
 		else if (ctx.STRING().size() > 0)
 			// create a string
 			return strip(getLocation(ctx), ctx.STRING(0).getText());
@@ -1805,11 +1886,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			DictionaryCreation r = new DictionaryCreation(currentCFG, getLocation(ctx),
 					values.toArray(Pair[]::new));
 			return r;
-		}
+		} else if (ctx.ELLIPSIS() != null)
+			return new PyEllipsisLiteral(currentCFG, getLocation(ctx));
 		throw new UnsupportedStatementException();
 	}
 
-	private StringLiteral strip(CodeLocation location, String string) {
+	private StringLiteral strip(
+			CodeLocation location,
+			String string) {
 		// ', ''', ", """
 		if (string.startsWith("'''") && string.endsWith("'''"))
 			return new PyStringLiteral(currentCFG, location, string.substring(3, string.length() - 3), "'''");
@@ -1822,7 +1906,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		return new PyStringLiteral(currentCFG, location, string, "\"");
 	}
 
-	private List<Pair<Expression, Expression>> extractPairsFromDictorSet(DictorsetmakerContext ctx) {
+	private List<Pair<Expression, Expression>> extractPairsFromDictorSet(
+			DictorsetmakerContext ctx) {
 		if (ctx == null)
 			return new ArrayList<>();
 		List<Pair<Expression, Expression>> result = new ArrayList<>();
@@ -1837,7 +1922,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		return result;
 	}
 
-	private List<Expression> extractExpressionsFromYieldArg(Yield_argContext ctx) {
+	private List<Expression> extractExpressionsFromYieldArg(
+			Yield_argContext ctx) {
 		if (ctx.test() != null) {
 			List<Expression> r = new ArrayList<>(1);
 			r.add(visitTest(ctx.test()));
@@ -1846,7 +1932,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return visitTestlist(ctx.testlist());
 	}
 
-	private List<Expression> extractExpressionsFromSubscriptlist(SubscriptlistContext ctx) {
+	private List<Expression> extractExpressionsFromSubscriptlist(
+			SubscriptlistContext ctx) {
 		List<Expression> result = new ArrayList<>();
 		if (ctx.subscript_().size() == 0)
 			return result;
@@ -1855,7 +1942,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		return result;
 	}
 
-	private List<Expression> extractExpressionsFromTestlist_comp(Testlist_compContext ctx) {
+	private List<Expression> extractExpressionsFromTestlist_comp(
+			Testlist_compContext ctx) {
 		List<Expression> result = new ArrayList<>();
 		if (ctx == null || ctx.testOrStar() == null || ctx.testOrStar().size() == 0)
 			return result;
@@ -1865,7 +1953,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitTestlist_comp(Testlist_compContext ctx) {
+	public Expression visitTestlist_comp(
+			Testlist_compContext ctx) {
 		if (ctx.comp_for() != null)
 			// comp_for is not supported
 			throw new UnsupportedStatementException();
@@ -1873,7 +1962,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitTestOrStar(TestOrStarContext ctx) {
+	public Expression visitTestOrStar(
+			TestOrStarContext ctx) {
 		if (ctx.star_expr() != null)
 			// star expr is not supported
 			throw new UnsupportedStatementException();
@@ -1881,17 +1971,20 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitTrailer(TrailerContext ctx) {
+	public Object visitTrailer(
+			TrailerContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitSubscriptlist(SubscriptlistContext ctx) {
+	public Object visitSubscriptlist(
+			SubscriptlistContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Expression visitSubscript_(Subscript_Context ctx) {
+	public Expression visitSubscript_(
+			Subscript_Context ctx) {
 		if (ctx.COLON() != null) {
 			SourceCodeLocation loc = getLocation(ctx);
 			Expression left = ctx.test1() == null ? new Empty(currentCFG, loc)
@@ -1906,12 +1999,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitSliceop(SliceopContext ctx) {
+	public Object visitSliceop(
+			SliceopContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Expression visitDictorsetmaker(DictorsetmakerContext ctx) {
+	public Expression visitDictorsetmaker(
+			DictorsetmakerContext ctx) {
 		if (ctx.COLON().size() == 0) {
 			List<Expression> values = new ArrayList<>();
 			for (TestContext exp : ctx.test())
@@ -1922,15 +2017,18 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public ClassUnit visitClassdef(ClassdefContext ctx) {
+	public ClassUnit visitClassdef(
+			ClassdefContext ctx) {
 		Unit previous = this.currentUnit;
 		String name = ctx.NAME().getSymbol().getText();
 		// TODO inheritance
 		ClassUnit cu = new ClassUnit(new SourceCodeLocation(name, 0, 0), program, name, true);
-		ArrayList<ArgumentContext> superclasses = ctx.arglist() != null ? new ArrayList<>(ctx.arglist().argument()) : new ArrayList<>();
+		ArrayList<ArgumentContext> superclasses = ctx.arglist() != null ? new ArrayList<>(ctx.arglist().argument())
+				: new ArrayList<>();
 		// parse anchestors
 		for (ArgumentContext superclass : superclasses) {
-			// if exists a class unit in the program with name superclass.getText(): add it to the anchestors
+			// if exists a class unit in the program with name
+			// superclass.getText(): add it to the anchestors
 			for (Unit programCu : this.program.getUnits()) {
 				if (programCu instanceof CompilationUnit && programCu.getName().equals(superclass.getText())) {
 					cu.addAncestor(((CompilationUnit) programCu));
@@ -1946,7 +2044,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		return cu;
 	}
 
-	private void parseClassBody(SuiteContext ctx) {
+	private void parseClassBody(
+			SuiteContext ctx) {
 		List<Pair<VariableRef, Expression>> fields_init = new ArrayList<>();
 		if (ctx.simple_stmt() != null)
 			throw new UnsupportedStatementException(
@@ -1976,7 +2075,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		dumpConstructor(fields_init, getLocation(ctx));
 	}
 
-	private void dumpConstructor(List<Pair<VariableRef, Expression>> fields_init, CodeLocation location) {
+	private void dumpConstructor(
+			List<Pair<VariableRef, Expression>> fields_init,
+			CodeLocation location) {
 		if (fields_init.size() > 0) {
 			PyCFG oldCFG = currentCFG;
 			currentCFG = new PyCFG(new CodeMemberDescriptor(location, currentUnit, true, "<init>"));
@@ -1993,7 +2094,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		}
 	}
 
-	private Pair<VariableRef, Expression> parseField(Simple_stmtContext st) {
+	private Pair<VariableRef, Expression> parseField(
+			Simple_stmtContext st) {
 		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> simple = visitSimple_stmt(st);
 		Collection<Statement> nodes = simple.getMiddle().getNodes();
 		if (nodes.size() != 1)
@@ -2012,12 +2114,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitArglist(ArglistContext ctx) {
+	public Object visitArglist(
+			ArglistContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Expression visitArgument(ArgumentContext ctx) {
+	public Expression visitArgument(
+			ArgumentContext ctx) {
 		if (ctx.ASSIGN() != null)
 			return new PyAssign(currentCFG, getLocation(ctx), visitTest(ctx.test(0)), visitTest(ctx.test(1)));
 		else if (ctx.STAR() != null)
@@ -2029,32 +2133,38 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitComp_iter(Comp_iterContext ctx) {
+	public Object visitComp_iter(
+			Comp_iterContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitComp_for(Comp_forContext ctx) {
+	public Object visitComp_for(
+			Comp_forContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitComp_if(Comp_ifContext ctx) {
+	public Object visitComp_if(
+			Comp_ifContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitEncoding_decl(Encoding_declContext ctx) {
+	public Object visitEncoding_decl(
+			Encoding_declContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitYield_expr(Yield_exprContext ctx) {
+	public Object visitYield_expr(
+			Yield_exprContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
-	public Object visitYield_arg(Yield_argContext ctx) {
+	public Object visitYield_arg(
+			Yield_argContext ctx) {
 		throw new UnsupportedStatementException();
 	}
 }

@@ -1,10 +1,5 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -12,6 +7,10 @@ import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 public class Method {
 
@@ -22,7 +21,12 @@ public class Method {
 	private final Type type;
 	private final List<Parameter> params = new LinkedList<>();
 
-	public Method(boolean instance, boolean sealed, String name, String implementation, Type type) {
+	public Method(
+			boolean instance,
+			boolean sealed,
+			String name,
+			String implementation,
+			Type type) {
 		this.instance = instance;
 		this.sealed = sealed;
 		this.name = name;
@@ -60,7 +64,8 @@ public class Method {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -80,7 +85,10 @@ public class Method {
 	}
 
 	@SuppressWarnings("unchecked")
-	public NativeCFG toLiSACfg(CodeLocation location, CFG init, Unit container) {
+	public NativeCFG toLiSACfg(
+			CodeLocation location,
+			CFG init,
+			Unit container) {
 		it.unive.lisa.program.cfg.Parameter[] pars = new it.unive.lisa.program.cfg.Parameter[params.size()];
 		for (int i = 0; i < pars.length; i++)
 			pars[i] = this.params.get(i).toLiSAParameter(location, init);

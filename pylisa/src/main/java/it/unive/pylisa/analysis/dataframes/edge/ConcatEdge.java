@@ -6,7 +6,10 @@ public class ConcatEdge extends DataframeEdge {
 
 	private final int edgeIndex;
 
-	public ConcatEdge(DataframeOperation source, DataframeOperation destination, int edgeIndex) {
+	public ConcatEdge(
+			DataframeOperation source,
+			DataframeOperation destination,
+			int edgeIndex) {
 		super(source, destination);
 		this.edgeIndex = edgeIndex;
 	}
@@ -24,7 +27,8 @@ public class ConcatEdge extends DataframeEdge {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -43,7 +47,9 @@ public class ConcatEdge extends DataframeEdge {
 	}
 
 	@Override
-	public DataframeEdge newInstance(DataframeOperation source, DataframeOperation destination) {
+	public DataframeEdge newInstance(
+			DataframeOperation source,
+			DataframeOperation destination) {
 		return new ConcatEdge(source, destination, edgeIndex);
 	}
 }

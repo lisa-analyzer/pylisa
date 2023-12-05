@@ -1,12 +1,12 @@
 package it.unive.pylisa.analysis.constants;
 
 import java.util.Objects;
+import java.util.Set;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
-import it.unive.lisa.analysis.representation.DomainRepresentation;
-import it.unive.lisa.analysis.representation.StringRepresentation;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.type.Float32Type;
@@ -18,7 +18,7 @@ import it.unive.lisa.program.type.Int8Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.PushInv;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.ArithmeticOperator;
 import it.unive.lisa.symbolic.value.operator.DivisionOperator;
@@ -31,13 +31,16 @@ import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.Power;
 import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
 
-public class ConstantPropagation implements
+public class ConstantPropagation
+		implements
 		BaseNonRelationalValueDomain<ConstantPropagation>,
 		Comparable<ConstantPropagation> {
 
@@ -52,15 +55,19 @@ public class ConstantPropagation implements
 		this(null, true);
 	}
 
-	public ConstantPropagation(int value) {
+	public ConstantPropagation(
+			int value) {
 		this(new Constant(Int32Type.INSTANCE, value, SyntheticLocation.INSTANCE));
 	}
 
-	public ConstantPropagation(Constant constant) {
+	public ConstantPropagation(
+			Constant constant) {
 		this(constant, false);
 	}
 
-	private ConstantPropagation(Constant constant, boolean isTop) {
+	private ConstantPropagation(
+			Constant constant,
+			boolean isTop) {
 		this.constant = constant;
 		this.isTop = isTop;
 	}
@@ -69,11 +76,13 @@ public class ConstantPropagation implements
 		return constant.getValue();
 	}
 
-	public <T> boolean is(Class<T> type) {
+	public <T> boolean is(
+			Class<T> type) {
 		return type.isInstance(getConstant());
 	}
 
-	public <T> T as(Class<T> type) {
+	public <T> T as(
+			Class<T> type) {
 		return type.cast(getConstant());
 	}
 
@@ -82,7 +91,7 @@ public class ConstantPropagation implements
 		return representation().toString();
 	}
 
-	public DomainRepresentation representation() {
+	public StructuredRepresentation representation() {
 		if (isTop())
 			return Lattice.topRepresentation();
 		if (isBottom())
@@ -111,17 +120,23 @@ public class ConstantPropagation implements
 	}
 
 	@Override
-	public ConstantPropagation lubAux(ConstantPropagation other) throws SemanticException {
+	public ConstantPropagation lubAux(
+			ConstantPropagation other)
+			throws SemanticException {
 		return Objects.equals(constant, other.constant) ? this : top();
 	}
 
 	@Override
-	public ConstantPropagation wideningAux(ConstantPropagation other) throws SemanticException {
+	public ConstantPropagation wideningAux(
+			ConstantPropagation other)
+			throws SemanticException {
 		return lubAux(other);
 	}
 
 	@Override
-	public boolean lessOrEqualAux(ConstantPropagation other) throws SemanticException {
+	public boolean lessOrEqualAux(
+			ConstantPropagation other)
+			throws SemanticException {
 		return Objects.equals(constant, other.constant);
 	}
 
@@ -135,7 +150,8 @@ public class ConstantPropagation implements
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -153,7 +169,8 @@ public class ConstantPropagation implements
 		return true;
 	}
 
-	private static boolean isAccepted(Type t) {
+	private static boolean isAccepted(
+			Type t) {
 		return t.isNumericType()
 				|| t.isStringType()
 				|| t.toString().equals(LibrarySpecificationProvider.LIST)
@@ -162,32 +179,59 @@ public class ConstantPropagation implements
 	}
 
 	@Override
-	public boolean tracksIdentifiers(Identifier id) {
-		return canProcess(id);
+	public boolean canProcess(
+			SymbolicExpression expression,
+			ProgramPoint pp,
+			SemanticOracle oracle) {
+		if (expression instanceof PushInv)
+			// the type approximation of a pushinv is bottom, so the below check
+			// will always fail regardless of the kind of value we are tracking
+			return isAccepted(expression.getStaticType());
+
+		Set<Type> rts = null;
+		try {
+			rts = oracle.getRuntimeTypesOf(expression, pp, oracle);
+		} catch (SemanticException e) {
+			return false;
+		}
+
+		if (rts == null || rts.isEmpty())
+			// if we have no runtime types, either the type domain has no type
+			// information for the given expression (thus it can be anything,
+			// also something that we can track) or the computation returned
+			// bottom (and the whole state is likely going to go to bottom
+			// anyway).
+			return true;
+
+		return rts.stream().anyMatch(ConstantPropagation::isAccepted);
 	}
 
-	@Override
-	public boolean canProcess(SymbolicExpression expression) {
-		return expression.hasRuntimeTypes()
-				? expression.getRuntimeTypes(null).stream().anyMatch(ConstantPropagation::isAccepted)
-				: isAccepted(expression.getStaticType());
-	}
 
 	@Override
-	public ConstantPropagation evalNullConstant(ProgramPoint pp) throws SemanticException {
+	public ConstantPropagation evalNullConstant(
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
 		return TOP;
 	}
 
 	@Override
-	public ConstantPropagation evalNonNullConstant(Constant constant, ProgramPoint pp) throws SemanticException {
+	public ConstantPropagation evalNonNullConstant(
+			Constant constant,
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
 		if (isAccepted(constant.getStaticType()))
 			return new ConstantPropagation(constant);
 		return TOP;
 	}
 
 	@Override
-	public ConstantPropagation evalUnaryExpression(UnaryOperator operator, ConstantPropagation arg,
-			ProgramPoint pp) {
+	public ConstantPropagation evalUnaryExpression(
+			UnaryOperator operator,
+			ConstantPropagation arg,
+			ProgramPoint pp,
+			SemanticOracle oracle) {
 		if (arg.isTop())
 			return top();
 		if (operator == NumericNegation.INSTANCE)
@@ -210,8 +254,12 @@ public class ConstantPropagation implements
 	}
 
 	@Override
-	public ConstantPropagation evalBinaryExpression(BinaryOperator operator, ConstantPropagation left,
-			ConstantPropagation right, ProgramPoint pp) {
+	public ConstantPropagation evalBinaryExpression(
+			BinaryOperator operator,
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp,
+			SemanticOracle oracle) {
 		if (operator instanceof ArithmeticOperator) {
 			if (left.isTop() || right.isTop() || !left.constant.getStaticType().isNumericType()
 					|| !right.constant.getStaticType().isNumericType())
@@ -248,7 +296,10 @@ public class ConstantPropagation implements
 		return top();
 	}
 
-	private Constant div(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+	private Constant div(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
 		Constant c;
 		if (left.is(Integer.class) && right.is(Integer.class)) {
 			Integer l = left.as(Integer.class);
@@ -265,7 +316,10 @@ public class ConstantPropagation implements
 		return c;
 	}
 
-	private Constant rem(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+	private Constant rem(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
 		Constant c;
 		if (left.is(Integer.class) && right.is(Integer.class)) {
 			Integer l = left.as(Integer.class);
@@ -282,7 +336,10 @@ public class ConstantPropagation implements
 		return c;
 	}
 
-	private Constant sum(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+	private Constant sum(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
 		Constant c;
 		if (left.is(Integer.class) && right.is(Integer.class))
 			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) + right.as(Integer.class),
@@ -299,7 +356,10 @@ public class ConstantPropagation implements
 		return c;
 	}
 
-	private Constant sub(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+	private Constant sub(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
 		Constant c;
 		if (left.is(Integer.class) && right.is(Integer.class))
 			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) - right.as(Integer.class),
@@ -316,7 +376,10 @@ public class ConstantPropagation implements
 		return c;
 	}
 
-	private Constant mul(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+	private Constant mul(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
 		Constant c;
 		if (left.is(Integer.class) && right.is(Integer.class))
 			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) * right.as(Integer.class),
@@ -333,7 +396,10 @@ public class ConstantPropagation implements
 		return c;
 	}
 
-	private ConstantPropagation stringConcat(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+	private ConstantPropagation stringConcat(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
 
 		if (left.isTop() || right.isTop()) {
 			return TOP;
@@ -346,7 +412,10 @@ public class ConstantPropagation implements
 		return TOP;
 	}
 
-	private ConstantPropagation stringRepeat(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+	private ConstantPropagation stringRepeat(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
 		if (left.isTop() || right.isTop()) {
 			return TOP;
 		}
@@ -373,7 +442,10 @@ public class ConstantPropagation implements
 		return TOP;
 	}
 
-	private ConstantPropagation power(ConstantPropagation left, ConstantPropagation right, ProgramPoint pp) {
+	private ConstantPropagation power(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
 		if (left.isTop() || right.isTop()) {
 			return TOP;
 		}
@@ -430,7 +502,9 @@ public class ConstantPropagation implements
 		return TOP;
 	}
 
-	private String stringRepeatAux(String s, Long times) {
+	private String stringRepeatAux(
+			String s,
+			Long times) {
 		StringBuilder sb = new StringBuilder();
 		for (long i = 0; i < times; i++) {
 			sb.append(s);
@@ -439,7 +513,8 @@ public class ConstantPropagation implements
 	}
 
 	@Override
-	public int compareTo(ConstantPropagation other) {
+	public int compareTo(
+			ConstantPropagation other) {
 		if (isBottom() && !other.isBottom())
 			return -1;
 		else if (!isBottom() && other.isBottom())

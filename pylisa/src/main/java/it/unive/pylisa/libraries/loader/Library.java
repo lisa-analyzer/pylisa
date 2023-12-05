@@ -1,10 +1,5 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
-
 import it.unive.lisa.program.CodeUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
@@ -13,8 +8,14 @@ import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.NativeCFG;
+import it.unive.pylisa.cfg.type.PyLibraryUnitType;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
-import it.unive.pylisa.libraries.PyLibraryUnitType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Library {
 	private final String name;
@@ -23,7 +24,9 @@ public class Library {
 	private final Collection<Field> fields = new HashSet<>();
 	private final Collection<ClassDef> classes = new HashSet<>();
 
-	public Library(String name, String location) {
+	public Library(
+			String name,
+			String location) {
 		this.name = name;
 		this.location = location;
 	}
@@ -54,7 +57,8 @@ public class Library {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -72,7 +76,9 @@ public class Library {
 		return "Library [name=" + name + ", location=" + location + "]";
 	}
 
-	public CodeUnit toLiSAUnit(Program program, AtomicReference<CompilationUnit> rootHolder) {
+	public CodeUnit toLiSAUnit(
+			Program program,
+			AtomicReference<CompilationUnit> rootHolder) {
 		CodeLocation location = new SourceCodeLocation(this.location, 0, 0);
 		CodeUnit unit = new CodeUnit(location, program, name);
 		program.addUnit(unit);
@@ -81,13 +87,31 @@ public class Library {
 			CompilationUnit c = cls.toLiSAUnit(location, program, rootHolder);
 			program.addUnit(c);
 			// type registration is a side effect of the constructor
-			new PyLibraryUnitType(unit, c);
+			if (cls.getTypeName() == null)
+				new PyLibraryUnitType(unit, c);
+			else
+				try {
+					Class<?> type = Class.forName(cls.getTypeName());
+					Constructor<?> constructor = type.getConstructor(CompilationUnit.class);
+					constructor.newInstance(c);
+				} catch (ClassNotFoundException
+						| SecurityException
+						| IllegalArgumentException
+						| IllegalAccessException
+						| NoSuchMethodException
+						| InstantiationException
+						| InvocationTargetException e) {
+					throw new LibraryCreationException(e);
+				}
 		}
 
 		return unit;
 	}
 
-	public void populateUnit(CFG init, CompilationUnit root, CodeUnit lib) {
+	public void populateUnit(
+			CFG init,
+			CompilationUnit root,
+			CodeUnit lib) {
 		CodeLocation location = new SourceCodeLocation(this.location, 0, 0);
 
 		for (Method mtd : this.methods) {

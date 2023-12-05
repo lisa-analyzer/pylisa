@@ -10,11 +10,13 @@ public class UnsupportedStatementException extends RuntimeException {
 		super();
 	}
 
-	public UnsupportedStatementException(String message) {
+	public UnsupportedStatementException(
+			String message) {
 		super(message);
 	}
 
-	public UnsupportedStatementException(Statement s) {
+	public UnsupportedStatementException(
+			Statement s) {
 		super("Not supported yet:" + s);
 	}
 }

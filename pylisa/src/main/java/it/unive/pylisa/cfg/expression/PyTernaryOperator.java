@@ -4,9 +4,6 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.heap.HeapDomain;
-import it.unive.lisa.analysis.value.TypeDomain;
-import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -24,7 +21,11 @@ public class PyTernaryOperator extends Expression {
 	private final Expression ifTrue;
 	private final Expression ifFalse;
 
-	public PyTernaryOperator(CFG cfg, CodeLocation location, Expression condition, Expression ifTrue,
+	public PyTernaryOperator(
+			CFG cfg,
+			CodeLocation location,
+			Expression condition,
+			Expression ifTrue,
 			Expression ifFalse) {
 		super(cfg, location, ifTrue.getStaticType().commonSupertype(ifFalse.getStaticType()));
 		this.condition = condition;
@@ -55,7 +56,8 @@ public class PyTernaryOperator extends Expression {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -87,16 +89,9 @@ public class PyTernaryOperator extends Expression {
 	}
 
 	@Override
-	public int setOffset(int offset) {
-		this.offset = offset;
-		int off = ifTrue.setOffset(this.offset + 1);
-		off = condition.setOffset(off + 1);
-		off = ifFalse.setOffset(off + 1);
-		return off;
-	}
-
-	@Override
-	public <V> boolean accept(GraphVisitor<CFG, Statement, Edge, V> visitor, V tool) {
+	public <V> boolean accept(
+			GraphVisitor<CFG, Statement, Edge, V> visitor,
+			V tool) {
 		if (!ifTrue.accept(visitor, tool))
 			return false;
 		if (!condition.accept(visitor, tool))
@@ -107,15 +102,12 @@ public class PyTernaryOperator extends Expression {
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>,
-			H extends HeapDomain<H>,
-			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> semantics(
-					AnalysisState<A, H, V, T> entryState,
-					InterproceduralAnalysis<A, H, V, T> interprocedural,
-					StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
-		AnalysisState<A, H, V, T> postCondition = condition.semantics(entryState, interprocedural, expressions);
+	public <A extends AbstractState<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		AnalysisState<A> postCondition = condition.forwardSemantics(entryState, interprocedural, expressions);
 		for (SymbolicExpression cond : postCondition.getComputedExpressions()) {
 			UnaryExpression negated = new UnaryExpression(cond.getStaticType(), cond, LogicalNegation.INSTANCE,
 					cond.getCodeLocation());
@@ -123,13 +115,16 @@ public class PyTernaryOperator extends Expression {
 			case BOTTOM:
 				return entryState.bottom();
 			case NOT_SATISFIED:
-				return ifFalse.semantics(postCondition.assume(cond, condition, ifTrue), interprocedural, expressions);
+				return ifFalse.forwardSemantics(postCondition.assume(cond, condition, ifTrue), interprocedural,
+						expressions);
 			case SATISFIED:
-				return ifTrue.semantics(postCondition.assume(negated, condition, ifFalse), interprocedural,
+				return ifTrue.forwardSemantics(postCondition.assume(negated, condition, ifFalse), interprocedural,
 						expressions);
 			case UNKNOWN:
-				return ifTrue.semantics(postCondition.assume(cond, condition, ifTrue), interprocedural, expressions)
-						.lub(ifFalse.semantics(postCondition.assume(negated, condition, ifFalse), interprocedural,
+				return ifTrue
+						.forwardSemantics(postCondition.assume(cond, condition, ifTrue), interprocedural, expressions)
+						.lub(ifFalse.forwardSemantics(postCondition.assume(negated, condition, ifFalse),
+								interprocedural,
 								expressions));
 			}
 		}

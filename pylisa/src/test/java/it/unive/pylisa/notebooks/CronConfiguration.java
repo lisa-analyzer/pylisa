@@ -1,8 +1,7 @@
 package it.unive.pylisa.notebooks;
 
-import java.util.List;
-
 import it.unive.lisa.conf.LiSAConfiguration;
+import java.util.List;
 
 /**
  * An extended {@link LiSAConfiguration} that also holds test configuration

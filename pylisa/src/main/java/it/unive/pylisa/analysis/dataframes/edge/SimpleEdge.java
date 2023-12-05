@@ -4,7 +4,9 @@ import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 
 public class SimpleEdge extends DataframeEdge {
 
-	public SimpleEdge(DataframeOperation source, DataframeOperation destination) {
+	public SimpleEdge(
+			DataframeOperation source,
+			DataframeOperation destination) {
 		super(source, destination);
 	}
 
@@ -14,7 +16,9 @@ public class SimpleEdge extends DataframeEdge {
 	}
 
 	@Override
-	public DataframeEdge newInstance(DataframeOperation source, DataframeOperation destination) {
+	public DataframeEdge newInstance(
+			DataframeOperation source,
+			DataframeOperation destination) {
 		return new SimpleEdge(source, destination);
 	}
 

@@ -1,12 +1,10 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.util.Collections;
-import java.util.Set;
-
-import org.apache.commons.collections4.SetUtils;
-
 import it.unive.lisa.analysis.lattices.SetLattice;
 import it.unive.lisa.util.collections.CollectionsDiffBuilder;
+import java.util.Collections;
+import java.util.Set;
+import org.apache.commons.collections4.SetUtils;
 
 public class Names extends SetLattice<Names, String> implements Comparable<Names> {
 
@@ -17,19 +15,24 @@ public class Names extends SetLattice<Names, String> implements Comparable<Names
 		this(true);
 	}
 
-	public Names(String element) {
+	public Names(
+			String element) {
 		this(Collections.singleton(element), false);
 	}
 
-	public Names(Set<String> elements) {
+	public Names(
+			Set<String> elements) {
 		this(elements, false);
 	}
 
-	private Names(boolean isTop) {
+	private Names(
+			boolean isTop) {
 		this(Collections.emptySet(), isTop);
 	}
 
-	private Names(Set<String> elements, boolean isTop) {
+	private Names(
+			Set<String> elements,
+			boolean isTop) {
 		super(elements, isTop);
 	}
 
@@ -37,19 +40,21 @@ public class Names extends SetLattice<Names, String> implements Comparable<Names
 	public Names top() {
 		return TOP;
 	}
-	
+
 	@Override
 	public Names bottom() {
 		return BOTTOM;
 	}
 
 	@Override
-	public Names mk(Set<String> set) {
+	public Names mk(
+			Set<String> set) {
 		return new Names(set);
 	}
 
 	@Override
-	public int compareTo(Names other) {
+	public int compareTo(
+			Names other) {
 		int cmp;
 		if ((cmp = Integer.compare(elements.size(), other.elements.size())) != 0)
 			return cmp;
@@ -63,16 +68,19 @@ public class Names extends SetLattice<Names, String> implements Comparable<Names
 			return builder.getOnlyFirst().iterator().next().compareTo(builder.getOnlySecond().iterator().next());
 		return 0;
 	}
-	
-	public Names intersection(Names other) {
+
+	public Names intersection(
+			Names other) {
 		return new Names(SetUtils.intersection(elements, other.elements), false);
 	}
-	
-	public Names symmetricDifference(Names other) {
+
+	public Names symmetricDifference(
+			Names other) {
 		return new Names(SetUtils.disjunction(elements, other.elements), false);
 	}
-	
-	public Names difference(Names other) {
+
+	public Names difference(
+			Names other) {
 		return new Names(SetUtils.difference(elements, other.elements), false);
 	}
 }

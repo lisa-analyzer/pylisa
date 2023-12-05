@@ -1,21 +1,25 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Objects;
-
 import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import java.util.Objects;
 
 public class Parameter {
 	private final String name;
 	private final Type type;
 	private final Value value;
 
-	public Parameter(String name, Type type) {
+	public Parameter(
+			String name,
+			Type type) {
 		this(name, type, null);
 	}
 
-	public Parameter(String name, Type type, Value value) {
+	public Parameter(
+			String name,
+			Type type,
+			Value value) {
 		this.name = name;
 		this.type = type;
 		this.value = value;
@@ -39,7 +43,8 @@ public class Parameter {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -56,7 +61,9 @@ public class Parameter {
 		return "Parameter [name=" + name + ", type=" + type + ", value=" + value + "]";
 	}
 
-	public it.unive.lisa.program.cfg.Parameter toLiSAParameter(CodeLocation location, CFG init) {
+	public it.unive.lisa.program.cfg.Parameter toLiSAParameter(
+			CodeLocation location,
+			CFG init) {
 		if (this.value == null)
 			return new it.unive.lisa.program.cfg.Parameter(location, this.name, this.type.toLiSAType());
 		return new it.unive.lisa.program.cfg.Parameter(
