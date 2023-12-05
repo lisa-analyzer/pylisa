@@ -1,8 +1,7 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.util.Objects;
-
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
+import java.util.Objects;
 
 public class NodeId {
 

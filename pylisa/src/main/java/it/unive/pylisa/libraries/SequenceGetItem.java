@@ -1,7 +1,5 @@
 package it.unive.pylisa.libraries;
 
-import java.util.Set;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -21,6 +19,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.symbolic.operators.dataframes.Iterate;
+import java.util.Set;
 
 public class SequenceGetItem extends BinaryExpression implements PluggableStatement {
 

@@ -45,12 +45,12 @@ public class ObjectDelAttr extends BinaryExpression implements PluggableStatemen
 
 	@Override
 	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-					InterproceduralAnalysis<A> interprocedural,
-					AnalysisState<A> state,
-					SymbolicExpression left,
-					SymbolicExpression right,
-					StatementStore<A> expressions)
-					throws SemanticException {
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		// nothing we can do here really
 		return state;
 	}

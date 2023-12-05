@@ -40,11 +40,11 @@ public class ObjectDel extends UnaryExpression implements PluggableStatement {
 
 	@Override
 	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-					InterproceduralAnalysis<A> interprocedural,
-					AnalysisState<A> state,
-					SymbolicExpression arg,
-					StatementStore<A> expressions)
-					throws SemanticException {
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression arg,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		// nothing we can do here really
 		return state;
 	}

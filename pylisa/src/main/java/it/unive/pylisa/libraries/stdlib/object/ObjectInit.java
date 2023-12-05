@@ -40,11 +40,11 @@ public class ObjectInit extends UnaryExpression implements PluggableStatement {
 
 	@Override
 	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-					InterproceduralAnalysis<A> interprocedural,
-					AnalysisState<A> state,
-					SymbolicExpression arg,
-					StatementStore<A> expressions)
-					throws SemanticException {
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression arg,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		return state;
 	}
 }

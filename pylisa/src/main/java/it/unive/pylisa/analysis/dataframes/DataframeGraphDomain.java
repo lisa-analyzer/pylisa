@@ -523,7 +523,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		return bound;
 	}
-	
+
 	public DataframeGraphDomain visit(
 			UnaryExpression expression,
 			DataframeGraphDomain arg,
@@ -718,7 +718,6 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				arg.pointers.setStack(new SetLattice<>(id)),
 				ops.putState(id, new SetLattice<>(concatNode)));
 	}
-
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static DataframeGraphDomain doUnaryTransformation(

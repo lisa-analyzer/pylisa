@@ -1,8 +1,5 @@
 package it.unive.pylisa;
 
-import java.util.Collections;
-import java.util.List;
-
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.heap.pointbased.AllocationSite;
@@ -11,6 +8,8 @@ import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.lattices.GenericMapLattice;
 import it.unive.lisa.analysis.nonrelational.heap.HeapEnvironment;
+import java.util.Collections;
+import java.util.List;
 
 public class PyFieldSensitivePointBasedHeap extends FieldSensitivePointBasedHeap {
 

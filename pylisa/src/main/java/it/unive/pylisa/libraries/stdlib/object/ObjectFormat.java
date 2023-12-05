@@ -45,12 +45,12 @@ public class ObjectFormat extends BinaryExpression implements PluggableStatement
 
 	@Override
 	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-					InterproceduralAnalysis<A> interprocedural,
-					AnalysisState<A> state,
-					SymbolicExpression left,
-					SymbolicExpression right,
-					StatementStore<A> expressions)
-					throws SemanticException {
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		return state.smallStepSemantics(new PushAny(getStaticType(), getLocation()), st);
 	}
 }

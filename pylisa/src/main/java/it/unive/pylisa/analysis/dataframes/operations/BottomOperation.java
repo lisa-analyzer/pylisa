@@ -55,7 +55,7 @@ public class BottomOperation extends DataframeOperation {
 			DataframeOperation o) {
 		return 0;
 	}
-	
+
 	@Override
 	protected DataframeOperation wideningSameOperation(
 			DataframeOperation other)

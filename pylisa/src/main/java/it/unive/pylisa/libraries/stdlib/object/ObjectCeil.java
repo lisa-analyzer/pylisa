@@ -46,6 +46,7 @@ public class ObjectCeil extends UnaryExpression implements PluggableStatement {
 			SymbolicExpression arg,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		return new PyNotImplementedLiteral(getCFG(), getLocation()).forwardSemantics(state, interprocedural, expressions);
+		return new PyNotImplementedLiteral(getCFG(), getLocation()).forwardSemantics(state, interprocedural,
+				expressions);
 	}
 }

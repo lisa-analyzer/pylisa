@@ -49,13 +49,14 @@ public class ObjectSetItem extends TernaryExpression implements PluggableStateme
 
 	@Override
 	public <A extends AbstractState<A>> AnalysisState<A> fwdTernarySemantics(
-					InterproceduralAnalysis<A> interprocedural,
-					AnalysisState<A> state,
-					SymbolicExpression left,
-					SymbolicExpression middle,
-					SymbolicExpression right,
-					StatementStore<A> expressions)
-					throws SemanticException {
-		return new PyNotImplementedLiteral(getCFG(), getLocation()).forwardSemantics(state, interprocedural, expressions);
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression middle,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		return new PyNotImplementedLiteral(getCFG(), getLocation()).forwardSemantics(state, interprocedural,
+				expressions);
 	}
 }

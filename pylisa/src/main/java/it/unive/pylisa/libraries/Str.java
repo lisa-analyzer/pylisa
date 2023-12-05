@@ -1,7 +1,5 @@
 package it.unive.pylisa.libraries;
 
-import java.util.Set;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -17,6 +15,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
+import java.util.Set;
 
 public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	protected Statement st;
@@ -44,7 +43,7 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Set<Type> rts = state.getState().getRuntimeTypesOf(expr, this, state.getState());
-		if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(t -> t.isStringType() || t.isNumericType())) 
+		if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(t -> t.isStringType() || t.isNumericType()))
 			return state.smallStepSemantics(
 					new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
 		// TODO Handle other cases

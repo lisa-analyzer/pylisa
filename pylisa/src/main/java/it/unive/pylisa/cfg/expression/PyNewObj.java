@@ -1,10 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import org.apache.commons.lang3.ArrayUtils;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -24,6 +19,9 @@ import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
+import java.util.HashSet;
+import java.util.Set;
+import org.apache.commons.lang3.ArrayUtils;
 
 public class PyNewObj extends NaryExpression {
 

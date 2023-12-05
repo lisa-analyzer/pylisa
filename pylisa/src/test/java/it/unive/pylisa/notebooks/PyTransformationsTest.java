@@ -1,8 +1,5 @@
 package it.unive.pylisa.notebooks;
 
-import org.junit.Ignore;
-import org.junit.Test;
-
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
@@ -15,6 +12,8 @@ import it.unive.pylisa.checks.BottomFinder;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
 import it.unive.pylisa.checks.OpenCallsFinder;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class PyTransformationsTest extends AnalysisTestExecutor {

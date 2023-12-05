@@ -41,11 +41,12 @@ public class ObjectPos extends UnaryExpression implements PluggableStatement {
 
 	@Override
 	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-					InterproceduralAnalysis<A> interprocedural,
-					AnalysisState<A> state,
-					SymbolicExpression arg,
-					StatementStore<A> expressions)
-					throws SemanticException {
-		return new PyNotImplementedLiteral(getCFG(), getLocation()).forwardSemantics(state, interprocedural, expressions);
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression arg,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		return new PyNotImplementedLiteral(getCFG(), getLocation()).forwardSemantics(state, interprocedural,
+				expressions);
 	}
 }

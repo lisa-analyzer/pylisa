@@ -48,13 +48,13 @@ public class ObjectSetAttr extends TernaryExpression implements PluggableStateme
 
 	@Override
 	public <A extends AbstractState<A>> AnalysisState<A> fwdTernarySemantics(
-					InterproceduralAnalysis<A> interprocedural,
-					AnalysisState<A> state,
-					SymbolicExpression left,
-					SymbolicExpression middle,
-					SymbolicExpression right,
-					StatementStore<A> expressions)
-					throws SemanticException {
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression middle,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		// TODO given that we handle assignments separately, do we need to do
 		// something here?
 		return state;

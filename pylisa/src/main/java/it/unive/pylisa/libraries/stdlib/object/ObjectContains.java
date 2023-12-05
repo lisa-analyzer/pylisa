@@ -42,12 +42,13 @@ public class ObjectContains extends BinaryExpression implements PluggableStateme
 
 	@Override
 	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-					InterproceduralAnalysis<A> interprocedural,
-					AnalysisState<A> state,
-					SymbolicExpression left,
-					SymbolicExpression right,
-					StatementStore<A> expressions)
-					throws SemanticException {
-		return new PyNotImplementedLiteral(getCFG(), getLocation()).forwardSemantics(state, interprocedural, expressions);
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		return new PyNotImplementedLiteral(getCFG(), getLocation()).forwardSemantics(state, interprocedural,
+				expressions);
 	}
 }
