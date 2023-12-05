@@ -480,22 +480,21 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	private void addRetNodesToCurrentCFG() {
-		if (currentCFG.getAllExitpoints().isEmpty()) {
-			Ret ret = new Ret(currentCFG, currentCFG.getDescriptor().getLocation());
-			if (currentCFG.getNodesCount() == 0) {
-				// empty method, so the ret is also the entrypoint
-				currentCFG.addNode(ret, true);
-			} else {
-				// every non-throwing instruction that does not have a follower
-				// is ending the method
-				Collection<Statement> preExits = new LinkedList<>();
-				for (Statement st : currentCFG.getNodes())
-					if (!st.stopsExecution() && currentCFG.followersOf(st).isEmpty())
-						preExits.add(st);
+		Ret ret = new Ret(currentCFG, currentCFG.getDescriptor().getLocation());
+		if (currentCFG.getNodesCount() == 0) {
+			// empty method, so the ret is also the entrypoint
+			currentCFG.addNode(ret, true);
+		} else {
+			// every non-throwing instruction that does not have a follower
+			// is ending the method
+			Collection<Statement> preExits = new LinkedList<>();
+			for (Statement st : currentCFG.getNodes())
+				if (!st.stopsExecution() && currentCFG.followersOf(st).isEmpty())
+					preExits.add(st);
+			if (!preExits.isEmpty()) {
 				currentCFG.addNode(ret);
 				for (Statement st : preExits)
 					currentCFG.addEdge(new SequentialEdge(st, ret));
-
 				for (VariableTableEntry entry : currentCFG.getDescriptor().getVariables())
 					if (preExits.contains(entry.getScopeEnd()))
 						entry.setScopeEnd(ret);
