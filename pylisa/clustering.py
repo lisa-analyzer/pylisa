@@ -1,6 +1,5 @@
 from sknetwork.hierarchy import Paris
 from sknetwork.visualization import svg_dendrogram
-from graph_based_clustering import SpanTreeConnectedComponentsClustering
 from sknetwork.ranking import PageRank
 from sknetwork.data import from_adjacency_list
 import numpy as np
@@ -14,7 +13,7 @@ edgesNo = 0
 adj_matrix = None
 adj_list = []
 ### PARSE FILE
-with open("OUTPUT/dir-graph-adj-matrix.txt") as f:
+with open("/Users/giacomozanatta/Projects/pylisa-ros/analysis/ros2-beginner/dir-graph-adj-matrix.txt") as f:
     lines = f.read().split('\n')
     found_ids = False
     found_graph = False

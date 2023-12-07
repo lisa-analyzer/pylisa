@@ -88,6 +88,7 @@ class ROSNode3(Node):
 class ROSNode4(Node):
 
     def __init__(self):
+        self.x = 3
         super().__init__('node_4')
         self.publisher = self.create_publisher(String, 'topic1', 10)
         self.create_publisher(String, 'topic3', 10)
@@ -104,13 +105,15 @@ class ROSNode4(Node):
         self.get_logger().info('Publishing: "%s"' % msg.data)
         self.i += 1
 
-def main(args=None):
-    rclpy.init(args=args)
-    node1 = ROSNode1()
-    node2 = ROSNode2()
-    node3 = ROSNode3()
-    node4 = ROSNode4()
-    rclpy.shutdown()
+#def main(args=None):
+#    rclpy.init(args=args)
 
-if __name__ == '__main__':
-    main()
+#    rclpy.shutdown()
+
+node1 = ROSNode1()
+node2 = ROSNode2()
+node3 = ROSNode3()
+node4 = ROSNode4()
+
+#if __name__ == '__main__':
+#    main()
