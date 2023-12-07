@@ -54,7 +54,10 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		Type type = visitType(ctx.type());
 		String name = ctx.name.getText();
 		if (ctx.DEFAULT() == null)
-			return new Parameter(name, type, ctx.STAR() != null ? Parameter.ParameterType.VAR_ARGS : ctx.POWER() != null ? Parameter.ParameterType.KW_ARGS : ctx.AMP() != null ? Parameter.ParameterType.KW_ONLY : Parameter.ParameterType.STANDARD);
+			return new Parameter(name, type,
+					ctx.STAR() != null ? Parameter.ParameterType.VAR_ARGS
+							: ctx.POWER() != null ? Parameter.ParameterType.KW_ARGS
+									: ctx.AMP() != null ? Parameter.ParameterType.KW_ONLY : Parameter.ParameterType.STANDARD);
 
 		Value def;
 		if (ctx.val.NONE() != null)
@@ -68,7 +71,10 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		else
 			throw new LibraryParsingException(file, "Unsupported default parameter type: " + type);
 
-		return new Parameter(name, type, def, ctx.STAR() != null ? Parameter.ParameterType.VAR_ARGS : ctx.POWER() != null ? Parameter.ParameterType.KW_ARGS : ctx.AMP() != null ? Parameter.ParameterType.KW_ONLY : Parameter.ParameterType.STANDARD);
+		return new Parameter(name, type, def,
+				ctx.STAR() != null ? Parameter.ParameterType.VAR_ARGS
+						: ctx.POWER() != null ? Parameter.ParameterType.KW_ARGS
+								: ctx.AMP() != null ? Parameter.ParameterType.KW_ONLY : Parameter.ParameterType.STANDARD);
 	}
 
 	@Override
