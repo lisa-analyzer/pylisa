@@ -100,7 +100,7 @@ public class Main {
     // 1. parse file
 
     Scanner scanner = new Scanner(new File(MAIN_FOLDER + "/pythonFiles.txt"));
-    FileWriter output = new FileWriter("results.csv");
+    FileWriter output = new FileWriter("results-parser.csv");
     BufferedWriter Bout = new BufferedWriter(output);
     Bout.write("file_name,status,error_message,stack_trace");
     Bout.newLine();
@@ -137,7 +137,8 @@ public class Main {
   }
 
   public static void main(String[] args) throws IOException {
-    testROSApplication();
+    // testROSApplication();
+    testPyFrontend();
   }
 
 }

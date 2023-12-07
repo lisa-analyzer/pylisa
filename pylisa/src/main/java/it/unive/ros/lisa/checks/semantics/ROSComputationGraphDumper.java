@@ -3,6 +3,7 @@ package it.unive.ros.lisa.checks.semantics;
 import it.unive.lisa.analysis.*;
 import it.unive.lisa.analysis.heap.pointbased.HeapAllocationSite;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
+import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
@@ -24,7 +25,10 @@ import it.unive.lisa.program.cfg.statement.call.TruncatedParamsCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.AccessChild;
+import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
+import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
@@ -90,7 +94,11 @@ public class ROSComputationGraphDumper implements
                                 try {
                                         Call c = tool.getResolvedVersion((UnresolvedCall) node, result);
                                         if (c instanceof ResolvedCall) {
-                                                CodeMember codeMember = ((ResolvedCall) c).getTargets().iterator()
+                                                Collection<CodeMember> targets = ((ResolvedCall) c).getTargets();
+                                                if (targets.size() == 0) {
+                                                        continue;
+                                                }
+                                                CodeMember codeMember = targets.iterator()
                                                                 .next();
                                                 if (codeMember instanceof NativeCFG) {
                                                         NativeCFG nativeCFG = (NativeCFG) codeMember;
@@ -151,37 +159,55 @@ public class ROSComputationGraphDumper implements
                                                                                 .getAnalysisStateAfter(node);
                                                                 for (SymbolicExpression expr : analysisState
                                                                                 .getComputedExpressions()) {
-                                                                        if (expr instanceof HeapAllocationSite
-                                                                                        && ((HeapAllocationSite) expr)
-                                                                                                        .getField()
-                                                                                                        .equals("node_name")) {
-                                                                                // name =
-                                                                                // analysisState.getState().getValueState().eval(expr,
-                                                                                // node);
-                                                                                name = analysisState.getState()
-                                                                                                .getValueState()
-                                                                                                .eval((ValueExpression) expr,
-                                                                                                                node)
-                                                                                                .toString();
-                                                                                name = name.substring(1,
-                                                                                                name.length() - 1);
-                                                                        }
-                                                                        if (expr instanceof HeapAllocationSite
-                                                                                        && ((HeapAllocationSite) expr)
-                                                                                                        .getField()
-                                                                                                        .equals("namespace")) {
-                                                                                namespace = analysisState.getState()
-                                                                                                .getValueState()
-                                                                                                .eval((ValueExpression) expr,
-                                                                                                                node)
-                                                                                                .toString();
-                                                                                if (namespace.length() > 0) {
-                                                                                        namespace = namespace.substring(
-                                                                                                        1,
-                                                                                                        namespace.length()
-                                                                                                                        - 1);
+                                                                        HeapReference ref = (HeapReference) expr;
+                                                                        HeapDereference deref = new HeapDereference(ref
+                                                                                        .getExpression()
+                                                                                        .getStaticType(), expr,
+                                                                                        node.getLocation());
+                                                                        AccessChild accessChild = new AccessChild(
+                                                                                        StringType.INSTANCE, deref,
+                                                                                        new Variable(StringType.INSTANCE,
+                                                                                                        "node_name",
+                                                                                                        node.getLocation()),
+                                                                                        node.getLocation());
+                                                                        ExpressionSet<SymbolicExpression> nodeNameSet = analysisState
+                                                                                        .rewrite(accessChild,
+                                                                                                        node);
+                                                                        for (SymbolicExpression se : nodeNameSet) {
+                                                                                if (se instanceof HeapAllocationSite) {
+                                                                                        name = analysisState.getState()
+                                                                                                        .getValueState()
+                                                                                                        .eval((ValueExpression) se,
+                                                                                                                        node)
+                                                                                                        .toString();
+                                                                                        name = name.substring(1,
+                                                                                                        name.length() - 1);
                                                                                 }
-
+                                                                        }
+                                                                        accessChild = new AccessChild(
+                                                                                        StringType.INSTANCE, deref,
+                                                                                        new Variable(StringType.INSTANCE,
+                                                                                                        "namespace",
+                                                                                                        node.getLocation()),
+                                                                                        node.getLocation());
+                                                                        ExpressionSet<SymbolicExpression> namespaceSet = analysisState
+                                                                                        .rewrite(accessChild,
+                                                                                                        node);
+                                                                        for (SymbolicExpression se : namespaceSet) {
+                                                                                if (se instanceof HeapAllocationSite) {
+                                                                                        // node);
+                                                                                        namespace = analysisState
+                                                                                                        .getState()
+                                                                                                        .getValueState()
+                                                                                                        .eval((ValueExpression) se,
+                                                                                                                        node)
+                                                                                                        .toString();
+                                                                                        if (namespace.length() > 0) {
+                                                                                                namespace = name.substring(
+                                                                                                                1,
+                                                                                                                name.length() - 1);
+                                                                                        }
+                                                                                }
                                                                         }
                                                                 }
                                                                 rosGraph.addNode(new Node(name, namespace,
@@ -204,8 +230,8 @@ public class ROSComputationGraphDumper implements
                                                                                         && ((HeapReference) expr)
                                                                                                         .getStaticType()
                                                                                                         .equals(new ReferenceType(
-                                                                                                                        PyClassType
-                                                                                                                                        .lookup(LibrarySpecificationProvider.RCLPY_SUBSCRIPTION)))) {
+                                                                                                                        PyClassType.lookup(
+                                                                                                                                        LibrarySpecificationProvider.RCLPY_SUBSCRIPTION)))) {
                                                                                 Variable access = new Variable(
                                                                                                 Untyped.INSTANCE,
                                                                                                 "topic_name",
@@ -267,23 +293,7 @@ public class ROSComputationGraphDumper implements
                                                                                 callbackFunction = callback;
                                                                         }
                                                                 }
-                                                                /*
-                                                                 * String topicName = "<undefined>";
-                                                                 * for (SymbolicExpression expr :
-                                                                 * result.getAnalysisStateAfter(((UnresolvedCall)
-                                                                 * node).getSubExpressions()[2]).getComputedExpressions(
-                                                                 * )) {
-                                                                 * topicName = ((Constant) expr).getValue().toString();
-                                                                 * }
-                                                                 * 
-                                                                 * String callbackFunction = "<undefined>";
-                                                                 * for (SymbolicExpression expr :
-                                                                 * result.getAnalysisStateAfter(((UnresolvedCall)
-                                                                 * node).getSubExpressions()[3]).getComputedExpressions(
-                                                                 * )) {
-                                                                 * callbackFunction = expr.toString();
-                                                                 * }
-                                                                 */
+
                                                                 Topic topic = rosGraph.addOrGetTopic(topicName);
                                                                 rosGraph.getNodeByScopeId(currentNodeScopeId)
                                                                                 .addNewSubscriber(topic, msgType,
@@ -345,14 +355,6 @@ public class ROSComputationGraphDumper implements
                                                                         }
                                                                 }
 
-                                                                /*
-                                                                 * for (SymbolicExpression expr :
-                                                                 * result.getAnalysisStateAfter(((UnresolvedCall)
-                                                                 * node).getSubExpressions()[1]).getComputedExpressions(
-                                                                 * )) {
-                                                                 * msgType = ((Variable) expr).toString();
-                                                                 * }
-                                                                 */
                                                                 Topic topic = rosGraph.addOrGetTopic(topicName);
                                                                 rosGraph.getNodeByScopeId(currentNodeScopeId)
                                                                                 .addNewPublisher(topic, msgType);
@@ -499,6 +501,7 @@ public class ROSComputationGraphDumper implements
 
                 }
                 return true;
+
         }
 
         @Override

@@ -1318,7 +1318,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 	@Override
 	public Expression visitLambdef(LambdefContext ctx) {
-		List<Expression> args = extractNamesFromVarArgList(ctx.varargslist());
+		List<Expression> args = new ArrayList<Expression>();
+		if (ctx.varargslist() != null) {
+			args = extractNamesFromVarArgList(ctx.varargslist());
+		}
+
 		Expression body = visitTest(ctx.test());
 		return new LambdaExpression(
 				args,

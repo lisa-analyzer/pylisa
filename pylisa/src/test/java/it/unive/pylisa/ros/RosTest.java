@@ -34,7 +34,7 @@ public class RosTest {
          */
         Statement s;
         PyFrontend translator = new PyFrontend(
-                "/Users/giacomozanatta/Projects/pylisa-ros/pylisa/test.py",
+                "test-lambda.py",
                 false);
         Program program = translator.toLiSAProgram();
 
@@ -61,7 +61,8 @@ public class RosTest {
 
         ROSApplication r = new RosApplicationBuilder()
                 .withNode(
-                        new PythonROSNodeBuilder("/Users/giacomozanatta/Projects/pylisa-ros/pylisa/test.py"))
+                        new PythonROSNodeBuilder(
+                                "/Users/giacomozanatta/Projects/git-repos-downloader/repos/Select-ROS2/src/ros2/rclpy/rclpy/test/test_callback_group.py"))
                 .withWorkDir("out-test.py").build();
         r.dumpGraph();
     }
