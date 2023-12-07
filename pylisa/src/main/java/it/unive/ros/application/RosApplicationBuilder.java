@@ -31,7 +31,7 @@ public class RosApplicationBuilder {
     private final ArrayList<Program> programs = new ArrayList<>();
     private final ROSComputationGraphDumper rosGraphDumper = new ROSComputationGraphDumper(new RosComputationalGraph());
     private final Map<String, Grant> permissionsGrants = new HashMap<>();
-    
+
     public RosApplicationBuilder() {
     }
 
@@ -40,13 +40,15 @@ public class RosApplicationBuilder {
         return this;
     }
 
-    public RosApplicationBuilder withPermissions(String XMLfileName) throws ROSNodeBuildException, FileNotFoundException, JAXBException {
+    public RosApplicationBuilder withPermissions(String XMLfileName)
+            throws ROSNodeBuildException, FileNotFoundException, JAXBException {
         PermissionsNode permsNode = JAXBPermissionsHelpers.load(XMLfileName);
         for (Grant g : permsNode.getPermissions().getGrant()) {
             permissionsGrants.putIfAbsent(g.getName(), g);
         }
         return this;
     }
+
     public RosApplicationBuilder withWorkDir(String workDir) {
         this.workDir = workDir;
         return this;
@@ -68,13 +70,13 @@ public class RosApplicationBuilder {
         conf.workdir = workDir;
         conf.serializeResults = false;
         conf.jsonOutput = false;
-        conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
+        conf.analysisGraphs = LiSAConfiguration.GraphType.NONE;
         conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
         conf.callGraph = new RTACallGraph();
         conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
         conf.optimize = false;
         conf.semanticChecks.add(rosGraphDumper);
-        FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs();
+        FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs().bottom();
         TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
         ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
         conf.abstractState = new SimpleAbstractState<>(heap, domain, type);

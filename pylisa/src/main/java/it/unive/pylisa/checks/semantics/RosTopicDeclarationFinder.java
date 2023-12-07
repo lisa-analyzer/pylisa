@@ -15,65 +15,81 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 
-import java.util.Objects;
-
-public class RosTopicDeclarationFinder implements SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> {
-
+public class RosTopicDeclarationFinder implements
+        SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> {
 
     @Override
-    public void beforeExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {
+    public void beforeExecution(
+            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {
     }
 
     @Override
-    public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {
+    public void afterExecution(
+            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {
     }
 
     @Override
-    public boolean visitUnit(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool, Unit unit) {
+    public boolean visitUnit(
+            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool,
+            Unit unit) {
         return true;
     }
 
     @Override
-    public void visitGlobal(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool, Unit unit, Global global, boolean instance) {
+    public void visitGlobal(
+            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool,
+            Unit unit, Global global, boolean instance) {
 
     }
 
     @Override
-    public boolean visit(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool, CFG graph) {
+    public boolean visit(
+            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool,
+            CFG graph) {
         return true;
     }
 
     @Override
-    public boolean visit(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool, CFG graph, Statement node) {
+    public boolean visit(
+            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool,
+            CFG graph, Statement node) {
         if (node instanceof Call) {
             Call call = (Call) node;
         }
-           /* if (Objects.equals(call.getTargetName(), "create_subscription") || Objects.equals(call.getTargetName(), "create_publisher")) {
-                String nodeType = Objects.equals(call.getTargetName(), "create_subscription") ? "Subscriber" : "Publisher";
-                String messageType = call.getSubExpressions()[1].toString();
-                String topicName = "[undefined]";
-                for (CFGWithAnalysisResults<
-                                        SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>,
-                                        PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-                                        TypeEnvironment<InferredTypes>> result : tool.getResultOf(call.getCFG())) {
-
-                    ConstantPropagation cp = result.getAnalysisStateAfter(call.getParameters()[2])
-                            .getState()
-                            .getValueState()
-                            .getValueOnStack();
-                    if (cp.getConstant() != null) {
-                        topicName = cp.getConstant().toString();
-                    }
-                }
-                tool.warnOn(graph, nodeType +" found: " + node + ". Read from topic: " + topicName + ", message type: " + messageType);
-            }
-        }*/
+        /*
+         * if (Objects.equals(call.getTargetName(), "create_subscription") ||
+         * Objects.equals(call.getTargetName(), "create_publisher")) {
+         * String nodeType = Objects.equals(call.getTargetName(), "create_subscription")
+         * ? "Subscriber" : "Publisher";
+         * String messageType = call.getSubExpressions()[1].toString();
+         * String topicName = "[undefined]";
+         * for (CFGWithAnalysisResults<
+         * SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+         * TypeEnvironment<InferredTypes>>,
+         * PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+         * TypeEnvironment<InferredTypes>> result : tool.getResultOf(call.getCFG())) {
+         * 
+         * ConstantPropagation cp =
+         * result.getAnalysisStateAfter(call.getParameters()[2])
+         * .getState()
+         * .getValueState()
+         * .getValueOnStack();
+         * if (cp.getConstant() != null) {
+         * topicName = cp.getConstant().toString();
+         * }
+         * }
+         * tool.warnOn(graph, nodeType +" found: " + node + ". Read from topic: " +
+         * topicName + ", message type: " + messageType);
+         * }
+         * }
+         */
         return true;
     }
 
     @Override
-    public boolean visit(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool, CFG graph, Edge edge) {
+    public boolean visit(
+            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>, PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool,
+            CFG graph, Edge edge) {
         return true;
     }
 }
-

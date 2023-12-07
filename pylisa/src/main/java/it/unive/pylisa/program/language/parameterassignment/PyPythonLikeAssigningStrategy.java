@@ -26,10 +26,8 @@ import it.unive.pylisa.cfg.VarPositionalParameter;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import javassist.compiler.ast.Expr;
 import org.apache.commons.lang3.tuple.Pair;
 import it.unive.pylisa.cfg.VarKeywordParameter;
-import it.unive.pylisa.cfg.VarPositionalParameter;
 import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -48,10 +46,7 @@ public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy
 
     @Override
     @SuppressWarnings("unchecked")
-    public <A extends AbstractState<A, H, V, T>,
-            H extends HeapDomain<H>,
-            V extends ValueDomain<V>,
-            T extends TypeDomain<T>> Pair<AnalysisState<A, H, V, T>, ExpressionSet<SymbolicExpression>[]> prepare(
+    public <A extends AbstractState<A, H, V, T>, H extends HeapDomain<H>, V extends ValueDomain<V>, T extends TypeDomain<T>> Pair<AnalysisState<A, H, V, T>, ExpressionSet<SymbolicExpression>[]> prepare(
             Call call,
             AnalysisState<A, H, V, T> callState,
             InterproceduralAnalysis<A, H, V, T> interprocedural,
@@ -107,96 +102,109 @@ public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy
         return Pair.of(prepared, slots);
     }
 
-    /*private <T extends TypeDomain<T>, H extends HeapDomain<H>, V extends ValueDomain<V>, A extends AbstractState<A, H, V, T>> AnalysisState<A,H,V,T> pythonLogic(
-            Parameter[] formals,
-            Expression[] actuals,
-            ExpressionSet<SymbolicExpression>[] given,
-            Set<Type>[] givenTypes,
-            ExpressionSet<SymbolicExpression>[] defaults,
-            Set<Type>[] defaultTypes,
-            ExpressionSet<SymbolicExpression>[] slots,
-            Set<Type>[] slotTypes,
-            InterproceduralAnalysis<A,H,V,T> interprocedural,
-            AnalysisState<A,H,V,T> failure) throws SemanticException {
-        int actualPos = 0;
-        int formalsPos = 0;
-        boolean vargsPos = false;
-        // first phase: positional arguments
-        // we stop if we found a VarPositionalParameter in formals, OR a NamedParameterExpression in actuals
-        for (; actualPos < actuals.length && formalsPos < formals.length; actualPos++, formalsPos++) {
-            if (formals[formalsPos] instanceof VarPositionalParameter) {
-                vargsPos = true;
-                break;
-            } else if (actuals[actualPos] instanceof NamedParameterExpression)
-                break;
-            else {
-                slots[formalsPos] = given[actualPos];
-                slotTypes[formalsPos] = givenTypes[actualPos];
-            }
-        }
-
-        if (vargsPos) {
-            //if (formalsPos) {}
-            List<Expression> vargsList = new ArrayList<>();
-
-            for (; actualPos < actuals.length; actualPos++) {
-                // stop if actuals[pos] == NamedParameterExpression
-                if (actuals[actualPos] instanceof NamedParameterExpression)
-                    break;
-                vargsList.add(actuals[actualPos]);
-            }
-            if (vargsList.isEmpty()) {
-                return failure;
-            }
-
-            int offset = actualPos - vargsList.size();
-            // create the expressions set
-            ExpressionSet<SymbolicExpression>[] symbolicExprs = new ExpressionSet[actualPos - offset];
-            for (int i = 0; i < actualPos - offset; i++) {
-                symbolicExprs[i] = given[actualPos - offset + i - 1];
-            }
-            ListCreation listCreation = new ListCreation(actuals[offset].getCFG(), actuals[offset].getLocation(), vargsList.toArray(Expression[]::new));
-            AnalysisState<A,H,V,T> listSemantics = listCreation.expressionSemantics(interprocedural, failure.bottom(), symbolicExprs, null);
-            slots[formalsPos]  = listSemantics.getComputedExpressions();
-            slotTypes[formalsPos] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
-            formalsPos++;
-        }
-        // at this point, the remaining elements to check in actuals must be only NamedParameter.
-        // ensure that we have all the necessary parameters.
-        if (formals.length - formalsPos < actuals.length - actualPos) {
-            return failure; // too many arguments
-        }
-        // second phase: keyword arguments
-        for (; actualPos < actuals.length; actualPos++) {
-            String name = ((NamedParameterExpression) actuals[actualPos]).getParameterName();
-            for (int i = formalsPos; i < formals.length; i++)
-                if (formals[i].getName().equals(name)) {
-                    if (slots[i] != null)
-                        // already filled -> TypeError
-                        return failure;
-                    else {
-                        slots[i] = given[actualPos];
-                        slotTypes[i] = givenTypes[actualPos];
-                    }
-                    break;
-                }
-        }
-
-        // third phase: default values
-        for (int pos = 0; pos < slots.length; pos++)
-            if (slots[pos] == null) {
-                if (defaults[pos] == null)
-                    // unfilled and no default value -> TypeError
-                    return failure;
-                else {
-                    slots[pos] = defaults[pos];
-                    slotTypes[pos] = defaultTypes[pos];
-                }
-            }
-
-        return null;
-    }
-}*/
+    /*
+     * private <T extends TypeDomain<T>, H extends HeapDomain<H>, V extends
+     * ValueDomain<V>, A extends AbstractState<A, H, V, T>> AnalysisState<A,H,V,T>
+     * pythonLogic(
+     * Parameter[] formals,
+     * Expression[] actuals,
+     * ExpressionSet<SymbolicExpression>[] given,
+     * Set<Type>[] givenTypes,
+     * ExpressionSet<SymbolicExpression>[] defaults,
+     * Set<Type>[] defaultTypes,
+     * ExpressionSet<SymbolicExpression>[] slots,
+     * Set<Type>[] slotTypes,
+     * InterproceduralAnalysis<A,H,V,T> interprocedural,
+     * AnalysisState<A,H,V,T> failure) throws SemanticException {
+     * int actualPos = 0;
+     * int formalsPos = 0;
+     * boolean vargsPos = false;
+     * // first phase: positional arguments
+     * // we stop if we found a VarPositionalParameter in formals, OR a
+     * NamedParameterExpression in actuals
+     * for (; actualPos < actuals.length && formalsPos < formals.length;
+     * actualPos++, formalsPos++) {
+     * if (formals[formalsPos] instanceof VarPositionalParameter) {
+     * vargsPos = true;
+     * break;
+     * } else if (actuals[actualPos] instanceof NamedParameterExpression)
+     * break;
+     * else {
+     * slots[formalsPos] = given[actualPos];
+     * slotTypes[formalsPos] = givenTypes[actualPos];
+     * }
+     * }
+     * 
+     * if (vargsPos) {
+     * //if (formalsPos) {}
+     * List<Expression> vargsList = new ArrayList<>();
+     * 
+     * for (; actualPos < actuals.length; actualPos++) {
+     * // stop if actuals[pos] == NamedParameterExpression
+     * if (actuals[actualPos] instanceof NamedParameterExpression)
+     * break;
+     * vargsList.add(actuals[actualPos]);
+     * }
+     * if (vargsList.isEmpty()) {
+     * return failure;
+     * }
+     * 
+     * int offset = actualPos - vargsList.size();
+     * // create the expressions set
+     * ExpressionSet<SymbolicExpression>[] symbolicExprs = new
+     * ExpressionSet[actualPos - offset];
+     * for (int i = 0; i < actualPos - offset; i++) {
+     * symbolicExprs[i] = given[actualPos - offset + i - 1];
+     * }
+     * ListCreation listCreation = new ListCreation(actuals[offset].getCFG(),
+     * actuals[offset].getLocation(), vargsList.toArray(Expression[]::new));
+     * AnalysisState<A,H,V,T> listSemantics =
+     * listCreation.expressionSemantics(interprocedural, failure.bottom(),
+     * symbolicExprs, null);
+     * slots[formalsPos] = listSemantics.getComputedExpressions();
+     * slotTypes[formalsPos] =
+     * Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
+     * formalsPos++;
+     * }
+     * // at this point, the remaining elements to check in actuals must be only
+     * NamedParameter.
+     * // ensure that we have all the necessary parameters.
+     * if (formals.length - formalsPos < actuals.length - actualPos) {
+     * return failure; // too many arguments
+     * }
+     * // second phase: keyword arguments
+     * for (; actualPos < actuals.length; actualPos++) {
+     * String name = ((NamedParameterExpression)
+     * actuals[actualPos]).getParameterName();
+     * for (int i = formalsPos; i < formals.length; i++)
+     * if (formals[i].getName().equals(name)) {
+     * if (slots[i] != null)
+     * // already filled -> TypeError
+     * return failure;
+     * else {
+     * slots[i] = given[actualPos];
+     * slotTypes[i] = givenTypes[actualPos];
+     * }
+     * break;
+     * }
+     * }
+     * 
+     * // third phase: default values
+     * for (int pos = 0; pos < slots.length; pos++)
+     * if (slots[pos] == null) {
+     * if (defaults[pos] == null)
+     * // unfilled and no default value -> TypeError
+     * return failure;
+     * else {
+     * slots[pos] = defaults[pos];
+     * slotTypes[pos] = defaultTypes[pos];
+     * }
+     * }
+     * 
+     * return null;
+     * }
+     * }
+     */
     private <T extends TypeDomain<T>, H extends HeapDomain<H>, V extends ValueDomain<V>, A extends AbstractState<A, H, V, T>> AnalysisState<A, H, V, T> pythonLogic(
             Parameter[] formals,
             Expression[] actuals,
@@ -258,9 +266,11 @@ public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy
             for (int i = 0; i < actualPos - offset; i++) {
                 symbolicExprs[i] = given[offset + i];
             }
-            ListCreation listCreation = new ListCreation(callCFG, SyntheticLocation.INSTANCE, vargsList.toArray(Expression[]::new));
-            AnalysisState<A,H,V,T> listSemantics = listCreation.expressionSemantics(interprocedural, failure.bottom(), symbolicExprs, null);
-            slots[formalsPos]  = listSemantics.getComputedExpressions();
+            ListCreation listCreation = new ListCreation(callCFG, SyntheticLocation.INSTANCE,
+                    vargsList.toArray(Expression[]::new));
+            AnalysisState<A, H, V, T> listSemantics = listCreation.expressionSemantics(interprocedural,
+                    failure.bottom(), symbolicExprs, null);
+            slots[formalsPos] = listSemantics.getComputedExpressions();
             slotTypes[formalsPos] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
             formalsPos++;
         }
@@ -268,7 +278,8 @@ public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy
         // third phase: kwargs
         // kwargs must be the last parameter.
         if (formals.length > 0 && formals[formals.length - 1] instanceof VarKeywordParameter) {
-            // for every named parameter, if it is NOT in the formal named parameter list, then add it to the varkeyword.
+            // for every named parameter, if it is NOT in the formal named parameter list,
+            // then add it to the varkeyword.
             // 1. prepare dict.
             List<Pair<Expression, Expression>> pairExprs = new ArrayList<>();
             List<ExpressionSet<SymbolicExpression>> symbExprs = new ArrayList<>();
@@ -282,19 +293,23 @@ public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy
                     }
                 }
                 if (!found) {
-                    ExpressionSet<SymbolicExpression> left = new ExpressionSet<>(new Constant(StringType.INSTANCE, ((NamedParameterExpression) actuals[i]).getParameterName(), SyntheticLocation.INSTANCE));
+                    ExpressionSet<SymbolicExpression> left = new ExpressionSet<>(new Constant(StringType.INSTANCE,
+                            ((NamedParameterExpression) actuals[i]).getParameterName(), SyntheticLocation.INSTANCE));
                     ExpressionSet<SymbolicExpression> right = given[i];
                     symbExprs.add(left);
                     symbExprs.add(right);
                     Expression _right = ((NamedParameterExpression) actuals[i]).getSubExpression();
-                    Expression _left = new StringLiteral(callCFG, SyntheticLocation.INSTANCE, ((NamedParameterExpression) actuals[i]).getParameterName());
+                    Expression _left = new StringLiteral(callCFG, SyntheticLocation.INSTANCE,
+                            ((NamedParameterExpression) actuals[i]).getParameterName());
                     pairExprs.add(Pair.of(_left, _right));
                     namedParameterExpressions.remove(((NamedParameterExpression) actuals[i]).getParameterName());
                 }
             }
 
-            DictionaryCreation dictCreation = new DictionaryCreation(callCFG, SyntheticLocation.INSTANCE, pairExprs.toArray(Pair[]::new));
-            AnalysisState<A,H,V,T> dictSemantics = dictCreation.expressionSemantics(interprocedural, failure.bottom(), symbExprs.toArray(ExpressionSet[]::new), null);
+            DictionaryCreation dictCreation = new DictionaryCreation(callCFG, SyntheticLocation.INSTANCE,
+                    pairExprs.toArray(Pair[]::new));
+            AnalysisState<A, H, V, T> dictSemantics = dictCreation.expressionSemantics(interprocedural,
+                    failure.bottom(), symbExprs.toArray(ExpressionSet[]::new), null);
             slots[formals.length - 1] = dictSemantics.getComputedExpressions();
             slotTypes[formals.length - 1] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.DICT));
         }
@@ -340,10 +355,14 @@ public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy
     }
 }
 /*
-    ListCreation listCreation = new ListCreation(actuals[offset].getCFG(), actuals[offset].getLocation(), vargsList.toArray(Expression[]::new));
-    AnalysisState<A,H,V,T> listSemantics = listCreation.expressionSemantics(interprocedural, failure.bottom(), symbolicExprs, null);
-            slots[formalsPos]  = listSemantics.getComputedExpressions();
-                    slotTypes[formalsPos] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
-                    formalsPos++;
-
+ * ListCreation listCreation = new ListCreation(actuals[offset].getCFG(),
+ * actuals[offset].getLocation(), vargsList.toArray(Expression[]::new));
+ * AnalysisState<A,H,V,T> listSemantics =
+ * listCreation.expressionSemantics(interprocedural, failure.bottom(),
+ * symbolicExprs, null);
+ * slots[formalsPos] = listSemantics.getComputedExpressions();
+ * slotTypes[formalsPos] =
+ * Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
+ * formalsPos++;
+ * 
  */

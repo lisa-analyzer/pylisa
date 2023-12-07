@@ -16,21 +16,15 @@ import it.unive.lisa.program.cfg.statement.*;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.HeapReference;
-import it.unive.lisa.symbolic.heap.MemoryAllocation;
-import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.lisa.symbolic.value.Skip;
+
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.type.ReferenceType;
 import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.libraries.NoOpFunction;
 import it.unive.ros.lisa.symbolic.operators.ros.ROSTopicNameExpansion;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,7 +32,7 @@ public class CreateSubscription extends NaryExpression implements PluggableState
     protected Statement st;
 
     protected CreateSubscription(CFG cfg, CodeLocation location, String constructName,
-                                 Expression... parameters) {
+            Expression... parameters) {
         super(cfg, location, constructName, parameters);
     }
 
@@ -47,26 +41,33 @@ public class CreateSubscription extends NaryExpression implements PluggableState
     }
 
     @Override
-    public <A extends AbstractState<A, H, V, T>, H extends HeapDomain<H>, V extends ValueDomain<V>, T extends TypeDomain<T>> AnalysisState<A, H, V, T> expressionSemantics(InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state, ExpressionSet<SymbolicExpression>[] params, StatementStore<A, H, V, T> expressions) throws SemanticException {
+    public <A extends AbstractState<A, H, V, T>, H extends HeapDomain<H>, V extends ValueDomain<V>, T extends TypeDomain<T>> AnalysisState<A, H, V, T> expressionSemantics(
+            InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state,
+            ExpressionSet<SymbolicExpression>[] params, StatementStore<A, H, V, T> expressions)
+            throws SemanticException {
         Set<SymbolicExpression> exprSet = new HashSet<>();
         // [AIG] self.namespace
-        AccessInstanceGlobal aigNS = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0], "namespace");
+        AccessInstanceGlobal aigNS = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0],
+                "namespace");
         // compute semantics
-        AnalysisState<A,H,V,T> aigSemanticsNS = aigNS.semantics(state, interprocedural, expressions);
+        AnalysisState<A, H, V, T> aigSemanticsNS = aigNS.semantics(state, interprocedural, expressions);
 
         // [AIG] self.node_name
-        AccessInstanceGlobal aigNodeName = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0], "node_name");
+        AccessInstanceGlobal aigNodeName = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0],
+                "node_name");
         // compute semantics
-        AnalysisState<A,H,V,T> aigSemanticsNodeName = aigNodeName.semantics(aigSemanticsNS, interprocedural, expressions);
+        AnalysisState<A, H, V, T> aigSemanticsNodeName = aigNodeName.semantics(aigSemanticsNS, interprocedural,
+                expressions);
 
         for (SymbolicExpression s : params[2]) {
-            for (SymbolicExpression eNS: aigSemanticsNS.getComputedExpressions()) {
+            for (SymbolicExpression eNS : aigSemanticsNS.getComputedExpressions()) {
                 ExpressionSet<ValueExpression> vesNS = state.getState().getHeapState().rewrite(eNS, st);
                 for (SymbolicExpression eNodeName : aigSemanticsNodeName.getComputedExpressions()) {
                     ExpressionSet<ValueExpression> vesNodeName = state.getState().getHeapState().rewrite(eNodeName, st);
-                    for (ValueExpression veNS: vesNS) {
+                    for (ValueExpression veNS : vesNS) {
                         for (ValueExpression veNodeName : vesNodeName)
-                            exprSet.add(new TernaryExpression(StringType.INSTANCE, s, veNS, veNodeName,  new ROSTopicNameExpansion(), getLocation()));
+                            exprSet.add(new TernaryExpression(StringType.INSTANCE, s, veNS, veNodeName,
+                                    new ROSTopicNameExpansion(), getLocation()));
                     }
                 }
             }
@@ -76,10 +77,12 @@ public class CreateSubscription extends NaryExpression implements PluggableState
 
         PyClassType subscriptionClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_SUBSCRIPTION);
 
-        PyNewObj subscriptionObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__", subscriptionClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
+        PyNewObj subscriptionObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
+                subscriptionClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
         subscriptionObj.setOffset(st.getOffset());
-        AnalysisState<A,H,V,T> newSubscriptionAS = subscriptionObj.expressionSemantics(interprocedural, aigSemanticsNodeName, Arrays.copyOfRange(params, 1, params.length), expressions);
-        state =  aigSemanticsNodeName.lub(newSubscriptionAS);
+        AnalysisState<A, H, V, T> newSubscriptionAS = subscriptionObj.expressionSemantics(interprocedural,
+                aigSemanticsNodeName, Arrays.copyOfRange(params, 1, params.length), expressions);
+        state = aigSemanticsNodeName.lub(newSubscriptionAS);
         return state;
     }
 
