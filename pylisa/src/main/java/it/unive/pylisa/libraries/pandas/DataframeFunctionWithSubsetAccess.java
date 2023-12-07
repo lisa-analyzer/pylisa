@@ -49,6 +49,12 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 		return new DataframeFunctionWithSubsetAccess(cfg, location, exprs[0], subset);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	private static Expression getOptional(
 			Expression expression) {
 		if (!(expression instanceof NamedParameterExpression))

@@ -34,6 +34,12 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		super(cfg, location, constructName, sequence, index);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static SequenceGetItem build(
 			CFG cfg,
 			CodeLocation location,

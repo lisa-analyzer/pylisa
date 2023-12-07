@@ -43,6 +43,12 @@ public class Concatenate extends it.unive.lisa.program.cfg.statement.UnaryExpres
 		return concat;
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return axis.compareTo(((Concatenate) o).axis);
+	}
+
 	private static void setOptional(
 			Concatenate concat,
 			Expression expression) {

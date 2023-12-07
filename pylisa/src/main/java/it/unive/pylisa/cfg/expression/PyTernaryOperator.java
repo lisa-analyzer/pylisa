@@ -33,6 +33,18 @@ public class PyTernaryOperator extends Expression {
 		this.ifFalse = ifFalse;
 	}
 
+	@Override
+	protected int compareSameClass(
+			Statement o) {
+		PyTernaryOperator other = (PyTernaryOperator) o;
+		int cmp;
+		if ((cmp = condition.compareTo(other.condition)) != 0)
+			return cmp;
+		if ((cmp = ifTrue.compareTo(other.ifTrue)) != 0)
+			return cmp;
+		return ifFalse.compareTo(other.ifFalse);
+	}
+
 	public Expression getCondition() {
 		return condition;
 	}

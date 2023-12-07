@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class LambdaExpression extends Expression {
+
 	private final List<Expression> arguments;
 	private final Expression body;
 
@@ -29,6 +30,19 @@ public class LambdaExpression extends Expression {
 
 		this.body = body;
 		this.arguments = arguments;
+	}
+
+	@Override
+	protected int compareSameClass(
+			Statement o) {
+		LambdaExpression other = (LambdaExpression) o;
+		int cmp;
+		if ((cmp = Integer.compare(arguments.size(), other.arguments.size())) != 0)
+			return 0;
+		for (int i = 0; i < arguments.size(); i++)
+			if ((cmp = arguments.get(i).compareTo(other.arguments.get(i))) != 0)
+				return cmp;
+		return body.compareTo(other.body);
 	}
 
 	@Override

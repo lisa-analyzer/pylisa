@@ -32,6 +32,12 @@ public class ObjectRLShift extends BinaryExpression implements PluggableStatemen
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectRLShift build(
 			CFG cfg,
 			CodeLocation location,

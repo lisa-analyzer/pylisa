@@ -33,6 +33,12 @@ public class ObjectSetAttr extends TernaryExpression implements PluggableStateme
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectSetAttr build(
 			CFG cfg,
 			CodeLocation location,

@@ -32,6 +32,12 @@ public class ObjectRMatMul extends BinaryExpression implements PluggableStatemen
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectRMatMul build(
 			CFG cfg,
 			CodeLocation location,

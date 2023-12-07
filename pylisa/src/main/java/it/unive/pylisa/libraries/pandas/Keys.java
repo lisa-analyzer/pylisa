@@ -39,6 +39,12 @@ public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression im
 	}
 
 	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
+	@Override
 	final public void setOriginatingStatement(
 			Statement st) {
 		this.st = st;

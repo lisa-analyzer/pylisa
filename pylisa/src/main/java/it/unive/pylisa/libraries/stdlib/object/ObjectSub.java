@@ -32,6 +32,12 @@ public class ObjectSub extends BinaryExpression implements PluggableStatement {
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectSub build(
 			CFG cfg,
 			CodeLocation location,

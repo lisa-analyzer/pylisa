@@ -34,6 +34,12 @@ public class ObjectSetItem extends TernaryExpression implements PluggableStateme
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectSetItem build(
 			CFG cfg,
 			CodeLocation location,

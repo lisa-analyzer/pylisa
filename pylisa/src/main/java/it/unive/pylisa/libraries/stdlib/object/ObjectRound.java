@@ -32,6 +32,12 @@ public class ObjectRound extends BinaryExpression implements PluggableStatement 
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectRound build(
 			CFG cfg,
 			CodeLocation location,

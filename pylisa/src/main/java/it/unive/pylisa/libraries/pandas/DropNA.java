@@ -53,6 +53,12 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		return drop;
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	private static void setOptional(
 			DropNA drop,
 			Expression expression) {

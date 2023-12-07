@@ -32,6 +32,12 @@ public class ObjectRXor extends BinaryExpression implements PluggableStatement {
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectRXor build(
 			CFG cfg,
 			CodeLocation location,

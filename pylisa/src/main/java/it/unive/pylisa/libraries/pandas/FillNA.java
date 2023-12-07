@@ -54,6 +54,12 @@ public class FillNA extends it.unive.lisa.program.cfg.statement.BinaryExpression
 		return drop;
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	private static void setOptional(
 			FillNA drop,
 			Expression expression) {

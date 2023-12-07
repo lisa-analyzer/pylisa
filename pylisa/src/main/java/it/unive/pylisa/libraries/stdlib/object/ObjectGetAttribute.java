@@ -37,6 +37,12 @@ public class ObjectGetAttribute extends BinaryExpression implements PluggableSta
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectGetAttribute build(
 			CFG cfg,
 			CodeLocation location,

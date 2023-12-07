@@ -13,6 +13,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Skip;
+import it.unive.lisa.util.collections.CollectionsDiffBuilder;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Map;
@@ -32,6 +33,34 @@ public class Import extends Statement {
 		this.libs = libs;
 		for (String lib : libs.keySet())
 			LibrarySpecificationProvider.importLibrary(program, lib);
+	}
+
+	@Override
+	protected int compareSameClass(
+			Statement o) {
+		Import other = (Import) o;
+		int cmp;
+		if ((cmp = Integer.compare(libs.keySet().size(), other.libs.keySet().size())) != 0)
+			return cmp;
+
+		CollectionsDiffBuilder<String> builder = new CollectionsDiffBuilder<>(
+				String.class,
+				libs.keySet(),
+				other.libs.keySet());
+		builder.compute(String::compareTo);
+
+		if (!builder.sameContent())
+			// same size means that both have at least one element that is
+			// different
+			return builder.getOnlyFirst().iterator().next().compareTo(builder.getOnlySecond().iterator().next());
+
+		// same keys: just iterate over them and apply comparisons
+		// since fields is sorted, the order of iteration will be consistent
+		for (Entry<String, String> entry : this.libs.entrySet())
+			if ((cmp = entry.getValue().compareTo(other.libs.get(entry.getKey()))) != 0)
+				return cmp;
+
+		return 0;
 	}
 
 	@Override

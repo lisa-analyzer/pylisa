@@ -32,6 +32,12 @@ public class ObjectGetItem extends BinaryExpression implements PluggableStatemen
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectGetItem build(
 			CFG cfg,
 			CodeLocation location,

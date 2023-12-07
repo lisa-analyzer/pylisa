@@ -32,6 +32,12 @@ public class ObjectAnd extends BinaryExpression implements PluggableStatement {
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectAnd build(
 			CFG cfg,
 			CodeLocation location,

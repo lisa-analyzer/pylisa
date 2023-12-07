@@ -27,6 +27,12 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 		super(cfg, location, constructName, series);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ToDatetime build(
 			CFG cfg,
 			CodeLocation location,

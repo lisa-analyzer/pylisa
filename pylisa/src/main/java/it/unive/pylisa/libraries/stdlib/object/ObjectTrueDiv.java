@@ -32,6 +32,12 @@ public class ObjectTrueDiv extends BinaryExpression implements PluggableStatemen
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectTrueDiv build(
 			CFG cfg,
 			CodeLocation location,

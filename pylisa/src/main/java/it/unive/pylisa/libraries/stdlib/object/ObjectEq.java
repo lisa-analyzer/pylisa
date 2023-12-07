@@ -34,6 +34,12 @@ public class ObjectEq extends BinaryExpression implements PluggableStatement {
 	}
 
 	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
+	@Override
 	public void setOriginatingStatement(
 			Statement st) {
 		this.st = st;

@@ -41,6 +41,12 @@ public class DataFrame extends it.unive.lisa.program.cfg.statement.UnaryExpressi
 	}
 
 	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
+	@Override
 	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
 			InterproceduralAnalysis<A> interprocedural,
 			AnalysisState<A> state,

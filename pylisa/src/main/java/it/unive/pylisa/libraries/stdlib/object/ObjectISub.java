@@ -32,6 +32,12 @@ public class ObjectISub extends BinaryExpression implements PluggableStatement {
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectISub build(
 			CFG cfg,
 			CodeLocation location,

@@ -32,6 +32,12 @@ public class ObjectIOr extends BinaryExpression implements PluggableStatement {
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectIOr build(
 			CFG cfg,
 			CodeLocation location,

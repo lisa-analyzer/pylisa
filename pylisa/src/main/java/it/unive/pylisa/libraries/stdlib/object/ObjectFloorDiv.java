@@ -32,6 +32,12 @@ public class ObjectFloorDiv extends BinaryExpression implements PluggableStateme
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectFloorDiv build(
 			CFG cfg,
 			CodeLocation location,

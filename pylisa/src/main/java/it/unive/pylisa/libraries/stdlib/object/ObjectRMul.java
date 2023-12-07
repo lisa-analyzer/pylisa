@@ -32,6 +32,12 @@ public class ObjectRMul extends BinaryExpression implements PluggableStatement {
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectRMul build(
 			CFG cfg,
 			CodeLocation location,

@@ -24,6 +24,12 @@ public class UninterestingDataframeFunction extends UnaryExpression implements P
 		super(cfg, location, "uninteresting-func", dataframe);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static UninterestingDataframeFunction build(
 			CFG cfg,
 			CodeLocation location,

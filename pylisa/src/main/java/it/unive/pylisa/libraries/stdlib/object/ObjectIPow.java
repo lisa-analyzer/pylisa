@@ -34,6 +34,12 @@ public class ObjectIPow extends TernaryExpression implements PluggableStatement 
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectIPow build(
 			CFG cfg,
 			CodeLocation location,

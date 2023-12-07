@@ -40,6 +40,12 @@ public class ObjectRDivMod extends BinaryExpression implements PluggableStatemen
 	}
 
 	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
+	@Override
 	public void setOriginatingStatement(
 			Statement st) {
 		this.st = st;

@@ -34,6 +34,12 @@ public class ObjectPow extends TernaryExpression implements PluggableStatement {
 				right);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static ObjectPow build(
 			CFG cfg,
 			CodeLocation location,
