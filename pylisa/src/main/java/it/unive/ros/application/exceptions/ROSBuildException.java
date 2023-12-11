@@ -8,7 +8,7 @@ public class ROSBuildException extends Exception {
 	protected ROSBuildException(
 			String context,
 			Exception wrapped) {
-		super(context + ": " + wrapped.getMessage());
+		super(context + ": " + wrapped.getMessage(), wrapped);
 		this.context = context;
 		this.wrapped = wrapped;
 	}

@@ -58,7 +58,7 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		AnalysisState<A> result = state;
+		AnalysisState<A> result = state.bottom();
 		Expression self = getSubExpressions()[0];
 		Expression node_name = getSubExpressions()[1] instanceof NamedParameterExpression
 				? getNamedParameterExpr("node_name").getSubExpression()
@@ -70,11 +70,11 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 
 		AccessInstanceGlobal nodeName = new AccessInstanceGlobal(st.getCFG(), getLocation(), self, "node_name");
 		PyAssign pyAssign = new PyAssign(getCFG(), getLocation(), nodeName, node_name);
-		result = result.lub(pyAssign.forwardSemantics(result, interprocedural, expressions));
+		result = result.lub(pyAssign.forwardSemantics(state, interprocedural, expressions));
 
 		AccessInstanceGlobal namespaceAIG = new AccessInstanceGlobal(st.getCFG(), getLocation(), self, "namespace");
 		pyAssign = new PyAssign(getCFG(), getLocation(), namespaceAIG, namespace);
-		result = result.lub(pyAssign.forwardSemantics(result, interprocedural, expressions));
+		result = result.lub(pyAssign.forwardSemantics(state, interprocedural, expressions));
 
 		return result;
 	}

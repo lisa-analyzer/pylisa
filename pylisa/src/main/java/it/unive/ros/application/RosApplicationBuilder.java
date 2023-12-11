@@ -75,7 +75,7 @@ public class RosApplicationBuilder {
 		conf.workdir = workDir;
 		conf.serializeResults = false;
 		conf.jsonOutput = false;
-		conf.analysisGraphs = LiSAConfiguration.GraphType.NONE;
+		conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;

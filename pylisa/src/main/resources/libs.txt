@@ -126,18 +126,18 @@ library numpy:
 			param y type it.unive.lisa.program.type.Int32Type::INSTANCE
 library rclpy:
     location rclpy
-		method create_node: it.unive.pylisa.libraries.rclpy.CreateNode
-            libtype rclpy.node.Node*
-            param node_name type it.unive.lisa.program.type.StringType::INSTANCE
-            param &context type it.unive.lisa.type.Untyped::INSTANCE default none
-            param &cli_args type it.unive.lisa.type.Untyped::INSTANCE default none
-            param &namespace type it.unive.lisa.type.Untyped::INSTANCE default none
-            param &use_global_arguments type it.unive.lisa.program.type.BoolType::INSTANCE default true
-            param &enable_rosout type it.unive.lisa.program.type.BoolType::INSTANCE default true
-            param &start_parameter_services type it.unive.lisa.program.type.BoolType::INSTANCE default true
-            param &parameter_overrides type it.unive.lisa.type.Untyped::INSTANCE default none
-            param &parameter_overrides type it.unive.lisa.program.type.BoolType::INSTANCE default false
-            param &automatically_declare_parameters_from_overrides type it.unive.lisa.program.type.BoolType::INSTANCE default false
+	method create_node: it.unive.pylisa.libraries.rclpy.CreateNode
+        libtype rclpy.node.Node*
+        param node_name type it.unive.lisa.program.type.StringType::INSTANCE
+        param &context type it.unive.lisa.type.Untyped::INSTANCE default none
+        param &cli_args type it.unive.lisa.type.Untyped::INSTANCE default none
+        param &namespace type it.unive.lisa.type.Untyped::INSTANCE default none
+        param &use_global_arguments type it.unive.lisa.program.type.BoolType::INSTANCE default true
+        param &enable_rosout type it.unive.lisa.program.type.BoolType::INSTANCE default true
+        param &start_parameter_services type it.unive.lisa.program.type.BoolType::INSTANCE default true
+        param &parameter_overrides type it.unive.lisa.type.Untyped::INSTANCE default none
+        param &parameter_overrides type it.unive.lisa.program.type.BoolType::INSTANCE default false
+        param &automatically_declare_parameters_from_overrides type it.unive.lisa.program.type.BoolType::INSTANCE default false
         
     class rclpy.qos.QoSProfile:
 		instance method __init__: it.unive.pylisa.libraries.rclpy.qos.Init
@@ -186,7 +186,7 @@ library rclpy:
             param callback_group type it.unive.lisa.type.Untyped::INSTANCE default none
     class rclpy.node.Node:
         instance field namespace type it.unive.lisa.program.type.StringType::INSTANCE
-        instance field name type it.unive.lisa.program.type.StringType::INSTANCE
+        instance field node_name type it.unive.lisa.program.type.StringType::INSTANCE
         instance method Node: it.unive.pylisa.libraries.rclpy.node.Init
             libtype rclpy.node.Node*
             param self libtype rclpy.node.Node*

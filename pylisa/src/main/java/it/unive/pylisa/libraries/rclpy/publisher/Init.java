@@ -59,8 +59,6 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 			StatementStore<A> expressions)
 			throws SemanticException {
 		AnalysisState<A> result = state.bottom();
-		AccessInstanceGlobal aig;
-		PyAssign pa;
 
 		for (SymbolicExpression v : params[0]) {
 			Set<Type> rts = state.getState().getRuntimeTypesOf(v, this, state.getState());

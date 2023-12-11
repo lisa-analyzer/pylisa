@@ -36,8 +36,7 @@ public class SimpleSuperUnresolvedCall extends UnresolvedCall {
 			Type staticType,
 			Expression... parameters) {
 		super(cfg, location, callType, qualifier, targetName, order, staticType, parameters);
-		Expression[] expr = new Expression[0];
-		call = new UnresolvedCall(cfg, location, callType, qualifier, targetName, order, staticType, expr);
+		call = new UnresolvedCall(cfg, location, callType, qualifier, targetName, order, staticType);
 	}
 
 	public SimpleSuperUnresolvedCall(
@@ -61,17 +60,6 @@ public class SimpleSuperUnresolvedCall extends UnresolvedCall {
 		this(cfg, location, callType, qualifier, targetName, LeftToRightEvaluation.INSTANCE, staticType, parameters);
 	}
 
-	public SimpleSuperUnresolvedCall(
-			CFG cfg,
-			CodeLocation location,
-			CallType callType,
-			String qualifier,
-			String targetName,
-			EvaluationOrder order,
-			Expression... parameters) {
-		this(cfg, location, callType, qualifier, targetName, order, Untyped.INSTANCE, parameters);
-	}
-
 	@Override
 	@SuppressWarnings("unchecked")
 	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
@@ -81,15 +69,16 @@ public class SimpleSuperUnresolvedCall extends UnresolvedCall {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Call resolved;
+		Set<Type>[] ptypes = parameterTypes(expressions);
 		try {
 			resolved = interprocedural.resolve(
 					call,
 					new Set[0],
 					state.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
-			if (resolved instanceof OpenCall)
+			if (resolved instanceof OpenCall) 
 				resolved = interprocedural.resolve(
 						this,
-						parameterTypes(expressions),
+						ptypes,
 						state.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
 		} catch (CallResolutionException e) {
 			throw new SemanticException("Unable to resolve call " + this, e);

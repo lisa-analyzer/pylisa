@@ -141,12 +141,12 @@ public class Main {
 		RosApplicationBuilder rob = new RosApplicationBuilder();
 		try {
 			rob.withNode(
-					new PythonROSNodeBuilder("/Users/giacomozanatta/Projects/pylisa-ros/pylisa/ros-tests/minimal.py"));
+					new PythonROSNodeBuilder("ros-tests/init-procedure.py"));
 		} catch (ROSNodeBuildException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		rob.withWorkDir("analysis-single");
+		rob.withWorkDir("ros-test-outputs/analysis-init");
 		rob.build().dumpGraph();
 	}
 
