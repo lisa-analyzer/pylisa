@@ -12,7 +12,9 @@ public class PyLibraryUnitType extends PyClassType {
 
 	private Integer hash = null;
 
-	public PyLibraryUnitType(CodeUnit library, CompilationUnit unit) {
+	public PyLibraryUnitType(
+			CodeUnit library,
+			CompilationUnit unit) {
 		super(unit.getName(), unit);
 		this.libraryName = library.getName();
 
@@ -35,7 +37,8 @@ public class PyLibraryUnitType extends PyClassType {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
@@ -51,7 +54,10 @@ public class PyLibraryUnitType extends PyClassType {
 		return true;
 	}
 
-	public static boolean is(Type t, String lib, boolean includeReferences) {
+	public static boolean is(
+			Type t,
+			String lib,
+			boolean includeReferences) {
 		if (!LibrarySpecificationProvider.isLibraryLoaded(lib))
 			return false;
 		if (t instanceof PyLibraryUnitType)

@@ -6,7 +6,8 @@ import it.unive.ros.application.exceptions.ROSNodeBuildException;
 
 public class PythonROSNodeBuilder extends ROSNodeBuilder {
 
-	public PythonROSNodeBuilder(String fileName) {
+	public PythonROSNodeBuilder(
+			String fileName) {
 		super(fileName);
 	}
 

@@ -8,11 +8,18 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collections;
 import java.util.Set;
 
-public class CopyDataframe implements UnaryOperator {
+public class CopyDataframe implements UnaryOperator, DataframeOperator {
 
-	public static final CopyDataframe INSTANCE = new CopyDataframe();
+	private final int index;
 
-	private CopyDataframe() {
+	public CopyDataframe(
+			int index) {
+		this.index = index;
+	}
+
+	@Override
+	public int getIndex() {
+		return index;
 	}
 
 	@Override
@@ -21,7 +28,9 @@ public class CopyDataframe implements UnaryOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> arg) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> arg) {
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		boolean notdf = arg.stream().noneMatch(t -> t.equals(df));

@@ -38,7 +38,8 @@ public enum DefaultAction {
 		return name();
 	}
 
-	public static DefaultAction fromValue(String v) {
+	public static DefaultAction fromValue(
+			String v) {
 		return valueOf(v);
 	}
 

@@ -8,11 +8,18 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collections;
 import java.util.Set;
 
-public class ReadDataframe implements UnaryOperator {
+public class ReadDataframe implements UnaryOperator, DataframeOperator {
 
-	public static final ReadDataframe INSTANCE = new ReadDataframe();
+	private final int index;
 
-	private ReadDataframe() {
+	public ReadDataframe(
+			int index) {
+		this.index = index;
+	}
+
+	@Override
+	public int getIndex() {
+		return index;
 	}
 
 	@Override
@@ -21,7 +28,9 @@ public class ReadDataframe implements UnaryOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> argument) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> argument) {
 		if (argument.stream().noneMatch(Type::isStringType))
 			return Collections.emptySet();
 		return Collections.singleton(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF));

@@ -8,15 +8,25 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collections;
 import java.util.Set;
 
-public class JoinCols implements BinaryOperator {
+public class JoinCols implements BinaryOperator, DataframeOperator {
 
-	public static final JoinCols INSTANCE = new JoinCols();
+	private final int index;
 
-	private JoinCols() {
+	public JoinCols(
+			int index) {
+		this.index = index;
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+	public int getIndex() {
+		return index;
+	}
+
+	@Override
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		if (left.stream().noneMatch(t -> t.equals(df)))
 			return Collections.emptySet();

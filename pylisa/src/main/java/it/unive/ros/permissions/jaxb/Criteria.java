@@ -59,7 +59,8 @@ public class Criteria {
 	 * 
 	 * @param value allowed object is {@link TopicExpressionList }
 	 */
-	public void setTopics(TopicExpressionList value) {
+	public void setTopics(
+			TopicExpressionList value) {
 		this.topics = value;
 	}
 
@@ -77,7 +78,8 @@ public class Criteria {
 	 * 
 	 * @param value allowed object is {@link PartitionExpressionList }
 	 */
-	public void setPartitions(PartitionExpressionList value) {
+	public void setPartitions(
+			PartitionExpressionList value) {
 		this.partitions = value;
 	}
 
@@ -95,7 +97,8 @@ public class Criteria {
 	 * 
 	 * @param value allowed object is {@link DataTags }
 	 */
-	public void setDataTags(DataTags value) {
+	public void setDataTags(
+			DataTags value) {
 		this.dataTags = value;
 	}
 

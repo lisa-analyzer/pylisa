@@ -19,14 +19,21 @@ public class JAXBPermissionsHelpers {
 		return jaxbContext;
 	}
 
-	public static PermissionsNode load(String fileName) throws JAXBException, FileNotFoundException {
+	public static PermissionsNode load(
+			String fileName)
+			throws JAXBException,
+			FileNotFoundException {
 		Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
 		JAXBElement<PermissionsNode> permissions = (JAXBElement<PermissionsNode>) jaxbUnmarshaller
 				.unmarshal(new FileInputStream(fileName));
 		return permissions.getValue();
 	}
 
-	public static void store(PermissionsNode permissions, String fileName) throws JAXBException, IOException {
+	public static void store(
+			PermissionsNode permissions,
+			String fileName)
+			throws JAXBException,
+			IOException {
 		Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
 		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 		jaxbMarshaller.setProperty(Marshaller.JAXB_NO_NAMESPACE_SCHEMA_LOCATION,

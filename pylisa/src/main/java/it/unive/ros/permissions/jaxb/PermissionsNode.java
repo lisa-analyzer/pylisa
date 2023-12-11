@@ -54,7 +54,8 @@ public class PermissionsNode {
 	 * 
 	 * @param value allowed object is {@link Permissions }
 	 */
-	public void setPermissions(Permissions value) {
+	public void setPermissions(
+			Permissions value) {
 		this.permissions = value;
 	}
 

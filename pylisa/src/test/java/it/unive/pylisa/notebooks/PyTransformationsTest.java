@@ -1,7 +1,6 @@
 package it.unive.pylisa.notebooks;
 
 import it.unive.lisa.analysis.SimpleAbstractState;
-import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
@@ -21,7 +20,8 @@ public class PyTransformationsTest extends AnalysisTestExecutor {
 		return buildConfig(false);
 	}
 
-	private CronConfiguration buildConfig(boolean findOpenCalls) {
+	private CronConfiguration buildConfig(
+			boolean findOpenCalls) {
 		CronConfiguration conf = new CronConfiguration();
 		// conf.serializeResults = true;
 		// conf.analysisGraphs =
@@ -39,7 +39,7 @@ public class PyTransformationsTest extends AnalysisTestExecutor {
 		if (findOpenCalls)
 			conf.semanticChecks.add(new OpenCallsFinder<>());
 
-		PointBasedHeap heap = new PyFieldSensitivePointBasedHeap();
+		PyFieldSensitivePointBasedHeap heap = new PyFieldSensitivePointBasedHeap();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		DataframeGraphDomain df = new DataframeGraphDomain();
 		conf.abstractState = new SimpleAbstractState<>(heap, df, type);

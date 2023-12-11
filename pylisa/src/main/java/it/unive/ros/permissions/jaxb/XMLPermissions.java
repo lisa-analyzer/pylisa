@@ -16,7 +16,10 @@ public class XMLPermissions {
 	 * 
 	 * @return
 	 */
-	public static XMLPermissions fromFile(String fileName) throws JAXBException, FileNotFoundException {
+	public static XMLPermissions fromFile(
+			String fileName)
+			throws JAXBException,
+			FileNotFoundException {
 		PermissionsNode permissionsXML = JAXBPermissionsHelpers.load(fileName);
 		return new XMLPermissions();
 	}
@@ -78,7 +81,11 @@ public class XMLPermissions {
 		return permissionsNode;
 	}
 
-	public void toFile(String fileName) throws DatatypeConfigurationException, JAXBException, IOException {
+	public void toFile(
+			String fileName)
+			throws DatatypeConfigurationException,
+			JAXBException,
+			IOException {
 
 		JAXBPermissionsHelpers.store(toJAXBPermissions(), fileName);
 	}

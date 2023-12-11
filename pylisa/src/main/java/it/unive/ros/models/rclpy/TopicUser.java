@@ -5,7 +5,10 @@ public abstract class TopicUser {
 	private String msgType;
 	private Node node;
 
-	public TopicUser(Node node, Topic topic, String msgType) {
+	public TopicUser(
+			Node node,
+			Topic topic,
+			String msgType) {
 		this.node = node;
 		this.topic = topic;
 		this.msgType = msgType;

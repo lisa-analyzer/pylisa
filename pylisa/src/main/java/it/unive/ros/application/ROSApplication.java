@@ -17,7 +17,8 @@ public class ROSApplication {
 
 	private Map<String, Grant> permissionsGrants = new HashMap<>();
 
-	public void setWorkDir(String workDir) {
+	public void setWorkDir(
+			String workDir) {
 		this.workDir = workDir;
 	}
 
@@ -25,16 +26,21 @@ public class ROSApplication {
 		return workDir;
 	}
 
-	public ROSApplication(RosComputationalGraph ROSComputationalGraph) {
+	public ROSApplication(
+			RosComputationalGraph ROSComputationalGraph) {
 		this.ROSComputationalGraph = ROSComputationalGraph;
 	}
 
-	public ROSApplication(RosComputationalGraph ROSComputationalGraph, String workDir) {
+	public ROSApplication(
+			RosComputationalGraph ROSComputationalGraph,
+			String workDir) {
 		this.ROSComputationalGraph = ROSComputationalGraph;
 		this.workDir = workDir;
 	}
 
-	public ROSApplication(RosComputationalGraph ROSComputationalGraph, Map<String, Grant> permissionsGrants,
+	public ROSApplication(
+			RosComputationalGraph ROSComputationalGraph,
+			Map<String, Grant> permissionsGrants,
 			String workDir) {
 		this.ROSComputationalGraph = ROSComputationalGraph;
 		this.workDir = workDir;

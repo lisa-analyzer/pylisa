@@ -58,7 +58,8 @@ public class Validity {
 	 * 
 	 * @param value allowed object is {@link XMLGregorianCalendar }
 	 */
-	public void setNotBefore(XMLGregorianCalendar value) {
+	public void setNotBefore(
+			XMLGregorianCalendar value) {
 		this.notBefore = value;
 	}
 
@@ -76,7 +77,8 @@ public class Validity {
 	 * 
 	 * @param value allowed object is {@link XMLGregorianCalendar }
 	 */
-	public void setNotAfter(XMLGregorianCalendar value) {
+	public void setNotAfter(
+			XMLGregorianCalendar value) {
 		this.notAfter = value;
 	}
 

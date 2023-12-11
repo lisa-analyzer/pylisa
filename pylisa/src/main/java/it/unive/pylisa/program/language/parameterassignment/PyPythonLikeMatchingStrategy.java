@@ -28,13 +28,18 @@ public class PyPythonLikeMatchingStrategy implements ParameterMatchingStrategy {
 	 * @param delegate the strategy to delegate the match after the actual
 	 *                     parameters have been shuffled
 	 */
-	public PyPythonLikeMatchingStrategy(FixedOrderMatchingStrategy delegate) {
+	public PyPythonLikeMatchingStrategy(
+			FixedOrderMatchingStrategy delegate) {
 		this.delegate = delegate;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public boolean matches(Call call, Parameter[] formals, Expression[] actuals, Set<Type>[] types) {
+	public boolean matches(
+			Call call,
+			Parameter[] formals,
+			Expression[] actuals,
+			Set<Type>[] types) {
 		Expression[] slots = new Expression[formals.length];
 		Set<Type>[] slotTypes = new Set[formals.length];
 
@@ -194,7 +199,8 @@ public class PyPythonLikeMatchingStrategy implements ParameterMatchingStrategy {
 		return null;
 	}
 
-	static int getNamedParameterExpressionIndex(Expression[] expressions) {
+	static int getNamedParameterExpressionIndex(
+			Expression[] expressions) {
 		for (int i = 0; i < expressions.length; i++) {
 			if (expressions[i] instanceof NamedParameterExpression) {
 				return i;

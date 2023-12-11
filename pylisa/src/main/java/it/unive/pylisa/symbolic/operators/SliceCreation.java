@@ -23,7 +23,11 @@ public class SliceCreation implements TernaryOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> middle, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> middle,
+			Set<Type> right) {
 		Predicate<Type> accepted = t -> t.isNumericType() || t.isNullType();
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			ReferenceType seriesreftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES).getReference();

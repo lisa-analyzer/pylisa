@@ -12,19 +12,28 @@ import java.util.Set;
 
 public class SetConstant extends Constant {
 
-	public SetConstant(CodeLocation location, Lattice<?>... elements) {
+	public SetConstant(
+			CodeLocation location,
+			Lattice<?>... elements) {
 		this(location, new HashSet<Lattice<?>>(Arrays.asList(elements)));
 	}
 
-	public SetConstant(CodeLocation location, Set<Lattice<?>> elements) {
+	public SetConstant(
+			CodeLocation location,
+			Set<Lattice<?>> elements) {
 		super(PyClassType.lookup(LibrarySpecificationProvider.SET), elements, location);
 	}
 
-	public SetConstant(CodeLocation location, Set<Lattice<?>> elements, Lattice<?> tail) {
+	public SetConstant(
+			CodeLocation location,
+			Set<Lattice<?>> elements,
+			Lattice<?> tail) {
 		this(location, append(elements, tail));
 	}
 
-	private static Set<Lattice<?>> append(Set<Lattice<?>> elements, Lattice<?> tail) {
+	private static Set<Lattice<?>> append(
+			Set<Lattice<?>> elements,
+			Lattice<?> tail) {
 		Set<Lattice<?>> result = new HashSet<>();
 		result.addAll(elements);
 		result.add(tail);

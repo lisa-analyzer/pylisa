@@ -18,11 +18,13 @@ public class RosComputationalGraph {
 		return nodes;
 	}
 
-	public void addNode(Node n) {
+	public void addNode(
+			Node n) {
 		nodes.add(n);
 	}
 
-	public Node getNodeByName(String name) {
+	public Node getNodeByName(
+			String name) {
 		for (Node n : nodes) {
 			if (n.getName().equals(name)) {
 				return n;
@@ -31,7 +33,8 @@ public class RosComputationalGraph {
 		return null;
 	}
 
-	public Node getNodeByScopeId(ScopeId scopeId) {
+	public Node getNodeByScopeId(
+			ScopeId scopeId) {
 		for (Node n : nodes) {
 			if (n.getScopeId().equals(scopeId)) {
 				return n;
@@ -40,7 +43,8 @@ public class RosComputationalGraph {
 		return null;
 	}
 
-	public Topic addOrGetTopic(String name) {
+	public Topic addOrGetTopic(
+			String name) {
 		for (Topic t : topics) {
 			if (t.getName().equals(name)) {
 				return t;
@@ -51,7 +55,8 @@ public class RosComputationalGraph {
 		return t;
 	}
 
-	public Set<TopicUser> getTopicUsers(String topicName) {
+	public Set<TopicUser> getTopicUsers(
+			String topicName) {
 		Set<TopicUser> topicUsers = new HashSet<>();
 		for (Node n : nodes) {
 			for (TopicUser tu : n.getAllNodeTopicsUsers()) {
@@ -63,7 +68,8 @@ public class RosComputationalGraph {
 		return topicUsers;
 	}
 
-	public Set<Subscription> getTopicSubscriptions(String topicName) {
+	public Set<Subscription> getTopicSubscriptions(
+			String topicName) {
 		Set<Subscription> topicSubs = new HashSet<>();
 		for (Node n : nodes) {
 			for (TopicUser tu : n.getAllNodeTopicsUsers()) {
@@ -75,7 +81,8 @@ public class RosComputationalGraph {
 		return topicSubs;
 	}
 
-	public Set<Publisher> getTopicPublishers(String topicName) {
+	public Set<Publisher> getTopicPublishers(
+			String topicName) {
 		Set<Publisher> topicPubs = new HashSet<>();
 		for (Node n : nodes) {
 			for (TopicUser tu : n.getAllNodeTopicsUsers()) {

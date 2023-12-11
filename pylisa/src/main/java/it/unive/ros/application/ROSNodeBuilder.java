@@ -7,7 +7,8 @@ public abstract class ROSNodeBuilder {
 
 	private String fileName;
 
-	public ROSNodeBuilder(String fileName) {
+	public ROSNodeBuilder(
+			String fileName) {
 		this.fileName = fileName;
 	}
 

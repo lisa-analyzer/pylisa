@@ -24,7 +24,10 @@ public class StringMult extends StringOperation implements StringOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
 		if ((left.stream().anyMatch(Type::isNumericType) && right.stream().anyMatch(Type::isStringType)) ||
 				(left.stream().anyMatch(Type::isStringType) && right.stream().anyMatch(Type::isNumericType))) {
 			return Collections.singleton(resultType(types));
@@ -35,7 +38,8 @@ public class StringMult extends StringOperation implements StringOperator {
 	}
 
 	@Override
-	protected Type resultType(TypeSystem types) {
+	protected Type resultType(
+			TypeSystem types) {
 		return types.getStringType();
 	}
 }

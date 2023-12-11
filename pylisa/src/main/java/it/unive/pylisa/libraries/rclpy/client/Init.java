@@ -4,10 +4,7 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.heap.HeapDomain;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
-import it.unive.lisa.analysis.value.TypeDomain;
-import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
@@ -22,16 +19,27 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
-import java.util.Collections;
+import java.util.Set;
 
 public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression implements PluggableStatement {
 	protected Statement st;
 
-	public Init(CFG cfg, CodeLocation location, Expression[] exprs) {
+	public Init(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
 		super(cfg, location, "__init__", exprs);
 	}
 
-	public static it.unive.pylisa.libraries.rclpy.service.Init build(CFG cfg, CodeLocation location,
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
+	public static it.unive.pylisa.libraries.rclpy.service.Init build(
+			CFG cfg,
+			CodeLocation location,
 			Expression[] exprs) {
 		return new it.unive.pylisa.libraries.rclpy.service.Init(cfg, location, exprs);
 	}
@@ -42,32 +50,31 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>,
-			H extends HeapDomain<H>,
-			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> expressionSemantics(
-					InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state,
-					ExpressionSet<SymbolicExpression>[] params, StatementStore<A, H, V, T> expressions)
-					throws SemanticException {
-		AnalysisState<A, H, V, T> result = state.bottom();
+	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		AnalysisState<A> result = state.bottom();
 
 		for (SymbolicExpression v : params[0]) {
-			for (Type recType : v.getRuntimeTypes(getCFG().getDescriptor().getUnit().getProgram().getTypes()))
+			Set<Type> rts = state.getState().getRuntimeTypesOf(v, this, state.getState());
+			for (Type recType : rts)
 				if (recType.isPointerType()) {
 					Type inner = recType.asPointerType().getInnerType();
 					if (!inner.isUnitType())
 						continue;
 
-					AnalysisState<A, H, V, T> partial = state;
+					AnalysisState<A> partial = state;
 
 					HeapDereference container = new HeapDereference(inner, v, getLocation());
-					container.setRuntimeTypes(Collections.singleton(inner));
 					CompilationUnit unit = inner.asUnitType().getUnit();
 
 					Global global = new Global(getLocation(), unit, "srv_type", false, StringType.INSTANCE);
 					Variable var = global.toSymbolicVariable(getLocation());
 					AccessChild access = new AccessChild(var.getStaticType(), container, var, getLocation());
-					AnalysisState<A, H, V, T> tmp = state.bottom();
+					AnalysisState<A> tmp = state.bottom();
 					for (SymbolicExpression t : params[1])
 						tmp = tmp.lub(partial.assign(access, t, this));
 					partial = tmp;
@@ -97,7 +104,8 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 	}
 
 	@Override
-	public void setOriginatingStatement(Statement st) {
+	public void setOriginatingStatement(
+			Statement st) {
 		this.st = st;
 	}
 

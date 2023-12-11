@@ -9,7 +9,8 @@ import java.util.Objects;
 public class BooleanValue implements Value {
 	private final boolean value;
 
-	public BooleanValue(boolean value) {
+	public BooleanValue(
+			boolean value) {
 		this.value = value;
 	}
 
@@ -23,7 +24,8 @@ public class BooleanValue implements Value {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -40,7 +42,8 @@ public class BooleanValue implements Value {
 	}
 
 	@Override
-	public Expression toLiSAExpression(CFG init) {
+	public Expression toLiSAExpression(
+			CFG init) {
 		if (value)
 			return new TrueLiteral(init, init.getDescriptor().getLocation());
 		else

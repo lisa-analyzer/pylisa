@@ -26,7 +26,10 @@ public class PyLogicalOr implements LogicalOperator, BinaryOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
 		return Collections.singleton(BoolType.INSTANCE);
 	}
 }

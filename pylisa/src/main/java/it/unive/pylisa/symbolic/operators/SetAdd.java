@@ -21,7 +21,10 @@ public class SetAdd implements BinaryOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
 		if (left.stream().noneMatch(t -> t.toString().equals(LibrarySpecificationProvider.SET)))
 			return Collections.emptySet();
 		return Collections.singleton(PyClassType.lookup(LibrarySpecificationProvider.SET));

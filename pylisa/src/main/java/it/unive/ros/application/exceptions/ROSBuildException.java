@@ -5,13 +5,16 @@ public class ROSBuildException extends Exception {
 
 	private final String context;
 
-	protected ROSBuildException(String context, Exception wrapped) {
+	protected ROSBuildException(
+			String context,
+			Exception wrapped) {
 		super(context + ": " + wrapped.getMessage());
 		this.context = context;
 		this.wrapped = wrapped;
 	}
 
-	public ROSBuildException(Exception wrapped) {
+	public ROSBuildException(
+			Exception wrapped) {
 		this("ROSBuilderException", wrapped);
 	}
 

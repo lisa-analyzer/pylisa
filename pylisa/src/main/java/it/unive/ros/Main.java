@@ -66,7 +66,9 @@ public class Main {
 				.build();
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main(
+			String[] args)
+			throws Exception {
 		ROSApplication ra = new RosApplicationBuilder().withNode(new PythonROSNodeBuilder("ros-tests/minimal.py"))
 				.withWorkDir("OUTPUT")
 				.build();

@@ -19,7 +19,10 @@ public class PyTypeLiteral extends Literal<Unit> {
 	 *                     program
 	 * @param value    the value of this literal
 	 */
-	public PyTypeLiteral(CFG cfg, CodeLocation location, Unit value) {
+	public PyTypeLiteral(
+			CFG cfg,
+			CodeLocation location,
+			Unit value) {
 		super(cfg, location, value, new PyTypeTokenType(Collections.singleton(PyClassType.lookup(value.getName()))));
 	}
 }

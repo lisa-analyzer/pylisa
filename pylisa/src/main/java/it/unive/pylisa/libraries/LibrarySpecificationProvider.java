@@ -64,7 +64,9 @@ public class LibrarySpecificationProvider {
 
 	private static final Collection<String> LOADED_LIBS = new HashSet<>();
 
-	public static void load(Program program) throws AnalysisSetupException {
+	public static void load(
+			Program program)
+			throws AnalysisSetupException {
 		init = null;
 		hierarchyRoot = null;
 		AVAILABLE_LIBS.clear();
@@ -93,14 +95,17 @@ public class LibrarySpecificationProvider {
 			AVAILABLE_LIBS.put(lib.getName(), lib);
 	}
 
-	private static CFG makeInit(Program program) {
+	private static CFG makeInit(
+			Program program) {
 		init = new CFG(new CodeMemberDescriptor(SyntheticLocation.INSTANCE, program, false, "LiSA$init"));
 		init.addNode(new Ret(init, SyntheticLocation.INSTANCE), true);
 		program.addCodeMember(init);
 		return init;
 	}
 
-	public static void importLibrary(Program program, String name) {
+	public static void importLibrary(
+			Program program,
+			String name) {
 		if (LOADED_LIBS.contains(name))
 			return;
 
@@ -118,11 +123,13 @@ public class LibrarySpecificationProvider {
 		return AVAILABLE_LIBS.values();
 	}
 
-	public static Library getLibraryUnit(String name) {
+	public static Library getLibraryUnit(
+			String name) {
 		return AVAILABLE_LIBS.get(name);
 	}
 
-	public static boolean isLibraryLoaded(String name) {
+	public static boolean isLibraryLoaded(
+			String name) {
 		return LOADED_LIBS.contains(name);
 	}
 }

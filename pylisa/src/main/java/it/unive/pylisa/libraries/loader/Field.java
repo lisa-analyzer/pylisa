@@ -11,7 +11,10 @@ public class Field {
 	private final String name;
 	private final Type type;
 
-	public Field(boolean instance, String name, Type type) {
+	public Field(
+			boolean instance,
+			String name,
+			Type type) {
 		this.instance = instance;
 		this.name = name;
 		this.type = type;
@@ -35,7 +38,8 @@ public class Field {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -51,7 +55,9 @@ public class Field {
 		return "Field [instance=" + instance + ", name=" + name + ", type=" + type + "]";
 	}
 
-	public Global toLiSAObject(CodeLocation location, Unit container) {
+	public Global toLiSAObject(
+			CodeLocation location,
+			Unit container) {
 		it.unive.lisa.type.Type type = this.type.toLiSAType();
 		return new Global(location, container, name, this.instance, type);
 	}

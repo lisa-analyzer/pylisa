@@ -7,7 +7,9 @@ public class LibType implements Type {
 	private final String name;
 	private final boolean pointer;
 
-	public LibType(String name, boolean pointer) {
+	public LibType(
+			String name,
+			boolean pointer) {
 		this.name = name;
 		this.pointer = pointer;
 	}
@@ -26,7 +28,8 @@ public class LibType implements Type {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)

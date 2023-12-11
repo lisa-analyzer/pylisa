@@ -9,7 +9,9 @@ import java.util.Set;
 
 public class ROSFixNamespace implements UnaryOperator {
 	@Override
-	public Set<Type> typeInference(TypeSystem typeSystem, Set<Type> set) {
+	public Set<Type> typeInference(
+			TypeSystem typeSystem,
+			Set<Type> set) {
 		if (set.stream().noneMatch(Type::isStringType))
 			return Collections.emptySet();
 		return Collections.singleton(StringType.INSTANCE);

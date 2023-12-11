@@ -6,11 +6,14 @@ import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 
 public abstract class DataframeEdge
-		implements Comparable<DataframeEdge>, CodeEdge<DataframeForest, DataframeOperation, DataframeEdge> {
+		implements
+		CodeEdge<DataframeForest, DataframeOperation, DataframeEdge> {
 
 	private final DataframeOperation source, destination;
 
-	protected DataframeEdge(DataframeOperation source, DataframeOperation destination) {
+	protected DataframeEdge(
+			DataframeOperation source,
+			DataframeOperation destination) {
 		this.source = source;
 		this.destination = destination;
 	}
@@ -35,7 +38,8 @@ public abstract class DataframeEdge
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -64,12 +68,15 @@ public abstract class DataframeEdge
 	public abstract String getEdgeSymbol();
 
 	@Override
-	public <V> boolean accept(GraphVisitor<DataframeForest, DataframeOperation, DataframeEdge, V> visitor, V tool) {
+	public <V> boolean accept(
+			GraphVisitor<DataframeForest, DataframeOperation, DataframeEdge, V> visitor,
+			V tool) {
 		return visitor.visit(tool, null, this);
 	}
 
 	@Override
-	public int compareTo(DataframeEdge o) {
+	public int compareTo(
+			DataframeEdge o) {
 		int cmp;
 		if ((cmp = source.compareTo(o.source)) != 0)
 			return cmp;

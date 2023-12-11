@@ -6,7 +6,10 @@ public class Service {
 
 	private String callback;
 
-	public Service(String name, String srvType, String callback) {
+	public Service(
+			String name,
+			String srvType,
+			String callback) {
 		this.name = name;
 		this.srvType = srvType;
 		this.callback = callback;

@@ -12,7 +12,12 @@ public class RelaxedRuntimeTypesMatchingStrategy extends FixedOrderMatchingStrat
 	public static final RelaxedRuntimeTypesMatchingStrategy INSTANCE = new RelaxedRuntimeTypesMatchingStrategy();
 
 	@Override
-	public boolean matches(Call call, int pos, Parameter formal, Expression actual, Set<Type> types) {
+	public boolean matches(
+			Call call,
+			int pos,
+			Parameter formal,
+			Expression actual,
+			Set<Type> types) {
 		return formal.getStaticType() instanceof Untyped
 				|| types.stream().anyMatch(rt -> rt.canBeAssignedTo(formal.getStaticType()));
 	}

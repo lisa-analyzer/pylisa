@@ -12,11 +12,14 @@ public class SetLattice<E> extends it.unive.lisa.analysis.lattices.SetLattice<Se
 		super(Collections.emptySet(), true);
 	}
 
-	public SetLattice(E element) {
+	public SetLattice(
+			E element) {
 		super(Collections.singleton(element), false);
 	}
 
-	public SetLattice(Set<E> elements, boolean isTop) {
+	public SetLattice(
+			Set<E> elements,
+			boolean isTop) {
 		super(elements, isTop);
 	}
 
@@ -31,15 +34,19 @@ public class SetLattice<E> extends it.unive.lisa.analysis.lattices.SetLattice<Se
 	}
 
 	@Override
-	public SetLattice<E> mk(Set<E> set) {
+	public SetLattice<E> mk(
+			Set<E> set) {
 		return new SetLattice<>(set, isTop);
 	}
 
-	public boolean intersects(SetLattice<E> other) {
+	public boolean intersects(
+			SetLattice<E> other) {
 		return !SetUtils.intersection(elements, other.elements).isEmpty();
 	}
 
-	public SetLattice<E> replace(SetLattice<E> elements, SetLattice<E> targets) {
+	public SetLattice<E> replace(
+			SetLattice<E> elements,
+			SetLattice<E> targets) {
 		SetView<E> result = SetUtils.union(
 				SetUtils.difference(this.elements, elements.elements),
 				targets.elements);
@@ -47,7 +54,9 @@ public class SetLattice<E> extends it.unive.lisa.analysis.lattices.SetLattice<Se
 		return new SetLattice<>(new HashSet<>(result), false);
 	}
 
-	public SetLattice<E> replace(E element, E target) {
+	public SetLattice<E> replace(
+			E element,
+			E target) {
 		HashSet<E> eles = new HashSet<>(elements);
 		eles.remove(element);
 		eles.add(target);

@@ -13,30 +13,43 @@ import java.util.Objects;
 public class RosTopicDeclarationFinder implements SyntacticCheck {
 
 	@Override
-	public void beforeExecution(CheckTool checkTool) {
+	public void beforeExecution(
+			CheckTool checkTool) {
 	}
 
 	@Override
-	public void afterExecution(CheckTool checkTool) {
+	public void afterExecution(
+			CheckTool checkTool) {
 	}
 
 	@Override
-	public boolean visitUnit(CheckTool checkTool, Unit unit) {
+	public boolean visitUnit(
+			CheckTool checkTool,
+			Unit unit) {
 
 		return true;
 	}
 
 	@Override
-	public void visitGlobal(CheckTool checkTool, Unit unit, Global global, boolean b) {
+	public void visitGlobal(
+			CheckTool checkTool,
+			Unit unit,
+			Global global,
+			boolean b) {
 	}
 
 	@Override
-	public boolean visit(CheckTool checkTool, CFG cfg) {
+	public boolean visit(
+			CheckTool checkTool,
+			CFG cfg) {
 		return true;
 	}
 
 	@Override
-	public boolean visit(CheckTool checkTool, CFG cfg, Statement statement) {
+	public boolean visit(
+			CheckTool checkTool,
+			CFG cfg,
+			Statement statement) {
 
 		if (statement instanceof Call) {
 			if (Objects.equals(((Call) statement).getTargetName(), "create_subscription")) {
@@ -56,7 +69,10 @@ public class RosTopicDeclarationFinder implements SyntacticCheck {
 	}
 
 	@Override
-	public boolean visit(CheckTool checkTool, CFG cfg, Edge edge) {
+	public boolean visit(
+			CheckTool checkTool,
+			CFG cfg,
+			Edge edge) {
 		return true;
 	}
 }

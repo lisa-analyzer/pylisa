@@ -2,34 +2,52 @@ package it.unive.pylisa.analysis.dataframes.operations;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
-import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
+import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
+import it.unive.pylisa.symbolic.operators.Enumerations.TransformKind;
 import java.util.Optional;
 
-public class Transform<S extends Selection<S>> extends DataframeOperation {
+public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
 
-	private final Kind type;
-	private final S selection;
-	private final boolean changeShape;
+	private final TransformKind type;
+	private final Axis axis;
+	private final DataframeSelection<R, C> selection;
 	private final Optional<Object> arg;
 
-	public Transform(CodeLocation where, Kind type, boolean changeShape, S selection) {
-		this(where, type, changeShape, selection, null);
+	public Transform(
+			CodeLocation where,
+			int index,
+			TransformKind type,
+			Axis axis,
+			DataframeSelection<R, C> selection) {
+		this(where, index, type, axis, selection, null);
 	}
 
-	public Transform(CodeLocation where, Kind type, boolean changeShape, S selection, Object arg) {
-		super(where);
+	public Transform(
+			CodeLocation where,
+			int index,
+			TransformKind type,
+			Axis axis,
+			DataframeSelection<R, C> selection,
+			Object arg) {
+		super(where, index);
 		this.type = type;
+		this.axis = axis;
 		this.selection = selection;
-		this.changeShape = changeShape;
 		this.arg = Optional.ofNullable(arg);
 	}
 
-	public Kind getType() {
+	public TransformKind getType() {
 		return type;
 	}
 
-	public S getSelection() {
+	public Axis getAxis() {
+		return axis;
+	}
+
+	public DataframeSelection<R, C> getSelection() {
 		return selection;
 	}
 
@@ -37,36 +55,31 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 		return arg;
 	}
 
-	public boolean isChangeShape() {
-		return changeShape;
-	}
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + ((arg == null) ? 0 : arg.hashCode());
-		result = prime * result + (changeShape ? 1231 : 1237);
 		result = prime * result + ((selection == null) ? 0 : selection.hashCode());
 		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		result = prime * result + ((axis == null) ? 0 : axis.hashCode());
 		return result;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Transform<?> other = (Transform<?>) obj;
+		Transform<?, ?> other = (Transform<?, ?>) obj;
 		if (arg == null) {
 			if (other.arg != null)
 				return false;
 		} else if (!arg.equals(other.arg))
-			return false;
-		if (changeShape != other.changeShape)
 			return false;
 		if (selection == null) {
 			if (other.selection != null)
@@ -75,44 +88,48 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 			return false;
 		if (type != other.type)
 			return false;
+		if (axis != other.axis)
+			return false;
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		if (arg.isEmpty())
-			return type + "(" + selection + ")";
-		else
-			return type + "(" + selection + ", " + arg.get() + ")";
+		String ret = "transform " + axis + ": " + type + "(" + selection;
+		if (arg.isPresent())
+			ret += ", " + arg.get();
+		ret += ")";
+		return ret;
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	protected boolean lessOrEqualSameOperation(DataframeOperation other) throws SemanticException {
-		Transform<?> o = (Transform<?>) other;
-		if (type != o.type || selection.getClass() != o.selection.getClass() || !arg.equals(o.arg)
-				|| changeShape != o.changeShape)
+	protected boolean lessOrEqualSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
+		Transform<?, ?> o = (Transform<?, ?>) other;
+		if (type != o.type || !arg.equals(o.arg))
 			return false;
-		return selection.lessOrEqual((S) o.selection);
+		return axis.lessOrEqual(o.axis) && selection.lessOrEqual(o.selection);
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	protected DataframeOperation lubSameOperation(DataframeOperation other) throws SemanticException {
-		Transform<?> o = (Transform<?>) other;
-		if (type != o.type || selection.getClass() != o.selection.getClass() || changeShape != o.changeShape)
+	protected DataframeOperation lubSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
+		Transform<?, ?> o = (Transform<?, ?>) other;
+		if (type != o.type || !arg.equals(o.arg))
 			return top();
-		return new Transform<>(loc(other), type, changeShape, selection.lub((S) o.selection),
-				arg.equals(o.arg) ? arg : null);
+		return new Transform<>(where, index, type, axis.lub(o.axis), selection.lub(o.selection), arg);
 	}
 
 	@Override
-	protected int compareToSameClassAndLocation(DataframeOperation o) {
-		Transform<?> other = (Transform<?>) o;
-		int cmp = type.compareTo(other.type);
+	protected int compareToSameOperation(
+			DataframeOperation o) {
+		Transform<?, ?> other = (Transform<?, ?>) o;
+		int cmp = type.compare(other.type);
 		if (cmp != 0)
 			return cmp;
-		cmp = Boolean.compare(changeShape, other.changeShape);
+		cmp = axis.compareTo(other.axis);
 		if (cmp != 0)
 			return cmp;
 		cmp = selection.compareTo(other.selection);
@@ -120,5 +137,15 @@ public class Transform<S extends Selection<S>> extends DataframeOperation {
 			return cmp;
 		// not much we can do here..
 		return Integer.compare(arg.hashCode(), other.arg.hashCode());
+	}
+
+	@Override
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
+		Transform<?, ?> o = (Transform<?, ?>) other;
+		if (type != o.type || !arg.equals(o.arg))
+			return top();
+		return new Transform<>(where, index, type, axis.widening(o.axis), selection.widening(o.selection), arg);
 	}
 }

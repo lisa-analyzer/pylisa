@@ -15,34 +15,31 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 
-public class RosTopicDeclarationFinder implements
+public class RosTopicDeclarationFinder
+		implements
 		SemanticCheck<
 				SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-						TypeEnvironment<InferredTypes>>,
-				PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> {
+						TypeEnvironment<InferredTypes>>> {
 
 	@Override
 	public void beforeExecution(
 			CheckToolWithAnalysisResults<
 					SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-							TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {
+							TypeEnvironment<InferredTypes>>> tool) {
 	}
 
 	@Override
 	public void afterExecution(
 			CheckToolWithAnalysisResults<
 					SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-							TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool) {
+							TypeEnvironment<InferredTypes>>> tool) {
 	}
 
 	@Override
 	public boolean visitUnit(
 			CheckToolWithAnalysisResults<
 					SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-							TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool,
+							TypeEnvironment<InferredTypes>>> tool,
 			Unit unit) {
 		return true;
 	}
@@ -51,9 +48,10 @@ public class RosTopicDeclarationFinder implements
 	public void visitGlobal(
 			CheckToolWithAnalysisResults<
 					SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-							TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool,
-			Unit unit, Global global, boolean instance) {
+							TypeEnvironment<InferredTypes>>> tool,
+			Unit unit,
+			Global global,
+			boolean instance) {
 
 	}
 
@@ -61,8 +59,7 @@ public class RosTopicDeclarationFinder implements
 	public boolean visit(
 			CheckToolWithAnalysisResults<
 					SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-							TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool,
+							TypeEnvironment<InferredTypes>>> tool,
 			CFG graph) {
 		return true;
 	}
@@ -71,9 +68,9 @@ public class RosTopicDeclarationFinder implements
 	public boolean visit(
 			CheckToolWithAnalysisResults<
 					SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-							TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool,
-			CFG graph, Statement node) {
+							TypeEnvironment<InferredTypes>>> tool,
+			CFG graph,
+			Statement node) {
 		if (node instanceof Call) {
 			Call call = (Call) node;
 		}
@@ -103,9 +100,9 @@ public class RosTopicDeclarationFinder implements
 	public boolean visit(
 			CheckToolWithAnalysisResults<
 					SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-							TypeEnvironment<InferredTypes>>,
-					PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>> tool,
-			CFG graph, Edge edge) {
+							TypeEnvironment<InferredTypes>>> tool,
+			CFG graph,
+			Edge edge) {
 		return true;
 	}
 }

@@ -1,9 +1,8 @@
 package it.unive.pylisa.symbolic.operators;
 
-import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.binary.NumericOperation;
 
-public class Power extends NumericOperation implements BinaryOperator {
+public class Power extends NumericOperation {
 	/**
 	 * The singleton instance of this class.
 	 */

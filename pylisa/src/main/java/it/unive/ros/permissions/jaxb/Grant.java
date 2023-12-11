@@ -79,7 +79,8 @@ public class Grant {
 	 * 
 	 * @param value allowed object is {@link String }
 	 */
-	public void setSubjectName(String value) {
+	public void setSubjectName(
+			String value) {
 		this.subjectName = value;
 	}
 
@@ -97,7 +98,8 @@ public class Grant {
 	 * 
 	 * @param value allowed object is {@link Validity }
 	 */
-	public void setValidity(Validity value) {
+	public void setValidity(
+			Validity value) {
 		this.validity = value;
 	}
 
@@ -140,7 +142,8 @@ public class Grant {
 	 * 
 	 * @param value allowed object is {@link DefaultAction }
 	 */
-	public void setDefault(DefaultAction value) {
+	public void setDefault(
+			DefaultAction value) {
 		this._default = value;
 	}
 
@@ -158,11 +161,13 @@ public class Grant {
 	 * 
 	 * @param value allowed object is {@link String }
 	 */
-	public void setName(String value) {
+	public void setName(
+			String value) {
 		this.name = value;
 	}
 
-	public boolean isPublisherAllowed(String topicName) {
+	public boolean isPublisherAllowed(
+			String topicName) {
 		if (this.getDefault() == DefaultAction.ALLOW) {
 			// check if the topic is not in deny rule.
 			for (JAXBElement<Rule> rule : this.getAllowRuleOrDenyRule()) {
@@ -195,7 +200,8 @@ public class Grant {
 		return false;
 	}
 
-	public boolean isSubscriptionAllowed(String topicName) {
+	public boolean isSubscriptionAllowed(
+			String topicName) {
 		if (this.getDefault() == DefaultAction.ALLOW) {
 			// check if the topic is not in deny rule.
 			for (JAXBElement<Rule> rule : this.getAllowRuleOrDenyRule()) {

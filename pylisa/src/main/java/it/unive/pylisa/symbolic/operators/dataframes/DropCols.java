@@ -8,11 +8,18 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collections;
 import java.util.Set;
 
-public class DropCols implements BinaryOperator {
+public class DropCols implements BinaryOperator, DataframeOperator {
 
-	public static final DropCols INSTANCE = new DropCols();
+	private final int index;
 
-	private DropCols() {
+	public DropCols(
+			int index) {
+		this.index = index;
+	}
+
+	@Override
+	public int getIndex() {
+		return index;
 	}
 
 	@Override
@@ -21,7 +28,10 @@ public class DropCols implements BinaryOperator {
 	}
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		if (left.stream().noneMatch(t -> t.equals(df)))
 			return Collections.emptySet();

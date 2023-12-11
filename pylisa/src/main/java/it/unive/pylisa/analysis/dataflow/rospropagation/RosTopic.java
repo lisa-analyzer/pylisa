@@ -3,19 +3,23 @@ package it.unive.pylisa.analysis.dataflow.rospropagation;
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.dataflow.DataflowElement;
-import it.unive.lisa.analysis.dataflow.PossibleForwardDataflowDomain;
-import it.unive.lisa.analysis.representation.DomainRepresentation;
-import it.unive.lisa.analysis.representation.StringRepresentation;
+import it.unive.lisa.analysis.dataflow.PossibleDataflowDomain;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import java.util.*;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
 
 public class RosTopic
-		implements DataflowElement<
-				PossibleForwardDataflowDomain<RosTopic>, // dataflow domain that
-															// we want
+		implements
+		DataflowElement<
+				PossibleDataflowDomain<RosTopic>, // dataflow domain that
+													// we want
 				RosTopic> {
 	// instances of this class will go inside a Collection (override equals and
 	// hashCode function are necessary)
@@ -30,7 +34,11 @@ public class RosTopic
 		this(null, null, "", "");
 	}
 
-	public RosTopic(Identifier id, ProgramPoint programPoint, String topicName, String msgType) {
+	public RosTopic(
+			Identifier id,
+			ProgramPoint programPoint,
+			String topicName,
+			String msgType) {
 		this.id = id;
 		this.programPoint = programPoint;
 		this.topicName = topicName;
@@ -38,7 +46,8 @@ public class RosTopic
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public boolean equals(
+			Object o) {
 		if (this == o)
 			return true;
 		if (o == null || getClass() != o.getClass())
@@ -65,8 +74,12 @@ public class RosTopic
 	}
 
 	@Override
-	public Collection<RosTopic> gen(Identifier identifier, ValueExpression valueExpression, ProgramPoint programPoint,
-			PossibleForwardDataflowDomain<RosTopic> rosTopicPossibleForwardDataflowDomain) throws SemanticException {
+	public Collection<RosTopic> gen(
+			Identifier identifier,
+			ValueExpression valueExpression,
+			ProgramPoint programPoint,
+			PossibleDataflowDomain<RosTopic> rosTopicPossibleForwardDataflowDomain)
+			throws SemanticException {
 		// System.out.println("GEN from assignment (identifier = expression)");
 		// System.out.println("value exp. -> " + valueExpression);
 		// System.out.println("identifier -> " + identifier);
@@ -76,8 +89,11 @@ public class RosTopic
 	}
 
 	@Override
-	public Collection<RosTopic> gen(ValueExpression valueExpression, ProgramPoint programPoint,
-			PossibleForwardDataflowDomain<RosTopic> rosTopicPossibleForwardDataflowDomain) throws SemanticException {
+	public Collection<RosTopic> gen(
+			ValueExpression valueExpression,
+			ProgramPoint programPoint,
+			PossibleDataflowDomain<RosTopic> rosTopicPossibleForwardDataflowDomain)
+			throws SemanticException {
 		// System.out.println("GEN from evaluation (non assigning expression)");
 		// System.out.println("value exp. -> " + valueExpression);
 		// System.out.println("identifier -> " + identifier);
@@ -112,8 +128,12 @@ public class RosTopic
 	}
 
 	@Override
-	public Collection<RosTopic> kill(Identifier identifier, ValueExpression valueExpression, ProgramPoint programPoint,
-			PossibleForwardDataflowDomain<RosTopic> rosTopicPossibleForwardDataflowDomain) throws SemanticException {
+	public Collection<RosTopic> kill(
+			Identifier identifier,
+			ValueExpression valueExpression,
+			ProgramPoint programPoint,
+			PossibleDataflowDomain<RosTopic> rosTopicPossibleForwardDataflowDomain)
+			throws SemanticException {
 		// System.out.println("KILL from assignment (identifier = expression)");
 		// System.out.println("value exp. -> " + valueExpression);
 		// System.out.println("identifier -> " + identifier);
@@ -122,8 +142,11 @@ public class RosTopic
 	}
 
 	@Override
-	public Collection<RosTopic> kill(ValueExpression valueExpression, ProgramPoint programPoint,
-			PossibleForwardDataflowDomain<RosTopic> rosTopicPossibleForwardDataflowDomain) throws SemanticException {
+	public Collection<RosTopic> kill(
+			ValueExpression valueExpression,
+			ProgramPoint programPoint,
+			PossibleDataflowDomain<RosTopic> rosTopicPossibleForwardDataflowDomain)
+			throws SemanticException {
 		// System.out.println("KILL from evaluation (non assigning
 		// expression)");
 		// System.out.println("value exp. -> " + valueExpression);
@@ -133,17 +156,21 @@ public class RosTopic
 	}
 
 	@Override
-	public DomainRepresentation representation() {
+	public StructuredRepresentation representation() {
 		return new StringRepresentation(id);
 	}
 
 	@Override
-	public RosTopic pushScope(ScopeToken scopeToken) throws SemanticException {
+	public RosTopic pushScope(
+			ScopeToken scopeToken)
+			throws SemanticException {
 		return this;
 	}
 
 	@Override
-	public RosTopic popScope(ScopeToken scopeToken) throws SemanticException {
+	public RosTopic popScope(
+			ScopeToken scopeToken)
+			throws SemanticException {
 		return this;
 	}
 }

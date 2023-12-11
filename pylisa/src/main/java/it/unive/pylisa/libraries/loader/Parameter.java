@@ -24,22 +24,34 @@ public class Parameter {
 
 	private final ParameterType parameterType;
 
-	public Parameter(String name, Type type) {
+	public Parameter(
+			String name,
+			Type type) {
 		this(name, type, null, ParameterType.STANDARD);
 	}
 
-	public Parameter(String name, Type type, Value value) {
+	public Parameter(
+			String name,
+			Type type,
+			Value value) {
 		this(name, type, value, ParameterType.STANDARD);
 	}
 
-	public Parameter(String name, Type type, Value value, ParameterType parameterType) {
+	public Parameter(
+			String name,
+			Type type,
+			Value value,
+			ParameterType parameterType) {
 		this.name = name;
 		this.type = type;
 		this.value = value;
 		this.parameterType = parameterType;
 	}
 
-	public Parameter(String name, Type type, ParameterType parameterType) {
+	public Parameter(
+			String name,
+			Type type,
+			ParameterType parameterType) {
 		this(name, type, null, parameterType);
 	}
 
@@ -65,7 +77,8 @@ public class Parameter {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -82,7 +95,9 @@ public class Parameter {
 		return "Parameter [name=" + name + ", type=" + type + ", value=" + value + "]";
 	}
 
-	public it.unive.lisa.program.cfg.Parameter toLiSAParameter(CodeLocation location, CFG init) {
+	public it.unive.lisa.program.cfg.Parameter toLiSAParameter(
+			CodeLocation location,
+			CFG init) {
 		Expression defValue = null;
 		if (this.value != null) {
 			defValue = this.value.toLiSAExpression(init);

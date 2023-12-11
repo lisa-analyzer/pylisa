@@ -135,7 +135,8 @@ public class ObjectFactory {
 	 *             }{@code <}{@link PermissionsNode }{@code >}
 	 */
 	@XmlElementDecl(namespace = "", name = "dds")
-	public JAXBElement<PermissionsNode> createDds(PermissionsNode value) {
+	public JAXBElement<PermissionsNode> createDds(
+			PermissionsNode value) {
 		return new JAXBElement<PermissionsNode>(_Dds_QNAME, PermissionsNode.class, null, value);
 	}
 
@@ -149,7 +150,8 @@ public class ObjectFactory {
 	 *             }{@code >}
 	 */
 	@XmlElementDecl(namespace = "", name = "name", scope = TagNameValuePair.class)
-	public JAXBElement<String> createTagNameValuePairName(String value) {
+	public JAXBElement<String> createTagNameValuePairName(
+			String value) {
 		return new JAXBElement<String>(_TagNameValuePairName_QNAME, String.class, TagNameValuePair.class, value);
 	}
 
@@ -163,7 +165,8 @@ public class ObjectFactory {
 	 *             }{@code >}
 	 */
 	@XmlElementDecl(namespace = "", name = "value", scope = TagNameValuePair.class)
-	public JAXBElement<String> createTagNameValuePairValue(String value) {
+	public JAXBElement<String> createTagNameValuePairValue(
+			String value) {
 		return new JAXBElement<String>(_TagNameValuePairValue_QNAME, String.class, TagNameValuePair.class, value);
 	}
 
@@ -177,7 +180,8 @@ public class ObjectFactory {
 	 *             }{@code <}{@link BigInteger }{@code >}
 	 */
 	@XmlElementDecl(namespace = "", name = "min", scope = DomainIdRange.class)
-	public JAXBElement<BigInteger> createDomainIdRangeMin(BigInteger value) {
+	public JAXBElement<BigInteger> createDomainIdRangeMin(
+			BigInteger value) {
 		return new JAXBElement<BigInteger>(_DomainIdRangeMin_QNAME, BigInteger.class, DomainIdRange.class, value);
 	}
 
@@ -191,7 +195,8 @@ public class ObjectFactory {
 	 *             }{@code <}{@link BigInteger }{@code >}
 	 */
 	@XmlElementDecl(namespace = "", name = "max", scope = DomainIdRange.class)
-	public JAXBElement<BigInteger> createDomainIdRangeMax(BigInteger value) {
+	public JAXBElement<BigInteger> createDomainIdRangeMax(
+			BigInteger value) {
 		return new JAXBElement<BigInteger>(_DomainIdRangeMax_QNAME, BigInteger.class, DomainIdRange.class, value);
 	}
 
@@ -204,7 +209,8 @@ public class ObjectFactory {
 	 *             }{@code >}
 	 */
 	@XmlElementDecl(namespace = "", name = "allow_rule", scope = Grant.class)
-	public JAXBElement<Rule> createGrantAllowRule(Rule value) {
+	public JAXBElement<Rule> createGrantAllowRule(
+			Rule value) {
 		return new JAXBElement<Rule>(_GrantAllowRule_QNAME, Rule.class, Grant.class, value);
 	}
 
@@ -217,7 +223,8 @@ public class ObjectFactory {
 	 *             }{@code >}
 	 */
 	@XmlElementDecl(namespace = "", name = "deny_rule", scope = Grant.class)
-	public JAXBElement<Rule> createGrantDenyRule(Rule value) {
+	public JAXBElement<Rule> createGrantDenyRule(
+			Rule value) {
 		return new JAXBElement<Rule>(_GrantDenyRule_QNAME, Rule.class, Grant.class, value);
 	}
 

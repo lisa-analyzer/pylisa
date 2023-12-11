@@ -150,7 +150,10 @@ public class Main {
 		rob.build().dumpGraph();
 	}
 
-	public static void main(String[] args) throws ROSApplicationBuildException, Exception {
+	public static void main(
+			String[] args)
+			throws ROSApplicationBuildException,
+			Exception {
 		testSingleRosApplication();
 		// testROSApplication();
 		// testPyFrontend();

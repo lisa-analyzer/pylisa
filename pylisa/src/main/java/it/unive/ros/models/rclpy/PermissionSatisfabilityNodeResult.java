@@ -8,7 +8,8 @@ public class PermissionSatisfabilityNodeResult {
 	List<Subscription> invalidSubscriptions = new ArrayList<>();
 	List<Publisher> invalidPublishers = new ArrayList<>();
 
-	public PermissionSatisfabilityNodeResult(Node n) {
+	public PermissionSatisfabilityNodeResult(
+			Node n) {
 		this.node = n;
 	}
 
@@ -16,11 +17,13 @@ public class PermissionSatisfabilityNodeResult {
 		return !invalidSubscriptions.isEmpty() || !invalidPublishers.isEmpty();
 	}
 
-	public void addInvalidPublisher(Publisher p) {
+	public void addInvalidPublisher(
+			Publisher p) {
 		this.invalidPublishers.add(p);
 	}
 
-	public void addInvalidSubscription(Subscription s) {
+	public void addInvalidSubscription(
+			Subscription s) {
 		this.invalidSubscriptions.add(s);
 	}
 }

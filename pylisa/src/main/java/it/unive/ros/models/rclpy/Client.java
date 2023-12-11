@@ -4,7 +4,9 @@ public class Client {
 	private String name;
 	private String srvType;
 
-	public Client(String name, String srvType) {
+	public Client(
+			String name,
+			String srvType) {
 		this.name = name;
 		this.srvType = srvType;
 	}

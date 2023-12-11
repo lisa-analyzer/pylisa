@@ -25,9 +25,9 @@ version = '0.1a1'
 mainClassName = 'it.unive.pylisa.PyLiSA'
 
 dependencies {
-    implementation 'io.github.lisa-analyzer:lisa-sdk:0.1b8'
-    implementation 'io.github.lisa-analyzer:lisa-program:0.1b8'
-    implementation 'io.github.lisa-analyzer:lisa-analyses:0.1b8'
+    implementation 'io.github.lisa-analyzer:lisa-sdk:0.1b10-SNAPSHOT'
+    implementation 'io.github.lisa-analyzer:lisa-program:0.1b10-SNAPSHOT'
+    implementation 'io.github.lisa-analyzer:lisa-analyses:0.1b10-SNAPSHOT'
     implementation group: 'org.jdom', name: 'jdom2', version: '2.0.5'
     implementation group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '3.0.2'
     antlr 'org.antlr:antlr4:4.8-1'

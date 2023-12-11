@@ -11,7 +11,9 @@ public class StringConstructor implements StringOperator, UnaryOperator {
 	public static final StringConstructor INSTANCE = new StringConstructor();
 
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> argument) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> argument) {
 		if (argument.stream().noneMatch(Type::isStringType) && argument.stream().noneMatch(Type::isNumericType)) {
 			return Collections.emptySet();
 		}

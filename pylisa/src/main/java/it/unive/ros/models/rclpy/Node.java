@@ -19,11 +19,16 @@ public class Node {
 
 	private String namespace;
 
-	public Node(String name, ScopeId scopeId) {
+	public Node(
+			String name,
+			ScopeId scopeId) {
 		this(name, "", scopeId);
 	}
 
-	public Node(String name, String namespace, ScopeId scopeId) {
+	public Node(
+			String name,
+			String namespace,
+			ScopeId scopeId) {
 		this.name = name;
 		subscribers = new HashSet<>();
 		publishers = new HashSet<>();
@@ -33,35 +38,49 @@ public class Node {
 		this.namespace = namespace;
 	}
 
-	public void addNewSubscriber(Topic topic, String msgType, String callBackFunction) {
+	public void addNewSubscriber(
+			Topic topic,
+			String msgType,
+			String callBackFunction) {
 		subscribers.add(new Subscription(this, topic, msgType, callBackFunction));
 	}
 
-	public void addNewService(Service service) {
+	public void addNewService(
+			Service service) {
 		this.services.add(service);
 	}
 
-	public void addNewClient(Client client) {
+	public void addNewClient(
+			Client client) {
 		this.clients.add(client);
 	}
 
-	public void addNewServiceSubscriber(Topic topic, String msgType, String callBackFunction) {
+	public void addNewServiceSubscriber(
+			Topic topic,
+			String msgType,
+			String callBackFunction) {
 		subscribers.add(new ServiceSubscription(this, topic, msgType, callBackFunction));
 	}
 
-	public void addNewPublisher(Topic topic, String msgType) {
+	public void addNewPublisher(
+			Topic topic,
+			String msgType) {
 		publishers.add(new Publisher(this, topic, msgType));
 	}
 
-	public void addNewServicePublisher(Topic topic, String msgType) {
+	public void addNewServicePublisher(
+			Topic topic,
+			String msgType) {
 		publishers.add(new ServicePublisher(this, topic, msgType));
 	}
 
-	public void removeSubscriber(Subscription s) {
+	public void removeSubscriber(
+			Subscription s) {
 		subscribers.remove(s);
 	}
 
-	public void removePublisher(Publisher p) {
+	public void removePublisher(
+			Publisher p) {
 		publishers.remove(p);
 	}
 
@@ -179,7 +198,8 @@ public class Node {
 		return permissionsNode;
 	}
 
-	public PermissionSatisfabilityNodeResult satisfiesPermission(PermissionsNode permissions) {
+	public PermissionSatisfabilityNodeResult satisfiesPermission(
+			PermissionsNode permissions) {
 		PermissionSatisfabilityNodeResult res = new PermissionSatisfabilityNodeResult(this);
 		Permissions perm = permissions.getPermissions();
 		Grant grant = perm.getGrant().get(0); // TODO: iterate over Grant, check
@@ -251,7 +271,9 @@ public class Node {
 		return res;
 	}
 
-	public void dumpPermissions(String workDir) throws Exception {
+	public void dumpPermissions(
+			String workDir)
+			throws Exception {
 		JAXBPermissionsHelpers.store(this.toPermissionsNode(),
 				workDir + "/permissions/" + this.getName() + "/permissions.xml");
 	}

@@ -71,7 +71,8 @@ public class Rule {
 	 * 
 	 * @param value allowed object is {@link DomainIdSet }
 	 */
-	public void setDomains(DomainIdSet value) {
+	public void setDomains(
+			DomainIdSet value) {
 		this.domains = value;
 	}
 

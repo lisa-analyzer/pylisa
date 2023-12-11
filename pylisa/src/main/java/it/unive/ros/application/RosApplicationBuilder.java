@@ -10,7 +10,7 @@ import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.program.Program;
-import it.unive.pylisa.FieldSensitivePointBasedHeapWithConvAs;
+import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.ros.application.exceptions.ROSApplicationBuildException;
 import it.unive.ros.application.exceptions.ROSNodeBuildException;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
@@ -34,13 +34,18 @@ public class RosApplicationBuilder {
 	public RosApplicationBuilder() {
 	}
 
-	public RosApplicationBuilder withNode(ROSNodeBuilder rosNodeBuilder) throws ROSNodeBuildException {
+	public RosApplicationBuilder withNode(
+			ROSNodeBuilder rosNodeBuilder)
+			throws ROSNodeBuildException {
 		programs.add(rosNodeBuilder.getLiSAProgram());
 		return this;
 	}
 
-	public RosApplicationBuilder withPermissions(String XMLfileName)
-			throws ROSNodeBuildException, FileNotFoundException, JAXBException {
+	public RosApplicationBuilder withPermissions(
+			String XMLfileName)
+			throws ROSNodeBuildException,
+			FileNotFoundException,
+			JAXBException {
 		PermissionsNode permsNode = JAXBPermissionsHelpers.load(XMLfileName);
 		for (Grant g : permsNode.getPermissions().getGrant()) {
 			permissionsGrants.putIfAbsent(g.getName(), g);
@@ -48,7 +53,8 @@ public class RosApplicationBuilder {
 		return this;
 	}
 
-	public RosApplicationBuilder withWorkDir(String workDir) {
+	public RosApplicationBuilder withWorkDir(
+			String workDir) {
 		this.workDir = workDir;
 		return this;
 	}
@@ -75,7 +81,8 @@ public class RosApplicationBuilder {
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 		conf.optimize = false;
 		conf.semanticChecks.add(rosGraphDumper);
-		FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs().bottom();
+		PyFieldSensitivePointBasedHeap heap = (PyFieldSensitivePointBasedHeap) new PyFieldSensitivePointBasedHeap()
+				.bottom();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
 		conf.abstractState = new SimpleAbstractState<>(heap, domain, type);

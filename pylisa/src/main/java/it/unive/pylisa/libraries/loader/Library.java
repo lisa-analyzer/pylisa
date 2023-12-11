@@ -22,7 +22,9 @@ public class Library {
 	private final Collection<Field> fields = new HashSet<>();
 	private final Collection<ClassDef> classes = new HashSet<>();
 
-	public Library(String name, String location) {
+	public Library(
+			String name,
+			String location) {
 		this.name = name;
 		this.location = location;
 	}
@@ -53,7 +55,8 @@ public class Library {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -71,7 +74,9 @@ public class Library {
 		return "Library [name=" + name + ", location=" + location + "]";
 	}
 
-	public CodeUnit toLiSAUnit(Program program, AtomicReference<CompilationUnit> rootHolder) {
+	public CodeUnit toLiSAUnit(
+			Program program,
+			AtomicReference<CompilationUnit> rootHolder) {
 		CodeLocation location = new SourceCodeLocation(this.location, 0, 0);
 		CodeUnit unit = new CodeUnit(location, program, name);
 		program.addUnit(unit);
@@ -86,7 +91,10 @@ public class Library {
 		return unit;
 	}
 
-	public void populateUnit(CFG init, CompilationUnit root, CodeUnit lib) {
+	public void populateUnit(
+			CFG init,
+			CompilationUnit root,
+			CodeUnit lib) {
 		CodeLocation location = new SourceCodeLocation(this.location, 0, 0);
 
 		for (Method mtd : this.methods) {

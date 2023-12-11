@@ -9,7 +9,11 @@ import java.util.Set;
 
 public class ROSTopicNameExpansion implements TernaryOperator {
 	@Override
-	public Set<Type> typeInference(TypeSystem types, Set<Type> left, Set<Type> middle, Set<Type> right) {
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> middle,
+			Set<Type> right) {
 		if (left.stream().noneMatch(Type::isStringType) && middle.stream().noneMatch(Type::isStringType)
 				&& right.stream().noneMatch(Type::isStringType))
 			return Collections.emptySet();
