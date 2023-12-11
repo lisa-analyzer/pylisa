@@ -12,6 +12,7 @@ import it.unive.ros.application.PythonROSNodeBuilder;
 import it.unive.ros.application.ROSApplication;
 import it.unive.ros.application.RosApplicationBuilder;
 import it.unive.ros.application.exceptions.ROSApplicationBuildException;
+import it.unive.ros.application.exceptions.ROSNodeBuildException;
 
 public class Main {
 
@@ -39,7 +40,7 @@ public class Main {
         try {
           if (!project.equals(projName)) {
             if (!project.equals("")) {
-              rob.withWorkDir("analysis-new/" + project);
+              rob.withWorkDir("analysis-new-2/" + project);
               project = projName;
               ROSApplication ra = rob.build();
               ra.dumpPermissions();
@@ -136,9 +137,22 @@ public class Main {
     scanner.close();
   }
 
-  public static void main(String[] args) throws IOException {
+  public static void testSingleRosApplication() throws ROSApplicationBuildException, Exception {
+    RosApplicationBuilder rob = new RosApplicationBuilder();
+    try {
+      rob.withNode(new PythonROSNodeBuilder("/Users/giacomozanatta/Projects/pylisa-ros/pylisa/ros-tests/minimal.py"));
+    } catch (ROSNodeBuildException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    rob.withWorkDir("analysis-single");
+    rob.build().dumpGraph();
+  }
+
+  public static void main(String[] args) throws ROSApplicationBuildException, Exception {
+    testSingleRosApplication();
     // testROSApplication();
-    testPyFrontend();
+    // testPyFrontend();
   }
 
 }

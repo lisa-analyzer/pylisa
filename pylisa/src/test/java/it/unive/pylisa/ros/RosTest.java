@@ -13,11 +13,12 @@ import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.pylisa.FieldSensitivePointBasedHeapWithConvAs;
 import it.unive.pylisa.PyFrontend;
-import it.unive.pylisa.analysis.constants.ConstantPropagation;
+//import it.unive.ros.lisa.analysis.ConstantPropagation;
 import it.unive.pylisa.analysis.dataflow.rospropagation.RosTopic;
 import it.unive.ros.application.PythonROSNodeBuilder;
 import it.unive.ros.application.ROSApplication;
 import it.unive.ros.application.RosApplicationBuilder;
+import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.lisa.checks.semantics.ROSComputationGraphDumper;
 import it.unive.ros.models.rclpy.RosComputationalGraph;
 
@@ -34,7 +35,7 @@ public class RosTest {
          */
         Statement s;
         PyFrontend translator = new PyFrontend(
-                "test-lambda.py",
+                "ros-tests/action.py",
                 false);
         Program program = translator.toLiSAProgram();
 
@@ -42,7 +43,7 @@ public class RosTest {
         conf.workdir = "1-to-1-procedural-out";
         conf.serializeResults = true;
         conf.jsonOutput = true;
-        conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
+        conf.analysisGraphs = LiSAConfiguration.GraphType.NONE;
         conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
         conf.callGraph = new RTACallGraph();
         conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
@@ -57,14 +58,15 @@ public class RosTest {
         conf.semanticChecks.add(new ROSComputationGraphDumper(new RosComputationalGraph()));
         conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
         LiSA lisa = new LiSA(conf);
-        // lisa.run(program);
+        lisa.run(program);
 
         ROSApplication r = new RosApplicationBuilder()
                 .withNode(
                         new PythonROSNodeBuilder(
-                                "/Users/giacomozanatta/Projects/git-repos-downloader/repos/Select-ROS2/src/ros2/rclpy/rclpy/test/test_callback_group.py"))
+                                "ros-tests/action.py"))
                 .withWorkDir("out-test.py").build();
         r.dumpGraph();
+
     }
 
     @Test
