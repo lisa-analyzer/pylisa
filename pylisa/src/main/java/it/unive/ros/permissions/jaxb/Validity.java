@@ -5,18 +5,17 @@
 // Generated on: 2023.09.22 at 03:06:47 PM CEST 
 //
 
-
 package it.unive.ros.permissions.jaxb;
 
 import jakarta.xml.bind.annotation.*;
-
 import javax.xml.datatype.XMLGregorianCalendar;
 
-
 /**
- * <p>Java class for Validity complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * Java class for Validity complex type.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="Validity"&gt;
@@ -30,69 +29,55 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Validity", propOrder = {
-    "notBefore",
-    "notAfter"
+		"notBefore",
+		"notAfter"
 })
 public class Validity {
 
-    @XmlElement(name = "not_before", required = true)
-    @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar notBefore;
-    @XmlElement(name = "not_after", required = true)
-    @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar notAfter;
+	@XmlElement(name = "not_before", required = true)
+	@XmlSchemaType(name = "dateTime")
+	protected XMLGregorianCalendar notBefore;
+	@XmlElement(name = "not_after", required = true)
+	@XmlSchemaType(name = "dateTime")
+	protected XMLGregorianCalendar notAfter;
 
-    /**
-     * Gets the value of the notBefore property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link XMLGregorianCalendar }
-     *     
-     */
-    public XMLGregorianCalendar getNotBefore() {
-        return notBefore;
-    }
+	/**
+	 * Gets the value of the notBefore property.
+	 * 
+	 * @return possible object is {@link XMLGregorianCalendar }
+	 */
+	public XMLGregorianCalendar getNotBefore() {
+		return notBefore;
+	}
 
-    /**
-     * Sets the value of the notBefore property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link XMLGregorianCalendar }
-     *     
-     */
-    public void setNotBefore(XMLGregorianCalendar value) {
-        this.notBefore = value;
-    }
+	/**
+	 * Sets the value of the notBefore property.
+	 * 
+	 * @param value allowed object is {@link XMLGregorianCalendar }
+	 */
+	public void setNotBefore(XMLGregorianCalendar value) {
+		this.notBefore = value;
+	}
 
-    /**
-     * Gets the value of the notAfter property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link XMLGregorianCalendar }
-     *     
-     */
-    public XMLGregorianCalendar getNotAfter() {
-        return notAfter;
-    }
+	/**
+	 * Gets the value of the notAfter property.
+	 * 
+	 * @return possible object is {@link XMLGregorianCalendar }
+	 */
+	public XMLGregorianCalendar getNotAfter() {
+		return notAfter;
+	}
 
-    /**
-     * Sets the value of the notAfter property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link XMLGregorianCalendar }
-     *     
-     */
-    public void setNotAfter(XMLGregorianCalendar value) {
-        this.notAfter = value;
-    }
+	/**
+	 * Sets the value of the notAfter property.
+	 * 
+	 * @param value allowed object is {@link XMLGregorianCalendar }
+	 */
+	public void setNotAfter(XMLGregorianCalendar value) {
+		this.notAfter = value;
+	}
 
 }

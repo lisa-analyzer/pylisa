@@ -13,7 +13,6 @@ import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.pylisa.FieldSensitivePointBasedHeapWithConvAs;
 import it.unive.pylisa.PyFrontend;
-//import it.unive.ros.lisa.analysis.ConstantPropagation;
 import it.unive.pylisa.analysis.dataflow.rospropagation.RosTopic;
 import it.unive.ros.application.PythonROSNodeBuilder;
 import it.unive.ros.application.ROSApplication;
@@ -21,135 +20,134 @@ import it.unive.ros.application.RosApplicationBuilder;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.lisa.checks.semantics.ROSComputationGraphDumper;
 import it.unive.ros.models.rclpy.RosComputationalGraph;
-
 import org.junit.Test;
 
 public class RosTest {
 
-    @Test
-    public void test() throws Exception {
-        /*
-         * PyFrontend translator = new PyFrontend(
-         * "/Users/giacomozanatta/Projects/git-repos-downloader/repos/mechaship/mechaship_teleop/mechaship_teleop/mechaship_teleop_keyboard.py",
-         * false);
-         */
-        Statement s;
-        PyFrontend translator = new PyFrontend(
-                "ros-tests/action.py",
-                false);
-        Program program = translator.toLiSAProgram();
+	@Test
+	public void test() throws Exception {
+		/*
+		 * PyFrontend translator = new PyFrontend(
+		 * "/Users/giacomozanatta/Projects/git-repos-downloader/repos/mechaship/mechaship_teleop/mechaship_teleop/mechaship_teleop_keyboard.py",
+		 * false);
+		 */
+		Statement s;
+		PyFrontend translator = new PyFrontend(
+				"ros-tests/action.py",
+				false);
+		Program program = translator.toLiSAProgram();
 
-        LiSAConfiguration conf = new LiSAConfiguration();
-        conf.workdir = "ros-test-outputs/1-to-1-procedural-out";
-        conf.serializeResults = true;
-        conf.jsonOutput = true;
-        conf.analysisGraphs = LiSAConfiguration.GraphType.NONE;
-        conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
-        conf.callGraph = new RTACallGraph();
-        conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
-        conf.optimize = false;
-        // conf.openCallPolicy
-        // conf.semanticChecks.add(new ROSComputationGraphDumper(new
-        // RosComputationalGraph()));
-        FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs().bottom();
-        TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
-        // conf.interproceduralAnalysis = new ContextBasedAnalysis();
-        ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
-        conf.semanticChecks.add(new ROSComputationGraphDumper(new RosComputationalGraph()));
-        conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
-        LiSA lisa = new LiSA(conf);
-        lisa.run(program);
+		LiSAConfiguration conf = new LiSAConfiguration();
+		conf.workdir = "ros-test-outputs/1-to-1-procedural-out";
+		conf.serializeResults = true;
+		conf.jsonOutput = true;
+		conf.analysisGraphs = LiSAConfiguration.GraphType.NONE;
+		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+		conf.callGraph = new RTACallGraph();
+		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
+		conf.optimize = false;
+		// conf.openCallPolicy
+		// conf.semanticChecks.add(new ROSComputationGraphDumper(new
+		// RosComputationalGraph()));
+		FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs().bottom();
+		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
+		// conf.interproceduralAnalysis = new ContextBasedAnalysis();
+		ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
+		conf.semanticChecks.add(new ROSComputationGraphDumper(new RosComputationalGraph()));
+		conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
+		LiSA lisa = new LiSA(conf);
+		lisa.run(program);
 
-        ROSApplication r = new RosApplicationBuilder()
-                .withNode(
-                        new PythonROSNodeBuilder(
-                                "ros-tests/action.py"))
-                .withWorkDir("ros-test-outputs/out-test.py").build();
-        r.dumpGraph();
+		ROSApplication r = new RosApplicationBuilder()
+				.withNode(
+						new PythonROSNodeBuilder(
+								"ros-tests/action.py"))
+				.withWorkDir("ros-test-outputs/out-test.py").build();
+		r.dumpGraph();
 
-    }
+	}
 
-    @Test
-    public void testConstant() throws Exception {
-        PyFrontend translator = new PyFrontend("ros-tests/constant-prop.py", false);
+	@Test
+	public void testConstant() throws Exception {
+		PyFrontend translator = new PyFrontend("ros-tests/constant-prop.py", false);
 
-        Program program = translator.toLiSAProgram();
+		Program program = translator.toLiSAProgram();
 
-        LiSAConfiguration conf = new LiSAConfiguration();
-        conf.workdir = "ros-test-outputs/test-ros-output-constant";
-        conf.serializeResults = true;
-        conf.jsonOutput = true;
-        conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
-        // conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
-        conf.callGraph = new RTACallGraph();
-        // conf.openCallPolicy
-        RosTopic rt = new RosTopic();
-        conf.optimize = false;
-        FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs();
-        TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
-        conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
-        ConstantPropagation constantPropagation = new ConstantPropagation();
-        // conf.semanticChecks.add(new
-        // it.unive.pylisa.checks.semantics.RosTopicDeclarationFinder());
-        ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
-        conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
-        LiSA lisa = new LiSA(conf);
-        lisa.run(program);
-    }
+		LiSAConfiguration conf = new LiSAConfiguration();
+		conf.workdir = "ros-test-outputs/test-ros-output-constant";
+		conf.serializeResults = true;
+		conf.jsonOutput = true;
+		conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
+		// conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+		conf.callGraph = new RTACallGraph();
+		// conf.openCallPolicy
+		RosTopic rt = new RosTopic();
+		conf.optimize = false;
+		FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs();
+		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
+		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+		ConstantPropagation constantPropagation = new ConstantPropagation();
+		// conf.semanticChecks.add(new
+		// it.unive.pylisa.checks.semantics.RosTopicDeclarationFinder());
+		ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
+		conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
+		LiSA lisa = new LiSA(conf);
+		lisa.run(program);
+	}
 
-    @Test
-    public void testLoopExpr() throws Exception {
-        PyFrontend translator = new PyFrontend("ros-tests/test_flow.py", false);
+	@Test
+	public void testLoopExpr() throws Exception {
+		PyFrontend translator = new PyFrontend("ros-tests/test_flow.py", false);
 
-        Program program = translator.toLiSAProgram();
+		Program program = translator.toLiSAProgram();
 
-        LiSAConfiguration conf = new LiSAConfiguration();
-        conf.workdir = "ros-test-outputs/test-ros-output-flow";
-        conf.serializeResults = true;
-        conf.jsonOutput = true;
-        conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
-        // conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
-        conf.callGraph = new RTACallGraph();
-        // conf.openCallPolicy
-        RosTopic rt = new RosTopic();
-        conf.optimize = false;
-        FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs();
-        TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
-        conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
-        ConstantPropagation constantPropagation = new ConstantPropagation();
-        // conf.semanticChecks.add(new
-        // it.unive.pylisa.checks.semantics.RosTopicDeclarationFinder());
-        ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
-        conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
-        LiSA lisa = new LiSA(conf);
-        lisa.run(program);
-    }
+		LiSAConfiguration conf = new LiSAConfiguration();
+		conf.workdir = "ros-test-outputs/test-ros-output-flow";
+		conf.serializeResults = true;
+		conf.jsonOutput = true;
+		conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
+		// conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+		conf.callGraph = new RTACallGraph();
+		// conf.openCallPolicy
+		RosTopic rt = new RosTopic();
+		conf.optimize = false;
+		FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs();
+		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
+		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+		ConstantPropagation constantPropagation = new ConstantPropagation();
+		// conf.semanticChecks.add(new
+		// it.unive.pylisa.checks.semantics.RosTopicDeclarationFinder());
+		ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
+		conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
+		LiSA lisa = new LiSA(conf);
+		lisa.run(program);
+	}
 
-    @Test
-    public void testSet() throws Exception {
-        PyFrontend translator = new PyFrontend("../test.py", false);
+	@Test
+	public void testSet() throws Exception {
+		PyFrontend translator = new PyFrontend("../test.py", false);
 
-        Program program = translator.toLiSAProgram();
+		Program program = translator.toLiSAProgram();
 
-        LiSAConfiguration conf = new LiSAConfiguration();
-        conf.workdir = "ros-test-outputs/test-ros-output-set";
-        conf.serializeResults = true;
-        conf.jsonOutput = true;
-        conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
-        // conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
-        conf.callGraph = new RTACallGraph();
-        // conf.openCallPolicy
-        RosTopic rt = new RosTopic();
-        conf.optimize = false;
-        FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs();
-        TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
-        conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
-        ConstantPropagation constantPropagation = new ConstantPropagation();
-        // conf.semanticChecks.add(new
-        // it.unive.pylisa.checks.semantics.RosTopicDeclarationFinder());
-        ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
-        conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
-        LiSA lisa = new LiSA(conf);
-        lisa.run(program);
-    }
+		LiSAConfiguration conf = new LiSAConfiguration();
+		conf.workdir = "ros-test-outputs/test-ros-output-set";
+		conf.serializeResults = true;
+		conf.jsonOutput = true;
+		conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
+		// conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+		conf.callGraph = new RTACallGraph();
+		// conf.openCallPolicy
+		RosTopic rt = new RosTopic();
+		conf.optimize = false;
+		FieldSensitivePointBasedHeapWithConvAs heap = new FieldSensitivePointBasedHeapWithConvAs();
+		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
+		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+		ConstantPropagation constantPropagation = new ConstantPropagation();
+		// conf.semanticChecks.add(new
+		// it.unive.pylisa.checks.semantics.RosTopicDeclarationFinder());
+		ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
+		conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
+		LiSA lisa = new LiSA(conf);
+		lisa.run(program);
+	}
 }

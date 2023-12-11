@@ -1,18 +1,5 @@
 package it.unive.pylisa.libraries;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.apache.commons.lang3.tuple.Pair;
-
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.program.CodeUnit;
 import it.unive.lisa.program.CompilationUnit;
@@ -25,6 +12,17 @@ import it.unive.pylisa.antlr.LibraryDefinitionLexer;
 import it.unive.pylisa.antlr.LibraryDefinitionParser;
 import it.unive.pylisa.libraries.loader.Library;
 import it.unive.pylisa.libraries.loader.Runtime;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class LibrarySpecificationProvider {
 
@@ -108,7 +106,8 @@ public class LibrarySpecificationProvider {
 
 		Library library = AVAILABLE_LIBS.get(name);
 		if (library == null)
-			// TODO do we log? could also be imports to other files under analysis...
+			// TODO do we log? could also be imports to other files under
+			// analysis...
 			return;
 		CodeUnit lib = library.toLiSAUnit(program, new AtomicReference<>(hierarchyRoot));
 		library.populateUnit(init, hierarchyRoot, lib);

@@ -1,12 +1,10 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.util.Collections;
-import java.util.Set;
-
-import org.apache.commons.collections4.SetUtils;
-
 import it.unive.lisa.analysis.lattices.SetLattice;
 import it.unive.lisa.util.collections.CollectionsDiffBuilder;
+import java.util.Collections;
+import java.util.Set;
+import org.apache.commons.collections4.SetUtils;
 
 public class Names extends SetLattice<Names, String> implements Comparable<Names> {
 
@@ -37,7 +35,7 @@ public class Names extends SetLattice<Names, String> implements Comparable<Names
 	public Names top() {
 		return TOP;
 	}
-	
+
 	@Override
 	public Names bottom() {
 		return BOTTOM;
@@ -63,15 +61,15 @@ public class Names extends SetLattice<Names, String> implements Comparable<Names
 			return builder.getOnlyFirst().iterator().next().compareTo(builder.getOnlySecond().iterator().next());
 		return 0;
 	}
-	
+
 	public Names intersection(Names other) {
 		return new Names(SetUtils.intersection(elements, other.elements), false);
 	}
-	
+
 	public Names symmetricDifference(Names other) {
 		return new Names(SetUtils.disjunction(elements, other.elements), false);
 	}
-	
+
 	public Names difference(Names other) {
 		return new Names(SetUtils.difference(elements, other.elements), false);
 	}

@@ -5,22 +5,21 @@
 // Generated on: 2023.09.22 at 03:06:47 PM CEST 
 //
 
-
 package it.unive.ros.permissions.jaxb;
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
-
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
- * <p>Java class for Rule complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * Java class for Rule complex type.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="Rule"&gt;
@@ -42,133 +41,110 @@ import java.util.List;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Rule", propOrder = {
-    "domains",
-    "publish",
-    "subscribe",
-    "relay"
+		"domains",
+		"publish",
+		"subscribe",
+		"relay"
 })
 public class Rule {
 
-    @XmlElement(required = true)
-    protected DomainIdSet domains;
-    protected List<Criteria> publish;
-    protected List<Criteria> subscribe;
-    protected List<Criteria> relay;
+	@XmlElement(required = true)
+	protected DomainIdSet domains;
+	protected List<Criteria> publish;
+	protected List<Criteria> subscribe;
+	protected List<Criteria> relay;
 
-    /**
-     * Gets the value of the domains property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link DomainIdSet }
-     *     
-     */
-    public DomainIdSet getDomains() {
-        return domains;
-    }
+	/**
+	 * Gets the value of the domains property.
+	 * 
+	 * @return possible object is {@link DomainIdSet }
+	 */
+	public DomainIdSet getDomains() {
+		return domains;
+	}
 
-    /**
-     * Sets the value of the domains property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link DomainIdSet }
-     *     
-     */
-    public void setDomains(DomainIdSet value) {
-        this.domains = value;
-    }
+	/**
+	 * Sets the value of the domains property.
+	 * 
+	 * @param value allowed object is {@link DomainIdSet }
+	 */
+	public void setDomains(DomainIdSet value) {
+		this.domains = value;
+	}
 
-    /**
-     * Gets the value of the publish property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the publish property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getPublish().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Criteria }
-     * 
-     * 
-     */
-    public List<Criteria> getPublish() {
-        if (publish == null) {
-            publish = new ArrayList<Criteria>();
-        }
-        return this.publish;
-    }
+	/**
+	 * Gets the value of the publish property.
+	 * <p>
+	 * This accessor method returns a reference to the live list, not a
+	 * snapshot. Therefore any modification you make to the returned list will
+	 * be present inside the JAXB object. This is why there is not a
+	 * <CODE>set</CODE> method for the publish property.
+	 * <p>
+	 * For example, to add a new item, do as follows:
+	 * 
+	 * <pre>
+	 * getPublish().add(newItem);
+	 * </pre>
+	 * <p>
+	 * Objects of the following type(s) are allowed in the list {@link Criteria
+	 * }
+	 */
+	public List<Criteria> getPublish() {
+		if (publish == null) {
+			publish = new ArrayList<Criteria>();
+		}
+		return this.publish;
+	}
 
-    /**
-     * Gets the value of the subscribe property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the subscribe property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getSubscribe().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Criteria }
-     * 
-     * 
-     */
-    public List<Criteria> getSubscribe() {
-        if (subscribe == null) {
-            subscribe = new ArrayList<Criteria>();
-        }
-        return this.subscribe;
-    }
+	/**
+	 * Gets the value of the subscribe property.
+	 * <p>
+	 * This accessor method returns a reference to the live list, not a
+	 * snapshot. Therefore any modification you make to the returned list will
+	 * be present inside the JAXB object. This is why there is not a
+	 * <CODE>set</CODE> method for the subscribe property.
+	 * <p>
+	 * For example, to add a new item, do as follows:
+	 * 
+	 * <pre>
+	 * getSubscribe().add(newItem);
+	 * </pre>
+	 * <p>
+	 * Objects of the following type(s) are allowed in the list {@link Criteria
+	 * }
+	 */
+	public List<Criteria> getSubscribe() {
+		if (subscribe == null) {
+			subscribe = new ArrayList<Criteria>();
+		}
+		return this.subscribe;
+	}
 
-    /**
-     * Gets the value of the relay property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the relay property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getRelay().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Criteria }
-     * 
-     * 
-     */
-    public List<Criteria> getRelay() {
-        if (relay == null) {
-            relay = new ArrayList<Criteria>();
-        }
-        return this.relay;
-    }
+	/**
+	 * Gets the value of the relay property.
+	 * <p>
+	 * This accessor method returns a reference to the live list, not a
+	 * snapshot. Therefore any modification you make to the returned list will
+	 * be present inside the JAXB object. This is why there is not a
+	 * <CODE>set</CODE> method for the relay property.
+	 * <p>
+	 * For example, to add a new item, do as follows:
+	 * 
+	 * <pre>
+	 * getRelay().add(newItem);
+	 * </pre>
+	 * <p>
+	 * Objects of the following type(s) are allowed in the list {@link Criteria
+	 * }
+	 */
+	public List<Criteria> getRelay() {
+		if (relay == null) {
+			relay = new ArrayList<Criteria>();
+		}
+		return this.relay;
+	}
 
 }

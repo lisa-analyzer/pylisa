@@ -1,9 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -32,6 +28,9 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PyAssign extends Assignment {
 
@@ -44,12 +43,12 @@ public class PyAssign extends Assignment {
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
 			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
-			InterproceduralAnalysis<A, H, V, T> interprocedural,
-			AnalysisState<A, H, V, T> state,
-			SymbolicExpression left,
-			SymbolicExpression right,
-			StatementStore<A, H, V, T> expressions)
-			throws SemanticException {
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					AnalysisState<A, H, V, T> state,
+					SymbolicExpression left,
+					SymbolicExpression right,
+					StatementStore<A, H, V, T> expressions)
+					throws SemanticException {
 		CodeLocation loc = getLocation();
 
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {

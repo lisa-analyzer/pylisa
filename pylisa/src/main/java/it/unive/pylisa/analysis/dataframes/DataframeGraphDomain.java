@@ -1,20 +1,5 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
@@ -106,9 +91,22 @@ import it.unive.pylisa.symbolic.operators.dataframes.ProjectRows;
 import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
-	
+
 	private static final Logger LOG = LogManager.getLogger(DataframeGraphDomain.class);
 
 	private static final SetLattice<NodeId> NO_IDS = new SetLattice<NodeId>().bottom();
@@ -1257,8 +1255,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			l = resolvePointers(left);
 			cstart = getRangeBound(l);
 		}
-		
-		if (!middle.constStack.isBottom()) 
+
+		if (!middle.constStack.isBottom())
 			rend = getRangeBound(middle.constStack);
 		else if (!topOrBottom(middle.pointers.lattice)) {
 			// column slice
@@ -1267,13 +1265,13 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				l = moveBackwards(right.graph, l);
 			cend = getRangeBound(m);
 		}
-		
+
 		Constant slice;
 		if (rstart != null && rend != null)
 			slice = new SliceConstant(rstart, rend, skip, pp.getLocation());
 		else
 			slice = new DataframeColumnSlice(new ColumnSlice(
-					rstart == null ? cstart : rstart, 
+					rstart == null ? cstart : rstart,
 					rend == null ? cend : rend, skip, l, m), pp.getLocation());
 		return new DataframeGraphDomain(
 				right.constants,
@@ -1478,7 +1476,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				right.pointers.setStack(NO_IDS),
 				right.operations);
 	}
-	
+
 	private static String getCaller() {
 		StackTraceElement[] trace = Thread.getAllStackTraces().get(Thread.currentThread());
 		// 0: java.lang.Thread.dumpThreads()

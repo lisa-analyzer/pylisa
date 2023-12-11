@@ -35,7 +35,8 @@ public class PyPower extends BinaryExpression {
 					StatementStore<A, H, V, T> expressions)
 					throws SemanticException {
 		TypeSystem types = getProgram().getTypes();
-		if (left.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType) && right.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType)) {
+		if (left.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType)
+				&& right.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType)) {
 			return state.smallStepSemantics(
 					new it.unive.lisa.symbolic.value.BinaryExpression(
 							getStaticType(),

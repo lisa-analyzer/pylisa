@@ -1,12 +1,5 @@
 package it.unive.pylisa.libraries;
 
-import java.util.Collection;
-import java.util.LinkedList;
-
-import it.unive.pylisa.libraries.loader.*;
-import it.unive.pylisa.libraries.loader.Runtime;
-import org.apache.commons.lang3.tuple.Pair;
-
 import it.unive.pylisa.antlr.LibraryDefinitionParser.ClassDefContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.FieldContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.FileContext;
@@ -17,6 +10,11 @@ import it.unive.pylisa.antlr.LibraryDefinitionParser.MethodContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.ParamContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.TypeContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParserBaseVisitor;
+import it.unive.pylisa.libraries.loader.*;
+import it.unive.pylisa.libraries.loader.Runtime;
+import java.util.Collection;
+import java.util.LinkedList;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisitor<Object> {
 
@@ -57,7 +55,8 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 			return new Parameter(name, type,
 					ctx.STAR() != null ? Parameter.ParameterType.VAR_ARGS
 							: ctx.POWER() != null ? Parameter.ParameterType.KW_ARGS
-									: ctx.AMP() != null ? Parameter.ParameterType.KW_ONLY : Parameter.ParameterType.STANDARD);
+									: ctx.AMP() != null ? Parameter.ParameterType.KW_ONLY
+											: Parameter.ParameterType.STANDARD);
 
 		Value def;
 		if (ctx.val.NONE() != null)
@@ -74,7 +73,8 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		return new Parameter(name, type, def,
 				ctx.STAR() != null ? Parameter.ParameterType.VAR_ARGS
 						: ctx.POWER() != null ? Parameter.ParameterType.KW_ARGS
-								: ctx.AMP() != null ? Parameter.ParameterType.KW_ONLY : Parameter.ParameterType.STANDARD);
+								: ctx.AMP() != null ? Parameter.ParameterType.KW_ONLY
+										: Parameter.ParameterType.STANDARD);
 	}
 
 	@Override

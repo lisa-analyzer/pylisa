@@ -130,7 +130,7 @@ public class AtomicBooleanSelection extends BooleanSelection<AtomicBooleanSelect
 			return cmp;
 		return cols.compareTo(other.cols);
 	}
-	
+
 	@Override
 	public Names extractColumnNames() {
 		return cols.extractColumnNames();

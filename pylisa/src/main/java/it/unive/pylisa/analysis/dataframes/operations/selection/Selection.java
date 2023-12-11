@@ -20,6 +20,6 @@ public abstract class Selection<S extends Selection<S>> implements BaseLattice<S
 	}
 
 	protected abstract int compareToSameClass(Selection<?> o);
-	
+
 	public abstract Names extractColumnNames() throws SemanticException;
 }

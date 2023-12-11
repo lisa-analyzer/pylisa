@@ -5,9 +5,7 @@
 // Generated on: 2023.09.22 at 03:06:47 PM CEST 
 //
 
-
 package it.unive.ros.permissions.jaxb;
-
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
@@ -15,9 +13,11 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
 
 /**
- * <p>Java class for PermissionsNode complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * Java class for PermissionsNode complex type.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="PermissionsNode"&gt;
@@ -30,40 +30,32 @@ import jakarta.xml.bind.annotation.XmlType;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "PermissionsNode", propOrder = {
-    "permissions"
+		"permissions"
 })
 public class PermissionsNode {
 
-    @XmlElement(required = true)
-    protected Permissions permissions;
+	@XmlElement(required = true)
+	protected Permissions permissions;
 
-    /**
-     * Gets the value of the permissions property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Permissions }
-     *     
-     */
-    public Permissions getPermissions() {
-        return permissions;
-    }
+	/**
+	 * Gets the value of the permissions property.
+	 * 
+	 * @return possible object is {@link Permissions }
+	 */
+	public Permissions getPermissions() {
+		return permissions;
+	}
 
-    /**
-     * Sets the value of the permissions property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Permissions }
-     *     
-     */
-    public void setPermissions(Permissions value) {
-        this.permissions = value;
-    }
+	/**
+	 * Sets the value of the permissions property.
+	 * 
+	 * @param value allowed object is {@link Permissions }
+	 */
+	public void setPermissions(Permissions value) {
+		this.permissions = value;
+	}
 
 }

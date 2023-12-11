@@ -24,13 +24,16 @@ public class PyNotEqual extends NotEqual {
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>, H extends HeapDomain<H>, V extends ValueDomain<V>, T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
-			InterproceduralAnalysis<A, H, V, T> interprocedural,
-			AnalysisState<A, H, V, T> state,
-			SymbolicExpression left,
-			SymbolicExpression right,
-			StatementStore<A, H, V, T> expressions)
-			throws SemanticException {
+	public <A extends AbstractState<A, H, V, T>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					AnalysisState<A, H, V, T> state,
+					SymbolicExpression left,
+					SymbolicExpression right,
+					StatementStore<A, H, V, T> expressions)
+					throws SemanticException {
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			AnalysisState<A, H, V, T> sem = PandasSemantics.compare(
 					state,

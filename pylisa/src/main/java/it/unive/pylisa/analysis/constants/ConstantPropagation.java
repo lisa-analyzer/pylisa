@@ -1,9 +1,5 @@
 package it.unive.pylisa.analysis.constants;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -34,13 +30,15 @@ import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
-import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.DictConstant;
 import it.unive.pylisa.symbolic.ListConstant;
 import it.unive.pylisa.symbolic.NoneConstant;
 import it.unive.pylisa.symbolic.operators.*;
 import it.unive.pylisa.symbolic.operators.value.StringFormat;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class ConstantPropagation implements
@@ -261,12 +259,15 @@ public class ConstantPropagation implements
 	}
 
 	@Override
-	public ConstantPropagation evalTernaryExpression(TernaryOperator operator, ConstantPropagation left, ConstantPropagation middle, ConstantPropagation right, ProgramPoint pp) throws SemanticException {
+	public ConstantPropagation evalTernaryExpression(TernaryOperator operator, ConstantPropagation left,
+			ConstantPropagation middle, ConstantPropagation right, ProgramPoint pp) throws SemanticException {
 		if (operator instanceof DictPut)
 			return dictPut(left, middle, right, pp);
 		return top();
 	}
-	private ConstantPropagation dictPut(ConstantPropagation left, ConstantPropagation middle, ConstantPropagation right, ProgramPoint pp) {
+
+	private ConstantPropagation dictPut(ConstantPropagation left, ConstantPropagation middle, ConstantPropagation right,
+			ProgramPoint pp) {
 		if (left.isTop() || middle.isTop() || right.isTop()) {
 			return top();
 		}

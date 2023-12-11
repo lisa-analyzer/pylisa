@@ -1,10 +1,5 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
-
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
@@ -13,6 +8,10 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.pylisa.cfg.type.PyClassType;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ClassDef {
 	private final boolean root;
@@ -112,7 +111,7 @@ public class ClassDef {
 			else
 				unit.addGlobal(field);
 		}
-		
+
 		return unit;
 	}
 }

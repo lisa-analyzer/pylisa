@@ -1,11 +1,10 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
-import java.util.Optional;
-
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation.Kind;
+import java.util.Optional;
 
 public class Transform<S extends Selection<S>> extends DataframeOperation {
 

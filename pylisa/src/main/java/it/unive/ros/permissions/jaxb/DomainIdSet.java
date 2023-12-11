@@ -5,20 +5,19 @@
 // Generated on: 2023.09.22 at 03:06:47 PM CEST 
 //
 
-
 package it.unive.ros.permissions.jaxb;
 
 import jakarta.xml.bind.annotation.*;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
- * <p>Java class for DomainIdSet complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * Java class for DomainIdSet complex type.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="DomainIdSet"&gt;
@@ -32,49 +31,41 @@ import java.util.List;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "DomainIdSet", propOrder = {
-    "idOrIdRange"
+		"idOrIdRange"
 })
 public class DomainIdSet {
 
-    @XmlElements({
-        @XmlElement(name = "id", type = BigInteger.class),
-        @XmlElement(name = "id_range", type = DomainIdRange.class)
-    })
-    protected List<Object> idOrIdRange;
+	@XmlElements({
+			@XmlElement(name = "id", type = BigInteger.class),
+			@XmlElement(name = "id_range", type = DomainIdRange.class)
+	})
+	protected List<Object> idOrIdRange;
 
-    /**
-     * Gets the value of the idOrIdRange property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the idOrIdRange property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getIdOrIdRange().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link BigInteger }
-     * {@link DomainIdRange }
-     * 
-     * 
-     */
-    public List<Object> getIdOrIdRange() {
-        if (idOrIdRange == null) {
-            idOrIdRange = new ArrayList<Object>();
-        }
-        return this.idOrIdRange;
-    }
+	/**
+	 * Gets the value of the idOrIdRange property.
+	 * <p>
+	 * This accessor method returns a reference to the live list, not a
+	 * snapshot. Therefore any modification you make to the returned list will
+	 * be present inside the JAXB object. This is why there is not a
+	 * <CODE>set</CODE> method for the idOrIdRange property.
+	 * <p>
+	 * For example, to add a new item, do as follows:
+	 * 
+	 * <pre>
+	 * getIdOrIdRange().add(newItem);
+	 * </pre>
+	 * <p>
+	 * Objects of the following type(s) are allowed in the list
+	 * {@link BigInteger } {@link DomainIdRange }
+	 */
+	public List<Object> getIdOrIdRange() {
+		if (idOrIdRange == null) {
+			idOrIdRange = new ArrayList<Object>();
+		}
+		return this.idOrIdRange;
+	}
 
 }

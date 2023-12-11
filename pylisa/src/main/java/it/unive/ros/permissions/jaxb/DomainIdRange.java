@@ -5,21 +5,20 @@
 // Generated on: 2023.09.22 at 03:06:47 PM CEST 
 //
 
-
 package it.unive.ros.permissions.jaxb;
 
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.annotation.*;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
- * <p>Java class for DomainIdRange complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * Java class for DomainIdRange complex type.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="DomainIdRange"&gt;
@@ -36,59 +35,52 @@ import java.util.List;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "DomainIdRange", propOrder = {
-    "content"
+		"content"
 })
 public class DomainIdRange {
 
-    @XmlElementRefs({
-        @XmlElementRef(name = "min", type = JAXBElement.class, required = false),
-        @XmlElementRef(name = "max", type = JAXBElement.class, required = false)
-    })
-    protected List<JAXBElement<BigInteger>> content;
+	@XmlElementRefs({
+			@XmlElementRef(name = "min", type = JAXBElement.class, required = false),
+			@XmlElementRef(name = "max", type = JAXBElement.class, required = false)
+	})
+	protected List<JAXBElement<BigInteger>> content;
 
-    /**
-     * Gets the rest of the content model. 
-     * 
-     * <p>
-     * You are getting this "catch-all" property because of the following reason: 
-     * The field name "Max" is used by two different parts of a schema. See: 
-     * line 94 of file:/Users/giacomo/Downloads/dds_security_permissions.xsd.xml
-     * line 92 of file:/Users/giacomo/Downloads/dds_security_permissions.xsd.xml
-     * <p>
-     * To get rid of this property, apply a property customization to one 
-     * of both of the following declarations to change their names: 
-     * Gets the value of the content property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the content property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getContent().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link JAXBElement }{@code <}{@link BigInteger }{@code >}
-     * {@link JAXBElement }{@code <}{@link BigInteger }{@code >}
-     * 
-     * 
-     */
-    public List<JAXBElement<BigInteger>> getContent() {
-        if (content == null) {
-            content = new ArrayList<JAXBElement<BigInteger>>();
-        }
-        return this.content;
-    }
+	/**
+	 * Gets the rest of the content model.
+	 * <p>
+	 * You are getting this "catch-all" property because of the following
+	 * reason: The field name "Max" is used by two different parts of a schema.
+	 * See: line 94 of
+	 * file:/Users/giacomo/Downloads/dds_security_permissions.xsd.xml line 92 of
+	 * file:/Users/giacomo/Downloads/dds_security_permissions.xsd.xml
+	 * <p>
+	 * To get rid of this property, apply a property customization to one of
+	 * both of the following declarations to change their names: Gets the value
+	 * of the content property.
+	 * <p>
+	 * This accessor method returns a reference to the live list, not a
+	 * snapshot. Therefore any modification you make to the returned list will
+	 * be present inside the JAXB object. This is why there is not a
+	 * <CODE>set</CODE> method for the content property.
+	 * <p>
+	 * For example, to add a new item, do as follows:
+	 * 
+	 * <pre>
+	 * getContent().add(newItem);
+	 * </pre>
+	 * <p>
+	 * Objects of the following type(s) are allowed in the list
+	 * {@link JAXBElement }{@code <}{@link BigInteger }{@code >}
+	 * {@link JAXBElement }{@code <}{@link BigInteger }{@code >}
+	 */
+	public List<JAXBElement<BigInteger>> getContent() {
+		if (content == null) {
+			content = new ArrayList<JAXBElement<BigInteger>>();
+		}
+		return this.content;
+	}
 
 }

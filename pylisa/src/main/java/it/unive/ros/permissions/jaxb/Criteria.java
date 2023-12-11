@@ -5,9 +5,7 @@
 // Generated on: 2023.09.22 at 03:06:47 PM CEST 
 //
 
-
 package it.unive.ros.permissions.jaxb;
-
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
@@ -15,9 +13,11 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
 
 /**
- * <p>Java class for Criteria complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * Java class for Criteria complex type.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="Criteria"&gt;
@@ -32,8 +32,6 @@ import jakarta.xml.bind.annotation.XmlType;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Criteria", propOrder = {
@@ -41,82 +39,64 @@ import jakarta.xml.bind.annotation.XmlType;
 })
 public class Criteria {
 
-    @XmlElement(required = true)
-    protected TopicExpressionList topics;
-    protected PartitionExpressionList partitions;
-    @XmlElement(name = "data_tags")
-    protected DataTags dataTags;
+	@XmlElement(required = true)
+	protected TopicExpressionList topics;
+	protected PartitionExpressionList partitions;
+	@XmlElement(name = "data_tags")
+	protected DataTags dataTags;
 
-    /**
-     * Gets the value of the topics property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link TopicExpressionList }
-     *     
-     */
-    public TopicExpressionList getTopics() {
-        return topics;
-    }
+	/**
+	 * Gets the value of the topics property.
+	 * 
+	 * @return possible object is {@link TopicExpressionList }
+	 */
+	public TopicExpressionList getTopics() {
+		return topics;
+	}
 
-    /**
-     * Sets the value of the topics property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link TopicExpressionList }
-     *     
-     */
-    public void setTopics(TopicExpressionList value) {
-        this.topics = value;
-    }
+	/**
+	 * Sets the value of the topics property.
+	 * 
+	 * @param value allowed object is {@link TopicExpressionList }
+	 */
+	public void setTopics(TopicExpressionList value) {
+		this.topics = value;
+	}
 
-    /**
-     * Gets the value of the partitions property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link PartitionExpressionList }
-     *     
-     */
-    public PartitionExpressionList getPartitions() {
-        return partitions;
-    }
+	/**
+	 * Gets the value of the partitions property.
+	 * 
+	 * @return possible object is {@link PartitionExpressionList }
+	 */
+	public PartitionExpressionList getPartitions() {
+		return partitions;
+	}
 
-    /**
-     * Sets the value of the partitions property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link PartitionExpressionList }
-     *     
-     */
-    public void setPartitions(PartitionExpressionList value) {
-        this.partitions = value;
-    }
+	/**
+	 * Sets the value of the partitions property.
+	 * 
+	 * @param value allowed object is {@link PartitionExpressionList }
+	 */
+	public void setPartitions(PartitionExpressionList value) {
+		this.partitions = value;
+	}
 
-    /**
-     * Gets the value of the dataTags property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link DataTags }
-     *     
-     */
-    public DataTags getDataTags() {
-        return dataTags;
-    }
+	/**
+	 * Gets the value of the dataTags property.
+	 * 
+	 * @return possible object is {@link DataTags }
+	 */
+	public DataTags getDataTags() {
+		return dataTags;
+	}
 
-    /**
-     * Sets the value of the dataTags property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link DataTags }
-     *     
-     */
-    public void setDataTags(DataTags value) {
-        this.dataTags = value;
-    }
+	/**
+	 * Sets the value of the dataTags property.
+	 * 
+	 * @param value allowed object is {@link DataTags }
+	 */
+	public void setDataTags(DataTags value) {
+		this.dataTags = value;
+	}
 
 }

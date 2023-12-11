@@ -1,8 +1,7 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Objects;
-
 import it.unive.pylisa.cfg.type.PyClassType;
+import java.util.Objects;
 
 public class LibType implements Type {
 	private final String name;

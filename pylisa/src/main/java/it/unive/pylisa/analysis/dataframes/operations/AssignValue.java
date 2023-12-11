@@ -17,7 +17,7 @@ public class AssignValue<R extends RowSelection<R>, C extends ColumnSelection<C>
 		this.selection = selection;
 		this.value = value;
 	}
-	
+
 	public DataframeSelection<R, C> getSelection() {
 		return selection;
 	}

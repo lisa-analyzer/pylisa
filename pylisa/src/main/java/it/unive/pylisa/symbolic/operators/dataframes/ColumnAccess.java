@@ -1,13 +1,12 @@
 package it.unive.pylisa.symbolic.operators.dataframes;
 
-import java.util.Collections;
-import java.util.Set;
-
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import java.util.Collections;
+import java.util.Set;
 
 public class ColumnAccess implements BinaryOperator {
 
@@ -30,7 +29,8 @@ public class ColumnAccess implements BinaryOperator {
 						&& t.equals(PyClassType.lookup(LibrarySpecificationProvider.LIST))
 						&& t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference())))
 			return Collections.emptySet();
-		if (right.stream().anyMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference())))
+		if (right.stream()
+				.anyMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference())))
 			return Collections.singleton(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF));
 		return Collections.singleton(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES));
 	}

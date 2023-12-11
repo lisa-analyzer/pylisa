@@ -1,12 +1,5 @@
 package it.unive.pylisa.checks;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import it.unive.lisa.AnalysisExecutionException;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.AnalyzedCFG;
@@ -51,6 +44,12 @@ import it.unive.pylisa.analysis.dataframes.operations.Keys;
 import it.unive.pylisa.analysis.dataframes.operations.ReadFromFile;
 import it.unive.pylisa.analysis.dataframes.operations.SelectionOperation;
 import it.unive.pylisa.analysis.dataframes.operations.Transform;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class DataframeStructureConstructor implements SemanticCheck<
 		SimpleAbstractState<

@@ -131,7 +131,7 @@ public class BooleanSelectionExpression<L extends BooleanSelection<L>, R extends
 			return cmp;
 		return right.compareTo(other.right);
 	}
-	
+
 	@Override
 	public Names extractColumnNames() throws SemanticException {
 		return left.extractColumnNames().lub(right.extractColumnNames());

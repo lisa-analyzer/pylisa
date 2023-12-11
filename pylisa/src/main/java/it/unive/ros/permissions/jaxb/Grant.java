@@ -5,23 +5,20 @@
 // Generated on: 2023.09.22 at 03:06:47 PM CEST 
 //
 
-
 package it.unive.ros.permissions.jaxb;
-
 
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.annotation.*;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.xml.namespace.QName;
 
-
 /**
- * <p>Java class for Grant complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * Java class for Grant complex type.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="Grant"&gt;
@@ -43,223 +40,192 @@ import javax.xml.namespace.QName;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Grant", propOrder = {
-    "subjectName",
-    "validity",
-    "allowRuleOrDenyRule",
-    "_default"
+		"subjectName",
+		"validity",
+		"allowRuleOrDenyRule",
+		"_default"
 })
 public class Grant {
 
-    @XmlElement(name = "subject_name", required = true)
-    protected String subjectName;
-    @XmlElement(required = true)
-    protected Validity validity;
-    @XmlElementRefs({
-        @XmlElementRef(name = "allow_rule", type = JAXBElement.class, required = false),
-        @XmlElementRef(name = "deny_rule", type = JAXBElement.class, required = false)
-    })
-    protected List<JAXBElement<Rule>> allowRuleOrDenyRule;
-    @XmlElement(name = "default", required = true)
-    @XmlSchemaType(name = "string")
-    protected DefaultAction _default;
-    @XmlAttribute(name = "name", required = true)
-    protected String name;
+	@XmlElement(name = "subject_name", required = true)
+	protected String subjectName;
+	@XmlElement(required = true)
+	protected Validity validity;
+	@XmlElementRefs({
+			@XmlElementRef(name = "allow_rule", type = JAXBElement.class, required = false),
+			@XmlElementRef(name = "deny_rule", type = JAXBElement.class, required = false)
+	})
+	protected List<JAXBElement<Rule>> allowRuleOrDenyRule;
+	@XmlElement(name = "default", required = true)
+	@XmlSchemaType(name = "string")
+	protected DefaultAction _default;
+	@XmlAttribute(name = "name", required = true)
+	protected String name;
 
-    /**
-     * Gets the value of the subjectName property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getSubjectName() {
-        return subjectName;
-    }
+	/**
+	 * Gets the value of the subjectName property.
+	 * 
+	 * @return possible object is {@link String }
+	 */
+	public String getSubjectName() {
+		return subjectName;
+	}
 
-    /**
-     * Sets the value of the subjectName property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setSubjectName(String value) {
-        this.subjectName = value;
-    }
+	/**
+	 * Sets the value of the subjectName property.
+	 * 
+	 * @param value allowed object is {@link String }
+	 */
+	public void setSubjectName(String value) {
+		this.subjectName = value;
+	}
 
-    /**
-     * Gets the value of the validity property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Validity }
-     *     
-     */
-    public Validity getValidity() {
-        return validity;
-    }
+	/**
+	 * Gets the value of the validity property.
+	 * 
+	 * @return possible object is {@link Validity }
+	 */
+	public Validity getValidity() {
+		return validity;
+	}
 
-    /**
-     * Sets the value of the validity property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Validity }
-     *     
-     */
-    public void setValidity(Validity value) {
-        this.validity = value;
-    }
+	/**
+	 * Sets the value of the validity property.
+	 * 
+	 * @param value allowed object is {@link Validity }
+	 */
+	public void setValidity(Validity value) {
+		this.validity = value;
+	}
 
-    /**
-     * Gets the value of the allowRuleOrDenyRule property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the allowRuleOrDenyRule property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getAllowRuleOrDenyRule().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link JAXBElement }{@code <}{@link Rule }{@code >}
-     * {@link JAXBElement }{@code <}{@link Rule }{@code >}
-     * 
-     * 
-     */
-    public List<JAXBElement<Rule>> getAllowRuleOrDenyRule() {
-        if (allowRuleOrDenyRule == null) {
-            allowRuleOrDenyRule = new ArrayList<JAXBElement<Rule>>();
-        }
-        return this.allowRuleOrDenyRule;
-    }
+	/**
+	 * Gets the value of the allowRuleOrDenyRule property.
+	 * <p>
+	 * This accessor method returns a reference to the live list, not a
+	 * snapshot. Therefore any modification you make to the returned list will
+	 * be present inside the JAXB object. This is why there is not a
+	 * <CODE>set</CODE> method for the allowRuleOrDenyRule property.
+	 * <p>
+	 * For example, to add a new item, do as follows:
+	 * 
+	 * <pre>
+	 * getAllowRuleOrDenyRule().add(newItem);
+	 * </pre>
+	 * <p>
+	 * Objects of the following type(s) are allowed in the list
+	 * {@link JAXBElement }{@code <}{@link Rule }{@code >} {@link JAXBElement
+	 * }{@code <}{@link Rule }{@code >}
+	 */
+	public List<JAXBElement<Rule>> getAllowRuleOrDenyRule() {
+		if (allowRuleOrDenyRule == null) {
+			allowRuleOrDenyRule = new ArrayList<JAXBElement<Rule>>();
+		}
+		return this.allowRuleOrDenyRule;
+	}
 
-    /**
-     * Gets the value of the default property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link DefaultAction }
-     *     
-     */
-    public DefaultAction getDefault() {
-        return _default;
-    }
+	/**
+	 * Gets the value of the default property.
+	 * 
+	 * @return possible object is {@link DefaultAction }
+	 */
+	public DefaultAction getDefault() {
+		return _default;
+	}
 
-    /**
-     * Sets the value of the default property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link DefaultAction }
-     *     
-     */
-    public void setDefault(DefaultAction value) {
-        this._default = value;
-    }
+	/**
+	 * Sets the value of the default property.
+	 * 
+	 * @param value allowed object is {@link DefaultAction }
+	 */
+	public void setDefault(DefaultAction value) {
+		this._default = value;
+	}
 
-    /**
-     * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getName() {
-        return name;
-    }
+	/**
+	 * Gets the value of the name property.
+	 * 
+	 * @return possible object is {@link String }
+	 */
+	public String getName() {
+		return name;
+	}
 
-    /**
-     * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setName(String value) {
-        this.name = value;
-    }
+	/**
+	 * Sets the value of the name property.
+	 * 
+	 * @param value allowed object is {@link String }
+	 */
+	public void setName(String value) {
+		this.name = value;
+	}
 
-    public boolean isPublisherAllowed(String topicName) {
-        if (this.getDefault() == DefaultAction.ALLOW) {
-            // check if the topic is not in deny rule.
-            for (JAXBElement<Rule> rule : this.getAllowRuleOrDenyRule()) {
-                if (rule.getName().equals(new QName("deny_rule"))) {
-                     Rule r = rule.getValue();
-                    for (Criteria c : r.getPublish()) {
-                        for (String topic : c.getTopics().getTopic()) {
-                            if (topic.equals(topicName)) {
-                                return false;
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            for (JAXBElement<Rule> rule : this.getAllowRuleOrDenyRule()) {
-                if (rule.getName().equals(new QName("allow_rule"))) {
-                    Rule r = rule.getValue();
-                    for (Criteria c : r.getPublish()) {
-                        for (String topic : c.getTopics().getTopic()) {
-                            if (topic.equals(topicName)) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+	public boolean isPublisherAllowed(String topicName) {
+		if (this.getDefault() == DefaultAction.ALLOW) {
+			// check if the topic is not in deny rule.
+			for (JAXBElement<Rule> rule : this.getAllowRuleOrDenyRule()) {
+				if (rule.getName().equals(new QName("deny_rule"))) {
+					Rule r = rule.getValue();
+					for (Criteria c : r.getPublish()) {
+						for (String topic : c.getTopics().getTopic()) {
+							if (topic.equals(topicName)) {
+								return false;
+							}
+						}
+					}
+				}
+			}
+		} else {
+			for (JAXBElement<Rule> rule : this.getAllowRuleOrDenyRule()) {
+				if (rule.getName().equals(new QName("allow_rule"))) {
+					Rule r = rule.getValue();
+					for (Criteria c : r.getPublish()) {
+						for (String topic : c.getTopics().getTopic()) {
+							if (topic.equals(topicName)) {
+								return true;
+							}
+						}
+					}
+				}
+			}
+		}
 
-        return false;
-    }
+		return false;
+	}
 
-    public boolean isSubscriptionAllowed(String topicName) {
-       if (this.getDefault() == DefaultAction.ALLOW) {
-            // check if the topic is not in deny rule.
-            for (JAXBElement<Rule> rule : this.getAllowRuleOrDenyRule()) {
-                if (rule.getName().equals(new QName("deny_rule"))) {
-                     Rule r = rule.getValue();
-                    for (Criteria c : r.getSubscribe()) {
-                        for (String topic : c.getTopics().getTopic()) {
-                            if (topic.equals(topicName)) {
-                                return false;
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            for (JAXBElement<Rule> rule : this.getAllowRuleOrDenyRule()) {
-                if (rule.getName().equals(new QName("allow_rule"))) {
-                    Rule r = rule.getValue();
-                    for (Criteria c : r.getSubscribe()) {
-                        for (String topic : c.getTopics().getTopic()) {
-                            if (topic.equals(topicName)) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+	public boolean isSubscriptionAllowed(String topicName) {
+		if (this.getDefault() == DefaultAction.ALLOW) {
+			// check if the topic is not in deny rule.
+			for (JAXBElement<Rule> rule : this.getAllowRuleOrDenyRule()) {
+				if (rule.getName().equals(new QName("deny_rule"))) {
+					Rule r = rule.getValue();
+					for (Criteria c : r.getSubscribe()) {
+						for (String topic : c.getTopics().getTopic()) {
+							if (topic.equals(topicName)) {
+								return false;
+							}
+						}
+					}
+				}
+			}
+		} else {
+			for (JAXBElement<Rule> rule : this.getAllowRuleOrDenyRule()) {
+				if (rule.getName().equals(new QName("allow_rule"))) {
+					Rule r = rule.getValue();
+					for (Criteria c : r.getSubscribe()) {
+						for (String topic : c.getTopics().getTopic()) {
+							if (topic.equals(topicName)) {
+								return true;
+							}
+						}
+					}
+				}
+			}
+		}
 
-        return false;
-    }
+		return false;
+	}
 
 }

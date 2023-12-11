@@ -19,18 +19,24 @@ import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.symbolic.operators.value.StringConstructor;
 
 public class PyStringConstructor extends it.unive.lisa.program.cfg.statement.UnaryExpression {
-    
-    public PyStringConstructor(CFG cfg, SourceCodeLocation location, Expression exp) {
-        super(cfg, location, "str", exp);
-    }
-    
-    @Override
-    public <A extends AbstractState<A, H, V, T>, H extends HeapDomain<H>, V extends ValueDomain<V>, T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state, SymbolicExpression expr, StatementStore<A, H, V, T> expressions) throws SemanticException {
-        TypeSystem types = getProgram().getTypes();
-        if (expr.getRuntimeTypes(types).stream().anyMatch(Type::isStringType) || expr.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType) ) {
-            return state.smallStepSemantics(
-                    new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
-        }
-            return null;
-    }
+
+	public PyStringConstructor(CFG cfg, SourceCodeLocation location, Expression exp) {
+		super(cfg, location, "str", exp);
+	}
+
+	@Override
+	public <A extends AbstractState<A, H, V, T>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(
+					InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state,
+					SymbolicExpression expr, StatementStore<A, H, V, T> expressions) throws SemanticException {
+		TypeSystem types = getProgram().getTypes();
+		if (expr.getRuntimeTypes(types).stream().anyMatch(Type::isStringType)
+				|| expr.getRuntimeTypes(types).stream().anyMatch(Type::isNumericType)) {
+			return state.smallStepSemantics(
+					new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
+		}
+		return null;
+	}
 }

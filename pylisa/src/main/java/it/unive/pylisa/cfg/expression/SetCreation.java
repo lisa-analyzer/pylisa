@@ -1,8 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -24,6 +21,8 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.SetConstant;
 import it.unive.pylisa.symbolic.operators.SetAdd;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SetCreation extends NaryExpression {
 
@@ -32,12 +31,15 @@ public class SetCreation extends NaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractState<A, H, V, T>, H extends HeapDomain<H>, V extends ValueDomain<V>, T extends TypeDomain<T>> AnalysisState<A, H, V, T> expressionSemantics(
-			InterproceduralAnalysis<A, H, V, T> interprocedural,
-			AnalysisState<A, H, V, T> state,
-			ExpressionSet<SymbolicExpression>[] params,
-			StatementStore<A, H, V, T> expressions)
-			throws SemanticException {
+	public <A extends AbstractState<A, H, V, T>,
+			H extends HeapDomain<H>,
+			V extends ValueDomain<V>,
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> expressionSemantics(
+					InterproceduralAnalysis<A, H, V, T> interprocedural,
+					AnalysisState<A, H, V, T> state,
+					ExpressionSet<SymbolicExpression>[] params,
+					StatementStore<A, H, V, T> expressions)
+					throws SemanticException {
 		CodeLocation loc = getLocation();
 		SetConstant set = new SetConstant(loc);
 
