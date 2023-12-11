@@ -40,7 +40,7 @@ public class RosTest {
         Program program = translator.toLiSAProgram();
 
         LiSAConfiguration conf = new LiSAConfiguration();
-        conf.workdir = "1-to-1-procedural-out";
+        conf.workdir = "ros-test-outputs/1-to-1-procedural-out";
         conf.serializeResults = true;
         conf.jsonOutput = true;
         conf.analysisGraphs = LiSAConfiguration.GraphType.NONE;
@@ -64,7 +64,7 @@ public class RosTest {
                 .withNode(
                         new PythonROSNodeBuilder(
                                 "ros-tests/action.py"))
-                .withWorkDir("out-test.py").build();
+                .withWorkDir("ros-test-outputs/out-test.py").build();
         r.dumpGraph();
 
     }
@@ -76,7 +76,7 @@ public class RosTest {
         Program program = translator.toLiSAProgram();
 
         LiSAConfiguration conf = new LiSAConfiguration();
-        conf.workdir = "test-ros-output-constant";
+        conf.workdir = "ros-test-outputs/test-ros-output-constant";
         conf.serializeResults = true;
         conf.jsonOutput = true;
         conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
@@ -104,7 +104,7 @@ public class RosTest {
         Program program = translator.toLiSAProgram();
 
         LiSAConfiguration conf = new LiSAConfiguration();
-        conf.workdir = "test-ros-output-flow";
+        conf.workdir = "ros-test-outputs/test-ros-output-flow";
         conf.serializeResults = true;
         conf.jsonOutput = true;
         conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
@@ -132,7 +132,7 @@ public class RosTest {
         Program program = translator.toLiSAProgram();
 
         LiSAConfiguration conf = new LiSAConfiguration();
-        conf.workdir = "test-ros-output-set";
+        conf.workdir = "ros-test-outputs/test-ros-output-set";
         conf.serializeResults = true;
         conf.jsonOutput = true;
         conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
