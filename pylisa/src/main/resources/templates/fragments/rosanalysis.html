@@ -1,0 +1,112 @@
+<div class="tab-pane active" id="pills-rosanalysis" role="tabpanel" aria-labelledby="pills-rosanalysis-tab" th:fragment="ros-analysis">
+    <div class="row">
+        <div class="container col-2 sub-menu pt-4 pl-4">
+            <div><a href="#">Computational Graph</a></div>
+            <div><a href="#Nodes">Nodes</a></div>
+            <ul>
+                <th:block th:each="node : ${graph.getNodes()}">
+                    <li><a th:href="${'#Node-' + node.getName()}">[[${node.getName()}]]</a></li>
+                </th:block>
+
+            </ul>
+        </div>
+
+        <div class="col-10">
+
+
+
+    <div class="pt-4 pl-4">
+        <div>
+            <div><h2>Computational Graph</h2></div>
+            <div>
+                <img th:src="${svgPath}" />
+            </div>
+
+        </div>
+        <a id="Nodes"></a>
+        <h2>Nodes</h2>
+        <div class="mt-2 ml-4">
+            <th:block th:each="node : ${graph.getNodes()}">
+                <div class="ml-4">
+                    <a th:id="${'Node-' + node.getName()}"></a>
+                    <div><h3>[[${node.getName()}]]</h3></div>
+                    <div  class="ml-4"><h4>Publishers:</h4>
+                        <th:block th:switch="${node.getPublisherTopics().size()}">
+                            <th:block th:case="'0'">
+                                <ul style="list-style-type:none;">
+                                    <li>No Publishers on this Node</li>
+                                </ul>
+                            </th:block>
+                            <th:block th:case="*">
+                                <ul>
+                                    <th:block th:each="t : ${node.getPublisherTopics()}">
+                                        <li>[[${t.getName()}]]</li>
+                                    </th:block>
+                                </ul>
+                            </th:block>
+                        </th:block>
+                    </div>
+                </div>
+                <div class="ml-4"><h4>Subscriptions:</h4>
+                    <th:block th:switch="${node.getSubscribersTopics().size()}">
+                        <th:block th:case="'0'">
+                            <ul style="list-style-type:none;">
+                                <li>No Subscriptions on this Node</li>
+                            </ul>
+                        </th:block>
+                        <th:block th:case="*">
+                            <ul>
+                                <th:block th:each="t : ${node.getSubscribersTopics()}">
+                                    <li>[[${t.getName()}]]</li>
+                                </th:block>
+                            </ul>
+                        </th:block>
+                    </th:block>
+                </div>
+                <div  class="ml-4">
+                    <h4>Generated permissions.xml</h4>
+                    <pre><code class="language-xml">[[${node.dumpPermissions()}]]</code></pre>
+                </div>
+            </th:block>
+        </div>
+        <a id="Events"></a>
+        <h2>Events</h2>
+        <div class="mt-2 ml-4">
+            <th:block th:each="node : ${rosNetwork.getNetworkEntityContainers()}">
+
+                <div class="ml-4">
+                    <div><h3>[[${node.getName()}]]</h3></div>
+                    <th:block th:switch="${node.getProcessedEvents().size()}">
+                        <th:block th:case="'0'">
+                            <div>No events on this Node...</div>
+                    </th:block>
+                    <th:block th:case="*">
+                        <table class="table table-striped">
+                            <thead>
+
+                            <tr>
+                                <th scope="col">Channel</th>
+                                <th scope="col">Sender</th>
+                                <th scope="col">Message</th>
+                                <th scope="col">Triggered By</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <th:block th:each="event : ${node.getProcessedEvents()}">
+                                <tr>
+                                    <td>[[${event.getChannel().getID()}]]</td>
+                                    <td>[[${event.getInitiator().getContainer().getName()}]]</td>
+                                    <td>[[${event.getMessage().getMessage()}]]</td>
+                                    <td>Spontaneously</td>
+                                </tr>
+                            </th:block>
+                            </tbody>
+                        </table>
+                    </th:block>
+                </div>
+            </th:block>
+        </div>
+    </div>
+</div>
+    </div>
+</div>
