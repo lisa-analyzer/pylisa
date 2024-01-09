@@ -6,6 +6,6 @@ public class ServiceSubscription extends Subscription {
 			Topic topic,
 			String msgType,
 			String callbackFunction) {
-		super(node, topic, msgType, callbackFunction);
+		super(node, topic, msgType, null);
 	}
 }

@@ -51,15 +51,15 @@ public class CreatePublisher extends NaryExpression implements PluggableStatemen
 
 	/**
 	 * @param interprocedural the interprocedural analysis of the program to
-	 *                            analyze
+	 *                        analyze
 	 * @param state           the state where the expression is to be evaluated
 	 * @param params          the symbolic expressions representing the computed
-	 *                            values of the sub-expressions of this
-	 *                            expression
+	 *                        values of the sub-expressions of this
+	 *                        expression
 	 * @param expressions     the cache where analysis states of intermediate
-	 *                            expressions are stored and that can be
-	 *                            accessed to query for post-states of
-	 *                            parameters expressions
+	 *                        expressions are stored and that can be
+	 *                        accessed to query for post-states of
+	 *                        parameters expressions
 	 *
 	 * @return
 	 * 
@@ -77,50 +77,21 @@ public class CreatePublisher extends NaryExpression implements PluggableStatemen
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		Set<SymbolicExpression> exprSet = new HashSet<>();
-		// [AIG] self.namespace
-		AccessInstanceGlobal aigNS = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0],
-				"namespace");
-		// compute semantics
-		AnalysisState<A> aigSemanticsNS = aigNS.forwardSemantics(state, interprocedural, expressions);
+		AnalysisState<A> result = state.bottom();
 
-		// [AIG] self.node_name
-		AccessInstanceGlobal aigNodeName = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0],
-				"node_name");
-		// compute semantics
-		AnalysisState<
-				A> aigSemanticsNodeName = aigNodeName.forwardSemantics(aigSemanticsNS, interprocedural, expressions);
-		/*
-		 * 0. Create an empty Set of SymbolicExpressions 1. Get computed
-		 * expressions from the new analysis state 2. For every computed
-		 * expressions: a Rewrite the HeapState (ExpressionSet of
-		 * ValueExpression b. Then, for every SymbolicExpression of params[2] i.
-		 * add a new BinaryExpression (with StringFormat operator) to the set.
-		 * 3. assign the expression set to params[2]
-		 */
-		for (SymbolicExpression s : params[2]) {
-			for (SymbolicExpression eNS : aigSemanticsNS.getComputedExpressions()) {
-				ExpressionSet vesNS = state.getState().rewrite(eNS, st, state.getState());
-				for (SymbolicExpression eNodeName : aigSemanticsNodeName.getComputedExpressions()) {
-					ExpressionSet vesNodeName = state.getState().rewrite(eNodeName, st, state.getState());
-					for (SymbolicExpression veNS : vesNS) {
-						for (SymbolicExpression veNodeName : vesNodeName)
-							exprSet.add(new TernaryExpression(StringType.INSTANCE, s, veNS, veNodeName,
-									new ROSTopicNameExpansion(), getLocation()));
-					}
-				}
-			}
-		}
+		params[2] = SemanticsHelpers.nameExpansion(this, getSubExpressions()[0], params[2], interprocedural, state,
+				expressions);
 
-		params[2] = new ExpressionSet(exprSet);
 		PyClassType publisherClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_PUBLISHER);
 
 		PyNewObj publisherObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
 				publisherClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
 		AnalysisState<A> newPublisherAS = publisherObj.forwardSemanticsAux(interprocedural,
-				aigSemanticsNodeName, Arrays.copyOfRange(params, 1, params.length), expressions);
-		state = aigSemanticsNodeName.lub(newPublisherAS);
-		return state;
+				state, Arrays.copyOfRange(params, 1, params.length), expressions);
+
+		result =  result.lub(newPublisherAS);
+
+		return result;
 	}
 
 	@Override

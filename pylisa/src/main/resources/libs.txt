@@ -241,3 +241,71 @@ library rclpy:
             param srv_name type it.unive.lisa.program.type.StringType::INSTANCE
             param &qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
             param &callback_group type it.unive.lisa.type.Untyped::INSTANCE default none
+    class rclpy.action.client.ActionClient:
+        instance method ActionClient: it.unive.pylisa.libraries.rclpy.action.client.Init
+            libtype rclpy.action.client.ActionClient*
+            param self libtype rclpy.action.client.ActionClient*
+            param node libtype rclpy.node.Node*
+            param action_type type it.unive.lisa.type.Untyped::INSTANCE
+            param action_name type it.unive.lisa.program.type.StringType::INSTANCE
+            param &callback_group type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &goal_service_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &result_service_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &cancel_service_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &feedback_sub_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &status_sub_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+        instance method __init__: it.unive.pylisa.libraries.rclpy.action.client.Init
+            libtype rclpy.action.client.ActionClient*
+            param self libtype rclpy.action.client.ActionClient*
+            param node libtype rclpy.node.Node*
+            param action_type type it.unive.lisa.type.Untyped::INSTANCE
+            param action_name type it.unive.lisa.program.type.StringType::INSTANCE
+            param &callback_group type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &goal_service_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &result_service_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &cancel_service_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &feedback_sub_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &status_sub_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+    class rclpy.action.server.ActionServer:
+        instance method ActionServer: it.unive.pylisa.libraries.rclpy.action.server.Init
+            libtype rclpy.action.server.ActionServer*
+            param self libtype rclpy.action.server.ActionServer*
+            param node libtype rclpy.node.Node*
+            param action_type type it.unive.lisa.type.Untyped::INSTANCE
+            param action_name type it.unive.lisa.program.type.StringType::INSTANCE
+            param execute_callback type it.unive.lisa.type.Untyped::INSTANCE
+            param &callback_group type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &goal_callback type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &handle_accepted_callback type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &cancel_callback type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &goal_service_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &result_service_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &cancel_service_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &feedback_pub_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &status_pub_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &result_timeout type it.unive.lisa.type.Untyped::INSTANCE default none
+        instance method __init__: it.unive.pylisa.libraries.rclpy.action.server.Init
+            libtype rclpy.action.server.ActionServer*
+            param self libtype rclpy.action.server.ActionServer*
+            param node libtype rclpy.node.Node*
+            param action_type type it.unive.lisa.type.Untyped::INSTANCE
+            param action_name type it.unive.lisa.program.type.StringType::INSTANCE
+            param execute_callback type it.unive.lisa.type.Untyped::INSTANCE
+            param &callback_group type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &goal_callback type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &handle_accepted_callback type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &cancel_callback type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &goal_service_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &result_service_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &cancel_service_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &feedback_pub_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &status_pub_qos_profile type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &result_timeout type it.unive.lisa.type.Untyped::INSTANCE default none
+library pika:
+    location pika
+    method create_channel: it.unive.pylisa.libraries.pika.CreateChannel
+        libtype pika.Channel*
+    class pika.Channel:
+        instance method __init__: it.unive.pylisa.libraries.pika.ChannelInit
+            libtype pika.Channel*
+            param self libtype pika.Channel*

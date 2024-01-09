@@ -1,6 +1,22 @@
 package it.unive.ros.models.rclpy;
 
+import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.SimpleAbstractState;
+import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
+import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
+import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
+import it.unive.lisa.analysis.types.InferredTypes;
+import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
+import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.HeapExpression;
+import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
+import it.unive.ros.network.Network;
+import it.unive.ros.network.NetworkEntity;
+import it.unive.ros.network.NetworkEntityContainer;
+import it.unive.ros.network.NetworkEvent;
 import it.unive.ros.permissions.jaxb.*;
 import jakarta.xml.bind.JAXBElement;
 import java.math.BigInteger;
@@ -8,9 +24,10 @@ import java.util.*;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 
-public class Node {
+public class Node implements NetworkEntityContainer {
+	private ROSLisaNodeAnalysis lisaNodeAnalysis;
 	private Set<Service> services;
-
+	public InterproceduralAnalysis<? extends AbstractState<?>> interproceduralAnalysis;
 	private Set<Client> clients;
 	private Set<Subscription> subscribers;
 	private Set<Publisher> publishers;
@@ -18,6 +35,9 @@ public class Node {
 	private ScopeId scopeId;
 
 	private String namespace;
+
+
+	private Set<Action> actions;
 
 	public Node(
 			String name,
@@ -34,20 +54,49 @@ public class Node {
 		publishers = new HashSet<>();
 		services = new HashSet<>();
 		clients = new HashSet<>();
+		actions = new HashSet<>();
 		this.scopeId = scopeId;
 		this.namespace = namespace;
+	}
+
+	public Node(String nodeName, String namespace, Statement node, HeapExpression expr) {
+		this.name = nodeName;
+		subscribers = new HashSet<>();
+		publishers = new HashSet<>();
+		services = new HashSet<>();
+		clients = new HashSet<>();
+		actions = new HashSet<>();
+		this.scopeId = null;
+		this.namespace = namespace;
+
+	}
+
+	public Node(String nodeName, String namespace, Statement node, HeapExpression expr, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, InterproceduralAnalysis<? extends AbstractState<?>> interproceduralAnalysis) {
+		this.name = nodeName;
+		subscribers = new HashSet<>();
+		publishers = new HashSet<>();
+		services = new HashSet<>();
+		clients = new HashSet<>();
+		actions = new HashSet<>();
+		this.namespace = namespace;
+		this.lisaNodeAnalysis = new ROSLisaNodeAnalysis(expr, node, analysisState, interproceduralAnalysis);
+		var x = 3;
 	}
 
 	public void addNewSubscriber(
 			Topic topic,
 			String msgType,
 			String callBackFunction) {
-		subscribers.add(new Subscription(this, topic, msgType, callBackFunction));
+		subscribers.add(new Subscription(this, topic, msgType, null));
 	}
 
 	public void addNewService(
 			Service service) {
 		this.services.add(service);
+	}
+
+	public void addNewAction(Action action) {
+		this.actions.add(action);
 	}
 
 	public void addNewClient(
@@ -119,7 +168,13 @@ public class Node {
 	public String getName() {
 		return name;
 	}
-
+	public List<NetworkEvent> getProcessedEvents() {
+		List<NetworkEvent> result = new ArrayList<>();
+		for (NetworkEntity ne : this.getNetworkEntities()) {
+			result.addAll(ne.getProcessedEvents());
+		}
+		return result;
+	}
 	public String getNamespace() {
 		return namespace;
 	}
@@ -203,7 +258,7 @@ public class Node {
 		PermissionSatisfabilityNodeResult res = new PermissionSatisfabilityNodeResult(this);
 		Permissions perm = permissions.getPermissions();
 		Grant grant = perm.getGrant().get(0); // TODO: iterate over Grant, check
-												// grant name.
+		// grant name.
 		// We assume that:
 		// 1. there is at least one Grant
 		// 2. the first Grant contains the rules for this node.
@@ -277,4 +332,40 @@ public class Node {
 		JAXBPermissionsHelpers.store(this.toPermissionsNode(),
 				workDir + "/permissions/" + this.getName() + "/permissions.xml");
 	}
+
+	public String dumpPermissions()
+			throws Exception {
+		return JAXBPermissionsHelpers.toString(this.toPermissionsNode());
+	}
+
+	public Set<Action> getActions() {
+		return actions;
+	}
+
+	@Override
+	public String getID() {
+		return lisaNodeAnalysis.getSymbolicExpression().getCodeLocation().toString();
+	}
+
+	@Override
+	public List<NetworkEntity> getNetworkEntities() {
+		List<NetworkEntity> result = new ArrayList<>();
+		result.addAll(this.publishers);
+		result.addAll(this.subscribers);
+		return result;
+	}
+
+	@Override
+	public void addNetworkEntity(NetworkEntity ne) {
+		if (ne instanceof Publisher) {
+			this.publishers.add((Publisher) ne);
+		} else if (ne instanceof Subscription) {
+			this.subscribers.add((Subscription) ne);
+		}
+	}
+
+	public ROSLisaNodeAnalysis getLisaState() {
+		return lisaNodeAnalysis;
+	}
+
 }

@@ -30,6 +30,8 @@ dependencies {
     implementation 'io.github.lisa-analyzer:lisa-analyses:0.1b10-SNAPSHOT'
     implementation group: 'org.jdom', name: 'jdom2', version: '2.0.5'
     implementation group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '3.0.2'
+    implementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
+    testImplementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
     antlr 'org.antlr:antlr4:4.8-1'
     testImplementation 'junit:junit:4.12'
     implementation 'com.google.code.gson:gson:2.8.7'

@@ -13,17 +13,13 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
-import it.unive.lisa.program.type.StringType;
-import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.TernaryExpression;
+
 import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.ros.lisa.symbolic.operators.ros.ROSTopicNameExpansion;
+import it.unive.pylisa.libraries.rclpy.subscription.ROSSubscriptionCallback;
+
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 public class CreateSubscription extends NaryExpression implements PluggableStatement {
 	protected Statement st;
@@ -56,44 +52,21 @@ public class CreateSubscription extends NaryExpression implements PluggableState
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		Set<SymbolicExpression> exprSet = new HashSet<>();
-		// [AIG] self.namespace
-		AccessInstanceGlobal aigNS = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0],
-				"namespace");
-		// compute semantics
-		AnalysisState<A> aigSemanticsNS = aigNS.forwardSemantics(state, interprocedural, expressions);
+		AnalysisState<A> result = state.bottom();
 
-		// [AIG] self.node_name
-		AccessInstanceGlobal aigNodeName = new AccessInstanceGlobal(st.getCFG(), getLocation(), getSubExpressions()[0],
-				"node_name");
-		// compute semantics
-		AnalysisState<A> aigSemanticsNodeName = aigNodeName.forwardSemantics(aigSemanticsNS, interprocedural,
+		params[2] = SemanticsHelpers.nameExpansion(this, getSubExpressions()[0], params[2], interprocedural, state,
 				expressions);
-
-		for (SymbolicExpression s : params[2]) {
-			for (SymbolicExpression eNS : aigSemanticsNS.getComputedExpressions()) {
-				ExpressionSet vesNS = state.getState().rewrite(eNS, st, state.getState());
-				for (SymbolicExpression eNodeName : aigSemanticsNodeName.getComputedExpressions()) {
-					ExpressionSet vesNodeName = state.getState().rewrite(eNodeName, st, state.getState());
-					for (SymbolicExpression veNS : vesNS) {
-						for (SymbolicExpression veNodeName : vesNodeName)
-							exprSet.add(new TernaryExpression(StringType.INSTANCE, s, veNS, veNodeName,
-									new ROSTopicNameExpansion(), getLocation()));
-					}
-				}
-			}
-		}
-
-		params[2] = new ExpressionSet(exprSet);
 
 		PyClassType subscriptionClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_SUBSCRIPTION);
 
 		PyNewObj subscriptionObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
 				subscriptionClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
+		ROSSubscriptionCallback callback = new ROSSubscriptionCallback(this.getCFG(), (SourceCodeLocation) getLocation(), getSubExpressions()[4]);
+		callback.snooping(interprocedural, state, new ExpressionSet[]{params[4]}, expressions);
 		AnalysisState<A> newSubscriptionAS = subscriptionObj.forwardSemanticsAux(interprocedural,
-				aigSemanticsNodeName, Arrays.copyOfRange(params, 1, params.length), expressions);
-		state = aigSemanticsNodeName.lub(newSubscriptionAS);
-		return state;
+				state, Arrays.copyOfRange(params, 1, params.length), expressions);
+
+		return result.lub(newSubscriptionAS);
 	}
 
 	@Override

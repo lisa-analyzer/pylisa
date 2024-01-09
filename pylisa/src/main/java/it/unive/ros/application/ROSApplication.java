@@ -3,6 +3,7 @@ package it.unive.ros.application;
 import com.ibm.icu.impl.Pair;
 import it.unive.lisa.util.file.FileManager;
 import it.unive.ros.models.rclpy.*;
+import it.unive.ros.network.Network;
 import it.unive.ros.permissions.jaxb.Grant;
 import java.io.IOException;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ public class ROSApplication {
 	private String workDir;
 	private final RosComputationalGraph ROSComputationalGraph;
 
+	private final Network rosNetwork;
 	private Map<String, Grant> permissionsGrants = new HashMap<>();
 
 	public void setWorkDir(
@@ -29,6 +31,7 @@ public class ROSApplication {
 	public ROSApplication(
 			RosComputationalGraph ROSComputationalGraph) {
 		this.ROSComputationalGraph = ROSComputationalGraph;
+		this.rosNetwork = new Network();
 	}
 
 	public ROSApplication(
@@ -36,15 +39,18 @@ public class ROSApplication {
 			String workDir) {
 		this.ROSComputationalGraph = ROSComputationalGraph;
 		this.workDir = workDir;
+		this.rosNetwork = new Network();
 	}
 
 	public ROSApplication(
 			RosComputationalGraph ROSComputationalGraph,
 			Map<String, Grant> permissionsGrants,
+			Network rosNetwork,
 			String workDir) {
 		this.ROSComputationalGraph = ROSComputationalGraph;
 		this.workDir = workDir;
 		this.permissionsGrants = permissionsGrants;
+		this.rosNetwork = rosNetwork;
 	}
 
 	public RosComputationalGraph getROSComputationalGraph() {
@@ -57,17 +63,44 @@ public class ROSApplication {
 		}
 	}
 
+
 	public void dumpGraph() throws Exception {
 		StringBuilder dotGraph = new StringBuilder(
 				"digraph rosgraph {graph [pad=\"0.5\", nodesep=\"1\", ranksep=\"2\"];");
 		// DUMP Services
 		int i = 0;
+
 		for (Node n : ROSComputationalGraph.getNodes()) {
+			Set<Service> ss = n.getServices();
+			for (Service s : ss) {
+
+			}
 			for (Service s : n.getServices()) {
 				dotGraph.append("subgraph cluster_" + i
 						+ " { style=filled;fillcolor=white;color=blue;penwidth=2;fontcolor=blue;label=\"" + s.getName()
 						+ "\";").append("\"" + s.getName() + "Reply\"")
 						.append("[shape=box,style=filled,fillcolor=\"tan1\"];").append("\"" + s.getName() + "Request\"")
+						.append("[shape=box,style=filled];}");
+				i++;
+			}
+			for (Action a : n.getActions()) {
+				dotGraph.append("subgraph cluster_" + i
+						+ " { style=filled;fillcolor=white;color=seagreen3;penwidth=2;fontcolor=seagreen3;label=\"" + a.getName()
+						+ "\";").append("\"" + a.getName() + "/_action/send_goalReply\"")
+						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
+						.append("\"" + a.getName() + "/_action/send_goalRequest\"")
+						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
+						.append("\"" + a.getName() + "/_action/get_resultRequest\"")
+						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
+						.append("\"" + a.getName() + "/_action/get_resultReply\"")
+						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
+						.append("\"" + a.getName() + "/_action/cancel_goalRequest\"")
+						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
+						.append("\"" + a.getName() + "/_action/cancel_goalReply\"")
+						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
+						.append("\"" + a.getName() + "/_action/feedback\"")
+						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
+						.append("\"" + a.getName() + "/_action/status\"")
 						.append("[shape=box,style=filled];}");
 				i++;
 			}
@@ -396,4 +429,6 @@ public class ROSApplication {
 		FileManager.WriteAction w = writer -> writer.write(res.toString());
 		new FileManager(workDir).mkOutputFile("dir-graph-adj-matrix.txt", w);
 	}
+
+	public Network getRosNetwork() {return rosNetwork;}
 }

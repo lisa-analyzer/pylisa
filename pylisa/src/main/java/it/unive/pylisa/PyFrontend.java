@@ -12,6 +12,8 @@ import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotations;
+import it.unive.lisa.program.annotations.Annotation;
+import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
@@ -202,6 +204,7 @@ import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.program.annotations.TypeHintAnnotation;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -270,7 +273,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 *
 	 * @param filePath file path to a Python program
 	 * @param notebook whether or not {@code filePath} points to a Jupyter
-	 *                     notebook file
+	 *                 notebook file
 	 */
 	public PyFrontend(
 			String filePath,
@@ -284,10 +287,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 *
 	 * @param filePath  file path to a Python program
 	 * @param notebook  whether or not {@code filePath} points to a Jupyter
-	 *                      notebook file
+	 *                  notebook file
 	 * @param cellOrder sequence of the indexes of cells of a Jupyter notebook
-	 *                      in the order they are to be executed. Only valid if
-	 *                      {@code notebook} is {@code true}.
+	 *                  in the order they are to be executed. Only valid if
+	 *                  {@code notebook} is {@code true}.
 	 */
 	public PyFrontend(
 			String filePath,
@@ -302,10 +305,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 *
 	 * @param filePath  file path to a Python program
 	 * @param notebook  whether or not {@code filePath} points to a Jupyter
-	 *                      notebook file
+	 *                  notebook file
 	 * @param cellOrder list of the indexes of cells of a Jupyter notebook in
-	 *                      the order they are to be executed. Only valid if
-	 *                      {@code notebook} is {@code true}.
+	 *                  the order they are to be executed. Only valid if
+	 *                  {@code notebook} is {@code true}.
 	 */
 	public PyFrontend(
 			String filePath,
@@ -343,10 +346,48 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 * @return collection of @CFG in file
 	 *
 	 * @throws IOException            if {@code stream} to file cannot be read
-	 *                                    from or closed
+	 *                                from or closed
 	 * @throws AnalysisSetupException if something goes wrong while setting up
-	 *                                    the program
+	 *                                the program
 	 */
+
+	public Program toLiSAProgram(boolean clearClassType) throws IOException, AnalysisSetupException {
+		if (clearClassType) {
+			PyClassType.clearAll();
+		}
+		TypeSystem types = program.getTypes();
+		types.registerType(PyLambdaType.INSTANCE);
+		types.registerType(BoolType.INSTANCE);
+		types.registerType(StringType.INSTANCE);
+		types.registerType(Int32Type.INSTANCE);
+		types.registerType(Float32Type.INSTANCE);
+		types.registerType(NullType.INSTANCE);
+		types.registerType(VoidType.INSTANCE);
+		types.registerType(Untyped.INSTANCE);
+		LibrarySpecificationProvider.load(program);
+
+		log.info("Reading file... " + filePath);
+
+		Python3Lexer lexer = null;
+		try (InputStream stream = mkStream();) {
+			lexer = new Python3Lexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			throw new IOException("Unable to parse '" + filePath + "'", e);
+		}
+
+		Python3Parser parser = new Python3Parser(new CommonTokenStream(lexer));
+		ParseTree tree = parser.file_input();
+
+		visit(tree);
+
+		PyClassType.all().forEach(types::registerType);
+
+		for (CFG cm : program.getAllCFGs())
+			if (cm.getDescriptor().getName().equals(INSTRUMENTED_MAIN_FUNCTION_NAME))
+				program.addEntryPoint(cm);
+
+		return program;
+	}
 
 	public Program toLiSAProgram() throws IOException, AnalysisSetupException {
 		log.info("PyToCFG setup...");
@@ -464,8 +505,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 			if (visited != null) {
 				@SuppressWarnings("unchecked")
-				Triple<Statement, NodeList<CFG, Statement, Edge>,
-						Statement> st = (Triple<Statement, NodeList<CFG, Statement, Edge>, Statement>) visited;
+				Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> st = (Triple<Statement, NodeList<CFG, Statement, Edge>, Statement>) visited;
 				currentCFG.getNodeList().mergeWith(st.getMiddle());
 				if (last_stmt == null)
 					// this is the first instruction
@@ -657,14 +697,21 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	@Override
 	public Parameter visitTypedarg(
 			TypedargContext ctx) {
-		if (ctx.tfpdef().test() != null)
-			throw new UnsupportedStatementException();
+		Annotation typeHints;
+		if (ctx.tfpdef().test() != null) {
+			Expression e = visitTest(ctx.tfpdef().test());
+			typeHints = new Annotation("$typeHint",
+					Collections.singletonList(new AnnotationMember("$typeHint", new TypeHintAnnotation(e))));
+		} else {
+			typeHints = new Annotation("$typeHint"); // empty typeHint annotation.
+		}
 		if (ctx.test() == null)
-			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText());
+			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText(), Untyped.INSTANCE, null,
+					new Annotations(typeHints));
 		else
 			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText(), Untyped.INSTANCE,
 					visitTest(ctx.test()),
-					new Annotations());
+					new Annotations(typeHints));
 	}
 
 	@Override
@@ -1329,8 +1376,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 				if (parsed != null) {
 					@SuppressWarnings("unchecked")
-					Triple<Statement, NodeList<CFG, Statement, Edge>,
-							Statement> st = (Triple<Statement, NodeList<CFG, Statement, Edge>, Statement>) parsed;
+					Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> st = (Triple<Statement, NodeList<CFG, Statement, Edge>, Statement>) parsed;
 					block.mergeWith(st.getMiddle());
 					if (first == null)
 						// this is the first instruction
@@ -1483,55 +1529,55 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		int nExpr = ctx.expr().size();
 		Expression result = null;
 		switch (nExpr) {
-		case 1:
-			result = visitExpr(ctx.expr(0));
-			break;
-		case 2:
-			Comp_opContext operator = ctx.comp_op(0);
-			Expression left = visitExpr(ctx.expr(0));
-			Expression right = visitExpr(ctx.expr(1));
-			if (operator.EQUALS() != null)
-				result = new PyEquals(currentCFG, getLocation(ctx), left, right);
+			case 1:
+				result = visitExpr(ctx.expr(0));
+				break;
+			case 2:
+				Comp_opContext operator = ctx.comp_op(0);
+				Expression left = visitExpr(ctx.expr(0));
+				Expression right = visitExpr(ctx.expr(1));
+				if (operator.EQUALS() != null)
+					result = new PyEquals(currentCFG, getLocation(ctx), left, right);
 
-			// Python greater (>)
-			if (operator.GREATER_THAN() != null) {
-				result = new PyGreaterThan(currentCFG, getLocation(ctx), left, right);
-			}
-			// Python greater equal (>=)
-			if (operator.GT_EQ() != null)
-				result = new PyGreaterOrEqual(currentCFG, getLocation(ctx), left, right);
+				// Python greater (>)
+				if (operator.GREATER_THAN() != null) {
+					result = new PyGreaterThan(currentCFG, getLocation(ctx), left, right);
+				}
+				// Python greater equal (>=)
+				if (operator.GT_EQ() != null)
+					result = new PyGreaterOrEqual(currentCFG, getLocation(ctx), left, right);
 
-			// Python in (in)
-			if (operator.IN() != null)
-				result = new PyIn(currentCFG, getLocation(ctx), left, right);
+				// Python in (in)
+				if (operator.IN() != null)
+					result = new PyIn(currentCFG, getLocation(ctx), left, right);
 
-			// Python is (is)
-			if (operator.IS() != null)
-				result = new PyIs(currentCFG, getLocation(ctx), left, right);
+				// Python is (is)
+				if (operator.IS() != null)
+					result = new PyIs(currentCFG, getLocation(ctx), left, right);
 
-			// Python less (<)
-			if (operator.LESS_THAN() != null)
-				result = new PyLessThan(currentCFG, getLocation(ctx), left, right);
+				// Python less (<)
+				if (operator.LESS_THAN() != null)
+					result = new PyLessThan(currentCFG, getLocation(ctx), left, right);
 
-			// Python less equal (<=)
-			if (operator.LT_EQ() != null)
-				result = new PyLessOrEqual(currentCFG, getLocation(ctx), left, right);
+				// Python less equal (<=)
+				if (operator.LT_EQ() != null)
+					result = new PyLessOrEqual(currentCFG, getLocation(ctx), left, right);
 
-			// Python not (not)
-			if (operator.NOT() != null)
-				result = new Not(currentCFG, getLocation(ctx), left);
+				// Python not (not)
+				if (operator.NOT() != null)
+					result = new Not(currentCFG, getLocation(ctx), left);
 
-			// Python not equals (<>)
-			if (operator.NOT_EQ_1() != null)
-				result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
+				// Python not equals (<>)
+				if (operator.NOT_EQ_1() != null)
+					result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
 
-			// Python not equals (!=)
-			if (operator.NOT_EQ_2() != null)
-				result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
+				// Python not equals (!=)
+				if (operator.NOT_EQ_2() != null)
+					result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
 
-			break;
-		default:
-			throw new UnsupportedStatementException();
+				break;
+			default:
+				throw new UnsupportedStatementException();
 		}
 
 		return result;

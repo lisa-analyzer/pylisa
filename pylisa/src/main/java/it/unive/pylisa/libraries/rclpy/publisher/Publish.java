@@ -31,16 +31,15 @@ public class Publish extends UnaryExpression implements PluggableStatement {
 	protected Publish(
 			CFG cfg,
 			CodeLocation location,
-			String constructName,
 			Expression param) {
-		super(cfg, location, constructName, param);
+		super(cfg, location, "publish", param);
 	}
 
 	public static Publish build(
 			CFG cfg,
 			CodeLocation location,
-			Expression param) {
-		return new Publish(cfg, location, "publish", param);
+			Expression[] param) {
+		return new Publish(cfg, location, param[0]);
 	}
 
 	@Override

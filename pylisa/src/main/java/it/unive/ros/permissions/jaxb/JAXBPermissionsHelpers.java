@@ -44,6 +44,19 @@ public class JAXBPermissionsHelpers {
 		jaxbMarshaller.marshal(new ObjectFactory().createDds(permissions), new FileOutputStream(file));
 	}
 
+	public static String toString(
+			PermissionsNode permissions)
+			throws JAXBException,
+			IOException {
+		Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+		jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+		jaxbMarshaller.setProperty(Marshaller.JAXB_NO_NAMESPACE_SCHEMA_LOCATION,
+				"http://www.omg.org/spec/DDS-SECURITY/20170901/omg_shared_ca_permissions.xsd");
+		StringWriter sw = new StringWriter();
+		jaxbMarshaller.marshal(new ObjectFactory().createDds(permissions), sw);
+		return sw.toString();
+	}
+
 	static void toROSPermissions() {
 
 	}

@@ -16,6 +16,7 @@ import it.unive.ros.application.exceptions.ROSNodeBuildException;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.lisa.checks.semantics.ROSComputationGraphDumper;
 import it.unive.ros.models.rclpy.RosComputationalGraph;
+import it.unive.ros.network.Network;
 import it.unive.ros.permissions.jaxb.Grant;
 import it.unive.ros.permissions.jaxb.JAXBPermissionsHelpers;
 import it.unive.ros.permissions.jaxb.PermissionsNode;
@@ -23,13 +24,17 @@ import jakarta.xml.bind.JAXBException;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RosApplicationBuilder {
 	private String workDir = "ros-app-output";
 	private final ArrayList<Program> programs = new ArrayList<>();
-	private final ROSComputationGraphDumper rosGraphDumper = new ROSComputationGraphDumper(new RosComputationalGraph());
+	Network n = new Network();
+	private final ROSComputationGraphDumper rosGraphDumper = new ROSComputationGraphDumper(new RosComputationalGraph(), n);
 	private final Map<String, Grant> permissionsGrants = new HashMap<>();
+	private final List<ROSNodeBuilder> nodes = new ArrayList<>();
+	private final List<String> fileNames = new ArrayList<>();
 
 	public RosApplicationBuilder() {
 	}
@@ -37,7 +42,8 @@ public class RosApplicationBuilder {
 	public RosApplicationBuilder withNode(
 			ROSNodeBuilder rosNodeBuilder)
 			throws ROSNodeBuildException {
-		programs.add(rosNodeBuilder.getLiSAProgram());
+		nodes.add(rosNodeBuilder);
+		// programs.add(rosNodeBuilder.getLiSAProgram());
 		return this;
 	}
 
@@ -63,11 +69,15 @@ public class RosApplicationBuilder {
 		// build nodes
 		try {
 			LiSA liSA = new LiSA(getLiSAConfiguration());
-			liSA.run(programs.toArray(new Program[0]));
+			for (ROSNodeBuilder node : nodes) {
+				Program p = node.getLiSAProgram();
+				liSA.run(p);
+			}
+			// liSA.run(programs.toArray(new Program[0]));
 		} catch (Exception e) {
 			throw new ROSApplicationBuildException(e);
 		}
-		return new ROSApplication(rosGraphDumper.getRosGraph(), permissionsGrants, workDir);
+		return new ROSApplication(rosGraphDumper.getRosGraph(), permissionsGrants, rosGraphDumper.getNetwork(), workDir);
 	}
 
 	protected LiSAConfiguration getLiSAConfiguration() {

@@ -120,24 +120,25 @@ public class PyTernaryOperator extends Expression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		AnalysisState<A> postCondition = condition.forwardSemantics(entryState, interprocedural, expressions);
-		for (SymbolicExpression cond : postCondition.getComputedExpressions()) {
+		for (SymbolicExpression cond : entryState.getState().rewrite(postCondition.getComputedExpressions(), this,
+				entryState.getState())) {
 			UnaryExpression negated = new UnaryExpression(cond.getStaticType(), cond, LogicalNegation.INSTANCE,
 					cond.getCodeLocation());
 			switch (postCondition.satisfies(cond, this)) {
-			case BOTTOM:
-				return entryState.bottom();
-			case NOT_SATISFIED:
-				return ifFalse.forwardSemantics(postCondition.assume(cond, condition, ifTrue), interprocedural,
-						expressions);
-			case SATISFIED:
-				return ifTrue.forwardSemantics(postCondition.assume(negated, condition, ifFalse), interprocedural,
-						expressions);
-			case UNKNOWN:
-				return ifTrue
-						.forwardSemantics(postCondition.assume(cond, condition, ifTrue), interprocedural, expressions)
-						.lub(ifFalse.forwardSemantics(postCondition.assume(negated, condition, ifFalse),
-								interprocedural,
-								expressions));
+				case BOTTOM:
+					return entryState.bottom();
+				case NOT_SATISFIED:
+					return ifFalse.forwardSemantics(postCondition.assume(cond, condition, ifTrue), interprocedural,
+							expressions);
+				case SATISFIED:
+					return ifTrue.forwardSemantics(postCondition.assume(negated, condition, ifFalse), interprocedural,
+							expressions);
+				case UNKNOWN:
+					return ifTrue
+							.forwardSemantics(postCondition.assume(cond, condition, ifTrue), interprocedural, expressions)
+							.lub(ifFalse.forwardSemantics(postCondition.assume(negated, condition, ifFalse),
+									interprocedural,
+									expressions));
 			}
 		}
 

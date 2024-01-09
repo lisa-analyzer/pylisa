@@ -20,6 +20,7 @@ import it.unive.ros.application.RosApplicationBuilder;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.lisa.checks.semantics.ROSComputationGraphDumper;
 import it.unive.ros.models.rclpy.RosComputationalGraph;
+import it.unive.ros.network.Network;
 import org.junit.Test;
 
 public class RosTest {
@@ -31,7 +32,6 @@ public class RosTest {
 		 * "/Users/giacomozanatta/Projects/git-repos-downloader/repos/mechaship/mechaship_teleop/mechaship_teleop/mechaship_teleop_keyboard.py",
 		 * false);
 		 */
-		Statement s;
 		PyFrontend translator = new PyFrontend(
 				"ros-tests/action.py",
 				false);
@@ -54,7 +54,7 @@ public class RosTest {
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		// conf.interproceduralAnalysis = new ContextBasedAnalysis();
 		ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
-		conf.semanticChecks.add(new ROSComputationGraphDumper(new RosComputationalGraph()));
+		conf.semanticChecks.add(new ROSComputationGraphDumper(new RosComputationalGraph(), new Network()));
 		conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
@@ -127,6 +127,15 @@ public class RosTest {
 	}
 
 	@Test
+	public void testTypedArgs() throws Exception {
+		PyFrontend translator = new PyFrontend("ros-tests/typedargs/typed.py", false);
+
+		Program program = translator.toLiSAProgram();
+
+		new LiSA(RosTestHelpers.getLisaConf("typedargs/typed.py")).run(program);
+	}
+
+	@Test
 	public void testSet() throws Exception {
 		PyFrontend translator = new PyFrontend("../test.py", false);
 
@@ -153,5 +162,33 @@ public class RosTest {
 		conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
+	}
+
+	@Test
+	public void testTwoFiles() throws Exception {
+		PyFrontend translator1 = new PyFrontend("ros-tests/two-nodes/first_file.py", false);
+		Program program1 = translator1.toLiSAProgram();
+		PyFrontend translator2 = new PyFrontend("ros-tests/two-nodes/second_file.py", false);
+		Program program2 = translator2.toLiSAProgram();
+		LiSAConfiguration conf = new LiSAConfiguration();
+		conf.workdir = "ros-test-outputs/two-files";
+		conf.serializeResults = true;
+		conf.jsonOutput = true;
+		conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
+		// conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+		conf.callGraph = new RTACallGraph();
+		// conf.openCallPolicy
+		conf.optimize = false;
+		PyFieldSensitivePointBasedHeap heap = (PyFieldSensitivePointBasedHeap) new PyFieldSensitivePointBasedHeap()
+				.bottom();
+		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
+		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+		ConstantPropagation constantPropagation = new ConstantPropagation();
+		// conf.semanticChecks.add(new
+		// it.unive.pylisa.checks.semantics.RosTopicDeclarationFinder());
+		ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
+		conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
+		LiSA lisa = new LiSA(conf);
+		lisa.run(program1, program2);
 	}
 }

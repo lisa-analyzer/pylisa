@@ -59,6 +59,7 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 			StatementStore<A> expressions)
 			throws SemanticException {
 		AnalysisState<A> result = state.bottom();
+
 		Expression self = getSubExpressions()[0];
 		Expression node_name = getSubExpressions()[1] instanceof NamedParameterExpression
 				? getNamedParameterExpr("node_name").getSubExpression()

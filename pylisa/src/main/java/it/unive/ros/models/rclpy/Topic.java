@@ -1,14 +1,21 @@
 package it.unive.ros.models.rclpy;
 
-public class Topic {
-	private String name;
+import it.unive.ros.network.NetworkChannel;
+
+public class Topic implements NetworkChannel {
+	private String ID;
 
 	public Topic(
 			String name) {
-		this.name = name;
+		this.ID = name;
 	}
 
 	public String getName() {
-		return this.name;
+		return this.ID;
+	}
+
+	@Override
+	public String getID() {
+		return this.ID;
 	}
 }
