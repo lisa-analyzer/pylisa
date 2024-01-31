@@ -34,7 +34,7 @@ public class Main {
 
     try {
       Scanner scanner = new Scanner(new File(MAIN_FOLDER + "/pythonFiles.txt"));
-      FileWriter output = new FileWriter("results-app-15122023-full.csv");
+      FileWriter output = new FileWriter("results.csv");
       BufferedWriter Bout = new BufferedWriter(output);
       Bout.write("file_name,status,error_message,stack_trace");
       Bout.newLine();
@@ -48,15 +48,10 @@ public class Main {
         try {
           if (!project.equals(projName)) {
             if (!project.equals("")) {
-              rob.withWorkDir("ros-test-outputs/analysis-app-15122023-full/" + project);
+              rob.withWorkDir("ros-test-outputs/analysis-app-16012024-full/" + project);
               project = projName;
               ROSApplication ra = rob.build();
-              ra.dumpPermissions();
-              ra.dumpGraph();
-              ra.dumpSecureGraph();
-              ra.dumpInfo();
-              ra.dumpGraphUndAdjMatrix();
-              ra.dumpGraphDirAdjMatrix();
+              ra.dumpResults();
               ra = null;
               rob = new RosApplicationBuilder();
             }

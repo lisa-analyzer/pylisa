@@ -14,6 +14,8 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
+import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
+import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.expression.PyStringLiteral;
 
@@ -66,6 +68,9 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 				: getSubExpressions()[1];
 		UnaryExpression _namespace = getNamedParameterExpr("namespace");
 
+		UnaryExpression _start_parameter_services = getNamedParameterExpr("start_parameter_services");
+		Expression start_parameter_services = _start_parameter_services != null ? _start_parameter_services.getSubExpression()
+				: new TrueLiteral(this.getCFG(), getLocation());
 		Expression namespace = _namespace != null ? _namespace.getSubExpression()
 				: new PyStringLiteral(this.getCFG(), getLocation(), "", "\"");
 
@@ -75,6 +80,10 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 
 		AccessInstanceGlobal namespaceAIG = new AccessInstanceGlobal(st.getCFG(), getLocation(), self, "namespace");
 		pyAssign = new PyAssign(getCFG(), getLocation(), namespaceAIG, namespace);
+		result = result.lub(pyAssign.forwardSemantics(state, interprocedural, expressions));
+
+		AccessInstanceGlobal startParamSvc = new AccessInstanceGlobal(st.getCFG(), getLocation(), self, "start_parameter_services");
+		pyAssign = new PyAssign(getCFG(), getLocation(), startParamSvc, start_parameter_services);
 		result = result.lub(pyAssign.forwardSemantics(state, interprocedural, expressions));
 
 		return result;

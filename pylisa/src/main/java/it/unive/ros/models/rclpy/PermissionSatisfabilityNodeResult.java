@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PermissionSatisfabilityNodeResult {
-	Node node;
-	List<Subscription> invalidSubscriptions = new ArrayList<>();
-	List<Publisher> invalidPublishers = new ArrayList<>();
+	ROSNode node;
+	List<ROSTopicSubscription> invalidSubscriptions = new ArrayList<>();
+	List<ROSTopicPublisher> invalidPublishers = new ArrayList<>();
 
 	public PermissionSatisfabilityNodeResult(
-			Node n) {
+			ROSNode n) {
 		this.node = n;
 	}
 
@@ -18,12 +18,12 @@ public class PermissionSatisfabilityNodeResult {
 	}
 
 	public void addInvalidPublisher(
-			Publisher p) {
+			ROSTopicPublisher p) {
 		this.invalidPublishers.add(p);
 	}
 
 	public void addInvalidSubscription(
-			Subscription s) {
+			ROSTopicSubscription s) {
 		this.invalidSubscriptions.add(s);
 	}
 }

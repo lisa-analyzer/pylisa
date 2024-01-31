@@ -10,6 +10,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
@@ -19,6 +20,8 @@ import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.statement.evaluation.RelaxedLeftToRightEvaluation;
+import it.unive.pylisa.cfg.statement.evaluation.RelaxedRightToLeftEvaluation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
@@ -36,7 +39,7 @@ public class PyAssign extends Assignment {
 			CodeLocation location,
 			Expression target,
 			Expression expression) {
-		super(cfg, location, target, expression);
+		super(cfg, location, RelaxedRightToLeftEvaluation.INSTANCE, target, expression);
 	}
 
 	@Override
@@ -75,9 +78,13 @@ public class PyAssign extends Assignment {
 		}
 
 		Expression lefthand = getLeft();
-		if (!(lefthand instanceof TupleCreation))
+		if (!(lefthand instanceof TupleCreation)) {
+			AnalysisState<A> sem = state.smallStepSemantics(left, this);
+			if (sem.getState().equals(sem.getState().bottom())) {
+				return state; // [WARN] THIS IS UNSOUND !!!!
+			}
 			return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
-
+		}
 		// get the variables being assigned
 		Expression[] vars = ((TupleCreation) lefthand).getSubExpressions();
 		List<ExpressionSet> ids = Arrays.stream(vars)

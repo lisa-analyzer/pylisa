@@ -15,37 +15,33 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.rclpy.subscription.ROSSubscriptionCallback;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.network.*;
 
-public class Subscription extends TopicUser{
+public class ROSTopicSubscription extends ROSTopicBasedNetworkEntity {
 	private ROSSubscriptionCallback callbackFunction;
 
-	private ROSLisaAnalysis rosLisaAnalysis;
-	public Subscription(
-			Node node,
-			Topic topic,
+	public ROSTopicSubscription(
+			ROSNode node,
+			ROSTopic topic,
 			String msgType,
 			ROSSubscriptionCallback callbackFunction) {
-		super(node, topic, msgType);
+		super(node, (it.unive.ros.models.rclpy.ROSTopic) topic, msgType);
 		this.callbackFunction = callbackFunction;
 	}
 
 
-	public Subscription(String containerID, Topic topic, String msgType, Statement subscriptionStmt, HeapExpression expr, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState) {
-		super(containerID, topic, msgType);
-		this.rosLisaAnalysis = new ROSLisaAnalysis(expr,subscriptionStmt, analysisState);
+	public ROSTopicSubscription(String containerID, ROSTopic topic, String msgType, Statement subscriptionStmt, HeapExpression expr, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState) {
+		super(containerID, topic, msgType, expr, subscriptionStmt, analysisState);
 	}
 
-	public Subscription(String containerID, Topic channel, String msgType, ROSSubscriptionCallback callbackFunction, Statement subscriptionStmt, HeapExpression expr, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState) {
+	public ROSTopicSubscription(String containerID, ROSTopic channel, String msgType, ROSSubscriptionCallback callbackFunction, Statement subscriptionStmt, HeapExpression expr, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState) {
 		this(containerID, channel, msgType, subscriptionStmt, expr, analysisState);
 		this.callbackFunction = callbackFunction;
 	}
@@ -61,15 +57,15 @@ public class Subscription extends TopicUser{
 
 	@Override
 	public void processMessage(NetworkMessage message) throws SemanticException {
-		SymbolicExpression nodeExpr = ((Node)getContainer()).getLisaState().getSymbolicExpression();
-		Statement subscriptionStmt = rosLisaAnalysis.getStatement();
+		SymbolicExpression nodeExpr = ((ROSNode)getContainer()).getLisaState().getSymbolicExpression();
+		Statement subscriptionStmt = getRosLisaAnalysis().getStatement();
 		if (nodeExpr instanceof HeapReference) {
 			HeapDereference hderef = new HeapDereference(Untyped.INSTANCE, nodeExpr, nodeExpr.getCodeLocation());
 			//AccessChild aChild = new AccessChild(Untyped.INSTANCE, hderef, new Variable())
 			if (subscriptionStmt instanceof UnresolvedCall) {
 				Expression callbackFunction = ((UnresolvedCall) subscriptionStmt).getSubExpressions()[4];
 				ROSSubscriptionCallback subCallback = new ROSSubscriptionCallback(subscriptionStmt.getCFG(), (SourceCodeLocation) subscriptionStmt.getLocation(), callbackFunction);
-				Node container = (Node)getContainer();
+				ROSNode container = (ROSNode)getContainer();
 				ExpressionSet[] exprSet = new ExpressionSet[2];
 				Constant msg = new Constant(Untyped.INSTANCE, message.getMessage(), SyntheticLocation.INSTANCE);
 				exprSet[0] = new ExpressionSet(nodeExpr);
@@ -85,7 +81,7 @@ public class Subscription extends TopicUser{
 
 	@Override
 	public String getID() {
-		return rosLisaAnalysis.getSymbolicExpression().getCodeLocation().toString();
+		return getRosLisaAnalysis().getSymbolicExpression().getCodeLocation().toString();
 	}
 
 	@Override

@@ -18,6 +18,7 @@ import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.expression.PyNewObj;
@@ -61,8 +62,14 @@ public class CreateClient extends NaryExpression implements PluggableStatement {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		AnalysisState<A> result = state.bottom();
+
 		params[2] = SemanticsHelpers.nameExpansion(this, getSubExpressions()[0], params[2], interprocedural, state,
 				expressions);
+
+		String messageType = params[1].iterator().next().toString();
+		Constant c = new Constant(StringType.INSTANCE, messageType, getLocation());
+		params[1] = new ExpressionSet(c);
+
 
 		PyClassType clientClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_CLIENT);
 

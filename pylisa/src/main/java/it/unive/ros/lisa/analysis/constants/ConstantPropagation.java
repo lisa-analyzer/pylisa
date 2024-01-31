@@ -186,7 +186,8 @@ public class ConstantPropagation
 				|| t.toString().equals(LibrarySpecificationProvider.LIST)
 				|| t.toString().equals(LibrarySpecificationProvider.DICT)
 				|| t.toString().equals(LibrarySpecificationProvider.SLICE)
-				|| t.isNullType();
+				|| t.isNullType()
+				|| t.isBooleanType();
 	}
 
 	@Override
@@ -338,8 +339,8 @@ public class ConstantPropagation
 		String namespace = middle.as(String.class);
 		String nodeName = right.as(String.class);
 		// 1. remove prefix
-		if (namespace.startsWith("rostopic://")) {
-			namespace.replace("rostopic://", "");
+		if (topicName.startsWith("rostopic://")) {
+			topicName.replace("rostopic://", "");
 		}
 		// 2. fix namespace
 		if (!namespace.startsWith("/")) {

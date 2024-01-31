@@ -1,13 +1,16 @@
 package it.unive.ros.network;
 
-import it.unive.lisa.analysis.SemanticException;
+import it.unive.ros.models.rclpy.ROSNetwork;
+import it.unive.ros.models.rclpy.ROSNetwork2;
+import it.unive.ros.models.rclpy.ROSNetworkEntity;
 
 public interface NetworkEvent {
-    NetworkEntity getInitiator();
+    ROSNetworkEntity getInitiator();
 
-    void setInitiator(NetworkEntity ne);
+    void setInitiator(ROSNetworkEntity ne);
     NetworkChannel getChannel();
     NetworkMessage getMessage();
+
     NetworkEvent getParent();
-    void process(Network network) throws SemanticException;
+    void process(Network network) throws Exception;
 }

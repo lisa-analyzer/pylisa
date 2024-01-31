@@ -1,10 +1,10 @@
 package it.unive.testing;
 
-class ParsingRes {
-	String fileName;
-	String status;
-	String error;
-	String stackTrace;
+public class ParsingRes {
+	public String fileName;
+	public String status;
+	public String error;
+	public String stackTrace;
 
 	public ParsingRes(
 			String fileName,

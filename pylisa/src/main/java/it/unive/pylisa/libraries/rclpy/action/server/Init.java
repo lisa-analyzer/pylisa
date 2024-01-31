@@ -21,6 +21,7 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.rclpy.node.SemanticsHelpers;
@@ -70,6 +71,9 @@ public class Init extends NaryExpression implements PluggableStatement {
 
           HeapDereference container = new HeapDereference(inner, v, getLocation());
           CompilationUnit unit = inner.asUnitType().getUnit();
+          String messageType = params[2].iterator().next().toString();
+          Constant c = new Constant(StringType.INSTANCE, messageType, getLocation());
+          params[2] = new ExpressionSet(c);
 
           Global global = new Global(getLocation(), unit, "action_type", false, StringType.INSTANCE);
           Variable var = global.toSymbolicVariable(getLocation());

@@ -1,24 +1,24 @@
 package it.unive.ros.network;
 
-import it.unive.lisa.analysis.SemanticException;
-
 import java.util.List;
 
-public interface NetworkEntity {
+public interface NetworkEntity<Container extends NetworkEntityContainer, Channel extends NetworkChannel> {
 
     NetworkEvent createNetworkEvent(NetworkMessage networkMessage);
-    NetworkEntityContainer getContainer();
-    void setContainer(NetworkEntityContainer nec);
+    Container getContainer();
+    void setContainer(Container container);
+
+
     String getContainerID();
 
     void setContainerID(String containerID);
-    void setNetwork(Network n);
-    NetworkChannel getChannel();
+    Channel getChannel();
 
     NetworkEntityType getNetworkEntityType();
 
     List<NetworkEvent> getProcessedEvents();
 
-    void processMessage(NetworkMessage message) throws SemanticException;
+    void processMessage(NetworkMessage message) throws Exception;
     String getID();
+
 }

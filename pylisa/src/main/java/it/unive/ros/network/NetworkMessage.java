@@ -3,9 +3,14 @@ package it.unive.ros.network;
 public class NetworkMessage {
     NetworkEvent event;
     Object message;
+    String type;
 
-    public NetworkMessage(Object message) {
+    public String getType() {
+        return this.type;
+    }
+    public NetworkMessage(Object message, String type) {
         this.message = message;
+        this.type = type;
     }
 
     public void setNetworkEvent(NetworkEvent event) {

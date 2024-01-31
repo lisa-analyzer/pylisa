@@ -1,18 +1,22 @@
 package it.unive.ros.network;
 
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.ros.models.rclpy.ROSCommunicationChannel;
+import it.unive.ros.models.rclpy.ROSNode;
+import it.unive.ros.models.rclpy.ROSTopic;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class Network {
-    private Set<NetworkEntityContainer> networkEntityContainers;
-    private Set<NetworkChannel> networkChannels;
+public class Network<Container extends NetworkEntityContainer, Entity extends NetworkEntity, Channel extends NetworkChannel> {
+    private Set<Container> networkEntityContainers;
+    private Set<Channel> networkChannels;
     private List<NetworkEvent> networkEvents;
 
-    private List<NetworkEntity> networkEntities;
+    private List<NetworkEvent> processedNetworkEvents = new ArrayList<>();
+    private List<Entity> networkEntities;
     public Network() {
         this.networkChannels = new HashSet<>();
         this.networkEntityContainers = new HashSet<>();
@@ -22,7 +26,7 @@ public class Network {
     public List<NetworkEvent> getNetworkEvents() {
         return networkEvents;
     }
-    public void addEntityContainer(NetworkEntityContainer container) throws Exception {
+    public void addEntityContainer(Container container) throws Exception {
         if (this.getNetworkEntityContainer(container.getID()) == null) {
             this.networkEntityContainers.add(container);
             resolveFoundling(container);
@@ -31,8 +35,8 @@ public class Network {
         }
     }
 
-    public NetworkEntityContainer getNetworkEntityContainer(String id) {
-        for (NetworkEntityContainer container : this.networkEntityContainers) {
+    public Container getNetworkEntityContainer(String id) {
+        for (Container container : this.networkEntityContainers) {
             if (container.getID().equals(id)) {
                 return container;
             }
@@ -40,8 +44,8 @@ public class Network {
         return null;
     }
 
-    public NetworkEntity getNetworkEntity(String id) {
-        for (NetworkEntity entity : this.networkEntities) {
+    public Entity getNetworkEntity(String id) {
+        for (Entity entity : this.networkEntities) {
             if (entity.getID().equals(id)) {
                 return entity;
             }
@@ -49,23 +53,23 @@ public class Network {
         return null;
     }
 
-    public List<NetworkEntity> getNetworkEntities() {
+    public List<Entity> getNetworkEntities() {
         return networkEntities;
     }
 
-    public Set<NetworkEntityContainer> getNetworkEntityContainers() {
+    public Set<Container> getNetworkEntityContainers() {
         return networkEntityContainers;
     }
-    public List<NetworkEntity> getChannelNetworkEntities(String channelID) {
-        List<NetworkEntity> result = new ArrayList<>();
-        for (NetworkEntity ne : getNetworkEntities()) {
+    public List<Entity> getChannelNetworkEntities(String channelID) {
+        List<Entity> result = new ArrayList<>();
+        for (Entity ne : getNetworkEntities()) {
             if (ne.getChannel().getID().equals(channelID)) {
                 result.add(ne);
             }
         }
         return result;
     }
-    public void addNetworkChannel(NetworkChannel channel) throws Exception {
+    public void addNetworkChannel(Channel channel) throws Exception {
         if (this.getNetworkChannel(channel.getID()) == null) {
             this.networkChannels.add(channel);
         } else {
@@ -73,8 +77,8 @@ public class Network {
         }
     }
 
-    public NetworkChannel getNetworkChannel(String id) {
-        for (NetworkChannel channel : this.networkChannels) {
+    public Channel getNetworkChannel(String id) {
+        for (Channel channel : this.networkChannels) {
             if (channel.getID().equals(id)) {
                 return channel;
             }
@@ -82,42 +86,44 @@ public class Network {
         return null;
     }
 
-    public NetworkEvent createNetworkEvent(NetworkMessage message, NetworkEntity networkEntity) {
+    public Set<Channel> getNetworkChannels() {
+        return this.networkChannels;
+    }
+
+
+    public NetworkEvent createNetworkEvent(NetworkMessage message, Entity networkEntity) {
         NetworkEvent event = networkEntity.createNetworkEvent(message);
         addNetworkEvent(event);
         return event;
     }
     public void processEvents() throws Exception {
-        while (!this.networkEvents.isEmpty()) {
+         while (!this.networkEvents.isEmpty()) {
             NetworkEvent e = this.networkEvents.get(0);
             e.process(this);
             this.networkEvents.remove(0);
+            this.processedNetworkEvents.add(e);
         }
     }
-
-    public void forwardMessage() {
-
+    public List<NetworkEvent> getProcessedNetworkEvents() {
+        return networkEvents;
     }
-
-
-    public void addNetworkEntity(NetworkEntity ne, String networkEntityContainerID) {
-        NetworkEntityContainer nec = getNetworkEntityContainer(networkEntityContainerID);
+    public void addNetworkEntity(Entity ne, String networkEntityContainerID) {
+        Container nec = getNetworkEntityContainer(networkEntityContainerID);
         if (nec != null) {
             ne.setContainer(nec);
             nec.addNetworkEntity(ne);
         }
-        ne.setNetwork(this);
         this.networkEntities.add(ne);
     }
 
     public void addNetworkEvent(NetworkEvent ne) {
         this.networkEvents.add(ne);
     }
-    public void resolveFoundling(NetworkEntityContainer nec) {
-        for (NetworkEntity ne : networkEntities) {
-            if (ne.getContainer() == null && ne.getContainerID().equals(nec.getID())) {
-                ne.setContainer(nec);
-                nec.addNetworkEntity(ne);
+    public void resolveFoundling(Container container) {
+        for (Entity ne : networkEntities) {
+            if (ne.getContainer() == null && ne.getContainerID().equals(container.getID())) {
+                ne.setContainer(container);
+                container.addNetworkEntity(ne);
             }
         }
     }

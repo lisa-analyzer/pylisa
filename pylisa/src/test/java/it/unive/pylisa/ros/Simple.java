@@ -4,7 +4,8 @@ import java.io.*;
 import java.time.LocalDate;
 
 import it.unive.ros.application.ROSApplication;
-import it.unive.ros.network.Network;
+import it.unive.ros.models.rclpy.ROSNetwork;
+import it.unive.ros.models.rclpy.ROSNetwork2;
 import org.junit.Test;
 
 import it.unive.lisa.AnalysisSetupException;
@@ -62,9 +63,9 @@ public class Simple {
     ROSApplication ra =  new RosApplicationBuilder().withWorkDir("ros-test-outputs/simple_node/action-app")
         .withNode(new PythonROSNodeBuilder("ros-tests/simple_node/action.py"))
         .build();
-        ra.dumpGraph();
+    ra.dumpGraph();
     Runtime rt = Runtime.getRuntime();
-    Network n = ra.getRosNetwork();
+    ROSNetwork n = ra.getRosNetwork();
     ra.getRosNetwork().processEvents();
     //ra.getRosNetwork().getNetworkEntityContainer("'ros-tests/simple_node/action.py':27:16").getProcessedEvents();
     rt.exec("dot  ros-test-outputs/simple_node/action-app/graph/graph.dot -Tsvg -o ros-test-outputs/simple_node/action-app/graph/graph.svg");
@@ -95,5 +96,15 @@ public class Simple {
     //Process pr = rt.exec("code ros-test-outputs/simple_node/action-app/graph/graph.dot");
 
     rt.exec("open ros-test-outputs/simple_node/action-app/report.html");
+  }
+
+  @Test
+  public void testNewFeatures() throws Exception {
+    ROSApplication ra =  new RosApplicationBuilder().withWorkDir("ros-test-outputs/new_feature/new_feature")
+            .withNode(new PythonROSNodeBuilder("ros-tests/test_publish/node01.py"))
+            .withNode(new PythonROSNodeBuilder("ros-tests/test_publish/node02.py"))
+            .build();
+    ra.getRosNetwork().processEvents();
+    ra.dumpResults();
   }
 }

@@ -15,8 +15,9 @@ import it.unive.ros.application.exceptions.ROSApplicationBuildException;
 import it.unive.ros.application.exceptions.ROSNodeBuildException;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.lisa.checks.semantics.ROSComputationGraphDumper;
+import it.unive.ros.models.rclpy.ROSNetwork;
+import it.unive.ros.models.rclpy.ROSNetwork2;
 import it.unive.ros.models.rclpy.RosComputationalGraph;
-import it.unive.ros.network.Network;
 import it.unive.ros.permissions.jaxb.Grant;
 import it.unive.ros.permissions.jaxb.JAXBPermissionsHelpers;
 import it.unive.ros.permissions.jaxb.PermissionsNode;
@@ -30,7 +31,7 @@ import java.util.Map;
 public class RosApplicationBuilder {
 	private String workDir = "ros-app-output";
 	private final ArrayList<Program> programs = new ArrayList<>();
-	Network n = new Network();
+	ROSNetwork n = new ROSNetwork();
 	private final ROSComputationGraphDumper rosGraphDumper = new ROSComputationGraphDumper(new RosComputationalGraph(), n);
 	private final Map<String, Grant> permissionsGrants = new HashMap<>();
 	private final List<ROSNodeBuilder> nodes = new ArrayList<>();
@@ -68,10 +69,16 @@ public class RosApplicationBuilder {
 	public ROSApplication build() throws ROSApplicationBuildException {
 		// build nodes
 		try {
-			LiSA liSA = new LiSA(getLiSAConfiguration());
+
 			for (ROSNodeBuilder node : nodes) {
-				Program p = node.getLiSAProgram();
-				liSA.run(p);
+				try {
+					LiSA liSA = new LiSA(getLiSAConfiguration());
+					Program p = node.getLiSAProgram();
+					liSA.run(p);
+				} catch (Exception e) {
+					System.out.println("[ERR] " + e.getMessage());
+					throw new ROSApplicationBuildException(e);
+				}
 			}
 			// liSA.run(programs.toArray(new Program[0]));
 		} catch (Exception e) {

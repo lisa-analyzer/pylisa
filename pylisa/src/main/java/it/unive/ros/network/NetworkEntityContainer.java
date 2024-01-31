@@ -1,15 +1,20 @@
 package it.unive.ros.network;
 
+import it.unive.ros.models.rclpy.ROSCommunicationChannel;
+import it.unive.ros.models.rclpy.ROSNetworkEntity;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public interface NetworkEntityContainer /* aka ROSNode */ {
-    public String getID();
+public interface NetworkEntityContainer<Entity extends NetworkEntity> {
+    String getID();
 
-    public String getName();
-    public List<NetworkEntity> getNetworkEntities();
+    String getName();
 
-    public List<NetworkEvent> getProcessedEvents();
-    public void addNetworkEntity(NetworkEntity ne);
+    String getURI();
+    List<Entity> getNetworkEntities();
+
+    List<NetworkEvent> getProcessedEvents();
+    void addNetworkEntity(Entity ne);
 
 }

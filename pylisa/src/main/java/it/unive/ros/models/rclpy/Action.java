@@ -1,6 +1,8 @@
 package it.unive.ros.models.rclpy;
 
-public class Action {
+import it.unive.ros.network.NetworkEntity;
+
+public abstract class Action implements NetworkEntity {
   private String name;
   private String actionType;
 

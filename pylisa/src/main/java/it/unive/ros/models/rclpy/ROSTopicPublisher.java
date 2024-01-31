@@ -7,29 +7,24 @@ import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.network.*;
 
-public class Publisher extends TopicUser {
+public class ROSTopicPublisher extends ROSTopicBasedNetworkEntity {
 
-	private ROSLisaAnalysis rosLisaAnalysis;
-	public Publisher(
-			Node node,
-			Topic topic,
+
+	public ROSTopicPublisher(
+			ROSNode node,
+			ROSTopic topic,
 			String msgType) {
 		super(node, topic, msgType);
 	}
 
-	public Publisher(String containerID, Topic topic, String msgType, Statement publisherStmt, HeapExpression expr, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState) {
-		super(containerID, topic, msgType);
-		this.rosLisaAnalysis = new ROSLisaAnalysis(expr, publisherStmt, analysisState);
+	public ROSTopicPublisher(String containerID, ROSTopic topic, String msgType, Statement publisherStmt, HeapExpression expr, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState) {
+		super(containerID, topic, msgType, expr, publisherStmt, analysisState);
 	}
 
-	public ROSLisaAnalysis getRosLisaAnalysis() {
-		return rosLisaAnalysis;
-	}
 
 	@Override
 	public NetworkEvent createNetworkEvent(NetworkMessage message) {
@@ -50,9 +45,5 @@ public class Publisher extends TopicUser {
 		return;
 	}
 
-	@Override
-	public String getID() {
-		return rosLisaAnalysis.getSymbolicExpression().getCodeLocation().toString();
-	}
 
 }

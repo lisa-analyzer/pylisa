@@ -11,8 +11,9 @@ import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.lisa.checks.semantics.ROSComputationGraphDumper;
+import it.unive.ros.models.rclpy.ROSNetwork;
+import it.unive.ros.models.rclpy.ROSNetwork2;
 import it.unive.ros.models.rclpy.RosComputationalGraph;
-import it.unive.ros.network.Network;
 
 public class RosTestHelpers {
   public static LiSAConfiguration getLisaConf(String workdir) {
@@ -32,7 +33,7 @@ public class RosTestHelpers {
 
     ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
     RosComputationalGraph graph = new RosComputationalGraph();
-    conf.semanticChecks.add(new ROSComputationGraphDumper(graph, new Network()));
+    conf.semanticChecks.add(new ROSComputationGraphDumper(graph, new ROSNetwork()));
     conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
     return conf;
   }

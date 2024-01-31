@@ -10,7 +10,6 @@ import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.program.Program;
-import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.dataflow.rospropagation.RosTopic;
@@ -19,8 +18,9 @@ import it.unive.ros.application.ROSApplication;
 import it.unive.ros.application.RosApplicationBuilder;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.lisa.checks.semantics.ROSComputationGraphDumper;
+import it.unive.ros.models.rclpy.ROSNetwork;
+import it.unive.ros.models.rclpy.ROSNetwork2;
 import it.unive.ros.models.rclpy.RosComputationalGraph;
-import it.unive.ros.network.Network;
 import org.junit.Test;
 
 public class RosTest {
@@ -54,7 +54,7 @@ public class RosTest {
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		// conf.interproceduralAnalysis = new ContextBasedAnalysis();
 		ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
-		conf.semanticChecks.add(new ROSComputationGraphDumper(new RosComputationalGraph(), new Network()));
+		conf.semanticChecks.add(new ROSComputationGraphDumper(new RosComputationalGraph(), new ROSNetwork()));
 		conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);

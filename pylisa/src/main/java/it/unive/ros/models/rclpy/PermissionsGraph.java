@@ -4,27 +4,27 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class PermissionsGraph {
-	private Set<Node> nodes;
+	private Set<ROSNode> nodes;
 
-	private Set<Topic> topics;
+	private Set<ROSTopic> topics;
 
 	public PermissionsGraph() {
 		this.nodes = new HashSet<>();
 		this.topics = new HashSet<>();
 	}
 
-	public Set<Node> getNodes() {
+	public Set<ROSNode> getNodes() {
 		return nodes;
 	}
 
 	public void addNode(
-			Node n) {
+			ROSNode n) {
 		nodes.add(n);
 	}
 
-	public Node getNodeByName(
+	public ROSNode getNodeByName(
 			String name) {
-		for (Node n : nodes) {
+		for (ROSNode n : nodes) {
 			if (n.getName().equals(name)) {
 				return n;
 			}
@@ -32,24 +32,24 @@ public class PermissionsGraph {
 		return null;
 	}
 
-	public Topic addOrGetTopic(
+	public ROSTopic addOrGetTopic(
 			String name) {
-		for (Topic t : topics) {
+		for (ROSTopic t : topics) {
 			if (t.getName().equals(name)) {
 				return t;
 			}
 		}
-		Topic t = new Topic(name);
+		ROSTopic t = new ROSTopic(name);
 		topics.add(t);
 		return t;
 	}
 
-	public Set<TopicUser> getTopicUsers(
+	public Set<ROSTopicBasedNetworkEntity> getTopicUsers(
 			String topicName) {
-		Set<TopicUser> topicUsers = new HashSet<>();
-		for (Node n : nodes) {
-			for (TopicUser tu : n.getAllNodeTopicsUsers()) {
-				if (tu.getTopic().getName().equals(topicName)) {
+		Set<ROSTopicBasedNetworkEntity> topicUsers = new HashSet<>();
+		for (ROSNode n : nodes) {
+			for (ROSTopicBasedNetworkEntity tu : n.getAllNodeTopicsUsers()) {
+				if (tu.getChannel().getName().equals(topicName)) {
 					topicUsers.add(tu);
 				}
 			}
@@ -57,33 +57,33 @@ public class PermissionsGraph {
 		return topicUsers;
 	}
 
-	public Set<Subscription> getTopicSubscriptions(
+	public Set<ROSTopicSubscription> getTopicSubscriptions(
 			String topicName) {
-		Set<Subscription> topicSubs = new HashSet<>();
-		for (Node n : nodes) {
-			for (TopicUser tu : n.getAllNodeTopicsUsers()) {
-				if (tu.getTopic().getName().equals(topicName) && tu instanceof Subscription) {
-					topicSubs.add((Subscription) tu);
+		Set<ROSTopicSubscription> topicSubs = new HashSet<>();
+		for (ROSNode n : nodes) {
+			for (ROSTopicBasedNetworkEntity tu : n.getAllNodeTopicsUsers()) {
+				if (tu.getChannel().getName().equals(topicName) && tu instanceof ROSTopicSubscription) {
+					topicSubs.add((ROSTopicSubscription) tu);
 				}
 			}
 		}
 		return topicSubs;
 	}
 
-	public Set<Publisher> getTopicPublishers(
+	public Set<ROSTopicPublisher> getTopicPublishers(
 			String topicName) {
-		Set<Publisher> topicPubs = new HashSet<>();
-		for (Node n : nodes) {
-			for (TopicUser tu : n.getAllNodeTopicsUsers()) {
-				if (tu.getTopic().getName().equals(topicName) && tu instanceof Publisher) {
-					topicPubs.add((Publisher) tu);
+		Set<ROSTopicPublisher> topicPubs = new HashSet<>();
+		for (ROSNode n : nodes) {
+			for (ROSTopicBasedNetworkEntity tu : n.getAllNodeTopicsUsers()) {
+				if (tu.getChannel().getName().equals(topicName) && tu instanceof ROSTopicPublisher) {
+					topicPubs.add((ROSTopicPublisher) tu);
 				}
 			}
 		}
 		return topicPubs;
 	}
 
-	public Set<Topic> getTopics() {
+	public Set<ROSTopic> getTopics() {
 		return topics;
 	}
 }

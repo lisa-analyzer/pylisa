@@ -1,12 +1,11 @@
 package it.unive.ros.models.rclpy;
 
-import it.unive.lisa.analysis.SemanticException;
 import it.unive.ros.network.*;
 
 import java.util.List;
 
 public class PublishMessageEvent implements NetworkEvent {
-    NetworkEntity initiator;
+    ROSNetworkEntity initiator;
     NetworkEvent parent;
 
     NetworkMessage message;
@@ -15,12 +14,12 @@ public class PublishMessageEvent implements NetworkEvent {
         this.message = message;
     }
     @Override
-    public NetworkEntity getInitiator() {
+    public ROSNetworkEntity getInitiator() {
         return initiator;
     }
 
     @Override
-    public void setInitiator(NetworkEntity ne) {
+    public void setInitiator(ROSNetworkEntity ne) {
         this.initiator = ne;
     }
 
@@ -40,12 +39,16 @@ public class PublishMessageEvent implements NetworkEvent {
     }
 
     @Override
-    public void process(Network network) throws SemanticException {
+    public void process(Network network) throws Exception {
         String channelId = this.getChannel().getID();
-        List<NetworkEntity> nes = network.getChannelNetworkEntities(channelId);
-        for (NetworkEntity ne : nes) {
-            if (ne instanceof Subscription) {
-                ne.processMessage(this.getMessage());
+        List<ROSNetworkEntity<?>> nes = network.getChannelNetworkEntities(channelId);
+        for (ROSNetworkEntity<?> ne : nes) {
+            if (ne instanceof ROSTopicSubscription) {
+                if (ne.getContainer() != null) {
+                    // skip dangling entities
+                    ne.processMessage(this.getMessage());
+                }
+
             }
         }
     }

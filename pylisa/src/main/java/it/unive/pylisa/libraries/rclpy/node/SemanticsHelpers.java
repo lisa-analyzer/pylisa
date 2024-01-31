@@ -68,4 +68,8 @@ public class SemanticsHelpers {
     return null;
   }
 
+  public static String getMessageType() {
+    return "ciao";
+  }
+
 }
