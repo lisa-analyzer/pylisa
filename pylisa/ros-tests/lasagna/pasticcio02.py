@@ -9,7 +9,7 @@ import os
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState
-
+from rclpy.action.server import ActionServer
 
 
 
@@ -35,7 +35,7 @@ class SerialNode(Node):
         #self.odom_msg.child_frame_id = "base_link"
         self.timer = self.create_timer(timer_period, self.arduino_callback)
         #self.timer_j = self.create_timer(0.001, self.joint_callback)
-
+        self.aS = ActionServer(self, String, "action", lambda: None)
         #self.counter = 0
         #self.init_time = self.get_clock().now()
         #self.is_initialized = False

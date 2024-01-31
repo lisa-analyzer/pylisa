@@ -20,10 +20,11 @@ public class PasticciTest {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        rob.withWorkDir("ros-test-outputs/pasticci/30012024-1");
+        rob.withWorkDir("ros-test-outputs/pasticci/31012024-1");
 
         ROSApplication ra = rob.build();
         ROSNetwork n = ra.getRosNetwork();
         ra.dumpResults();
+        System.out.println(n.toMermaid());
     }
 }

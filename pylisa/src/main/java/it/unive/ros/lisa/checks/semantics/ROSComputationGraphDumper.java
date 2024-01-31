@@ -195,7 +195,7 @@ public class ROSComputationGraphDumper
 		String nodeName = "<undefined>";
 		String namespace = "<undefined>";
 		Boolean startParamService = true; // true by default
-
+		Boolean enableRosout = true; // true by default
 		Variable access = new Variable(Untyped.INSTANCE,
 				"node_name",
 				expr.getCodeLocation());
@@ -236,12 +236,27 @@ public class ROSComputationGraphDumper
 						.getCodeLocation(),
 				access, false,
 				expr.getCodeLocation());
+
 		try {
 			startParamService = (Boolean) analysisState.getState()
 					.getValueState()
 					.eval(has, node, analysisState.getState()).getConstant();
 		} catch(Exception e) {}
-		ROSNode n =  new ROSNode(nodeName, namespace, startParamService, node, expr, analysisState, tool.getConfiguration().interproceduralAnalysis);
+		access = new Variable(Untyped.INSTANCE,
+				"enable_rosout",
+				expr.getCodeLocation());
+		has = new HeapAllocationSite(
+				StringType.INSTANCE,
+				expr.getCodeLocation()
+						.getCodeLocation(),
+				access, false,
+				expr.getCodeLocation());
+		try {
+			enableRosout = (Boolean) analysisState.getState()
+					.getValueState()
+					.eval(has, node, analysisState.getState()).getConstant();
+		} catch(Exception e) {}
+		ROSNode n =  new ROSNode(nodeName, namespace, startParamService, enableRosout, node, expr, analysisState, tool.getConfiguration().interproceduralAnalysis);
 		rosNetwork.addEntityContainer(n);
 	}
 

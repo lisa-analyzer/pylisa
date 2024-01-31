@@ -30,6 +30,14 @@ public class ROSNetwork extends Network<ROSNode, ROSNetworkEntity<? extends ROSC
             addNetworkChannel(serviceChannel);
             addNetworkEntity(new ROSServiceServer(this, serviceChannel, container), container.getID());
         }
+        if (container.getEnableRosout()) {
+            ROSTopic topic = getTopic("/rosout");
+            if (topic == null) {
+                topic = new ROSTopic("/rosout", true);
+                addNetworkChannel(topic);
+            }
+            addNetworkEntity(new ROSTopicPublisher(container, topic, "rcl_interfaces/msg/ParameterEvent"), container.getID());
+        }
         ROSTopic topic = getTopic("/parameter_events");
         if (topic == null) {
             topic = new ROSTopic("/parameter_events", true);
@@ -83,7 +91,86 @@ public class ROSNetwork extends Network<ROSNode, ROSNetworkEntity<? extends ROSC
         }
         return null;
     }
+    public String toMermaid() {
+        StringBuilder mermaid = new StringBuilder(
+                "graph TD\n");
+        // Nodes
+        for (ROSNode n : getNetworkEntityContainers()) {
+            mermaid.append(n.getURI()).append("\n");
+            mermaid.append("style ").append(n.getURI()).append(" fill:limegreen,stroke:#333,stroke-width:2px\n");
+        }
 
+        // Topic
+        for (ROSTopic t : this.getTopics()) {
+            if (!t.isSystem()) {
+                if (this.getChannelUserContainers(t).isEmpty()) {
+                    mermaid.append(t.getName()).append("[/").append(t.getName()).append("/]\n");
+                    mermaid.append("style ").append(t.getName()).append(" fill:gold,stroke:#333,stroke-width:2px\n");
+                } else {
+                    mermaid.append(t.getName()).append("[/").append(t.getName()).append("/]\n");
+                    mermaid.append("style ").append(t.getName()).append(" fill:gold,stroke:#333,stroke-width:2px\n");
+                }
+            }
+        }
+        for (ROSServiceChannel s : this.getServices()) {
+            if (!s.isSystem()) {
+                if (this.getChannelUserContainers(s).isEmpty()) {
+                    mermaid.append(s.getName()).append("[/").append(s.getName()).append("/]\n");
+                    mermaid.append("style ").append(s.getName()).append(" fill:lightskyblue,stroke:#333,stroke-width:2px\n");
+                } else {
+                    mermaid.append(s.getName()).append("[/").append(s.getName()).append("/]\n");
+                    mermaid.append("style ").append(s.getName()).append(" fill:lightskyblue,stroke:#333,stroke-width:2px\n");
+                }
+            }
+        }
+
+        for (ROSActionChannel s : this.getActions()) {
+            if (!s.isSystem()) {
+                if (this.getChannelUserContainers(s).isEmpty()) {
+                    mermaid.append(s.getName()).append("[/").append(s.getName()).append("/]\n");
+                    mermaid.append("style ").append(s.getName()).append(" fill:orchid1,stroke:#333,stroke-width:2px\n");
+                } else {
+                    mermaid.append(s.getName()).append("[/").append(s.getName()).append("/]\n");
+                    mermaid.append("style ").append(s.getName()).append(" fill:orchid1,stroke:#333,stroke-width:2px\n");
+                }
+            }
+        }
+
+        // Publishers and Subscribers
+        for (ROSNode n : getNetworkEntityContainers()) {
+            for (ROSTopicPublisher p : n.getPublishers()) {
+                if (!p.getChannel().isSystem()) {
+                    mermaid.append(n.getURI()).append(" --> ").append(p.getChannel().getName()).append("\n");
+                }
+            }
+            for (ROSTopicSubscription s : n.getSubscribers()) {
+                if (!s.getChannel().isSystem()) {
+                    mermaid.append(s.getChannel().getName()).append(" --> ").append(n.getURI()).append("\n");
+                }
+            }
+            for (ROSServiceServer ss : n.getServiceServers()) {
+                if (!ss.getChannel().isSystem()) {
+                    mermaid.append(ss.getChannel().getName()).append(" --> ").append(n.getURI()).append("\n");
+                }
+            }
+            for (ROSServiceClient sc : n.getServiceClients()) {
+                if (!sc.getChannel().isSystem()) {
+                    mermaid.append(n.getURI()).append(" --> ").append(sc.getChannel().getName()).append("\n");
+                }
+            }
+            for (ROSActionServer as : n.getActionServers()) {
+                if (!as.getChannel().isSystem()) {
+                    mermaid.append(as.getChannel().getName()).append(" --> ").append(n.getURI()).append("\n");
+                }
+            }
+            for (ROSActionClient ac : n.getActionClients()) {
+                if (!ac.getChannel().isSystem()) {
+                    mermaid.append(n.getURI()).append(" --> ").append(ac.getChannel().getName()).append("\n");
+                }
+            }
+        }
+        return mermaid.toString();
+    }
     public String toGraphviz(boolean secure) {
         StringBuilder dotGraph = new StringBuilder(
                 "digraph rosgraph {graph [pad=\"0.5\", nodesep=\"1\", ranksep=\"2\"];");

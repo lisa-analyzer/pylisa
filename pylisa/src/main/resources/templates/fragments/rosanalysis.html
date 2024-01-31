@@ -21,7 +21,9 @@
             <div>
                 <img th:src="${svgPath}" />
             </div>
-
+            <pre class="mermaid">
+                [[${rosNetwork.toMermaid()}]]
+            </pre>
         </div>
         <a id="Nodes"></a>
         <h2>Nodes</h2>

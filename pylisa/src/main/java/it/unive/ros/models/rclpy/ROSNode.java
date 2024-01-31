@@ -40,6 +40,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 
 	private Boolean enableParameterServices = true;
 
+	private Boolean enableRosout = true;
 	private Set<ROSNetworkEntity> networkEntities;
 
 	private Set<Action> actions;
@@ -48,6 +49,11 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 			String name,
 			ScopeId scopeId) {
 		this(name, "", scopeId);
+	}
+
+	public ROSNode(String nodeName, String namespace, Boolean startParamService, Boolean enableRosout, Statement node, HeapExpression expr, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, InterproceduralAnalysis<?> interproceduralAnalysis) {
+		this(nodeName, namespace, startParamService, node, expr, analysisState, interproceduralAnalysis);
+		this.enableRosout = enableRosout;
 	}
 
 	private void setNamespace(String namespace) {
@@ -455,5 +461,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 	public Boolean getEnableParameterServices() {
 		return enableParameterServices;
 	}
-
+	public Boolean getEnableRosout() {
+		return enableRosout;
+	}
 }
