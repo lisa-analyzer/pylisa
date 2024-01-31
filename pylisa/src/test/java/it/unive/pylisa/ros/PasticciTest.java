@@ -26,5 +26,6 @@ public class PasticciTest {
         ROSNetwork n = ra.getRosNetwork();
         ra.dumpResults();
         System.out.println(n.toMermaid());
+        System.out.println(n.toGraphviz(false));
     }
 }

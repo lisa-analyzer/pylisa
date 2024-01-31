@@ -96,7 +96,7 @@ public class ROSNetwork extends Network<ROSNode, ROSNetworkEntity<? extends ROSC
                 "graph TD\n");
         // Nodes
         for (ROSNode n : getNetworkEntityContainers()) {
-            mermaid.append(n.getURI()).append("\n");
+            mermaid.append(n.getURI()).append(":::wide\n");
             mermaid.append("style ").append(n.getURI()).append(" fill:limegreen,stroke:#333,stroke-width:2px\n");
         }
 
@@ -104,10 +104,10 @@ public class ROSNetwork extends Network<ROSNode, ROSNetworkEntity<? extends ROSC
         for (ROSTopic t : this.getTopics()) {
             if (!t.isSystem()) {
                 if (this.getChannelUserContainers(t).isEmpty()) {
-                    mermaid.append(t.getName()).append("[/").append(t.getName()).append("/]\n");
+                    mermaid.append(t.getName()).append("[/").append(t.getName()).append("/]:::wide\n");
                     mermaid.append("style ").append(t.getName()).append(" fill:gold,stroke:#333,stroke-width:2px\n");
                 } else {
-                    mermaid.append(t.getName()).append("[/").append(t.getName()).append("/]\n");
+                    mermaid.append(t.getName()).append("[/").append(t.getName()).append("/]:::wide\n");
                     mermaid.append("style ").append(t.getName()).append(" fill:gold,stroke:#333,stroke-width:2px\n");
                 }
             }
@@ -115,10 +115,10 @@ public class ROSNetwork extends Network<ROSNode, ROSNetworkEntity<? extends ROSC
         for (ROSServiceChannel s : this.getServices()) {
             if (!s.isSystem()) {
                 if (this.getChannelUserContainers(s).isEmpty()) {
-                    mermaid.append(s.getName()).append("[/").append(s.getName()).append("/]\n");
+                    mermaid.append(s.getName()).append("[/").append(s.getName()).append("/]:::wide\n");
                     mermaid.append("style ").append(s.getName()).append(" fill:lightskyblue,stroke:#333,stroke-width:2px\n");
                 } else {
-                    mermaid.append(s.getName()).append("[/").append(s.getName()).append("/]\n");
+                    mermaid.append(s.getName()).append("[/").append(s.getName()).append("/]:::wide\n");
                     mermaid.append("style ").append(s.getName()).append(" fill:lightskyblue,stroke:#333,stroke-width:2px\n");
                 }
             }
@@ -127,10 +127,10 @@ public class ROSNetwork extends Network<ROSNode, ROSNetworkEntity<? extends ROSC
         for (ROSActionChannel s : this.getActions()) {
             if (!s.isSystem()) {
                 if (this.getChannelUserContainers(s).isEmpty()) {
-                    mermaid.append(s.getName()).append("[/").append(s.getName()).append("/]\n");
+                    mermaid.append(s.getName()).append("[/").append(s.getName()).append("/]:::wide\n");
                     mermaid.append("style ").append(s.getName()).append(" fill:orchid1,stroke:#333,stroke-width:2px\n");
                 } else {
-                    mermaid.append(s.getName()).append("[/").append(s.getName()).append("/]\n");
+                    mermaid.append(s.getName()).append("[/").append(s.getName()).append("/]:::wide\n");
                     mermaid.append("style ").append(s.getName()).append(" fill:orchid1,stroke:#333,stroke-width:2px\n");
                 }
             }
@@ -169,11 +169,12 @@ public class ROSNetwork extends Network<ROSNode, ROSNetworkEntity<? extends ROSC
                 }
             }
         }
+        mermaid.append("classDef wide padding:50px\n");
         return mermaid.toString();
     }
     public String toGraphviz(boolean secure) {
         StringBuilder dotGraph = new StringBuilder(
-                "digraph rosgraph {graph [pad=\"0.5\", nodesep=\"1\", ranksep=\"2\"];");
+                "digraph rosgraph {graph [pad=\"1\", nodesep=\"3\", rankdir=\"BT\", ranksep=\"2\"];");
         // Nodes
         for (ROSNode n : getNetworkEntityContainers()) {
             dotGraph.append("\"").append(n.getURI()).append("\"").append("[style=filled,fillcolor=\"limegreen\"];");

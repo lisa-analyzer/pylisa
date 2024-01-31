@@ -40,7 +40,7 @@ public class FullTest {
 
         try {
             Scanner scanner = new Scanner(new File(MAIN_FOLDER + "/pythonFiles-new.txt"));
-            FileWriter output = new FileWriter("results-30012024-1-new.csv");
+            FileWriter output = new FileWriter("results-31012024-1-new.csv");
             BufferedWriter Bout = new BufferedWriter(output);
             Bout.write("file_name,status,error_message,stack_trace");
             Bout.newLine();
@@ -54,7 +54,7 @@ public class FullTest {
                 try {
                     if (!project.equals(projName)) {
                         if (!project.equals("")) {
-                            rob.withWorkDir("ros-test-outputs/analysis-full-30012024-1/" + project);
+                            rob.withWorkDir("ros-test-outputs/analysis-full-31012024-1/" + project);
                             project = projName;
                             ROSApplication ra = rob.build();
                             ra.getRosNetwork().processEvents();
@@ -96,7 +96,7 @@ public class FullTest {
                 Bout.newLine();
                 Bout.flush();
             }
-            rob.withWorkDir("ros-test-outputs/analysis-full-30012024-1/" + project);
+            rob.withWorkDir("ros-test-outputs/analysis-full-31012024-1/" + project);
             ROSApplication ra = rob.build();
 
             ra.dumpResults();
