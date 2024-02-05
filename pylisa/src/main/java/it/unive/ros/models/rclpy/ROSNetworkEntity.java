@@ -1,5 +1,5 @@
 package it.unive.ros.models.rclpy;
-
+import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;

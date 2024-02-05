@@ -75,6 +75,7 @@ public class RosApplicationBuilder {
 					LiSA liSA = new LiSA(getLiSAConfiguration());
 					Program p = node.getLiSAProgram();
 					liSA.run(p);
+
 				} catch (Exception e) {
 					System.out.println("[ERR] " + e.getMessage());
 					throw new ROSApplicationBuildException(e);
