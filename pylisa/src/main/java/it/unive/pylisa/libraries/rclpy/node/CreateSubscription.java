@@ -16,6 +16,7 @@ import it.unive.lisa.program.cfg.statement.Statement;
 
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -60,15 +61,15 @@ public class CreateSubscription extends NaryExpression implements PluggableState
 				expressions);
 
 		String messageType = params[1].iterator().next().toString();
-		Constant c = new Constant(StringType.INSTANCE, messageType, getLocation());
+		Constant c = new Constant(Untyped.INSTANCE, messageType, getLocation());
 		params[1] = new ExpressionSet(c);
 
 		PyClassType subscriptionClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_SUBSCRIPTION);
 
 		PyNewObj subscriptionObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
 				subscriptionClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
-		ROSSubscriptionCallback callback = new ROSSubscriptionCallback(this.getCFG(), (SourceCodeLocation) getLocation(), getSubExpressions()[4]);
-		callback.snooping(interprocedural, state, new ExpressionSet[]{params[4]}, expressions);
+		ROSSubscriptionCallback callback = new ROSSubscriptionCallback(this.getCFG(), (SourceCodeLocation) getLocation(), getSubExpressions()[3]);
+		callback.snooping(interprocedural, state, new ExpressionSet[]{params[3]}, expressions);
 		AnalysisState<A> newSubscriptionAS = subscriptionObj.forwardSemanticsAux(interprocedural,
 				state, Arrays.copyOfRange(params, 1, params.length), expressions);
 

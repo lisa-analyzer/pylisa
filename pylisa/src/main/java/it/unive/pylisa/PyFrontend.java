@@ -201,6 +201,8 @@ import it.unive.pylisa.cfg.expression.comparison.PyOr;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
+import it.unive.pylisa.cfg.statement.evaluation.RelaxedLeftToRightEvaluation;
+import it.unive.pylisa.cfg.statement.evaluation.RelaxedRightToLeftEvaluation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -830,6 +832,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				CallType.STATIC,
 				Program.PROGRAM_NAME,
 				"del",
+				RelaxedLeftToRightEvaluation.INSTANCE,
 				visitExprlist(ctx.exprlist()).toArray(new Expression[ctx.exprlist().expr().size()]));
 		return result;
 	}
@@ -858,6 +861,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					CallType.STATIC,
 					Program.PROGRAM_NAME,
 					"yield from",
+					RelaxedLeftToRightEvaluation.INSTANCE,
 					l.toArray(new Expression[0]));
 		}
 		if (ctx.continue_stmt() != null) {
@@ -1014,6 +1018,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				CallType.STATIC,
 				"assert",
 				Program.PROGRAM_NAME,
+				RelaxedLeftToRightEvaluation.INSTANCE,
 				visitTestlist(ctx.testlist())
 						.toArray(new Expression[ctx.testlist().test().size()]));
 	}
@@ -1215,6 +1220,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						CallType.INSTANCE,
 						null,
 						"__len__",
+						RelaxedLeftToRightEvaluation.INSTANCE,
 						collection_pars));
 		block.addNode(condition);
 
@@ -1229,6 +1235,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						CallType.INSTANCE,
 						null,
 						"__getitem__",
+						RelaxedLeftToRightEvaluation.INSTANCE,
 						counter_pars));
 		block.addNode(element_assignment);
 
@@ -1912,6 +1919,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								instance ? CallType.UNKNOWN : CallType.STATIC,
 								null,
 								method_name,
+								RelaxedLeftToRightEvaluation.INSTANCE,
 								pars.toArray(Expression[]::new));
 						if (method_name.equals("super") && pars.size() == 0) {
 							// if super() is inside an instance method

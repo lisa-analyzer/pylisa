@@ -10,6 +10,7 @@ import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.program.Program;
+import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.ros.application.exceptions.ROSApplicationBuildException;
 import it.unive.ros.application.exceptions.ROSNodeBuildException;
@@ -23,6 +24,7 @@ import it.unive.ros.permissions.jaxb.JAXBPermissionsHelpers;
 import it.unive.ros.permissions.jaxb.PermissionsNode;
 import jakarta.xml.bind.JAXBException;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,6 +70,7 @@ public class RosApplicationBuilder {
 
 	public ROSApplication build() throws ROSApplicationBuildException {
 		// build nodes
+		ArrayList<String> lisaOutputs = new ArrayList<>();
 		try {
 
 			for (ROSNodeBuilder node : nodes) {
@@ -75,7 +78,17 @@ public class RosApplicationBuilder {
 					LiSA liSA = new LiSA(getLiSAConfiguration());
 					Program p = node.getLiSAProgram();
 					liSA.run(p);
-
+					Field fileManagerLiSAField
+							= LiSA.class.getDeclaredField("fileManager");
+					fileManagerLiSAField.setAccessible(true);
+					FileManager fileManager = (FileManager) fileManagerLiSAField.get(liSA);
+					for (String name : fileManager.createdFiles()) {
+						if (name.endsWith(".html")) {
+							lisaOutputs.add(name);
+						}
+					}
+					fileManagerLiSAField.setAccessible(false);
+					var x = 3;
 				} catch (Exception e) {
 					System.out.println("[ERR] " + e.getMessage());
 					throw new ROSApplicationBuildException(e);
@@ -85,7 +98,7 @@ public class RosApplicationBuilder {
 		} catch (Exception e) {
 			throw new ROSApplicationBuildException(e);
 		}
-		return new ROSApplication(rosGraphDumper.getRosGraph(), permissionsGrants, rosGraphDumper.getNetwork(), workDir);
+		return new ROSApplication(rosGraphDumper.getRosGraph(), permissionsGrants, rosGraphDumper.getNetwork(), lisaOutputs, workDir);
 	}
 
 	protected LiSAConfiguration getLiSAConfiguration() {

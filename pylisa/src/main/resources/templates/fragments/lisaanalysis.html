@@ -1,10 +1,7 @@
 <div class="tab-pane" id="pills-lisaanalysis" role="tabpanel" aria-labelledby="pills-lisaanalysis-tab" th:fragment="lisa-analysis">
-    <div class="row">
-        <div class="container col-2 sub-menu pt-8">
-            <div><a href="">Computational Graph</a></div>
-            <div><a href="">Nodes</a></div>
-        </div>
-    <div class="col-10">Lisa Analysis
-        <iframe src="/Users/giacomozanatta/Projects/pylisa-ros/pylisa/ros-test-outputs/simple_node/action-app/untyped_MinimalActionClient.__init__(MinimalActionClient__self)_-2113863072.html" width="100%" height="100%"></iframe>
-    </div>
+        <th:block th:each="file : ${outputFiles}">
+            <div class="">Lisa Analysis
+                <iframe style="width: 100%; height: 100%" th:src="${file}"></iframe>
+            </div>
+        </th:block>
 </div>

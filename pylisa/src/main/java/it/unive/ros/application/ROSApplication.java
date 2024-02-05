@@ -14,10 +14,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ROSApplication {
 
@@ -26,6 +23,8 @@ public class ROSApplication {
 
 	private final ROSNetwork rosNetwork;
 	private Map<String, Grant> permissionsGrants = new HashMap<>();
+
+	private ArrayList<String> outputFiles = new ArrayList<>();
 
 	public void setWorkDir(
 			String workDir) {
@@ -61,6 +60,22 @@ public class ROSApplication {
 		this.rosNetwork = rosNetwork;
 	}
 
+	public ROSApplication(
+			RosComputationalGraph ROSComputationalGraph,
+			Map<String, Grant> permissionsGrants,
+			ROSNetwork rosNetwork,
+			ArrayList<String> outputFiles,
+			String workDir) {
+		this.ROSComputationalGraph = ROSComputationalGraph;
+		this.workDir = workDir;
+		this.permissionsGrants = permissionsGrants;
+		this.rosNetwork = rosNetwork;
+		this.outputFiles = outputFiles;
+	}
+
+	public ArrayList<String> getOutputFiles() {
+		return outputFiles;
+	}
 	public RosComputationalGraph getROSComputationalGraph() {
 		return ROSComputationalGraph;
 	}
@@ -86,10 +101,19 @@ public class ROSApplication {
 		context.setVariable("graph", getROSComputationalGraph());
 		context.setVariable("rosNetwork", getRosNetwork());
 		context.setVariable("svgPath", "graph/graph.svg");
+		context.setVariable("outputFiles", outputFiles);
+		context.setVariable("xmlPermMainFolder", workDir + "/permissions/");
 		var templateEngine = new TemplateEngine();
+		System.out.println("PROCESSED EVENTS: " + getRosNetwork().getProcessedNetworkEvents().size());
+
+		System.out.println("UNPROCESSED EVENTS: " + getRosNetwork().getNetworkEvents().size());
 		templateEngine.setTemplateResolver(resolver);
 		var result = templateEngine.process("index", context);
 		FileWriter output = new FileWriter(workDir + "/report.html");
+		// generate permissions .xml
+		for (ROSNode n : rosNetwork.getNetworkEntityContainers()) {
+			n.dumpPermissions(workDir);
+		}
 		BufferedWriter Bout = new BufferedWriter(output);
 		Bout.write(result);
 		Bout.flush();
@@ -388,7 +412,7 @@ public class ROSApplication {
 			id++;
 		}
 		res.append("§§§ MATRIX §§§\n");
-		StringBuilder matrix = new StringBuilder("");
+		StringBuilder matrix = new StringBuilder();
 		int vertices = ids.size();
 		int edges = 0;
 		Set<Pair<String, String>> verticesSet = new LinkedHashSet<>();
@@ -397,15 +421,15 @@ public class ROSApplication {
 				for (ROSTopicBasedNetworkEntity tu : this.ROSComputationalGraph.getTopicUsers(t.getName())) {
 					if (!tu.getNode().equals(entry.getKey())) {
 						if (verticesSet.add(Pair.of(entry.getValue(), ids.get(tu.getNode())))) {
-							matrix.append(entry.getValue() + " " + ids.get(tu.getNode()) + "\n");
+							matrix.append(entry.getValue()).append(" ").append(ids.get(tu.getNode())).append("\n");
 							edges++;
 						}
 					}
 				}
 			}
 		}
-		res.append("#edges: " + edges + "\n");
-		res.append("#vertices: " + vertices + "\n");
+		res.append("#edges: ").append(edges).append("\n");
+		res.append("#vertices: ").append(vertices).append("\n");
 		res.append(matrix);
 		FileManager.WriteAction w = writer -> writer.write(res.toString());
 		new FileManager(workDir).mkOutputFile("und-graph-adj-matrix.txt", w);
@@ -417,11 +441,11 @@ public class ROSApplication {
 		Map<ROSNode, String> ids = new HashMap<>();
 		for (ROSNode n : getROSComputationalGraph().getNodes()) {
 			ids.put(n, "" + id);
-			res.append(id + " " + n.getName() + "\n");
+			res.append(id).append(" ").append(n.getName()).append("\n");
 			id++;
 		}
 		res.append("§§§ MATRIX §§§\n");
-		StringBuilder matrix = new StringBuilder("");
+		StringBuilder matrix = new StringBuilder();
 		int vertices = ids.size();
 		int edges = 0;
 		Set<Pair<String, String>> verticesSet = new LinkedHashSet<>();
@@ -430,14 +454,14 @@ public class ROSApplication {
 				for (ROSTopicBasedNetworkEntity tu : this.ROSComputationalGraph.getTopicSubscriptions(t.getName())) {
 					if (!tu.getNode().equals(entry.getKey())) {
 						if (verticesSet.add(Pair.of(entry.getValue(), ids.get(tu.getNode())))) {
-							matrix.append(entry.getValue() + " " + ids.get(tu.getNode()) + "\n");
+							matrix.append(entry.getValue()).append(" ").append(ids.get(tu.getNode())).append("\n");
 							edges++;
 						}
 					}
 				}
 			}
 		}
-		if (matrix.length() > 0) {
+		if (!matrix.isEmpty()) {
 			int lastnNewLine = matrix.length() - 1;
 			matrix.replace(lastnNewLine, lastnNewLine + 1, "");
 		}
