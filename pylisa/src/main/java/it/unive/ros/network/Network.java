@@ -46,9 +46,11 @@ public class Network<Container extends NetworkEntityContainer, Entity extends Ne
 
     public Entity getNetworkEntity(String id) {
         for (Entity entity : this.networkEntities) {
-            if (entity.getID().equals(id)) {
-                return entity;
-            }
+            try {
+                if (entity.getID().equals(id)) {
+                    return entity;
+                }
+            }catch (Exception e) {}
         }
         return null;
     }
@@ -105,7 +107,7 @@ public class Network<Container extends NetworkEntityContainer, Entity extends Ne
         }
     }
     public List<NetworkEvent> getProcessedNetworkEvents() {
-        return networkEvents;
+        return processedNetworkEvents;
     }
     public void addNetworkEntity(Entity ne, String networkEntityContainerID) {
         Container nec = getNetworkEntityContainer(networkEntityContainerID);

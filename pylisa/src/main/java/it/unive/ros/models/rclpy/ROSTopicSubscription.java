@@ -70,7 +70,7 @@ public class ROSTopicSubscription extends ROSTopicBasedNetworkEntity {
 				Constant msg = new Constant(Untyped.INSTANCE, message.getMessage(), SyntheticLocation.INSTANCE);
 				exprSet[0] = new ExpressionSet(nodeExpr);
 				exprSet[1] = new ExpressionSet(msg);
-				subCallback.forwardSemanticsAux(container.getLisaState().interproceduralAnalysis, container.getLisaState().getAnalysisState(), exprSet, new StatementStore<>(container.getLisaState().getAnalysisState()));
+				// subCallback.forwardSemanticsAux(container.getLisaState().interproceduralAnalysis, container.getLisaState().getAnalysisState(), exprSet, new StatementStore<>(container.getLisaState().getAnalysisState())); WON'T DO
 				var x = 3;
 			}
 		}

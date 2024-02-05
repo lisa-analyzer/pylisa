@@ -77,7 +77,9 @@ public class PyLiSA {
 		}
 
 		ROSApplication ra = rob.build();
+		System.out.println(ra.getRosNetwork().getNetworkEvents().size());
 		ROSNetwork n = ra.getRosNetwork();
+		n.processEvents();
 		ra.dumpResults();
 	}
 

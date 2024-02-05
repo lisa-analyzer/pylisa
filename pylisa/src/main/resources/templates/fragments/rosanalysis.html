@@ -1,8 +1,20 @@
-<script>
-    mermaid.initialize({ startOnLoad: false });
+<!--<script>
+    mermaid.initialize({ startOnLoad: false,
+        graph: {
+            diagramPadding: 20,
+            //layoutDirection: 'TB',
+            minEntityWidth: 100,
+            minEntityHeight: 75,
+            entityPadding: 15,
+            stroke: 'gray',
+            fill: 'honeydew',
+            fontSize: 45,
+            useMaxWidth: true,
+        },
+    });
     mermaid.run();
     console.log(mermaid);
-</script>
+</script> -->
 <div class="tab-pane active" id="pills-rosanalysis" role="tabpanel" aria-labelledby="pills-rosanalysis-tab" th:fragment="ros-analysis">
     <div class="row">
         <div class="container col-2 sub-menu pt-4 pl-4">
@@ -23,12 +35,16 @@
     <div class="pt-4 pl-4">
         <div>
             <div><h2>Computational Graph</h2></div>
-            <div>
+            <div class="d-flex justify-content-center">
                 <img th:src="${svgPath}" />
             </div>
-            <pre class="mermaid">
+           <!-- <pre class="mermaid ros-graph" style="{width: 100%;}">
+---
+config:
+    useMaxWidth: true
+---
                 [[${rosNetwork.toMermaid()}]]
-            </pre>
+            </pre>-->
         </div>
         <a id="Nodes"></a>
         <h2>Nodes</h2>
@@ -36,7 +52,7 @@
             <th:block th:each="node : ${rosNetwork.getNetworkEntityContainers()}">
                 <div class="ml-4">
                     <a th:id="${'Node-' + node.getName()}"></a>
-                    <div><h3>[[${node.getName()}]]</h3></div>
+                    <div><h3>[[${node.getURI()}]]</h3></div>
                     <div  class="ml-4"><h4>Publishers:</h4>
                         <th:block th:switch="${node.getPublisherTopics().size()}">
                             <th:block th:case="'0'">
@@ -71,10 +87,33 @@
                     </th:block>
                 </div>
                 <div  class="ml-4">
-                    <h4>Generated permissions.xml</h4>
+                    <h4>Generated permissions.xml</h4> <a th:href="${'permissions/'.concat(node.getName()).concat('/permissions.xml')}" download>Download</a>
                     <pre><code class="language-xml">[[${node.dumpPermissions()}]]</code></pre>
                 </div>
             </th:block>
+        </div>
+
+        <a id="Network Events"></a>
+        <h2>Network Events</h2>
+        <div class="mt-2 ml-4">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Node Name</th>
+                        <th scope="col">Channel</th>
+                        <th scope="col">Message Type</th>
+                        <th scope="col">Where</th>
+                    </tr>
+                </thead>
+                <th:block th:each="event : ${rosNetwork.getProcessedNetworkEvents()}">
+                    <tr>
+                        <td>[[${event.getInitiator().getContainer().getURI()}]]</td>
+                        <td>[[${event.getChannel().getID()}]]</td>
+                        <td>[[${event.getInitiator().getType()}]]</td>
+                        <td>[[${event.getInitiator().getID()}]]</td>
+                    </tr>
+                </th:block>
+            </table>
         </div>
         <a id="Events"></a>
         <h2>Events</h2>
@@ -86,38 +125,31 @@
                     <th:block th:switch="${node.getProcessedEvents().size()}">
                         <th:block th:case="'0'">
                             <div>No events on this Node...</div>
-                    </th:block>
-                    <th:block th:case="*">
-                        <table class="table table-striped">
-                            <thead>
+                        </th:block>
+                        <th:block th:case="*">
+                            <table class="table table-striped">
+                                <thead>
 
-                            <tr>
-                                <th scope="col">Channel</th>
-                                <th scope="col">From</th>
-                                <th scope="col">Message Type</th>
-                                <th scope="col">Triggered By</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <th:block th:each="event : ${node.getProcessedEvents()}">
                                 <tr>
-                                    <td>[[${event.getChannel().getID()}]]</td>
-                                    <td>[[${event.getInitiator().getContainer().getName() + " @ " + event.getInitiator().getID()}]]</td>
-                                    <td>[[${event.getInitiator().getType()}]]</td>
-                                    <td>Spontaneously</td>
+                                    <th scope="col">Channel</th>
+                                    <th scope="col">From</th>
+                                    <th scope="col">Message Type</th>
+                                    <th scope="col">Triggered By</th>
                                 </tr>
-                            </th:block>
-                            </tbody>
-                        </table>
-                    </th:block>
+                                </thead>
+                                <tbody>
+                                <th:block th:each="event : ${node.getProcessedEvents()}">
+                                    <tr>
+                                        <td>[[${event.getChannel().getID()}]]</td>
+                                        <td>[[${event.getInitiator().getContainer().getName() + " @ " + event.getInitiator().getID()}]]</td>
+                                        <td>[[${event.getInitiator().getType()}]]</td>
+                                        <td>Spontaneously</td>
+                                    </tr>
+                                </th:block>
+                                </tbody>
+                            </table>
+                        </th:block>
                 </div>
-            </th:block>
-        </div>
-        <a id="Network Events"></a>
-        <h2>Network Events</h2>
-        <div class="mt-2 ml-4">
-            <th:block th:each="e : ${rosNetwork.getProcessedNetworkEvents()}">
-                <td>[[${e.getChannel().getID()}]]</td>
             </th:block>
         </div>
     </div>
