@@ -114,6 +114,9 @@ public class ROSApplication {
 		for (ROSNode n : rosNetwork.getNetworkEntityContainers()) {
 			n.dumpPermissions(workDir);
 		}
+		for (ROSNode n : rosNetwork.getNetworkEntityContainers()) {
+			n.dumpPolicy(workDir);
+		}
 		BufferedWriter Bout = new BufferedWriter(output);
 		Bout.write(result);
 		Bout.flush();

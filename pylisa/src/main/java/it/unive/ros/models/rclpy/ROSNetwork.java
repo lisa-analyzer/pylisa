@@ -52,6 +52,10 @@ public class ROSNetwork extends Network<ROSNode, ROSNetworkEntity<? extends ROSC
         addNetworkEntity(new ROSTopicPublisher(container, topic, "rmw_dds_common/msg/ParticipantEntitiesInfo"), container.getID());
         addNetworkEntity(new ROSTopicSubscription(container, topic, "rmw_dds_common/msg/ParticipantEntitiesInfo", null), container.getID());
 
+        ROSServiceChannel serviceChannel = new ROSServiceChannel(container.getURI() + "/get_type_description", true);
+        addNetworkChannel(serviceChannel);
+        addNetworkEntity(new ROSServiceServer(this, serviceChannel, container), container.getID());
+
     }
 
     public ROSTopic getTopic(String topicName) {

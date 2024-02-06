@@ -348,13 +348,63 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		Profile profile = new Profile();
 		profile.setNode(this.getName());
 		profile.setNs(this.getNamespace());
-		if (!this.getPublishers().isEmpty() ) {
+		// add TOPIC publishers
+		if (!this.getPublishers().isEmpty() || (this.getPublishers().size() == 1 && this.getPublishers().iterator().next().getChannel().getName().equals("ros_discovery_info"))) {
 			it.unive.ros.sros2policies.jaxb.TopicExpressionList publishers = new it.unive.ros.sros2policies.jaxb.TopicExpressionList();
 			publishers.setPublish(RuleQualifier.ALLOW);
 			for (ROSTopicPublisher p : this.getPublishers()) {
-				publishers.getTopic().add(p.getChannel().getName());
+				if (!p.getChannel().getName().equals("ros_discovery_info")) {
+					publishers.getTopic().add(p.getChannel().getName());
+				}
 			}
 			profile.getTopicsOrServicesOrActions().add(publishers);
+		}
+		// add TOPIC subscriptions
+		if (!this.getSubscribers().isEmpty() || (this.getSubscribers().size() == 1 && this.getSubscribers().iterator().next().getChannel().getName().equals("ros_discovery_info"))) {
+			it.unive.ros.sros2policies.jaxb.TopicExpressionList subscribers = new it.unive.ros.sros2policies.jaxb.TopicExpressionList();
+			subscribers.setSubscribe(RuleQualifier.ALLOW);
+			for (ROSTopicSubscription s : this.getSubscribers()) {
+				if (!s.getChannel().getName().equals("ros_discovery_info")) {
+					subscribers.getTopic().add(s.getChannel().getName());
+				}
+			}
+			profile.getTopicsOrServicesOrActions().add(subscribers);
+		}
+		// add SERVICE servers
+		if (!this.getServiceServers().isEmpty() ) {
+			it.unive.ros.sros2policies.jaxb.ServicesExpressionList services = new it.unive.ros.sros2policies.jaxb.ServicesExpressionList();
+			services.setReply(RuleQualifier.ALLOW);
+			for (ROSServiceServer s : this.getServiceServers()) {
+				services.getService().add(s.getChannel().getName());
+			}
+			profile.getTopicsOrServicesOrActions().add(services);
+		}
+		// add SERVICE clients
+		if (!this.getServiceClients().isEmpty() ) {
+			it.unive.ros.sros2policies.jaxb.ServicesExpressionList services = new it.unive.ros.sros2policies.jaxb.ServicesExpressionList();
+			services.setRequest(RuleQualifier.ALLOW);
+			for (ROSServiceClient s : this.getServiceClients()) {
+				services.getService().add(s.getChannel().getName());
+			}
+			profile.getTopicsOrServicesOrActions().add(services);
+		}
+		// add ACTION servers
+		if (!this.getActionServers().isEmpty() ) {
+			it.unive.ros.sros2policies.jaxb.ActionsExpressionList actions = new it.unive.ros.sros2policies.jaxb.ActionsExpressionList();
+			actions.setExecute(RuleQualifier.ALLOW);
+			for (ROSActionServer a : this.getActionServers()) {
+				actions.getAction().add(a.getChannel().getName());
+			}
+			profile.getTopicsOrServicesOrActions().add(actions);
+		}
+		// add ACTION clients
+		if (!this.getActionServers().isEmpty() ) {
+			it.unive.ros.sros2policies.jaxb.ActionsExpressionList actions = new it.unive.ros.sros2policies.jaxb.ActionsExpressionList();
+			actions.setCall(RuleQualifier.ALLOW);
+			for (ROSActionClient a : this.getActionClients()) {
+				actions.getAction().add(a.getChannel().getName());
+			}
+			profile.getTopicsOrServicesOrActions().add(actions);
 		}
 		profiles.getProfile().add(profile);
 		enclave.getProfiles().add(profiles);
@@ -442,6 +492,17 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 			throws Exception {
 		JAXBPermissionsHelpers.store(this.toPermissionsNode(),
 				workDir + "/permissions/" + this.getName() + "/permissions.xml");
+	}
+
+	public void dumpPolicy(
+			String workDir)
+			throws Exception {
+		JAXBROS2PermissionsHelpers.store(this.toSROS2Policy(),
+				workDir + "/policies/" + this.getName() + "/policy.xml");
+	}
+	public String dumpPolicy()
+			throws Exception {
+		return JAXBROS2PermissionsHelpers.toString(this.toSROS2Policy());
 	}
 
 	public String dumpPermissions()
