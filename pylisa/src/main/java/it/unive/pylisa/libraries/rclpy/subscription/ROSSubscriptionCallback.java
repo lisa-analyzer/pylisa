@@ -20,6 +20,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
+import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -64,9 +65,18 @@ public class ROSSubscriptionCallback extends NaryExpression {
                     unresolvedCall.forwardSemanticsAux(interprocedural, state, unresolvedCallParams, expressions);
                     var x = 3;
                 }
-                //new UnresolvedCall(this.getCFG(), )
                 var x = 3;
 
+            }
+            if (expr instanceof ValueExpression) {
+                VariableRef message = new VariableRef(this.getCFG(), this.getLocation(), "$msg");
+                Expression[] unresolvedCallExprs = new Expression[1];
+                unresolvedCallExprs[0] = message;
+                UnresolvedCall unresolvedCall = new UnresolvedCall(this.getCFG(), this.getLocation(), Call.CallType.UNKNOWN, null, expr.toString(), unresolvedCallExprs);
+                SymbolicExpression se = new Variable(Untyped.INSTANCE, "$msg", SyntheticLocation.INSTANCE);
+                ExpressionSet[] unresolvedCallParams = new ExpressionSet[1];
+                unresolvedCallParams[0] = new ExpressionSet(se);
+                unresolvedCall.forwardSemanticsAux(interprocedural, state, unresolvedCallParams, expressions);
             }
         }
         return state;
