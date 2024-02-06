@@ -58,8 +58,8 @@ java {
 }
 
 compileJava   {
-  sourceCompatibility = '17'
-  targetCompatibility = '17'
+  sourceCompatibility = '11'
+  targetCompatibility = '11'
 }
 
 javadoc {
@@ -174,16 +174,6 @@ publishing {
     }
 }
 
-startScripts {
-    doLast {
-        def windowsScriptFile = file getWindowsScript()
-        def unixScriptFile = file getUnixScript()
-
-        // Change APP_HOME to root dir in startScripts
-        windowsScriptFile.text = windowsScriptFile.text.replace('set APP_HOME=%DIRNAME%..\\..', 'set APP_HOME=%DIRNAME%')
-        unixScriptFile.text = unixScriptFile.text.replace('APP_HOME=$( cd "${APP_HOME:-./}../.." && pwd -P ) || exit', 'APP_HOME=$( cd "${APP_HOME:-./}" && pwd -P ) || exit')
-    }
-}
 signing {
     def signingKey = System.getenv('SIGN_KEY')
     def signingPassword = System.getenv('SIGN_PW')

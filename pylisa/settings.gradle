@@ -1,2 +1,1 @@
 rootProject.name = 'pylisa'
-includeBuild("/Users/giacomozanatta/Projects/lisa/lisa")
