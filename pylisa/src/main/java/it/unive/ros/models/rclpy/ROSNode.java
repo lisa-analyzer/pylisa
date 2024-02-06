@@ -15,6 +15,9 @@ import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.network.NetworkEntityContainer;
 import it.unive.ros.network.NetworkEvent;
 import it.unive.ros.permissions.jaxb.*;
+import it.unive.ros.permissions.jaxb.ObjectFactory;
+import it.unive.ros.permissions.jaxb.TopicExpressionList;
+import it.unive.ros.sros2policies.jaxb.*;
 import jakarta.xml.bind.JAXBElement;
 import java.math.BigInteger;
 import java.util.*;
@@ -332,6 +335,33 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		permissionsNode.setPermissions(permissions);
 		/** [END] DDS **/
 		return permissionsNode;
+	}
+
+	public Policy toSROS2Policy() throws DatatypeConfigurationException {
+		Policy policy = new Policy();
+		policy.setVersion("0.2.0"); // fixed value
+		Enclaves enclaves = new Enclaves();
+		// create Enclave
+		Enclave enclave = new Enclave();
+		enclave.setPath(this.getName().startsWith("/") ? this.getName() : "/".concat(this.getName()));
+		Profiles profiles = new Profiles();
+		Profile profile = new Profile();
+		profile.setNode(this.getName());
+		profile.setNs(this.getNamespace());
+		if (!this.getPublishers().isEmpty() ) {
+			it.unive.ros.sros2policies.jaxb.TopicExpressionList publishers = new it.unive.ros.sros2policies.jaxb.TopicExpressionList();
+			publishers.setPublish(RuleQualifier.ALLOW);
+			for (ROSTopicPublisher p : this.getPublishers()) {
+				publishers.getTopic().add(p.getChannel().getName());
+			}
+			profile.getTopicsOrServicesOrActions().add(publishers);
+		}
+		profiles.getProfile().add(profile);
+		enclave.getProfiles().add(profiles);
+		enclaves.getEnclave().add(enclave);
+		policy.setEnclaves(enclaves);
+		/** DDS **/
+		return policy;
 	}
 
 	public PermissionSatisfabilityNodeResult satisfiesPermission(
