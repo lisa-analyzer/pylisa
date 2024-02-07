@@ -5,7 +5,6 @@ import java.time.LocalDate;
 
 import it.unive.ros.application.ROSApplication;
 import it.unive.ros.models.rclpy.ROSNetwork;
-import it.unive.ros.models.rclpy.ROSNetwork2;
 import org.junit.Test;
 
 import it.unive.lisa.AnalysisSetupException;

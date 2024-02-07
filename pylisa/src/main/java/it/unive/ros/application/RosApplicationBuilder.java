@@ -17,7 +17,6 @@ import it.unive.ros.application.exceptions.ROSNodeBuildException;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.lisa.checks.semantics.ROSComputationGraphDumper;
 import it.unive.ros.models.rclpy.ROSNetwork;
-import it.unive.ros.models.rclpy.ROSNetwork2;
 import it.unive.ros.models.rclpy.RosComputationalGraph;
 import it.unive.ros.permissions.jaxb.Grant;
 import it.unive.ros.permissions.jaxb.JAXBPermissionsHelpers;
