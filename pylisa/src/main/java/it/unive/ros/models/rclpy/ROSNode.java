@@ -349,27 +349,32 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		profile.setNode(this.getName());
 		profile.setNs(this.getNamespace());
 		// add TOPIC publishers
-		if (!this.getPublishers().isEmpty() || (this.getPublishers().size() == 1 && this.getPublishers().iterator().next().getChannel().getName().equals("ros_discovery_info"))) {
-			it.unive.ros.sros2policies.jaxb.TopicExpressionList publishers = new it.unive.ros.sros2policies.jaxb.TopicExpressionList();
-			publishers.setPublish(RuleQualifier.ALLOW);
-			for (ROSTopicPublisher p : this.getPublishers()) {
-				if (!p.getChannel().getName().equals("ros_discovery_info")) {
-					publishers.getTopic().add(p.getChannel().getName());
+		if (!this.getPublishers().isEmpty()) {
+			if (this.getPublishers().size() != 1 || !this.getPublishers().iterator().next().getChannel().getName().equals("ros_discovery_info")) {
+				it.unive.ros.sros2policies.jaxb.TopicExpressionList publishers = new it.unive.ros.sros2policies.jaxb.TopicExpressionList();
+				publishers.setPublish(RuleQualifier.ALLOW);
+				for (ROSTopicPublisher p : this.getPublishers()) {
+					if (!p.getChannel().getName().equals("ros_discovery_info")) {
+						publishers.getTopic().add(p.getChannel().getName());
+					}
 				}
+				profile.getTopicsOrServicesOrActions().add(publishers);
 			}
-			profile.getTopicsOrServicesOrActions().add(publishers);
 		}
 		// add TOPIC subscriptions
-		if (!this.getSubscribers().isEmpty() || (this.getSubscribers().size() == 1 && this.getSubscribers().iterator().next().getChannel().getName().equals("ros_discovery_info"))) {
-			it.unive.ros.sros2policies.jaxb.TopicExpressionList subscribers = new it.unive.ros.sros2policies.jaxb.TopicExpressionList();
-			subscribers.setSubscribe(RuleQualifier.ALLOW);
-			for (ROSTopicSubscription s : this.getSubscribers()) {
-				if (!s.getChannel().getName().equals("ros_discovery_info")) {
-					subscribers.getTopic().add(s.getChannel().getName());
+		if (!this.getSubscribers().isEmpty()) {
+			if ((this.getSubscribers().size() != 1 || !this.getSubscribers().iterator().next().getChannel().getName().equals("ros_discovery_info"))) {
+				it.unive.ros.sros2policies.jaxb.TopicExpressionList subscribers = new it.unive.ros.sros2policies.jaxb.TopicExpressionList();
+				subscribers.setSubscribe(RuleQualifier.ALLOW);
+				for (ROSTopicSubscription s : this.getSubscribers()) {
+					if (!s.getChannel().getName().equals("ros_discovery_info")) {
+						subscribers.getTopic().add(s.getChannel().getName());
+					}
 				}
+				profile.getTopicsOrServicesOrActions().add(subscribers);
 			}
-			profile.getTopicsOrServicesOrActions().add(subscribers);
 		}
+
 		// add SERVICE servers
 		if (!this.getServiceServers().isEmpty() ) {
 			it.unive.ros.sros2policies.jaxb.ServicesExpressionList services = new it.unive.ros.sros2policies.jaxb.ServicesExpressionList();

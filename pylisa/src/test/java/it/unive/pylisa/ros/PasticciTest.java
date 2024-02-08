@@ -24,6 +24,7 @@ public class PasticciTest {
 
         ROSApplication ra = rob.build();
         ROSNetwork n = ra.getRosNetwork();
+        n.processEvents();
         ra.dumpResults();
         System.out.println(n.toMermaid());
     }
@@ -33,15 +34,16 @@ public class PasticciTest {
         RosApplicationBuilder rob = new RosApplicationBuilder();
         try {
             //rob.withNode(new PythonROSNodeBuilder("ros-tests/lasagna/pasticcio02.py"));
-            rob.withNode(new PythonROSNodeBuilder("ros-tests/lasagna/intel_pub.py"));
+            rob.withNode(new PythonROSNodeBuilder("ros-tests/lasagna/publisher_local_function.py"));
         } catch (ROSNodeBuildException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        rob.withWorkDir("ros-test-outputs/pasticci/intel_pub-1");
+        rob.withWorkDir("ros-test-outputs/pasticci/pointcloud_publisher");
 
         ROSApplication ra = rob.build();
         ROSNetwork n = ra.getRosNetwork();
+        n.processEvents();
         ra.dumpResults();
         System.out.println(n.toMermaid());
         System.out.println(n.toGraphviz(false));
