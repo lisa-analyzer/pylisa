@@ -72,7 +72,7 @@ public class ROSSubscriptionCallback extends NaryExpression {
                 VariableRef message = new VariableRef(this.getCFG(), this.getLocation(), "$msg");
                 Expression[] unresolvedCallExprs = new Expression[1];
                 unresolvedCallExprs[0] = message;
-                UnresolvedCall unresolvedCall = new UnresolvedCall(this.getCFG(), this.getLocation(), Call.CallType.UNKNOWN, null, expr.toString(), unresolvedCallExprs);
+                UnresolvedCall unresolvedCall = new UnresolvedCall(this.getCFG(), this.getLocation(), Call.CallType.STATIC, null, expr.toString(), unresolvedCallExprs);
                 SymbolicExpression se = new Variable(Untyped.INSTANCE, "$msg", SyntheticLocation.INSTANCE);
                 ExpressionSet[] unresolvedCallParams = new ExpressionSet[1];
                 unresolvedCallParams[0] = new ExpressionSet(se);

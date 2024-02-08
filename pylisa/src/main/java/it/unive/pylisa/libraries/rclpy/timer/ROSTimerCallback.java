@@ -58,7 +58,7 @@ public class ROSTimerCallback extends NaryExpression {
             }
             if (expr instanceof ValueExpression) {
                 Expression[] unresolvedCallExprs = new Expression[0];
-                UnresolvedCall unresolvedCall = new UnresolvedCall(this.getCFG(), this.getLocation(), Call.CallType.UNKNOWN, null, expr.toString(), unresolvedCallExprs);
+                UnresolvedCall unresolvedCall = new UnresolvedCall(this.getCFG(), this.getLocation(), Call.CallType.STATIC, null, expr.toString(), unresolvedCallExprs);
                 ExpressionSet[] unresolvedCallParams = new ExpressionSet[0];
                 unresolvedCall.forwardSemanticsAux(interprocedural, state, unresolvedCallParams, expressions);
             }

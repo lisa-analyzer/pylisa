@@ -776,9 +776,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return visitAssert_stmt(ctx.assert_stmt());
 		else if (ctx.flow_stmt() != null)
 			return visitFlow_stmt(ctx.flow_stmt());
-		else
-			// TODO: GLOBAL AND NONLOCAL
-			throw new UnsupportedStatementException("Simple statement not yet supported");
+		else if (ctx.nonlocal_stmt() != null)
+			return new NoOp(currentCFG, getLocation(ctx)); // TODO
+		else if (ctx.global_stmt() != null)
+			return new NoOp(currentCFG, getLocation(ctx)); // TODO
+		throw new UnsupportedStatementException("Simple statement not yet supported");
 	}
 
 	@Override
