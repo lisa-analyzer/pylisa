@@ -486,6 +486,17 @@ public class ROSComputationGraphDumper
 					callback.length()
 							- 2);
 		}
+
+		access = new Variable(Untyped.INSTANCE,
+				"qos_profile",
+				expr.getCodeLocation());
+		has = new HeapAllocationSite(
+				StringType.INSTANCE,
+				expr.getCodeLocation()
+						.getCodeLocation(),
+				access, false,
+				expr.getCodeLocation());
+
 		//callbackFunction = callback;
 		ROSCommunicationChannel channel = rosNetwork.getNetworkChannel(topicName);
 
@@ -493,7 +504,7 @@ public class ROSComputationGraphDumper
 			channel = new ROSTopic(topicName);
 			rosNetwork.addNetworkChannel(channel);
 		}
-		ROSSubscriptionCallback callbackFunction = new ROSSubscriptionCallback(publisher.getCFG(), (SourceCodeLocation) publisher.getLocation(), ((UnresolvedCall)publisher).getSubExpressions()[4]);
+		ROSSubscriptionCallback callbackFunction = new ROSSubscriptionCallback(publisher.getCFG(), (SourceCodeLocation) publisher.getLocation(), ((UnresolvedCall)publisher).getSubExpressions()[3]);
 		ROSTopicSubscription s = new ROSTopicSubscription(nodeExpr.getCodeLocation().toString(), (ROSTopic) channel, msgType, callbackFunction, publisher, expr, analysisState);
 		rosNetwork.addNetworkEntity(s, nodeExpr.getCodeLocation().toString());
 	}
@@ -555,6 +566,24 @@ public class ROSComputationGraphDumper
 		}
 	}
 
+	public Boolean isAvoidRosNamespaceConventions(AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analyzedCFG,
+												  AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState,
+												  Expression qosProfile) throws SemanticException {
+		String nodeName = null;
+		AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> qosSemantics = analyzedCFG.getAnalysisStateAfter(qosProfile);
+		HeapReference qosHR = new HeapReference(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE), qosSemantics.getComputedExpressions().elements.iterator().next(), qosProfile.getLocation());
+		HeapDereference qosDeref = new HeapDereference(qosHR.getExpression().getStaticType(), qosHR, qosSemantics.getComputedExpressions().elements.iterator().next().getCodeLocation());
+		ExpressionSet qosHAS = qosSemantics
+				.getState()
+				.rewrite(qosDeref,
+						qosProfile,
+						qosSemantics.getState());
+		SymbolicExpression e = qosHAS.iterator().next();
+		if (e instanceof HeapAllocationSite) {
+
+		}
+		return false;
+	}
 
 
 	public void visitNativeCFG(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> tool,
@@ -600,6 +629,7 @@ public class ROSComputationGraphDumper
 										.lookup(LibrarySpecificationProvider.RCLPY_SUBSCRIPTION)))) {
 					//AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> nodeSemantics = analyzedCFG.getAnalysisStateAfter(unresolvedCall.getSubExpressions()[0]);
 					SymbolicExpression nodeExpr = getNodeHeapReference(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[0]);
+					Boolean avoidNamespaceConventions = isAvoidRosNamespaceConventions(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[4]);
 					visitSubscriber(analysisState, unresolvedCall, (HeapExpression) expr, nodeExpr);
 				}
 			}

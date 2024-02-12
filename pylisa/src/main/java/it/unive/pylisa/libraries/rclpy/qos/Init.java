@@ -11,8 +11,12 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
+import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
+import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
+import it.unive.pylisa.cfg.expression.PyAssign;
 
 public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression implements PluggableStatement {
 	protected Statement st;
@@ -57,13 +61,12 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 			throws SemanticException {
 		AnalysisState<A> result = state;
 		Expression self = getSubExpressions()[0];
-		NamedParameterExpression _avoid_ros_ns_conventions = getNamedParameterExpr("avoid_ros_namespace_convention");
-		Expression avoid_ros_ns_conventions = _avoid_ros_ns_conventions != null
-				? _avoid_ros_ns_conventions.getSubExpression()
+		UnaryExpression _avoid_ros_namespace_conventions = getNamedParameterExpr("avoid_ros_namespace_conventions");
+		Expression avoid_ros_namespace_convention = _avoid_ros_namespace_conventions != null ? _avoid_ros_namespace_conventions.getSubExpression()
 				: new FalseLiteral(this.getCFG(), getLocation());
-		// _avoid_ros_ns_conventions.forwardSemanticsAux(interprocedural, state,
-		// params,
-		// expressions).getComputedExpressions();
+		AccessInstanceGlobal aig_avoidRosNamespaceConventions = new AccessInstanceGlobal(st.getCFG(), getLocation(), self, "avoid_ros_namespace_conventions");
+		PyAssign pyAssign = new PyAssign(getCFG(), getLocation(), aig_avoidRosNamespaceConventions, avoid_ros_namespace_convention);
+		result = result.lub(pyAssign.forwardSemantics(state, interprocedural, expressions));
 		return result;
 	}
 

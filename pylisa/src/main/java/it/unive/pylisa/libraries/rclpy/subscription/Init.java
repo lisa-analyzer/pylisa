@@ -20,6 +20,7 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import java.util.Set;
 
@@ -91,22 +92,21 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 						tmp = tmp.lub(partial.assign(access, t, this));
 					partial = tmp;
 
-					global = new Global(getLocation(), unit, "qos_profile", false, StringType.INSTANCE);
-					var = global.toSymbolicVariable(getLocation());
-					access = new AccessChild(var.getStaticType(), container, var, getLocation());
-					tmp = state.bottom();
-					for (SymbolicExpression t : params[3])
-						tmp = tmp.lub(partial.assign(access, t, this));
-					partial = tmp;
-
-					global = new Global(getLocation(), unit, "callback", false, StringType.INSTANCE);
+					global = new Global(getLocation(), unit, "qos_profile", false, Untyped.INSTANCE);
 					var = global.toSymbolicVariable(getLocation());
 					access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					tmp = state.bottom();
 					for (SymbolicExpression t : params[4])
 						tmp = tmp.lub(partial.assign(access, t, this));
 					partial = tmp;
-					//global = new Global(getLocation(), unit, "")
+
+					global = new Global(getLocation(), unit, "callback", false, Untyped.INSTANCE);
+					var = global.toSymbolicVariable(getLocation());
+					access = new AccessChild(var.getStaticType(), container, var, getLocation());
+					tmp = state.bottom();
+					for (SymbolicExpression t : params[3])
+						tmp = tmp.lub(partial.assign(access, t, this));
+					partial = tmp;
 					result = result.lub(partial);
 				}
 		}

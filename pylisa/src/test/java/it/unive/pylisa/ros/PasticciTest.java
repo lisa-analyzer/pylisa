@@ -39,7 +39,7 @@ public class PasticciTest {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        rob.withWorkDir("ros-test-outputs/pasticci/pointcloud_publisher");
+        rob.withWorkDir("ros-test-outputs/pasticci/qos");
 
         ROSApplication ra = rob.build();
         ROSNetwork n = ra.getRosNetwork();

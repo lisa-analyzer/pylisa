@@ -15,14 +15,21 @@
 import rclpy
 
 from std_msgs.msg import String
-
+from rclpy.qos import QoSProfile
 
 def main(args=None):
     rclpy.init(args=args)
-
+    QOS_RKL10V = QoSProfile(
+        reliability=QoSReliabilityPolicy.RELIABLE,
+        history=QoSHistoryPolicy.KEEP_LAST,
+        depth=qos_depth,
+        durability=QoSDurabilityPolicy.VOLATILE,
+        avoid_ros_namespace_conventions=True
+    )
     node = rclpy.create_node('minimal_publisher')
-    publisher = node.create_publisher(String, 'topic', 10)
-
+    #publisher = node.create_publisher(String, 'topic', 10)
+    x = 30
+    subscriber = node.create_subscription(String, 'topic', lambda: None, x)
     msg = String()
     i = 0
 
@@ -34,7 +41,7 @@ def main(args=None):
         publisher.publish(msg)
 
     timer_period = 0.5  # seconds
-    timer = node.create_timer(timer_period, timer_callback)
+    #timer = node.create_timer(timer_period, timer_callback)
 
     rclpy.spin(node)
 
