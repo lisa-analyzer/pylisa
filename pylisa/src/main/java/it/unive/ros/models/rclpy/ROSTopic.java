@@ -3,7 +3,6 @@ package it.unive.ros.models.rclpy;
 
 public class ROSTopic extends ROSCommunicationChannel {
 	private ROSTopicType topicType = ROSTopicType.DEFAULT;
-	private boolean avoidROSNamespaceConventions = false;
 	public ROSTopic(
 			String name) {
 		super(name);
@@ -14,8 +13,7 @@ public class ROSTopic extends ROSCommunicationChannel {
 	}
 
 	public ROSTopic(String name, boolean system, boolean avoidROSNamespaceConventions) {
-		super(name, system);
-		this.avoidROSNamespaceConventions = avoidROSNamespaceConventions;
+		super(name, system, avoidROSNamespaceConventions);
 	}
 
 	public ROSTopic(String name, boolean system, ROSTopicType topicType) {
@@ -23,16 +21,14 @@ public class ROSTopic extends ROSCommunicationChannel {
 		this.topicType = topicType;
 	}
 	public ROSTopic(String name, boolean system, ROSTopicType topicType, Boolean avoidROSNamespaceConventions) {
-		super(name, system);
+		super(name, system, avoidROSNamespaceConventions);
 		this.topicType = topicType;
-		this.avoidROSNamespaceConventions = avoidROSNamespaceConventions;
 	}
 	public String getName() {
-		return this.getID();
+		return super.getID();
 	}
-
-	public boolean isAvoidROSNamespaceConventions() {
-		return avoidROSNamespaceConventions;
+	public String getID() {
+		return this.getDDSPrefix() + super.getID();
 	}
 
 	public ROSTopicType getTopicType() {
@@ -40,7 +36,7 @@ public class ROSTopic extends ROSCommunicationChannel {
 	}
 
 	public String getDDSPrefix() {
-		if (avoidROSNamespaceConventions) {
+		if (isAvoidRosNamespaceConventions()) {
 			return "";
 		}
         return switch (topicType) {

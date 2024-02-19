@@ -1,6 +1,7 @@
 package it.unive.ros.models.rclpy;
 
 import it.unive.ros.network.Network;
+import it.unive.ros.network.NetworkEntity;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -188,9 +189,9 @@ public class ROSNetwork extends Network<ROSNode, ROSNetworkEntity<? extends ROSC
         for (ROSTopic t : this.getTopics()) {
             if (!t.isSystem()) {
                 if (this.getChannelUserContainers(t).isEmpty()) {
-                    dotGraph.append("\"").append(t.getName()).append("\"").append("[shape=parallelogram,style=filled,fillcolor=\"gold\"];");
+                    dotGraph.append("\"").append(t.getID()).append("\"").append("[shape=parallelogram,style=filled,fillcolor=\"gold\"];");
                 } else {
-                    dotGraph.append("\"").append(t.getName()).append("\"").append("[shape=parallelogram,style=filled,fillcolor=\"gold\"];");
+                    dotGraph.append("\"").append(t.getID()).append("\"").append("[shape=parallelogram,style=filled,fillcolor=\"gold\"];");
                 }
             }
         }
@@ -218,12 +219,12 @@ public class ROSNetwork extends Network<ROSNode, ROSNetworkEntity<? extends ROSC
         for (ROSNode n : getNetworkEntityContainers()) {
             for (ROSTopicPublisher p : n.getPublishers()) {
                 if (!p.getChannel().isSystem()) {
-                    dotGraph.append("\"").append(n.getURI()).append("\"").append(" -> ").append("\"").append(p.getChannel().getName()).append("\"");
+                    dotGraph.append("\"").append(n.getURI()).append("\"").append(" -> ").append("\"").append(p.getChannel().getID()).append("\"");
                 }
             }
             for (ROSTopicSubscription s : n.getSubscribers()) {
                 if (!s.getChannel().isSystem()) {
-                    dotGraph.append("\"").append(s.getChannel().getName()).append("\"").append(" -> ").append("\"").append(n.getURI()).append("\"");
+                    dotGraph.append("\"").append(s.getChannel().getID()).append("\"").append(" -> ").append("\"").append(n.getURI()).append("\"");
                 }
                 }
             for (ROSServiceServer ss : n.getServiceServers()) {

@@ -34,12 +34,12 @@ public class PasticciTest {
         RosApplicationBuilder rob = new RosApplicationBuilder();
         try {
             //rob.withNode(new PythonROSNodeBuilder("ros-tests/lasagna/pasticcio02.py"));
-            rob.withNode(new PythonROSNodeBuilder("ros-tests/lasagna/publisher_local_function.py"));
+            rob.withNode(new PythonROSNodeBuilder("ros-tests/test/subscription.py"));
         } catch (ROSNodeBuildException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        rob.withWorkDir("ros-test-outputs/pasticci/qos");
+        rob.withWorkDir("ros-test-outputs/test/qos");
 
         ROSApplication ra = rob.build();
         ROSNetwork n = ra.getRosNetwork();

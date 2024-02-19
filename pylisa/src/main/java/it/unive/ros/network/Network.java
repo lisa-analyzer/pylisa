@@ -14,7 +14,7 @@ public class Network<Container extends NetworkEntityContainer, Entity extends Ne
     private Set<Container> networkEntityContainers;
     private Set<Channel> networkChannels;
     private List<NetworkEvent> networkEvents;
-
+    private List<String> warnings = new ArrayList<>();
     private List<NetworkEvent> processedNetworkEvents = new ArrayList<>();
     private List<Entity> networkEntities;
     public Network() {
@@ -34,7 +34,9 @@ public class Network<Container extends NetworkEntityContainer, Entity extends Ne
             throw new Exception("Duplicated NetworkEntityContainer with id " + container.getID());
         }
     }
+    public List<String> getWarnings() {return warnings;}
 
+    public void addWarning(String warning) {this.warnings.add(warning);}
     public Container getNetworkEntityContainer(String id) {
         for (Container container : this.networkEntityContainers) {
             if (container.getID().equals(id)) {
@@ -74,9 +76,9 @@ public class Network<Container extends NetworkEntityContainer, Entity extends Ne
     public void addNetworkChannel(Channel channel) throws Exception {
         if (this.getNetworkChannel(channel.getID()) == null) {
             this.networkChannels.add(channel);
-        } else {
+        } /*else {
             throw new Exception("Duplicated NetworkChannel with id " + channel.getID());
-        }
+        }*/
     }
 
     public Channel getNetworkChannel(String id) {

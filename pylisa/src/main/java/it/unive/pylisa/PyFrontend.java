@@ -2029,7 +2029,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			if (ctx.yield_expr() != null)
 				throw new UnsupportedStatementException("yield expressions not supported");
 			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
-			return new TupleCreation(currentCFG, getLocation(ctx), sts.toArray(Expression[]::new));
+			TupleCreation tupleCreation = new TupleCreation(currentCFG, getLocation(ctx), sts.toArray(Expression[]::new));
+			if (tupleCreation.getSubExpressions().length == 1) {
+				return tupleCreation.getSubExpressions()[0];
+			}
+			return tupleCreation;
 		} else if (ctx.OPEN_BRACE() != null) {
 			// check if it is a dict or a set
 			if (!isADict(ctx.dictorsetmaker())) {

@@ -307,8 +307,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		TopicExpressionList PtopicExpressionList = new TopicExpressionList();
 		for (ROSTopicPublisher p : getAllPublishers()) {
 			PtopicExpressionList.getTopic().add(
-					p.getChannel().getDDSPrefix() +
-							p.getChannel().getName());
+							p.getChannel().getID());
 		}
 		/** [END] DDS.PERMISSIONS.GRANT.ALLOW_RULE.PUBLISH.TOPICS **/
 		Pcriteria.setTopics(PtopicExpressionList);
@@ -320,8 +319,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		TopicExpressionList StopicExpressionList = new TopicExpressionList();
 		for (ROSTopicSubscription s : getAllSubscriptions()) {
 			StopicExpressionList.getTopic().add(
-					s.getChannel().getDDSPrefix() +
-							s.getChannel().getName());
+					s.getChannel().getID());
 		}
 		/** [END] DDS.PERMISSIONS.GRANT.ALLOW_RULE.SUBSCRIBE.TOPICS **/
 		Scriteria.setTopics(StopicExpressionList);
