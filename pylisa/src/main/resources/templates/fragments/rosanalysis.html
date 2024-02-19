@@ -46,6 +46,24 @@ config:
                 [[${rosNetwork.toMermaid()}]]
             </pre>-->
         </div>
+        <th:block th:switch="${rosNetwork.getWarnings().size()}">
+            <th:block th:case="'0'">
+            </th:block>
+            <th:block th:case="*">
+                <div class="warnings">
+                <a id="Warnings"></a>
+
+                    <h2>Warnings</h2>
+                    <div class="mt-2 ml-4">
+                        <ul>
+                        <th:block th:each="warn : ${rosNetwork.getWarnings()}">
+                            <li>[[${warn}]]</li>
+                        </th:block>
+                        </ul>
+                    </div>
+                </div>
+            </th:block>
+        </th:block>
         <a id="Nodes"></a>
         <h2>Nodes</h2>
         <div class="mt-2 ml-4">

@@ -6,7 +6,7 @@ import it.unive.ros.network.NetworkChannel;
 public abstract class ROSCommunicationChannel implements NetworkChannel {
     private String ID;
     private Boolean system = false;
-
+    private Boolean avoidROSNamespaceConventions = false;
     public ROSCommunicationChannel(String ID) {
         this.ID = ID;
     }
@@ -15,6 +15,12 @@ public abstract class ROSCommunicationChannel implements NetworkChannel {
         this.ID = ID;
         this.system = system;
     }
+
+    public ROSCommunicationChannel(String id, boolean system, boolean avoidRosNamespaceConventions) {
+        this(id, system);
+        this.avoidROSNamespaceConventions = avoidRosNamespaceConventions;
+    }
+
     @Override
     public String getID() {
         return ID;
@@ -23,7 +29,7 @@ public abstract class ROSCommunicationChannel implements NetworkChannel {
     public String getName() {
         return ID;
     }
-
+    public Boolean isAvoidRosNamespaceConventions() {return avoidROSNamespaceConventions;}
     public Boolean isSystem() {
         return system;
     }

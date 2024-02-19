@@ -17,9 +17,16 @@ public class ElephantShooterTest {
 
   @Test
   public void testApplication() throws ROSApplicationBuildException, ROSNodeBuildException, Exception {
-    new RosApplicationBuilder().withNode(new PythonROSNodeBuilder("ros-tests/elephant_shooter/shooter_test.py"))
+    new RosApplicationBuilder().withNode(new PythonROSNodeBuilder("ros-tests/elephant_shooter/mpc_node.py"))
         .withWorkDir("ros-test-outputs/elephant-shooter/shooter_test")
         .build().dumpGraph();
+  }
+
+  @Test
+  public void testFOpenParen() throws ROSApplicationBuildException, ROSNodeBuildException, Exception {
+    new RosApplicationBuilder().withNode(new PythonROSNodeBuilder("ros-tests/elephant_shooter/test_open_paren.py"))
+            .withWorkDir("ros-test-outputs/elephant-shooter/test_open_paren")
+            .build().dumpGraph();
   }
 
   @Test
