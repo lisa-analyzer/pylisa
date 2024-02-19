@@ -117,8 +117,8 @@ public class FullTest {
         int ok = 0;
         // 1. parse file
 
-        Scanner scanner = new Scanner(new File(MAIN_FOLDER + "/pythonFiles.txt"));
-        FileWriter output = new FileWriter("results-parser-08022024.csv");
+        Scanner scanner = new Scanner(new File(MAIN_FOLDER + "/pythonFiles-new.txt"));
+        FileWriter output = new FileWriter("results-parser-19022024.csv");
         BufferedWriter Bout = new BufferedWriter(output);
         Bout.write("file_name,status,error_message,stack_trace");
         Bout.newLine();
