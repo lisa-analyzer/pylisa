@@ -25,8 +25,8 @@ public class FullTest {
         RosApplicationBuilder rob = new RosApplicationBuilder()
                 /*.withNode(new PythonROSNodeBuilder(
                         "/Users/giacomozanatta/Projects/ReposDownloader/repos/autonav_software_2024/autonav_ws/src/autonav_manual/src/steam.py"))*/
-                .withNode(new PythonROSNodeBuilder("/Users/giacomozanatta/Desktop/ros2_examples/mechaship/mechaship_teleop_joystick.py"))
-                .withWorkDir("test-ros-outputs/single-file-rosapp/mechashit");
+                .withNode(new PythonROSNodeBuilder("/Users/giacomozanatta/Projects/ReposDownloader/repos/2D-Test-Track-Planner/planner/ros2/src/graphics/graphics/node_visual_gui.py"))
+                .withWorkDir("test-ros-outputs/single-file-rosapp/visualgui");
         ROSApplication rosapp = rob.build();
         rosapp.getRosNetwork().processEvents();
         rosapp.dumpResults();

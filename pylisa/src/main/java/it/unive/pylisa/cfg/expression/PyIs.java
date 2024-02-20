@@ -38,6 +38,7 @@ public class PyIs extends BinaryExpression {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		throw new UnsupportedStatementException(this);
+		return state;
+		//throw new UnsupportedStatementException(this);
 	}
 }
