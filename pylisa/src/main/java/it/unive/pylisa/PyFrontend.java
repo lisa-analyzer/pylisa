@@ -2004,7 +2004,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			if (text.contains("e") || text.contains("."))
 				// floating point
 				return new Float32Literal(currentCFG, getLocation(ctx), Float.parseFloat(text));
-
+			if (text.contains("b")) {
+				return new Int32Literal(currentCFG, getLocation(ctx), 0);
+			}
 			// integer
 			return new Int32Literal(currentCFG, getLocation(ctx), Integer.parseInt(text));
 		} else if (ctx.FALSE() != null)
@@ -2236,7 +2238,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			if (stmt.simple_stmt() != null) {
 				Pair<VariableRef, Expression> p = parseField(stmt.simple_stmt());
 				if (p.getLeft() != null)
-					currentUnit.addGlobal(new Global(getLocation(ctx), currentUnit, p.getLeft().getName(), true));
+					currentUnit.addGlobal(new Global(getLocation(ctx), currentUnit, p.getLeft().getName(), false));
 				if (p.getRight() != null)
 					fields_init.add(p);
 			} else if (stmt.compound_stmt().funcdef() != null)
@@ -2255,7 +2257,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				throw new UnsupportedStatementException(
 						"Inside the body of a class we should have only field and method definitions");
 		}
-		dumpConstructor(fields_init, getLocation(ctx));
+		//dumpConstructor(fields_init, getLocation(ctx));
 	}
 
 	private void dumpConstructor(
@@ -2273,6 +2275,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				previous = f;
 			}
 			currentUnit.addCodeMember(currentCFG);
+			addRetNodesToCurrentCFG();
 			currentCFG = oldCFG;
 		}
 	}

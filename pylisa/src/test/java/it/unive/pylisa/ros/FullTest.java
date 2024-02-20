@@ -23,9 +23,10 @@ public class FullTest {
     public void testSingleFile() throws Exception {
         //String fileName = MAIN_FOLDER + "repos" + name;
         RosApplicationBuilder rob = new RosApplicationBuilder()
-                .withNode(new PythonROSNodeBuilder(
-                        "/Users/giacomozanatta/Projects/git-repos-downloader/repos/chapter6/crane_plus_commander/crane_plus_commander/commander1.py"))
-                .withWorkDir("test-ros-outputs/single-file-rosapp/crane_plus_commander");
+                /*.withNode(new PythonROSNodeBuilder(
+                        "/Users/giacomozanatta/Projects/ReposDownloader/repos/autonav_software_2024/autonav_ws/src/autonav_manual/src/steam.py"))*/
+                .withNode(new PythonROSNodeBuilder("/Users/giacomozanatta/Desktop/ros2_examples/mechaship/mechaship_teleop_joystick.py"))
+                .withWorkDir("test-ros-outputs/single-file-rosapp/mechashit");
         ROSApplication rosapp = rob.build();
         rosapp.getRosNetwork().processEvents();
         rosapp.dumpResults();
