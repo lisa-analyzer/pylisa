@@ -1046,8 +1046,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return this.visitClassdef(ctx.classdef());
 		else if (ctx.decorated() != null) {
 			return null;
+		} else if (ctx.async_stmt() != null) {
+			return null;
 		}
-			throw new UnsupportedStatementException("Statement " + ctx + " not yet supported");
+		throw new UnsupportedStatementException("Statement " + ctx + " not yet supported");
 	}
 
 	@Override
