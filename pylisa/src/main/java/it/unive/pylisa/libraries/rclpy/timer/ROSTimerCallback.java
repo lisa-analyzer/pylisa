@@ -43,7 +43,6 @@ public class ROSTimerCallback extends NaryExpression {
                     HeapDereference containerDeref = (HeapDereference) container;
                     HeapReference heapRef = new HeapReference(containerDeref.getStaticType(), containerDeref, containerDeref.getCodeLocation());
                     ExpressionSet exprSet = state.getState().rewrite(heapRef, this, state.getState());
-                    SymbolicExpression self = ((HeapDereference) container).getExpression();
                     VariableRef selfRef = new VariableRef(this.getCFG(), containerDeref.getCodeLocation(), containerDeref.getExpression().toString());
                     Expression[] unresolvedCallExprs = new Expression[1];
                     unresolvedCallExprs[0] = selfRef;
