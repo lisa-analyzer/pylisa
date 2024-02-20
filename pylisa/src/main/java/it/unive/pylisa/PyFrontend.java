@@ -1880,9 +1880,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					previous_access = access;
 					access = new PyAccessInstanceGlobal(currentCFG, getLocation(expr), access, last_name);
 				} else if (expr.OPEN_PAREN() != null) {
-					if (last_name == null)
-						throw new UnsupportedStatementException(
-								"When invoking a method we need to have always the name before the parentheses");
+					if (last_name == null) {
+						/* TODO throw new UnsupportedStatementException("When invoking a method we need to have always the name before the parentheses");*/
+						return null;
+					}
 					List<Expression> pars = new ArrayList<>();
 					String method_name = last_name;
 					boolean instance = access instanceof AccessInstanceGlobal;
