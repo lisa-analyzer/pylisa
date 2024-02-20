@@ -39,8 +39,8 @@ public class FullTest {
         // 1. parse file
 
         try {
-            Scanner scanner = new Scanner(new File(MAIN_FOLDER + "/pythonFiles-new.txt"));
-            FileWriter output = new FileWriter("results-31012024-1-new.csv");
+            Scanner scanner = new Scanner(new File(MAIN_FOLDER + "/pythonFiles-new-filtered.txt"));
+            FileWriter output = new FileWriter("results-19022024-new-filtered.csv");
             BufferedWriter Bout = new BufferedWriter(output);
             Bout.write("file_name,status,error_message,stack_trace");
             Bout.newLine();
@@ -54,7 +54,7 @@ public class FullTest {
                 try {
                     if (!project.equals(projName)) {
                         if (!project.equals("")) {
-                            rob.withWorkDir("ros-test-outputs/analysis-full-31012024-1/" + project);
+                            rob.withWorkDir("ros-test-outputs/analysis-full-19022024-2/" + project);
                             project = projName;
                             ROSApplication ra = rob.build();
                             ra.getRosNetwork().processEvents();
@@ -96,7 +96,7 @@ public class FullTest {
                 Bout.newLine();
                 Bout.flush();
             }
-            rob.withWorkDir("ros-test-outputs/analysis-full-31012024-1/" + project);
+            rob.withWorkDir("ros-test-outputs/analysis-full-19022024-2/" + project);
             ROSApplication ra = rob.build();
 
             ra.dumpResults();
@@ -160,13 +160,13 @@ public class FullTest {
         RosApplicationBuilder rob = new RosApplicationBuilder();
         try {
             rob.withNode(new PythonROSNodeBuilder(
-                    "/Users/giacomozanatta/Projects/git-repos-downloader/repos/joyride-ros-main/src/joyride_hmi/joyride_hmi/joystick_pub_node.py"));
+                    "/Users/giacomozanatta/Projects/git-repos-downloader/repos/mechaship/mechaship_teleop/mechaship_teleop/mechaship_teleop_keyboard.py"));
 
         } catch (ROSNodeBuildException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        rob.withWorkDir("ros-test-outputs/single-ros-app/joystick");
+        rob.withWorkDir("ros-test-outputs/single-ros-app/mechashit");
 
         ROSApplication ra = rob.build();
         ra.dumpGraph();
