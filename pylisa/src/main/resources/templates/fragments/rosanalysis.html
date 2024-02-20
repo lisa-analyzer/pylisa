@@ -74,16 +74,23 @@ config:
                     <div  class="ml-4"><h4>Publishers:</h4>
                         <th:block th:switch="${node.getPublisherTopics().size()}">
                             <th:block th:case="'0'">
-                                <ul style="list-style-type:none;">
-                                    <li>No Publishers on this Node</li>
-                                </ul>
+                                    <p>No Publishers on this Node</p>
                             </th:block>
                             <th:block th:case="*">
-                                <ul>
-                                    <th:block th:each="t : ${node.getPublisherTopics()}">
-                                        <li>[[${t.getName()}]]</li>
+                                <table class="table table-striped">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">Topic Name</th>
+                                        <th scope="col">Message Type</th>
+                                    </tr>
+                                    </thead>
+                                    <th:block th:each="p : ${node.getPublishers()}">
+                                        <tr>
+                                            <td>[[${p.getChannel().getID()}]]</td>
+                                            <td>[[${p.getType()}]]</td>
+                                        </tr>
                                     </th:block>
-                                </ul>
+                                </table>
                             </th:block>
                         </th:block>
                     </div>
@@ -91,16 +98,23 @@ config:
                 <div class="ml-4"><h4>Subscriptions:</h4>
                     <th:block th:switch="${node.getSubscribersTopics().size()}">
                         <th:block th:case="'0'">
-                            <ul style="list-style-type:none;">
-                                <li>No Subscriptions on this Node</li>
-                            </ul>
+                                <p>No Subscriptions on this Node</p>
                         </th:block>
                         <th:block th:case="*">
-                            <ul>
-                                <th:block th:each="t : ${node.getSubscribersTopics()}">
-                                    <li>[[${t.getName()}]]</li>
+                            <table class="table table-striped">
+                                <thead>
+                                <tr>
+                                    <th scope="col">Topic Name</th>
+                                    <th scope="col">Message Type</th>
+                                </tr>
+                                </thead>
+                                <th:block th:each="s : ${node.getSubscribers()}">
+                                    <tr>
+                                        <td>[[${s.getChannel().getID()}]]</td>
+                                        <td>[[${s.getType()}]]</td>
+                                    </tr>
                                 </th:block>
-                            </ul>
+                            </table>
                         </th:block>
                     </th:block>
                 </div>
