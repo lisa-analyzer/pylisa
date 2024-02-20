@@ -206,6 +206,7 @@ import it.unive.pylisa.cfg.statement.evaluation.RelaxedRightToLeftEvaluation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.NoOpFunction;
 import it.unive.pylisa.program.annotations.TypeHintAnnotation;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -1975,9 +1976,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								access,
 								indexes.get(0),
 								indexes.get(1));
-					else
-						throw new UnsupportedStatementException(
-								"Only array accesses with up to 2 indexes are supported");
+					else {
+						return NoOpFunction.build(currentCFG, getLocation(ctx), null);
+						/*throw new UnsupportedStatementException(
+								"Only array accesses with up to 2 indexes are supported");*/
+					}
 				} else
 					throw new UnsupportedStatementException();
 			}
@@ -2247,9 +2250,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	private void parseClassBody(
 			SuiteContext ctx) {
 		List<Pair<VariableRef, Expression>> fields_init = new ArrayList<>();
-		if (ctx.simple_stmt() != null)
+		/*if (ctx.simple_stmt() != null)
 			throw new UnsupportedStatementException(
-					"Inside the body of a class we should have only field and method definitions");
+					"Inside the body of a class we should have only field and method definitions");*/
 		for (StmtContext stmt : ctx.stmt()) {
 			if (stmt.simple_stmt() != null) {
 				Pair<VariableRef, Expression> p = parseField(stmt.simple_stmt());
@@ -2267,11 +2270,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					visitFuncdef(c.funcdef());
 				else if (c.classdef() != null)
 					visitClassdef(c.classdef());
-				else
-					throw new UnsupportedStatementException("We support only decorated classes and methods");
-			} else
+				/*else
+					throw new UnsupportedStatementException("We support only decorated classes and methods");*/
+			}/* else
 				throw new UnsupportedStatementException(
-						"Inside the body of a class we should have only field and method definitions");
+						"Inside the body of a class we should have only field and method definitions");*/
 		}
 		//dumpConstructor(fields_init, getLocation(ctx));
 	}
