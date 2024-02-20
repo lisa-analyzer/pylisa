@@ -310,6 +310,7 @@ public class ROSComputationGraphDumper
 				.toString();
 		msgType = msgType.substring(1,
 				msgType.length() - 1);
+		msgType = getMessageType(msgType, analysisState);
 		Boolean avoidNamespaceConventions = false;
 		try {
 			avoidNamespaceConventions = isAvoidRosNamespaceConventions(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[3]);
