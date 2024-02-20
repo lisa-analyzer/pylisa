@@ -1045,9 +1045,15 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		else if (ctx.classdef() != null)
 			return this.visitClassdef(ctx.classdef());
 		else if (ctx.decorated() != null) {
-			return null;
+			NoOp noop = new NoOp(currentCFG, getLocation(ctx));
+			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+			block.addNode(noop);
+			return Triple.of(noop, block, noop);
 		} else if (ctx.async_stmt() != null) {
-			return null;
+			NoOp noop = new NoOp(currentCFG, getLocation(ctx));
+			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+			block.addNode(noop);
+			return Triple.of(noop, block, noop);
 		}
 		throw new UnsupportedStatementException("Statement " + ctx + " not yet supported");
 	}
@@ -1882,7 +1888,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				} else if (expr.OPEN_PAREN() != null) {
 					if (last_name == null) {
 						/* TODO throw new UnsupportedStatementException("When invoking a method we need to have always the name before the parentheses");*/
-						return null;
+						return new Empty(currentCFG, getLocation(expr));
+						//return null;
 					}
 					List<Expression> pars = new ArrayList<>();
 					String method_name = last_name;
@@ -2324,9 +2331,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		else if (ctx.STAR() != null)
 			return new StarExpression(currentCFG, getLocation(ctx), visitTest(ctx.test(0)));
 		else if (ctx.comp_for() != null || ctx.POWER() != null || ctx.test().size() != 1) {
-
+			return new Empty(currentCFG, getLocation(ctx));
 			// throw new UnsupportedStatementException("We support only simple arguments in method calls");
-			return null;
+			// return null;
 		}
 		else
 			return visitTest(ctx.test(0));
