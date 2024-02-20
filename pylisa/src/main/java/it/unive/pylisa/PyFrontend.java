@@ -2009,6 +2009,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			if (text.contains("b")) {
 				return new Int32Literal(currentCFG, getLocation(ctx), 0);
 			}
+			if (text.contains("x")) {
+				return new Int32Literal(currentCFG, getLocation(ctx), 0);
+			}
+			if (text.length() >= 10) {
+				return new Int32Literal(currentCFG, getLocation(ctx), 0);
+			}
 			// integer
 			return new Int32Literal(currentCFG, getLocation(ctx), Integer.parseInt(text));
 		} else if (ctx.FALSE() != null)
