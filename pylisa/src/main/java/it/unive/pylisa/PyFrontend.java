@@ -2323,8 +2323,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return new PyAssign(currentCFG, getLocation(ctx), visitTest(ctx.test(0)), visitTest(ctx.test(1)));
 		else if (ctx.STAR() != null)
 			return new StarExpression(currentCFG, getLocation(ctx), visitTest(ctx.test(0)));
-		else if (ctx.comp_for() != null || ctx.POWER() != null || ctx.test().size() != 1)
-			throw new UnsupportedStatementException("We support only simple arguments in method calls");
+		else if (ctx.comp_for() != null || ctx.POWER() != null || ctx.test().size() != 1) {
+
+			// throw new UnsupportedStatementException("We support only simple arguments in method calls");
+			return null;
+		}
 		else
 			return visitTest(ctx.test(0));
 	}
