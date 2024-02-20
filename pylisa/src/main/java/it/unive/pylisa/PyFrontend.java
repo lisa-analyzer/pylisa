@@ -1203,8 +1203,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			variable = new TupleCreation(currentCFG, getLocation(ctx), exprs.toArray(Expression[]::new));
 
 		List<Expression> list = visitTestlist(ctx.testlist());
-		if (list.size() != 1)
-			throw new UnsupportedStatementException("for loops with more than one test are not supported");
+		/*if (list.size() != 1)
+			throw new UnsupportedStatementException("for loops with more than one test are not supported");*/
 		Expression collection = list.iterator().next();
 		Expression[] collection_pars = { collection };
 
@@ -2013,14 +2013,16 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				// complex number
 				throw new UnsupportedStatementException(
 						"complex numbeer are not supported (at " + getLocation(ctx) + ")");
-
+			if (text.contains("x")) {
+				return new Int32Literal(currentCFG, getLocation(ctx), 0);
+			}
+			if (text.contains("o")) {
+				return new Int32Literal(currentCFG, getLocation(ctx), 0);
+			}
 			if (text.contains("e") || text.contains("."))
 				// floating point
 				return new Float32Literal(currentCFG, getLocation(ctx), Float.parseFloat(text));
 			if (text.contains("b")) {
-				return new Int32Literal(currentCFG, getLocation(ctx), 0);
-			}
-			if (text.contains("x")) {
 				return new Int32Literal(currentCFG, getLocation(ctx), 0);
 			}
 			if (text.length() >= 10) {
