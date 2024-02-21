@@ -33,7 +33,9 @@ public class ROSSubscriptionCallback extends NaryExpression {
     public ROSSubscriptionCallback(CFG cfg, SourceCodeLocation location, Expression subExpression) {
         super(cfg, location, "ros_callback", subExpression);
     }
-
+    public String toString() {
+        return getSubExpressions()[0].toString();
+    }
     @Override
     protected int compareSameClassAndParams(Statement o) {
         return 0;

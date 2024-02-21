@@ -82,12 +82,16 @@ config:
                                     <tr>
                                         <th scope="col">Topic Name</th>
                                         <th scope="col">Message Type</th>
+                                        <th scope="col">System</th>
+                                        <th scope="col">Location</th>
                                     </tr>
                                     </thead>
                                     <th:block th:each="p : ${node.getPublishers()}">
                                         <tr>
                                             <td>[[${p.getChannel().getID()}]]</td>
                                             <td>[[${p.getType()}]]</td>
+                                            <td>[[${p.getChannel().isSystem() ? "YES" : ""}]]</td>
+                                            <td>[[${!p.getChannel().isSystem() ? p.getID() : "INTERNAL"}]]</td>
                                         </tr>
                                     </th:block>
                                 </table>
@@ -105,12 +109,18 @@ config:
                                     <tr>
                                         <th scope="col">Topic Name</th>
                                         <th scope="col">Message Type</th>
+                                        <th scope="col">System</th>
+                                        <th scope="col">Callback Function</th>
+                                        <th scope="col">Location</th>
                                     </tr>
                                     </thead>
                                     <th:block th:each="s : ${node.getSubscribers()}">
                                         <tr>
                                             <td>[[${s.getChannel().getID()}]]</td>
                                             <td>[[${s.getType()}]]</td>
+                                            <td>[[${s.getChannel().isSystem() ? "YES" : ""}]]</td>
+                                            <td>[[${!s.getChannel().isSystem() && s.getCallbackFunction() != null ? s.getCallbackFunction().toString() : ""}]]</td>
+                                            <td>[[${!s.getChannel().isSystem() ? s.getID() : "INTERNAL"}]]</td>
                                         </tr>
                                     </th:block>
                                 </table>
@@ -128,12 +138,16 @@ config:
                                     <tr>
                                         <th scope="col">Topic Name</th>
                                         <th scope="col">Message Type</th>
+                                        <th scope="col">System</th>
+                                        <th scope="col">Location</th>
                                     </tr>
                                     </thead>
                                     <th:block th:each="s : ${node.getServiceServers()}">
                                         <tr>
                                             <td>[[${s.getChannel().getID()}]]</td>
                                             <td>[[${s.getType()}]]</td>
+                                            <td>[[${s.getChannel().isSystem() ? "YES" : ""}]]</td>
+                                            <td>[[${!s.getChannel().isSystem() ? s.getID() : "INTERNAL"}]]</td>
                                         </tr>
                                     </th:block>
                                 </table>
@@ -151,12 +165,16 @@ config:
                                     <tr>
                                         <th scope="col">Topic Name</th>
                                         <th scope="col">Message Type</th>
+                                        <th scope="col">System</th>
+                                        <th scope="col">Location</th>
                                     </tr>
                                     </thead>
                                     <th:block th:each="s : ${node.getServiceClients()}">
                                         <tr>
                                             <td>[[${s.getChannel().getID()}]]</td>
                                             <td>[[${s.getType()}]]</td>
+                                            <td>[[${s.getChannel().isSystem() ? "YES" : ""}]]</td>
+                                            <td>[[${!s.getChannel().isSystem() ? s.getID() : "INTERNAL"}]]</td>
                                         </tr>
                                     </th:block>
                                 </table>
@@ -174,12 +192,16 @@ config:
                                     <tr>
                                         <th scope="col">Topic Name</th>
                                         <th scope="col">Message Type</th>
+                                        <th scope="col">System</th>
+                                        <th scope="col">Location</th>
                                     </tr>
                                     </thead>
                                     <th:block th:each="s : ${node.getActionClients()}">
                                         <tr>
                                             <td>[[${s.getChannel().getID()}]]</td>
                                             <td>[[${s.getType()}]]</td>
+                                            <td>[[${s.getChannel().isSystem() ? "YES" : ""}]]</td>
+                                            <td>[[${!s.getChannel().isSystem() ? s.getID() : "INTERNAL"}]]</td>
                                         </tr>
                                     </th:block>
                                 </table>
@@ -197,12 +219,16 @@ config:
                                     <tr>
                                         <th scope="col">Topic Name</th>
                                         <th scope="col">Message Type</th>
+                                        <th scope="col">System</th>
+                                        <th scope="col">Location</th>
                                     </tr>
                                     </thead>
                                     <th:block th:each="s : ${node.getActionServers()}">
                                         <tr>
                                             <td>[[${s.getChannel().getID()}]]</td>
                                             <td>[[${s.getType()}]]</td>
+                                            <td>[[${s.getChannel().isSystem() ? "YES" : ""}]]</td>
+                                            <td>[[${!s.getChannel().isSystem() ? s.getID() : "INTERNAL"}]]</td>
                                         </tr>
                                     </th:block>
                                 </table>
