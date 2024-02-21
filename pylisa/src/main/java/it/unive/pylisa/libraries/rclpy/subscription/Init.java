@@ -80,6 +80,7 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 					Variable var = global.toSymbolicVariable(getLocation());
 					AccessChild access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					AnalysisState<A> tmp = state.bottom();
+					SymbolicExpression msgType = params[1].iterator().next();
 					for (SymbolicExpression t : params[1])
 						tmp = tmp.lub(partial.assign(access, t, this));
 					partial = tmp;
@@ -96,7 +97,7 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 					var = global.toSymbolicVariable(getLocation());
 					access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					tmp = state.bottom();
-					for (SymbolicExpression t : params[4])
+					for (SymbolicExpression t : params[1])
 						tmp = tmp.lub(partial.assign(access, t, this));
 					partial = tmp;
 

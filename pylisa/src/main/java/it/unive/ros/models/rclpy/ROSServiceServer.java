@@ -22,7 +22,11 @@ public class ROSServiceServer extends ROSServiceBasedNetworkEntity {
 	public ROSServiceServer(ROSNetwork network, ROSServiceChannel channel, ROSNode node) {
 		super(network, channel, node);
 	}
+	public ROSServiceServer(ROSNetwork network, ROSServiceChannel channel, ROSNode node, String msgType) {
+		super(network, channel, node, msgType);
 
+
+	}
 	public ROSServiceServer(ROSNetwork network, ROSServiceChannel channel, String nodeID) {
 		super(network, channel, nodeID);
 	}

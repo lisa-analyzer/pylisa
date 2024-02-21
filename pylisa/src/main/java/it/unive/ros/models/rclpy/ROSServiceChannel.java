@@ -25,6 +25,7 @@ public class ROSServiceChannel extends ROSCommunicationChannel{
         if (isAvoidRosNamespaceConventions()) {
             return "";
         }
-        return "rs";
+        //return "rs";
+        return "";
         };
     }

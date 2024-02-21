@@ -32,6 +32,12 @@ public abstract class ROSServiceBasedNetworkEntity extends ROSNetworkEntity<ROSS
         super(null, channel, containerID, expr, publisherStmt, analysisState);
         this.srvType = srvType;
     }
+
+    public ROSServiceBasedNetworkEntity(ROSNetwork network, ROSServiceChannel channel, ROSNode node, String srvType) {
+        super(network, channel, node);
+        this.srvType = srvType;
+    }
+
     @Override
     public String getType() {
         return this.srvType;

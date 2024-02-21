@@ -1549,10 +1549,13 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		int nExpr = ctx.expr().size();
 		Expression result = null;
 		switch (nExpr) {
+			case 0:
+				throw new UnsupportedStatementException();
 			case 1:
 				result = visitExpr(ctx.expr(0));
 				break;
 			case 2:
+			default:
 				Comp_opContext operator = ctx.comp_op(0);
 				Expression left = visitExpr(ctx.expr(0));
 				Expression right = visitExpr(ctx.expr(1));
@@ -1594,10 +1597,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				// Python not equals (!=)
 				if (operator.NOT_EQ_2() != null)
 					result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
-
 				break;
-			default:
-				throw new UnsupportedStatementException();
 		}
 
 		return result;

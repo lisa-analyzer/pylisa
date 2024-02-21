@@ -36,7 +36,7 @@
         <div>
             <div><h2>Computational Graph</h2></div>
             <div class="d-flex justify-content-center">
-                <img th:src="${svgPath}" />
+                <img class="dot-graph" th:src="${svgPath}" />
             </div>
            <!-- <pre class="mermaid ros-graph" style="{width: 100%;}">
 ---
@@ -94,33 +94,125 @@ config:
                             </th:block>
                         </th:block>
                     </div>
-                </div>
-                <div class="ml-4"><h4>Subscriptions:</h4>
-                    <th:block th:switch="${node.getSubscribersTopics().size()}">
-                        <th:block th:case="'0'">
-                                <p>No Subscriptions on this Node</p>
-                        </th:block>
-                        <th:block th:case="*">
-                            <table class="table table-striped">
-                                <thead>
-                                <tr>
-                                    <th scope="col">Topic Name</th>
-                                    <th scope="col">Message Type</th>
-                                </tr>
-                                </thead>
-                                <th:block th:each="s : ${node.getSubscribers()}">
+                    <div class="ml-4"><h4>Subscriptions:</h4>
+                        <th:block th:switch="${node.getSubscribersTopics().size()}">
+                            <th:block th:case="'0'">
+                                    <p>No Subscriptions on this Node</p>
+                            </th:block>
+                            <th:block th:case="*">
+                                <table class="table table-striped">
+                                    <thead>
                                     <tr>
-                                        <td>[[${s.getChannel().getID()}]]</td>
-                                        <td>[[${s.getType()}]]</td>
+                                        <th scope="col">Topic Name</th>
+                                        <th scope="col">Message Type</th>
                                     </tr>
-                                </th:block>
-                            </table>
+                                    </thead>
+                                    <th:block th:each="s : ${node.getSubscribers()}">
+                                        <tr>
+                                            <td>[[${s.getChannel().getID()}]]</td>
+                                            <td>[[${s.getType()}]]</td>
+                                        </tr>
+                                    </th:block>
+                                </table>
+                            </th:block>
                         </th:block>
-                    </th:block>
-                </div>
-                <div  class="ml-4">
-                    <h4>Generated policy.xml</h4> <a th:href="${'policies/'.concat(node.getName()).concat('/policy.xml')}" download>Download</a>
-                    <pre><code class="language-xml">[[${node.dumpPolicy()}]]</code></pre>
+                    </div>
+                    <div class="ml-4"><h4>Service Servers:</h4>
+                        <th:block th:switch="${node.getServiceServers().size()}">
+                            <th:block th:case="'0'">
+                                <p>No Service Servers on this Node</p>
+                            </th:block>
+                            <th:block th:case="*">
+                                <table class="table table-striped">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">Topic Name</th>
+                                        <th scope="col">Message Type</th>
+                                    </tr>
+                                    </thead>
+                                    <th:block th:each="s : ${node.getServiceServers()}">
+                                        <tr>
+                                            <td>[[${s.getChannel().getID()}]]</td>
+                                            <td>[[${s.getType()}]]</td>
+                                        </tr>
+                                    </th:block>
+                                </table>
+                            </th:block>
+                        </th:block>
+                    </div>
+                    <div class="ml-4"><h4>Service Clients:</h4>
+                        <th:block th:switch="${node.getServiceClients().size()}">
+                            <th:block th:case="'0'">
+                                <p>No Service Clients on this Node</p>
+                            </th:block>
+                            <th:block th:case="*">
+                                <table class="table table-striped">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">Topic Name</th>
+                                        <th scope="col">Message Type</th>
+                                    </tr>
+                                    </thead>
+                                    <th:block th:each="s : ${node.getServiceClients()}">
+                                        <tr>
+                                            <td>[[${s.getChannel().getID()}]]</td>
+                                            <td>[[${s.getType()}]]</td>
+                                        </tr>
+                                    </th:block>
+                                </table>
+                            </th:block>
+                        </th:block>
+                    </div>
+                    <div class="ml-4"><h4>Action Clients:</h4>
+                        <th:block th:switch="${node.getActionClients().size()}">
+                            <th:block th:case="'0'">
+                                <p>No Action Clients on this Node</p>
+                            </th:block>
+                            <th:block th:case="*">
+                                <table class="table table-striped">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">Topic Name</th>
+                                        <th scope="col">Message Type</th>
+                                    </tr>
+                                    </thead>
+                                    <th:block th:each="s : ${node.getActionClients()}">
+                                        <tr>
+                                            <td>[[${s.getChannel().getID()}]]</td>
+                                            <td>[[${s.getType()}]]</td>
+                                        </tr>
+                                    </th:block>
+                                </table>
+                            </th:block>
+                        </th:block>
+                    </div>
+                    <div class="ml-4"><h4>Action Servers:</h4>
+                        <th:block th:switch="${node.getActionServers().size()}">
+                            <th:block th:case="'0'">
+                                <p>No Action Servers on this Node</p>
+                            </th:block>
+                            <th:block th:case="*">
+                                <table class="table table-striped">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">Topic Name</th>
+                                        <th scope="col">Message Type</th>
+                                    </tr>
+                                    </thead>
+                                    <th:block th:each="s : ${node.getActionServers()}">
+                                        <tr>
+                                            <td>[[${s.getChannel().getID()}]]</td>
+                                            <td>[[${s.getType()}]]</td>
+                                        </tr>
+                                    </th:block>
+                                </table>
+                            </th:block>
+                        </th:block>
+                    </div>
+                    <div  class="ml-4">
+                        <h4>Generated policy.xml</h4> <a th:href="${'policies/'.concat(node.getName()).concat('/policy.xml')}" download>Download</a>
+                        <pre><code class="language-xml">[[${node.dumpPolicy()}]]</code></pre>
+                    </div>
                 </div>
             </th:block>
         </div>

@@ -83,7 +83,11 @@ public class PyAssign extends Assignment {
 			if (sem.getState().equals(sem.getState().bottom())) {
 				return state; // [WARN] THIS IS UNSOUND !!!!
 			}
-			return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
+			try {
+				return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
+			} catch(Exception e) {
+				return state; // [WARN] THIS IS UNSOUND !!!!
+			}
 		}
 		// get the variables being assigned
 		Expression[] vars = ((TupleCreation) lefthand).getSubExpressions();
