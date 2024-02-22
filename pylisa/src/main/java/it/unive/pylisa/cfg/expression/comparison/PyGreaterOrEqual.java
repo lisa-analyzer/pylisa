@@ -12,6 +12,7 @@ import it.unive.lisa.program.cfg.statement.comparison.GreaterOrEqual;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonGe;
 import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
@@ -34,16 +35,17 @@ public class PyGreaterOrEqual extends GreaterOrEqual {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		AnalysisState<A> sem = PandasSemantics.compare(
-				state,
-				left,
-				right,
-				this,
-				state.getState(),
-				ComparisonOperator.GEQ);
-		if (sem != null)
-			return sem;
-
+		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
+			AnalysisState<A> sem = PandasSemantics.compare(
+					state,
+					left,
+					right,
+					this,
+					state.getState(),
+					ComparisonOperator.GEQ);
+			if (sem != null)
+				return sem;
+		}
 		// python does not require the types to be numeric
 		return state.smallStepSemantics(
 				new BinaryExpression(

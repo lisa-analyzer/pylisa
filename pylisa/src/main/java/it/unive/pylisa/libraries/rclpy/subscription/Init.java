@@ -18,7 +18,9 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.PyAssign;
@@ -97,8 +99,14 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 					var = global.toSymbolicVariable(getLocation());
 					access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					tmp = state.bottom();
-					for (SymbolicExpression t : params[1])
-						tmp = tmp.lub(partial.assign(access, t, this));
+					for (SymbolicExpression t : params[4]) {
+						if (t instanceof AccessChild) {
+							tmp = tmp.lub(partial.assign(access, new Constant(NullType.INSTANCE, null, getLocation()), this));
+						} else {
+							tmp = tmp.lub(partial.assign(access, t, this));
+						}
+					}
+
 					partial = tmp;
 
 					global = new Global(getLocation(), unit, "callback", false, Untyped.INSTANCE);

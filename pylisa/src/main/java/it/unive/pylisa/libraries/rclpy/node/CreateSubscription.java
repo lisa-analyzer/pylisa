@@ -14,6 +14,7 @@ import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 
+import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Untyped;
@@ -56,7 +57,6 @@ public class CreateSubscription extends NaryExpression implements PluggableState
 			StatementStore<A> expressions)
 			throws SemanticException {
 		AnalysisState<A> result = state.bottom();
-
 		params[2] = SemanticsHelpers.nameExpansion(this, getSubExpressions()[0], params[2], interprocedural, state,
 				expressions);
 

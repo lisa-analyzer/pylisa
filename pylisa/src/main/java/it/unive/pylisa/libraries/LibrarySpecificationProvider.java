@@ -52,8 +52,8 @@ public class LibrarySpecificationProvider {
 	public static final String RCLPY_SUBSCRIPTION = "rclpy.subscription.Subscription";
 	public static final String RCLPY_SERVICE = "rclpy.service.Service";
 	public static final String RCLPY_CLIENT = "rclpy.client.Client";
-	public static final String RCLPY_ACTIONCLIENT = "rclpy.action.client.ActionClient";
-	public static final String RCLPY_ACTIONSERVER = "rclpy.action.server.ActionServer";
+	public static final String RCLPY_ACTIONCLIENT = "rclpy.action.ActionClient";
+	public static final String RCLPY_ACTIONSERVER = "rclpy.action.ActionServer";
 	public static final String RCLPY_NODE = "rclpy.node.Node";
 
 	private static final Map<String, Library> AVAILABLE_LIBS = new HashMap<>();

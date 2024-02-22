@@ -10,6 +10,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.comparison.Equal;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
@@ -31,7 +32,7 @@ public class PyEquals extends Equal {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		try {
+		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			AnalysisState<A> sem = PandasSemantics.compare(
 					state,
 					left,
@@ -41,8 +42,6 @@ public class PyEquals extends Equal {
 					ComparisonOperator.EQ);
 			if (sem != null)
 				return sem;
-		} catch (Exception e) {
-			return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
 		}
 		return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
 	}

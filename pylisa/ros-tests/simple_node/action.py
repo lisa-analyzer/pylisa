@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
-from rclpy.action.client import ActionClient
-from rclpy.action.server import ActionServer
+from rclpy.action import ActionClient
+#from rclpy.action.server import ActionServer
 from std_msgs import String
 from std_msgs import Float64
 class O:
@@ -12,12 +12,13 @@ class MinimalActionClient(Node):
       super().__init__("node1", namespace="ns")
       # s = String()
       # s.data = "Hello World from node1!"
-      p = self.create_publisher(String, "topic01", 10)
-      self.create_subscription(String, "topic03", lambda: None, 10)
-      self.create_subscription(String, "topic02", lambda: None, 10)
-      self.create_service(String, "service01", lambda: None)
+      #p = self.create_publisher(String, "topic01", 10)
+      #self.create_subscription(String, "topic03", lambda: None, 10)
+      #self.create_subscription(String, "topic02", lambda: None, 10)
+      #self.create_service(String, "service01", lambda: None)
+      self._action = ActionClient(self, Fibonacci, "fibonacci")
       # p.publish(s)
-      p.publish("Hello World from node1!")
+      #p.publish("Hello World from node1!")
       #self.create_subscription(String, "topic02", 10, lambda: None)
 
 class Node2(Node):
@@ -44,13 +45,13 @@ class Node3(Node):
       #self.create_service(String, "service01", 10)
 def main():
   node1 = MinimalActionClient()
-  node2 = Node2()
-  node3 = Node3()
+  #node2 = Node2()
+  #node3 = Node3()
   #node.create_publisher(String, "Publisher", 10)
-  action = ActionClient(node1, String, "action")
+  #action = ActionClient(node1, String, "action")
   #serviceClient = node.create_client(String, "service", lambda:None, 10)
-  nodeServer = rclpy.create_node("node4", namespace="ns")
-  actionServer = ActionServer(nodeServer, String, "action", lambda: None)
-o = O()
+  #nodeServer = rclpy.create_node("node4", namespace="ns")
+  #actionServer = ActionServer(nodeServer, String, "action", lambda: None)
+#o = O()
 if __main__ == "main":
   main()

@@ -1931,7 +1931,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						access = new UnresolvedCall(
 								currentCFG,
 								getLocation(expr),
-								instance || method_name.equals("ActionClient") ? CallType.UNKNOWN : CallType.STATIC,
+								instance ? CallType.UNKNOWN : CallType.STATIC,
 								null,
 								method_name,
 								RelaxedLeftToRightEvaluation.INSTANCE,
