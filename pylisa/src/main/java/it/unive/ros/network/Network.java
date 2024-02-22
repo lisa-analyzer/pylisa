@@ -74,11 +74,9 @@ public class Network<Container extends NetworkEntityContainer, Entity extends Ne
         return result;
     }
     public void addNetworkChannel(Channel channel) throws Exception {
-        if (this.getNetworkChannel(channel.getID()) == null) {
+        //if (this.getNetworkChannel(channel.getID()) == null) {
             this.networkChannels.add(channel);
-        } /*else {
-            throw new Exception("Duplicated NetworkChannel with id " + channel.getID());
-        }*/
+        //}
     }
 
     public Channel getNetworkChannel(String id) {

@@ -25,8 +25,10 @@ public class FullTest {
         RosApplicationBuilder rob = new RosApplicationBuilder()
                 /*.withNode(new PythonROSNodeBuilder(
                         "/Users/giacomozanatta/Projects/ReposDownloader/repos/autonav_software_2024/autonav_ws/src/autonav_manual/src/steam.py"))*/
-                .withNode(new PythonROSNodeBuilder("/Users/giacomozanatta/Projects/ReposDownloader/repos/zumopi_telemetry_system/ros2_ws/src/telemetry_pkg/telemetry_pkg/gui.py"))
-                .withWorkDir("test-ros-outputs/single-file-rosapp/gui");
+                .withNode(new PythonROSNodeBuilder("ros-tests/actions/client.py"))
+                .withNode(new PythonROSNodeBuilder("ros-tests/simple_node/action.py"))
+                //.withNode(new PythonROSNodeBuilder("ros-tests/services/service.py"))
+                .withWorkDir("test-ros-outputs/single-file-rosapp/ACTION");
         ROSApplication rosapp = rob.build();
         rosapp.getRosNetwork().processEvents();
         rosapp.dumpResults();

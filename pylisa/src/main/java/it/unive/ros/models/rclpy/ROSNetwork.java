@@ -241,10 +241,10 @@ public class ROSNetwork extends Network<ROSNode, ROSNetworkEntity<? extends ROSC
                     dotGraph.append("\"").append(s.getName()).append("\"").append("[shape=parallelogram,style=filled,fillcolor=\"lightskyblue\"];");
                 }*/
                 dotGraph.append("subgraph cluster_" + i)
-                        .append(" { style=filled;fillcolor=\"lightskyblue\";penwidth=2;label=\"")
+                        .append(" { style=filled;fillcolor=\"orchid1\";penwidth=2;label=\"")
                         .append(s.getName())
                         .append("\";");
-                i+= 1;
+                i += 1;
                 for (NetworkEntity n : this.getNetworkEntities()) {
                     if (n instanceof ROSActionClient || n instanceof ROSActionServer) {
                         ROSActionBasedNetworkEntity action = (ROSActionBasedNetworkEntity) n;
@@ -261,9 +261,8 @@ public class ROSNetwork extends Network<ROSNode, ROSNetworkEntity<? extends ROSC
                     }
                 }
                 dotGraph.append("}");
-                    dotGraph.append("\"").append(s.getName()).append("\"").append("[shape=parallelogram,style=filled,fillcolor=\"orchid1\"];");
-                }
             }
+        }
 
         // Publishers and Subscribers
         for (ROSNode n : getNetworkEntityContainers()) {

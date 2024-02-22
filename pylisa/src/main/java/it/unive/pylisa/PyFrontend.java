@@ -1931,12 +1931,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						access = new UnresolvedCall(
 								currentCFG,
 								getLocation(expr),
-								instance ? CallType.UNKNOWN : CallType.STATIC,
+								instance || method_name.equals("ActionClient") ? CallType.UNKNOWN : CallType.STATIC,
 								null,
 								method_name,
 								RelaxedLeftToRightEvaluation.INSTANCE,
 								pars.toArray(Expression[]::new));
-						if (method_name.equals("super") && pars.size() == 0) {
+						if (method_name.equals("super") && pars.isEmpty()) {
 							// if super() is inside an instance method
 							if (this.currentCFG.getDescriptor().isInstance()) {
 								VariableTableEntry vte = currentCFG.getDescriptor().getVariables().get(0);

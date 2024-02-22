@@ -30,8 +30,8 @@ public class ROSServiceClient extends ROSServiceBasedNetworkEntity {
     @Override
     public Set<ROSTopicBasedNetworkEntity> toTopicEntities() {
         Set<ROSTopicBasedNetworkEntity> topics = new HashSet<>();
-        topics.add(new ROSTopicSubscription(null, new ROSTopic(getChannel().getName() + "Reply", getChannel().isSystem(), ROSTopicType.SERVICE_RESPONSE), getType(), null, null, null));
-        topics.add(new ROSTopicPublisher(null, new ROSTopic(getChannel().getName() + "Request", getChannel().isSystem(), ROSTopicType.SERVICE_REQUEST), getType(), null, null, null));
+        topics.add(new ROSTopicSubscription(null, new ROSTopic(getChannel().getName() + "Reply", getChannel().isSystem(), ROSTopicType.SERVICE_RESPONSE, getChannel().isAvoidRosNamespaceConventions()), getType(), null, null, null));
+        topics.add(new ROSTopicPublisher(null, new ROSTopic(getChannel().getName() + "Request", getChannel().isSystem(), ROSTopicType.SERVICE_REQUEST, getChannel().isAvoidRosNamespaceConventions()), getType(), null, null, null));
         return topics;
     }
 

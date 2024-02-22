@@ -39,6 +39,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.rclpy.node.SemanticsHelpers;
 import it.unive.pylisa.libraries.rclpy.subscription.ROSSubscriptionCallback;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.models.rclpy.*;
@@ -338,7 +339,7 @@ public class ROSComputationGraphDumper
 		return variableName;
 	}
 
-	public void visitServiceClient(AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, Statement publisher, HeapExpression expr, SymbolicExpression nodeExpr) throws Exception {
+	public void visitServiceClient(AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analyzedCFG, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, UnresolvedCall unresolvedCall, HeapExpression expr, SymbolicExpression nodeExpr) throws Exception {
 		String serviceName = "<undefined>";
 		String msgType = "<undefined>";
 
@@ -354,7 +355,7 @@ public class ROSComputationGraphDumper
 				expr.getCodeLocation());
 		serviceName = analysisState.getState()
 				.getValueState()
-				.eval(has, publisher, analysisState.getState())
+				.eval(has, unresolvedCall, analysisState.getState())
 				.toString();
 		serviceName = serviceName.substring(1,
 				serviceName.length() - 1);
@@ -369,24 +370,32 @@ public class ROSComputationGraphDumper
 				expr.getCodeLocation());
 		msgType = analysisState.getState()
 				.getValueState()
-				.eval(has, publisher, analysisState.getState())
+				.eval(has, unresolvedCall, analysisState.getState())
 				.toString();
 		msgType = msgType.substring(1,
 				msgType.length() - 1);
 		msgType = getMessageType(msgType, analysisState);
-		ROSServiceChannel channel = rosNetwork.getServiceChannel(serviceName);
-
-		if (channel == null) {
-			channel = new ROSServiceChannel(serviceName);
-			rosNetwork.addNetworkChannel(channel);
+		Boolean avoidNamespaceConventions = false;
+		try {
+			Expression e = SemanticsHelpers.getNamedParameterExpr(unresolvedCall.getSubExpressions(), "qos_profile");
+			if (e != null) {
+				avoidNamespaceConventions = isAvoidRosNamespaceConventions(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[3]);
+				if (avoidNamespaceConventions) {
+					rosNetwork.getWarnings().add("avoid_ros_namespace_conventions = True in Service Client " + expr.getCodeLocation().toString());
+				}
+			}
+		} catch (Exception e) {
+			rosNetwork.getWarnings().add("Fail to get  avoid_ros_namespace_conventions for Service Client " + expr.getCodeLocation().toString());
 		}
-		ROSServiceClient s = new ROSServiceClient(nodeExpr.getCodeLocation().toString(), channel, msgType, publisher, expr, analysisState);
+		ROSServiceChannel channel = new ROSServiceChannel(serviceName, false, avoidNamespaceConventions);
+		rosNetwork.addNetworkChannel(channel);
+		ROSServiceClient s = new ROSServiceClient(nodeExpr.getCodeLocation().toString(), channel, msgType, unresolvedCall, expr, analysisState);
 		rosNetwork.addNetworkEntity(s, nodeExpr.getCodeLocation().toString());
 		//ROSTopicPublisher p = new ROSTopicPublisher(nodeExpr.getCodeLocation().toString(), (ROSTopic) channel, msgType, publisher, expr, analysisState);
 		//rosNetwork.addNetworkEntity(p, nodeExpr.getCodeLocation().toString());
 	}
 
-	public void visitServiceServer(AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, Statement publisher, HeapExpression expr, SymbolicExpression nodeExpr) throws Exception {
+	public void visitServiceServer(AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analyzedCFG, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, UnresolvedCall unresolvedCall, HeapExpression expr, SymbolicExpression nodeExpr) throws Exception {
 		String serviceName = "<undefined>";
 		String msgType = "<undefined>";
 
@@ -402,7 +411,7 @@ public class ROSComputationGraphDumper
 				expr.getCodeLocation());
 		serviceName = analysisState.getState()
 				.getValueState()
-				.eval(has, publisher, analysisState.getState())
+				.eval(has, unresolvedCall, analysisState.getState())
 				.toString();
 		serviceName = serviceName.substring(1,
 				serviceName.length() - 1);
@@ -417,21 +426,28 @@ public class ROSComputationGraphDumper
 				expr.getCodeLocation());
 		msgType = analysisState.getState()
 				.getValueState()
-				.eval(has, publisher, analysisState.getState())
+				.eval(has, unresolvedCall, analysisState.getState())
 				.toString();
 		msgType = msgType.substring(1,
 				msgType.length() - 1);
 		msgType = getMessageType(msgType, analysisState);
-		ROSServiceChannel channel = rosNetwork.getServiceChannel(serviceName);
+		Boolean avoidNamespaceConventions = false;
+		try {
+			Expression e = SemanticsHelpers.getNamedParameterExpr(unresolvedCall.getSubExpressions(), "qos_profile");
+			if (e != null) {
+				avoidNamespaceConventions = isAvoidRosNamespaceConventions(analyzedCFG, analysisState, e);
+				if (avoidNamespaceConventions) {
+					rosNetwork.getWarnings().add("avoid_ros_namespace_conventions = True in Service Server " + expr.getCodeLocation().toString());
+				}
+			}
 
-		if (channel == null) {
-			channel = new ROSServiceChannel(serviceName);
-			rosNetwork.addNetworkChannel(channel);
+		} catch (Exception e) {
+			rosNetwork.getWarnings().add("Fail to get  avoid_ros_namespace_conventions for Service Server " + expr.getCodeLocation().toString());
 		}
-		ROSServiceServer s = new ROSServiceServer(nodeExpr.getCodeLocation().toString(), channel, msgType, publisher, expr, analysisState);
+		ROSServiceChannel channel = new ROSServiceChannel(serviceName, false, avoidNamespaceConventions);
+		rosNetwork.addNetworkChannel(channel);
+		ROSServiceServer s = new ROSServiceServer(nodeExpr.getCodeLocation().toString(), channel, msgType, unresolvedCall, expr, analysisState);
 		rosNetwork.addNetworkEntity(s, nodeExpr.getCodeLocation().toString());
-		//ROSTopicPublisher p = new ROSTopicPublisher(nodeExpr.getCodeLocation().toString(), (ROSTopic) channel, msgType, publisher, expr, analysisState);
-		//rosNetwork.addNetworkEntity(p, nodeExpr.getCodeLocation().toString());
 	}
 
 	public void visitSubscriber(AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analyzedCFG, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, UnresolvedCall unresolvedCall, HeapExpression expr, SymbolicExpression nodeExpr) throws Exception {
@@ -698,8 +714,7 @@ public class ROSComputationGraphDumper
 								PyClassType
 										.lookup(LibrarySpecificationProvider.RCLPY_SERVICE)))) {
 					SymbolicExpression nodeSymbolic = getNodeHeapReference(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[0]);
-					visitServiceServer(analysisState, unresolvedCall, (HeapExpression) expr, nodeSymbolic);
-					var x = 3;
+					visitServiceServer(analyzedCFG, analysisState, unresolvedCall,(HeapExpression) expr, nodeSymbolic);
 				}
 			}
 		} else if (nativeCFGDescriptorName.equals("create_client")
@@ -717,7 +732,7 @@ public class ROSComputationGraphDumper
 								PyClassType
 										.lookup(LibrarySpecificationProvider.RCLPY_CLIENT)))) {
 					SymbolicExpression nodeSymbolic = getNodeHeapReference(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[0]);
-					visitServiceClient(analysisState, unresolvedCall, (HeapExpression) expr, nodeSymbolic);
+					visitServiceClient(analyzedCFG, analysisState, unresolvedCall, (HeapExpression) expr, nodeSymbolic);
 				}
 			}
 		} else if (nativeCFGDescriptorName.equals("publish")

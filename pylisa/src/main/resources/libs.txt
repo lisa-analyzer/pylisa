@@ -277,7 +277,7 @@ library rclpy:
         instance method ActionServer: it.unive.pylisa.libraries.rclpy.action.server.Init
             libtype rclpy.action.server.ActionServer*
             param self libtype rclpy.action.server.ActionServer*
-            param node libtype rclpy.node.Node*
+            param node type it.unive.lisa.type.Untyped::INSTANCE
             param action_type type it.unive.lisa.type.Untyped::INSTANCE
             param action_name type it.unive.lisa.program.type.StringType::INSTANCE
             param execute_callback type it.unive.lisa.type.Untyped::INSTANCE
@@ -294,7 +294,7 @@ library rclpy:
         instance method __init__: it.unive.pylisa.libraries.rclpy.action.server.Init
             libtype rclpy.action.server.ActionServer*
             param self libtype rclpy.action.server.ActionServer*
-            param node libtype rclpy.node.Node*
+            param node type it.unive.lisa.type.Untyped::INSTANCE
             param action_type type it.unive.lisa.type.Untyped::INSTANCE
             param action_name type it.unive.lisa.program.type.StringType::INSTANCE
             param execute_callback type it.unive.lisa.type.Untyped::INSTANCE

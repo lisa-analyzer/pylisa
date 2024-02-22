@@ -31,17 +31,17 @@ public class ROSActionServer extends ROSActionBasedNetworkEntity {
     @Override
     public Set<ROSTopicBasedNetworkEntity> toTopicEntities() {
         Set<ROSTopicBasedNetworkEntity> topics = new HashSet<>();
-        topics.add(new ROSTopicPublisher(null, new ROSTopic(getChannel().getName() + "/_action/status"), getType(), null, null, null));
-        topics.add(new ROSTopicPublisher(null, new ROSTopic(getChannel().getName() + "/_action/feedback"), getType(), null, null, null));
+        topics.add(new ROSTopicPublisher(null, new ROSTopic(getChannel().getName() + "/_action/status", getChannel().isSystem(), ROSTopicType.DEFAULT), getType(), null, null, null));
+        topics.add(new ROSTopicPublisher(null, new ROSTopic(getChannel().getName() + "/_action/feedback", getChannel().isSystem(), ROSTopicType.DEFAULT), getType(), null, null, null));
 
-        topics.add(new ROSTopicPublisher(null, new ROSTopic(getChannel().getName() + "/_action/send_goalReply"), getType(), null, null, null));
-        topics.add(new ROSTopicSubscription(null, new ROSTopic(getChannel().getName() + "/_action/send_goalRequest"), getType(), null, null, null));
+        topics.add(new ROSTopicPublisher(null, new ROSTopic(getChannel().getName() + "/_action/send_goalReply", getChannel().isSystem(), ROSTopicType.SERVICE_RESPONSE), getType(), null, null, null));
+        topics.add(new ROSTopicSubscription(null, new ROSTopic(getChannel().getName() + "/_action/send_goalRequest", getChannel().isSystem(), ROSTopicType.SERVICE_REQUEST), getType(), null, null, null));
 
-        topics.add(new ROSTopicPublisher(null, new ROSTopic(getChannel().getName() + "/_action/cancel_goalReply"), getType(), null, null, null));
-        topics.add(new ROSTopicSubscription(null, new ROSTopic(getChannel().getName() + "/_action/cancel_goalRequest"), getType(), null, null, null));
+        topics.add(new ROSTopicPublisher(null, new ROSTopic(getChannel().getName() + "/_action/cancel_goalReply", getChannel().isSystem(), ROSTopicType.SERVICE_RESPONSE), getType(), null, null, null));
+        topics.add(new ROSTopicSubscription(null, new ROSTopic(getChannel().getName() + "/_action/cancel_goalRequest", getChannel().isSystem(), ROSTopicType.SERVICE_REQUEST), getType(), null, null, null));
 
-        topics.add(new ROSTopicPublisher(null, new ROSTopic(getChannel().getName() + "/_action/get_resultReply"), getType(), null, null, null));
-        topics.add(new ROSTopicSubscription(null, new ROSTopic(getChannel().getName() + "/_action/get_resultRequest"), getType(), null, null, null));
+        topics.add(new ROSTopicPublisher(null, new ROSTopic(getChannel().getName() + "/_action/get_resultReply", getChannel().isSystem(), ROSTopicType.SERVICE_RESPONSE), getType(), null, null, null));
+        topics.add(new ROSTopicSubscription(null, new ROSTopic(getChannel().getName() + "/_action/get_resultRequest", getChannel().isSystem(), ROSTopicType.SERVICE_REQUEST), getType(), null, null, null));
 
         return topics;
     }

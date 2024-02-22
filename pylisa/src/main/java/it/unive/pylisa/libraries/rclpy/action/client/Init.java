@@ -22,6 +22,7 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.expression.PyAssign;
@@ -60,6 +61,12 @@ public class Init extends NaryExpression implements PluggableStatement {
         : getSubExpressions()[1]; // The 'Node'
     ExpressionSet nameExpansion = SemanticsHelpers.nameExpansion(this, node,
         params[3], interprocedural, state, expressions);
+
+    Expression goal_service_qos_profile = SemanticsHelpers.getNamedParameterExpr(getSubExpressions(), "goal_service_qos_profile");
+    Expression result_service_qos_profile = SemanticsHelpers.getNamedParameterExpr(getSubExpressions(), "result_service_qos_profile");
+    Expression cancel_service_qos_profile = SemanticsHelpers.getNamedParameterExpr(getSubExpressions(), "cancel_service_qos_profile");
+    Expression feedback_sub_qos_profile = SemanticsHelpers.getNamedParameterExpr(getSubExpressions(), "feedback_sub_qos_profile");
+    Expression status_sub_qos_profile = SemanticsHelpers.getNamedParameterExpr(getSubExpressions(), "status_sub_qos_profile");
     for (SymbolicExpression v : params[0]) {
       Set<Type> rts = state.getState().getRuntimeTypesOf(v, this, state.getState());
       for (Type recType : rts)
@@ -72,6 +79,10 @@ public class Init extends NaryExpression implements PluggableStatement {
 
           HeapDereference container = new HeapDereference(inner, v, getLocation());
           CompilationUnit unit = inner.asUnitType().getUnit();
+
+          String messageType = params[2].iterator().next().toString();
+          Constant c = new Constant(StringType.INSTANCE, messageType, getLocation());
+          params[2] = new ExpressionSet(c);
 
           Global global = new Global(getLocation(), unit, "action_type", false, StringType.INSTANCE);
           Variable var = global.toSymbolicVariable(getLocation());
@@ -121,4 +132,14 @@ public class Init extends NaryExpression implements PluggableStatement {
     // return result;
   }
 
+  public NamedParameterExpression getNamedParameterExpr(
+          String name) {
+    for (Expression e : getSubExpressions()) {
+      if (e instanceof NamedParameterExpression
+              && ((NamedParameterExpression) e).getParameterName().equals(name)) {
+        return ((NamedParameterExpression) e);
+      }
+    }
+    return null;
+  }
 }

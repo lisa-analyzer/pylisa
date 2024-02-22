@@ -19,6 +19,8 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
+
 import java.util.Set;
 
 public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression implements PluggableStatement {
@@ -37,11 +39,11 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 		return 0;
 	}
 
-	public static it.unive.pylisa.libraries.rclpy.service.Init build(
+	public static it.unive.pylisa.libraries.rclpy.client.Init build(
 			CFG cfg,
 			CodeLocation location,
 			Expression[] exprs) {
-		return new it.unive.pylisa.libraries.rclpy.service.Init(cfg, location, exprs);
+		return new it.unive.pylisa.libraries.rclpy.client.Init(cfg, location, exprs);
 	}
 
 	@Override
@@ -84,6 +86,14 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 					access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					tmp = state.bottom();
 					for (SymbolicExpression t : params[2])
+						tmp = tmp.lub(partial.assign(access, t, this));
+					partial = tmp;
+
+					global = new Global(getLocation(), unit, "qos_profile", false, Untyped.INSTANCE);
+					var = global.toSymbolicVariable(getLocation());
+					access = new AccessChild(var.getStaticType(), container, var, getLocation());
+					tmp = state.bottom();
+					for (SymbolicExpression t : params[3])
 						tmp = tmp.lub(partial.assign(access, t, this));
 					partial = tmp;
 
