@@ -26,9 +26,9 @@ public class FullTest {
                 /*.withNode(new PythonROSNodeBuilder(
                         "/Users/giacomozanatta/Projects/ReposDownloader/repos/autonav_software_2024/autonav_ws/src/autonav_manual/src/steam.py"))*/
                 //.withNode(new PythonROSNodeBuilder("ros-tests/actions/client.py"))
-                .withNode(new PythonROSNodeBuilder("ros-tests/detect_ball.py"))
+                .withNode(new PythonROSNodeBuilder("ros-tests/poly_dust_server.py"))
                 //.withNode(new PythonROSNodeBuilder("ros-tests/services/service.py"));
-                .withWorkDir("test-ros-outputs/single-file-rosapp/ACTION-server");
+                .withWorkDir("test-ros-outputs/single-file-rosapp/polydust");
         ROSApplication rosapp = rob.build();
         rosapp.getRosNetwork().processEvents();
         rosapp.dumpResults();

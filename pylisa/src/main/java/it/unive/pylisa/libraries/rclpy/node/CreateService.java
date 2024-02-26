@@ -13,18 +13,14 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.type.StringType;
-import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.ros.lisa.symbolic.operators.ros.ROSTopicNameExpansion;
+import it.unive.pylisa.libraries.rclpy.client.ROSServiceCallback;
+
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 public class CreateService extends NaryExpression implements PluggableStatement {
 
@@ -67,7 +63,10 @@ public class CreateService extends NaryExpression implements PluggableStatement 
 		params[1] = new ExpressionSet(c);
 
 		PyClassType serviceClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_SERVICE);
-
+		ROSServiceCallback callback = new ROSServiceCallback(this.getCFG(), (SourceCodeLocation) getLocation(), getSubExpressions()[3]);
+		try {
+			callback.snooping(interprocedural, state, new ExpressionSet[]{params[3]}, expressions);
+		} catch(Exception e) {}
 		PyNewObj serviceObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
 				serviceClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
 		AnalysisState<A> newServiceAS = serviceObj.forwardSemanticsAux(interprocedural,

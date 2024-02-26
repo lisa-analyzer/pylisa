@@ -69,7 +69,9 @@ public class CreateSubscription extends NaryExpression implements PluggableState
 		PyNewObj subscriptionObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
 				subscriptionClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
 		ROSSubscriptionCallback callback = new ROSSubscriptionCallback(this.getCFG(), (SourceCodeLocation) getLocation(), getSubExpressions()[3]);
-		//callback.snooping(interprocedural, state, new ExpressionSet[]{params[3]}, expressions);
+		try {
+			callback.snooping(interprocedural, state, new ExpressionSet[]{params[3]}, expressions);
+		} catch(Exception e) {}
 		AnalysisState<A> newSubscriptionAS = subscriptionObj.forwardSemanticsAux(interprocedural,
 				state, Arrays.copyOfRange(params, 1, params.length), expressions);
 

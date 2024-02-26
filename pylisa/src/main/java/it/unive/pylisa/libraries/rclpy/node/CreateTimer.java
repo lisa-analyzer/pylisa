@@ -42,7 +42,9 @@ public class CreateTimer extends NaryExpression implements PluggableStatement {
     @Override
     public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(InterproceduralAnalysis<A> interprocedural, AnalysisState<A> state, ExpressionSet[] params, StatementStore<A> expressions) throws SemanticException {
         ROSTimerCallback callback = new ROSTimerCallback(this.getCFG(), (SourceCodeLocation) getLocation(), getSubExpressions()[2]);
-        callback.snooping(interprocedural, state, new ExpressionSet[]{params[2]}, expressions);
+        try {
+            callback.snooping(interprocedural, state, new ExpressionSet[]{params[2]}, expressions);
+        } catch (Exception e) {}
         return state;
     }
 

@@ -65,9 +65,7 @@ public class ROSSubscriptionCallback extends NaryExpression {
                     unresolvedCallParams[1] = new ExpressionSet(se);
 
                     unresolvedCall.forwardSemanticsAux(interprocedural, state, unresolvedCallParams, expressions);
-                    var x = 3;
                 }
-                var x = 3;
 
             }
             if (expr instanceof ValueExpression) {
