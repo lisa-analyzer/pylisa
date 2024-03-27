@@ -12,11 +12,10 @@ import it.unive.pylisa.checks.BottomFinder;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
 import it.unive.pylisa.checks.OpenCallsFinder;
-
 import org.junit.Ignore;
 import org.junit.Test;
 
-@Ignore
+//@Ignore
 public class PyTransformationsTest extends AnalysisTestExecutor {
 
 	private CronConfiguration buildConfig() {

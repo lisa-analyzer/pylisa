@@ -2,22 +2,17 @@ package it.unive.pylisa.analysis.dataframes.operations;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
 
 public class Concat extends DataframeOperation {
-
-	// we can concatenate along rows or columns
-	public static enum Axis {
-		CONCAT_ROWS,
-		CONCAT_COLS,
-		TOP
-	}
 
 	private final Axis axis;
 
 	public Concat(
 			CodeLocation where,
+			int index,
 			Axis axis) {
-		super(where);
+		super(where, index);
 		this.axis = axis;
 	}
 
@@ -26,11 +21,7 @@ public class Concat extends DataframeOperation {
 			DataframeOperation other)
 			throws SemanticException {
 		Concat o = (Concat) other;
-		if (o.axis != this.axis) {
-			return false;
-		}
-
-		return true;
+		return axis.lessOrEqual(o.axis);
 	}
 
 	@Override
@@ -38,11 +29,22 @@ public class Concat extends DataframeOperation {
 			DataframeOperation other)
 			throws SemanticException {
 		Concat o = (Concat) other;
-		if (o.axis != this.axis) {
-			return new Concat(loc(other), Axis.TOP);
-		}
+		return new Concat(where, index, axis.lub(o.axis));
+	}
 
-		return new Concat(loc(other), this.axis);
+	@Override
+	protected DataframeOperation wideningSameOperation(
+			DataframeOperation other)
+			throws SemanticException {
+		Concat o = (Concat) other;
+		return new Concat(where, index, axis.widening(o.axis));
+	}
+
+	@Override
+	protected int compareToSameOperation(
+			DataframeOperation o) {
+		Concat other = (Concat) o;
+		return axis.compareTo(other.axis);
 	}
 
 	@Override
@@ -70,21 +72,6 @@ public class Concat extends DataframeOperation {
 
 	@Override
 	public String toString() {
-		if (this.axis == Axis.CONCAT_COLS) {
-			return "concat_cols";
-		} else if (this.axis == Axis.CONCAT_ROWS) {
-			return "concat_rows";
-		} else if (this.axis == Axis.TOP) {
-			return "concat_TOP";
-		}
-		return "concat";
+		return "concat:" + axis;
 	}
-
-	@Override
-	protected int compareToSameClassAndLocation(
-			DataframeOperation o) {
-		Concat other = (Concat) o;
-		return axis.compareTo(other.axis);
-	}
-
 }

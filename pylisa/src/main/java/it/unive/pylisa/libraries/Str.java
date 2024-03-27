@@ -28,6 +28,12 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 		super(cfg, location, constructName, sequence);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static Str build(
 			CFG cfg,
 			CodeLocation location,
@@ -43,10 +49,9 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Set<Type> rts = state.getState().getRuntimeTypesOf(expr, this, state.getState());
-		if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(t -> t.isStringType() || t.isNumericType())) {
+		if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(t -> t.isStringType() || t.isNumericType()))
 			return state.smallStepSemantics(
 					new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
-		}
 		// TODO Handle other cases
 		return state;
 	}

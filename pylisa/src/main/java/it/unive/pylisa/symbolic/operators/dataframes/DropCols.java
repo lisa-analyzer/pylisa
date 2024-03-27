@@ -8,11 +8,18 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collections;
 import java.util.Set;
 
-public class DropCols implements BinaryOperator {
+public class DropCols implements BinaryOperator, DataframeOperator {
 
-	public static final DropCols INSTANCE = new DropCols();
+	private final int index;
 
-	private DropCols() {
+	public DropCols(
+			int index) {
+		this.index = index;
+	}
+
+	@Override
+	public int getIndex() {
+		return index;
 	}
 
 	@Override

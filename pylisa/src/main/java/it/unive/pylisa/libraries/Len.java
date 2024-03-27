@@ -62,4 +62,10 @@ public class Len extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 			Statement st) {
 		this.st = st;
 	}
+
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
 }

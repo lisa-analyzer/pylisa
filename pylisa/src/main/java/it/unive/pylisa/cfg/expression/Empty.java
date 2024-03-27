@@ -22,6 +22,12 @@ public class Empty extends Expression {
 	}
 
 	@Override
+	protected int compareSameClass(
+			Statement o) {
+		return 0;
+	}
+
+	@Override
 	public <V> boolean accept(
 			GraphVisitor<CFG, Statement, Edge, V> visitor,
 			V tool) {

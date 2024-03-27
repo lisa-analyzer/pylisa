@@ -28,6 +28,12 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 	}
 
 	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
+	@Override
 	final public void setOriginatingStatement(
 			Statement st) {
 		this.st = st;
@@ -49,7 +55,7 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 			throws SemanticException {
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		UnaryExpression read = new UnaryExpression(dftype, arg, ReadDataframe.INSTANCE, location);
+		UnaryExpression read = new UnaryExpression(dftype, arg, new ReadDataframe(0), location);
 		return PandasSemantics.createAndInitDataframe(state, read, st);
 	}
 }

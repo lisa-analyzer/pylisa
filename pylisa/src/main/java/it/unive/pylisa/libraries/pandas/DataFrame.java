@@ -41,6 +41,12 @@ public class DataFrame extends it.unive.lisa.program.cfg.statement.UnaryExpressi
 	}
 
 	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
+	@Override
 	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
 			InterproceduralAnalysis<A> interprocedural,
 			AnalysisState<A> state,
@@ -49,7 +55,7 @@ public class DataFrame extends it.unive.lisa.program.cfg.statement.UnaryExpressi
 			throws SemanticException {
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		UnaryExpression read = new UnaryExpression(dftype, arg, CreateDataframe.INSTANCE, location);
+		UnaryExpression read = new UnaryExpression(dftype, arg, new CreateDataframe(0), location);
 		return PandasSemantics.createAndInitDataframe(state, read, st);
 	}
 }

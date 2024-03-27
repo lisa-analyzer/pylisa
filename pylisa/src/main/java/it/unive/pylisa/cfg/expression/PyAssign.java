@@ -22,8 +22,8 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
-import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionConstant;
-import it.unive.pylisa.symbolic.operators.dataframes.WriteSelectionDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.AssignToConstant;
+import it.unive.pylisa.symbolic.operators.dataframes.AssignToSelection;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -64,10 +64,10 @@ public class PyAssign extends Assignment {
 					// get deref from right
 					if (PandasSemantics.isDataframePortionThatCanBeAssignedTo(right, this, state.getState()))
 						right = PandasSemantics.getDataframeDereference(right, this, state.getState());
-					write = new BinaryExpression(dftype, lderef, right, WriteSelectionDataframe.INSTANCE, loc);
+					write = new BinaryExpression(dftype, lderef, right, new AssignToSelection(0), loc);
 				} else
 					// assigning a part of a dataframe to a constant
-					write = new BinaryExpression(dftype, lderef, right, WriteSelectionConstant.INSTANCE, loc);
+					write = new BinaryExpression(dftype, lderef, right, new AssignToConstant(0), loc);
 
 				// we leave on the stack the column that received the assignment
 				return state.smallStepSemantics(write, this).smallStepSemantics(left, this);

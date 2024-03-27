@@ -16,8 +16,8 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
 import it.unive.pylisa.symbolic.operators.dataframes.AxisConcatenation;
-import it.unive.pylisa.symbolic.operators.dataframes.FilterNull.Axis;
 
 public class Concatenate extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 
@@ -43,6 +43,12 @@ public class Concatenate extends it.unive.lisa.program.cfg.statement.UnaryExpres
 		return concat;
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return axis.compareTo(((Concatenate) o).axis);
+	}
+
 	private static void setOptional(
 			Concatenate concat,
 			Expression expression) {
@@ -54,7 +60,7 @@ public class Concatenate extends it.unive.lisa.program.cfg.statement.UnaryExpres
 		case "axis":
 			if (!(npe.getSubExpression() instanceof Int32Literal))
 				return;
-			concat.axis = ((Int32Literal) npe.getSubExpression()).getValue() == 0 ? Axis.ROWS : Axis.COLUMNS;
+			concat.axis = ((Int32Literal) npe.getSubExpression()).getValue() == 0 ? Axis.ROWS : Axis.COLS;
 			break;
 		default:
 			return;
@@ -76,7 +82,7 @@ public class Concatenate extends it.unive.lisa.program.cfg.statement.UnaryExpres
 			throws SemanticException {
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		UnaryExpression concat = new UnaryExpression(dftype, expr, new AxisConcatenation(axis), location);
+		UnaryExpression concat = new UnaryExpression(dftype, expr, new AxisConcatenation(0, axis), location);
 		return PandasSemantics.createAndInitDataframe(state, concat, st);
 	}
 }

@@ -15,10 +15,10 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.pylisa.cfg.expression.NoneLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.ColumnAccess;
+import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
 
 public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg.statement.BinaryExpression
 		implements
@@ -45,8 +45,14 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 					break;
 
 		if (subset == null)
-			subset = new NoneLiteral(cfg, location);
+			subset = new PyNoneLiteral(cfg, location);
 		return new DataframeFunctionWithSubsetAccess(cfg, location, exprs[0], subset);
+	}
+
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
 	}
 
 	private static Expression getOptional(
@@ -85,7 +91,7 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		HeapDereference derefLeft = new HeapDereference(dftype, left, location);
 		BinaryExpression access = new BinaryExpression(dftype, derefLeft, right,
-				ColumnAccess.INSTANCE, location);
+				new ColumnProjection(0), location);
 		return state.smallStepSemantics(access, st).smallStepSemantics(left, st);
 	}
 }

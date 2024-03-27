@@ -8,6 +8,7 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.UnsupportedStatementException;
@@ -19,6 +20,12 @@ public class StarExpression extends UnaryExpression {
 			CodeLocation loc,
 			Expression expr) {
 		super(cfg, loc, "*", expr);
+	}
+
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
 	}
 
 	@Override

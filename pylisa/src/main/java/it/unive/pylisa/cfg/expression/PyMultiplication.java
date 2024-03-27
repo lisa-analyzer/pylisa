@@ -1,5 +1,7 @@
 package it.unive.pylisa.cfg.expression;
 
+import java.util.Set;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -15,7 +17,6 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyLibraryUnitType;
 import it.unive.pylisa.symbolic.operators.StringMult;
-import java.util.Set;
 
 public class PyMultiplication extends Multiplication {
 
@@ -47,7 +48,6 @@ public class PyMultiplication extends Multiplication {
 		// string repeat: STRING * Integer || Integer * String
 		if ((rtsl.stream().anyMatch(Type::isStringType) && rtsr.stream().anyMatch(Type::isNumericType)) ||
 				(rtsr.stream().anyMatch(Type::isStringType) && rtsl.stream().anyMatch(Type::isNumericType))) {
-
 			return state.smallStepSemantics(
 					new BinaryExpression(
 							getStaticType(),

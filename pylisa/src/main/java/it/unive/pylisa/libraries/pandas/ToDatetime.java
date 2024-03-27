@@ -11,7 +11,9 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
+import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 
 public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 
@@ -23,6 +25,12 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 			String constructName,
 			Expression series) {
 		super(cfg, location, constructName, series);
+	}
+
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
 	}
 
 	public static ToDatetime build(
@@ -45,7 +53,7 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		ApplyTransformation op = new ApplyTransformation(ApplyTransformation.Kind.TO_DATETIME, false);
-		return PandasSemantics.transform(state, expr, st, op);
+		UnaryTransform op = new UnaryTransform(0, UnaryTransformKind.TO_DATETIME, Axis.ROWS, false);
+		return PandasSemantics.applyUnary(state, expr, st, op);
 	}
 }

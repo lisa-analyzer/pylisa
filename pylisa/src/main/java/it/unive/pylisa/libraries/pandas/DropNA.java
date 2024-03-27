@@ -22,8 +22,9 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.FilterNull;
-import it.unive.pylisa.symbolic.operators.dataframes.FilterNull.Axis;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
+import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 
 public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 
@@ -52,6 +53,12 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		return drop;
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	private static void setOptional(
 			DropNA drop,
 			Expression expression) {
@@ -63,7 +70,7 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		case "axis":
 			if (!(npe.getSubExpression() instanceof Int32Literal))
 				return;
-			drop.axis = ((Int32Literal) npe.getSubExpression()).getValue() == 0 ? Axis.ROWS : Axis.COLUMNS;
+			drop.axis = ((Int32Literal) npe.getSubExpression()).getValue() == 0 ? Axis.ROWS : Axis.COLS;
 			break;
 		case "inplace":
 			if (npe.getSubExpression() instanceof TrueLiteral)
@@ -105,7 +112,7 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		}
 
 		AnalysisState<A> filtered = state.bottom();
-		FilterNull op = new FilterNull(axis);
+		UnaryTransform op = new UnaryTransform(0, UnaryTransformKind.DROP_NA, axis, false);
 		for (SymbolicExpression loc : targets) {
 			UnaryExpression filter = new UnaryExpression(dftype, loc, op, location);
 			SymbolicExpression ref = loc instanceof HeapDereference

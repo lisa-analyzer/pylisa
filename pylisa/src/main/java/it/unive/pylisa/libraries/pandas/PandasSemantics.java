@@ -14,13 +14,13 @@ import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.ApplyTransformation;
-import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
 import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
-import it.unive.pylisa.symbolic.operators.dataframes.PandasSeriesComparison;
+import it.unive.pylisa.symbolic.operators.dataframes.SeriesComparison;
+import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 import java.util.Set;
 
 public class PandasSemantics {
@@ -66,7 +66,7 @@ public class PandasSemantics {
 		AnalysisState<A> allocated = state.smallStepSemantics(allocation, pp);
 
 		AnalysisState<A> copy = state.bottom();
-		UnaryExpression cp = new UnaryExpression(dftype, dataframe, CopyDataframe.INSTANCE, location);
+		UnaryExpression cp = new UnaryExpression(dftype, dataframe, new CopyDataframe(0), location);
 		for (SymbolicExpression loc : allocated.getComputedExpressions())
 			// copy the dataframe
 			copy = copy.lub(allocated.smallStepSemantics(cp, pp).assign(loc, cp, pp));
@@ -74,11 +74,11 @@ public class PandasSemantics {
 		return copy;
 	}
 
-	public static <A extends AbstractState<A>> AnalysisState<A> transform(
+	public static <A extends AbstractState<A>> AnalysisState<A> applyUnary(
 			AnalysisState<A> state,
 			SymbolicExpression dataframe,
 			ProgramPoint pp,
-			ApplyTransformation op)
+			UnaryOperator op)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		AnalysisState<A> result = state.bottom();
@@ -175,7 +175,7 @@ public class PandasSemantics {
 			CodeLocation loc = pp.getLocation();
 			for (SymbolicExpression id : copied.getComputedExpressions()) {
 				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, right,
-						new PandasSeriesComparison(op), loc);
+						new SeriesComparison(0, op), loc);
 				AnalysisState<A> tmp = copied.smallStepSemantics(seriesComp, pp);
 
 				HeapReference ref = new HeapReference(seriesref, id, loc);
@@ -196,7 +196,7 @@ public class PandasSemantics {
 			CodeLocation loc = pp.getLocation();
 			for (SymbolicExpression id : copied.getComputedExpressions()) {
 				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, left,
-						new PandasSeriesComparison(op), loc);
+						new SeriesComparison(0, op), loc);
 				AnalysisState<A> tmp = copied.smallStepSemantics(seriesComp, pp);
 
 				HeapReference ref = new HeapReference(seriesref, id, loc);

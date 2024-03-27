@@ -10,6 +10,7 @@ import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
@@ -20,6 +21,7 @@ import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class PyNewObj extends NaryExpression {
@@ -41,6 +43,12 @@ public class PyNewObj extends NaryExpression {
 	}
 
 	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
+	@Override
 	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
 			InterproceduralAnalysis<A> interprocedural,
 			AnalysisState<A> state,
@@ -59,7 +67,7 @@ public class PyNewObj extends NaryExpression {
 		// we also have to add the receiver inside the state
 		AnalysisState<A> callstate = paramThis.forwardSemantics(state, interprocedural, expressions);
 		AnalysisState<A> tmp = state.bottom();
-		HashSet<SymbolicExpression> expr = new HashSet<>();
+		Set<SymbolicExpression> expr = new HashSet<>();
 		for (SymbolicExpression v : callstate.getComputedExpressions()) {
 			tmp = tmp.lub(callstate.assign(v, ref, paramThis));
 			expr.add(v);

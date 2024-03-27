@@ -3,6 +3,10 @@ package it.unive.pylisa.analysis.dataframes.operations.selection;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.dataframes.Names;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.AllColumns;
+import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSelection;
+import it.unive.pylisa.analysis.dataframes.operations.selection.rows.AllRows;
+import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
 
 public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelection<C>>
 		extends
@@ -18,19 +22,22 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 		this(rowSelection, columnSelection, false);
 	}
 
+	@SuppressWarnings("unchecked")
 	public DataframeSelection(
 			R rowSelection) {
-		this(rowSelection, null, false);
+		this(rowSelection, (C) AllColumns.INSTANCE, false);
 	}
 
+	@SuppressWarnings("unchecked")
 	public DataframeSelection(
 			C columnSelection) {
-		this(null, columnSelection, false);
+		this((R) AllRows.INSTANCE, columnSelection, false);
 	}
 
+	@SuppressWarnings("unchecked")
 	public DataframeSelection(
 			boolean isTop) {
-		this(null, null, isTop);
+		this((R) AllRows.INSTANCE, (C) AllColumns.INSTANCE, isTop);
 	}
 
 	public DataframeSelection(
@@ -163,7 +170,7 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 
 	@Override
 	public String toString() {
-		return "{" + rowSelection + ", " + columnSelection + "}";
+		return "[rows:" + rowSelection + ", cols:" + columnSelection + "]";
 	}
 
 	@Override
@@ -181,6 +188,8 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 
 	@Override
 	public Names extractColumnNames() throws SemanticException {
+		// we do not extract column names from row filters intentionally, as
+		// they are handled ad-hoc
 		return columnSelection == null ? Names.TOP : columnSelection.extractColumnNames();
 	}
 }

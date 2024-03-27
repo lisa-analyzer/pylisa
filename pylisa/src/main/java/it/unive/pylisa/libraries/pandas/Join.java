@@ -40,6 +40,12 @@ public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression i
 	}
 
 	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
+	@Override
 	final public void setOriginatingStatement(
 			Statement st) {
 		this.st = st;
@@ -61,7 +67,7 @@ public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression i
 		AnalysisState<A> copy = PandasSemantics.copyDataframe(state, left, st);
 		ExpressionSet recs = copy.getComputedExpressions();
 		for (SymbolicExpression rec : recs) {
-			BinaryExpression cat = new BinaryExpression(dftype, rec, right, JoinCols.INSTANCE, loc);
+			BinaryExpression cat = new BinaryExpression(dftype, rec, right, new JoinCols(0), loc);
 			HeapReference ref = new HeapReference(dfref, rec, loc);
 			result = result.lub(copy.smallStepSemantics(cat, st).smallStepSemantics(ref, st));
 		}

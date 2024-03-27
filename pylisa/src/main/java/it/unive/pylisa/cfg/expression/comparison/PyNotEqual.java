@@ -11,7 +11,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.comparison.NotEqual;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
-import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
+import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
 public class PyNotEqual extends NotEqual {
 

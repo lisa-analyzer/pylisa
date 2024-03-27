@@ -32,6 +32,12 @@ public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression 
 		super(cfg, location, constructName, expressions[0], expressions[1]);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static Super build(
 			CFG cfg,
 			CodeLocation location,

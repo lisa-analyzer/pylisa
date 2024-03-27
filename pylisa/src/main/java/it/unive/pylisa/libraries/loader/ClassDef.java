@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ClassDef {
 	private final boolean root;
 	private final boolean sealed;
+	private final String typeName;
 	private final String name;
 	private final String base;
 	private final Collection<Method> methods = new HashSet<>();
@@ -24,10 +25,12 @@ public class ClassDef {
 	public ClassDef(
 			boolean root,
 			boolean sealed,
+			String typeName,
 			String name,
 			String base) {
 		this.root = root;
 		this.sealed = sealed;
+		this.typeName = typeName;
 		this.name = name;
 		this.base = base;
 	}
@@ -48,6 +51,10 @@ public class ClassDef {
 		return base;
 	}
 
+	public String getTypeName() {
+		return typeName;
+	}
+
 	public Collection<Method> getMethods() {
 		return methods;
 	}
@@ -58,7 +65,7 @@ public class ClassDef {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(fields, methods, name, root, sealed, base);
+		return Objects.hash(base, fields, methods, name, root, sealed, typeName);
 	}
 
 	@Override
@@ -71,15 +78,15 @@ public class ClassDef {
 		if (getClass() != obj.getClass())
 			return false;
 		ClassDef other = (ClassDef) obj;
-		return Objects.equals(fields, other.fields) && Objects.equals(methods, other.methods)
-				&& Objects.equals(name, other.name) && root == other.root && sealed == other.sealed
-				&& Objects.equals(base, other.base);
+		return Objects.equals(base, other.base) && Objects.equals(fields, other.fields)
+				&& Objects.equals(methods, other.methods) && Objects.equals(name, other.name) && root == other.root
+				&& sealed == other.sealed && Objects.equals(typeName, other.typeName);
 	}
 
 	@Override
 	public String toString() {
-		return "ClassDef [root=" + root + ", sealed=" + sealed + ", name=" + name + ", sup=" + base + ", methods="
-				+ methods + ", fields=" + fields + "]";
+		return "ClassDef [root=" + root + ", sealed=" + sealed + ", typeName=" + typeName + ", name=" + name + ", base="
+				+ base + ", methods=" + methods + ", fields=" + fields + "]";
 	}
 
 	public ClassUnit toLiSAUnit(

@@ -10,6 +10,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
@@ -28,6 +29,12 @@ public class ListCreation extends NaryExpression {
 			CodeLocation loc,
 			Expression... values) {
 		super(cfg, loc, "list", values);
+	}
+
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
 	}
 
 	@Override

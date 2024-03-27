@@ -21,8 +21,7 @@ import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.AccessRows;
-import it.unive.pylisa.symbolic.operators.dataframes.ProjectRows;
+import it.unive.pylisa.symbolic.operators.dataframes.RowProjection;
 
 public class Head extends BinaryExpression implements PluggableStatement {
 
@@ -49,6 +48,12 @@ public class Head extends BinaryExpression implements PluggableStatement {
 	}
 
 	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
+	@Override
 	final public void setOriginatingStatement(
 			Statement st) {
 		this.st = st;
@@ -71,18 +76,12 @@ public class Head extends BinaryExpression implements PluggableStatement {
 
 		// we allocate the copy that will have only the given rows
 		AnalysisState<A> copied = PandasSemantics.copyDataframe(state, derefLeft, st);
-
-		// the receiver will have its rows accessed instead
-		TernaryExpression access = new TernaryExpression(dftype, derefLeft, start, right,
-				AccessRows.INSTANCE, location);
-		AnalysisState<A> accessed = copied.smallStepSemantics(access, st);
-
 		AnalysisState<A> result = state.bottom();
 		for (SymbolicExpression id : copied.getComputedExpressions()) {
 			// the new dataframe will have its rows projected
 			TernaryExpression projection = new TernaryExpression(dftype, id, start, right,
-					ProjectRows.INSTANCE, location);
-			AnalysisState<A> tmp = accessed.smallStepSemantics(projection, st);
+					new RowProjection(0), location);
+			AnalysisState<A> tmp = copied.smallStepSemantics(projection, st);
 
 			// we leave a reference to the fresh dataframe on the stack
 			HeapReference ref = new HeapReference(dfref, id, location);

@@ -14,7 +14,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonLe;
-import it.unive.pylisa.symbolic.operators.dataframes.ComparisonOperator;
+import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
 public class PyLessOrEqual extends LessOrEqual {
 

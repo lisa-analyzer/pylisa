@@ -75,14 +75,8 @@ public class DataframeForest
 	public void addNode(
 			DataframeOperation node,
 			boolean entrypoint) {
-		if (containsNode(node))
-			for (DataframeOperation op : list)
-				if (op.equals(node)) {
-					node.setOffset(op.getOffset());
-					return;
-				}
-
-		super.addNode(node, entrypoint);
+		if (!containsNode(node))
+			super.addNode(node, entrypoint);
 	}
 
 	@Override

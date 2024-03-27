@@ -27,6 +27,12 @@ public class Reshape extends NaryExpression implements PluggableStatement {
 		super(cfg, location, "reshape", params);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static Reshape build(
 			CFG cfg,
 			CodeLocation location,

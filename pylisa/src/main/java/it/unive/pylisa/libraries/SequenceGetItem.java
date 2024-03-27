@@ -34,6 +34,12 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		super(cfg, location, constructName, sequence, index);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static SequenceGetItem build(
 			CFG cfg,
 			CodeLocation location,
@@ -63,7 +69,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		Set<Type> rts = state.getState().getRuntimeTypesOf(left, this, state.getState());
 		if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(dfref::equals)) {
 			HeapDereference deref = new HeapDereference(dftype, left, loc);
-			UnaryExpression iterate = new UnaryExpression(seriestype, deref, Iterate.INSTANCE, loc);
+			UnaryExpression iterate = new UnaryExpression(seriestype, deref, new Iterate(0), loc);
 			return state.smallStepSemantics(iterate, st);
 		}
 

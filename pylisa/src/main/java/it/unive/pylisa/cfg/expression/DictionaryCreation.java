@@ -10,6 +10,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
@@ -41,6 +42,12 @@ public class DictionaryCreation extends NaryExpression {
 			result[idx + 1] = values[i].getRight();
 		}
 		return result;
+	}
+
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
 	}
 
 	@Override

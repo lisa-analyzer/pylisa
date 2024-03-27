@@ -8,6 +8,7 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.TernaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
@@ -17,7 +18,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.AccessRowsColumns;
+import it.unive.pylisa.symbolic.operators.dataframes.DataframeProjection;
 import java.util.Set;
 
 public class PyDoubleArrayAccess extends TernaryExpression {
@@ -30,6 +31,12 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 			Expression index1,
 			Expression index2) {
 		super(cfg, loc, "[]", staticType, receiver, index1, index2);
+	}
+
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
 	}
 
 	@Override
@@ -54,7 +61,7 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 				it.unive.lisa.symbolic.value.TernaryExpression dfAccess = new it.unive.lisa.symbolic.value.TernaryExpression(
 						dftype,
 						deref, middle, right,
-						AccessRowsColumns.INSTANCE,
+						new DataframeProjection(0),
 						getLocation());
 				state = state.smallStepSemantics(dfAccess, this);
 				dereferencedType = dftype;

@@ -8,11 +8,18 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collections;
 import java.util.Set;
 
-public class CopyDataframe implements UnaryOperator {
+public class CopyDataframe implements UnaryOperator, DataframeOperator {
 
-	public static final CopyDataframe INSTANCE = new CopyDataframe();
+	private final int index;
 
-	private CopyDataframe() {
+	public CopyDataframe(
+			int index) {
+		this.index = index;
+	}
+
+	@Override
+	public int getIndex() {
+		return index;
 	}
 
 	@Override

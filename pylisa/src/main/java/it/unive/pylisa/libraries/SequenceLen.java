@@ -27,6 +27,12 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 		super(cfg, location, constructName, sequence);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static SequenceLen build(
 			CFG cfg,
 			CodeLocation location,

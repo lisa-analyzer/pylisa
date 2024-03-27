@@ -8,11 +8,18 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collections;
 import java.util.Set;
 
-public class AccessKeys implements UnaryOperator {
+public class AccessKeys implements UnaryOperator, DataframeOperator {
 
-	public static final AccessKeys INSTANCE = new AccessKeys();
+	private final int index;
 
-	private AccessKeys() {
+	public AccessKeys(
+			int index) {
+		this.index = index;
+	}
+
+	@Override
+	public int getIndex() {
+		return index;
 	}
 
 	@Override

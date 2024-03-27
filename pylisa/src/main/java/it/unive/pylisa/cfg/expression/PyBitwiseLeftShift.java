@@ -9,6 +9,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftLeft;
 import it.unive.lisa.type.Untyped;
@@ -21,6 +22,12 @@ public class PyBitwiseLeftShift extends BinaryExpression {
 			Expression left,
 			Expression right) {
 		super(cfg, loc, "<<", Untyped.INSTANCE, left, right);
+	}
+
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
 	}
 
 	@Override
