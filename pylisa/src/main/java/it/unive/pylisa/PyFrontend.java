@@ -57,6 +57,7 @@ import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.VoidType;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
+import it.unive.pylisa.annotationvalues.DecoratedAnnotation;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
 import it.unive.pylisa.antlr.Python3Parser.AddContext;
@@ -588,27 +589,68 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitDecorator(
+	public AnnotationMember visitDecorator(
 			DecoratorContext ctx) {
-		throw new UnsupportedStatementException();
+		if (ctx.dotted_name() == null) {
+			throw new UnsupportedOperationException("Expecting a Dotted_nameContext in a DecoratorContext.");
+		}
+		List<Expression> params = new ArrayList<>();
+		if (ctx.arglist() != null) {
+			for (ArgumentContext arg : ctx.arglist().argument())
+				params.add(visitArgument(arg));
+		}
+
+		return new AnnotationMember(ctx.dotted_name().getText(), new DecoratedAnnotation(params));
 	}
 
 	@Override
-	public Object visitDecorators(
+	public Annotation visitDecorators(
 			DecoratorsContext ctx) {
-		throw new UnsupportedStatementException();
+		List<AnnotationMember> annotationMembers = new ArrayList<>();
+		for (DecoratorContext dc : ctx.decorator()) {
+			annotationMembers.add(visitDecorator(dc));
+		}
+		Annotation annotation = new Annotation("$decorators", annotationMembers);
+		return annotation;
 	}
 
+	/*
+	  decorated
+	     : decorators (classdef | funcdef | async_funcdef)
+	     ;
+	  @param ctx the parse tree
+	  @return
+	*/
 	@Override
 	public Object visitDecorated(
 			DecoratedContext ctx) {
-		throw new UnsupportedStatementException();
+		if (ctx.decorators() != null) {
+			Annotation annotation = visitDecorators(ctx.decorators());
+			if (ctx.classdef() != null) {
+				ClassUnit classUnit = visitClassdef(ctx.classdef());
+				classUnit.getAnnotations().addAnnotation(annotation);
+				return classUnit;
+			} else if (ctx.async_funcdef() != null ) {
+					PyCFG method = visitAsync_funcdef(ctx.async_funcdef());
+					method.getDescriptor().getAnnotations().addAnnotation(annotation);
+					return method;
+			} else if (ctx.funcdef() != null) {
+				PyCFG method = visitFuncdef(ctx.funcdef());
+				method.getDescriptor().getAnnotations().addAnnotation(annotation);
+				return method;
+			}
+		} else {
+			throw new UnsupportedStatementException("Expecting {'def', 'class', 'async'} after decorators.");
+		}
+		throw new UnsupportedStatementException("Expecting a DecoratorsContext in DecoratedContext");
 	}
 
 	@Override
-	public Object visitAsync_funcdef(
+	public PyCFG visitAsync_funcdef(
 			Async_funcdefContext ctx) {
-		throw new UnsupportedStatementException();
+		log.warn("Async function defintions are not yet supported. The async def at line " + getLine(ctx) + " of file "
+				+ getFilePath() + " is unsoundly translated into a def");
+		return visitFuncdef(ctx.funcdef());
 	}
 
 	@Override
@@ -1046,10 +1088,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		else if (ctx.classdef() != null)
 			return this.visitClassdef(ctx.classdef());
 		else if (ctx.decorated() != null) {
-			NoOp noop = new NoOp(currentCFG, getLocation(ctx));
+			return this.visitDecorated(ctx.decorated());
+			/*NoOp noop = new NoOp(currentCFG, getLocation(ctx));
 			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 			block.addNode(noop);
-			return Triple.of(noop, block, noop);
+			return Triple.of(noop, block, noop);*/
 		} else if (ctx.async_stmt() != null) {
 			NoOp noop = new NoOp(currentCFG, getLocation(ctx));
 			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
