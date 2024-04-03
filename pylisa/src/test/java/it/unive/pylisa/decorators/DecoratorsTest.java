@@ -29,12 +29,10 @@ public class DecoratorsTest {
         PyFrontend translator = new PyFrontend(
                 "py-testcases/decorators/dec01.py",
                 false);
-        Program program1 = translator.toLiSAProgram(false);
-        LiSAConfiguration conf = RosTestHelpers.getLisaConf("dec01");
+        Program program = translator.toLiSAProgram(false);
+        LiSAConfiguration conf = getLisaConf("dec01");
         LiSA lisa = new LiSA(conf);
-        lisa.run(program1);
-        //lisa.run(program2);
-        InterproceduralAnalysis ia = conf.interproceduralAnalysis;
+        lisa.run(program);
         var x = 3;
     }
 
