@@ -33,7 +33,6 @@ public class PyParameterTest {
         LiSAConfiguration conf = getLisaConf("tests/");
         LiSA lisa = new LiSA(conf);
         lisa.run(program);
-        var x = 3;
     }
     public static LiSAConfiguration getLisaConf(String workdir) {
         LiSAConfiguration conf = new LiSAConfiguration();
