@@ -63,8 +63,7 @@ public class PyLiSA {
 			for (Warning w : report.getWarnings())
 				System.out.println("  " + w);
 		}*/
-		System.out.println("CIAOOOOO");
-		/*RosApplicationBuilder rob = new RosApplicationBuilder();
+		RosApplicationBuilder rob = new RosApplicationBuilder();
 		try {
 			for (int i = 0; i < args.length - 1; i++) {
 				rob.withNode(new PythonROSNodeBuilder(args[i]));
@@ -81,7 +80,7 @@ public class PyLiSA {
 		System.out.println(ra.getRosNetwork().getNetworkEvents().size());
 		ROSNetwork n = ra.getRosNetwork();
 		n.processEvents();
-		ra.dumpResults();*/
+		ra.dumpResults();
 	}
 
 	}
