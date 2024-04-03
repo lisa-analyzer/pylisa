@@ -2309,23 +2309,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					currentUnit.addGlobal(new Global(getLocation(ctx), currentUnit, p.getLeft().getName(), false));
 				if (p.getRight() != null)
 					fields_init.add(p);
-			} else if (stmt.compound_stmt().funcdef() != null)
+			} else if (stmt.compound_stmt().funcdef() != null) {
 				visitFuncdef(stmt.compound_stmt().funcdef());
-			else if (stmt.compound_stmt().decorated() != null) {
-				log.warn("Ignoring decorator " + stmt.compound_stmt().decorated().decorators().getText()
-						+ " at " + getLocation(stmt));
-				DecoratedContext c = stmt.compound_stmt().decorated();
-				if (c.funcdef() != null)
-					visitFuncdef(c.funcdef());
-				else if (c.classdef() != null)
-					visitClassdef(c.classdef());
-				/*else
-					throw new UnsupportedStatementException("We support only decorated classes and methods");*/
-			}/* else
-				throw new UnsupportedStatementException(
-						"Inside the body of a class we should have only field and method definitions");*/
+			} else if (stmt.compound_stmt().async_stmt() != null) {
+				visitAsync_stmt(stmt.compound_stmt().async_stmt());
+			} else if (stmt.compound_stmt().decorated() != null) {
+				visitDecorated(stmt.compound_stmt().decorated());
+			}
 		}
-		//dumpConstructor(fields_init, getLocation(ctx));
 	}
 
 	private void dumpConstructor(
