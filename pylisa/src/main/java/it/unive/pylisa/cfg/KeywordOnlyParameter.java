@@ -6,7 +6,7 @@ import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.type.Type;
 
-public class KeywordOnlyParameter extends Parameter {
+public class KeywordOnlyParameter extends PyParameter {
 
 	public KeywordOnlyParameter(
 			Parameter parameter) {

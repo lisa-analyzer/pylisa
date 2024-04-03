@@ -382,7 +382,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		ParseTree tree = parser.file_input();
 
 		visit(tree);
-
 		PyClassType.all().forEach(types::registerType);
 
 		for (CFG cm : program.getAllCFGs())
@@ -565,7 +564,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 	private CodeMemberDescriptor buildMainCFGDescriptor(
 			SourceCodeLocation loc) {
-		Parameter[] cfgArgs = new Parameter[] {};
+		PyParameter[] cfgArgs = new PyParameter[] {};
 
 		return new CodeMemberDescriptor(loc, currentUnit, false, INSTRUMENTED_MAIN_FUNCTION_NAME, cfgArgs);
 	}
@@ -574,7 +573,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			FuncdefContext funcDecl) {
 		String funcName = funcDecl.NAME().getText();
 
-		Parameter[] cfgArgs = visitParameters(funcDecl.parameters());
+		PyParameter[] cfgArgs = visitParameters(funcDecl.parameters());
 
 		return new CodeMemberDescriptor(getLocation(funcDecl), currentUnit,
 				currentUnit instanceof ClassUnit ? true : false,
@@ -635,21 +634,21 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Parameter[] visitParameters(
+	public PyParameter[] visitParameters(
 			ParametersContext ctx) {
 		if (ctx.typedargslist() == null)
-			return new Parameter[0];
+			return new PyParameter[0];
 		return visitTypedargslist(ctx.typedargslist());
 	}
 
 	@Override
-	public Parameter[] visitTypedargslist(
+	public PyParameter[] visitTypedargslist(
 			TypedargslistContext ctx) {
-		List<Parameter> pars = new LinkedList<>();
+		List<PyParameter> pars = new LinkedList<>();
 		for (TypedargContext typedArg : ctx.typedarg()) {
 			if (pars.isEmpty()) {
 				if (currentUnit instanceof ClassUnit) {
-					pars.add(new Parameter(getLocation(typedArg), typedArg.tfpdef().NAME().getText(),
+					pars.add(new PyParameter(getLocation(typedArg), typedArg.tfpdef().NAME().getText(),
 							new ReferenceType(PyClassType.lookup(currentUnit.getName(), (ClassUnit) currentUnit))));
 				} else {
 					pars.add(visitTypedarg(typedArg));
@@ -667,13 +666,13 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			pars.add(visitVarkw(ctx.varkw()));
 		}
 
-		return pars.toArray(Parameter[]::new);
+		return pars.toArray(PyParameter[]::new);
 	}
 
 	@Override
-	public Parameter[] visitStarargs(
+	public PyParameter[] visitStarargs(
 			Python3Parser.StarargsContext ctx) {
-		List<Parameter> pars = new LinkedList<>();
+		List<PyParameter> pars = new LinkedList<>();
 		if (ctx.varpositional() != null) {
 			VarpositionalContext def = ctx.varpositional();
 			pars.add(new VarPositionalParameter(getLocation(def), def.tfpdef().NAME().getText()));
@@ -688,39 +687,33 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				pars.add(new KeywordOnlyParameter(visitTypedarg(typedArg)));
 			}
 		}
-		return pars.toArray(Parameter[]::new);
+		return pars.toArray(PyParameter[]::new);
 	}
 
 	@Override
-	public Parameter visitVarkw(
+	public PyParameter visitVarkw(
 			Python3Parser.VarkwContext ctx) {
 		return new VarKeywordParameter(getLocation(ctx), ctx.tfpdef().NAME().getText());
 	}
 
 	@Override
-	public Parameter visitTypedarg(
+	public PyParameter visitTypedarg(
 			TypedargContext ctx) {
-		Annotation typeHints;
+		String typeHint = null;
 		if (ctx.tfpdef().test() != null) {
-			Expression e = visitTest(ctx.tfpdef().test());
-			typeHints = new Annotation("$typeHint",
-					Collections.singletonList(new AnnotationMember("$typeHint", new TypeHintAnnotation(e))));
-		} else {
-			typeHints = new Annotation("$typeHint"); // empty typeHint annotation.
+			typeHint = visitTest(ctx.tfpdef().test()).toString();
 		}
 		if (ctx.test() == null)
-			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText(), Untyped.INSTANCE, null,
-					new Annotations(typeHints));
+			return new PyParameter(getLocation(ctx), ctx.tfpdef().NAME().getText(), Untyped.INSTANCE, null, null, typeHint);
 		else
-			return new Parameter(getLocation(ctx), ctx.tfpdef().NAME().getText(), Untyped.INSTANCE,
-					visitTest(ctx.test()),
-					new Annotations(typeHints));
+			return new PyParameter(getLocation(ctx), ctx.tfpdef().NAME().getText(), Untyped.INSTANCE,
+					visitTest(ctx.test()), null, typeHint);
 	}
 
 	@Override
-	public Parameter visitTfpdef(
+	public PyParameter visitTfpdef(
 			TfpdefContext ctx) {
-		return new Parameter(getLocation(ctx), ctx.NAME().getText(), Untyped.INSTANCE);
+		return new PyParameter(getLocation(ctx), ctx.NAME().getText(), Untyped.INSTANCE);
 	}
 
 	@Override
