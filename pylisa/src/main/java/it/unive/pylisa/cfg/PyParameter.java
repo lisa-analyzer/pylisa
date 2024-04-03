@@ -37,4 +37,8 @@ public class PyParameter extends Parameter {
         super(location, name, staticType, defaultValue, annotations);
         this.typeHint = typeHint;
     }
+
+    public String getTypeHint() {
+        return typeHint;
+    }
 }
