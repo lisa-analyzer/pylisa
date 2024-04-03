@@ -648,7 +648,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	@Override
 	public PyCFG visitAsync_funcdef(
 			Async_funcdefContext ctx) {
-		log.warn("Async function defintions are not yet supported. The async def at line " + getLine(ctx) + " of file "
+		log.warn("Async function definitions are not yet supported. The async def at line " + getLine(ctx) + " of file "
 				+ getFilePath() + " is unsoundly translated into a def");
 		return visitFuncdef(ctx.funcdef());
 	}
@@ -1089,23 +1089,27 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return this.visitClassdef(ctx.classdef());
 		else if (ctx.decorated() != null) {
 			return this.visitDecorated(ctx.decorated());
-			/*NoOp noop = new NoOp(currentCFG, getLocation(ctx));
-			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
-			block.addNode(noop);
-			return Triple.of(noop, block, noop);*/
 		} else if (ctx.async_stmt() != null) {
-			NoOp noop = new NoOp(currentCFG, getLocation(ctx));
-			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
-			block.addNode(noop);
-			return Triple.of(noop, block, noop);
+			return this.visitAsync_stmt(ctx.async_stmt());
 		}
 		throw new UnsupportedStatementException("Statement " + ctx + " not yet supported");
 	}
 
 	@Override
-	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitAsync_stmt(
+	public Object visitAsync_stmt(
 			Async_stmtContext ctx) {
-		throw new UnsupportedStatementException();
+		log.warn("Async statements are not yet supported. The async stmt at line " + getLine(ctx) + " of file "
+				+ getFilePath() + " is unsoundly translated into its synchronous version.");
+		if (ctx.funcdef() != null ) {
+			return visitFuncdef(ctx.funcdef());
+		}
+		if (ctx.for_stmt() != null) {
+			return visitFor_stmt(ctx.for_stmt());
+		}
+		if (ctx.with_stmt() != null) {
+			return visitWith_stmt(ctx.with_stmt());
+		}
+		throw new UnsupportedStatementException("Expecting with, for, def, in Async_stmtContext.");
 	}
 
 	@Override
