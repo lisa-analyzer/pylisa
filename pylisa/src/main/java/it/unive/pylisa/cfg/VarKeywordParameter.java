@@ -6,7 +6,7 @@ import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.type.Type;
 
-public class VarKeywordParameter extends Parameter {
+public class VarKeywordParameter extends PyParameter {
 
 	public VarKeywordParameter(
 			CodeLocation location,
