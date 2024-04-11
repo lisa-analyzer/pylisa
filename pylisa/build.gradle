@@ -25,6 +25,12 @@ version = '0.1a1'
 mainClassName = 'it.unive.pylisa.PyLiSA'
 
 dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.22'
+    annotationProcessor 'org.projectlombok:lombok:1.18.22'
+
+    testCompileOnly 'org.projectlombok:lombok:1.18.22'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
+
     implementation 'io.github.lisa-analyzer:lisa-sdk:0.1b10-SNAPSHOT'
     implementation 'io.github.lisa-analyzer:lisa-program:0.1b10-SNAPSHOT'
     implementation 'io.github.lisa-analyzer:lisa-analyses:0.1b10-SNAPSHOT'
