@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.fastapi.httpMethod;
+package it.unive.pylisa.libraries.fastapi.sarl.method;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -14,22 +14,24 @@ import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 
-public class Put extends NaryExpression implements PluggableStatement {
+public class Post extends NaryExpression implements PluggableStatement {
 
     private Statement st;
 
-    public Put(CFG cfg, CodeLocation location, Expression... parameters) {
-        super(cfg, location, "put", parameters);
+    public Post(CFG cfg, CodeLocation location, Expression... parameters) {
+        super(cfg, location, "post", parameters);
     }
 
     @Override
     public void setOriginatingStatement(Statement st) { this.st = st; }
 
     @Override
-    public Program getProgram() { return super.getProgram(); }
+    public Program getProgram() {
+        return super.getProgram();
+    }
 
-    public static Put build(CFG cfg, CodeLocation location, Expression[] parameters) {
-        return new Put(cfg, location, parameters);
+    public static Post build(CFG cfg, CodeLocation location, Expression[] parameters) {
+        return new Post(cfg, location, parameters);
     }
 
     @Override

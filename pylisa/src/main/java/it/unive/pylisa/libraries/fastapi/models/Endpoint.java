@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.fastapi.model;
+package it.unive.pylisa.libraries.fastapi.models;
 
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.statement.Expression;

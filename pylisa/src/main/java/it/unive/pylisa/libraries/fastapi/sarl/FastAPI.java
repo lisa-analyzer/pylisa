@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.fastapi.httpMethod;
+package it.unive.pylisa.libraries.fastapi.sarl;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -9,29 +9,24 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.NaryExpression;
-import it.unive.lisa.program.cfg.statement.PluggableStatement;
-import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.*;
 
-public class Post extends NaryExpression implements PluggableStatement {
+public class FastAPI extends NaryExpression implements PluggableStatement {
 
     private Statement st;
 
-    public Post(CFG cfg, CodeLocation location, Expression... parameters) {
-        super(cfg, location, "post", parameters);
+    public FastAPI(CFG cfg, CodeLocation location, Expression... parameters) {
+        super(cfg, location, "FastAPI", parameters);
     }
 
     @Override
     public void setOriginatingStatement(Statement st) { this.st = st; }
 
     @Override
-    public Program getProgram() {
-        return super.getProgram();
-    }
+    public Program getProgram() { return super.getProgram(); }
 
-    public static Post build(CFG cfg, CodeLocation location, Expression[] parameters) {
-        return new Post(cfg, location, parameters);
+    public static FastAPI build(CFG cfg, CodeLocation location, Expression[] parameters) {
+        return new FastAPI(cfg, location, parameters);
     }
 
     @Override

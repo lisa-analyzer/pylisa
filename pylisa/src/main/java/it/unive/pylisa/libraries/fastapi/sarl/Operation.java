@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.fastapi.httpMethod;
+package it.unive.pylisa.libraries.fastapi.sarl;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -11,24 +11,22 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.*;
 
-public class Get extends NaryExpression implements PluggableStatement {
+public class Operation extends NaryExpression implements PluggableStatement {
 
     private Statement st;
 
-    public Get(CFG cfg, CodeLocation location, Expression... parameters) {
-        super(cfg, location, "get", parameters);
+    public Operation(CFG cfg, CodeLocation location, Expression... parameters) {
+        super(cfg, location, "Operation", parameters);
     }
 
     @Override
     public void setOriginatingStatement(Statement st) { this.st = st; }
 
     @Override
-    public Program getProgram() {
-        return super.getProgram();
-    }
+    public Program getProgram() { return super.getProgram(); }
 
-    public static Get build(CFG cfg, CodeLocation location, Expression[] parameters) {
-        return new Get(cfg, location, parameters);
+    public static Operation build(CFG cfg, CodeLocation location, Expression[] parameters) {
+        return new Operation(cfg, location, parameters);
     }
 
     @Override

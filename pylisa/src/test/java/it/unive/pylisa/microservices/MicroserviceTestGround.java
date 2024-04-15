@@ -1,4 +1,4 @@
-package it.unive.pylisa.fastapi;
+package it.unive.pylisa.microservices;
 
 import  it.unive.lisa.LiSA;
 import it.unive.lisa.analysis.SimpleAbstractState;
@@ -13,16 +13,29 @@ import it.unive.lisa.program.Program;
 import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
-import it.unive.pylisa.checks.FastApiHalfwaySemanticChecker;
 import it.unive.pylisa.checks.FastApiSyntacticChecker;
+import it.unive.pylisa.libraries.fastapi.EndpointGraphBuilder;
+import it.unive.pylisa.libraries.fastapi.models.Endpoint;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.List;
 
-public class TestGround {
+import static guru.nidi.graphviz.model.Factory.graph;
+import static guru.nidi.graphviz.model.Factory.node;
+import static guru.nidi.graphviz.model.Link.to;
 
-    @Test
-    public void initial() throws IOException {
+public class MicroserviceTestGround {
+
+    private LiSAConfiguration conf;
+
+    private List<Endpoint> endpoints;
+    private final FastApiSyntacticChecker syntacticChecker = new FastApiSyntacticChecker();
+
+
+    @Before
+    public void before() {
 
         LiSAConfiguration conf = new LiSAConfiguration();
         conf.workdir = "test-outputs/";
@@ -33,29 +46,30 @@ public class TestGround {
         conf.callGraph = new RTACallGraph();
         conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
         conf.optimize = false;
-        conf.syntacticChecks.add(new FastApiSyntacticChecker());
-//        conf.semanticChecks.add(new FastApiHalfwaySemanticChecker<>());
+        conf.syntacticChecks.add(syntacticChecker);
 
         PyFieldSensitivePointBasedHeap heap = (PyFieldSensitivePointBasedHeap) new PyFieldSensitivePointBasedHeap().bottom();
         TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
         ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
         conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
 
-        PyFrontend frontend1 = new PyFrontend(
+        this.conf = conf;
+    }
+
+    @Test
+    public void initial() throws IOException {
+
+        PyFrontend frontend = new PyFrontend(
                 "/Users/teodors/Documents/erasmus/lisa/projects/lisa-on-microservices/to-analyse/actual/microservice_a.py",
                 false);
 
-//        PyFrontend frontend2 = new PyFrontend(
-//                "/Users/teodors/Documents/erasmus/lisa/projects/lisa-on-microservices/to-analyse/actual/microservice_b.py",
-//                false);
+        Program program1 = frontend.toLiSAProgram();
+        LiSA lisa = new LiSA(this.conf);
 
-        Program program1 = frontend1.toLiSAProgram();
-//        Program program2 = frontend2.toLiSAProgram();
-        LiSA lisa = new LiSA(conf);
+        lisa.run(program1);
 
-        try {
-//            lisa.run(program1, program2);
-            lisa.run(program1);
-        } catch (Exception ignored) { }
+        endpoints = syntacticChecker.endpoints;
+
+        EndpointGraphBuilder.build(endpoints);
     }
 }

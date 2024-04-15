@@ -318,9 +318,11 @@ library pika:
             param self libtype pika.Channel*
 library fastapi:
     location fastapi
-    method FastAPI: it.unive.pylisa.libraries.fastapi.FastAPI
+
+    method FastAPI: it.unive.pylisa.libraries.fastapi.sarl.FastAPI
         libtype fastapi.FastAPI*
-    method get: it.unive.pylisa.libraries.fastapi.httpMethod.Get
+
+    method get: it.unive.pylisa.libraries.fastapi.sarl.method.Get
         libtype fastapi.Operation*
         param path type it.unive.lisa.program.type.StringType::INSTANCE
         param callback type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
@@ -347,7 +349,7 @@ library fastapi:
         param &openapi_extra type it.unive.lisa.type.Untyped::INSTANCE default none
         param &generate_unique_id_function type it.unive.lisa.type.Untyped::INSTANCE default none
 
-    method post: it.unive.pylisa.libraries.fastapi.httpMethod.Post
+    method post: it.unive.pylisa.libraries.fastapi.sarl.method.Post
         libtype fastapi.Operation*
         param path type it.unive.lisa.program.type.StringType::INSTANCE
         param callback type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
@@ -374,7 +376,7 @@ library fastapi:
         param &openapi_extra type it.unive.lisa.type.Untyped::INSTANCE default none
         param &generate_unique_id_function type it.unive.lisa.type.Untyped::INSTANCE default none
 
-    method put: it.unive.pylisa.libraries.fastapi.httpMethod.Put
+    method put: it.unive.pylisa.libraries.fastapi.sarl.method.Put
         libtype fastapi.Operation*
         param path type it.unive.lisa.program.type.StringType::INSTANCE
         param callback type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
@@ -401,7 +403,7 @@ library fastapi:
         param &openapi_extra type it.unive.lisa.type.Untyped::INSTANCE default none
         param &generate_unique_id_function type it.unive.lisa.type.Untyped::INSTANCE default none
 
-    method delete: it.unive.pylisa.libraries.fastapi.httpMethod.Delete
+    method delete: it.unive.pylisa.libraries.fastapi.sarl.method.Delete
         libtype fastapi.Operation*
         param path type it.unive.lisa.program.type.StringType::INSTANCE
         param callback type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
@@ -428,7 +430,7 @@ library fastapi:
         param &openapi_extra type it.unive.lisa.type.Untyped::INSTANCE default none
         param &generate_unique_id_function type it.unive.lisa.type.Untyped::INSTANCE default none
 
-    method options: it.unive.pylisa.libraries.fastapi.httpMethod.Options
+    method options: it.unive.pylisa.libraries.fastapi.sarl.method.Options
         libtype fastapi.Operation*
         param path type it.unive.lisa.program.type.StringType::INSTANCE
         param callback type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
@@ -456,13 +458,13 @@ library fastapi:
         param &generate_unique_id_function type it.unive.lisa.type.Untyped::INSTANCE default none
 
     class fastapi.FastAPI:
-        instance method add_route: it.unive.pylisa.libraries.fastapi.AddRoute
+        instance method add_route: it.unive.pylisa.libraries.fastapi.sarl.AddRoute
             type it.unive.lisa.type.VoidType::INSTANCE
             param self libtype fastapi.FastAPI*
             param path type it.unive.lisa.program.type.StringType::INSTANCE
             param callback type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
     class fastapi.Operation:
-        instance method execute: it.unive.pylisa.libraries.fastapi.Operation
+        instance method execute: it.unive.pylisa.libraries.fastapi.sarl.Operation
             type it.unive.lisa.type.VoidType::INSTANCE
             param self libtype fastapi.Operation*
             param request type it.unive.lisa.type.Untyped::INSTANCE

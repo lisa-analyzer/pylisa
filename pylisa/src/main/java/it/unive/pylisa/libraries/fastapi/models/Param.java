@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.fastapi.model;
+package it.unive.pylisa.libraries.fastapi.models;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,6 +10,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 public class Param {
+
     private String type;
     private String name;
 

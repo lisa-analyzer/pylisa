@@ -8,7 +8,7 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.*;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.pylisa.libraries.fastapi.model.Endpoint;
+import it.unive.pylisa.libraries.fastapi.models.Endpoint;
 
 import java.util.ArrayList;
 import java.util.List;

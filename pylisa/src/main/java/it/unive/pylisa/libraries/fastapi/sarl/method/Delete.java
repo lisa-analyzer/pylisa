@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.fastapi.httpMethod;
+package it.unive.pylisa.libraries.fastapi.sarl.method;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;

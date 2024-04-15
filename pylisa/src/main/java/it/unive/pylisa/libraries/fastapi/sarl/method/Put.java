@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.fastapi;
+package it.unive.pylisa.libraries.fastapi.sarl.method;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -9,15 +9,17 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.statement.*;
-import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.NaryExpression;
+import it.unive.lisa.program.cfg.statement.PluggableStatement;
+import it.unive.lisa.program.cfg.statement.Statement;
 
-public class FastAPI extends NaryExpression implements PluggableStatement {
+public class Put extends NaryExpression implements PluggableStatement {
 
     private Statement st;
 
-    public FastAPI(CFG cfg, CodeLocation location, Expression... parameters) {
-        super(cfg, location, "FastAPI", parameters);
+    public Put(CFG cfg, CodeLocation location, Expression... parameters) {
+        super(cfg, location, "put", parameters);
     }
 
     @Override
@@ -26,8 +28,8 @@ public class FastAPI extends NaryExpression implements PluggableStatement {
     @Override
     public Program getProgram() { return super.getProgram(); }
 
-    public static FastAPI build(CFG cfg, CodeLocation location, Expression[] parameters) {
-        return new FastAPI(cfg, location, parameters);
+    public static Put build(CFG cfg, CodeLocation location, Expression[] parameters) {
+        return new Put(cfg, location, parameters);
     }
 
     @Override
