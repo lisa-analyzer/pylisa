@@ -14,11 +14,7 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.annotations.AnnotationMember;
-import it.unive.lisa.program.cfg.CFG;
-import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.CodeMemberDescriptor;
-import it.unive.lisa.program.cfg.Parameter;
-import it.unive.lisa.program.cfg.VariableTableEntry;
+import it.unive.lisa.program.cfg.*;
 import it.unive.lisa.program.cfg.controlFlow.ControlFlowStructure;
 import it.unive.lisa.program.cfg.controlFlow.IfThenElse;
 import it.unive.lisa.program.cfg.controlFlow.Loop;
@@ -33,6 +29,7 @@ import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.program.cfg.statement.call.CFGCall;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
@@ -208,13 +205,10 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.NoOpFunction;
+import it.unive.pylisa.program.PyCodeUnit;
 import it.unive.pylisa.program.annotations.TypeHintAnnotation;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
+
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
@@ -228,6 +222,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.util.Strings;
 
 public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
@@ -243,6 +238,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	 */
 	private final String filePath;
 
+
+	private final String modulePath;
 	/**
 	 * The LiSA program obtained from the Python program at filePath.
 	 */
@@ -320,10 +317,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			List<Integer> cellOrder) {
 		this.program = new Program(new PythonFeatures(), new PythonTypeSystem());
 		this.filePath = filePath;
+		String[] splittedFilePath = filePath.split("/");
+		this.modulePath = Strings.join(Arrays.asList(Arrays.copyOf(splittedFilePath, splittedFilePath.length - 1)), '/');
 		this.notebook = notebook;
 		this.cellOrder = cellOrder;
-		this.currentUnit = new CodeUnit(new SourceCodeLocation(filePath, 0, 0),
-				program, FilenameUtils.removeExtension(filePath));
+		this.currentUnit = new PyCodeUnit(new SourceCodeLocation(filePath, 0, 0),
+				program, FilenameUtils.removeExtension(filePath), true);
 		program.addUnit(currentUnit);
 	}
 
@@ -386,7 +385,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		PyClassType.all().forEach(types::registerType);
 
 		for (CFG cm : program.getAllCFGs())
-			if (cm.getDescriptor().getName().equals(INSTRUMENTED_MAIN_FUNCTION_NAME))
+			if ((cm.getDescriptor().getUnit() instanceof PyCodeUnit c && c.isMainUnit()) &&  cm.getDescriptor().getName().equals(INSTRUMENTED_MAIN_FUNCTION_NAME))
 				program.addEntryPoint(cm);
 
 		return program;
@@ -426,10 +425,46 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		PyClassType.all().forEach(types::registerType);
 
 		for (CFG cm : program.getAllCFGs())
-			if (cm.getDescriptor().getName().equals(INSTRUMENTED_MAIN_FUNCTION_NAME))
+			if ((cm.getDescriptor().getUnit() instanceof PyCodeUnit c && c.isMainUnit()) &&  cm.getDescriptor().getName().equals(INSTRUMENTED_MAIN_FUNCTION_NAME))
 				program.addEntryPoint(cm);
 
 		return program;
+	}
+
+
+	private UnresolvedCall visitImport(String pyModule, SourceCodeLocation location) throws IOException {
+		String importPath = this.modulePath + "/" + pyModule;
+		File f = new File(importPath);
+		if (f.isDirectory()) {
+			importPath = importPath + "/__init__.py";
+		} else {
+			importPath = importPath + ".py";
+		}
+		f = new File(importPath);
+		if(!f.exists()) {
+			// if the file does not exists -- continue parsing the current file.
+			return null;
+		}
+		Python3Lexer lexer = new Python3Lexer(CharStreams.fromStream(new FileInputStream(f), StandardCharsets.UTF_8));
+		Python3Parser parser = new Python3Parser(new CommonTokenStream(lexer));
+		ParseTree tree = parser.file_input();
+		Unit oldUnit = this.currentUnit;
+		this.currentUnit = new CodeUnit(new SourceCodeLocation(importPath, 0, 0),
+		program, FilenameUtils.removeExtension(importPath));
+		program.addUnit(currentUnit);
+		PyCFG oldCFG = this.currentCFG;
+		visit(tree);
+		Collection<CodeMember> mains = this.currentUnit.getCodeMembersByName("$main");
+		Collection<CFG> cfgMains = new ArrayList<>();
+		for (CodeMember cm : mains) {
+			if (cm instanceof CFG cfg) {
+				cfgMains.add(cfg);
+			}
+		}
+		UnresolvedCall cfgCall = new UnresolvedCall(oldCFG, location, CallType.STATIC, this.currentUnit.getName(), "$main");
+		this.currentCFG = oldCFG;
+		this.currentUnit = oldUnit;
+		return cfgCall;
 	}
 
 	private InputStream mkStream() throws FileNotFoundException {
@@ -983,12 +1018,24 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	public Statement visitImport_name(
 			Import_nameContext ctx) {
 		Map<String, String> libs = new HashMap<>();
+		List<UnresolvedCall> cfgs = new ArrayList<>();
 		for (Dotted_as_nameContext single : ctx.dotted_as_names().dotted_as_name()) {
 			String importedLibrary = dottedNameToString(single.dotted_name());
 			String as = single.NAME() != null ? single.NAME().getSymbol().getText() : null;
 			libs.put(importedLibrary, as);
+
+			String pyModule = importedLibrary.replace(".", "/");
+
+			try {
+				UnresolvedCall uc = visitImport(pyModule, getLocation(ctx));
+				if (uc != null) {
+					cfgs.add(visitImport(pyModule, getLocation(ctx)));
+				}
+			} catch(Exception e) {
+				throw new RuntimeException("Fail to visitImport: " + e.getMessage());
+			}
 		}
-		return new Import(program, libs, currentCFG, getLocation(ctx));
+		return new Import(program, libs, currentCFG, getLocation(ctx), cfgs);
 	}
 
 	private String dottedNameToString(
