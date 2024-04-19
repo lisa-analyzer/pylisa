@@ -19,6 +19,8 @@ import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.collections.CollectionsDiffBuilder;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
+import it.unive.pylisa.ImportDescriptor;
+import it.unive.pylisa.ModuleImportDescriptor;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
@@ -26,14 +28,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class Import extends Statement {
+public class Import extends Statement implements ImportDescriptor {
 
-	private final Map<String, String> libs;
+	private final Map<String, ModuleImportDescriptor> libs;
 	private List<UnresolvedCall> cfgCalls;
 	// import <left> as <right>
 	public Import(
 			Program program,
-			Map<String, String> libs,
+			Map<String, ModuleImportDescriptor> libs,
 			CFG cfg,
 			CodeLocation loc) {
 		super(cfg, loc);
@@ -44,7 +46,7 @@ public class Import extends Statement {
 
 	public Import(
 			Program program,
-			Map<String, String> libs,
+			Map<String, ModuleImportDescriptor> libs,
 			CFG cfg,
 			CodeLocation loc,
 			List<UnresolvedCall> cfgCalls) {
@@ -73,10 +75,12 @@ public class Import extends Statement {
 
 		// same keys: just iterate over them and apply comparisons
 		// since fields is sorted, the order of iteration will be consistent
-		for (Entry<String, String> entry : this.libs.entrySet())
-			if ((cmp = entry.getValue().compareTo(other.libs.get(entry.getKey()))) != 0)
+		for (Entry<String, ModuleImportDescriptor> entry : this.libs.entrySet()) {
+			if ((cmp = entry.getValue().getModulePath().compareTo(other.libs.get(entry.getKey()).getModulePath())) != 0)
 				return cmp;
-
+			if ((cmp = entry.getValue().getAs().compareTo(other.libs.get(entry.getKey()).getAs())) != 0)
+				return cmp;
+		}
 		return 0;
 	}
 
@@ -90,7 +94,7 @@ public class Import extends Statement {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder("import ");
-		for (Entry<String, String> lib : libs.entrySet()) {
+		for (Entry<String, ModuleImportDescriptor> lib : libs.entrySet()) {
 			builder.append(lib.getKey());
 			if (lib.getValue() != null)
 				builder.append(" as ").append(lib.getValue());
@@ -137,15 +141,19 @@ public class Import extends Statement {
 		if (result.getInfo(SymbolAliasing.INFO_KEY) == null)
 			result = result.storeInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
 
-		for (Entry<String, String> lib : libs.entrySet()) {
-			if (lib.getValue() != null)
+		for (Entry<String, ModuleImportDescriptor> lib : libs.entrySet()) {
+			if (lib.getValue() != null && lib.getValue().getAs() != null)
 				result = result.storeInfo(SymbolAliasing.INFO_KEY,
 						result.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class)
-								.alias(new QualifierSymbol(lib.getKey()), new QualifierSymbol(lib.getValue())));
+								.alias(new QualifierSymbol(lib.getKey()), new QualifierSymbol(lib.getValue().getAs())));
 		}
 		for (UnresolvedCall uc : cfgCalls) {
 			uc.forwardSemanticsAux(interprocedural, result, new ExpressionSet[]{}, expressions);
 		}
 		return result;
+	}
+
+	public Map<String, ModuleImportDescriptor> getImportDescriptor() {
+		return this.libs;
 	}
 }
