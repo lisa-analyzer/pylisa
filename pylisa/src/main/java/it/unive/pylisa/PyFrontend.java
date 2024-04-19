@@ -1028,23 +1028,30 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		Map<String, ModuleImportDescriptor> libs = new HashMap<>();
 		List<UnresolvedCall> cfgs = new ArrayList<>();
 		for (Dotted_as_nameContext single : ctx.dotted_as_names().dotted_as_name()) {
-			String importedLibrary = dottedNameToString(single.dotted_name());
+			//String importedLibrary = dottedNameToString(single.dotted_name());
+			String[] imps = importedLibs(single.dotted_name());
 			String as = single.NAME() != null ? single.NAME().getSymbol().getText() : null;
-			String pyModule = importedLibrary.replace(".", "/");
-			String modulePath = resolveModulePath(pyModule);
-			if (modulePath != null) {
-				try {
-					UnresolvedCall uc = visitImport(modulePath + ".py", getLocation(ctx));
-					if (uc != null) {
-						cfgs.add(uc);
-					}
-				} catch (Exception e) {
-					throw new RuntimeException("Fail to visitImport: " + e.getMessage());
-				}
+			if (as != null) {
+				// if we have something like import x.y as z, import only y
+				imps = Arrays.copyOfRange(imps, imps.length - 1, imps.length);
 			}
-			ModuleImportDescriptor mid = new ModuleImportDescriptor(modulePath, as);
-			libs.put(importedLibrary, mid);
-			imports.put(importedLibrary, mid);
+			for (String importedLibrary : imps) {
+				String pyModule = importedLibrary.replace(".", "/");
+				String modulePath = resolveModulePath(pyModule);
+				if (modulePath != null) {
+					try {
+						UnresolvedCall uc = visitImport(modulePath + ".py", getLocation(ctx));
+						if (uc != null) {
+							cfgs.add(uc);
+						}
+					} catch (Exception e) {
+						throw new RuntimeException("Fail to visitImport: " + e.getMessage());
+					}
+				}
+				ModuleImportDescriptor mid = new ModuleImportDescriptor(modulePath, as);
+				libs.put(importedLibrary, mid);
+				this.imports.put(importedLibrary, mid);
+			}
 		}
 		return new Import(program, libs, currentCFG, getLocation(ctx), cfgs);
 	}
@@ -1063,6 +1070,17 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		return result.toString();
 	}
 
+
+	public String[] importedLibs(Dotted_nameContext dotted_name) {
+		String imp = dottedNameToString(dotted_name);
+		String[] libs = imp.split("\\.");
+
+		for (int i = 1; i < libs.length; i++) {
+			libs[i] = String.join(".", Arrays.copyOfRange(libs, i-1, i+1));
+		}
+		return libs;
+
+	}
 	@Override
 	public Object visitImport_as_name(
 			Import_as_nameContext ctx) {
@@ -2059,7 +2077,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						if (target instanceof VariableRef vrTarget) {
 							String targetName = vrTarget.getName();
 							for (String key : imports.keySet()) {
-								if (imports.get(key).getModulePath().equals(targetName)) {
+								ModuleImportDescriptor mid = imports.get(key);
+								if (mid != null && mid.getModulePath() != null && mid.getModulePath().equals(targetName)) {
 									// we have it in imports. Get the module from program
 									Unit unit = program.getUnit(targetName);
 									if (unit != null && unit instanceof CodeUnit codeUnit) {
