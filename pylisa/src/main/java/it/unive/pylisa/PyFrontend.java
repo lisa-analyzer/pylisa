@@ -11,7 +11,6 @@ import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.Unit;
-import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.*;
@@ -200,13 +199,13 @@ import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.statement.evaluation.RelaxedLeftToRightEvaluation;
-import it.unive.pylisa.cfg.statement.evaluation.RelaxedRightToLeftEvaluation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
+import it.unive.pylisa.frontend.imports.ModuleImportDescriptor;
+import it.unive.pylisa.frontend.imports.ProjectModuleImports;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.NoOpFunction;
 import it.unive.pylisa.program.PyCodeUnit;
-import it.unive.pylisa.program.annotations.TypeHintAnnotation;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -232,11 +231,13 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 	private static final Logger log = LogManager.getLogger(PyFrontend.class);
 
-	private Map<String, ModuleImportDescriptor> imports = new HashMap<>();
+	private ProjectModuleImports imports = new ProjectModuleImports();
+
+
 	/**
 	 * Python program file path.
 	 */
-	private final String filePath;
+	private String filePath;
 
 
 	private final String modulePath;
@@ -432,7 +433,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 
-	private String resolveModulePath(String pyModule) {
+	private ModuleImportDescriptor resolveModulePath(String importedLibrary, String as) {
+		String pyModule = importedLibrary.replace(".", "/");
 		String module = this.modulePath + "/" + pyModule;
 		File f = new File(module);
 		if (f.isDirectory()) {
@@ -440,9 +442,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		}
 		f = new File(module + ".py");
 		if (!f.exists()) {
-			return null;
+			return new ModuleImportDescriptor(this.modulePath + "/" + pyModule, as != null ? as : importedLibrary, true);
 		}
-		return module;
+		return new ModuleImportDescriptor(module, as != null ? as : importedLibrary);
 	}
 
 	private UnresolvedCall visitImport(String file, SourceCodeLocation location) throws IOException {
@@ -451,6 +453,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		Python3Parser parser = new Python3Parser(new CommonTokenStream(lexer));
 		ParseTree tree = parser.file_input();
 		Unit oldUnit = this.currentUnit;
+		String oldFilePath = this.filePath;
+		this.filePath = file;
 		this.currentUnit = new CodeUnit(new SourceCodeLocation(file, 0, 0),
 		program, FilenameUtils.removeExtension(file));
 		program.addUnit(currentUnit);
@@ -466,6 +470,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		UnresolvedCall cfgCall = new UnresolvedCall(oldCFG, location, CallType.STATIC, this.currentUnit.getName(), "$main");
 		this.currentCFG = oldCFG;
 		this.currentUnit = oldUnit;
+		this.filePath = oldFilePath;
 		return cfgCall;
 	}
 
@@ -528,6 +533,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	public PyCFG visitFile_input(
 			File_inputContext ctx) {
 		currentCFG = new PyCFG(buildMainCFGDescriptor(getLocation(ctx)));
+		imports.putModuleImports(currentCFG.getDescriptor().getLocation());
 		cfs = new HashSet<>();
 		currentUnit.addCodeMember(currentCFG);
 		Statement last_stmt = null;
@@ -695,6 +701,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		PyCFG oldCFG = currentCFG;
 		Collection<ControlFlowStructure> oldCfs = cfs;
 		PyCFG newCFG = currentCFG = new PyCFG(buildCFGDescriptor(ctx));
+		imports.
 		cfs = new HashSet<>();
 		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> r = visitSuite(ctx.suite());
 		currentCFG.getNodeList().mergeWith(r.getMiddle());
@@ -867,9 +874,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				return visitTestlist_star_expr(ctx.testlist_star_expr(0));
 		String target = ctx.testlist_star_expr(0).getText();
 
-		ModuleImportDescriptor mid = imports.get(target);
+		ModuleImportDescriptor mid = imports.getModuleImports(currentCFG.getDescriptor().getLocation()).getModuleImportDescriptor(target);
 		if (mid != null) {
-			imports.remove(mid); // remove the imports - new assignment
+			imports.getModuleImports(currentCFG.getDescriptor().getLocation()).removeModuleImportDescriptor(mid.getAs());
+			//imports.remove(mid); // remove the imports - new assignment
 		}
 		PyAssign assign = new PyAssign(currentCFG, getLocation(ctx),
 				visitTestlist_star_expr(ctx.testlist_star_expr(0)),
@@ -1016,8 +1024,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			String importedComponent = single.NAME(0).getSymbol().getText();
 			String as = single.NAME().size() == 2 ? single.NAME(1).getSymbol().getText() : null;
 			components.put(importedComponent, as);
-			ModuleImportDescriptor descriptor = new ModuleImportDescriptor(importedComponent,name + "." + importedComponent);
-			imports.put(importedComponent, descriptor);
+			ModuleImportDescriptor mid = new ModuleImportDescriptor(importedComponent,name + "." + importedComponent);
+			this.imports.getModuleImports(currentCFG.getDescriptor().getLocation()).addModuleImportDescriptor(mid);
+			//imports.put(importedComponent, descriptor);
 		}
 		return new FromImport(program, name, components, currentCFG, getLocation(ctx));
 	}
@@ -1036,11 +1045,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				imps = Arrays.copyOfRange(imps, imps.length - 1, imps.length);
 			}
 			for (String importedLibrary : imps) {
-				String pyModule = importedLibrary.replace(".", "/");
-				String modulePath = resolveModulePath(pyModule);
-				if (modulePath != null) {
+
+				ModuleImportDescriptor mid = resolveModulePath(importedLibrary, as);
+				if (mid != null && !mid.isNamespace()) {
 					try {
-						UnresolvedCall uc = visitImport(modulePath + ".py", getLocation(ctx));
+						UnresolvedCall uc = visitImport(mid.getModulePath() + ".py", getLocation(ctx));
 						if (uc != null) {
 							cfgs.add(uc);
 						}
@@ -1048,9 +1057,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						throw new RuntimeException("Fail to visitImport: " + e.getMessage());
 					}
 				}
-				ModuleImportDescriptor mid = new ModuleImportDescriptor(modulePath, as);
 				libs.put(importedLibrary, mid);
-				this.imports.put(importedLibrary, mid);
+				this.imports.getModuleImports(currentCFG.getDescriptor().getLocation()).addModuleImportDescriptor(mid);
+				//this.imports.put(importedLibrary, mid);
 			}
 		}
 		return new Import(program, libs, currentCFG, getLocation(ctx), cfgs);
@@ -2016,7 +2025,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						pars.add(previous_access);
 						if (previous_access instanceof VariableRef vr) {
 							String varName = vr.getName();
-							ModuleImportDescriptor mid = imports.get(previous_access.toString());
+							ModuleImportDescriptor mid = imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getModuleImportDescriptor(previous_access.toString());
 							if (mid != null) {
 								if (mid.getAs() != null) {
 									varName = mid.getAs();
@@ -2036,7 +2045,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					if (cu == null) {
 						cu = program.getUnit(access.toString().replace("::", "."));
 						if (cu == null) {
-							ModuleImportDescriptor mid = imports.get(access.toString());
+							ModuleImportDescriptor mid = imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getModuleImportDescriptor(access.toString());
 							if (mid != null) {
 								String unitName = mid.getModulePath();
 								if (unitName != null) {
@@ -2076,8 +2085,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						CFG targetCFG = null;
 						if (target instanceof VariableRef vrTarget) {
 							String targetName = vrTarget.getName();
-							for (String key : imports.keySet()) {
-								ModuleImportDescriptor mid = imports.get(key);
+							for (ModuleImportDescriptor mid : imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getAllModuleImportDescriptors()) {
 								if (mid != null && mid.getModulePath() != null && mid.getModulePath().equals(targetName)) {
 									// we have it in imports. Get the module from program
 									Unit unit = program.getUnit(targetName);
@@ -2178,7 +2186,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			if (ctx.getParent() instanceof Atom_exprContext aec) {
 
 
-				ModuleImportDescriptor mid = imports.get(varName);
+				ModuleImportDescriptor mid = imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getModuleImportDescriptor(varName);
 				if (mid != null) {
 					if (mid.getAs() != null) {
 						varName = mid.getAs();
@@ -2417,7 +2425,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			// superclass.getText(): add it
 			// to the anchestors
 			String superClassName = superclass.getText();
-			ModuleImportDescriptor mid = imports.get(superclass.getText());
+			ModuleImportDescriptor mid = imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getModuleImportDescriptor(superclass.getText());
 			if (mid != null) {
 				if (mid.getAs() != null) {
 					superClassName = mid.getAs();

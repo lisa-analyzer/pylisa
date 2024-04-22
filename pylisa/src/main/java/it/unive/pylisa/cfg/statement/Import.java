@@ -12,16 +12,13 @@ import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
-import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.call.CFGCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.collections.CollectionsDiffBuilder;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.ImportDescriptor;
-import it.unive.pylisa.ModuleImportDescriptor;
-import it.unive.pylisa.cfg.PyCFG;
+import it.unive.pylisa.frontend.imports.ModuleImportDescriptor;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 import java.util.List;
