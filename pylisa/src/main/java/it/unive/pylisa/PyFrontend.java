@@ -1997,19 +1997,48 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		 * (dictorsetmaker)? '}' | NAME | NUMBER | STRING+ | '...' | 'None' |
 		 * 'True' | 'False');
 		 */
+
 		if (ctx.AWAIT() != null)
 			throw new UnsupportedStatementException("await is not supported");
-		if (ctx.trailer().size() > 0) {
-
+		if (!ctx.trailer().isEmpty()) {
+			ModuleImports mi = this.imports.getModuleImports(this.currentCFG.getDescriptor().getLocation());
+			CFG targetCFG = this.currentCFG;
+			Unit targetUnit = this.currentUnit;
+			int i = 0;
+			Expression access = null;
+			if (mi.hasImport(ctx.atom().getText())) {
+				String moduleName = ctx.atom().getText();
+				ModuleImportDescriptor mid = mi.getModuleImportDescriptor(moduleName);
+				// visit trailers
+				for (i = 0; i < ctx.trailer().size(); i++) {
+					TrailerContext expr = ctx.trailer(i);
+					if (expr.NAME() == null) {
+						if (expr.OPEN_BRACK() != null) {
+							throw new RuntimeException("TypeError: 'module' object is not subscriptable at " + getLocation(ctx));
+						}
+						if (expr.OPEN_PAREN() != null) {
+							throw new RuntimeException("TypeError: 'module' object is not callable at " + getLocation(ctx));
+						}
+					}
+					if (!mi.hasImport(moduleName + expr.getText())) {
+						break;
+					}
+					moduleName = moduleName + expr.getText();
+					mid = mi.getModuleImportDescriptor(moduleName);
+				}
+				targetUnit = program.getUnit(mid.getModulePath());
+				targetCFG = (PyCFG) targetUnit.getCodeMembersByName("$main").iterator().next();
+			}
 			// trailer: '(' (arglist)? ')' | '[' subscriptlist ']' | '.' NAME;
-			Expression access = visitAtom(ctx.atom());
+			access = visitAtom(ctx.atom());
 			String last_name = access instanceof VariableRef ? ((VariableRef) access).getName() : null;
 			Expression previous_access = null;
-			for (TrailerContext expr : ctx.trailer()) {
+			for(; i < ctx.trailer().size(); i++) {
+				TrailerContext expr = ctx.trailer(i);
 				if (expr.NAME() != null) {
 					last_name = expr.NAME().getSymbol().getText();
 					previous_access = access;
-					access = new PyAccessInstanceGlobal(currentCFG, getLocation(expr), access, last_name);
+					access = new PyAccessInstanceGlobal(targetCFG, getLocation(expr), access, last_name);
 				} else if (expr.OPEN_PAREN() != null) {
 					if (last_name == null) {
 						/* TODO throw new UnsupportedStatementException("When invoking a method we need to have always the name before the parentheses");*/
@@ -2068,19 +2097,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								pars.toArray(Expression[]::new));
 					} else {
 						String qualifier = null;
-						/*ModuleImportDescriptor mid = imports.get(previous_access.toString());
-						if (mid != null) {
-							if (mid.getAs() != null) {
-								qualifier = mid.getAs();
-							} else {
-								qualifier = mid.getModulePath();
-							}
-						}*/
 						// get first parameter
 						Expression target = !pars.isEmpty() ? pars.get(0) : null;
 						// check if target is in imports. If true, then craft a CFGCall instead of an UnresolvedCall.
 						CFGCall call = null;
-						CFG targetCFG = null;
 						if (target instanceof VariableRef vrTarget) {
 							String targetName = vrTarget.getName();
 							for (ModuleImportDescriptor mid : imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getAllModuleImportDescriptors()) {
