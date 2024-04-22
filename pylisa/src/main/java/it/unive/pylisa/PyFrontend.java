@@ -4,13 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.logging.IterationLogger;
-import it.unive.lisa.program.ClassUnit;
-import it.unive.lisa.program.CodeUnit;
-import it.unive.lisa.program.CompilationUnit;
-import it.unive.lisa.program.Global;
-import it.unive.lisa.program.Program;
-import it.unive.lisa.program.SourceCodeLocation;
-import it.unive.lisa.program.Unit;
+import it.unive.lisa.program.*;
 import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.*;
@@ -202,6 +196,7 @@ import it.unive.pylisa.cfg.statement.evaluation.RelaxedLeftToRightEvaluation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.frontend.imports.ModuleImportDescriptor;
+import it.unive.pylisa.frontend.imports.ModuleImports;
 import it.unive.pylisa.frontend.imports.ProjectModuleImports;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.NoOpFunction;
@@ -532,7 +527,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	@Override
 	public PyCFG visitFile_input(
 			File_inputContext ctx) {
-		currentCFG = new PyCFG(buildMainCFGDescriptor(getLocation(ctx)));
+		new SourceCodeLocation(this.getFilePath(), 0,0);
+		currentCFG = new PyCFG(buildMainCFGDescriptor(new SourceCodeLocation(this.getFilePath(), 0,0)));
 		imports.putModuleImports(currentCFG.getDescriptor().getLocation());
 		cfs = new HashSet<>();
 		currentUnit.addCodeMember(currentCFG);
@@ -701,7 +697,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		PyCFG oldCFG = currentCFG;
 		Collection<ControlFlowStructure> oldCfs = cfs;
 		PyCFG newCFG = currentCFG = new PyCFG(buildCFGDescriptor(ctx));
-		imports.
+
+		ModuleImports mi = new ModuleImports(ctx.NAME().getText());
+		imports.putModuleImports(getLocation(ctx),mi);
 		cfs = new HashSet<>();
 		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> r = visitSuite(ctx.suite());
 		currentCFG.getNodeList().mergeWith(r.getMiddle());
@@ -2086,9 +2084,9 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						if (target instanceof VariableRef vrTarget) {
 							String targetName = vrTarget.getName();
 							for (ModuleImportDescriptor mid : imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getAllModuleImportDescriptors()) {
-								if (mid != null && mid.getModulePath() != null && mid.getModulePath().equals(targetName)) {
+								if (mid != null && mid.getAs() != null && mid.getAs().equals(targetName)) {
 									// we have it in imports. Get the module from program
-									Unit unit = program.getUnit(targetName);
+									Unit unit = program.getUnit(mid.getModulePath());
 									if (unit != null && unit instanceof CodeUnit codeUnit) {
 										for (CodeMember cm : codeUnit.getCodeMembers()) {
 											if (cm instanceof CFG && cm.getDescriptor().getName().equals(method_name)) {
