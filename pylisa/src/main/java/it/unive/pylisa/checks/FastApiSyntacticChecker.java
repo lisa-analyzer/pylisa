@@ -8,27 +8,30 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.pylisa.libraries.fastapi.models.Endpoint;
-import it.unive.pylisa.libraries.fastapi.EndpointChecker;
-import it.unive.pylisa.libraries.fastapi.EndpointService;
+import it.unive.pylisa.libraries.fastapi.helpers.TextHelper;
+import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
+import it.unive.pylisa.libraries.fastapi.analysis.syntax.EndpointChecker;
+import it.unive.pylisa.libraries.fastapi.analysis.syntax.EndpointService;
 
-import java.util.ArrayList;
-
-import java.util.List;
+import java.util.*;
 
 public class FastApiSyntacticChecker implements SyntacticCheck {
 
-    public List<Endpoint> endpoints;
+    public final HashMap<String, List<Endpoint>> endpointsByUnit = new HashMap<>();
 
     @Override
     public void beforeExecution(CheckTool tool) {
-        endpoints = new ArrayList<>();
+//        endpointsByUnit = new HashMap<>();
     }
 
     @Override
     public void afterExecution(CheckTool tool) {
 
-        EndpointChecker.doPostChecks(tool,endpoints);
+        for (List<Endpoint> endpoints : endpointsByUnit.values()) {
+
+            EndpointService.setUniquePaths(endpoints);
+            EndpointChecker.doPostChecks(tool,endpoints);
+        }
     }
 
     @Override
@@ -36,16 +39,15 @@ public class FastApiSyntacticChecker implements SyntacticCheck {
 
         if (unit instanceof CodeUnit && !unit.getName().equals("fastapi")) {
 
-            endpoints = EndpointService.gatherEndpoints(tool, unit);
-
+            String endpointGroupName = TextHelper.getFilenameFromUnit(unit);
+            List<Endpoint> endpoints = EndpointService.gatherProviderEndpoints(unit);
 
             if (!endpoints.isEmpty()) {
+                endpointsByUnit.put(endpointGroupName, endpoints);
                 EndpointChecker.doCheck(tool, unit, endpoints);
             }
-
             return true;
         }
-
         return false;
     }
 
@@ -54,13 +56,28 @@ public class FastApiSyntacticChecker implements SyntacticCheck {
 
     @Override
     public boolean visit(CheckTool tool, CFG graph) {
-        
+
         // Check-ups for Microservice B endpoints are temporally withheld as that part was extra messy. Doing its improvements.
         return true;
     }
 
     @Override
     public boolean visit(CheckTool tool, CFG graph, Statement node) {
+
+        Endpoint endpoint = EndpointService.gatherConsumerEndpoint(node);
+
+        if (endpoint != null) {
+            String endpointGroupName = TextHelper.getFilenameFromUnit(graph.getDescriptor().getUnit());
+
+            if (endpointsByUnit.containsKey(endpointGroupName)) {
+                endpointsByUnit.get(endpointGroupName).add(endpoint);
+
+            } else {
+                List<Endpoint> list = new ArrayList<>();
+                list.add(endpoint);
+                endpointsByUnit.put(endpointGroupName, list);
+            }
+        }
 
         return true;
     }
@@ -69,6 +86,6 @@ public class FastApiSyntacticChecker implements SyntacticCheck {
     public boolean visit(CheckTool tool, CFG graph, Edge edge) {
 
         boolean doAnalysisContinue = EndpointChecker.validateDELETE(tool, graph, edge); // Temporary, will move no visit(Statement node) with this.
-        return doAnalysisContinue;
+        return true;
     }
 }

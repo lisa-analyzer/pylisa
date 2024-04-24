@@ -458,6 +458,12 @@ library fastapi:
         param &generate_unique_id_function type it.unive.lisa.type.Untyped::INSTANCE default none
 
     class fastapi.FastAPI:
+        instance method FastAPI: it.unive.pylisa.libraries.fastapi.sarl.FastAPI
+            libtype fastapi.FastAPI*
+            param self libtype fastapi.FastAPI*
+        instance method __init__: it.unive.pylisa.libraries.fastapi.sarl.FastAPI
+            libtype fastapi.FastAPI*
+            param self libtype fastapi.FastAPI*
         instance method add_route: it.unive.pylisa.libraries.fastapi.sarl.AddRoute
             type it.unive.lisa.type.VoidType::INSTANCE
             param self libtype fastapi.FastAPI*

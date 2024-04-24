@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.fastapi.models;
+package it.unive.pylisa.libraries.fastapi.definitions;
 
 import lombok.Getter;
 

@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.fastapi;
+package it.unive.pylisa.libraries.fastapi.analysis.syntax;
 
 import it.unive.lisa.checks.syntactic.CheckTool;
 import it.unive.lisa.program.Unit;
@@ -11,11 +11,12 @@ import it.unive.pylisa.annotationvalues.DecoratedAnnotation;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.expression.PyIs;
 import it.unive.pylisa.cfg.expression.PyStringLiteral;
-import it.unive.pylisa.libraries.fastapi.models.Endpoint;
-import it.unive.pylisa.libraries.fastapi.models.Method;
-import it.unive.pylisa.libraries.fastapi.models.Param;
+import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
+import it.unive.pylisa.libraries.fastapi.definitions.Method;
+import it.unive.pylisa.libraries.fastapi.definitions.Param;
 import lombok.experimental.UtilityClass;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -31,6 +32,8 @@ public class EndpointChecker {
             if (endpoint.getMethod() == Method.PUT) validatePUT(tool, unit, endpoint);
             validateGENERL(tool, unit, endpoint);
         }
+
+        EndpointService.endpoints = new ArrayList<>();
     }
 
     public void validateGENERL(CheckTool tool, Unit unit, Endpoint endpoint) {

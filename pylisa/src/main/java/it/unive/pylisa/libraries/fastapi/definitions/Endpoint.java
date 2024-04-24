@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.fastapi.models;
+package it.unive.pylisa.libraries.fastapi.definitions;
 
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -27,11 +27,12 @@ public class Endpoint {
     private String fullPath;
     private String pathVariableName;
     private List<Param> methodPathVariable = new ArrayList<>();
-    private Boolean calledAtleastOnce = false;
+    private Role role;
 
     public Endpoint(AnnotationMember decorator) {
 
         this.method = Method.specify(decorator.getId());
+        this.role = Role.PROVIDER;
 
         DecoratedAnnotation decoratorValue = (DecoratedAnnotation) decorator.getValue();
         for (Expression exp : decoratorValue.getParams()) {

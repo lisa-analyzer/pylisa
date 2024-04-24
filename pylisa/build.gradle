@@ -32,6 +32,8 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
 
     implementation 'guru.nidi:graphviz-java:0.18.1'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'org.springframework:spring-web:6.1.6'
     implementation 'io.github.lisa-analyzer:lisa-sdk:0.1b10-SNAPSHOT'
     implementation 'io.github.lisa-analyzer:lisa-program:0.1b10-SNAPSHOT'
     implementation 'io.github.lisa-analyzer:lisa-analyses:0.1b10-SNAPSHOT'
