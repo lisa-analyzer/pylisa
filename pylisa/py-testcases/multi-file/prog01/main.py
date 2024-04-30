@@ -1,12 +1,28 @@
-import lib.sublib.lib3
-f = lib.test()
+#import lib.sublib.lib3
+import lib
+class F:
+    def __init__(self):
+        pass
+    def g(self):
+        return 2
+
+#b = F()
+
+#h = b.g()
+#f = lib.test()
+#x = lib.test()
 #print(f)
-g = lib.sublib.lib3.sub(1,2)
-print(g)
+
+#print(g)
 #print(lib)
 #print(lib.sublib)
 #print(lib.sublib.lib3)
-x = lib.test()
 
+print(x)
 def x():
-    import lib.sublib2
+    import lib.sublib.lib3
+    g = lib.sublib.lib3.sub(1,2)
+
+x()
+
+h = lib.sublib.lib3.sub(1,2)
