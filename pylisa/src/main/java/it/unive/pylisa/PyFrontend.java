@@ -2006,9 +2006,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			Unit targetUnit = this.currentUnit;
 			int i = 0;
 			Expression access = null;
+			ModuleImportDescriptor mid = null;
+			boolean isImport = false;
 			if (mi.hasImport(ctx.atom().getText())) {
 				String moduleName = ctx.atom().getText();
-				ModuleImportDescriptor mid = mi.getModuleImportDescriptor(moduleName);
+				mid = mi.getModuleImportDescriptor(moduleName);
+				isImport = true;
 				// visit trailers
 				for (i = 0; i < ctx.trailer().size(); i++) {
 					TrailerContext expr = ctx.trailer(i);
@@ -2028,9 +2031,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				}
 				targetUnit = program.getUnit(mid.getModulePath());
 				targetCFG = (PyCFG) targetUnit.getCodeMembersByName("$main").iterator().next();
+				access = new VariableRef(currentCFG, getLocation(ctx), mid.getAs());
+			} else {
+				access = visitAtom(ctx.atom());
 			}
 			// trailer: '(' (arglist)? ')' | '[' subscriptlist ']' | '.' NAME;
-			access = visitAtom(ctx.atom());
+
 			String last_name = access instanceof VariableRef ? ((VariableRef) access).getName() : null;
 			Expression previous_access = null;
 			for(; i < ctx.trailer().size(); i++) {
@@ -2052,7 +2058,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						pars.add(previous_access);
 						if (previous_access instanceof VariableRef vr) {
 							String varName = vr.getName();
-							ModuleImportDescriptor mid = imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getModuleImportDescriptor(previous_access.toString());
+							//ModuleImportDescriptor mid = imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getModuleImportDescriptor(previous_access.toString());
 							if (mid != null) {
 								if (mid.getAs() != null) {
 									varName = mid.getAs();
@@ -2072,11 +2078,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 					if (cu == null) {
 						cu = program.getUnit(access.toString().replace("::", "."));
 						if (cu == null) {
-							ModuleImportDescriptor mid = imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getModuleImportDescriptor(access.toString());
-							if (mid != null) {
-								String unitName = mid.getModulePath();
+							ModuleImportDescriptor modImp = imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getModuleImportDescriptor(access.toString());
+							if (modImp != null) {
+								String unitName = modImp.getModulePath();
 								if (unitName != null) {
-									cu = program.getUnit(mid.getModulePath());
+									cu = program.getUnit(modImp.getModulePath());
 								}
 							}
 						}
@@ -2103,11 +2109,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						CFGCall call = null;
 						if (target instanceof VariableRef vrTarget) {
 							String targetName = vrTarget.getName();
-							for (ModuleImportDescriptor mid : imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getAllModuleImportDescriptors()) {
-								if (mid != null && mid.getAs() != null && mid.getAs().equals(targetName)) {
+							for (ModuleImportDescriptor moduleImp : imports.getModuleImports(this.currentCFG.getDescriptor().getLocation()).getAllModuleImportDescriptors()) {
+								if (moduleImp != null && moduleImp.getAs() != null && moduleImp.getAs().equals(targetName)) {
 									// we have it in imports. Get the module from program
-									Unit unit = program.getUnit(mid.getModulePath());
-									if (unit != null && unit instanceof CodeUnit codeUnit) {
+									Unit unit = program.getUnit(moduleImp.getModulePath());
+									if (unit instanceof CodeUnit codeUnit) {
 										for (CodeMember cm : codeUnit.getCodeMembers()) {
 											if (cm instanceof CFG && cm.getDescriptor().getName().equals(method_name)) {
 												targetCFG = (CFG) cm;
@@ -2119,8 +2125,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								}
 							}
 						}
-						if (targetCFG != null) {
-							access = new CFGCall(currentCFG, getLocation(expr), CallType.STATIC, qualifier, method_name, Collections.singleton(targetCFG));
+						if (isImport && targetCFG != null) {
+							access = new CFGCall(currentCFG, getLocation(expr), CallType.STATIC, qualifier, method_name, Collections.singleton(targetCFG), !pars.isEmpty() ? pars.subList(1, pars.size()).toArray(new Expression[0]) : new Expression[0]);
 						} else {
 							access = new UnresolvedCall(
 									currentCFG,
