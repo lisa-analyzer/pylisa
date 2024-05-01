@@ -24,6 +24,7 @@ public class MicroserviceTestGround {
 
     private LiSAConfiguration conf;
     private final FastApiSyntacticChecker syntacticChecker = new FastApiSyntacticChecker();
+    private final EndpointGraphBuilder graphBuilder = new EndpointGraphBuilder();
 
     @Before
     public void before() {
@@ -51,61 +52,60 @@ public class MicroserviceTestGround {
     public void twoFiles() throws IOException {
 
         PyFrontend frontend1 = new PyFrontend(
-                "/Users/teodors/Documents/erasmus/lisa/projects/lisa-on-microservices/to-analyse/complex/microservice_a.py",
+                "py-testcases/microservices/basic/microservice_a.py",
                 false);
 
         PyFrontend frontend2 = new PyFrontend(
-                "/Users/teodors/Documents/erasmus/lisa/projects/lisa-on-microservices/to-analyse/complex/microservice_b.py",
+                "py-testcases/microservices/basic/microservice_b.py",
                 false);
 
         Program program1 = frontend1.toLiSAProgram();
-        Program program2 = frontend2.toLiSAProgram();
-
         LiSA lisa = new LiSA(this.conf);
         lisa.run(program1);
 
+        Program program2 = frontend2.toLiSAProgram();
         LiSA lisa2 = new LiSA(this.conf);
         lisa2.run(program2);
 
-        EndpointGraphBuilder.build(syntacticChecker.endpointsByUnit);
+        graphBuilder.build(syntacticChecker.endpoints);
     }
 
     @Test
     public void threeFiles() throws IOException {
 
         PyFrontend frontend1 = new PyFrontend(
-                "/Users/teodors/Documents/erasmus/lisa/projects/lisa-on-microservices/to-analyse/complex/microservice_a.py",
+                "py-testcases/microservices/level-1-complexity/microservice_a.py",
                 false);
 
         PyFrontend frontend2 = new PyFrontend(
-                "/Users/teodors/Documents/erasmus/lisa/projects/lisa-on-microservices/to-analyse/complex/microservice_b.py",
+                "py-testcases/microservices/level-1-complexity/microservice_b.py",
                 false);
 
         PyFrontend frontend3 = new PyFrontend(
-                "/Users/teodors/Documents/erasmus/lisa/projects/lisa-on-microservices/to-analyse/complex/microservice_c.py",
+                "py-testcases/microservices/level-1-complexity/microservice_c.py",
                 false);
 
-        Program program1 = frontend1.toLiSAProgram();
-        Program program2 = frontend2.toLiSAProgram();
-        Program program3 = frontend3.toLiSAProgram();
-
         LiSA lisa = new LiSA(this.conf);
+        Program program1 = frontend1.toLiSAProgram();
         lisa.run(program1);
 
         LiSA lisa2 = new LiSA(this.conf);
+        Program program2 = frontend2.toLiSAProgram();
         lisa2.run(program2);
 
         LiSA lisa3 = new LiSA(this.conf);
+        Program program3 = frontend3.toLiSAProgram();
         lisa3.run(program3);
 
-        EndpointGraphBuilder.build(syntacticChecker.endpointsByUnit);
+        graphBuilder.build(syntacticChecker.endpoints);
     }
 
     @Test
     public void withoutDecorators() throws IOException {
 
+        // TODO: Adapt this test case to the latest changes.
         PyFrontend frontend1 = new PyFrontend(
-                "/Users/teodors/Documents/erasmus/lisa/projects/lisa-on-microservices/to-analyse/undecorated/nodec_microservice_a.py",
+                "py-testcases/microservices/undecorated/nodec_microservice_a.py",
                 false);
 
         Program program1 = frontend1.toLiSAProgram();

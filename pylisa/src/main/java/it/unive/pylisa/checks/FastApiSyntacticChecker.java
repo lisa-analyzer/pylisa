@@ -17,21 +17,14 @@ import java.util.*;
 
 public class FastApiSyntacticChecker implements SyntacticCheck {
 
-    public final HashMap<String, List<Endpoint>> endpointsByUnit = new HashMap<>();
+    public final  List<Endpoint> endpoints = new ArrayList<>();
 
     @Override
-    public void beforeExecution(CheckTool tool) {
-//        endpointsByUnit = new HashMap<>();
-    }
+    public void beforeExecution(CheckTool tool) { }
 
     @Override
     public void afterExecution(CheckTool tool) {
-
-        for (List<Endpoint> endpoints : endpointsByUnit.values()) {
-
-            EndpointService.setUniquePaths(endpoints);
-            EndpointChecker.doPostChecks(tool,endpoints);
-        }
+        EndpointChecker.doAfterChecks(tool, endpoints);
     }
 
     @Override
@@ -39,11 +32,10 @@ public class FastApiSyntacticChecker implements SyntacticCheck {
 
         if (unit instanceof CodeUnit && !unit.getName().equals("fastapi")) {
 
-            String endpointGroupName = TextHelper.getFilenameFromUnit(unit);
-            List<Endpoint> endpoints = EndpointService.gatherProviderEndpoints(unit);
+            List<Endpoint> unitEndpoints = EndpointService.gatherProviderEndpoints(unit);
 
-            if (!endpoints.isEmpty()) {
-                endpointsByUnit.put(endpointGroupName, endpoints);
+            if (!unitEndpoints.isEmpty()) {
+                endpoints.addAll(unitEndpoints);
                 EndpointChecker.doCheck(tool, unit, endpoints);
             }
             return true;
@@ -67,16 +59,10 @@ public class FastApiSyntacticChecker implements SyntacticCheck {
         Endpoint endpoint = EndpointService.gatherConsumerEndpoint(node);
 
         if (endpoint != null) {
-            String endpointGroupName = TextHelper.getFilenameFromUnit(graph.getDescriptor().getUnit());
+            String sourceName = TextHelper.getFilenameFromUnit(graph.getDescriptor().getUnit());
 
-            if (endpointsByUnit.containsKey(endpointGroupName)) {
-                endpointsByUnit.get(endpointGroupName).add(endpoint);
-
-            } else {
-                List<Endpoint> list = new ArrayList<>();
-                list.add(endpoint);
-                endpointsByUnit.put(endpointGroupName, list);
-            }
+            endpoint.setBelongs(sourceName);
+            endpoints.add(endpoint);
         }
 
         return true;
@@ -85,7 +71,7 @@ public class FastApiSyntacticChecker implements SyntacticCheck {
     @Override
     public boolean visit(CheckTool tool, CFG graph, Edge edge) {
 
-        boolean doAnalysisContinue = EndpointChecker.validateDELETE(tool, graph, edge); // Temporary, will move no visit(Statement node) with this.
+        boolean doAnalysisContinue = EndpointChecker.validateDELETE(tool, graph, edge, endpoints); // Temporary, will move no visit(Statement node) with this.
         return true;
     }
 }

@@ -1,6 +1,7 @@
 package it.unive.pylisa.libraries.fastapi.analysis.syntax;
 
 import it.unive.lisa.checks.syntactic.CheckTool;
+import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.CFG;
@@ -16,9 +17,9 @@ import it.unive.pylisa.libraries.fastapi.definitions.Method;
 import it.unive.pylisa.libraries.fastapi.definitions.Param;
 import lombok.experimental.UtilityClass;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @UtilityClass
 public class EndpointChecker {
@@ -32,14 +33,16 @@ public class EndpointChecker {
             if (endpoint.getMethod() == Method.PUT) validatePUT(tool, unit, endpoint);
             validateGENERL(tool, unit, endpoint);
         }
-
-        EndpointService.endpoints = new ArrayList<>();
     }
 
     public void validateGENERL(CheckTool tool, Unit unit, Endpoint endpoint) {
 
         if (endpoint.getFullPath() == null) {
-            tool.warnOn(unit, "No path for endpoint defined");
+
+            String pathlessWarning = "No path for endpoint defined.";
+
+            tool.warnOn(unit, pathlessWarning);
+            endpoint.addIssue(pathlessWarning);
         }
     }
 
@@ -53,6 +56,7 @@ public class EndpointChecker {
 
         if (pathVariableName != null && methodVariableName != null && !pathVariableName.equals(methodVariableName)) {
             tool.warnOn(unit, String.format("Path variable name of endpoint '%s' differs from one specified in method. | Path variable name: %s | Method variable name: %s", endpoint.getFullPath(), pathVariableName, methodVariableName));
+            endpoint.addIssue("Path variable name differs from one specified in method.");
         }
 
         if (endpoint.getMethodPathVariable().isEmpty()) return;
@@ -61,6 +65,7 @@ public class EndpointChecker {
 
         if (!"string".equals(methodVariableType) && !"numeric".equals(methodVariableType)) {
             tool.warnOn(unit, String.format("This GET endpoint's path method accepts non-string or non-numeric parameter: %s | Variable's type: %s", endpoint.getFullPath(), methodVariableType));
+            endpoint.addIssue("Endpoint's path method accepts non-string or non-numeric parameter.");
         }
     }
 
@@ -75,7 +80,8 @@ public class EndpointChecker {
             }
 
             if (!oneOfMethodVarsIsCustomDef) {
-                tool.warnOn(unit,"This POST endpoint " + endpoint.getFullPath() + " does not accept any argument of custom definition / model. Only primitives.");
+                tool.warnOn(unit,"This POST endpoint " + endpoint.getFullPath() + " does not accept any argument of custom definition, t.i. model. Only primitives.");
+                endpoint.addIssue("Endpoint does not accept any argument of custom definition, t.i. model. Only primitives.");
             }
         }
     }
@@ -92,13 +98,15 @@ public class EndpointChecker {
 
         if (!idForUpdateSpecified && objectProvided) {
             tool.warnOn(unit,"This PUT endpoint " + endpoint.getFullPath() + " does not accept any arguments to specify the object to update.");
+            endpoint.addIssue("Endpoint does not accept any arguments to specify the object to update.");
 
         } else if (idForUpdateSpecified && !objectProvided) {
-            tool.warnOn(unit,"This PUT endpoint " + endpoint.getFullPath() + " does not accept any arguments as updates target id.");
+            tool.warnOn(unit,"This PUT endpoint " + endpoint.getFullPath() + " does not accept any arguments as updates target ID.");
+            endpoint.addIssue("Endpoint does not accept any arguments as updates target ID.");
         }
     }
 
-    public Boolean validateDELETE(CheckTool tool, CFG graph, Edge edge) {
+    public Boolean validateDELETE(CheckTool tool, CFG graph, Edge edge, List<Endpoint> endpoints) {
 
         boolean entityObtainedFromPathVar;
         boolean entityPresenceChecked;
@@ -113,6 +121,8 @@ public class EndpointChecker {
             PyStringLiteral pathLiteral = (PyStringLiteral) Arrays.stream(pathWrapper.getSubExpressions()).toList().get(1);
             String pathVariable = Endpoint.extractPathVariable(pathLiteral.getValue());
 
+            Optional<Endpoint> endpoint = endpoints.stream().filter(e -> pathLiteral.getValue().equals(e.getFullPath())).findFirst();
+
             if (edge.getSource() instanceof PyIs isCheck) {
 
                 entityObtainedFromPathVar = Arrays.stream(isCheck.getSubExpressions()).toList().get(1) instanceof NullLiteral;
@@ -125,11 +135,22 @@ public class EndpointChecker {
 
                     if (!entityPresenceChecked) {
                         tool.warnOn(checkByNull.getCFG(), "DELETE endpoint" + pathLiteral.getValue() + " is missing prior entity check-up for its existence before deletion.");
+                        endpoint.ifPresent(value -> value.addIssue("Endpoint is missing prior entity check-up for its existence before deletion."));
                     }
                 }
 
             } else {
                 tool.warnOn(edge.getSource(), "DELETE endpoint " + pathLiteral.getValue() + " deletes entity without prior check-up for its existence.");
+                endpoint.ifPresent(value -> value.addIssue("Endpoint deletes entity without prior check-up for its existence."));
+
+                if (endpoint.isPresent()) {
+                    for (int i = 0; i < endpoints.size(); i++) {
+                        if (endpoints.get(i).getFullPath().equals(pathLiteral.getValue())) {
+                            endpoints.set(i, endpoint.get());
+                            break;
+                        }
+                    }
+                }
                 return false;
             }
         }
@@ -137,7 +158,7 @@ public class EndpointChecker {
     }
 
 
-    public void doPostChecks(CheckTool tool, List<Endpoint> endpoints) {
+    public void doAfterChecks(CheckTool tool, List<Endpoint> endpoints) {
 
         long countGET = endpoints.stream().filter(endpoint -> endpoint.getMethod().equals(Method.GET)).count();
         long countPOST = endpoints.stream().filter(endpoint -> endpoint.getMethod().equals(Method.POST)).count();

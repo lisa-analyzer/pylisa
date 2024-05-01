@@ -3,6 +3,11 @@ package it.unive.pylisa.libraries.fastapi.helpers;
 import it.unive.lisa.program.Unit;
 import lombok.experimental.UtilityClass;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
+
 @UtilityClass
 public class TextHelper {
 
@@ -21,5 +26,24 @@ public class TextHelper {
         }
 
         return filepath.substring(lastSlashIndex + 1);
+    }
+
+    public String getCodeline(String filepath) {
+
+        int lastIndex = filepath.lastIndexOf('/');
+
+        if (lastIndex != -1) {
+            return filepath.substring(lastIndex + 1);
+        } else {
+            return "";
+        }
+    }
+
+    public String loadResourceTemplate(String path) throws IOException {
+        try (InputStream inputStream = TextHelper.class.getResourceAsStream(path);
+             Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8)) {
+            scanner.useDelimiter("\\A");
+            return scanner.hasNext() ? scanner.next() : "";
+        }
     }
 }

@@ -6,14 +6,13 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.pylisa.annotationvalues.DecoratedAnnotation;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.expression.PyStringLiteral;
+import it.unive.pylisa.libraries.fastapi.helpers.TextHelper;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,6 +25,9 @@ public class Endpoint {
     private Method method;
     private String fullPath;
     private String pathVariableName;
+    private String belongs;
+    private String codeLocation;
+    private Set<String> issues = new HashSet<>();
     private List<Param> methodPathVariable = new ArrayList<>();
     private Role role;
 
@@ -47,6 +49,7 @@ public class Endpoint {
                 if (argument.getName().equals("path")) {
                     this.fullPath = path.getValue();
                     this.pathVariableName = extractPathVariable(this.fullPath);
+                    this.codeLocation = TextHelper.getCodeline(path.getLocation().getCodeLocation());
                 }
             }
         }
@@ -66,5 +69,9 @@ public class Endpoint {
         }
 
         return pathVariable;
+    }
+
+    public void addIssue(String issue) {
+        this.issues.add(issue);
     }
 }

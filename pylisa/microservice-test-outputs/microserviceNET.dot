@@ -1,0 +1,29 @@
+digraph "microservice_graph" {
+graph ["splines"="ortho","bgcolor"="white:white","gradientangle"="90"]
+subgraph "cluster_microservice_b" {
+graph ["rankdir"="LR","style"="rounded","color"="black","label"="microservice_b","fontname"="Helvetica-bold","fontsize"="24","splines"="ortho","bgcolor"="grey80:#93c383","gradientangle"="90"]
+"PUT /manufacturer/{id}" ["label"=<<b>PUT</b><br/>/manufacturer/{id}>,"color"="lightblue","fontname"="Helvetica","fontsize"="14","style"="filled","tooltip"="{\"method\":\"PUT\",\"fullPath\":\"/manufacturer/{id}\",\"pathVariableName\":\"id\",\"belongs\":\"microservice_b\",\"codeLocation\":\"microservice_b.py':6:16\",\"issues\":[\"Endpoint does not accept any arguments to specify the object to update.\"],\"methodPathVariable\":[{\"type\":\"string\",\"name\":\"id\",\"typeCustomDefinition\":false},{\"type\":\"numeric\",\"name\":\"name\",\"typeCustomDefinition\":false}],\"role\":\"PROVIDER\"}"]
+"POST /quota/fik39" ["label"=<<b>POST</b><br/>/quota/fik39>,"color"="red3","fontname"="Helvetica","fontsize"="14","fontcolor"="white","style"="filled","tooltip"="{\"method\":\"POST\",\"fullPath\":\"/quota/fik39\",\"pathVariableName\":null,\"belongs\":\"microservice_b\",\"codeLocation\":\"microservice_b.py':14:29\",\"issues\":[],\"methodPathVariable\":[],\"role\":\"CONSUMER\"}"]
+"GET /report/3" ["label"=<<b>GET</b><br/>/report/3>,"color"="red3","fontname"="Helvetica","fontsize"="14","fontcolor"="white","style"="filled","tooltip"="{\"method\":\"GET\",\"fullPath\":\"/report/3\",\"pathVariableName\":null,\"belongs\":\"microservice_b\",\"codeLocation\":\"microservice_b.py':11:28\",\"issues\":[],\"methodPathVariable\":[],\"role\":\"CONSUMER\"}"]
+}
+subgraph "cluster_microservice_c" {
+graph ["rankdir"="LR","style"="rounded","color"="black","label"="microservice_c","fontname"="Helvetica-bold","fontsize"="24","splines"="ortho","bgcolor"="grey80:#9b9cd2","gradientangle"="90"]
+"POST /quota/{name}" ["label"=<<b>POST</b><br/>/quota/{name}>,"color"="lightblue","fontname"="Helvetica","fontsize"="14","style"="filled","tooltip"="{\"method\":\"POST\",\"fullPath\":\"/quota/{name}\",\"pathVariableName\":\"name\",\"belongs\":\"microservice_c\",\"codeLocation\":\"microservice_c.py':6:17\",\"issues\":[\"Endpoint does not accept any argument of custom definition, t.i. model. Only primitives.\"],\"methodPathVariable\":[{\"type\":\"string\",\"name\":\"id\",\"typeCustomDefinition\":false}],\"role\":\"PROVIDER\"}"]
+"GET /report/1" ["label"=<<b>GET</b><br/>/report/1>,"color"="red3","fontname"="Helvetica","fontsize"="14","fontcolor"="white","style"="filled","tooltip"="{\"method\":\"GET\",\"fullPath\":\"/report/1\",\"pathVariableName\":null,\"belongs\":\"microservice_c\",\"codeLocation\":\"microservice_c.py':11:28\",\"issues\":[],\"methodPathVariable\":[],\"role\":\"CONSUMER\"}"]
+"PUT /manufacturer/ChanVendor" ["label"=<<b>PUT</b><br/>/manufacturer/ChanVendor>,"color"="red3","fontname"="Helvetica","fontsize"="14","fontcolor"="white","style"="filled","tooltip"="{\"method\":\"PUT\",\"fullPath\":\"/manufacturer/ChanVendor\",\"pathVariableName\":null,\"belongs\":\"microservice_c\",\"codeLocation\":\"microservice_c.py':14:28\",\"issues\":[],\"methodPathVariable\":[],\"role\":\"CONSUMER\"}"]
+}
+subgraph "cluster_microservice_a" {
+graph ["rankdir"="LR","style"="rounded","color"="black","label"="microservice_a","fontname"="Helvetica-bold","fontsize"="24","splines"="ortho","bgcolor"="grey80:#addb94","gradientangle"="90"]
+"GET /report/{pageNr}" ["label"=<<b>GET</b><br/>/report/{pageNr}>,"color"="lightblue","fontname"="Helvetica","fontsize"="14","style"="filled","tooltip"="{\"method\":\"GET\",\"fullPath\":\"/report/{pageNr}\",\"pathVariableName\":\"pageNr\",\"belongs\":\"microservice_a\",\"codeLocation\":\"microservice_a.py':7:16\",\"issues\":[\"Endpoint's path method accepts non-string or non-numeric parameter.\"],\"methodPathVariable\":[{\"type\":\"boolean\",\"name\":\"pageNr\",\"typeCustomDefinition\":false}],\"role\":\"PROVIDER\"}"]
+"DELETE /item/{item_id}" ["label"=<<b>DELETE</b><br/>/item/{item_id}>,"color"="lightblue","fontname"="Helvetica","fontsize"="14","style"="filled","tooltip"="{\"method\":\"DELETE\",\"fullPath\":\"/item/{item_id}\",\"pathVariableName\":\"item_id\",\"belongs\":\"microservice_a\",\"codeLocation\":\"microservice_a.py':15:19\",\"issues\":[\"Endpoint deletes entity without prior check-up for its existence.\"],\"methodPathVariable\":[{\"type\":\"string\",\"name\":\"item_id\",\"typeCustomDefinition\":false}],\"role\":\"PROVIDER\"}"]
+"GET" ["label"=<<b>GET</b><br/>This endpoint was left without path definition>,"fillcolor"="lightgray","fontname"="Helvetica","fontsize"="14","style"="dotted"]
+"POST /quota/nau16" ["label"=<<b>POST</b><br/>/quota/nau16>,"color"="red3","fontname"="Helvetica","fontsize"="14","fontcolor"="white","style"="filled","tooltip"="{\"method\":\"POST\",\"fullPath\":\"/quota/nau16\",\"pathVariableName\":null,\"belongs\":\"microservice_a\",\"codeLocation\":\"microservice_a.py':25:29\",\"issues\":[],\"methodPathVariable\":[],\"role\":\"CONSUMER\"}"]
+"PUT /manufacturer/JoeVendor" ["label"=<<b>PUT</b><br/>/manufacturer/JoeVendor>,"color"="red3","fontname"="Helvetica","fontsize"="14","fontcolor"="white","style"="filled","tooltip"="{\"method\":\"PUT\",\"fullPath\":\"/manufacturer/JoeVendor\",\"pathVariableName\":null,\"belongs\":\"microservice_a\",\"codeLocation\":\"microservice_a.py':22:28\",\"issues\":[],\"methodPathVariable\":[],\"role\":\"CONSUMER\"}"]
+}
+"GET /report/3" -> "GET /report/{pageNr}"
+"GET /report/1" -> "GET /report/{pageNr}"
+"PUT /manufacturer/JoeVendor" -> "PUT /manufacturer/{id}"
+"PUT /manufacturer/ChanVendor" -> "PUT /manufacturer/{id}"
+"POST /quota/nau16" -> "POST /quota/{name}"
+"POST /quota/fik39" -> "POST /quota/{name}"
+}
