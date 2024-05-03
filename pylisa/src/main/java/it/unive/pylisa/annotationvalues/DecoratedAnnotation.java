@@ -17,10 +17,6 @@ public class DecoratedAnnotation implements AnnotationValue {
         this.call = call;
     }
 
-    public List<Expression> getParams() {
-        return params;
-    }
-
     public Call getCall() {
         return this.call;
     }
