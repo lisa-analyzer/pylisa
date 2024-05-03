@@ -33,6 +33,7 @@ import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
@@ -200,6 +201,7 @@ import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
 import it.unive.pylisa.cfg.statement.FromImport;
+import it.unive.pylisa.cfg.statement.FunctionDef;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.statement.evaluation.RelaxedLeftToRightEvaluation;
@@ -218,6 +220,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -593,13 +597,24 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (ctx.dotted_name() == null) {
 			throw new UnsupportedOperationException("Expecting a Dotted_nameContext in a DecoratorContext.");
 		}
+
 		List<Expression> params = new ArrayList<>();
+		String varName = ctx.dotted_name().children.get(0).getText();
+		params.add(new VariableRef(this.currentCFG, getLocation(ctx), varName));
+
 		if (ctx.arglist() != null) {
 			for (ArgumentContext arg : ctx.arglist().argument())
 				params.add(visitArgument(arg));
 		}
 
-		return new AnnotationMember(ctx.dotted_name().getText(), new DecoratedAnnotation(params));
+
+		List<ParseTree> trees = ctx.dotted_name().children.subList( 1, ctx.dotted_name().children.size());
+		String target = trees.stream()
+				.filter(pt -> !pt.getText().equals("."))
+				.map(ParseTree::getText)
+				.collect(Collectors.joining("."));
+		UnresolvedCall uc = new UnresolvedCall(currentCFG, getLocation(ctx), CallType.UNKNOWN, null, target, params.toArray(Expression[]::new));
+		return new AnnotationMember(ctx.dotted_name().getText(), new DecoratedAnnotation(params, uc));
 	}
 
 	@Override
@@ -607,7 +622,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			DecoratorsContext ctx) {
 		List<AnnotationMember> annotationMembers = new ArrayList<>();
 		for (DecoratorContext dc : ctx.decorator()) {
-			annotationMembers.add(visitDecorator(dc));
+			AnnotationMember am = visitDecorator(dc);
+			annotationMembers.add(am);
 		}
 		Annotation annotation = new Annotation("$decorators", annotationMembers);
 		return annotation;
@@ -624,22 +640,50 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	public Object visitDecorated(
 			DecoratedContext ctx) {
 		if (ctx.decorators() != null) {
+			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+			Statement first = null, last = null;
 			Annotation annotation = visitDecorators(ctx.decorators());
+			for (AnnotationMember ann : annotation.getAnnotationMembers()) {
+				if (ann.getValue() instanceof DecoratedAnnotation da) {
+					Call c = da.getCall();
+					if (first == null) {
+						first = c;
+					}
+					block.addNode(c);
+					if (last != null) {
+						Edge e = new SequentialEdge(last, c);
+						block.addEdge(e);
+					}
+					last = c;
+				}
+			}
 			if (ctx.classdef() != null) {
 				ClassUnit classUnit = visitClassdef(ctx.classdef());
 				classUnit.getAnnotations().addAnnotation(annotation);
-				return classUnit;
 			} else if (ctx.async_funcdef() != null ) {
-					PyCFG method = visitAsync_funcdef(ctx.async_funcdef());
-					method.getDescriptor().getAnnotations().addAnnotation(annotation);
-					return method;
+				PyCFG method = visitAsync_funcdef(ctx.async_funcdef());
+				method.getDescriptor().getAnnotations().addAnnotation(annotation);
+				FunctionDef fdef = new FunctionDef(this.currentCFG, getLocation(ctx), method);
+				block.addNode(fdef);
+				if (last != null) {
+					Edge e = new SequentialEdge(last, fdef);
+					block.addEdge(e);
+				}
+				last = fdef;
 			} else if (ctx.funcdef() != null) {
 				PyCFG method = visitFuncdef(ctx.funcdef());
 				method.getDescriptor().getAnnotations().addAnnotation(annotation);
-				return method;
+				FunctionDef fdef = new FunctionDef(this.currentCFG, getLocation(ctx), method);
+				block.addNode(fdef);
+				if (last != null) {
+					Edge e = new SequentialEdge(last, fdef);
+					block.addEdge(e);
+				}
+				last = fdef;
+			} else {
+				throw new UnsupportedStatementException("Expecting {'def', 'class', 'async'} after decorators.");
 			}
-		} else {
-			throw new UnsupportedStatementException("Expecting {'def', 'class', 'async'} after decorators.");
+			return Triple.of(first, block, last);
 		}
 		throw new UnsupportedStatementException("Expecting a DecoratorsContext in DecoratedContext");
 	}
