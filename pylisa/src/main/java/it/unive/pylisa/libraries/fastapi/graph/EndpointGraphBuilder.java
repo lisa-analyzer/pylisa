@@ -42,7 +42,7 @@ public class EndpointGraphBuilder {
     private List<Endpoint> providers;
     private List<Endpoint> consumers;
 
-    private final String emptyCallImg = "/Users/teodors/Documents/erasmus/lisa/projects/lisa-on-microservices/pylisa/pylisa/src/main/resources/assets/cross-mark.png";
+    private final String emptyCallImg = EndpointGraphBuilder.class.getResource("/assets/cross-mark.png").getFile();
 
     private Color randomColor() {
         int r = 128 + rand.nextInt(128);
