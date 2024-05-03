@@ -14,6 +14,9 @@ public class DecoratedAnnotation implements AnnotationValue {
         this.params = params;
     }
 
+    public List<Expression> getParams() {
+        return params;
+    }
     @Override
     public int compareTo(AnnotationValue o) {
         return 0;
