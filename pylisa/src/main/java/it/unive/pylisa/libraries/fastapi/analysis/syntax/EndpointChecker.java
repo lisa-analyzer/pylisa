@@ -117,7 +117,7 @@ public class EndpointChecker {
 
             DecoratedAnnotation decorator = (DecoratedAnnotation) delete.getValue();
 
-            PyAssign pathWrapper = (PyAssign) decorator.getParams().get(0);
+            PyAssign pathWrapper = (PyAssign) decorator.getParams().get(1);
             PyStringLiteral pathLiteral = (PyStringLiteral) Arrays.stream(pathWrapper.getSubExpressions()).toList().get(1);
             String pathVariable = Endpoint.extractPathVariable(pathLiteral.getValue());
 
