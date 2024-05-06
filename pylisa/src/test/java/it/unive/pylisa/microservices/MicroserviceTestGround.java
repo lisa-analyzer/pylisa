@@ -12,7 +12,7 @@ import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.PyFrontend;
-import it.unive.pylisa.analysis.constants.ConstantPropagation;
+import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.checks.FastApiSyntacticChecker;
 import it.unive.pylisa.libraries.fastapi.graph.EndpointGraphBuilder;
 import org.junit.Before;
