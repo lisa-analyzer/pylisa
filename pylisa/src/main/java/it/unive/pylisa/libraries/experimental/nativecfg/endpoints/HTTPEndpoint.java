@@ -45,11 +45,7 @@ public class HTTPEndpoint extends GenericEndpoint {
                     parameters);
             ((PluggableStatement) instance).setOriginatingStatement(original);
             return instance;
-        } catch (NoSuchMethodException
-             | SecurityException
-             | IllegalAccessException
-             | IllegalArgumentException
-             | InvocationTargetException e) {
+        } catch (Exception e) {
             throw new CallResolutionException("Unable to create call to native construct " + getConstruct().getName(), e);
         }
     }

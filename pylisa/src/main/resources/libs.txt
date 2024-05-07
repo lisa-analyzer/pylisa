@@ -541,7 +541,6 @@ library fastapi:
             param path type it.unive.lisa.program.type.StringType::INSTANCE
             param callback type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
     class fastapi.Operation
-
 library miniapi:
     location miniapi
     method MiniAPI: it.unive.pylisa.libraries.miniapi.MiniAPI

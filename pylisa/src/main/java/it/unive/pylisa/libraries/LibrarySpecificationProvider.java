@@ -9,9 +9,10 @@ import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.pylisa.antlr.LibraryDefinitionLexer;
 import it.unive.pylisa.antlr.LibraryDefinitionParser;
+import it.unive.pylisa.libraries.experimental.loader.CustomMethod;
 import it.unive.pylisa.libraries.experimental.nativecfg.endpoints.HTTPEndpoint;
-import it.unive.pylisa.libraries.loader.Library;
-import it.unive.pylisa.libraries.loader.Runtime;
+import it.unive.pylisa.libraries.loader.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -20,6 +21,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+
+import it.unive.pylisa.libraries.loader.Runtime;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.commons.lang3.tuple.Pair;
@@ -90,9 +93,29 @@ public class LibrarySpecificationProvider {
 		hierarchyRoot = root.get();
 		makeInit(program);
 		parsed.getLeft().populateProgram(program, init, hierarchyRoot);
-
-		for (Library lib : parsed.getValue())
+		Method getM = null;
+		for (Library lib : parsed.getValue()) {
+			if (lib.getName().equals("fastapi")) {
+				for (ClassDef cd :lib.getClasses()) {
+					if (cd.getName().equals("fastapi.FastAPI")) {
+						for (Method m : cd.getMethods()) {
+							if (m.getName().equals("get")) {
+								getM = m;
+								break;
+							}
+						}
+						if (getM != null) {
+							cd.getMethods().remove(getM);
+							CustomMethod newGet = new CustomMethod(true, false, "get", "it.unive.pylisa.libraries.experimental.statement.HTTPEndpointStatement", new LiSAType("it.unive.lisa.type.VoidType", "INSTANCE"));
+							newGet.getParams().addAll(getM.getParams());
+							cd.getMethods().add(newGet);
+						}
+					}
+				}
+			}
 			AVAILABLE_LIBS.put(lib.getName(), lib);
+		}
+
 		// create new Library
 		CodeLocation location = new SourceCodeLocation("services", 0, 0);
 		Unit unit = new CodeUnit(location, program, "fastapi");

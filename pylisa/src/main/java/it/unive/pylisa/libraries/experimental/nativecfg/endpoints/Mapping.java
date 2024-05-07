@@ -18,9 +18,8 @@ public class Mapping {
         this.rule = rule;
     }
 
-
-    public Expression eval(Statement statement) {
-        return new StringLiteral(statement.getCFG(), SyntheticLocation.INSTANCE, "GET");
+    public Expression eval(Statement statement) throws Exception {
+        return rule.eval(statement);
     }
 
 }
