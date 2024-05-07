@@ -25,7 +25,7 @@ public class Operation extends NaryExpression implements PluggableStatement {
     @Override
     public Program getProgram() { return super.getProgram(); }
 
-    public static Operation build(CFG cfg, CodeLocation location, Expression[] parameters) {
+    public static Operation buiwld(CFG cfg, CodeLocation location, Expression[] parameters) {
         return new Operation(cfg, location, parameters);
     }
 
@@ -40,6 +40,7 @@ public class Operation extends NaryExpression implements PluggableStatement {
             AnalysisState<A> analysisState,
             ExpressionSet[] expressionSets,
             StatementStore<A> statementStore) throws SemanticException {
-        return null;
+        // create a new PyNewObj (route)
+        return analysisState;
     }
 }

@@ -38,7 +38,7 @@ public class MicroserviceTestGround {
         conf.callGraph = new RTACallGraph();
         conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
         conf.optimize = false;
-        conf.syntacticChecks.add(syntacticChecker);
+        //conf.syntacticChecks.add(syntacticChecker);
 
         PyFieldSensitivePointBasedHeap heap = (PyFieldSensitivePointBasedHeap) new PyFieldSensitivePointBasedHeap().bottom();
         TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());

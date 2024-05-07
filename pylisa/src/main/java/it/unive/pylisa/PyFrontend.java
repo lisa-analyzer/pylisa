@@ -613,7 +613,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				.filter(pt -> !pt.getText().equals("."))
 				.map(ParseTree::getText)
 				.collect(Collectors.joining("."));
-		UnresolvedCall uc = new UnresolvedCall(currentCFG, getLocation(ctx), CallType.UNKNOWN, null, target, params.toArray(Expression[]::new));
+		UnresolvedCall uc = new UnresolvedCall(currentCFG, getLocation(ctx), CallType.UNKNOWN, null, target, convertAssignmentsToByNameParameters(params).toArray(Expression[]::new));
 		return new AnnotationMember(ctx.dotted_name().getText(), new DecoratedAnnotation(params, uc));
 	}
 

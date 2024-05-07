@@ -152,8 +152,12 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 
 		for (ClassDefContext cls : ctx.classDef())
 			runtime.getClasses().add(visitClassDef(cls));
-		for (LibraryContext lib : ctx.library())
+		for (LibraryContext lib : ctx.library()) {
+		/*	if (lib.name.getText().equals("fastapi")) {
+				continue;
+			} */
 			libraries.add(visitLibrary(lib));
+		}
 		for (MethodContext meth : ctx.method()) {
 			runtime.getMethods().add(visitMethod(meth));
 		}

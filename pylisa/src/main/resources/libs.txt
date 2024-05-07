@@ -322,33 +322,6 @@ library fastapi:
     method FastAPI: it.unive.pylisa.libraries.fastapi.sarl.FastAPI
         libtype fastapi.FastAPI*
 
-    method get: it.unive.pylisa.libraries.fastapi.sarl.method.Get
-        libtype fastapi.Operation*
-        param path type it.unive.lisa.program.type.StringType::INSTANCE
-        param callback type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
-        param &response_model type it.unive.lisa.type.Untyped::INSTANCE default none
-        param &status_code type it.unive.lisa.program.type.Int32Type::INSTANCE default none
-        param &tags type it.unive.lisa.type.Untyped::INSTANCE default none
-        param &dependencies type it.unive.lisa.type.Untyped::INSTANCE default none
-        param &summary type it.unive.lisa.program.type.StringType::INSTANCE default ""
-        param &description type it.unive.lisa.program.type.StringType::INSTANCE default ""
-        param &response_description type it.unive.lisa.program.type.StringType::INSTANCE default "Successful Response"
-        param &responses type it.unive.lisa.type.Untyped::INSTANCE default none
-        param &deprecated type it.unive.lisa.program.type.BoolType::INSTANCE default none
-        param &operation_id type it.unive.lisa.program.type.StringType::INSTANCE default ""
-        param &response_model_include type it.unive.lisa.type.Untyped::INSTANCE default none
-        param &response_model_exclude type it.unive.lisa.type.Untyped::INSTANCE default none
-        param &response_model_by_alias type it.unive.lisa.program.type.BoolType::INSTANCE default true
-        param &response_model_exclude_unset type it.unive.lisa.program.type.BoolType::INSTANCE default false
-        param &response_model_exclude_defaults type it.unive.lisa.program.type.BoolType::INSTANCE default false
-        param &response_model_exclude_none type it.unive.lisa.program.type.BoolType::INSTANCE default false
-        param &include_in_schema type it.unive.lisa.program.type.BoolType::INSTANCE default true
-        param &response_class type it.unive.lisa.type.Untyped::INSTANCE default none
-        param &name type it.unive.lisa.program.type.StringType::INSTANCE default ""
-        param &callbacks type it.unive.lisa.type.Untyped::INSTANCE default none
-        param &openapi_extra type it.unive.lisa.type.Untyped::INSTANCE default none
-        param &generate_unique_id_function type it.unive.lisa.type.Untyped::INSTANCE default none
-
     method post: it.unive.pylisa.libraries.fastapi.sarl.method.Post
         libtype fastapi.Operation*
         param path type it.unive.lisa.program.type.StringType::INSTANCE
@@ -536,16 +509,38 @@ library fastapi:
             param &generate_unique_id_function type it.unive.lisa.type.Untyped::INSTANCE default none
             param &separate_input_output_schemas type it.unive.lisa.program.type.BoolType::INSTANCE default true
             param **extra type it.unive.lisa.type.Untyped::INSTANCE default none
+        instance method get: it.unive.pylisa.libraries.fastapi.sarl.method.Get
+            libtype fastapi.Operation*
+            param self libtype fastapi.FastAPI*
+            param path type it.unive.lisa.program.type.StringType::INSTANCE
+            param &response_model type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &status_code type it.unive.lisa.program.type.Int32Type::INSTANCE default 0
+            param &tags type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &dependencies type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &summary type it.unive.lisa.program.type.StringType::INSTANCE default ""
+            param &description type it.unive.lisa.program.type.StringType::INSTANCE default ""
+            param &response_description type it.unive.lisa.program.type.StringType::INSTANCE default "Successful Response"
+            param &responses type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &deprecated type it.unive.lisa.program.type.BoolType::INSTANCE default false
+            param &operation_id type it.unive.lisa.program.type.StringType::INSTANCE default ""
+            param &response_model_include type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &response_model_exclude type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &response_model_by_alias type it.unive.lisa.program.type.BoolType::INSTANCE default true
+            param &response_model_exclude_unset type it.unive.lisa.program.type.BoolType::INSTANCE default false
+            param &response_model_exclude_defaults type it.unive.lisa.program.type.BoolType::INSTANCE default false
+            param &response_model_exclude_none type it.unive.lisa.program.type.BoolType::INSTANCE default false
+            param &include_in_schema type it.unive.lisa.program.type.BoolType::INSTANCE default true
+            param &response_class type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &name type it.unive.lisa.program.type.StringType::INSTANCE default ""
+            param &callbacks type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &openapi_extra type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &generate_unique_id_function type it.unive.lisa.type.Untyped::INSTANCE default none
         instance method add_route: it.unive.pylisa.libraries.fastapi.sarl.AddRoute
             type it.unive.lisa.type.VoidType::INSTANCE
             param self libtype fastapi.FastAPI*
             param path type it.unive.lisa.program.type.StringType::INSTANCE
             param callback type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
-    class fastapi.Operation:
-        instance method execute: it.unive.pylisa.libraries.fastapi.sarl.Operation
-            type it.unive.lisa.type.VoidType::INSTANCE
-            param self libtype fastapi.Operation*
-            param request type it.unive.lisa.type.Untyped::INSTANCE
+    class fastapi.Operation
 
 library miniapi:
     location miniapi

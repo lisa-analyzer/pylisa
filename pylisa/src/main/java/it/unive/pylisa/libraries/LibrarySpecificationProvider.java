@@ -1,15 +1,15 @@
 package it.unive.pylisa.libraries;
 
 import it.unive.lisa.AnalysisSetupException;
-import it.unive.lisa.program.CodeUnit;
-import it.unive.lisa.program.CompilationUnit;
-import it.unive.lisa.program.Program;
-import it.unive.lisa.program.SyntheticLocation;
+import it.unive.lisa.program.*;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.pylisa.antlr.LibraryDefinitionLexer;
 import it.unive.pylisa.antlr.LibraryDefinitionParser;
+import it.unive.pylisa.libraries.experimental.nativecfg.endpoints.HTTPEndpoint;
 import it.unive.pylisa.libraries.loader.Library;
 import it.unive.pylisa.libraries.loader.Runtime;
 import java.io.IOException;
@@ -93,6 +93,14 @@ public class LibrarySpecificationProvider {
 
 		for (Library lib : parsed.getValue())
 			AVAILABLE_LIBS.put(lib.getName(), lib);
+		// create new Library
+		CodeLocation location = new SourceCodeLocation("services", 0, 0);
+		Unit unit = new CodeUnit(location, program, "fastapi");
+		program.addUnit(unit);
+		//Parameter[]
+		//CodeMemberDescriptor cmd = new CodeMemberDescriptor(location, unit, true, "get", )
+		// CodeMember cm = new HTTPEndpoint(new CodeMemberDescriptor(location))
+
 	}
 
 	private static CFG makeInit(
