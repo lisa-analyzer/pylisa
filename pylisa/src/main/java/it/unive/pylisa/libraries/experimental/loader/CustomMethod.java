@@ -41,57 +41,114 @@ public class CustomMethod extends Method {
         desc.setOverridable(this.isSealed());
 
         /**
-         * FastAPI.get -> HTTPEndpoint {
-         *             libtype fastapi.FastAPI*
-         *             param self libtype fastapi.FastAPI*
-         *             param &debug type it.unive.lisa.program.type.BoolType::INSTANCE default false
-         *             param &routes type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &title type it.unive.lisa.program.type.StringType::INSTANCE default "FastAPI"
-         *             param &summary type it.unive.lisa.program.type.StringType::INSTANCE default ""
-         *             param &description type it.unive.lisa.program.type.StringType::INSTANCE default ""
-         *             param &version type it.unive.lisa.program.type.StringType::INSTANCE default "0.1.0"
-         *             param &openapi_url type it.unive.lisa.program.type.StringType::INSTANCE default "/openapi.json"
-         *             param &openapi_tags type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &servers type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &dependencies type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &default_response_class type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &redirect_slashes type it.unive.lisa.program.type.BoolType::INSTANCE default true
-         *             param &docs_url type it.unive.lisa.program.type.StringType::INSTANCE default "/docs"
-         *             param &redoc_url type it.unive.lisa.program.type.StringType::INSTANCE default "/redoc"
-         *             param &swagger_ui_oauth2_redirect_url type it.unive.lisa.program.type.StringType::INSTANCE default "/redoc"
-         *             param &swagger_ui_init_oauth type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &middleware type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &exception_handlers type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &on_startup type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &on_shutdown type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &lifespan type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &terms_of_service type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &contact type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &license_info type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &openapi_prefix type it.unive.lisa.program.type.StringType::INSTANCE default ""
-         *             param &root_path type it.unive.lisa.program.type.StringType::INSTANCE default ""
-         *             param &root_path_in_servers type it.unive.lisa.program.type.BoolType::INSTANCE default true
-         *             param &responses type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &callbacks type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &webhooks type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &deprecated type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &include_in_schema type it.unive.lisa.program.type.BoolType::INSTANCE default true
-         *             param &swagger_ui_parameters type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &generate_unique_id_function type it.unive.lisa.type.Untyped::INSTANCE default none
-         *             param &separate_input_output_schemas type it.unive.lisa.program.type.BoolType::INSTANCE default true
-         *             param **extra type it.unive.lisa.type.Untyped::INSTANCE default none
+         * FastAPI.get(
+         *     self libtype fastapi.FastAPI*
+         *     path type it.unive.lisa.program.type.StringType::INSTANCE
+         *     &response_model type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &status_code type it.unive.lisa.program.type.Int32Type::INSTANCE default 0
+         *     &tags type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &dependencies type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &summary type it.unive.lisa.program.type.StringType::INSTANCE default ""
+         *     &description type it.unive.lisa.program.type.StringType::INSTANCE default ""
+         *     &response_description type it.unive.lisa.program.type.StringType::INSTANCE default "Successful Response"
+         *     &responses type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &deprecated type it.unive.lisa.program.type.BoolType::INSTANCE default false
+         *     &operation_id type it.unive.lisa.program.type.StringType::INSTANCE default ""
+         *     &response_model_include type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &response_model_exclude type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &response_model_by_alias type it.unive.lisa.program.type.BoolType::INSTANCE default true
+         *     &response_model_exclude_unset type it.unive.lisa.program.type.BoolType::INSTANCE default false
+         *     &response_model_exclude_defaults type it.unive.lisa.program.type.BoolType::INSTANCE default false
+         *     &response_model_exclude_none type it.unive.lisa.program.type.BoolType::INSTANCE default false
+         *     &include_in_schema type it.unive.lisa.program.type.BoolType::INSTANCE default true
+         *     &response_class type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &name type it.unive.lisa.program.type.StringType::INSTANCE default ""
+         *     &callbacks type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &openapi_extra type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &generate_unique_id_function type it.unive.lisa.type.Untyped::INSTANCE default none
+         * ) -> HTTPEndpoint(
+         *     path: $param[1] IF instanceof($param[1], NamedParameterExpression) ELSE $param["path"]
+         *     method: String("GET")
+         * )
          *
-         *      path: $param[1] IF instanceof($param[1], NamedParameterExpression) ELSE $param["path"]
-         *      method: String("GET")
-         * }
-         *
-         * FastAPI.post -> HTTPEndpoint {
-         *      path: $param[1] IF instanceof($param[1], NamedParameterExpression) ELSE $param["path"]
-         *      method: String("POST")
-         * }
+         * FastAPI.post(
+         *     self libtype fastapi.FastAPI*
+         *     path type it.unive.lisa.program.type.StringType::INSTANCE
+         *     &response_model type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &status_code type it.unive.lisa.program.type.Int32Type::INSTANCE default 0
+         *     &tags type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &dependencies type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &summary type it.unive.lisa.program.type.StringType::INSTANCE default ""
+         *     &description type it.unive.lisa.program.type.StringType::INSTANCE default ""
+         *     &response_description type it.unive.lisa.program.type.StringType::INSTANCE default "Successful Response"
+         *     &responses type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &deprecated type it.unive.lisa.program.type.BoolType::INSTANCE default false
+         *     &operation_id type it.unive.lisa.program.type.StringType::INSTANCE default ""
+         *     &response_model_include type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &response_model_exclude type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &response_model_by_alias type it.unive.lisa.program.type.BoolType::INSTANCE default true
+         *     &response_model_exclude_unset type it.unive.lisa.program.type.BoolType::INSTANCE default false
+         *     &response_model_exclude_defaults type it.unive.lisa.program.type.BoolType::INSTANCE default false
+         *     &response_model_exclude_none type it.unive.lisa.program.type.BoolType::INSTANCE default false
+         *     &include_in_schema type it.unive.lisa.program.type.BoolType::INSTANCE default true
+         *     &response_class type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &name type it.unive.lisa.program.type.StringType::INSTANCE default ""
+         *     &callbacks type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &openapi_extra type it.unive.lisa.type.Untyped::INSTANCE default none
+         *     &generate_unique_id_function type it.unive.lisa.type.Untyped::INSTANCE default none
+         * ) -> HTTPEndpoint(
+         *     path: $param[1] IF instanceof($param[1], NamedParameterExpression) ELSE $param["path"]
+         *     method: String("GET")
+         * )
          */
 
         // es per GET
+
+
+
+        /*
+        get(
+            self,
+            path,
+            *,
+            response_model=Default(None),
+            status_code=None,
+            tags=None,
+            dependencies=None,
+            summary=None,
+            description=None,
+            response_description="Successful Response",
+            responses=None,
+            deprecated=None,
+            operation_id=None,
+            response_model_include=None,
+            response_model_exclude=None,
+            response_model_by_alias=True,
+            response_model_exclude_unset=False,
+            response_model_exclude_defaults=False,
+            response_model_exclude_none=False,
+            include_in_schema=True,
+            response_class=Default(JSONResponse),
+            name=None,
+            callbacks=None,
+            openapi_extra=None,
+            generate_unique_id_function=Default(generate_unique_id)
+        )
+
+        @app.get("/status")
+        @app.get(path = "/status")
+        @app.get(status_code = 200, path = "/status")
+
+
+
+        def f(a, b, *, x, y):
+            print(a)
+        f(10,20, x=30,y=40)
+        f(10,20,y=40,x=30)
+        f(10,x=30,b=20,y=40)
+        f(x=30,y=40,b=20,a=10)
+
+         */
         return new HTTPEndpoint(desc,
                 new Mapping("path",
                         new ConditionalMapping(new IsInstanceOf(new ParameterMappingRule(1), NamedParameterExpression.class), // param[1] instanceof NamedParameterExpression ?
