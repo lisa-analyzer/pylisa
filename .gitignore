@@ -227,3 +227,4 @@ gradle-app.setting
 
 pylisa/ros-test-outputs/*
 pylisa/test-outputs/*
+/test-outputs
