@@ -1,22 +1,32 @@
 {
   "warnings" : [ {
-    "message" : "[GENERIC] Analysed file/s have | GET: 9 | POST: 5 | PUT: 5 | DELETE: 2 endpoints in total."
+    "message" : "['pylisa/py-testcases/microservices/uploded-from-endpoint/microservice_a.py':17:29] on 'untyped pylisa/py-testcases/microservices/uploded-from-endpoint/microservice_a::delete_item(untyped item_id)': [EXPRESSION] DELETE endpoint /item/{item_id} deletes entity without prior check-up for its existence."
+  }, {
+    "message" : "[GENERIC] Analysed file/s have | GET: 4 | POST: 3 | PUT: 3 | DELETE: 1 endpoints in total."
+  }, {
+    "message" : "[it.unive.lisa.program.SyntheticLocation@78dd8612] on 'pylisa/py-testcases/microservices/uploded-from-endpoint/microservice_a': [UNIT] No path for endpoint defined."
+  }, {
+    "message" : "[it.unive.lisa.program.SyntheticLocation@78dd8612] on 'pylisa/py-testcases/microservices/uploded-from-endpoint/microservice_a': [UNIT] This GET endpoint's path method accepts non-string or non-numeric parameter: /report/{pageNr} | Variable's type: boolean"
+  }, {
+    "message" : "[it.unive.lisa.program.SyntheticLocation@78dd8612] on 'pylisa/py-testcases/microservices/uploded-from-endpoint/microservice_a': [UNIT] This POST endpoint /quota/{name} does not accept any argument of custom definition, t.i. model. Only primitives."
+  }, {
+    "message" : "[it.unive.lisa.program.SyntheticLocation@78dd8612] on 'pylisa/py-testcases/microservices/uploded-from-endpoint/microservice_a': [UNIT] This PUT endpoint /manufacturer/{id} does not accept any arguments to specify the object to update."
   } ],
-  "files" : [ "js/cose-base.js", "js/cytoscape-3.21.1.min.js", "js/cytoscape-expand-collapse.js", "js/cytoscape-fcose.js", "js/cytoscape-graphml-1.0.6-hier.js", "js/jquery-3.0.0.min.js", "js/layout-base.js", "report.json", "untyped_pylisa_py-testcases_microservices_uploded-from-endpoint_microservice_a.$main().html", "untyped_pylisa_py-testcases_microservices_uploded-from-endpoint_microservice_a.$main().json", "untyped_pylisa_py-testcases_microservices_uploded-from-endpoint_microservice_a.getItems()_-1563904038.html", "untyped_pylisa_py-testcases_microservices_uploded-from-endpoint_microservice_a.getItems()_-1563904038.json" ],
+  "files" : [ "js/cose-base.js", "js/cytoscape-3.21.1.min.js", "js/cytoscape-expand-collapse.js", "js/cytoscape-fcose.js", "js/cytoscape-graphml-1.0.6-hier.js", "js/jquery-3.0.0.min.js", "js/layout-base.js", "report.json", "untyped_pylisa_py-testcases_microservices_uploded-from-endpoint_microservice_a.$main().html", "untyped_pylisa_py-testcases_microservices_uploded-from-endpoint_microservice_a.$main().json" ],
   "info" : {
-    "cfgs" : "3",
-    "duration" : "16ms",
-    "end" : "2024-05-07T12:14:51.557+02:00",
-    "expressions" : "13",
-    "files" : "11",
+    "cfgs" : "7",
+    "duration" : "10ms",
+    "end" : "2024-05-20T17:51:45.053+02:00",
+    "expressions" : "20",
+    "files" : "9",
     "globals" : "0",
-    "members" : "9",
+    "members" : "23",
     "programs" : "1",
-    "start" : "2024-05-07T12:14:51.541+02:00",
-    "statements" : "10",
-    "units" : "8",
+    "start" : "2024-05-20T17:51:45.043+02:00",
+    "statements" : "14",
+    "units" : "11",
     "version" : "0.1b9",
-    "warnings" : "1"
+    "warnings" : "6"
   },
   "configuration" : {
     "analysisGraphs" : "HTML_WITH_SUBNODES",
