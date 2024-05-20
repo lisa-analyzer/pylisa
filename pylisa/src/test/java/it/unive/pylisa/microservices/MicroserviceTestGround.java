@@ -15,6 +15,7 @@ import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.checks.FastApiSyntacticChecker;
 import it.unive.pylisa.libraries.fastapi.graph.EndpointGraphBuilder;
+import it.unive.pylisa.libraries.fastapi.web.GraphService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,7 +25,7 @@ public class MicroserviceTestGround {
 
     private LiSAConfiguration conf;
     private final FastApiSyntacticChecker syntacticChecker = new FastApiSyntacticChecker();
-    private final EndpointGraphBuilder graphBuilder = new EndpointGraphBuilder();
+    private final GraphService graphBuilder = new GraphService();
 
     @Before
     public void before() {
@@ -67,7 +68,7 @@ public class MicroserviceTestGround {
         LiSA lisa2 = new LiSA(this.conf);
         lisa2.run(program2);
 
-        graphBuilder.build(syntacticChecker.endpoints);
+        graphBuilder.buildDot("microservice_b", syntacticChecker.endpoints);
     }
 
     @Test
@@ -97,7 +98,7 @@ public class MicroserviceTestGround {
         Program program3 = frontend3.toLiSAProgram();
         lisa3.run(program3);
 
-        graphBuilder.build(syntacticChecker.endpoints);
+        graphBuilder.buildDot("microservice_b", syntacticChecker.endpoints);
     }
 
     @Test

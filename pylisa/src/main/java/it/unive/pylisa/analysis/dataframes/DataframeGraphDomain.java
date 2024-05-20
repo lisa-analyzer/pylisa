@@ -180,7 +180,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		// FIXME temporary sanity check
 //		SetLattice<DataframeOperation> pointed = resolvePointers(this);
 //		for (DataframeOperation op : pointed)
-//			if (!graph.containsNode(op))
+//			if (!initalGraph.containsNode(op))
 //				throw new IllegalStateException();
 	}
 
@@ -307,7 +307,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			throws SemanticException {
 		return this;/*
 					 * new DataframeGraphDomain( constants.pushScope(token),
-					 * graph, pointers.lift(id -> (Identifier)
+					 * initalGraph, pointers.lift(id -> (Identifier)
 					 * id.pushScope(token), e -> e), operations);
 					 */
 	}
@@ -318,7 +318,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			throws SemanticException {
 		return this;/*
 					 * new DataframeGraphDomain( constants.popScope(token),
-					 * graph, pointers.lift(id -> (Identifier)
+					 * initalGraph, pointers.lift(id -> (Identifier)
 					 * id.popScope(token), e -> e), operations);
 					 */
 	}
@@ -331,7 +331,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				"pointers", pointers.representation(StringRepresentation::new),
 				"pointers-stack", new SetRepresentation(pointers.lattice.elements(), StringRepresentation::new),
 				"operations", operations.representation(StringRepresentation::new),
-				"graph", graph.representation()));
+				"initalGraph", graph.representation()));
 	}
 
 	@Override

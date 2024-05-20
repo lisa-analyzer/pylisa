@@ -6,6 +6,8 @@ plugins {
    	id "com.diffplug.spotless" version "6.18.0"
    	id 'maven-publish'
     id 'signing'
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.4'
 }
 
 repositories {
@@ -33,18 +35,27 @@ dependencies {
 
     implementation 'guru.nidi:graphviz-java:0.18.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.17.0'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.17.0'
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'
-    implementation 'org.springframework:spring-web:6.1.6'
     implementation 'io.github.lisa-analyzer:lisa-sdk:0.1b10-SNAPSHOT'
     implementation 'io.github.lisa-analyzer:lisa-program:0.1b10-SNAPSHOT'
     implementation 'io.github.lisa-analyzer:lisa-analyses:0.1b10-SNAPSHOT'
     implementation group: 'org.jdom', name: 'jdom2', version: '2.0.5'
     implementation group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '3.0.2'
-    implementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
-    testImplementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
-    antlr 'org.antlr:antlr4:4.8-1'
-    testImplementation 'junit:junit:4.12'
     implementation 'com.google.code.gson:gson:2.8.7'
+    implementation 'ognl:ognl:3.4.3'
+
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-devtools:3.2.5'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework:spring-web:6.1.6'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'junit:junit:4.12'
+
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    antlr 'org.antlr:antlr4:4.8-1'
 }
 
 generateGrammarSource {

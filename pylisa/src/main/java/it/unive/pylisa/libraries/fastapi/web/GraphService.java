@@ -1,38 +1,36 @@
-package it.unive.pylisa.libraries.fastapi.graph;
+package it.unive.pylisa.libraries.fastapi.web;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.nidi.graphviz.attribute.*;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.model.*;
+import guru.nidi.graphviz.model.MutableGraph;
+import guru.nidi.graphviz.model.MutableNode;
 import it.unive.pylisa.libraries.fastapi.analysis.syntax.EndpointService;
 import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
 import it.unive.pylisa.libraries.fastapi.definitions.GroupBy;
 import it.unive.pylisa.libraries.fastapi.definitions.Role;
-import it.unive.pylisa.libraries.fastapi.helpers.TextHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriTemplate;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
-import org.thymeleaf.templatemode.TemplateMode;
-import org.thymeleaf.templateresolver.StringTemplateResolver;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import static guru.nidi.graphviz.attribute.Color.*;
 import static guru.nidi.graphviz.attribute.GraphAttr.SplineMode.ORTHO;
 import static guru.nidi.graphviz.attribute.GraphAttr.splines;
 import static guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT;
-
-import static guru.nidi.graphviz.model.Factory.*;
+import static guru.nidi.graphviz.model.Factory.mutGraph;
+import static guru.nidi.graphviz.model.Factory.mutNode;
 
 @Service
-public class EndpointGraphBuilder {
+public class GraphService {
 
     private final Random rand = new Random();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -52,26 +50,36 @@ public class EndpointGraphBuilder {
         return Color.rgb(r, g, b);
     }
 
-    public void build(List<Endpoint> endpoints) throws IOException {
+    public List<String> getClusterOptions(List<Endpoint> endpoints) {
+        return EndpointService.groupEndpoints(endpoints, GroupBy.BELONGS).keySet().stream().toList();
+    }
+
+    public String buildDot(String microserviceName, List<Endpoint> endpoints) throws IOException {
 
         this.buildBase(endpoints);
 
-        for (Map.Entry<String, List<Endpoint>> group : grouped.entrySet()) {
+        List<Endpoint> endpointsOfMicro = grouped.get(microserviceName);
+        List<MutableNode> nodes = buildNodes(endpointsOfMicro);
 
-            List<MutableNode> nodes = buildNodes(group);
+        MutableGraph cluster = this.buildClusterBase(microserviceName);
+        cluster.add(nodes);
 
-            MutableGraph cluster = this.buildClusterBase(group.getKey());
-            cluster.add(nodes);
+        for (String groupName : grouped.keySet()) {
 
-            base.add(cluster);
+            if (!groupName.equals(microserviceName)) {
+                MutableNode clusterNode = buildClusterAsNode(groupName);
+                base.add(clusterNode);
+            }
         }
 
-        this.connectNodes();
-        this.pointEmptyConsumers();
+        this.connectNodesToOutgoing(cluster);
+//      this.pointEmptyConsumers();
 
-        this.exportToPNG();
-        this.exportToDOT();
-        this.exportToHTML();
+        base.add(cluster);
+
+        return Graphviz.fromGraph(base).render(Format.DOT).toString();
+//        Graphviz.fromGraph(base).height(300).render(Format.PNG).toFile(new File("microservice-test-outputs/microserviceNET.png"));
+//        return "";
     }
 
     private void buildBase(List<Endpoint> endpoints) {
@@ -95,6 +103,15 @@ public class EndpointGraphBuilder {
         cluster.graphAttrs().add(Color.BLACK, Label.of(clusterName));
         cluster.graphAttrs().add(Font.config("Helvetica-bold", 24));
         cluster.graphAttrs().add(splines(ORTHO), GREY80.gradient(randomColor()).background().angle(90));
+
+        return cluster;
+    }
+
+    private MutableNode buildClusterAsNode(String label) {
+
+        String prettyLabel = "<b>" + label + "</b>";
+
+        MutableNode cluster = mutNode(label).setName(label).add(Label.html(prettyLabel), ROYALBLUE, Font.config("Helvetica", 14), WHITE.font(), Style.FILLED, Shape.RECTANGLE);
 
         return cluster;
     }
@@ -135,11 +152,11 @@ public class EndpointGraphBuilder {
         return empty;
     }
 
-    private List<MutableNode> buildNodes(Map.Entry<String, List<Endpoint>> group) throws JsonProcessingException {
+    private List<MutableNode> buildNodes(List<Endpoint> endpoints) throws JsonProcessingException {
 
         List<MutableNode> nodes = new ArrayList<>();
 
-        for (Endpoint endpoint : group.getValue()) {
+        for (Endpoint endpoint : endpoints) {
 
             if (endpoint.getRole() == Role.CONSUMER) {
                 MutableNode consumer = buildConsumerNode(endpoint);
@@ -158,7 +175,7 @@ public class EndpointGraphBuilder {
         return nodes;
     }
 
-    private void connectNodes() {
+    private void connectNodesToOutgoing(MutableGraph cluster) {
 
         for (Endpoint provider : providers) {
             for (Endpoint consumer : consumers) {
@@ -176,9 +193,17 @@ public class EndpointGraphBuilder {
 
                     if (!variables.isEmpty()) {
 
-                        MutableNode providerNode = mutNode(providerLabel);
-                        MutableNode consumerNode = mutNode(consumerLabel);
-                        base.add(consumerNode.addLink(providerNode));
+                        if (cluster.name().toString().equals(consumer.getBelongs())) {
+                            MutableNode consumerNode = mutNode(consumerLabel);
+                            MutableNode toCluster = mutNode(provider.getBelongs());
+                            base.add(consumerNode.addLink(toCluster));
+                        }
+
+                        if (cluster.name().toString().equals(provider.getBelongs())) {
+                            MutableNode providerNode = mutNode(providerLabel);
+                            MutableNode fromCluster = mutNode(consumer.getBelongs());
+                            base.add(fromCluster.addLink(providerNode));
+                        }
                     }
                 }
             }
@@ -198,38 +223,9 @@ public class EndpointGraphBuilder {
                 MutableNode from = mutNode(label);
 
                 String id = String.valueOf(rand.nextInt());
-                MutableNode to = mutNode(" ").setName(id).add(TRANSPARENT.font(), Color.TRANSPARENT, Size.std().margin(0, 0), Image.of(emptyCallImg));
+                MutableNode to = mutNode(" ").setName(id).add(TRANSPARENT.font(), TRANSPARENT, Size.std().margin(0, 0), Image.of(emptyCallImg));
                 base.add(from.addLink(to));
             }
         }
-    }
-
-    private void exportToHTML() throws IOException {
-
-        String exportedGraph = Graphviz.fromGraph(base).render(Format.DOT).toString();
-
-        TemplateEngine templateEngine = new TemplateEngine();
-        StringTemplateResolver resolver = new StringTemplateResolver();
-        resolver.setTemplateMode(TemplateMode.HTML);
-        templateEngine.setTemplateResolver(resolver);
-
-        String htmlTemplate = TextHelper.loadResourceTemplate("/templates/microservice-graph.html");
-
-        Context context = new Context();
-        context.setVariable("dotContent", exportedGraph);
-        context.setVariable("emptyCallImg", emptyCallImg);
-
-        String html = templateEngine.process(htmlTemplate, context);
-
-        Path outputPath = Path.of("microservice-test-outputs/microserviceNET.html");
-        Files.writeString(outputPath, html);
-    }
-
-    private void exportToDOT() throws IOException {
-        Graphviz.fromGraph(base).render(Format.DOT).toFile(new File("microservice-test-outputs/microserviceNET.dot"));
-    }
-
-    private void exportToPNG() throws IOException {
-        Graphviz.fromGraph(base).height(300).render(Format.PNG).toFile(new File("microservice-test-outputs/microserviceNET.png"));
     }
 }

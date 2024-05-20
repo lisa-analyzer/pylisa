@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>MicroserviceNet graph</title>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -14,22 +14,22 @@
     <style>
         html,
         body {
-          background-color: aliceblue;
+            background-color: aliceblue;
         }
 
         .hovered {
-          fill: #ffa500;
-          stroke: #333;
-          stroke-width: 2px;
-          filter: drop-shadow(0 0 5px rgba(255, 153, 0, 0.5));
+            fill: #ffa500;
+            stroke: #333;
+            stroke-width: 2px;
+            filter: drop-shadow(0 0 5px rgba(255, 153, 0, 0.5));
         }
 
         .node ellipse {
-          transition: fill 0.3s ease, stroke 0.3s ease, stroke-width 0.3s ease;
+            transition: fill 0.3s ease, stroke 0.3s ease, stroke-width 0.3s ease;
         }
 
         .navbar {
-          background-color: #d9ede0
+            background-color: #d9ede0
         }
     </style>
 </head>
@@ -39,8 +39,8 @@
 <nav class="navbar">
     <div class="container-fluid ">
         <a class="navbar-brand" href="#">
-            <img src="https://raw.githubusercontent.com/lisa-analyzer/lisa/master/logo.png" alt="Logo" height="50"
-                 class="d-inline-block align-text-top">
+            <img alt="Logo" class="d-inline-block align-text-top" height="50"
+                 src="https://raw.githubusercontent.com/lisa-analyzer/lisa/master/logo.png">
         </a>
 
         <h4>Microservice Analyzer</h4>
@@ -54,80 +54,105 @@
 <script th:inline="javascript">
 
     function addPathVariableInfo(jsonData) {
-      let pathVariables = '';
-      jsonData.forEach(param => {
-        pathVariables +=
-          `<hr>
+        let pathVariables = '';
+        jsonData.forEach(param => {
+            pathVariables +=
+                `<hr>
             <p><strong>Variable:</strong> ${param.name}</p>
               <ul class="list-group">
-                <li class="list-group-item list-group-item-action list-group-item-light"> Type: ${param.typeCustomDefinition ? 'Custom': param.type} </li>
-              </ul>`;
-      });
-      return pathVariables;
+                <li class="list-group-item list-group-item-action list-group-item-light"> Type: ${param.typeCustomDefinition ? 'Custom' : param.type} </li>
+              </ul>
+            `;
+        });
+        return pathVariables;
     }
 
     function addIssues(jsonData) {
-      let issues = '';
-      jsonData.forEach(issue => {
-        issues +=
-          `<hr>
+        let issues = '';
+        jsonData.forEach(issue => {
+            issues +=
+                `<hr>
               <ul class="list-group">
                   <li class="list-group-item list-group-item-danger">${issue}</li>
-              </ul>`;
-      });
-      return issues;
+              </ul>
+          `;
+        });
+        return issues;
+    }
+
+    function goToCluster(clustername) {
+        fetch(`/cluster/${clustername}`)
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    console.error('Error:', response.statusText);
+                }
+            })
+            .catch(error => {
+                console.error('Network error:', error);
+            });
     }
 
     const graphviz = d3.select("#graph").graphviz()
-      .fit(true)
-      .zoom(true)
-      .addImage(/*[[${emptyCallImg}]]*/ 'defaultCallToEmpty', "40px", "40px")
-      .height(1200);
+        .fit(true)
+        .zoom(true)
+        .addImage(/*[[${emptyCallImg}]]*/ 'defaultCallToEmpty', "40px", "40px")
+        .height(1200);
 
     /*<![CDATA[*/
     const dot = /*[[${dotContent}]]*/ 'default DOT placeholder';
+
     /*]]>*/
 
     function renderGraph(dotString) {
-      graphviz.renderDot(dotString, function () {
-        d3.selectAll(".node")
-          .on("mouseover", function () {
-            d3.select(this)
-              .select("ellipse")
-              .classed("hovered", true);
-          })
-          .on("mouseout", function () {
-            d3.select(this)
-              .select("ellipse")
-              .classed("hovered", false);
-          });
-      }).on("end", function () {
-        d3.selectAll(".node a").each(function () {
+        graphviz.renderDot(dotString, function () {
+            d3.selectAll(".node")
+                .on("mouseover", function () {
+                    d3.select(this)
+                        .select("ellipse")
+                        .classed("hovered", true);
+                })
+                .on("mouseout", function () {
+                    d3.select(this)
+                        .select("ellipse")
+                        .classed("hovered", false);
+                })
+                .on("click", function () {
+                    var label = d3.select(this).select("text").text();
+                    console.log(label);
+                    console.log(this);
+                    if (label) {
+                        goToCluster(label);
+                    }
+                });
+        }).on("end", function () {
+            d3.selectAll(".node a").each(function () {
 
-          const node = d3.select(this);
-          var info = d3.select(this).attr("xlink:title");
+                const node = d3.select(this);
+                var info = d3.select(this).attr("xlink:title");
 
-          const jsonData = JSON.parse(info);
-          console.log(jsonData);
+                const jsonData = JSON.parse(info);
+                console.log(jsonData);
 
-          new bootstrap.Popover(this, {
-            container: 'body',
-            html: true,
-            trigger: 'hover',
-            placement: 'top',
-            title: jsonData.fullPath || "Default Title",
-            content: function () {
-              return `<h6>${jsonData.role}</h6>
+                new bootstrap.Popover(this, {
+                    container: 'body',
+                    html: true,
+                    trigger: 'hover',
+                    placement: 'top',
+                    title: jsonData.fullPath || "Default Title",
+                    content: function () {
+                        return `<h6>${jsonData.role}</h6>
                         <strong>Method:</strong> ${jsonData.method}<br>
                         <strong>Endpoint:</strong> ${jsonData.fullPath}<br>
                         <strong>Path variable:</strong> ${jsonData.pathVariableName}<br>
                         <strong>Location:</strong> ${jsonData.codeLocation}<br>
                         ${addPathVariableInfo(jsonData.methodPathVariable)}
                         ${addIssues(jsonData.issues)}`;
-            }
-          });
+                    }
+                });
+            });
         });
-      });
     }
 
     renderGraph(dot);

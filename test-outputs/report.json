@@ -1,0 +1,40 @@
+{
+  "warnings" : [ {
+    "message" : "[GENERIC] Analysed file/s have | GET: 9 | POST: 5 | PUT: 5 | DELETE: 2 endpoints in total."
+  } ],
+  "files" : [ "js/cose-base.js", "js/cytoscape-3.21.1.min.js", "js/cytoscape-expand-collapse.js", "js/cytoscape-fcose.js", "js/cytoscape-graphml-1.0.6-hier.js", "js/jquery-3.0.0.min.js", "js/layout-base.js", "report.json", "untyped_pylisa_py-testcases_microservices_uploded-from-endpoint_microservice_a.$main().html", "untyped_pylisa_py-testcases_microservices_uploded-from-endpoint_microservice_a.$main().json", "untyped_pylisa_py-testcases_microservices_uploded-from-endpoint_microservice_a.getItems()_-1563904038.html", "untyped_pylisa_py-testcases_microservices_uploded-from-endpoint_microservice_a.getItems()_-1563904038.json" ],
+  "info" : {
+    "cfgs" : "3",
+    "duration" : "16ms",
+    "end" : "2024-05-07T12:14:51.557+02:00",
+    "expressions" : "13",
+    "files" : "11",
+    "globals" : "0",
+    "members" : "9",
+    "programs" : "1",
+    "start" : "2024-05-07T12:14:51.541+02:00",
+    "statements" : "10",
+    "units" : "8",
+    "version" : "0.1b9",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "analysisGraphs" : "HTML_WITH_SUBNODES",
+    "descendingPhaseType" : "NONE",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "DuplicateFreeFIFOWorkingSet",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "jsonOutput" : "true",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "optimize" : "false",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "",
+    "serializeInputs" : "false",
+    "serializeResults" : "true",
+    "syntacticChecks" : "FastApiSyntacticChecker",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "test-outputs/"
+  }
+}
