@@ -14,8 +14,7 @@ import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.checks.FastApiSyntacticChecker;
-import it.unive.pylisa.libraries.fastapi.graph.EndpointGraphBuilder;
-import it.unive.pylisa.libraries.fastapi.web.GraphService;
+import it.unive.pylisa.libraries.fastapi.graph.GraphServiceForWeb;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -25,7 +24,7 @@ public class MicroserviceTestGround {
 
     private LiSAConfiguration conf;
     private final FastApiSyntacticChecker syntacticChecker = new FastApiSyntacticChecker();
-    private final GraphService graphBuilder = new GraphService();
+    private final GraphServiceForWeb graphBuilder = new GraphServiceForWeb();
 
     @Before
     public void before() {

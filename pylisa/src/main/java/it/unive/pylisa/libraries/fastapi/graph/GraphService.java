@@ -31,8 +31,9 @@ import static guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT;
 
 import static guru.nidi.graphviz.model.Factory.*;
 
+// TODO: Much duplication with GraphServiceForWeb that are optimized for delivering in browser. Better to combine them under one interface.
 @Service
-public class EndpointGraphBuilder {
+public class GraphService {
 
     private final Random rand = new Random();
     private final ObjectMapper mapper = new ObjectMapper();

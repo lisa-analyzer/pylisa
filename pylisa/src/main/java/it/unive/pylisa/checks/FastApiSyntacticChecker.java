@@ -10,7 +10,7 @@ import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.pylisa.libraries.fastapi.helpers.TextHelper;
 import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
-import it.unive.pylisa.libraries.fastapi.analysis.syntax.EndpointChecker;
+import it.unive.pylisa.libraries.fastapi.analysis.syntax.helpers.EndpointChecker;
 import it.unive.pylisa.libraries.fastapi.analysis.syntax.EndpointService;
 
 import java.util.*;

@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.fastapi.web;
+package it.unive.pylisa.libraries.fastapi.web.helpers;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;

@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.fastapi.web;
+package it.unive.pylisa.libraries.fastapi.graph;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,7 +14,6 @@ import it.unive.pylisa.libraries.fastapi.definitions.Role;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriTemplate;
 
-import java.io.File;
 import java.util.*;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,8 +28,9 @@ import static guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT;
 import static guru.nidi.graphviz.model.Factory.mutGraph;
 import static guru.nidi.graphviz.model.Factory.mutNode;
 
+// TODO: Much duplication with ordinary GraphService. Better to combine them under one interface.
 @Service
-public class GraphService {
+public class GraphServiceForWeb {
 
     private final Random rand = new Random();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -73,13 +73,9 @@ public class GraphService {
         }
 
         this.connectNodesToOutgoing(cluster);
-//      this.pointEmptyConsumers();
-
         base.add(cluster);
 
         return Graphviz.fromGraph(base).render(Format.DOT).toString();
-//        Graphviz.fromGraph(base).height(300).render(Format.PNG).toFile(new File("microservice-test-outputs/microserviceNET.png"));
-//        return "";
     }
 
     private void buildBase(List<Endpoint> endpoints) {
@@ -206,25 +202,6 @@ public class GraphService {
                         }
                     }
                 }
-            }
-        }
-    }
-
-    private void pointEmptyConsumers() {
-
-        List<String> connectedConsumers = base.edges().stream().map(edge -> edge.from().name().toString()).toList();
-
-        for (Endpoint consumer : consumers) {
-
-            String label = consumer.getMethod() + " " + consumer.getFullPath();
-
-            if (!connectedConsumers.contains(label)) {
-
-                MutableNode from = mutNode(label);
-
-                String id = String.valueOf(rand.nextInt());
-                MutableNode to = mutNode(" ").setName(id).add(TRANSPARENT.font(), TRANSPARENT, Size.std().margin(0, 0), Image.of(emptyCallImg));
-                base.add(from.addLink(to));
             }
         }
     }

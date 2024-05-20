@@ -1,6 +1,7 @@
 package it.unive.pylisa.libraries.fastapi.web;
 
 import it.unive.pylisa.checks.FastApiSyntacticChecker;
+import it.unive.pylisa.libraries.fastapi.graph.GraphServiceForWeb;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
@@ -26,16 +27,15 @@ import java.util.Map;
 public class GraphController {
 
     private final AnalysisService analysisService;
-    private final GraphService graphService;
+    private final GraphServiceForWeb graphServiceForWeb;
 
     private FastApiSyntacticChecker syntacticChecker;
 
     private static final String STORAGE_FOLDER = "pylisa/py-testcases/microservices/uploded-from-endpoint/";
-    private final String emptyCallImg = "pylisa/src/main/resources/static/cross-mark.png";
 
-    public GraphController(AnalysisService analysisService, GraphService graphService) {
+    public GraphController(AnalysisService analysisService, GraphServiceForWeb graphServiceForWeb) {
         this.analysisService = analysisService;
-        this.graphService = graphService;
+        this.graphServiceForWeb = graphServiceForWeb;
     }
 
     @GetMapping("/")
@@ -82,7 +82,7 @@ public class GraphController {
         }
 
         if (clustername == null) {
-            List<String> clusterOptions = this.graphService.getClusterOptions(this.syntacticChecker.endpoints);
+            List<String> clusterOptions = this.graphServiceForWeb.getClusterOptions(this.syntacticChecker.endpoints);
 
             if (!clusterOptions.isEmpty()) {
                 clustername = clusterOptions.get(0);
@@ -92,10 +92,10 @@ public class GraphController {
             }
         }
 
-        String dot = graphService.buildDot(clustername, this.syntacticChecker.endpoints);
+        String dot = graphServiceForWeb.buildDot(clustername, this.syntacticChecker.endpoints);
 
         model.addAttribute("dotContent", dot);
-        model.addAttribute("emptyCallImg", emptyCallImg);
+        model.addAttribute("emptyCallImg", "pylisa/src/main/resources/static/cross-mark.png");
         return "microservice-graph";
     }
 
@@ -103,7 +103,7 @@ public class GraphController {
     public void cluster(@PathVariable("name") String name, HttpSession session, HttpServletResponse response) throws IOException {
 
         if (name == null) {
-            List<String> clusterOptions = this.graphService.getClusterOptions(this.syntacticChecker.endpoints);
+            List<String> clusterOptions = this.graphServiceForWeb.getClusterOptions(this.syntacticChecker.endpoints);
 
             if (!clusterOptions.isEmpty()) {
                 name = clusterOptions.get(0);

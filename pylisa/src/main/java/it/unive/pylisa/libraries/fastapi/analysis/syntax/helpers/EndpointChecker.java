@@ -1,7 +1,6 @@
-package it.unive.pylisa.libraries.fastapi.analysis.syntax;
+package it.unive.pylisa.libraries.fastapi.analysis.syntax.helpers;
 
 import it.unive.lisa.checks.syntactic.CheckTool;
-import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.CFG;
@@ -12,6 +11,7 @@ import it.unive.pylisa.annotationvalues.DecoratedAnnotation;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.expression.PyIs;
 import it.unive.pylisa.cfg.expression.PyStringLiteral;
+import it.unive.pylisa.libraries.fastapi.analysis.syntax.EndpointService;
 import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
 import it.unive.pylisa.libraries.fastapi.definitions.Method;
 import it.unive.pylisa.libraries.fastapi.definitions.Param;
