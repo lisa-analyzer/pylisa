@@ -1903,12 +1903,197 @@ A sketch:
 
 ## To browser. Demonstration.
 
-### ------ Internship diary page of 21.05.2024
+### ------ Internship diary page of 21.05.2024 (Final)
 
+## Wrapping up and conclusion
 
+### Preface
 
-#### A Plan Forward.
+*Unfortunately with the PhD proposal little was done to improve aspects of project further. Thus, I only did some cleanup of the code and leaving some elaborations about "what is what"*
+
+#### A Plan for today was...
 
 1. Refactor, refine and wrap up the code. Minor usability improvements for the graph website.
+2. Create a summary table that outlines which checks are covered, which needs more testing & development, where core logic is located, etc.
 
-2. Create a summary table that outlines which checks are covered, which needs more testing & development, where core logic is located, etc. (same with features & graph).
+*1. All that was showcased in the last meeting was pushed to separate branch `microservices/springbooted`*
+
+There are currently two versions of project:
+`/giacomozanatta/pylisa/tree/mircoservices` - pre-springboot version. One for producing static PNG/HTML/DOT files.
+`/giacomozanatta/pylisa/tree/mircoservices/springbooted` - version with springboot version. All unrelated files were removed. Functionality is accessible via localhost:8080.
+
+*2. Summaries*
+
+*Syntactic checks*
+
+| Method | Check                                                                                    | Working Status               | Tested?                 | Refer to class, file or func. name                          |
+|--------|------------------------------------------------------------------------------------------|------------------------------|-------------------------|-------------------------------------------------------------|
+| ALL    | Endpoint path is given                                                                   | OK                           | On undecorated endpoint | FastApiSyntacticChecker + EndpointService + EndpointChecker |
+| GET    | Input argument is of a type numeric or string type and not any other (dict, boolea, etc) | OK                           | On undecorated endpoint | FastApiSyntacticChecker + EndpointService + EndpointChecker |                                                           |
+| GET    | Path variable name is same as the argument of a function                                 | Unreliable                   | On undecorated endpoint | FastApiSyntacticChecker + EndpointService + EndpointChecker |                                                           |
+| POST   | Argument or payload must be some kind of object with a defined model. Not a primitive.   | Unreliable                   | On undecorated endpoint | FastApiSyntacticChecker + EndpointService + EndpointChecker |                                                           |
+| PUT    | Must have a path variable as ID and a custom object as a payload body.                     | Unreliable                   | On undecorated endpoint | FastApiSyntacticChecker + EndpointService + EndpointChecker |                                                           |
+| DELETE | Must have some kind of prior item existence checkup or validation.                       | Does not work (to be honest) | On undecorated endpoint | FastApiSyntacticChecker + EndpointService + EndpointChecker |                                                          |
+
+*Graph capabilities*
+
+At Java side for exporting to PNG/DOT refer to - [graphviz-java](https://github.com/nidi3/graphviz-java)
+For exporting to HTML to - [d3-graphviz](https://github.com/magjac/d3-graphviz)
+
+What is worrying? If you decide to rely on `graphviz-java` notice that its maintenance status is under suspension of abandonment:
+
+![img1](https://github.com/giacomozanatta/pylisa/assets/45534919/1a8b1853-238b-4db2-b9aa-3e23ad173575)
+
+With `d3-graphviz` all looks good!
+
+![img2](https://github.com/giacomozanatta/pylisa/assets/45534919/0ad0fbf0-11d6-4752-8518-0d1d8c19afbf)
+
+If it comes to `interactive data visualizations in web browsers` nothing better than D3.js does not exist. It is the most advanced, customizable, supported in terms of flexibility, web-optimization and performance and community.
+
+Also, for proper, sustainable delivery of complicated views in the browser just Thymeleaf and MVC will not do:
+
+```javascript
+    /*<![CDATA[*/
+    const dot = /*[[${dotContent}]]*/ 'default DOT placeholder';
+    /*]]>*/
+
+    function renderGraph(dotString) {
+        graphviz.renderDot(dotString, function () {
+            d3.selectAll(".node")
+                .on("mouseover", function () {
+                    d3.select(this)
+                        .select("ellipse")
+                        .classed("hovered", true);
+                })
+                .on("mouseout", function () {
+                    d3.select(this)
+                        .select("ellipse")
+                        .classed("hovered", false);
+                })
+                .on("click", function () {
+                    var label = d3.select(this).select("text").text();
+                    console.log(label);
+                    console.log(this);
+                    if (label) {
+                        goToCluster(label);
+                    }
+                });
+        }).on("end", function () {
+            d3.selectAll(".node a").each(function () {
+```
+
+*Graph capabilities*
+
+| Feature                               | Provided by                            | Refer to class, file or func. name                            |
+|---------------------------------------|----------------------------------------|---------------------------------------------------------------|
+| Visuals / base representation         | Graphviz                               | GraphController + AnalysisService + GraphServiceForWeb        |
+| Render in web browser                 | D3.js                                  | resources/templates/microservice-graph.html                   |
+| Page / view construction and delivery | Spring Boot MVC + Thymeleaf            | GraphController                                               |
+| Redirect to new views                 | Spring Boot MVC + Thymeleaf + D3.js    | resources/templates/microservice-graph.html + GraphController |
+| Dropdown + upload                     | JS + Dropzone +  Spring Boot MVC       | resources/templates/index.html                                | 
+
+All becomes much more maintainable with involvement of frameworks like Angular, React, Vue.js.
+
+*3. Starting point with `springbooted` version. 
+
+The `springbooted` version was run using quite a specific IDEA configuration. Placing here its configuration from `.idea/workspace.xml`
+
+```
+  <component name="RunManager">
+    <configuration name="PyLiSA" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+      <module name="pylisa.main" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="it.unive.pylisa.PyLiSA" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9f38398b9061-39b83d9b5494-intellij.indexing.shared.core-IU-241.15989.150" />
+        <option value="bundled-js-predefined-1d06a55b98c1-91d5c284f522-JavaScript-IU-241.15989.150" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="1c11dbb5-3029-4269-85b7-6c177e97982a" name="Changes" comment="" />
+      <created>1716237463109</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1716237463109</updated>
+      <workItem from="1716237464168" duration="25000" />
+      <workItem from="1716273176250" duration="115000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+```
+
+It is best to start experimenting with uploading these files as the analysis/graph build-up is left very fragile.
+
+[microservice-a](https://github.com/giacomozanatta/pylisa/blob/mircoservices/springbooted/pylisa/py-testcases/microservices/level-1-complexity/microservice_a.py)
+[microservice-b](https://github.com/giacomozanatta/pylisa/blob/mircoservices/springbooted/pylisa/py-testcases/microservices/level-1-complexity/microservice_b.py)
+[microservice-c](https://github.com/giacomozanatta/pylisa/blob/mircoservices/springbooted/pylisa/py-testcases/microservices/level-1-complexity/microservice_c.py)
+
+### Side-notes from researching for PhD proposal...
+
+*1. The industry is slowly diverging away from microservices...*
+
+Some loud titles...
+
+<img width="737" alt="image" src="https://github.com/giacomozanatta/pylisa/assets/45534919/93d7174a-ba3c-4291-9bd5-4df4a43d847d">
+
+<img width="662" alt="image" src="https://github.com/giacomozanatta/pylisa/assets/45534919/f06366db-7197-47a4-860b-7f58e9cc2538">
+
+<img width="1037" alt="image" src="https://github.com/giacomozanatta/pylisa/assets/45534919/76d2bb12-2d57-4520-8a43-5ff9f3942ef4">
+
+<img width="594" alt="image" src="https://github.com/giacomozanatta/pylisa/assets/45534919/50494d82-0952-409d-8ce1-6e83279dd734">
+
+<img width="444" alt="image" src="https://github.com/giacomozanatta/pylisa/assets/45534919/3c4dc6b4-f4ee-4b37-a8c8-8ef46d36eda7">
+
+### Currently a new architectural pattern is defining. It goes by many names, but is most often referred to as `modular/layered/distributed monolith`
+
+![image](https://github.com/giacomozanatta/pylisa/assets/45534919/ab253f44-343d-466a-8ab0-45cedad5ea18)
+
+*2. Rethinking the fundamentals...*
+
+Having gone through many papers on reconstruction and its possible reliance on static analysis one should examine the "table legs" (t.i. pillars) about e.g. fundamental unit of the MS capture mesh. 
+
+Questions like: Is this optimal and sufficient how for capturing connection points and later doing the reconstruction:
+
+```java
+public class Endpoint {
+
+    private Method method;
+    private String fullPath;
+    private String pathVariableName;
+    private String belongs;
+    private String codeLocation;
+    private Set<String> issues = new HashSet<>();
+    private List<Param> methodPathVariable = new ArrayList<>();
+    private Role role;
+}
+```
+If additionally consider the involvement of message broker or event-driven based communication - how would look like a universal and probably more abstract capture unit...
+
+Questions like: Not to mention how searching for code of interest and matching is performed. 
+
+Probably the best course of investigation is to build a few minor and interconnect Java projects and test them with the reconstruction tools from the list:
+`Appendix to: Tools reconstructing Microservice Architecture: A Systematic Mapping Study` by `Alexander Bakhtin et al.`
+
+Many of the listed tools have Git repositories and are openly examinable:
+<img width="873" alt="image" src="https://github.com/giacomozanatta/pylisa/assets/45534919/159aaf56-209d-40d9-aa51-7efb5cb3c5dd">
+
+### Most importantly. I would say LiSA requires more practice-orientated material (or better simple exercise textbook with guided tasks with very dosed theoretical aspects given).
+
+![book](https://github.com/giacomozanatta/pylisa/assets/45534919/71a77cfb-d141-4af2-b528-cfb565a826c4)
+
+When such a book appears. Please email me.
+
+## End.
