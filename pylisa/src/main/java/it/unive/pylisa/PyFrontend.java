@@ -1321,7 +1321,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	@Override
 	public Expression visitLambdef(
 			LambdefContext ctx) {
-		List<Expression> args = extractNamesFromVarArgList(ctx.varargslist());
+		List<Expression> args;
+		if (ctx.varargslist() != null)
+			args = extractNamesFromVarArgList(ctx.varargslist());
+		else
+			args = new ArrayList<>();
+
 		Expression body = visitTest(ctx.test());
 		return new LambdaExpression(
 				args,
@@ -1333,7 +1338,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	@Override
 	public Expression visitLambdef_nocond(
 			Lambdef_nocondContext ctx) {
-		List<Expression> args = extractNamesFromVarArgList(ctx.varargslist());
+		List<Expression> args;
+		if (ctx.varargslist() != null)
+			args = extractNamesFromVarArgList(ctx.varargslist());
+		else
+			args = new ArrayList<>();
+
 		Expression body = visitTest_nocond(ctx.test_nocond());
 		return new LambdaExpression(
 				args,
@@ -1881,7 +1891,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			if (ctx.yield_expr() != null)
 				throw new UnsupportedStatementException("yield expressions not supported");
 			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
-			return new TupleCreation(currentCFG, getLocation(ctx), sts.toArray(Expression[]::new));
+			TupleCreation tupleCreation = new TupleCreation(currentCFG, getLocation(ctx), sts.toArray(Expression[]::new));
+			// if the tuple has only one element -> unfold it.
+			if (tupleCreation.getSubExpressions().length == 1) {
+				return tupleCreation.getSubExpressions()[0];
+			}
+			return tupleCreation;
 		} else if (ctx.OPEN_BRACE() != null) {
 			// check if it is a dict or a set
 			if (!isADict(ctx.dictorsetmaker())) {
