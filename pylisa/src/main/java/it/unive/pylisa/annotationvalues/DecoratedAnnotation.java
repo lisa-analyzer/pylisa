@@ -12,17 +12,17 @@ public class DecoratedAnnotation implements AnnotationValue {
     private List<Expression> params;
     private Call call;
 
-    public DecoratedAnnotation(List<Expression> params) {
+    public DecoratedAnnotation(List<Expression> params, Call call) {
         this.params = params;
         this.call = call;
     }
 
-    public List<Expression> getParams() {
-        return params;
-    }
-
     public Call getCall() {
         return this.call;
+    }
+
+    public List<Expression> getParams() {
+        return params;
     }
 
     @Override

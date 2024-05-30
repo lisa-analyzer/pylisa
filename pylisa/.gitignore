@@ -9,6 +9,7 @@ target
 
 # throwaway folder for testing and running analyses
 py-outputs
+test-outputs/*
 
 # gradle configuration for accessing the snapshot of lisa
 gradle.properties
