@@ -1,5 +1,10 @@
 package it.unive.pylisa.cfg.expression;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -10,7 +15,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
+import it.unive.lisa.program.cfg.statement.evaluation.RightToLeftEvaluation;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
@@ -20,17 +25,11 @@ import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import it.unive.pylisa.cfg.statement.evaluation.RelaxedLeftToRightEvaluation;
-import it.unive.pylisa.cfg.statement.evaluation.RelaxedRightToLeftEvaluation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.dataframes.AssignToConstant;
 import it.unive.pylisa.symbolic.operators.dataframes.AssignToSelection;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class PyAssign extends Assignment {
 
@@ -39,7 +38,7 @@ public class PyAssign extends Assignment {
 			CodeLocation location,
 			Expression target,
 			Expression expression) {
-		super(cfg, location, RelaxedRightToLeftEvaluation.INSTANCE, target, expression);
+		super(cfg, location, RightToLeftEvaluation.INSTANCE, target, expression);
 	}
 
 	@Override
@@ -78,17 +77,9 @@ public class PyAssign extends Assignment {
 		}
 
 		Expression lefthand = getLeft();
-		if (!(lefthand instanceof TupleCreation)) {
-			AnalysisState<A> sem = state.smallStepSemantics(left, this);
-			if (sem.getState().equals(sem.getState().bottom())) {
-				return state; // [WARN] THIS IS UNSOUND !!!!
-			}
-			try {
-				return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
-			} catch(Exception e) {
-				return state; // [WARN] THIS IS UNSOUND !!!!
-			}
-		}
+		if (!(lefthand instanceof TupleCreation)) 
+			return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
+		
 		// get the variables being assigned
 		Expression[] vars = ((TupleCreation) lefthand).getSubExpressions();
 		List<ExpressionSet> ids = Arrays.stream(vars)

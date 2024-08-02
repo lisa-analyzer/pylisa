@@ -26,8 +26,6 @@ public class ExperimentalTests {
         Program program2 = translator1.toLiSAProgram(false);
         lisa.run(program1, program2);
         //lisa.run(program2);
-        InterproceduralAnalysis ia = conf.interproceduralAnalysis;
-        var x = 3;
     }
 
 

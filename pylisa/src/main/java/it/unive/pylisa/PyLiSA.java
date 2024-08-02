@@ -1,9 +1,14 @@
 package it.unive.pylisa;
 
-import it.unive.lisa.AnalysisException;
+import java.io.IOException;
+import java.util.Arrays;
+
+import org.apache.commons.io.FilenameUtils;
+
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAReport;
 import it.unive.lisa.analysis.SimpleAbstractState;
+import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.warnings.Warning;
@@ -15,23 +20,64 @@ import it.unive.lisa.program.Program;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
-import java.io.IOException;
-
 import it.unive.ros.application.PythonROSNodeBuilder;
 import it.unive.ros.application.ROSApplication;
 import it.unive.ros.application.RosApplicationBuilder;
 import it.unive.ros.application.exceptions.ROSApplicationBuildException;
 import it.unive.ros.application.exceptions.ROSNodeBuildException;
 import it.unive.ros.models.rclpy.ROSNetwork;
-import org.apache.commons.io.FilenameUtils;
 
 public class PyLiSA {
 
 	public static void main(
 			String[] args)
 			throws Exception {
-		/*if (args.length < 2) {
-			System.err.println("PyLiSA needs two arguments: the file to analyze and the working directory");
+		if (args.length == 0) {
+			System.err.println("PyLiSA needs at least one argument: 'ros' for executing the ROS analysis, "
+					+ "or 'df' for executing the dataframes analysis");
+			System.exit(-1);
+		}
+
+		String[] copy = Arrays.copyOfRange(args, 1, args.length);
+		if (args[0].equals("df"))
+			dataframes(copy);
+		else if (args[0].equals("ros"))
+			ros(copy);
+		else {
+			System.err.println("Unknown mode: " + args[0]);
+			System.exit(-1);
+		}
+	}
+
+	private static void ros(
+			String[] args)
+			throws Exception,
+			ROSApplicationBuildException {
+		RosApplicationBuilder rob = new RosApplicationBuilder();
+		try {
+			for (int i = 0; i < args.length - 1; i++) {
+				rob.withNode(new PythonROSNodeBuilder(args[i]));
+			}
+			// rob.withNode(new
+			// PythonROSNodeBuilder("ros-tests/lasagna/pasticcio02.py"));
+			rob.withWorkDir(args[args.length - 1]);
+		} catch (ROSNodeBuildException e) {
+			e.printStackTrace();
+			throw new Exception(e);
+		}
+
+		ROSApplication ra = rob.build();
+		System.out.println(ra.getRosNetwork().getNetworkEvents().size());
+		ROSNetwork n = ra.getRosNetwork();
+		n.processEvents();
+		ra.dumpResults();
+	}
+
+	private static void dataframes(
+			String[] args)
+			throws IOException {
+		if (args.length < 2) {
+			System.err.println("Dataframes mode needs two arguments: the file to analyze and the working directory");
 			System.exit(-1);
 		}
 
@@ -51,7 +97,7 @@ public class PyLiSA {
 		conf.semanticChecks.add(new DataframeDumper());
 		conf.semanticChecks.add(new DataframeStructureConstructor());
 
-		PyFieldSensitivePointBasedHeap heap = new PyFieldSensitivePointBasedHeap();
+		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		DataframeGraphDomain df = new DataframeGraphDomain();
 		conf.abstractState = new SimpleAbstractState<>(heap, df, type);
@@ -62,25 +108,6 @@ public class PyLiSA {
 			System.out.println("The analysis generated the following warnings:");
 			for (Warning w : report.getWarnings())
 				System.out.println("  " + w);
-		}*/
-		RosApplicationBuilder rob = new RosApplicationBuilder();
-		try {
-			for (int i = 0; i < args.length - 1; i++) {
-				rob.withNode(new PythonROSNodeBuilder(args[i]));
-			}
-			//rob.withNode(new PythonROSNodeBuilder("ros-tests/lasagna/pasticcio02.py"));
-			rob.withWorkDir(args[args.length - 1]);
-		} catch (ROSNodeBuildException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			throw new Exception(e);
 		}
-
-		ROSApplication ra = rob.build();
-		System.out.println(ra.getRosNetwork().getNetworkEvents().size());
-		ROSNetwork n = ra.getRosNetwork();
-		n.processEvents();
-		ra.dumpResults();
 	}
-
-	}
+}

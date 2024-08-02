@@ -1,7 +1,15 @@
 package it.unive.ros.application;
 
+import java.io.FileNotFoundException;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import it.unive.lisa.LiSA;
 import it.unive.lisa.analysis.SimpleAbstractState;
+import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
@@ -11,7 +19,6 @@ import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.util.file.FileManager;
-import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.ros.application.exceptions.ROSApplicationBuildException;
 import it.unive.ros.application.exceptions.ROSNodeBuildException;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
@@ -22,12 +29,6 @@ import it.unive.ros.permissions.jaxb.Grant;
 import it.unive.ros.permissions.jaxb.JAXBPermissionsHelpers;
 import it.unive.ros.permissions.jaxb.PermissionsNode;
 import jakarta.xml.bind.JAXBException;
-import java.io.FileNotFoundException;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class RosApplicationBuilder {
 	private String workDir = "ros-app-output";
@@ -111,8 +112,7 @@ public class RosApplicationBuilder {
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 		conf.optimize = false;
 		conf.semanticChecks.add(rosGraphDumper);
-		PyFieldSensitivePointBasedHeap heap = (PyFieldSensitivePointBasedHeap) new PyFieldSensitivePointBasedHeap()
-				.bottom();
+		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap().bottom();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
 		conf.abstractState = new SimpleAbstractState<>(heap, domain, type);

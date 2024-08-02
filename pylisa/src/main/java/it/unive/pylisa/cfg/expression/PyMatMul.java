@@ -37,7 +37,6 @@ public class PyMatMul extends BinaryExpression {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		return state;
-		//throw new UnsupportedStatementException(this);
+		throw new UnsupportedStatementException(this);
 	}
 }

@@ -14,7 +14,7 @@ import java.util.Scanner;
 
 public class Main {
 
-  static String MAIN_FOLDER = "/Users/giacomozanatta/Projects/git-repos-downloader/";
+  static String MAIN_FOLDER;
 
   public static void testSingleFile(String name) throws Exception {
     String fileName = MAIN_FOLDER + "repos" + name;
@@ -156,41 +156,41 @@ public class Main {
     RosApplicationBuilder rob = new RosApplicationBuilder();
     try {
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_web/awr_web/app.py"));
+      // MAIN_FOLDER + "repos/aware/aware_web/awr_web/app.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_memory/awr_ros_memory/long_term_memory_node.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_memory/awr_ros_memory/long_term_memory_node.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_memory/awr_ros_memory/short_term_memory_node.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_memory/awr_ros_memory/short_term_memory_node.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_launch/awr_ros_launch/memory.launch.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_launch/awr_ros_launch/memory.launch.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_launch/awr_ros_launch/perception.launch.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_launch/awr_ros_launch/perception.launch.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_launch/awr_ros_launch/action.launch.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_launch/awr_ros_launch/action.launch.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_launch/awr_ros_launch/learning.launch.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_launch/awr_ros_launch/learning.launch.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/executive_director/executive_director_node.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/executive_director/executive_director_node.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/conversation/extractor_node.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/conversation/extractor_node.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/conversation/critic_node.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/conversation/critic_node.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/conversation/director_node.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/conversation/director_node.py"));
       rob.withNode(new PythonROSNodeBuilder(
-          "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/conversation/psychologist_node.py"));
+          MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/conversation/psychologist_node.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/conversation/integrator_node.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/conversation/integrator_node.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/conversation/learning_node.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_learning/awr_ros_learning/conversation/learning_node.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_perception/awr_ros_perception/listen_node.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_perception/awr_ros_perception/listen_node.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_action/awr_ros_action/talk_node.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_action/awr_ros_action/talk_node.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_action/awr_ros_action/dialog_node.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_action/awr_ros_action/dialog_node.py"));
       // rob.withNode(new PythonROSNodeBuilder(
-      // "/Users/giacomozanatta/Projects/git-repos-downloader/repos/aware/aware_ws/src/awr_ros_reasoning/awr_ros_reasoning/executive_control_node.py"));
+      // MAIN_FOLDER + "repos/aware/aware_ws/src/awr_ros_reasoning/awr_ros_reasoning/executive_control_node.py"));
 
     } catch (ROSNodeBuildException e) {
       // TODO Auto-generated catch block
@@ -204,6 +204,9 @@ public class Main {
       String[] args)
       throws ROSApplicationBuildException,
       Exception {
+	  MAIN_FOLDER = args[0];
+	  if (!MAIN_FOLDER.endsWith("/"))
+		  MAIN_FOLDER = MAIN_FOLDER + "/";
     // testSingleRosApplication();
     testROSApplication();
     // testPyFrontend();

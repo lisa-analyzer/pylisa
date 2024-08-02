@@ -1,35 +1,49 @@
 package it.unive.pylisa.libraries.fastapi.graph;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import guru.nidi.graphviz.attribute.*;
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.model.*;
-import it.unive.pylisa.libraries.fastapi.analysis.syntax.EndpointService;
-import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
-import it.unive.pylisa.libraries.fastapi.definitions.GroupBy;
-import it.unive.pylisa.libraries.fastapi.definitions.Role;
-import it.unive.pylisa.libraries.fastapi.helpers.TextHelper;
-import lombok.experimental.UtilityClass;
+import static guru.nidi.graphviz.attribute.Color.GREY80;
+import static guru.nidi.graphviz.attribute.Color.TRANSPARENT;
+import static guru.nidi.graphviz.attribute.Color.WHITE;
+import static guru.nidi.graphviz.attribute.GraphAttr.splines;
+import static guru.nidi.graphviz.attribute.GraphAttr.SplineMode.ORTHO;
+import static guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT;
+import static guru.nidi.graphviz.model.Factory.mutGraph;
+import static guru.nidi.graphviz.model.Factory.mutNode;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
 import org.springframework.web.util.UriTemplate;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.StringTemplateResolver;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import static guru.nidi.graphviz.attribute.Color.*;
-import static guru.nidi.graphviz.attribute.GraphAttr.SplineMode.ORTHO;
-import static guru.nidi.graphviz.attribute.GraphAttr.splines;
-import static guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT;
-
-import static guru.nidi.graphviz.model.Factory.*;
+import guru.nidi.graphviz.attribute.Color;
+import guru.nidi.graphviz.attribute.Font;
+import guru.nidi.graphviz.attribute.Image;
+import guru.nidi.graphviz.attribute.Label;
+import guru.nidi.graphviz.attribute.Rank;
+import guru.nidi.graphviz.attribute.Size;
+import guru.nidi.graphviz.attribute.Style;
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.model.MutableGraph;
+import guru.nidi.graphviz.model.MutableNode;
+import it.unive.pylisa.libraries.fastapi.analysis.syntax.EndpointService;
+import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
+import it.unive.pylisa.libraries.fastapi.definitions.GroupBy;
+import it.unive.pylisa.libraries.fastapi.definitions.Role;
+import it.unive.pylisa.libraries.fastapi.helpers.TextHelper;
 
 public class EndpointGraphBuilder {
 
@@ -51,7 +65,7 @@ public class EndpointGraphBuilder {
         return Color.rgb(r, g, b);
     }
 
-    public void build(List<Endpoint> endpoints) throws IOException {
+    public void build(List<Endpoint> endpoints, String basePathNoExt) throws IOException {
 
         this.buildBase(endpoints);
 
@@ -68,9 +82,9 @@ public class EndpointGraphBuilder {
         this.connectNodes();
         this.pointEmptyConsumers();
 
-        this.exportToPNG();
-        this.exportToDOT();
-        this.exportToHTML();
+        this.exportToPNG(basePathNoExt + ".png");
+        this.exportToDOT(basePathNoExt + ".dot");
+        this.exportToHTML(basePathNoExt + ".html");
     }
 
     private void buildBase(List<Endpoint> endpoints) {
@@ -203,8 +217,7 @@ public class EndpointGraphBuilder {
         }
     }
 
-    private void exportToHTML() throws IOException {
-
+    private void exportToHTML(String path) throws IOException {
         String exportedGraph = Graphviz.fromGraph(base).render(Format.DOT).toString();
 
         TemplateEngine templateEngine = new TemplateEngine();
@@ -220,15 +233,15 @@ public class EndpointGraphBuilder {
 
         String html = templateEngine.process(htmlTemplate, context);
 
-        Path outputPath = Path.of("microservice-test-outputs/microserviceNET.html");
+        Path outputPath = Path.of(path);
         Files.writeString(outputPath, html);
     }
 
-    private void exportToDOT() throws IOException {
-        Graphviz.fromGraph(base).render(Format.DOT).toFile(new File("microservice-test-outputs/microserviceNET.dot"));
+    private void exportToDOT(String path) throws IOException {
+        Graphviz.fromGraph(base).render(Format.DOT).toFile(new File(path));
     }
 
-    private void exportToPNG() throws IOException {
-        Graphviz.fromGraph(base).height(300).render(Format.PNG).toFile(new File("microservice-test-outputs/microserviceNET.png"));
+    private void exportToPNG(String path) throws IOException {
+        Graphviz.fromGraph(base).height(300).render(Format.PNG).toFile(new File(path));
     }
 }

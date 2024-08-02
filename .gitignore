@@ -1,4 +1,3 @@
-
 # Created by https://www.toptal.com/developers/gitignore/api/java,gradle,intellij,eclipse
 # Edit at https://www.toptal.com/developers/gitignore?templates=java,gradle,intellij,eclipse
 
@@ -224,6 +223,3 @@ gradle-app.setting
 .classpath
 
 # End of https://www.toptal.com/developers/gitignore/api/java,gradle,intellij,eclipse
-
-pylisa/ros-test-outputs/*
-pylisa/test-outputs/*

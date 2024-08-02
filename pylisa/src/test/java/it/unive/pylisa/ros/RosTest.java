@@ -1,7 +1,10 @@
 package it.unive.pylisa.ros;
 
+import org.junit.Test;
+
 import it.unive.lisa.LiSA;
 import it.unive.lisa.analysis.SimpleAbstractState;
+import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
@@ -10,7 +13,6 @@ import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.program.Program;
-import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.dataflow.rospropagation.RosTopic;
 import it.unive.ros.application.PythonROSNodeBuilder;
@@ -20,7 +22,6 @@ import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.lisa.checks.semantics.ROSComputationGraphDumper;
 import it.unive.ros.models.rclpy.ROSNetwork;
 import it.unive.ros.models.rclpy.RosComputationalGraph;
-import org.junit.Test;
 
 public class RosTest {
 
@@ -48,8 +49,7 @@ public class RosTest {
 		// conf.openCallPolicy
 		// conf.semanticChecks.add(new ROSComputationGraphDumper(new
 		// RosComputationalGraph()));
-		PyFieldSensitivePointBasedHeap heap = (PyFieldSensitivePointBasedHeap) new PyFieldSensitivePointBasedHeap()
-				.bottom();
+		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap().bottom();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		// conf.interproceduralAnalysis = new ContextBasedAnalysis();
 		ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
@@ -83,8 +83,7 @@ public class RosTest {
 		// conf.openCallPolicy
 		RosTopic rt = new RosTopic();
 		conf.optimize = false;
-		PyFieldSensitivePointBasedHeap heap = (PyFieldSensitivePointBasedHeap) new PyFieldSensitivePointBasedHeap()
-				.bottom();
+		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap().bottom();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		ConstantPropagation constantPropagation = new ConstantPropagation();
@@ -112,8 +111,7 @@ public class RosTest {
 		// conf.openCallPolicy
 		RosTopic rt = new RosTopic();
 		conf.optimize = false;
-		PyFieldSensitivePointBasedHeap heap = (PyFieldSensitivePointBasedHeap) new PyFieldSensitivePointBasedHeap()
-				.bottom();
+		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap().bottom();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		ConstantPropagation constantPropagation = new ConstantPropagation();
@@ -150,8 +148,7 @@ public class RosTest {
 		// conf.openCallPolicy
 		RosTopic rt = new RosTopic();
 		conf.optimize = false;
-		PyFieldSensitivePointBasedHeap heap = (PyFieldSensitivePointBasedHeap) new PyFieldSensitivePointBasedHeap()
-				.bottom();
+		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap().bottom();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		ConstantPropagation constantPropagation = new ConstantPropagation();
@@ -178,8 +175,7 @@ public class RosTest {
 		conf.callGraph = new RTACallGraph();
 		// conf.openCallPolicy
 		conf.optimize = false;
-		PyFieldSensitivePointBasedHeap heap = (PyFieldSensitivePointBasedHeap) new PyFieldSensitivePointBasedHeap()
-				.bottom();
+		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap().bottom();
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		ConstantPropagation constantPropagation = new ConstantPropagation();

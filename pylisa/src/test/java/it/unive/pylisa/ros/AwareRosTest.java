@@ -6,20 +6,8 @@ import org.junit.Test;
 
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
-import it.unive.lisa.analysis.SimpleAbstractState;
-import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
-import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.types.InferredTypes;
-import it.unive.lisa.conf.LiSAConfiguration;
-import it.unive.lisa.interprocedural.ReturnTopPolicy;
-import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
-import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.program.Program;
-import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.PyFrontend;
-import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
-import it.unive.ros.lisa.checks.semantics.ROSComputationGraphDumper;
-import it.unive.ros.models.rclpy.RosComputationalGraph;
 
 public class AwareRosTest {
 

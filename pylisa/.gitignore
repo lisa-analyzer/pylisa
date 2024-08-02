@@ -10,6 +10,8 @@ target
 # throwaway folder for testing and running analyses
 py-outputs
 test-outputs/*
+ros-test-outputs/*
+microservice-test-outputs/*
 
 # gradle configuration for accessing the snapshot of lisa
 gradle.properties

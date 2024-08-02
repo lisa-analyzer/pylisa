@@ -19,7 +19,7 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.*;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class PyPythonLikeMatchingStrategy implements ParameterMatchingStrategy {
+public class PyMatchingStrategy implements ParameterMatchingStrategy {
 	private final FixedOrderMatchingStrategy delegate;
 
 	/**
@@ -28,7 +28,7 @@ public class PyPythonLikeMatchingStrategy implements ParameterMatchingStrategy {
 	 * @param delegate the strategy to delegate the match after the actual
 	 *                     parameters have been shuffled
 	 */
-	public PyPythonLikeMatchingStrategy(
+	public PyMatchingStrategy(
 			FixedOrderMatchingStrategy delegate) {
 		this.delegate = delegate;
 	}
@@ -53,7 +53,7 @@ public class PyPythonLikeMatchingStrategy implements ParameterMatchingStrategy {
 			}
 		}
 
-		Boolean logic = PyPythonLikeMatchingStrategy.pythonLogic(
+		Boolean logic = PyMatchingStrategy.pythonLogic(
 				formals,
 				actuals,
 				actuals,
@@ -70,6 +70,7 @@ public class PyPythonLikeMatchingStrategy implements ParameterMatchingStrategy {
 		return delegate.matches(call, formals, slots, slotTypes);
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <T, F> F pythonLogic(
 			Parameter[] formals,
 			Expression[] actuals,
@@ -82,54 +83,51 @@ public class PyPythonLikeMatchingStrategy implements ParameterMatchingStrategy {
 			CFG callCFG,
 			F failure) {
 
-		Set<String> namedParameterExpressions = new HashSet<>();
-		int namedParameterOffset = getNamedParameterExpressionIndex(actuals);
-		if (namedParameterOffset >= 0) {
-			for (int i = namedParameterOffset; i < actuals.length; i++) {
-				namedParameterExpressions.add(((NamedParameterExpression) actuals[i]).getParameterName());
-			}
-		} else {
-			namedParameterOffset = actuals.length;
-		}
+		Set<String> namedPars = new HashSet<>();
+		int namedParOffset = getNamedParIndex(actuals);
+		if (namedParOffset >= 0)
+			for (int i = namedParOffset; i < actuals.length; i++)
+				namedPars.add(((NamedParameterExpression) actuals[i]).getParameterName());
+		else
+			namedParOffset = actuals.length;
 
-		int actualPos = 0;
-		int formalsPos = 0;
-		boolean vargsPos = false;
-		boolean vargsKw = false;
+		int aPos = 0;
+		int fPos = 0;
 
 		// first phase: positional arguments
-		for (; actualPos < namedParameterOffset && formalsPos < formals.length; actualPos++, formalsPos++) {
-			if (formals[formalsPos] instanceof VarKeywordParameter) {
+		for (; aPos < namedParOffset && fPos < formals.length; aPos++, fPos++) {
+			if (formals[fPos] instanceof VarKeywordParameter) 
 				// problem: varKeywordParameter in positional parameter
 				return failure;
-			} else if (formals[formalsPos] instanceof VarPositionalParameter) {
+			else if (formals[fPos] instanceof VarPositionalParameter) 
 				// all the next positional parameter must be inserted inside a
-				// list.
+				// list
 				break;
-			} else {
-				slots[formalsPos] = given[actualPos];
-				slotTypes[formalsPos] = givenTypes[actualPos];
+			else {
+				slots[fPos] = given[aPos];
+				slotTypes[fPos] = givenTypes[aPos];
 			}
 		}
+
 		// second phase: check vargsPos
-		if (formalsPos < formals.length && formals[formalsPos] instanceof VarPositionalParameter) {
+		if (fPos < formals.length && formals[fPos] instanceof VarPositionalParameter) {
 			List<Expression> vargsList = new ArrayList<>();
-			for (; actualPos < namedParameterOffset; actualPos++) {
+			for (; aPos < namedParOffset; aPos++) {
 				// stop if actuals[pos] == NamedParameterExpression
-				if (actuals[actualPos] instanceof NamedParameterExpression)
+				if (actuals[aPos] instanceof NamedParameterExpression)
 					break;
-				vargsList.add(actuals[actualPos]);
-			}
-			ListCreation listCreation = new ListCreation(callCFG, SyntheticLocation.INSTANCE,
-					vargsList.toArray(Expression[]::new));
-			if (formalsPos >= slotTypes.length) {
-				// no more spaces!
-				return failure;
+				vargsList.add(actuals[aPos]);
 			}
 
-			slots[formalsPos] = (T) listCreation;
-			slotTypes[formalsPos] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
-			formalsPos++;
+			ListCreation listCreation = new ListCreation(callCFG, SyntheticLocation.INSTANCE,
+					vargsList.toArray(Expression[]::new));
+			if (fPos >= slotTypes.length)
+				// no more space!
+				return failure;
+
+			slots[fPos] = (T) listCreation;
+			slotTypes[fPos] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
+			fPos++;
 		}
 
 		// third phase: kwargs
@@ -139,23 +137,22 @@ public class PyPythonLikeMatchingStrategy implements ParameterMatchingStrategy {
 			// parameter list, then add it to the varkeyword.
 			// 1. prepare dict.
 			List<Pair<Expression, Expression>> pairExprs = new ArrayList<>();
-			for (int i = actualPos; i < actuals.length; i++) {
+			for (int i = aPos; i < actuals.length; i++) {
 				boolean found = false;
-				String name = ((NamedParameterExpression) actuals[i]).getParameterName(); // ACTUAL
-																							// VAR.
-																							// NAME
-				for (int j = formalsPos; j < formals.length; j++) {
+				// ACTUAL VAR. NAME
+				String name = ((NamedParameterExpression) actuals[i]).getParameterName();
+				for (int j = fPos; j < formals.length; j++)
 					if (formals[j].getName().equals(name)) {
 						found = true;
 						break;
 					}
-				}
+
 				if (!found) {
 					Expression right = ((NamedParameterExpression) actuals[i]).getSubExpression();
 					Expression left = new StringLiteral(callCFG, SyntheticLocation.INSTANCE,
 							((NamedParameterExpression) actuals[i]).getParameterName());
 					pairExprs.add(Pair.of(left, right));
-					namedParameterExpressions.remove(((NamedParameterExpression) actuals[i]).getParameterName());
+					namedPars.remove(((NamedParameterExpression) actuals[i]).getParameterName());
 				}
 			}
 
@@ -166,19 +163,18 @@ public class PyPythonLikeMatchingStrategy implements ParameterMatchingStrategy {
 		}
 
 		// fourth phase: keyword arguments
-		for (; actualPos < actuals.length; actualPos++) {
-			if (!(actuals[actualPos] instanceof NamedParameterExpression)) {
+		for (; aPos < actuals.length; aPos++) {
+			if (!(actuals[aPos] instanceof NamedParameterExpression)) 
 				return failure;
-			}
-			String name = ((NamedParameterExpression) actuals[actualPos]).getParameterName();
-			for (int i = formalsPos; i < formals.length; i++)
+			String name = ((NamedParameterExpression) actuals[aPos]).getParameterName();
+			for (int i = fPos; i < formals.length; i++)
 				if (formals[i].getName().equals(name)) {
 					if (slots[i] != null)
 						// already filled -> TypeError
 						return failure;
 					else {
-						slots[i] = given[actualPos];
-						slotTypes[i] = givenTypes[actualPos];
+						slots[i] = given[aPos];
+						slotTypes[i] = givenTypes[aPos];
 					}
 					break;
 				}
@@ -199,13 +195,11 @@ public class PyPythonLikeMatchingStrategy implements ParameterMatchingStrategy {
 		return null;
 	}
 
-	static int getNamedParameterExpressionIndex(
+	private static int getNamedParIndex(
 			Expression[] expressions) {
-		for (int i = 0; i < expressions.length; i++) {
-			if (expressions[i] instanceof NamedParameterExpression) {
+		for (int i = 0; i < expressions.length; i++)
+			if (expressions[i] instanceof NamedParameterExpression)
 				return i;
-			}
-		}
 		return -1;
 	}
 }

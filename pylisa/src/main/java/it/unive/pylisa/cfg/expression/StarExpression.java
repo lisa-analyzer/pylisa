@@ -35,8 +35,7 @@ public class StarExpression extends UnaryExpression {
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		return state;
-		//throw new UnsupportedStatementException(this);
+		throw new UnsupportedStatementException(this);
 	}
 
 }

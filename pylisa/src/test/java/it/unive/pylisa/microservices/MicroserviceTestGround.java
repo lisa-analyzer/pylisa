@@ -1,7 +1,13 @@
 package it.unive.pylisa.microservices;
 
+import java.io.IOException;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import  it.unive.lisa.LiSA;
 import it.unive.lisa.analysis.SimpleAbstractState;
+import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
@@ -10,15 +16,10 @@ import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.program.Program;
-import it.unive.pylisa.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.PyFrontend;
-import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.checks.FastApiSyntacticChecker;
 import it.unive.pylisa.libraries.fastapi.graph.EndpointGraphBuilder;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.IOException;
+import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 
 public class MicroserviceTestGround {
 
@@ -40,7 +41,7 @@ public class MicroserviceTestGround {
         conf.optimize = false;
         conf.syntacticChecks.add(syntacticChecker);
 
-        PyFieldSensitivePointBasedHeap heap = (PyFieldSensitivePointBasedHeap) new PyFieldSensitivePointBasedHeap().bottom();
+        FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap().bottom();
         TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
         ValueEnvironment<ConstantPropagation> domain = new ValueEnvironment<>(new ConstantPropagation());
         conf.abstractState = new SimpleAbstractState<>(heap, domain, type);
@@ -67,7 +68,7 @@ public class MicroserviceTestGround {
         LiSA lisa2 = new LiSA(this.conf);
         lisa2.run(program2);
 
-        graphBuilder.build(syntacticChecker.endpoints);
+        graphBuilder.build(syntacticChecker.endpoints, "microservice-test-outputs/microserviceNET");
     }
 
     @Test
@@ -97,7 +98,7 @@ public class MicroserviceTestGround {
         Program program3 = frontend3.toLiSAProgram();
         lisa3.run(program3);
 
-        graphBuilder.build(syntacticChecker.endpoints);
+        graphBuilder.build(syntacticChecker.endpoints, "microservice-test-outputs/microserviceNET");
     }
 
     @Test

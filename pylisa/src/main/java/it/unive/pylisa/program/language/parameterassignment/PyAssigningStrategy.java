@@ -30,14 +30,14 @@ import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy {
+public class PyAssigningStrategy implements ParameterAssigningStrategy {
 
 	/**
 	 * The singleton instance of this class.
 	 */
-	public static final PyPythonLikeAssigningStrategy INSTANCE = new PyPythonLikeAssigningStrategy();
+	public static final PyAssigningStrategy INSTANCE = new PyAssigningStrategy();
 
-	private PyPythonLikeAssigningStrategy() {
+	private PyAssigningStrategy() {
 	}
 
 	@Override
@@ -99,6 +99,7 @@ public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy
 		return Pair.of(prepared, slots);
 	}
 
+	@SuppressWarnings("unchecked")
 	private <A extends AbstractState<A>> AnalysisState<A> pythonLogic(
 			Parameter[] formals,
 			Expression[] actuals,
@@ -112,85 +113,80 @@ public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy
 			CFG callCFG,
 			AnalysisState<A> failure)
 			throws SemanticException {
-		Set<String> namedParameterExpressions = new HashSet<>();
-		int namedParameterOffset = getNamedParameterExpressionIndex(actuals);
-		if (namedParameterOffset >= 0) {
-			for (int i = namedParameterOffset; i < actuals.length; i++) {
-				namedParameterExpressions.add(((NamedParameterExpression) actuals[i]).getParameterName());
-			}
-		} else {
-			namedParameterOffset = actuals.length;
-		}
+		Set<String> namedPars = new HashSet<>();
+		int namedParOffset = getNamedParIndex(actuals);
+		if (namedParOffset >= 0)
+			for (int i = namedParOffset; i < actuals.length; i++)
+				namedPars.add(((NamedParameterExpression) actuals[i]).getParameterName());
+		else
+			namedParOffset = actuals.length;
 
-		int actualPos = 0;
-		int formalsPos = 0;
-		boolean vargsPos = false;
-		boolean vargsKw = false;
+		int aPos = 0;
+		int fPos = 0;
 
 		// first phase: positional arguments
-		for (; actualPos < namedParameterOffset && formalsPos < formals.length; actualPos++, formalsPos++) {
-			if (formals[formalsPos] instanceof VarKeywordParameter) {
+		for (; aPos < namedParOffset && fPos < formals.length; aPos++, fPos++) {
+			if (formals[fPos] instanceof VarKeywordParameter)
 				// problem: varKeywordParameter in positional parameter
 				return failure;
-			} else if (formals[formalsPos] instanceof VarPositionalParameter) {
+			else if (formals[fPos] instanceof VarPositionalParameter)
 				// all the next positional parameter must be inserted inside a
-				// list.
+				// list
 				break;
-			} else {
-				slots[formalsPos] = given[actualPos];
-				slotTypes[formalsPos] = givenTypes[actualPos];
+			else {
+				slots[fPos] = given[aPos];
+				slotTypes[fPos] = givenTypes[aPos];
 			}
 		}
+		
 		// second phase: check vargsPos
-		if (formalsPos < formals.length && formals[formalsPos] instanceof VarPositionalParameter) {
+		if (fPos < formals.length && formals[fPos] instanceof VarPositionalParameter) {
 			List<Expression> vargsList = new ArrayList<>();
-			for (; actualPos < namedParameterOffset; actualPos++) {
+			for (; aPos < namedParOffset; aPos++) {
 				// stop if actuals[pos] == NamedParameterExpression
-				if (actuals[actualPos] instanceof NamedParameterExpression)
+				if (actuals[aPos] instanceof NamedParameterExpression)
 					break;
-				vargsList.add(actuals[actualPos]);
+				vargsList.add(actuals[aPos]);
 			}
 
-			if (formalsPos >= slotTypes.length) {
-				// no more spaces!
+			if (fPos >= slotTypes.length) {
+				// no more space!
 				return failure;
 			}
 
-			int offset = actualPos - vargsList.size();
+			int offset = aPos - vargsList.size();
 			// create the expressions set
-			ExpressionSet[] symbolicExprs = new ExpressionSet[actualPos - offset];
-			for (int i = 0; i < actualPos - offset; i++) {
+			ExpressionSet[] symbolicExprs = new ExpressionSet[aPos - offset];
+			for (int i = 0; i < aPos - offset; i++) {
 				symbolicExprs[i] = given[offset + i];
 			}
 			ListCreation listCreation = new ListCreation(callCFG, SyntheticLocation.INSTANCE,
 					vargsList.toArray(Expression[]::new));
 			AnalysisState<A> listSemantics = listCreation.forwardSemanticsAux(interprocedural,
 					failure.bottom(), symbolicExprs, null);
-			slots[formalsPos] = listSemantics.getComputedExpressions();
-			slotTypes[formalsPos] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
-			formalsPos++;
+			slots[fPos] = listSemantics.getComputedExpressions();
+			slotTypes[fPos] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
+			fPos++;
 		}
 
 		// third phase: kwargs
 		// kwargs must be the last parameter.
 		if (formals.length > 0 && formals[formals.length - 1] instanceof VarKeywordParameter) {
 			// for every named parameter, if it is NOT in the formal named
-			// parameter list,
-			// then add it to the varkeyword.
+			// parameter list, then add it to the varkeyword.
 			// 1. prepare dict.
 			List<Pair<Expression, Expression>> pairExprs = new ArrayList<>();
 			List<ExpressionSet> symbExprs = new ArrayList<>();
-			for (int i = actualPos; i < actuals.length; i++) {
+			for (int i = aPos; i < actuals.length; i++) {
 				boolean found = false;
-				String name = ((NamedParameterExpression) actuals[i]).getParameterName(); // ACTUAL
-																							// VAR.
-																							// NAME
-				for (int j = formalsPos; j < formals.length; j++) {
+				// ACTUAL VAR. NAME
+				String name = ((NamedParameterExpression) actuals[i]).getParameterName(); 
+				for (int j = fPos; j < formals.length; j++) 
 					if (formals[j].getName().equals(name)) {
 						found = true;
 						break;
 					}
-				}
+
 				if (!found) {
 					ExpressionSet left = new ExpressionSet(new Constant(StringType.INSTANCE,
 							((NamedParameterExpression) actuals[i]).getParameterName(), SyntheticLocation.INSTANCE));
@@ -201,7 +197,7 @@ public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy
 					Expression _left = new StringLiteral(callCFG, SyntheticLocation.INSTANCE,
 							((NamedParameterExpression) actuals[i]).getParameterName());
 					pairExprs.add(Pair.of(_left, _right));
-					namedParameterExpressions.remove(((NamedParameterExpression) actuals[i]).getParameterName());
+					namedPars.remove(((NamedParameterExpression) actuals[i]).getParameterName());
 				}
 			}
 
@@ -214,16 +210,16 @@ public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy
 		}
 
 		// fourth phase: keyword arguments
-		for (; actualPos < actuals.length; actualPos++) {
-			String name = ((NamedParameterExpression) actuals[actualPos]).getParameterName();
-			for (int i = formalsPos; i < formals.length; i++)
+		for (; aPos < actuals.length; aPos++) {
+			String name = ((NamedParameterExpression) actuals[aPos]).getParameterName();
+			for (int i = fPos; i < formals.length; i++)
 				if (formals[i].getName().equals(name)) {
 					if (slots[i] != null)
 						// already filled -> TypeError
 						return failure;
 					else {
-						slots[i] = given[actualPos];
-						slotTypes[i] = givenTypes[actualPos];
+						slots[i] = given[aPos];
+						slotTypes[i] = givenTypes[aPos];
 					}
 					break;
 				}
@@ -244,7 +240,7 @@ public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy
 		return null;
 	}
 
-	static int getNamedParameterExpressionIndex(
+	static int getNamedParIndex(
 			Expression[] expressions) {
 		for (int i = 0; i < expressions.length; i++) {
 			if (expressions[i] instanceof NamedParameterExpression) {
@@ -254,12 +250,3 @@ public class PyPythonLikeAssigningStrategy implements ParameterAssigningStrategy
 		return -1;
 	}
 }
-/*
- * ListCreation listCreation = new ListCreation(actuals[offset].getCFG(),
- * actuals[offset].getLocation(), vargsList.toArray(Expression[]::new));
- * AnalysisState<A,H,V,T> listSemantics =
- * listCreation.forwardSemanticsAux(interprocedural, failure.bottom(),
- * symbolicExprs, null); slots[formalsPos] =
- * listSemantics.getComputedExpressions(); slotTypes[formalsPos] =
- * Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST)); formalsPos++;
- */
