@@ -24,6 +24,7 @@ import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.RemainderOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.NumericType;
@@ -31,12 +32,21 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.symbolic.DictConstant;
+import it.unive.pylisa.symbolic.ListConstant;
+import it.unive.pylisa.symbolic.PyNoneConstant;
+import it.unive.pylisa.symbolic.operators.DictPut;
+import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.Power;
 import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
+import it.unive.pylisa.symbolic.operators.value.StringFormat;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class ConstantPropagation
 		implements
@@ -174,7 +184,8 @@ public class ConstantPropagation
 				|| t.isStringType()
 				|| t.toString().equals(LibrarySpecificationProvider.LIST)
 				|| t.toString().equals(LibrarySpecificationProvider.DICT)
-				|| t.toString().equals(LibrarySpecificationProvider.SLICE);
+				|| t.toString().equals(LibrarySpecificationProvider.SLICE)
+				|| t.isNullType();
 	}
 
 	@Override
@@ -210,7 +221,7 @@ public class ConstantPropagation
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
-		return TOP;
+		return new ConstantPropagation(new PyNoneConstant(pp.getLocation()));
 	}
 
 	@Override
@@ -289,9 +300,68 @@ public class ConstantPropagation
 			return new ConstantPropagation(c);
 		} else if (operator instanceof StringAdd)
 			return stringConcat(left, right, pp);
+		else if (operator instanceof StringFormat) {
+			return stringFormat(left, right, pp);
+		}
 		if (operator instanceof StringMult)
 			return stringRepeat(left, right, pp);
+		if (operator instanceof ListAppend)
+			return listAppend(left, right, pp);
 		return top();
+	}
+
+	@Override
+	public ConstantPropagation evalTernaryExpression(
+			TernaryOperator operator,
+			ConstantPropagation left,
+			ConstantPropagation middle,
+			ConstantPropagation right,
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
+		if (operator instanceof DictPut)
+			return dictPut(left, middle, right, pp);
+		return top();
+	}
+
+	private ConstantPropagation dictPut(
+			ConstantPropagation left,
+			ConstantPropagation middle,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+		if (left.isTop() || middle.isTop() || right.isTop()) {
+			return top();
+		}
+		DictConstant newdict = new DictConstant(pp.getLocation(), left.as(Map.class), Pair.of(middle, right));
+		return new ConstantPropagation(newdict);
+	}
+
+	private ConstantPropagation listAppend(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+		if (left.isTop() || right.isTop() || !left.is(List.class)) {
+			return TOP;
+		}
+
+		ListConstant listconst = new ListConstant(pp.getLocation(), left.as(List.class), right);
+		return new ConstantPropagation(listconst);
+	}
+
+	private ConstantPropagation stringFormat(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+
+		if (left.isTop() || right.isTop()) {
+			return TOP;
+		}
+		if (left.constant.getStaticType().isStringType() && right.constant.getStaticType().isStringType()) {
+			return new ConstantPropagation(
+					new Constant(StringType.INSTANCE, left.as(String.class) + right.as(String.class),
+							pp.getLocation()));
+		}
+		return TOP;
 	}
 
 	private Constant div(

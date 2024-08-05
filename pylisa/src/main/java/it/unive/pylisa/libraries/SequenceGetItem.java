@@ -34,12 +34,6 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		super(cfg, location, constructName, sequence, index);
 	}
 
-	@Override
-	protected int compareSameClassAndParams(
-			Statement o) {
-		return 0;
-	}
-
 	public static SequenceGetItem build(
 			CFG cfg,
 			CodeLocation location,
@@ -61,18 +55,26 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		Type dfref = ((PyClassType) dftype).getReference();
-		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-
 		CodeLocation loc = getLocation();
-		Set<Type> rts = state.getState().getRuntimeTypesOf(left, this, state.getState());
-		if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(dfref::equals)) {
-			HeapDereference deref = new HeapDereference(dftype, left, loc);
-			UnaryExpression iterate = new UnaryExpression(seriestype, deref, new Iterate(0), loc);
-			return state.smallStepSemantics(iterate, st);
+		try {
+			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+			Type dfref = ((PyClassType) dftype).getReference();
+			PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
+			Set<Type> rts = state.getState().getRuntimeTypesOf(left, this, state.getState());
+			if (rts.stream().anyMatch(dfref::equals)) {
+				HeapDereference deref = new HeapDereference(dftype, left, loc);
+				UnaryExpression iterate = new UnaryExpression(seriestype, deref, new Iterate(0), loc);
+				return state.smallStepSemantics(iterate, st);
+			}
+		} catch(Exception e) {
+			return state.smallStepSemantics(new PushAny(Untyped.INSTANCE, loc), st);
 		}
-
 		return state.smallStepSemantics(new PushAny(Untyped.INSTANCE, loc), st);
+	}
+
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
 	}
 }

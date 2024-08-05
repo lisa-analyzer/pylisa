@@ -31,14 +31,10 @@ public class PyClassType implements InMemoryType, UnitType {
 
 	public static PyClassType lookup(
 			String name) {
-		PyClassType ct = types.get(name);
-		if (ct == null)
-			throw new IllegalStateException("The requested type '" + name + "' has not been registered before");
-
-		return ct;
+		return lookup(name, null);
 	}
 
-	public static PyClassType register(
+	public static PyClassType lookup(
 			String name,
 			CompilationUnit unit) {
 		return types.computeIfAbsent(name, x -> new PyClassType(name, unit));

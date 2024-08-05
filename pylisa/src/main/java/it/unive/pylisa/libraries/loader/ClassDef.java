@@ -25,7 +25,6 @@ public class ClassDef {
 	public ClassDef(
 			boolean root,
 			boolean sealed,
-			String typeName,
 			String name,
 			String base) {
 		this.root = root;

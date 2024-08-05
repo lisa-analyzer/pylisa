@@ -33,7 +33,6 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		// TODO pandas-to-move
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 			Type dfreftype = dftype.getReference();
@@ -54,6 +53,14 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 				}
 		}
 
-		return null;
+		// FIXME
+		AnalysisState<A> sup = super.fwdUnarySemantics(interprocedural, state, expr, expressions);
+		if (!sup.isBottom())
+			return sup;
+
+		Variable var = new Variable(Untyped.INSTANCE, getTarget(), new Annotations(), getLocation());
+		HeapDereference container = new HeapDereference(Untyped.INSTANCE, expr, getLocation());
+		AccessChild access = new AccessChild(Untyped.INSTANCE, container, var, getLocation());
+		return state.smallStepSemantics(access, this);
 	}
 }

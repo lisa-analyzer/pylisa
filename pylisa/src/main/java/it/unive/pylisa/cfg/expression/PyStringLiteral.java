@@ -21,4 +21,9 @@ public class PyStringLiteral extends StringLiteral {
 	public String toString() {
 		return delimiter + getValue() + delimiter;
 	}
+
+	public String toString(
+			boolean delimiter) {
+		return delimiter ? toString() : getValue();
+	}
 }
