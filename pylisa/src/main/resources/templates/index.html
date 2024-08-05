@@ -1,0 +1,111 @@
+<html>
+
+<head>
+  <title>LiSA | ROS Application Report</title>
+  <link th:href="@{https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css}" rel="stylesheet" />
+  <script th:src="@{https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js}"></script>
+  <script th:src="@{https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js}"></script>
+  <script th:src="@{https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js}"></script>
+  <script th:src="@{https://dagrejs.github.io/project/dagre-d3/latest/dagre-d3.js}"></script>
+  <link rel="stylesheet" th:href="@{https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css}">
+  <script th:src="@{https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js}"></script>
+  <script th:src="@{https://dagrejs.github.io/project/dagre/latest/dagre.min.js}"></script>
+  <script th:src="@{https://unpkg.com/cytoscape/dist/cytoscape.min.js}"></script>
+  <script th:src="@{https://cdn.jsdelivr.net/npm/mermaid@10.7.0/dist/mermaid.min.js}"></script>
+  <link rel="icon" href="../../logo.png">
+  <script>hljs.highlightAll();</script>
+  <style>
+    .bg-lisa {
+      background-color: #d9ede0;
+    }
+    body {
+      padding-top: 70px;
+    }
+    .sub-menu {
+      background-color: #d9ede0;
+    }
+    .nav-pills .nav-link-lisa.active {
+      background-color: #199a59;
+    }
+    .nav-link-lisa {
+      border-width: 0;
+      background-color: transparent;
+    }
+    .navbar {
+      height: 70px;
+    }
+
+    .dot-graph {
+      max-width: 100%;
+    }
+
+    .h-scroll {
+      height: 100%; /* %-height of the viewport */
+      position: fixed;
+      overflow-y: scroll;
+    }
+    .logo {
+      max-width: 60px;
+    }
+    #cy {
+      width: 100%;
+      height: 600px;
+    }
+    .warnings {
+      background-color: lightyellow;
+    }
+
+.table td, .table th {
+    border-left: 1px solid#dee2e6;
+}
+
+  </style>
+</head>
+<body style="font-family: 'Raleway', sans-serif;">
+<nav class="navbar bg-lisa fixed-top">
+  <div class="container-fluid justify-content-start">
+      <img th:src="@{https://raw.githubusercontent.com/lisa-analyzer/lisa/master/logo.png}" alt="" class="d-inline-block align-text-top mr-4 logo" />
+    <div class="ml-4"><h4><a href="/">Home</a></h4></div>
+    <ul class="nav nav-pills ml-4" id="pills-tab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link nav-link-lisa active" id="pills-rosanalysis-tab" data-bs-toggle="pill" data-target="pills-rosanalysis" data-bs-target="#pills-rosanalysis" type="button" role="tab" aria-controls="pills-rosanalysis" aria-selected="true">ROS2 Report</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link nav-link-lisa" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-lisaanalysis" type="button" role="tab" aria-controls="pills-lisaanalysis" aria-selected="false">LiSA Analysis</button>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<div class="tab-content" id="pills-tabContent">
+  <div th:replace="fragments/rosanalysis :: 'ros-analysis'"></div>
+  <div th:replace="fragments/lisaanalysis :: 'lisa-analysis'"></div>
+
+</div>
+</div>
+</body>
+<script>
+  var tabs = ["#pills-rosanalysis", "#pills-lisaanalysis"];
+  var triggerTabList = [].slice.call(document.querySelectorAll('#pills-tab button'))
+  console.log(triggerTabList);
+  triggerTabList.forEach(function (triggerEl) {
+    console.log(triggerEl);
+    var tabTrigger = new bootstrap.Tab(triggerEl);
+
+    triggerEl.addEventListener('click', function (event) {
+      console.log(this);
+      event.preventDefault();
+      var targetId = this.dataset["bsTarget"];
+      tabs.forEach(function (tabId) {
+        if (tabId === targetId) {
+          $(tabId).addClass("active");
+        } else {
+          $(tabId).removeClass("active");
+        }
+      });
+
+      tabTrigger.show();
+    })
+  })
+</script>
+</html>

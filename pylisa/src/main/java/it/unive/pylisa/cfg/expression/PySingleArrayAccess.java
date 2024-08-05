@@ -46,7 +46,7 @@ public class PySingleArrayAccess extends BinaryExpression {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		AnalysisState<A> result = state;
+		AnalysisState<A> result = state.bottom();
 		Type dereferencedType = null;
 		Type childType = getStaticType();
 		Set<Type> rts = state.getState().getRuntimeTypesOf(left, this, state.getState());
@@ -86,7 +86,7 @@ public class PySingleArrayAccess extends BinaryExpression {
 			return result.smallStepSemantics(ref, this);
 		} else {
 			AccessChild access = new AccessChild(childType, deref, right, getLocation());
-			return result.smallStepSemantics(access, this);
+			return state.lub(result.smallStepSemantics(access, this));
 		}
 	}
 }

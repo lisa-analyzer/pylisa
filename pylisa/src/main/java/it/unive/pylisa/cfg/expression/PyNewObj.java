@@ -1,5 +1,7 @@
 package it.unive.pylisa.cfg.expression;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -67,12 +69,9 @@ public class PyNewObj extends NaryExpression {
 		// we also have to add the receiver inside the state
 		AnalysisState<A> callstate = paramThis.forwardSemantics(state, interprocedural, expressions);
 		AnalysisState<A> tmp = state.bottom();
-		Set<SymbolicExpression> expr = new HashSet<>();
-		for (SymbolicExpression v : callstate.getComputedExpressions()) {
+		for (SymbolicExpression v : callstate.getComputedExpressions()) 
 			tmp = tmp.lub(callstate.assign(v, ref, paramThis));
-			expr.add(v);
-		}
-		ExpressionSet[] fullParams = ArrayUtils.insert(0, params, new ExpressionSet(expr));
+		ExpressionSet[] fullParams = ArrayUtils.insert(0, params, callstate.getComputedExpressions());
 		expressions.put(paramThis, tmp);
 
 		UnresolvedCall call = new UnresolvedCall(getCFG(), getLocation(), CallType.INSTANCE, type.toString(),

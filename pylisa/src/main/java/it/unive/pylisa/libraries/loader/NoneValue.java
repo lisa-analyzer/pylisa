@@ -2,7 +2,7 @@ package it.unive.pylisa.libraries.loader;
 
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
+import it.unive.pylisa.cfg.expression.PyNoneLiteral;
 
 public class NoneValue implements Value {
 

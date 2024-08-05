@@ -105,8 +105,9 @@ public class DataframeDumper
 							SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
 									TypeEnvironment<InferredTypes>>>> results = tool.getResultOf(graph);
 
-			for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-					TypeEnvironment<InferredTypes>>> result : results)
+			for (AnalyzedCFG<
+					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
+							TypeEnvironment<InferredTypes>>> result : results)
 				try {
 					AnalysisState<
 							SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,

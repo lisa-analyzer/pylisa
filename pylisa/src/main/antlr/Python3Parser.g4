@@ -79,7 +79,25 @@ parameters
    ;
 
 typedargslist
-   : (typedarg (',' typedarg)* (',' ('*' (tfpdef)? (',' typedarg)* (',' ('**' tfpdef (',')?)?)? | '**' tfpdef (',')?)?)? | '*' (tfpdef)? (',' typedarg)* (',' ('**' tfpdef (',')?)?)? | '**' tfpdef (',')?)
+   : typedarg (COMMA typedarg)* (COMMA (starargs (COMMA (varkw (COMMA)?)?)? | varkw (COMMA)?)?)?
+   | starargs (COMMA (varkw (COMMA)?)?)?
+   | varkw (COMMA)?
+   ;
+
+starargs
+   : (varpositional | varkwonly) (COMMA typedarg)*
+   ;
+
+varkw
+   : POWER tfpdef
+   ;
+
+varpositional
+   : STAR (tfpdef)
+   ;
+
+varkwonly
+   : STAR
    ;
 
 typedarg

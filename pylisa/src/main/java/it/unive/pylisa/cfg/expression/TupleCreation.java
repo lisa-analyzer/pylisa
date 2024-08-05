@@ -91,5 +91,4 @@ public class TupleCreation extends NaryExpression {
 
 		return result;
 	}
-
 }

@@ -15,9 +15,7 @@ import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 
-public class BottomFinder<A extends AbstractState<A>>
-		implements
-		SemanticCheck<A> {
+public class BottomFinder<A extends AbstractState<A>> implements SemanticCheck<A> {
 
 	@Override
 	public void beforeExecution(

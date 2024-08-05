@@ -46,6 +46,41 @@ public class SetCreation extends NaryExpression {
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SetConstant set = new SetConstant(loc);
+
+		if (params.length == 0)
+			return state.smallStepSemantics(set, this);
+
+		Type setType = PyClassType.lookup(LibrarySpecificationProvider.SET);
+		BinaryOperator add = SetAdd.INSTANCE;
+
+		Set<BinaryExpression> ws = new HashSet<>(), tmp = new HashSet<>();
+		for (SymbolicExpression element : params[0])
+			ws.add(new BinaryExpression(setType, set, element, add, loc));
+		for (int i = 1; i < params.length; i++) {
+			tmp.addAll(ws);
+			ws.clear();
+			for (SymbolicExpression element : params[i])
+				for (BinaryExpression setHead : tmp)
+					ws.add(new BinaryExpression(setType, setHead, element, add, loc));
+			tmp.clear();
+		}
+
+		AnalysisState<A> result = state.bottom();
+		for (BinaryExpression completeSet : ws)
+			result = result.lub(state.smallStepSemantics(completeSet, this));
+
+		return result;
+	}
+
+	@Override
+	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		CodeLocation loc = getLocation();
+		SetConstant set = new SetConstant(loc);
 		if (params.length == 0)
 			return state.smallStepSemantics(set, this);
 		Type setType = PyClassType.lookup(LibrarySpecificationProvider.SET);

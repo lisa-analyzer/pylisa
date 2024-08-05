@@ -17,6 +17,7 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyLibraryUnitType;
 import it.unive.pylisa.symbolic.operators.StringMult;
+import java.util.Set;
 
 public class PyMultiplication extends Multiplication {
 

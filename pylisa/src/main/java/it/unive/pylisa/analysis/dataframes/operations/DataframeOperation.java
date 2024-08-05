@@ -14,7 +14,6 @@ import java.util.Objects;
 public abstract class DataframeOperation
 		implements
 		BaseLattice<DataframeOperation>,
-		Comparable<DataframeOperation>,
 		CodeNode<DataframeForest, DataframeOperation, DataframeEdge> {
 
 	public static final DataframeOperation TOP = new TopOperation();

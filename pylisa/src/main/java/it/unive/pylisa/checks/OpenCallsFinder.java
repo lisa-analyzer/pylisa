@@ -14,9 +14,7 @@ import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 
-public class OpenCallsFinder<A extends AbstractState<A>>
-		implements
-		SemanticCheck<A> {
+public class OpenCallsFinder<A extends AbstractState<A>> implements SemanticCheck<A> {
 
 	@Override
 	public void beforeExecution(

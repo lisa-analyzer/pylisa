@@ -39,10 +39,9 @@ public class PyPower extends BinaryExpression {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		Set<Type> rtsl = state.getState().getRuntimeTypesOf(left, this, state.getState());
-		Set<Type> rtsr = state.getState().getRuntimeTypesOf(right, this, state.getState());
-		if (rtsl != null && !rtsl.isEmpty() && rtsl.stream().anyMatch(Type::isNumericType)
-				&& rtsr != null && !rtsr.isEmpty() && rtsr.stream().anyMatch(Type::isNumericType)) {
+		Set<Type> tleft = state.getState().getRuntimeTypesOf(left, this, state.getState());
+		Set<Type> tright = state.getState().getRuntimeTypesOf(right, this, state.getState());
+		if (tleft.stream().anyMatch(Type::isNumericType) && tright.stream().anyMatch(Type::isNumericType)) {
 			return state.smallStepSemantics(
 					new it.unive.lisa.symbolic.value.BinaryExpression(
 							getStaticType(),

@@ -7,7 +7,6 @@ import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
 
 public abstract class DataframeEdge
 		implements
-		Comparable<DataframeEdge>,
 		CodeEdge<DataframeForest, DataframeOperation, DataframeEdge> {
 
 	private final DataframeOperation source, destination;

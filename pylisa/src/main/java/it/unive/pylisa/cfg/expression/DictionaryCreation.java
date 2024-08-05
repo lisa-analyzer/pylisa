@@ -33,6 +33,12 @@ public class DictionaryCreation extends NaryExpression {
 		super(cfg, loc, "dict", toFlatArray(values));
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	private static Expression[] toFlatArray(
 			Pair<Expression, Expression>[] values) {
 		Expression[] result = new Expression[values.length * 2];
@@ -42,12 +48,6 @@ public class DictionaryCreation extends NaryExpression {
 			result[idx + 1] = values[i].getRight();
 		}
 		return result;
-	}
-
-	@Override
-	protected int compareSameClassAndParams(
-			Statement o) {
-		return 0;
 	}
 
 	@Override

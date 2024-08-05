@@ -29,17 +29,17 @@ public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression
 				dataframe);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static Geocode build(
 			CFG cfg,
 			CodeLocation location,
 			Expression[] exprs) {
 		return new Geocode(cfg, location, exprs[0]);
-	}
-
-	@Override
-	protected int compareSameClassAndParams(
-			Statement o) {
-		return 0;
 	}
 
 	@Override

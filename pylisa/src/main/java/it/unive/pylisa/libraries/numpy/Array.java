@@ -27,17 +27,17 @@ public class Array extends UnaryExpression implements PluggableStatement {
 		super(cfg, location, "array", arraylike);
 	}
 
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
 	public static Array build(
 			CFG cfg,
 			CodeLocation location,
 			Expression[] exprs) {
 		return new Array(cfg, location, exprs[0]);
-	}
-
-	@Override
-	protected int compareSameClassAndParams(
-			Statement o) {
-		return 0;
 	}
 
 	@Override
