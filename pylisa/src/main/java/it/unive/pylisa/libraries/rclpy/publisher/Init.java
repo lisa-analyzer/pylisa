@@ -13,8 +13,6 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
-import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
@@ -22,7 +20,6 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import it.unive.pylisa.cfg.expression.PyAssign;
 import java.util.Set;
 
 public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression implements PluggableStatement {
@@ -79,7 +76,6 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 					Variable var = global.toSymbolicVariable(getLocation());
 					AccessChild access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					AnalysisState<A> tmp = state.bottom();
-					SymbolicExpression msgType = params[1].iterator().next();
 					for (SymbolicExpression t : params[1])
 						tmp = tmp.lub(partial.assign(access, t, this));
 					partial = tmp;

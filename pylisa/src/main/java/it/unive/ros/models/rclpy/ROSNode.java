@@ -14,17 +14,37 @@ import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.network.NetworkEntityContainer;
 import it.unive.ros.network.NetworkEvent;
-import it.unive.ros.permissions.jaxb.*;
+import it.unive.ros.permissions.jaxb.Criteria;
+import it.unive.ros.permissions.jaxb.DefaultAction;
+import it.unive.ros.permissions.jaxb.DomainIdSet;
+import it.unive.ros.permissions.jaxb.Grant;
+import it.unive.ros.permissions.jaxb.JAXBPermissionsHelpers;
 import it.unive.ros.permissions.jaxb.ObjectFactory;
+import it.unive.ros.permissions.jaxb.Permissions;
+import it.unive.ros.permissions.jaxb.PermissionsNode;
+import it.unive.ros.permissions.jaxb.Rule;
 import it.unive.ros.permissions.jaxb.TopicExpressionList;
-import it.unive.ros.sros2policies.jaxb.*;
+import it.unive.ros.permissions.jaxb.Validity;
+import it.unive.ros.sros2policies.jaxb.Enclave;
+import it.unive.ros.sros2policies.jaxb.Enclaves;
+import it.unive.ros.sros2policies.jaxb.JAXBROS2PermissionsHelpers;
+import it.unive.ros.sros2policies.jaxb.Policy;
+import it.unive.ros.sros2policies.jaxb.Profile;
+import it.unive.ros.sros2policies.jaxb.Profiles;
+import it.unive.ros.sros2policies.jaxb.RuleQualifier;
 import jakarta.xml.bind.JAXBElement;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 
-public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extends ROSCommunicationChannel>>{
+public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extends ROSCommunicationChannel>> {
 	private ROSLisaNodeAnalysis lisaNodeAnalysis;
 
 	private String name;
@@ -54,18 +74,29 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		this(name, "", scopeId);
 	}
 
-	public ROSNode(String nodeName, String namespace, Boolean startParamService, Boolean enableRosout, Statement node, HeapExpression expr, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, InterproceduralAnalysis<?> interproceduralAnalysis) {
+	public ROSNode(
+			String nodeName,
+			String namespace,
+			Boolean startParamService,
+			Boolean enableRosout,
+			Statement node,
+			HeapExpression expr,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			InterproceduralAnalysis<?> interproceduralAnalysis) {
 		this(nodeName, namespace, startParamService, node, expr, analysisState, interproceduralAnalysis);
 		this.enableRosout = enableRosout;
 	}
 
-	private void setNamespace(String namespace) {
+	private void setNamespace(
+			String namespace) {
 		if (!namespace.startsWith("/")) {
 			this.namespace = "/" + namespace;
 		} else {
 			this.namespace = namespace;
 		}
 	}
+
 	public ROSNode(
 			String name,
 			String namespace,
@@ -75,20 +106,39 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		setNamespace(namespace);
 	}
 
-	public ROSNode(String nodeName, String namespace, Statement node, HeapExpression expr) {
+	public ROSNode(
+			String nodeName,
+			String namespace,
+			Statement node,
+			HeapExpression expr) {
 		this.name = nodeName;
 		this.scopeId = null;
 		setNamespace(namespace);
 
 	}
 
-	public ROSNode(String nodeName, String namespace, Statement node, HeapExpression expr, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, InterproceduralAnalysis<? extends AbstractState<?>> interproceduralAnalysis) {
+	public ROSNode(
+			String nodeName,
+			String namespace,
+			Statement node,
+			HeapExpression expr,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			InterproceduralAnalysis<? extends AbstractState<?>> interproceduralAnalysis) {
 		this.name = nodeName;
 		setNamespace(namespace);
 		this.lisaNodeAnalysis = new ROSLisaNodeAnalysis(expr, node, analysisState, interproceduralAnalysis);
 	}
 
-	public ROSNode(String nodeName, String namespace, Boolean enableParameterServices, Statement node, HeapExpression expr, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, InterproceduralAnalysis<? extends AbstractState<?>> interproceduralAnalysis) {
+	public ROSNode(
+			String nodeName,
+			String namespace,
+			Boolean enableParameterServices,
+			Statement node,
+			HeapExpression expr,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			InterproceduralAnalysis<? extends AbstractState<?>> interproceduralAnalysis) {
 		this.enableParameterServices = enableParameterServices;
 		this.name = nodeName;
 		setNamespace(namespace);
@@ -107,17 +157,16 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		this.serviceServers.add(service);
 	}
 
-	public void addNewAction(Action action) {
+	public void addNewAction(
+			Action action) {
 		this.actions.add(action);
 	}
-
 
 	public void addNewPublisher(
 			ROSTopic topic,
 			String msgType) {
 		networkEntities.add(new ROSTopicPublisher(this, topic, msgType));
 	}
-
 
 	public Set<ROSTopic> getSubscribersTopics() {
 		HashSet<ROSTopic> topics = new HashSet<>();
@@ -138,9 +187,11 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 	public Set<ROSActionClient> getActionClients() {
 		return this.actionClients;
 	}
+
 	public Set<ROSServiceClient> getServiceClients() {
 		return this.serviceClients;
 	}
+
 	public Set<ROSTopic> getPublisherTopics() {
 		HashSet<ROSTopic> topics = new HashSet<>();
 		for (ROSTopicPublisher s : publishers) {
@@ -181,7 +232,6 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		return result;
 	}
 
-
 	public String getNamespace() {
 		return namespace;
 	}
@@ -198,17 +248,17 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		return publishers;
 	}
 
-
 	public Set<ROSTopicSubscription> getAllSubscriptions() {
 		Set<ROSTopicSubscription> allSubscriptions = new HashSet<>(this.subscribers);
 		Set<ROSServiceBasedNetworkEntity> serviceEntities = new HashSet<>(this.serviceServers);
 		serviceEntities.addAll(this.serviceClients);
-		for (ROSServiceBasedNetworkEntity service: serviceEntities) {
+		for (ROSServiceBasedNetworkEntity service : serviceEntities) {
 			Set<ROSTopicBasedNetworkEntity> serviceTopics = service.toTopicEntities();
 			for (ROSTopicBasedNetworkEntity t : serviceTopics) {
 				if (t instanceof ROSTopicSubscription) {
 					ROSTopicSubscription s = allSubscriptions.stream()
-							.filter(subscription -> t.getChannel().getName().equals(subscription.getChannel().getName()))
+							.filter(subscription -> t.getChannel().getName()
+									.equals(subscription.getChannel().getName()))
 							.findAny()
 							.orElse(null);
 					if (s == null) {
@@ -220,12 +270,13 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 
 		Set<ROSActionBasedNetworkEntity> actionEntities = new HashSet<>(this.actionServers);
 		actionEntities.addAll(this.actionClients);
-		for (ROSActionBasedNetworkEntity action: actionEntities) {
+		for (ROSActionBasedNetworkEntity action : actionEntities) {
 			Set<ROSTopicBasedNetworkEntity> serviceTopics = action.toTopicEntities();
 			for (ROSTopicBasedNetworkEntity t : serviceTopics) {
 				if (t instanceof ROSTopicSubscription) {
 					ROSTopicSubscription s = allSubscriptions.stream()
-							.filter(subscription -> t.getChannel().getName().equals(subscription.getChannel().getName()))
+							.filter(subscription -> t.getChannel().getName()
+									.equals(subscription.getChannel().getName()))
 							.findAny()
 							.orElse(null);
 					if (s == null) {
@@ -241,7 +292,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		Set<ROSTopicPublisher> allPublishers = new HashSet<>(this.publishers);
 		Set<ROSServiceBasedNetworkEntity> serviceEntities = new HashSet<>(this.serviceServers);
 		serviceEntities.addAll(this.serviceClients);
-		for (ROSServiceBasedNetworkEntity service: serviceEntities) {
+		for (ROSServiceBasedNetworkEntity service : serviceEntities) {
 			Set<ROSTopicBasedNetworkEntity> serviceTopics = service.toTopicEntities();
 			for (ROSTopicBasedNetworkEntity t : serviceTopics) {
 				if (t instanceof ROSTopicPublisher) {
@@ -258,7 +309,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 
 		Set<ROSActionBasedNetworkEntity> actionEntities = new HashSet<>(this.actionServers);
 		actionEntities.addAll(this.actionClients);
-		for (ROSActionBasedNetworkEntity action: actionEntities) {
+		for (ROSActionBasedNetworkEntity action : actionEntities) {
 			Set<ROSTopicBasedNetworkEntity> serviceTopics = action.toTopicEntities();
 			for (ROSTopicBasedNetworkEntity t : serviceTopics) {
 				if (t instanceof ROSTopicPublisher) {
@@ -307,7 +358,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		TopicExpressionList PtopicExpressionList = new TopicExpressionList();
 		for (ROSTopicPublisher p : getAllPublishers()) {
 			PtopicExpressionList.getTopic().add(
-							p.getChannel().getID());
+					p.getChannel().getID());
 		}
 		/** [END] DDS.PERMISSIONS.GRANT.ALLOW_RULE.PUBLISH.TOPICS **/
 		Pcriteria.setTopics(PtopicExpressionList);
@@ -348,7 +399,8 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		profile.setNs(this.getNamespace());
 		// add TOPIC publishers
 		if (!this.getPublishers().isEmpty()) {
-			if (this.getPublishers().size() != 1 || !this.getPublishers().iterator().next().getChannel().getName().equals("ros_discovery_info")) {
+			if (this.getPublishers().size() != 1
+					|| !this.getPublishers().iterator().next().getChannel().getName().equals("ros_discovery_info")) {
 				it.unive.ros.sros2policies.jaxb.TopicExpressionList publishers = new it.unive.ros.sros2policies.jaxb.TopicExpressionList();
 				publishers.setPublish(RuleQualifier.ALLOW);
 				for (ROSTopicPublisher p : this.getPublishers()) {
@@ -361,7 +413,8 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		}
 		// add TOPIC subscriptions
 		if (!this.getSubscribers().isEmpty()) {
-			if ((this.getSubscribers().size() != 1 || !this.getSubscribers().iterator().next().getChannel().getName().equals("ros_discovery_info"))) {
+			if ((this.getSubscribers().size() != 1
+					|| !this.getSubscribers().iterator().next().getChannel().getName().equals("ros_discovery_info"))) {
 				it.unive.ros.sros2policies.jaxb.TopicExpressionList subscribers = new it.unive.ros.sros2policies.jaxb.TopicExpressionList();
 				subscribers.setSubscribe(RuleQualifier.ALLOW);
 				for (ROSTopicSubscription s : this.getSubscribers()) {
@@ -374,7 +427,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		}
 
 		// add SERVICE servers
-		if (!this.getServiceServers().isEmpty() ) {
+		if (!this.getServiceServers().isEmpty()) {
 			it.unive.ros.sros2policies.jaxb.ServicesExpressionList services = new it.unive.ros.sros2policies.jaxb.ServicesExpressionList();
 			services.setReply(RuleQualifier.ALLOW);
 			for (ROSServiceServer s : this.getServiceServers()) {
@@ -383,7 +436,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 			profile.getTopicsOrServicesOrActions().add(services);
 		}
 		// add SERVICE clients
-		if (!this.getServiceClients().isEmpty() ) {
+		if (!this.getServiceClients().isEmpty()) {
 			it.unive.ros.sros2policies.jaxb.ServicesExpressionList services = new it.unive.ros.sros2policies.jaxb.ServicesExpressionList();
 			services.setRequest(RuleQualifier.ALLOW);
 			for (ROSServiceClient s : this.getServiceClients()) {
@@ -392,7 +445,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 			profile.getTopicsOrServicesOrActions().add(services);
 		}
 		// add ACTION servers
-		if (!this.getActionServers().isEmpty() ) {
+		if (!this.getActionServers().isEmpty()) {
 			it.unive.ros.sros2policies.jaxb.ActionsExpressionList actions = new it.unive.ros.sros2policies.jaxb.ActionsExpressionList();
 			actions.setExecute(RuleQualifier.ALLOW);
 			for (ROSActionServer a : this.getActionServers()) {
@@ -401,7 +454,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 			profile.getTopicsOrServicesOrActions().add(actions);
 		}
 		// add ACTION clients
-		if (!this.getActionServers().isEmpty() ) {
+		if (!this.getActionServers().isEmpty()) {
 			it.unive.ros.sros2policies.jaxb.ActionsExpressionList actions = new it.unive.ros.sros2policies.jaxb.ActionsExpressionList();
 			actions.setCall(RuleQualifier.ALLOW);
 			for (ROSActionClient a : this.getActionClients()) {
@@ -503,6 +556,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 		JAXBROS2PermissionsHelpers.store(this.toSROS2Policy(),
 				workDir + "/policies/" + this.getName() + "/policy.xml");
 	}
+
 	public String dumpPolicy()
 			throws Exception {
 		return JAXBROS2PermissionsHelpers.toString(this.toSROS2Policy());
@@ -523,16 +577,16 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 
 	public List<ROSNetworkEntity<? extends ROSCommunicationChannel>> getNetworkEntities() {
 		List<ROSNetworkEntity<?>> result = new ArrayList<>();
-        result.addAll(publishers);
-        result.addAll(subscribers);
+		result.addAll(publishers);
+		result.addAll(subscribers);
 		result.addAll(serviceClients);
 		result.addAll(serviceServers);
 		result.addAll(actionServers);
 		return result;
 	}
 
-
-	public void addNetworkEntity(ROSNetworkEntity ne) {
+	public void addNetworkEntity(
+			ROSNetworkEntity ne) {
 		if (ne instanceof ROSTopicPublisher) {
 			this.publishers.add((ROSTopicPublisher) ne);
 		} else if (ne instanceof ROSTopicSubscription) {
@@ -555,6 +609,7 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 	public Boolean getEnableParameterServices() {
 		return enableParameterServices;
 	}
+
 	public Boolean getEnableRosout() {
 		return enableRosout;
 	}

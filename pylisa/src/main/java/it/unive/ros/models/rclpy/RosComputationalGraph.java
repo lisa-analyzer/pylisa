@@ -8,6 +8,7 @@ public class RosComputationalGraph {
 	private Set<ROSNode> nodes;
 
 	private Set<ROSTopic> topics;
+
 	public RosComputationalGraph() {
 		this.nodes = new HashSet<>();
 		this.topics = new HashSet<>();

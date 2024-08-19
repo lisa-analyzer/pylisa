@@ -15,31 +15,45 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 
 public class Init extends UnaryExpression implements PluggableStatement {
 
-    private Statement st;
+	// private Statement st;
 
-    public Init(CFG cfg, CodeLocation location, Expression operation) {
-        super(cfg, location, "Init", operation);
-    }
+	public Init(
+			CFG cfg,
+			CodeLocation location,
+			Expression operation) {
+		super(cfg, location, "Init", operation);
+	}
 
-    @Override
-    public void setOriginatingStatement(Statement st) { this.st = st; }
+	@Override
+	public void setOriginatingStatement(
+			Statement st) {
+		// this.st = st;
+	}
 
-    public static Init build(CFG cfg, CodeLocation location, Expression[] exprs) {
-        if (exprs.length != 1) {
-            throw new IllegalArgumentException("ExecuteOperation requires exactly one argument: the operation to execute");
-        }
-        return new Init(cfg, location, exprs[0]);
-    }
+	public static Init build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
+		if (exprs.length != 1) {
+			throw new IllegalArgumentException(
+					"ExecuteOperation requires exactly one argument: the operation to execute");
+		}
+		return new Init(cfg, location, exprs[0]);
+	}
 
-    @Override
-    protected int compareSameClassAndParams(Statement o) { return 0; }
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
 
-    @Override
-    public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-            InterproceduralAnalysis<A> interprocedural,
-            AnalysisState<A> state,
-            SymbolicExpression operation,
-            StatementStore<A> expressions) throws SemanticException {
-        return state;
-    }
+	@Override
+	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression operation,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		return state;
+	}
 }

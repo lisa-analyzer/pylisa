@@ -66,7 +66,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 				UnaryExpression iterate = new UnaryExpression(seriestype, deref, new Iterate(0), loc);
 				return state.smallStepSemantics(iterate, st);
 			}
-		} catch(Exception e) {
+		} catch (Exception e) {
 			return state.smallStepSemantics(new PushAny(Untyped.INSTANCE, loc), st);
 		}
 		return state.smallStepSemantics(new PushAny(Untyped.INSTANCE, loc), st);

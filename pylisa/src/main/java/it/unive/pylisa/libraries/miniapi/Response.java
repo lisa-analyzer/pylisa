@@ -16,31 +16,47 @@ import it.unive.lisa.type.Untyped;
 
 public class Response extends BinaryExpression implements PluggableStatement {
 
-    private Statement st;
+	// private Statement st;
 
-    public Response(CFG cfg, CodeLocation location, Expression statusCode, Expression detail) {
-        super(cfg, location, "response", Untyped.INSTANCE, statusCode, detail);
-    }
+	public Response(
+			CFG cfg,
+			CodeLocation location,
+			Expression statusCode,
+			Expression detail) {
+		super(cfg, location, "response", Untyped.INSTANCE, statusCode, detail);
+	}
 
-    @Override
-    public void setOriginatingStatement(Statement st) {this.st = st; }
+	@Override
+	public void setOriginatingStatement(
+			Statement st) {
+		// this.st = st;
+	}
 
-    public static Response build(CFG cfg, CodeLocation location, Expression[] exprs) {
-        if (exprs.length != 2) {
-            throw new IllegalArgumentException("RaiseHttpException requires exactly two arguments: status code and detail message");
-        }
-        return new Response(cfg, location, exprs[0], exprs[1]);
-    }
+	public static Response build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
+		if (exprs.length != 2) {
+			throw new IllegalArgumentException(
+					"RaiseHttpException requires exactly two arguments: status code and detail message");
+		}
+		return new Response(cfg, location, exprs[0], exprs[1]);
+	}
 
-    @Override
-    protected int compareSameClassAndParams(Statement o) { return 0; }
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
 
-    @Override
-    public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-            InterproceduralAnalysis<A> interproceduralAnalysis,
-            AnalysisState<A> state,
-            SymbolicExpression left, SymbolicExpression right,
-            StatementStore<A> statementStore) throws SemanticException {
-        return state;
-    }
+	@Override
+	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A> interproceduralAnalysis,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> statementStore)
+			throws SemanticException {
+		return state;
+	}
 }

@@ -16,33 +16,46 @@ import it.unive.lisa.program.cfg.statement.Statement;
 
 public class Delete extends NaryExpression implements PluggableStatement {
 
-    private Statement st;
+	// private Statement st;
 
-    public Delete(CFG cfg, CodeLocation location, Expression... parameters) {
-        super(cfg, location, "delete", parameters);
-    }
+	public Delete(
+			CFG cfg,
+			CodeLocation location,
+			Expression... parameters) {
+		super(cfg, location, "delete", parameters);
+	}
 
-    @Override
-    public void setOriginatingStatement(Statement st) { this.st = st; }
+	@Override
+	public void setOriginatingStatement(
+			Statement st) {
+		// this.st = st;
+	}
 
-    @Override
-    public Program getProgram() { return super.getProgram(); }
+	@Override
+	public Program getProgram() {
+		return super.getProgram();
+	}
 
-    public static Delete build(CFG cfg, CodeLocation location, Expression[] parameters) {
-        return new Delete(cfg, location, parameters);
-    }
+	public static Delete build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] parameters) {
+		return new Delete(cfg, location, parameters);
+	}
 
-    @Override
-    protected int compareSameClassAndParams(Statement o) {
-        return 0;
-    }
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
 
-    @Override
-    public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-            InterproceduralAnalysis<A> interproceduralAnalysis,
-            AnalysisState<A> analysisState,
-            ExpressionSet[] expressionSets,
-            StatementStore<A> statementStore) throws SemanticException {
-        return null;
-    }
+	@Override
+	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A> interproceduralAnalysis,
+			AnalysisState<A> analysisState,
+			ExpressionSet[] expressionSets,
+			StatementStore<A> statementStore)
+			throws SemanticException {
+		return null;
+	}
 }

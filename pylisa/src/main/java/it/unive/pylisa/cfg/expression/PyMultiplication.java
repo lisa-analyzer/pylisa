@@ -1,7 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.Set;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;

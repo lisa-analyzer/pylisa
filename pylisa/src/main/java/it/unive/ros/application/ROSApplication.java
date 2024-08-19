@@ -2,19 +2,27 @@ package it.unive.ros.application;
 
 import com.ibm.icu.impl.Pair;
 import it.unive.lisa.util.file.FileManager;
-import it.unive.ros.models.rclpy.*;
+import it.unive.ros.models.rclpy.ROSNetwork;
 import it.unive.ros.models.rclpy.ROSNode;
+import it.unive.ros.models.rclpy.ROSTopic;
+import it.unive.ros.models.rclpy.ROSTopicBasedNetworkEntity;
+import it.unive.ros.models.rclpy.ROSTopicPublisher;
+import it.unive.ros.models.rclpy.ROSTopicSubscription;
+import it.unive.ros.models.rclpy.RosComputationalGraph;
 import it.unive.ros.permissions.jaxb.Grant;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
-import org.thymeleaf.templatemode.TemplateMode;
-import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 public class ROSApplication {
 
@@ -76,6 +84,7 @@ public class ROSApplication {
 	public ArrayList<String> getOutputFiles() {
 		return outputFiles;
 	}
+
 	public RosComputationalGraph getROSComputationalGraph() {
 		return ROSComputationalGraph;
 	}
@@ -123,119 +132,85 @@ public class ROSApplication {
 		Bout.close();
 		output.close();
 	}
+
 	public void dumpGraph() throws Exception {
-		/*StringBuilder dotGraph = new StringBuilder(
-				"digraph rosgraph {graph [pad=\"0.5\", nodesep=\"1\", ranksep=\"2\"];");
-		// DUMP Services
-		int i = 0;
-
-		for (ROSNode n : ROSComputationalGraph.getNodes()) {
-			Set<Service> ss = n.getServices();
-			for (Service s : ss) {
-
-			}
-			for (Service s : n.getServices()) {
-				dotGraph.append("subgraph cluster_" + i
-						+ " { style=filled;fillcolor=white;color=blue;penwidth=2;fontcolor=blue;label=\"" + s.getName()
-						+ "\";").append("\"" + s.getName() + "Reply\"")
-						.append("[shape=box,style=filled,fillcolor=\"tan1\"];").append("\"" + s.getName() + "Request\"")
-						.append("[shape=box,style=filled];}");
-				i++;
-			}
-			for (Action a : n.getActions()) {
-				dotGraph.append("subgraph cluster_" + i
-						+ " { style=filled;fillcolor=white;color=seagreen3;penwidth=2;fontcolor=seagreen3;label=\"" + a.getName()
-						+ "\";").append("\"" + a.getName() + "/_action/send_goalReply\"")
-						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
-						.append("\"" + a.getName() + "/_action/send_goalRequest\"")
-						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
-						.append("\"" + a.getName() + "/_action/get_resultRequest\"")
-						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
-						.append("\"" + a.getName() + "/_action/get_resultReply\"")
-						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
-						.append("\"" + a.getName() + "/_action/cancel_goalRequest\"")
-						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
-						.append("\"" + a.getName() + "/_action/cancel_goalReply\"")
-						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
-						.append("\"" + a.getName() + "/_action/feedback\"")
-						.append("[shape=box,style=filled,fillcolor=\"tan1\"];")
-						.append("\"" + a.getName() + "/_action/status\"")
-						.append("[shape=box,style=filled];}");
-				i++;
-			}
-			dotGraph.append("\"" + n.getName() + "\"").append("[style=filled,fillcolor=\"aquamarine\"];");
-		}
-		for (ROSTopic t : ROSComputationalGraph.getTopics()) {
-			if (ROSComputationalGraph.getTopicSubscriptions(t.getName()).isEmpty()
-					|| ROSComputationalGraph.getTopicPublishers(t.getName()).isEmpty()) {
-				dotGraph.append("\"" + t.getName() + "\"").append("[shape=box,style=filled,fillcolor=\"tan1\"];");
-			} else {
-				dotGraph.append("\"" + t.getName() + "\"").append("[shape=box,style=filled,fillcolor=\"khaki1\"];");
-			}
-		}
-		for (ROSNode n : ROSComputationalGraph.getNodes()) {
-			for (ROSTopicPublisher p : n.getPublishers()) {
-				dotGraph.append("\"" + n.getName() + "\"").append(" -> ").append("\"" + p.getChannel().getName() + "\"");
-				Boolean loop = false;
-				Boolean perm = true;
-				Set<ROSTopicSubscription> subs = ROSComputationalGraph.getTopicSubscriptions(p.getChannel().getName());
-				for (ROSTopicSubscription s : subs) {
-					if (s.getNode().equals(n)) {
-						loop = true;
-						break;
-					}
-				}
-				if (loop) {
-					if (perm) {
-						dotGraph.append("[shape=box,label=\"").append(p.getType()).append("\",color=\"red\"];");
-					} else {
-						dotGraph.append("[shape=box,label=\"⚠️").append(p.getType())
-								.append("\",color=\"red\",style=\"dotted\",penwidth=3];");
-					}
-
-				} else {
-					if (perm) {
-						dotGraph.append("[shape=box,label=\"").append(p.getType()).append("\"];");
-					} else {
-						dotGraph.append("[shape=box,label=\"⚠️").append(p.getType())
-								.append("\",style=\"dotted\",penwidth=3];");
-					}
-
-				}
-			}
-			for (ROSTopicSubscription s : n.getSubscribers()) {
-				dotGraph.append("\"" + s.getChannel().getName() + "\"").append(" -> ").append("\"" + n.getName() + "\"");
-				Boolean loop = false;
-				Boolean perm = true;
-
-				Set<ROSTopicPublisher> pubs = ROSComputationalGraph.getTopicPublishers("\"" + s.getChannel().getName() + "\"");
-				for (ROSTopicPublisher p : pubs) {
-					if (p.getNode().equals(n)) {
-						loop = true;
-						break;
-					}
-				}
-				if (loop) {
-					if (perm) {
-						dotGraph.append("[shape=box,label=\"").append(s.getType()).append(", ")
-								.append(s.getCallbackFunction()).append("\",color=\"red\"];");
-					} else {
-						dotGraph.append("[shape=box,label=\"⚠️").append(s.getType()).append(", ")
-								.append(s.getCallbackFunction())
-								.append("\",color=\"red\",style=\"dotted\",penwidth=3];");
-					}
-				} else {
-					if (perm) {
-						dotGraph.append("[shape=box,label=\"").append(s.getType()).append(", ")
-								.append(s.getCallbackFunction()).append("\"];");
-					} else {
-						dotGraph.append("[shape=box,label=\"⚠️").append(s.getType()).append(", ")
-								.append(s.getCallbackFunction()).append("\",style=\"dotted\",penwidth=3];");
-					}
-				}
-			}
-		}
-		dotGraph.append("}");*/
+		/*
+		 * StringBuilder dotGraph = new StringBuilder(
+		 * "digraph rosgraph {graph [pad=\"0.5\", nodesep=\"1\", ranksep=\"2\"];"
+		 * ); // DUMP Services int i = 0; for (ROSNode n :
+		 * ROSComputationalGraph.getNodes()) { Set<Service> ss =
+		 * n.getServices(); for (Service s : ss) { } for (Service s :
+		 * n.getServices()) { dotGraph.append("subgraph cluster_" + i +
+		 * " { style=filled;fillcolor=white;color=blue;penwidth=2;fontcolor=blue;label=\""
+		 * + s.getName() + "\";").append("\"" + s.getName() + "Reply\"")
+		 * .append("[shape=box,style=filled,fillcolor=\"tan1\"];").append("\"" +
+		 * s.getName() + "Request\"") .append("[shape=box,style=filled];}");
+		 * i++; } for (Action a : n.getActions()) {
+		 * dotGraph.append("subgraph cluster_" + i +
+		 * " { style=filled;fillcolor=white;color=seagreen3;penwidth=2;fontcolor=seagreen3;label=\""
+		 * + a.getName() + "\";").append("\"" + a.getName() +
+		 * "/_action/send_goalReply\"")
+		 * .append("[shape=box,style=filled,fillcolor=\"tan1\"];") .append("\""
+		 * + a.getName() + "/_action/send_goalRequest\"")
+		 * .append("[shape=box,style=filled,fillcolor=\"tan1\"];") .append("\""
+		 * + a.getName() + "/_action/get_resultRequest\"")
+		 * .append("[shape=box,style=filled,fillcolor=\"tan1\"];") .append("\""
+		 * + a.getName() + "/_action/get_resultReply\"")
+		 * .append("[shape=box,style=filled,fillcolor=\"tan1\"];") .append("\""
+		 * + a.getName() + "/_action/cancel_goalRequest\"")
+		 * .append("[shape=box,style=filled,fillcolor=\"tan1\"];") .append("\""
+		 * + a.getName() + "/_action/cancel_goalReply\"")
+		 * .append("[shape=box,style=filled,fillcolor=\"tan1\"];") .append("\""
+		 * + a.getName() + "/_action/feedback\"")
+		 * .append("[shape=box,style=filled,fillcolor=\"tan1\"];") .append("\""
+		 * + a.getName() + "/_action/status\"")
+		 * .append("[shape=box,style=filled];}"); i++; } dotGraph.append("\"" +
+		 * n.getName() +
+		 * "\"").append("[style=filled,fillcolor=\"aquamarine\"];"); } for
+		 * (ROSTopic t : ROSComputationalGraph.getTopics()) { if
+		 * (ROSComputationalGraph.getTopicSubscriptions(t.getName()).isEmpty()
+		 * || ROSComputationalGraph.getTopicPublishers(t.getName()).isEmpty()) {
+		 * dotGraph.append("\"" + t.getName() +
+		 * "\"").append("[shape=box,style=filled,fillcolor=\"tan1\"];"); } else
+		 * { dotGraph.append("\"" + t.getName() +
+		 * "\"").append("[shape=box,style=filled,fillcolor=\"khaki1\"];"); } }
+		 * for (ROSNode n : ROSComputationalGraph.getNodes()) { for
+		 * (ROSTopicPublisher p : n.getPublishers()) { dotGraph.append("\"" +
+		 * n.getName() + "\"").append(" -> ").append("\"" +
+		 * p.getChannel().getName() + "\""); Boolean loop = false; Boolean perm
+		 * = true; Set<ROSTopicSubscription> subs =
+		 * ROSComputationalGraph.getTopicSubscriptions(p.getChannel().getName())
+		 * ; for (ROSTopicSubscription s : subs) { if (s.getNode().equals(n)) {
+		 * loop = true; break; } } if (loop) { if (perm) {
+		 * dotGraph.append("[shape=box,label=\"").append(p.getType()).append(
+		 * "\",color=\"red\"];"); } else {
+		 * dotGraph.append("[shape=box,label=\"⚠️").append(p.getType())
+		 * .append("\",color=\"red\",style=\"dotted\",penwidth=3];"); } } else {
+		 * if (perm) {
+		 * dotGraph.append("[shape=box,label=\"").append(p.getType()).append(
+		 * "\"];"); } else {
+		 * dotGraph.append("[shape=box,label=\"⚠️").append(p.getType())
+		 * .append("\",style=\"dotted\",penwidth=3];"); } } } for
+		 * (ROSTopicSubscription s : n.getSubscribers()) { dotGraph.append("\""
+		 * + s.getChannel().getName() + "\"").append(" -> ").append("\"" +
+		 * n.getName() + "\""); Boolean loop = false; Boolean perm = true;
+		 * Set<ROSTopicPublisher> pubs =
+		 * ROSComputationalGraph.getTopicPublishers("\"" +
+		 * s.getChannel().getName() + "\""); for (ROSTopicPublisher p : pubs) {
+		 * if (p.getNode().equals(n)) { loop = true; break; } } if (loop) { if
+		 * (perm) { dotGraph.append("[shape=box,label=\"").append(s.getType()).
+		 * append(", ")
+		 * .append(s.getCallbackFunction()).append("\",color=\"red\"];"); } else
+		 * { dotGraph.append("[shape=box,label=\"⚠️").append(s.getType()).
+		 * append(", ") .append(s.getCallbackFunction())
+		 * .append("\",color=\"red\",style=\"dotted\",penwidth=3];"); } } else {
+		 * if (perm) {
+		 * dotGraph.append("[shape=box,label=\"").append(s.getType()).
+		 * append(", ") .append(s.getCallbackFunction()).append("\"];"); } else
+		 * { dotGraph.append("[shape=box,label=\"⚠️").append(s.getType()).
+		 * append(", ") .append(s.getCallbackFunction()).append(
+		 * "\",style=\"dotted\",penwidth=3];"); } } } } dotGraph.append("}");
+		 */
 		FileManager.WriteAction w = writer -> writer.write(rosNetwork.toGraphviz(false));
 		try {
 			new FileManager(workDir + "/graph/").mkDotFile("graph", w);
@@ -262,7 +237,8 @@ public class ROSApplication {
 
 		for (ROSNode n : ROSComputationalGraph.getNodes()) {
 			for (ROSTopicPublisher p : n.getPublishers()) {
-				dotGraph.append("\"" + n.getName() + "\"").append(" -> ").append("\"" + p.getChannel().getName() + "\"");
+				dotGraph.append("\"" + n.getName() + "\"").append(" -> ")
+						.append("\"" + p.getChannel().getName() + "\"");
 				Boolean loop = false;
 				Grant permGrant = permissionsGrants.get(n.getName());
 
@@ -273,8 +249,8 @@ public class ROSApplication {
 				 * Node _n = permGraph.getNodeByName(n.getName()); if (_n !=
 				 * null) { for (Publisher _p :
 				 * permGraph.getNodeByName(n.getName()).getPublishers()) { if
-				 * (_p.getChannel().getName().equals(p.getChannel().getName())) {
-				 * perm = true; break; } } }
+				 * (_p.getChannel().getName().equals(p.getChannel().getName()))
+				 * { perm = true; break; } } }
 				 */
 				Set<ROSTopicSubscription> subs = ROSComputationalGraph.getTopicSubscriptions(p.getChannel().getName());
 				for (ROSTopicSubscription s : subs) {
@@ -302,7 +278,8 @@ public class ROSApplication {
 				}
 			}
 			for (ROSTopicSubscription s : n.getSubscribers()) {
-				dotGraph.append("\"" + s.getChannel().getName() + "\"").append(" -> ").append("\"" + n.getName() + "\"");
+				dotGraph.append("\"" + s.getChannel().getName() + "\"").append(" -> ")
+						.append("\"" + n.getName() + "\"");
 				Boolean loop = false;
 				Grant permGrant = permissionsGrants.get(n.getName());
 				Boolean perm = permGrant != null && permGrant.isSubscriptionAllowed(s.getChannel().getName());
@@ -311,8 +288,8 @@ public class ROSApplication {
 				 * Node _n = permGraph.getNodeByName(n.getName()); if (_n !=
 				 * null) { for (Subscription _s :
 				 * permGraph.getNodeByName(n.getName()).getSubscribers()) { if
-				 * (_s.getChannel().getName().equals(s.getChannel().getName())) {
-				 * perm = true; break; } } }
+				 * (_s.getChannel().getName().equals(s.getChannel().getName()))
+				 * { perm = true; break; } } }
 				 */
 
 				Set<ROSTopicPublisher> pubs = ROSComputationalGraph.getTopicPublishers(s.getChannel().getName());
@@ -475,5 +452,7 @@ public class ROSApplication {
 		new FileManager(workDir).mkOutputFile("dir-graph-adj-matrix.txt", w);
 	}
 
-	public ROSNetwork getRosNetwork() {return rosNetwork;}
+	public ROSNetwork getRosNetwork() {
+		return rosNetwork;
+	}
 }

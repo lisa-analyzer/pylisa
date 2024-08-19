@@ -5,22 +5,22 @@
 // Generated on: 2024.02.05 at 04:38:39 PM UTC 
 //
 
-
 package it.unive.ros.sros2policies.jaxb;
 
-import java.util.ArrayList;
-import java.util.List;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
-
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * <p>Java class for TopicExpressionList complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * Java class for TopicExpressionList complex type.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="TopicExpressionList"&gt;
@@ -35,97 +35,79 @@ import jakarta.xml.bind.annotation.XmlType;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "TopicExpressionList", propOrder = {
-    "topic"
+		"topic"
 })
 public class TopicExpressionList {
 
-    @XmlElement(required = true)
-    protected List<String> topic;
-    @XmlAttribute(name = "publish")
-    protected RuleQualifier publish;
-    @XmlAttribute(name = "subscribe")
-    protected RuleQualifier subscribe;
+	@XmlElement(required = true)
+	protected List<String> topic;
+	@XmlAttribute(name = "publish")
+	protected RuleQualifier publish;
+	@XmlAttribute(name = "subscribe")
+	protected RuleQualifier subscribe;
 
-    /**
-     * Gets the value of the topic property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the topic property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getTopic().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link String }
-     * 
-     * 
-     */
-    public List<String> getTopic() {
-        if (topic == null) {
-            topic = new ArrayList<String>();
-        }
-        return this.topic;
-    }
+	/**
+	 * Gets the value of the topic property.
+	 * <p>
+	 * This accessor method returns a reference to the live list, not a
+	 * snapshot. Therefore any modification you make to the returned list will
+	 * be present inside the JAXB object. This is why there is not a
+	 * <CODE>set</CODE> method for the topic property.
+	 * <p>
+	 * For example, to add a new item, do as follows:
+	 * 
+	 * <pre>
+	 * getTopic().add(newItem);
+	 * </pre>
+	 * <p>
+	 * Objects of the following type(s) are allowed in the list {@link String }
+	 */
+	public List<String> getTopic() {
+		if (topic == null) {
+			topic = new ArrayList<String>();
+		}
+		return this.topic;
+	}
 
-    /**
-     * Gets the value of the publish property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link RuleQualifier }
-     *     
-     */
-    public RuleQualifier getPublish() {
-        return publish;
-    }
+	/**
+	 * Gets the value of the publish property.
+	 * 
+	 * @return possible object is {@link RuleQualifier }
+	 */
+	public RuleQualifier getPublish() {
+		return publish;
+	}
 
-    /**
-     * Sets the value of the publish property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link RuleQualifier }
-     *     
-     */
-    public void setPublish(RuleQualifier value) {
-        this.publish = value;
-    }
+	/**
+	 * Sets the value of the publish property.
+	 * 
+	 * @param value allowed object is {@link RuleQualifier }
+	 */
+	public void setPublish(
+			RuleQualifier value) {
+		this.publish = value;
+	}
 
-    /**
-     * Gets the value of the subscribe property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link RuleQualifier }
-     *     
-     */
-    public RuleQualifier getSubscribe() {
-        return subscribe;
-    }
+	/**
+	 * Gets the value of the subscribe property.
+	 * 
+	 * @return possible object is {@link RuleQualifier }
+	 */
+	public RuleQualifier getSubscribe() {
+		return subscribe;
+	}
 
-    /**
-     * Sets the value of the subscribe property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link RuleQualifier }
-     *     
-     */
-    public void setSubscribe(RuleQualifier value) {
-        this.subscribe = value;
-    }
+	/**
+	 * Sets the value of the subscribe property.
+	 * 
+	 * @param value allowed object is {@link RuleQualifier }
+	 */
+	public void setSubscribe(
+			RuleQualifier value) {
+		this.subscribe = value;
+	}
 
 }

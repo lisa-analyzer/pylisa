@@ -10,47 +10,64 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.network.NetworkEvent;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public abstract class ROSServiceBasedNetworkEntity extends ROSNetworkEntity<ROSServiceChannel>{
-    String srvType;
+public abstract class ROSServiceBasedNetworkEntity extends ROSNetworkEntity<ROSServiceChannel> {
+	String srvType;
 
-    private List<NetworkEvent> processedEvents = new ArrayList<>();
+	private List<NetworkEvent> processedEvents = new ArrayList<>();
 
-    public ROSServiceBasedNetworkEntity(ROSNetwork network, ROSServiceChannel channel, ROSNode node) {
-        super(network, channel, node);
-    }
+	public ROSServiceBasedNetworkEntity(
+			ROSNetwork network,
+			ROSServiceChannel channel,
+			ROSNode node) {
+		super(network, channel, node);
+	}
 
-    public ROSServiceBasedNetworkEntity(ROSNetwork network, ROSServiceChannel channel, String nodeID) {
-        super(network, channel, nodeID);
-    }
+	public ROSServiceBasedNetworkEntity(
+			ROSNetwork network,
+			ROSServiceChannel channel,
+			String nodeID) {
+		super(network, channel, nodeID);
+	}
 
-    public ROSServiceBasedNetworkEntity(String containerID, ROSServiceChannel channel, String srvType, HeapExpression expr, Statement publisherStmt, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState) {
-        super(null, channel, containerID, expr, publisherStmt, analysisState);
-        this.srvType = srvType;
-    }
+	public ROSServiceBasedNetworkEntity(
+			String containerID,
+			ROSServiceChannel channel,
+			String srvType,
+			HeapExpression expr,
+			Statement publisherStmt,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState) {
+		super(null, channel, containerID, expr, publisherStmt, analysisState);
+		this.srvType = srvType;
+	}
 
-    public ROSServiceBasedNetworkEntity(ROSNetwork network, ROSServiceChannel channel, ROSNode node, String srvType) {
-        super(network, channel, node);
-        this.srvType = srvType;
-    }
+	public ROSServiceBasedNetworkEntity(
+			ROSNetwork network,
+			ROSServiceChannel channel,
+			ROSNode node,
+			String srvType) {
+		super(network, channel, node);
+		this.srvType = srvType;
+	}
 
-    @Override
-    public String getType() {
-        return this.srvType;
-    }
+	@Override
+	public String getType() {
+		return this.srvType;
+	}
 
-    @Override
-    public List<NetworkEvent> getProcessedEvents() {
-        return processedEvents;
-    }
+	@Override
+	public List<NetworkEvent> getProcessedEvents() {
+		return processedEvents;
+	}
 
-    public abstract Set<ROSTopicBasedNetworkEntity> toTopicEntities();
+	public abstract Set<ROSTopicBasedNetworkEntity> toTopicEntities();
 
-    public void addProcessedEvent(NetworkEvent ne) {
-        processedEvents.add(ne);
-    }
+	public void addProcessedEvent(
+			NetworkEvent ne) {
+		processedEvents.add(ne);
+	}
 }

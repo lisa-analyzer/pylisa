@@ -13,7 +13,6 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
@@ -23,7 +22,6 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import it.unive.pylisa.cfg.expression.PyAssign;
 import java.util.Set;
 
 public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression implements PluggableStatement {
@@ -62,8 +60,6 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 			StatementStore<A> expressions)
 			throws SemanticException {
 		AnalysisState<A> result = state.bottom();
-		AccessInstanceGlobal aig;
-		PyAssign pa;
 
 		for (SymbolicExpression v : params[0]) {
 			Set<Type> rts = state.getState().getRuntimeTypesOf(v, this, state.getState());
@@ -82,7 +78,6 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 					Variable var = global.toSymbolicVariable(getLocation());
 					AccessChild access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					AnalysisState<A> tmp = state.bottom();
-					SymbolicExpression msgType = params[1].iterator().next();
 					for (SymbolicExpression t : params[1])
 						tmp = tmp.lub(partial.assign(access, t, this));
 					partial = tmp;
@@ -101,7 +96,8 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 					tmp = state.bottom();
 					for (SymbolicExpression t : params[4]) {
 						if (t instanceof AccessChild) {
-							tmp = tmp.lub(partial.assign(access, new Constant(NullType.INSTANCE, null, getLocation()), this));
+							tmp = tmp.lub(
+									partial.assign(access, new Constant(NullType.INSTANCE, null, getLocation()), this));
 						} else {
 							tmp = tmp.lub(partial.assign(access, t, this));
 						}

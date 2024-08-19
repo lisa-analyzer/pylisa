@@ -75,7 +75,7 @@ public class SimpleSuperUnresolvedCall extends UnresolvedCall {
 					call,
 					new Set[0],
 					state.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
-			if (resolved instanceof OpenCall) 
+			if (resolved instanceof OpenCall)
 				resolved = interprocedural.resolve(
 						this,
 						ptypes,

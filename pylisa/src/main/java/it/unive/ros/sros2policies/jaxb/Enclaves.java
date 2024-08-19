@@ -5,21 +5,21 @@
 // Generated on: 2024.02.05 at 04:38:39 PM UTC 
 //
 
-
 package it.unive.ros.sros2policies.jaxb;
 
-import java.util.ArrayList;
-import java.util.List;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
-
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * <p>Java class for Enclaves complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * Java class for Enclaves complex type.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="Enclaves"&gt;
@@ -32,45 +32,37 @@ import jakarta.xml.bind.annotation.XmlType;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Enclaves", propOrder = {
-    "enclave"
+		"enclave"
 })
 public class Enclaves {
 
-    @XmlElement(required = true)
-    protected List<Enclave> enclave;
+	@XmlElement(required = true)
+	protected List<Enclave> enclave;
 
-    /**
-     * Gets the value of the enclave property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the enclave property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getEnclave().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Enclave }
-     * 
-     * 
-     */
-    public List<Enclave> getEnclave() {
-        if (enclave == null) {
-            enclave = new ArrayList<Enclave>();
-        }
-        return this.enclave;
-    }
+	/**
+	 * Gets the value of the enclave property.
+	 * <p>
+	 * This accessor method returns a reference to the live list, not a
+	 * snapshot. Therefore any modification you make to the returned list will
+	 * be present inside the JAXB object. This is why there is not a
+	 * <CODE>set</CODE> method for the enclave property.
+	 * <p>
+	 * For example, to add a new item, do as follows:
+	 * 
+	 * <pre>
+	 * getEnclave().add(newItem);
+	 * </pre>
+	 * <p>
+	 * Objects of the following type(s) are allowed in the list {@link Enclave }
+	 */
+	public List<Enclave> getEnclave() {
+		if (enclave == null) {
+			enclave = new ArrayList<Enclave>();
+		}
+		return this.enclave;
+	}
 
 }

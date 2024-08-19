@@ -25,8 +25,8 @@ public class RosTopic
 	// hashCode function are necessary)
 	private final Identifier id;
 	private final ProgramPoint programPoint;
-	private String topicName;
-	private String msgType;
+	// private String topicName;
+	// private String msgType;
 	// private List<String> publisher;
 	// private List<String> subscriber;
 
@@ -41,8 +41,8 @@ public class RosTopic
 			String msgType) {
 		this.id = id;
 		this.programPoint = programPoint;
-		this.topicName = topicName;
-		this.msgType = msgType;
+		// this.topicName = topicName;
+		// this.msgType = msgType;
 	}
 
 	@Override

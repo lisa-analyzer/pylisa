@@ -3,12 +3,18 @@ package it.unive.ros.network;
 import it.unive.ros.models.rclpy.ROSNetworkEntity;
 
 public interface NetworkEvent {
-    ROSNetworkEntity getInitiator();
+	ROSNetworkEntity getInitiator();
 
-    void setInitiator(ROSNetworkEntity ne);
-    NetworkChannel getChannel();
-    NetworkMessage getMessage();
+	void setInitiator(
+			ROSNetworkEntity ne);
 
-    NetworkEvent getParent();
-    void process(Network network) throws Exception;
+	NetworkChannel getChannel();
+
+	NetworkMessage getMessage();
+
+	NetworkEvent getParent();
+
+	void process(
+			Network network)
+			throws Exception;
 }

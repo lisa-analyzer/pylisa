@@ -16,7 +16,10 @@ import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class PyMatchingStrategy implements ParameterMatchingStrategy {
@@ -96,10 +99,10 @@ public class PyMatchingStrategy implements ParameterMatchingStrategy {
 
 		// first phase: positional arguments
 		for (; aPos < namedParOffset && fPos < formals.length; aPos++, fPos++) {
-			if (formals[fPos] instanceof VarKeywordParameter) 
+			if (formals[fPos] instanceof VarKeywordParameter)
 				// problem: varKeywordParameter in positional parameter
 				return failure;
-			else if (formals[fPos] instanceof VarPositionalParameter) 
+			else if (formals[fPos] instanceof VarPositionalParameter)
 				// all the next positional parameter must be inserted inside a
 				// list
 				break;
@@ -164,7 +167,7 @@ public class PyMatchingStrategy implements ParameterMatchingStrategy {
 
 		// fourth phase: keyword arguments
 		for (; aPos < actuals.length; aPos++) {
-			if (!(actuals[aPos] instanceof NamedParameterExpression)) 
+			if (!(actuals[aPos] instanceof NamedParameterExpression))
 				return failure;
 			String name = ((NamedParameterExpression) actuals[aPos]).getParameterName();
 			for (int i = fPos; i < formals.length; i++)

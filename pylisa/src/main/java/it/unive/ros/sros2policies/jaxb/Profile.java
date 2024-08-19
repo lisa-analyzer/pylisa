@@ -5,23 +5,23 @@
 // Generated on: 2024.02.05 at 04:38:39 PM UTC 
 //
 
-
 package it.unive.ros.sros2policies.jaxb;
 
-import java.util.ArrayList;
-import java.util.List;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElements;
 import jakarta.xml.bind.annotation.XmlType;
-
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * <p>Java class for Profile complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * Java class for Profile complex type.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="Profile"&gt;
@@ -40,103 +40,85 @@ import jakarta.xml.bind.annotation.XmlType;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Profile", propOrder = {
-    "topicsOrServicesOrActions"
+		"topicsOrServicesOrActions"
 })
 public class Profile {
 
-    @XmlElements({
-        @XmlElement(name = "topics", type = TopicExpressionList.class),
-        @XmlElement(name = "services", type = ServicesExpressionList.class),
-        @XmlElement(name = "actions", type = ActionsExpressionList.class)
-    })
-    protected List<Object> topicsOrServicesOrActions;
-    @XmlAttribute(name = "ns", required = true)
-    protected String ns;
-    @XmlAttribute(name = "node", required = true)
-    protected String node;
+	@XmlElements({
+			@XmlElement(name = "topics", type = TopicExpressionList.class),
+			@XmlElement(name = "services", type = ServicesExpressionList.class),
+			@XmlElement(name = "actions", type = ActionsExpressionList.class)
+	})
+	protected List<Object> topicsOrServicesOrActions;
+	@XmlAttribute(name = "ns", required = true)
+	protected String ns;
+	@XmlAttribute(name = "node", required = true)
+	protected String node;
 
-    /**
-     * Gets the value of the topicsOrServicesOrActions property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the topicsOrServicesOrActions property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getTopicsOrServicesOrActions().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link TopicExpressionList }
-     * {@link ServicesExpressionList }
-     * {@link ActionsExpressionList }
-     * 
-     * 
-     */
-    public List<Object> getTopicsOrServicesOrActions() {
-        if (topicsOrServicesOrActions == null) {
-            topicsOrServicesOrActions = new ArrayList<Object>();
-        }
-        return this.topicsOrServicesOrActions;
-    }
+	/**
+	 * Gets the value of the topicsOrServicesOrActions property.
+	 * <p>
+	 * This accessor method returns a reference to the live list, not a
+	 * snapshot. Therefore any modification you make to the returned list will
+	 * be present inside the JAXB object. This is why there is not a
+	 * <CODE>set</CODE> method for the topicsOrServicesOrActions property.
+	 * <p>
+	 * For example, to add a new item, do as follows:
+	 * 
+	 * <pre>
+	 * getTopicsOrServicesOrActions().add(newItem);
+	 * </pre>
+	 * <p>
+	 * Objects of the following type(s) are allowed in the list
+	 * {@link TopicExpressionList } {@link ServicesExpressionList }
+	 * {@link ActionsExpressionList }
+	 */
+	public List<Object> getTopicsOrServicesOrActions() {
+		if (topicsOrServicesOrActions == null) {
+			topicsOrServicesOrActions = new ArrayList<Object>();
+		}
+		return this.topicsOrServicesOrActions;
+	}
 
-    /**
-     * Gets the value of the ns property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getNs() {
-        return ns;
-    }
+	/**
+	 * Gets the value of the ns property.
+	 * 
+	 * @return possible object is {@link String }
+	 */
+	public String getNs() {
+		return ns;
+	}
 
-    /**
-     * Sets the value of the ns property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setNs(String value) {
-        this.ns = value;
-    }
+	/**
+	 * Sets the value of the ns property.
+	 * 
+	 * @param value allowed object is {@link String }
+	 */
+	public void setNs(
+			String value) {
+		this.ns = value;
+	}
 
-    /**
-     * Gets the value of the node property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getNode() {
-        return node;
-    }
+	/**
+	 * Gets the value of the node property.
+	 * 
+	 * @return possible object is {@link String }
+	 */
+	public String getNode() {
+		return node;
+	}
 
-    /**
-     * Sets the value of the node property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setNode(String value) {
-        this.node = value;
-    }
+	/**
+	 * Sets the value of the node property.
+	 * 
+	 * @param value allowed object is {@link String }
+	 */
+	public void setNode(
+			String value) {
+		this.node = value;
+	}
 
 }

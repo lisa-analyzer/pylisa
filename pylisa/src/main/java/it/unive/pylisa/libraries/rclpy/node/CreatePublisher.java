@@ -13,19 +13,12 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.type.StringType;
-import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.TernaryExpression;
-import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.ros.lisa.symbolic.operators.ros.ROSTopicNameExpansion;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 public class CreatePublisher extends NaryExpression implements PluggableStatement {
 	protected Statement st;
@@ -51,27 +44,6 @@ public class CreatePublisher extends NaryExpression implements PluggableStatemen
 		return new CreatePublisher(cfg, location, "create_publisher", exprs);
 	}
 
-	/**
-	 * @param interprocedural the interprocedural analysis of the program to
-	 *                        analyze
-	 * @param state           the state where the expression is to be evaluated
-	 * @param params          the symbolic expressions representing the computed
-	 *                        values of the sub-expressions of this
-	 *                        expression
-	 * @param expressions     the cache where analysis states of intermediate
-	 *                        expressions are stored and that can be
-	 *                        accessed to query for post-states of
-	 *                        parameters expressions
-	 *
-	 * @return
-	 * 
-	 * @param <A>
-	 * @param <H>
-	 * @param <V>
-	 * @param <T>
-	 * 
-	 * @throws SemanticException
-	 */
 	@Override
 	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
 			InterproceduralAnalysis<A> interprocedural,
@@ -95,7 +67,7 @@ public class CreatePublisher extends NaryExpression implements PluggableStatemen
 		AnalysisState<A> newPublisherAS = publisherObj.forwardSemanticsAux(interprocedural,
 				state, Arrays.copyOfRange(params, 1, params.length), expressions);
 
-		result =  result.lub(newPublisherAS);
+		result = result.lub(newPublisherAS);
 
 		return result;
 	}

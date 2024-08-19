@@ -138,7 +138,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 				slotTypes[fPos] = givenTypes[aPos];
 			}
 		}
-		
+
 		// second phase: check vargsPos
 		if (fPos < formals.length && formals[fPos] instanceof VarPositionalParameter) {
 			List<Expression> vargsList = new ArrayList<>();
@@ -180,8 +180,8 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			for (int i = aPos; i < actuals.length; i++) {
 				boolean found = false;
 				// ACTUAL VAR. NAME
-				String name = ((NamedParameterExpression) actuals[i]).getParameterName(); 
-				for (int j = fPos; j < formals.length; j++) 
+				String name = ((NamedParameterExpression) actuals[i]).getParameterName();
+				for (int j = fPos; j < formals.length; j++)
 					if (formals[j].getName().equals(name)) {
 						found = true;
 						break;

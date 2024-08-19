@@ -1,9 +1,5 @@
 package it.unive.pylisa.decorators;
 
-import java.io.IOException;
-
-import org.junit.Test;
-
 import it.unive.lisa.LiSA;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
@@ -17,6 +13,8 @@ import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.PyFrontend;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
+import java.io.IOException;
+import org.junit.Test;
 
 public class DecoratorsTest {
 

@@ -9,8 +9,7 @@ import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
-import it.unive.ros.network.*;
-
+import it.unive.ros.network.NetworkEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,18 +28,25 @@ public abstract class ROSTopicBasedNetworkEntity extends ROSNetworkEntity<ROSTop
 		this.processedEvents = new ArrayList<>();
 	}
 
-	public ROSTopicBasedNetworkEntity(String containerID, ROSTopic topic, String msgType, HeapExpression expr, Statement publisherStmt, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState) {
+	public ROSTopicBasedNetworkEntity(
+			String containerID,
+			ROSTopic topic,
+			String msgType,
+			HeapExpression expr,
+			Statement publisherStmt,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState) {
 		super(null, topic, containerID, expr, publisherStmt, analysisState);
 		this.msgType = msgType;
 		this.processedEvents = new ArrayList<>();
 	}
 
-
 	public ROSNode getNode() {
 		return getContainer();
 	}
 
-	public void setNode(ROSNode n) {
+	public void setNode(
+			ROSNode n) {
 		this.setContainer(n);
 	}
 
@@ -53,7 +59,8 @@ public abstract class ROSTopicBasedNetworkEntity extends ROSNetworkEntity<ROSTop
 		return processedEvents;
 	}
 
-	public void addProcessedEvent(NetworkEvent ne) {
+	public void addProcessedEvent(
+			NetworkEvent ne) {
 		processedEvents.add(ne);
 	}
 }

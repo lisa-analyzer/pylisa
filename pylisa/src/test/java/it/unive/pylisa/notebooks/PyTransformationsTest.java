@@ -1,8 +1,5 @@
 package it.unive.pylisa.notebooks;
 
-import org.junit.Ignore;
-import org.junit.Test;
-
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;

@@ -13,16 +13,12 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-
-import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.rclpy.subscription.ROSSubscriptionCallback;
-
 import java.util.Arrays;
 
 public class CreateSubscription extends NaryExpression implements PluggableStatement {
@@ -68,10 +64,12 @@ public class CreateSubscription extends NaryExpression implements PluggableState
 
 		PyNewObj subscriptionObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
 				subscriptionClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
-		ROSSubscriptionCallback callback = new ROSSubscriptionCallback(this.getCFG(), (SourceCodeLocation) getLocation(), getSubExpressions()[3]);
+		ROSSubscriptionCallback callback = new ROSSubscriptionCallback(this.getCFG(),
+				(SourceCodeLocation) getLocation(), getSubExpressions()[3]);
 		try {
-			callback.snooping(interprocedural, state, new ExpressionSet[]{params[3]}, expressions);
-		} catch(Exception e) {}
+			callback.snooping(interprocedural, state, new ExpressionSet[] { params[3] }, expressions);
+		} catch (Exception e) {
+		}
 		AnalysisState<A> newSubscriptionAS = subscriptionObj.forwardSemanticsAux(interprocedural,
 				state, Arrays.copyOfRange(params, 1, params.length), expressions);
 

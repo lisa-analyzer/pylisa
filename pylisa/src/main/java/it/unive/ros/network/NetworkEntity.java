@@ -4,21 +4,29 @@ import java.util.List;
 
 public interface NetworkEntity<Container extends NetworkEntityContainer, Channel extends NetworkChannel> {
 
-    NetworkEvent createNetworkEvent(NetworkMessage networkMessage);
-    Container getContainer();
-    void setContainer(Container container);
+	NetworkEvent createNetworkEvent(
+			NetworkMessage networkMessage);
 
+	Container getContainer();
 
-    String getContainerID();
+	void setContainer(
+			Container container);
 
-    void setContainerID(String containerID);
-    Channel getChannel();
+	String getContainerID();
 
-    NetworkEntityType getNetworkEntityType();
+	void setContainerID(
+			String containerID);
 
-    List<NetworkEvent> getProcessedEvents();
+	Channel getChannel();
 
-    void processMessage(NetworkMessage message) throws Exception;
-    String getID();
+	NetworkEntityType getNetworkEntityType();
+
+	List<NetworkEvent> getProcessedEvents();
+
+	void processMessage(
+			NetworkMessage message)
+			throws Exception;
+
+	String getID();
 
 }

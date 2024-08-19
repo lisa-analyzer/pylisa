@@ -1,6 +1,9 @@
 package it.unive.ros.lisa.checks.semantics;
 
-import it.unive.lisa.analysis.*;
+import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.AnalyzedCFG;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.HeapAllocationSite;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
@@ -27,7 +30,6 @@ import it.unive.lisa.program.cfg.statement.call.ResolvedCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.lisa.symbolic.heap.HeapReference;
@@ -42,15 +44,27 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.rclpy.node.SemanticsHelpers;
 import it.unive.pylisa.libraries.rclpy.subscription.ROSSubscriptionCallback;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
-import it.unive.ros.models.rclpy.*;
+import it.unive.ros.models.rclpy.ROSActionChannel;
+import it.unive.ros.models.rclpy.ROSActionClient;
+import it.unive.ros.models.rclpy.ROSActionServer;
+import it.unive.ros.models.rclpy.ROSCommunicationChannel;
 import it.unive.ros.models.rclpy.ROSNetwork;
-import it.unive.ros.network.*;
-
+import it.unive.ros.models.rclpy.ROSNetworkEntity;
+import it.unive.ros.models.rclpy.ROSNode;
+import it.unive.ros.models.rclpy.ROSServiceChannel;
+import it.unive.ros.models.rclpy.ROSServiceClient;
+import it.unive.ros.models.rclpy.ROSServiceServer;
+import it.unive.ros.models.rclpy.ROSTopic;
+import it.unive.ros.models.rclpy.ROSTopicPublisher;
+import it.unive.ros.models.rclpy.ROSTopicSubscription;
+import it.unive.ros.models.rclpy.RosComputationalGraph;
+import it.unive.ros.network.NetworkMessage;
 import java.util.Collection;
 
 public class ROSComputationGraphDumper
 		implements
-		SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> {
+		SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+				TypeEnvironment<InferredTypes>>> {
 
 	private RosComputationalGraph rosGraph;
 
@@ -59,31 +73,36 @@ public class ROSComputationGraphDumper
 	private ScopeId currentNodeScopeId;
 
 	public ROSComputationGraphDumper(
-			RosComputationalGraph rosGraph, ROSNetwork n) {
+			RosComputationalGraph rosGraph,
+			ROSNetwork n) {
 		this.rosGraph = rosGraph;
 		this.rosNetwork = n;
 	}
 
 	@Override
 	public void beforeExecution(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> tool) {
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> tool) {
 	}
 
 	@Override
 	public void afterExecution(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> tool) {
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> tool) {
 	}
 
 	@Override
 	public boolean visitUnit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> tool,
 			Unit unit) {
 		return true;
 	}
 
 	@Override
 	public void visitGlobal(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> tool,
 			Unit unit,
 			Global global,
 			boolean instance) {
@@ -92,13 +111,20 @@ public class ROSComputationGraphDumper
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> tool,
 			CFG graph) {
 
 		return true;
 	}
 
-	public void visitActionClient(AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, Statement publisher, HeapExpression expr, SymbolicExpression nodeExpr) throws Exception {
+	public void visitActionClient(
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			Statement publisher,
+			HeapExpression expr,
+			SymbolicExpression nodeExpr)
+			throws Exception {
 		String actionName = "<undefined>";
 		String actionType = "<undefined>";
 
@@ -141,11 +167,19 @@ public class ROSComputationGraphDumper
 			channel = new ROSActionChannel(actionName);
 			rosNetwork.addNetworkChannel(channel);
 		}
-		ROSActionClient server = new ROSActionClient(nodeExpr.getCodeLocation().toString(), channel, actionType, expr, publisher, analysisState);
+		ROSActionClient server = new ROSActionClient(nodeExpr.getCodeLocation().toString(), channel, actionType, expr,
+				publisher, analysisState);
 		rosNetwork.addNetworkEntity(server, nodeExpr.getCodeLocation().toString());
 		var x = 3;
 	}
-	public void visitActionServer(AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, Statement publisher, HeapExpression expr, SymbolicExpression nodeExpr) throws Exception {
+
+	public void visitActionServer(
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			Statement publisher,
+			HeapExpression expr,
+			SymbolicExpression nodeExpr)
+			throws Exception {
 		String actionName = "<undefined>";
 		String actionType = "<undefined>";
 
@@ -188,11 +222,20 @@ public class ROSComputationGraphDumper
 			channel = new ROSActionChannel(actionName);
 			rosNetwork.addNetworkChannel(channel);
 		}
-		ROSActionServer server = new ROSActionServer(nodeExpr.getCodeLocation().toString(), channel, actionType, expr, publisher, analysisState);
+		ROSActionServer server = new ROSActionServer(nodeExpr.getCodeLocation().toString(), channel, actionType, expr,
+				publisher, analysisState);
 		rosNetwork.addNetworkEntity(server, nodeExpr.getCodeLocation().toString());
 		var x = 3;
 	}
-	public void visitNode(AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, Statement node, HeapExpression expr, CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> tool) throws Exception {
+
+	public void visitNode(
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			Statement node,
+			HeapExpression expr,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> tool)
+			throws Exception {
 		String nodeName = "<undefined>";
 		String namespace = "<undefined>";
 		Boolean startParamService = true; // true by default
@@ -242,7 +285,8 @@ public class ROSComputationGraphDumper
 			startParamService = (Boolean) analysisState.getState()
 					.getValueState()
 					.eval(has, node, analysisState.getState()).getConstant();
-		} catch(Exception e) {}
+		} catch (Exception e) {
+		}
 		access = new Variable(Untyped.INSTANCE,
 				"enable_rosout",
 				expr.getCodeLocation());
@@ -256,18 +300,27 @@ public class ROSComputationGraphDumper
 			enableRosout = (Boolean) analysisState.getState()
 					.getValueState()
 					.eval(has, node, analysisState.getState()).getConstant();
-		} catch(Exception e) {}
-		ROSNode n =  new ROSNode(nodeName, namespace, startParamService, enableRosout, node, expr, analysisState, tool.getConfiguration().interproceduralAnalysis);
+		} catch (Exception e) {
+		}
+		ROSNode n = new ROSNode(nodeName, namespace, startParamService, enableRosout, node, expr, analysisState,
+				tool.getConfiguration().interproceduralAnalysis);
 		rosNetwork.addEntityContainer(n);
 	}
 
-	public SymbolicExpression getNodeHeapReference(AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analyzedCFG,
-	   AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState,
-	   Expression node) throws SemanticException {
+	public SymbolicExpression getNodeHeapReference(
+			AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analyzedCFG,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			Expression node)
+			throws SemanticException {
 		String nodeName = null;
-		AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> nodeSemantics = analyzedCFG.getAnalysisStateAfter(node);
-		HeapReference nodeHR = new HeapReference(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE), nodeSemantics.getComputedExpressions().elements.iterator().next(), node.getLocation());
-		HeapDereference nodeDeref = new HeapDereference(nodeHR.getExpression().getStaticType(), nodeHR, nodeSemantics.getComputedExpressions().elements.iterator().next().getCodeLocation());
+		AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+				TypeEnvironment<InferredTypes>>> nodeSemantics = analyzedCFG.getAnalysisStateAfter(node);
+		HeapReference nodeHR = new HeapReference(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE),
+				nodeSemantics.getComputedExpressions().elements.iterator().next(), node.getLocation());
+		HeapDereference nodeDeref = new HeapDereference(nodeHR.getExpression().getStaticType(), nodeHR,
+				nodeSemantics.getComputedExpressions().elements.iterator().next().getCodeLocation());
 		ExpressionSet nodeHAS = nodeSemantics
 				.getState()
 				.rewrite(nodeDeref,
@@ -276,7 +329,15 @@ public class ROSComputationGraphDumper
 		return nodeHAS.iterator().next();
 	}
 
-	public void visitPublisher(AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analyzedCFG, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, UnresolvedCall unresolvedCall, HeapExpression expr, SymbolicExpression nodeExpr) throws Exception {
+	public void visitPublisher(
+			AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analyzedCFG,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			UnresolvedCall unresolvedCall,
+			HeapExpression expr,
+			SymbolicExpression nodeExpr)
+			throws Exception {
 		String topicName = "<undefined>";
 		String msgType = "<undefined>";
 
@@ -314,20 +375,27 @@ public class ROSComputationGraphDumper
 		msgType = getMessageType(msgType, analysisState);
 		Boolean avoidNamespaceConventions = false;
 		try {
-			avoidNamespaceConventions = isAvoidRosNamespaceConventions(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[3]);
+			avoidNamespaceConventions = isAvoidRosNamespaceConventions(analyzedCFG, analysisState,
+					unresolvedCall.getSubExpressions()[3]);
 			if (avoidNamespaceConventions) {
-				rosNetwork.getWarnings().add("avoid_ros_namespace_conventions = True in Publisher " + expr.getCodeLocation().toString());
+				rosNetwork.getWarnings().add(
+						"avoid_ros_namespace_conventions = True in Publisher " + expr.getCodeLocation().toString());
 			}
 		} catch (Exception e) {
-			rosNetwork.getWarnings().add("Fail to get  avoid_ros_namespace_conventions for Publisher " + expr.getCodeLocation().toString());
+			rosNetwork.getWarnings().add(
+					"Fail to get  avoid_ros_namespace_conventions for Publisher " + expr.getCodeLocation().toString());
 		}
 		ROSTopic channel = new ROSTopic(topicName, false, avoidNamespaceConventions);
 		rosNetwork.addNetworkChannel(channel);
-		ROSTopicPublisher p = new ROSTopicPublisher(nodeExpr.getCodeLocation().toString(), channel, msgType, unresolvedCall, expr, analysisState);
+		ROSTopicPublisher p = new ROSTopicPublisher(nodeExpr.getCodeLocation().toString(), channel, msgType,
+				unresolvedCall, expr, analysisState);
 		rosNetwork.addNetworkEntity(p, nodeExpr.getCodeLocation().toString());
 	}
 
-	public String getMessageType(String variableName, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState) {
+	public String getMessageType(
+			String variableName,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState) {
 		for (Symbol s : analysisState.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).getKeys()) {
 			if (s instanceof QualifiedNameSymbol) {
 				QualifiedNameSymbol qnss = (QualifiedNameSymbol) s;
@@ -339,7 +407,15 @@ public class ROSComputationGraphDumper
 		return variableName;
 	}
 
-	public void visitServiceClient(AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analyzedCFG, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, UnresolvedCall unresolvedCall, HeapExpression expr, SymbolicExpression nodeExpr) throws Exception {
+	public void visitServiceClient(
+			AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analyzedCFG,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			UnresolvedCall unresolvedCall,
+			HeapExpression expr,
+			SymbolicExpression nodeExpr)
+			throws Exception {
 		String serviceName = "<undefined>";
 		String msgType = "<undefined>";
 
@@ -379,23 +455,38 @@ public class ROSComputationGraphDumper
 		try {
 			Expression e = SemanticsHelpers.getNamedParameterExpr(unresolvedCall.getSubExpressions(), "qos_profile");
 			if (e != null) {
-				avoidNamespaceConventions = isAvoidRosNamespaceConventions(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[3]);
+				avoidNamespaceConventions = isAvoidRosNamespaceConventions(analyzedCFG, analysisState,
+						unresolvedCall.getSubExpressions()[3]);
 				if (avoidNamespaceConventions) {
-					rosNetwork.getWarnings().add("avoid_ros_namespace_conventions = True in Service Client " + expr.getCodeLocation().toString());
+					rosNetwork.getWarnings().add("avoid_ros_namespace_conventions = True in Service Client "
+							+ expr.getCodeLocation().toString());
 				}
 			}
 		} catch (Exception e) {
-			rosNetwork.getWarnings().add("Fail to get  avoid_ros_namespace_conventions for Service Client " + expr.getCodeLocation().toString());
+			rosNetwork.getWarnings().add("Fail to get  avoid_ros_namespace_conventions for Service Client "
+					+ expr.getCodeLocation().toString());
 		}
 		ROSServiceChannel channel = new ROSServiceChannel(serviceName, false, avoidNamespaceConventions);
 		rosNetwork.addNetworkChannel(channel);
-		ROSServiceClient s = new ROSServiceClient(nodeExpr.getCodeLocation().toString(), channel, msgType, unresolvedCall, expr, analysisState);
+		ROSServiceClient s = new ROSServiceClient(nodeExpr.getCodeLocation().toString(), channel, msgType,
+				unresolvedCall, expr, analysisState);
 		rosNetwork.addNetworkEntity(s, nodeExpr.getCodeLocation().toString());
-		//ROSTopicPublisher p = new ROSTopicPublisher(nodeExpr.getCodeLocation().toString(), (ROSTopic) channel, msgType, publisher, expr, analysisState);
-		//rosNetwork.addNetworkEntity(p, nodeExpr.getCodeLocation().toString());
+		// ROSTopicPublisher p = new
+		// ROSTopicPublisher(nodeExpr.getCodeLocation().toString(), (ROSTopic)
+		// channel, msgType, publisher, expr, analysisState);
+		// rosNetwork.addNetworkEntity(p,
+		// nodeExpr.getCodeLocation().toString());
 	}
 
-	public void visitServiceServer(AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analyzedCFG, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, UnresolvedCall unresolvedCall, HeapExpression expr, SymbolicExpression nodeExpr) throws Exception {
+	public void visitServiceServer(
+			AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analyzedCFG,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			UnresolvedCall unresolvedCall,
+			HeapExpression expr,
+			SymbolicExpression nodeExpr)
+			throws Exception {
 		String serviceName = "<undefined>";
 		String msgType = "<undefined>";
 
@@ -437,23 +528,34 @@ public class ROSComputationGraphDumper
 			if (e != null) {
 				avoidNamespaceConventions = isAvoidRosNamespaceConventions(analyzedCFG, analysisState, e);
 				if (avoidNamespaceConventions) {
-					rosNetwork.getWarnings().add("avoid_ros_namespace_conventions = True in Service Server " + expr.getCodeLocation().toString());
+					rosNetwork.getWarnings().add("avoid_ros_namespace_conventions = True in Service Server "
+							+ expr.getCodeLocation().toString());
 				}
 			}
 
 		} catch (Exception e) {
-			rosNetwork.getWarnings().add("Fail to get  avoid_ros_namespace_conventions for Service Server " + expr.getCodeLocation().toString());
+			rosNetwork.getWarnings().add("Fail to get  avoid_ros_namespace_conventions for Service Server "
+					+ expr.getCodeLocation().toString());
 		}
 		ROSServiceChannel channel = new ROSServiceChannel(serviceName, false, avoidNamespaceConventions);
 		rosNetwork.addNetworkChannel(channel);
-		ROSServiceServer s = new ROSServiceServer(nodeExpr.getCodeLocation().toString(), channel, msgType, unresolvedCall, expr, analysisState);
+		ROSServiceServer s = new ROSServiceServer(nodeExpr.getCodeLocation().toString(), channel, msgType,
+				unresolvedCall, expr, analysisState);
 		rosNetwork.addNetworkEntity(s, nodeExpr.getCodeLocation().toString());
 	}
 
-	public void visitSubscriber(AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analyzedCFG, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, UnresolvedCall unresolvedCall, HeapExpression expr, SymbolicExpression nodeExpr) throws Exception {
+	public void visitSubscriber(
+			AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analyzedCFG,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			UnresolvedCall unresolvedCall,
+			HeapExpression expr,
+			SymbolicExpression nodeExpr)
+			throws Exception {
 		String topicName = "<undefined>";
 		String msgType = "<undefined>";
-		//String callbackFunction = "<undefined>";
+		// String callbackFunction = "<undefined>";
 		Variable access = new Variable(
 				Untyped.INSTANCE,
 				"topic_name",
@@ -500,7 +602,8 @@ public class ROSComputationGraphDumper
 				.getValueState()
 				.eval(has, unresolvedCall, analysisState.getState())
 				.toString();
-		//ROSSubscriptionCallback callbackFunction = getROSCallbackFunction(((UnresolvedCall)publisher).getSubExpressions()[4]);
+		// ROSSubscriptionCallback callbackFunction =
+		// getROSCallbackFunction(((UnresolvedCall)publisher).getSubExpressions()[4]);
 		if (callback.startsWith("\"")) {
 			callback = new String(callback
 					.toCharArray(),
@@ -519,37 +622,54 @@ public class ROSComputationGraphDumper
 				access, false,
 				expr.getCodeLocation());
 
-		//callbackFunction = callback;
+		// callbackFunction = callback;
 		Boolean avoidNamespaceConventions = false;
 		try {
-			avoidNamespaceConventions = isAvoidRosNamespaceConventions(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[4]);
+			avoidNamespaceConventions = isAvoidRosNamespaceConventions(analyzedCFG, analysisState,
+					unresolvedCall.getSubExpressions()[4]);
 			if (avoidNamespaceConventions) {
-				rosNetwork.getWarnings().add("avoid_ros_namespace_conventions = True in Subscription " + expr.getCodeLocation().toString());
+				rosNetwork.getWarnings().add(
+						"avoid_ros_namespace_conventions = True in Subscription " + expr.getCodeLocation().toString());
 			}
 		} catch (Exception e) {
-			rosNetwork.getWarnings().add("Fail to get  avoid_ros_namespace_conventions for Subscription " + expr.getCodeLocation().toString());
+			rosNetwork.getWarnings().add("Fail to get  avoid_ros_namespace_conventions for Subscription "
+					+ expr.getCodeLocation().toString());
 		}
 		ROSCommunicationChannel channel = new ROSTopic(topicName, false, avoidNamespaceConventions);
 		rosNetwork.addNetworkChannel(channel);
-		ROSSubscriptionCallback callbackFunction = new ROSSubscriptionCallback(unresolvedCall.getCFG(), (SourceCodeLocation) unresolvedCall.getLocation(), unresolvedCall.getSubExpressions()[3]);
-		ROSTopicSubscription s = new ROSTopicSubscription(nodeExpr.getCodeLocation().toString(), (ROSTopic) channel, msgType, callbackFunction, unresolvedCall, expr, analysisState);
+		ROSSubscriptionCallback callbackFunction = new ROSSubscriptionCallback(unresolvedCall.getCFG(),
+				(SourceCodeLocation) unresolvedCall.getLocation(), unresolvedCall.getSubExpressions()[3]);
+		ROSTopicSubscription s = new ROSTopicSubscription(nodeExpr.getCodeLocation().toString(), (ROSTopic) channel,
+				msgType, callbackFunction, unresolvedCall, expr, analysisState);
 
 		rosNetwork.addNetworkEntity(s, nodeExpr.getCodeLocation().toString());
 	}
 
-	public void visitAnalyzedCFG(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> tool, AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analyzedCFG, Statement node) throws Exception {
+	public void visitAnalyzedCFG(
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> tool,
+			AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analyzedCFG,
+			Statement node)
+			throws Exception {
 		if (node instanceof PyNewObj) {
 			PyNewObj obj = (PyNewObj) node;
 			Type staticType = obj.getStaticType();
 			if (staticType instanceof PyClassType) {
 				PyClassType pyCObjClassType = (PyClassType) staticType;
-				if (pyCObjClassType.getUnit().getImmediateAncestors().contains(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE).getUnit())) {
+				if (pyCObjClassType.getUnit().getImmediateAncestors()
+						.contains(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE).getUnit())) {
 					// we are creating a rclpy Node.
-					AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
+					AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
 					// in the analysis state we have a rclpy Node.
 					for (SymbolicExpression expr : analysisState.getComputedExpressions()) {
 						if (expr instanceof HeapReference
-								/*&& expr.getStaticType().equals(new ReferenceType(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE)))*/) {
+						/*
+						 * && expr.getStaticType().equals(new
+						 * ReferenceType(PyClassType.lookup(
+						 * LibrarySpecificationProvider.RCLPY_NODE)))
+						 */) {
 							visitNode(analysisState, node, (HeapExpression) expr, tool);
 							return;
 						}
@@ -557,21 +677,33 @@ public class ROSComputationGraphDumper
 				}
 			}
 			if (staticType.equals(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_ACTIONCLIENT))) {
-				AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
+				AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+						TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
 				for (SymbolicExpression expr : analysisState.getComputedExpressions()) {
 					if (expr instanceof HeapReference
-						/*&& expr.getStaticType().equals(new ReferenceType(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE)))*/) {
-						SymbolicExpression nodeExpr = getNodeHeapReference(analyzedCFG, analysisState, ((PyNewObj) node).getSubExpressions()[0]);
+					/*
+					 * && expr.getStaticType().equals(new
+					 * ReferenceType(PyClassType.lookup(
+					 * LibrarySpecificationProvider.RCLPY_NODE)))
+					 */) {
+						SymbolicExpression nodeExpr = getNodeHeapReference(analyzedCFG, analysisState,
+								((PyNewObj) node).getSubExpressions()[0]);
 						visitActionClient(analysisState, node, (HeapExpression) expr, nodeExpr);
 						return;
 					}
 				}
 			} else if (staticType.equals(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_ACTIONSERVER))) {
-				AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
+				AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+						TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
 				for (SymbolicExpression expr : analysisState.getComputedExpressions()) {
 					if (expr instanceof HeapReference
-						/*&& expr.getStaticType().equals(new ReferenceType(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE)))*/) {
-						SymbolicExpression nodeExpr = getNodeHeapReference(analyzedCFG, analysisState, ((PyNewObj)node).getSubExpressions()[0]);
+					/*
+					 * && expr.getStaticType().equals(new
+					 * ReferenceType(PyClassType.lookup(
+					 * LibrarySpecificationProvider.RCLPY_NODE)))
+					 */) {
+						SymbolicExpression nodeExpr = getNodeHeapReference(analyzedCFG, analysisState,
+								((PyNewObj) node).getSubExpressions()[0]);
 						visitActionServer(analysisState, node, (HeapExpression) expr, nodeExpr);
 						return;
 					}
@@ -594,12 +726,19 @@ public class ROSComputationGraphDumper
 		}
 	}
 
-	public Boolean isAvoidRosNamespaceConventions(AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analyzedCFG,
-												  AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState,
-												  Expression qosProfile) throws SemanticException {
-		AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> qosSemantics = analyzedCFG.getAnalysisStateAfter(qosProfile);
-		HeapReference qosHR = new HeapReference(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE), qosSemantics.getComputedExpressions().elements.iterator().next(), qosProfile.getLocation());
-		HeapDereference qosDeref = new HeapDereference(qosHR.getExpression().getStaticType(), qosHR, qosSemantics.getComputedExpressions().elements.iterator().next().getCodeLocation());
+	public Boolean isAvoidRosNamespaceConventions(
+			AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analyzedCFG,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			Expression qosProfile)
+			throws SemanticException {
+		AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+				TypeEnvironment<InferredTypes>>> qosSemantics = analyzedCFG.getAnalysisStateAfter(qosProfile);
+		HeapReference qosHR = new HeapReference(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE),
+				qosSemantics.getComputedExpressions().elements.iterator().next(), qosProfile.getLocation());
+		HeapDereference qosDeref = new HeapDereference(qosHR.getExpression().getStaticType(), qosHR,
+				qosSemantics.getComputedExpressions().elements.iterator().next().getCodeLocation());
 		ExpressionSet qosHAS = qosSemantics
 				.getState()
 				.rewrite(qosDeref,
@@ -608,7 +747,7 @@ public class ROSComputationGraphDumper
 		SymbolicExpression e = qosHAS.iterator().next();
 		if (e instanceof HeapAllocationSite) {
 
-			//HeapAllocationSite has = (HeapAllocationSite) e;
+			// HeapAllocationSite has = (HeapAllocationSite) e;
 			Variable access = new Variable(Untyped.INSTANCE,
 					"avoid_ros_namespace_conventions",
 					e.getCodeLocation());
@@ -618,14 +757,20 @@ public class ROSComputationGraphDumper
 							.getCodeLocation(),
 					access, false,
 					e.getCodeLocation());
-			return (Boolean) analysisState.getState().getValueState().eval(has, qosProfile, analysisState.getState()).getConstant();
+			return (Boolean) analysisState.getState().getValueState().eval(has, qosProfile, analysisState.getState())
+					.getConstant();
 		}
 		return false;
 	}
 
-
-	public void visitNativeCFG(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> tool,
-  		NativeCFG nativeCFG, AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analyzedCFG, Statement node) throws Exception {
+	public void visitNativeCFG(
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> tool,
+			NativeCFG nativeCFG,
+			AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analyzedCFG,
+			Statement node)
+			throws Exception {
 		String nativeCFGDescriptorName = nativeCFG.getDescriptor().getName();
 		String nativeCFGDescriptorUnitName = nativeCFG.getDescriptor().getUnit().getName();
 		System.out.println(" ! ! ! ! ! ! " + nativeCFGDescriptorName);
@@ -633,18 +778,24 @@ public class ROSComputationGraphDumper
 			PyNewObj obj = (PyNewObj) node;
 			Type staticType = obj.getStaticType();
 			if (staticType.equals(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_ACTIONCLIENT))) {
-			} else if (staticType.equals(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_ACTIONSERVER))) {}
+			} else if (staticType.equals(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_ACTIONSERVER))) {
+			}
 		} else if ((nativeCFGDescriptorName.equals("__init__")
 				&& nativeCFGDescriptorUnitName
-				.equals(LibrarySpecificationProvider.RCLPY_NODE))) {
+						.equals(LibrarySpecificationProvider.RCLPY_NODE))) {
 			// Node.__init__( ... )
 		} else if ((nativeCFGDescriptorName.equals("create_node")
 				&& nativeCFGDescriptorUnitName
-				.equals(LibrarySpecificationProvider.RCLPY))) {
-			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
+						.equals(LibrarySpecificationProvider.RCLPY))) {
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
 			for (SymbolicExpression expr : analysisState.getComputedExpressions()) {
 				if (expr instanceof HeapReference
-					/*&& expr.getStaticType().equals(new ReferenceType(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE)))*/) {
+				/*
+				 * && expr.getStaticType().equals(new
+				 * ReferenceType(PyClassType.lookup(LibrarySpecificationProvider
+				 * .RCLPY_NODE)))
+				 */) {
 					visitNode(analysisState, node, (HeapExpression) expr, tool);
 					return;
 				}
@@ -653,20 +804,25 @@ public class ROSComputationGraphDumper
 		} else if (nativeCFG.getDescriptor().getName()
 				.equals("create_subscription")
 				&& nativeCFGDescriptorUnitName
-				.equals(LibrarySpecificationProvider.RCLPY_NODE)) {
+						.equals(LibrarySpecificationProvider.RCLPY_NODE)) {
 			UnresolvedCall unresolvedCall = (UnresolvedCall) node;
-			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
 
 			for (SymbolicExpression expr : analysisState.getComputedExpressions()) {
 
 				if (expr instanceof HeapReference
 						&& ((HeapReference) expr)
-						.getStaticType()
-						.equals(new ReferenceType(
-								PyClassType
-										.lookup(LibrarySpecificationProvider.RCLPY_SUBSCRIPTION)))) {
-					//AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> nodeSemantics = analyzedCFG.getAnalysisStateAfter(unresolvedCall.getSubExpressions()[0]);
-					SymbolicExpression nodeExpr = getNodeHeapReference(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[0]);
+								.getStaticType()
+								.equals(new ReferenceType(
+										PyClassType
+												.lookup(LibrarySpecificationProvider.RCLPY_SUBSCRIPTION)))) {
+					// AnalysisState<SimpleAbstractState<PointBasedHeap,
+					// ValueEnvironment<ConstantPropagation>,
+					// TypeEnvironment<InferredTypes>>> nodeSemantics =
+					// analyzedCFG.getAnalysisStateAfter(unresolvedCall.getSubExpressions()[0]);
+					SymbolicExpression nodeExpr = getNodeHeapReference(analyzedCFG, analysisState,
+							unresolvedCall.getSubExpressions()[0]);
 
 					visitSubscriber(analyzedCFG, analysisState, unresolvedCall, (HeapExpression) expr, nodeExpr);
 				}
@@ -674,64 +830,82 @@ public class ROSComputationGraphDumper
 		} else if (nativeCFGDescriptorName
 				.equals("create_publisher")
 				&& nativeCFGDescriptorUnitName
-				.equals(LibrarySpecificationProvider.RCLPY_NODE)) {
+						.equals(LibrarySpecificationProvider.RCLPY_NODE)) {
 			UnresolvedCall unresolvedCall = (UnresolvedCall) node;
-			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
 
 			for (SymbolicExpression expr : analysisState.getComputedExpressions()) {
 
 				if (expr instanceof HeapReference
 						&& ((HeapReference) expr)
-						.getStaticType()
-						.equals(new ReferenceType(
-								PyClassType
-										.lookup(LibrarySpecificationProvider.RCLPY_PUBLISHER)))) {
-					//AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> nodeSemantics = analyzedCFG.getAnalysisStateAfter(unresolvedCall.getSubExpressions()[0]);
-					SymbolicExpression nodeSymbolic = getNodeHeapReference(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[0]);
+								.getStaticType()
+								.equals(new ReferenceType(
+										PyClassType
+												.lookup(LibrarySpecificationProvider.RCLPY_PUBLISHER)))) {
+					// AnalysisState<SimpleAbstractState<PointBasedHeap,
+					// ValueEnvironment<ConstantPropagation>,
+					// TypeEnvironment<InferredTypes>>> nodeSemantics =
+					// analyzedCFG.getAnalysisStateAfter(unresolvedCall.getSubExpressions()[0]);
+					SymbolicExpression nodeSymbolic = getNodeHeapReference(analyzedCFG, analysisState,
+							unresolvedCall.getSubExpressions()[0]);
 					visitPublisher(analyzedCFG, analysisState, unresolvedCall, (HeapExpression) expr, nodeSymbolic);
 
-					//var aigSemanticsNodeName = aigNodeName.forwardSemantics(nodeSemantics, tool.getConfiguration().interproceduralAnalysis, new StatementStore<>(nodeSemantics));
-					//ConstantPropagation cp = analysisState.getState().getValueState().eval((ValueExpression) nodeSemantics.getComputedExpressions().elements.iterator().next(), node, analysisState.getState());
+					// var aigSemanticsNodeName =
+					// aigNodeName.forwardSemantics(nodeSemantics,
+					// tool.getConfiguration().interproceduralAnalysis, new
+					// StatementStore<>(nodeSemantics));
+					// ConstantPropagation cp =
+					// analysisState.getState().getValueState().eval((ValueExpression)
+					// nodeSemantics.getComputedExpressions().elements.iterator().next(),
+					// node, analysisState.getState());
 					// compute semantics
-					//AnalysisState<A> aigSemanticsNodeName = aigNodeName.forwardSemantics(analysisState, tool.getConfiguration().interproceduralAnalysis, expressions);
-					//Publisher p = visitPublisher();
+					// AnalysisState<A> aigSemanticsNodeName =
+					// aigNodeName.forwardSemantics(analysisState,
+					// tool.getConfiguration().interproceduralAnalysis,
+					// expressions);
+					// Publisher p = visitPublisher();
 					var x = 10;
 				}
 			}
 		} else if (nativeCFGDescriptorName
 				.equals("create_service")
 				&& nativeCFGDescriptorUnitName
-				.equals(LibrarySpecificationProvider.RCLPY_NODE)) {
+						.equals(LibrarySpecificationProvider.RCLPY_NODE)) {
 			UnresolvedCall unresolvedCall = (UnresolvedCall) node;
-			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
 
 			for (SymbolicExpression expr : analysisState.getComputedExpressions()) {
 
 				if (expr instanceof HeapReference
 						&& ((HeapReference) expr)
-						.getStaticType()
-						.equals(new ReferenceType(
-								PyClassType
-										.lookup(LibrarySpecificationProvider.RCLPY_SERVICE)))) {
-					SymbolicExpression nodeSymbolic = getNodeHeapReference(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[0]);
-					visitServiceServer(analyzedCFG, analysisState, unresolvedCall,(HeapExpression) expr, nodeSymbolic);
+								.getStaticType()
+								.equals(new ReferenceType(
+										PyClassType
+												.lookup(LibrarySpecificationProvider.RCLPY_SERVICE)))) {
+					SymbolicExpression nodeSymbolic = getNodeHeapReference(analyzedCFG, analysisState,
+							unresolvedCall.getSubExpressions()[0]);
+					visitServiceServer(analyzedCFG, analysisState, unresolvedCall, (HeapExpression) expr, nodeSymbolic);
 				}
 			}
 		} else if (nativeCFGDescriptorName.equals("create_client")
-			&& nativeCFGDescriptorUnitName
-			.equals(LibrarySpecificationProvider.RCLPY_NODE)) {
+				&& nativeCFGDescriptorUnitName
+						.equals(LibrarySpecificationProvider.RCLPY_NODE)) {
 			UnresolvedCall unresolvedCall = (UnresolvedCall) node;
-			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
 
 			for (SymbolicExpression expr : analysisState.getComputedExpressions()) {
 
 				if (expr instanceof HeapReference
 						&& ((HeapReference) expr)
-						.getStaticType()
-						.equals(new ReferenceType(
-								PyClassType
-										.lookup(LibrarySpecificationProvider.RCLPY_CLIENT)))) {
-					SymbolicExpression nodeSymbolic = getNodeHeapReference(analyzedCFG, analysisState, unresolvedCall.getSubExpressions()[0]);
+								.getStaticType()
+								.equals(new ReferenceType(
+										PyClassType
+												.lookup(LibrarySpecificationProvider.RCLPY_CLIENT)))) {
+					SymbolicExpression nodeSymbolic = getNodeHeapReference(analyzedCFG, analysisState,
+							unresolvedCall.getSubExpressions()[0]);
 					visitServiceClient(analyzedCFG, analysisState, unresolvedCall, (HeapExpression) expr, nodeSymbolic);
 				}
 			}
@@ -742,39 +916,51 @@ public class ROSComputationGraphDumper
 
 			Expression publisherExpression = ((UnresolvedCall) node).getSubExpressions()[0];
 			Expression message = ((UnresolvedCall) node).getSubExpressions()[1];
-			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> publisherSemantics = analyzedCFG.getAnalysisStateAfter(publisherExpression);
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<
+					InferredTypes>>> publisherSemantics = analyzedCFG.getAnalysisStateAfter(publisherExpression);
 
-			HeapReference publisherHR = new HeapReference(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE), publisherSemantics.getComputedExpressions().elements.iterator().next(), publisherExpression.getLocation());
-			HeapDereference publisherDeref = new HeapDereference(publisherHR.getExpression().getStaticType(), publisherHR, publisherSemantics.getComputedExpressions().elements.iterator().next().getCodeLocation());
+			HeapReference publisherHR = new HeapReference(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE),
+					publisherSemantics.getComputedExpressions().elements.iterator().next(),
+					publisherExpression.getLocation());
+			HeapDereference publisherDeref = new HeapDereference(publisherHR.getExpression().getStaticType(),
+					publisherHR,
+					publisherSemantics.getComputedExpressions().elements.iterator().next().getCodeLocation());
 			ExpressionSet publisherExprSet = publisherSemantics
 					.getState()
 					.rewrite(publisherDeref,
 							node,
 							publisherSemantics.getState());
-			ROSNetworkEntity ne = rosNetwork.getNetworkEntity(publisherExprSet.iterator().next().getCodeLocation().toString());
+			ROSNetworkEntity ne = rosNetwork
+					.getNetworkEntity(publisherExprSet.iterator().next().getCodeLocation().toString());
 			System.out.println(ne);
-			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> messageSemantics = analyzedCFG.getAnalysisStateAfter(message);
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> messageSemantics = analyzedCFG.getAnalysisStateAfter(message);
 			Object _message = null;
 			for (SymbolicExpression e : messageSemantics.getComputedExpressions()) {
-				ConstantPropagation cp = messageSemantics.getState().getValueState().eval((ValueExpression) e, message , messageSemantics.getState());
+				ConstantPropagation cp = messageSemantics.getState().getValueState().eval((ValueExpression) e, message,
+						messageSemantics.getState());
 				_message = cp.isTop() ? "#TOP#" : cp.getConstant();
 			}
-			//messageSemantics.getState().getValueState().eval(message, message.getLocation());
+			// messageSemantics.getState().getValueState().eval(message,
+			// message.getLocation());
 			NetworkMessage NetworkMessage = new NetworkMessage(_message, ne.getType());
-			//NetworkEvent event = ne.createNetworkEvent(message);
+			// NetworkEvent event = ne.createNetworkEvent(message);
 			rosNetwork.createNetworkEvent(NetworkMessage, ne);
 		}
 	}
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> tool,
 			CFG graph,
 			Statement node) {
-		Collection<AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>>> results = tool
-				.getResultOf(graph);
+		Collection<AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+				TypeEnvironment<InferredTypes>>>> results = tool
+						.getResultOf(graph);
 		try {
-			for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> result : results) {
+			for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> result : results) {
 				visitAnalyzedCFG(tool, result, node);
 				if (node instanceof UnresolvedCall) {
 
@@ -799,7 +985,8 @@ public class ROSComputationGraphDumper
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> tool,
 			CFG graph,
 			Edge edge) {
 		if (graph.getDescriptor().getName().equals("$main")) {
@@ -816,5 +1003,7 @@ public class ROSComputationGraphDumper
 		return rosGraph;
 	}
 
-	public ROSNetwork getNetwork() { return rosNetwork; }
+	public ROSNetwork getNetwork() {
+		return rosNetwork;
+	}
 }

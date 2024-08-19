@@ -324,6 +324,7 @@ public class ConstantPropagation
 		return top();
 	}
 
+	@SuppressWarnings("unchecked")
 	private ConstantPropagation dictPut(
 			ConstantPropagation left,
 			ConstantPropagation middle,
@@ -336,6 +337,7 @@ public class ConstantPropagation
 		return new ConstantPropagation(newdict);
 	}
 
+	@SuppressWarnings("unchecked")
 	private ConstantPropagation listAppend(
 			ConstantPropagation left,
 			ConstantPropagation right,

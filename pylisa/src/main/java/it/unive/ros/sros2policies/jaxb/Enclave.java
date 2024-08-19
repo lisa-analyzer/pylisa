@@ -5,22 +5,22 @@
 // Generated on: 2024.02.05 at 04:38:39 PM UTC 
 //
 
-
 package it.unive.ros.sros2policies.jaxb;
 
-import java.util.ArrayList;
-import java.util.List;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
-
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * <p>Java class for Enclave complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * Java class for Enclave complex type.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="Enclave"&gt;
@@ -34,71 +34,59 @@ import jakarta.xml.bind.annotation.XmlType;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Enclave", propOrder = {
-    "profiles"
+		"profiles"
 })
 public class Enclave {
 
-    @XmlElement(required = true)
-    protected List<Profiles> profiles;
-    @XmlAttribute(name = "path", required = true)
-    protected String path;
+	@XmlElement(required = true)
+	protected List<Profiles> profiles;
+	@XmlAttribute(name = "path", required = true)
+	protected String path;
 
-    /**
-     * Gets the value of the profiles property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the profiles property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getProfiles().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Profiles }
-     * 
-     * 
-     */
-    public List<Profiles> getProfiles() {
-        if (profiles == null) {
-            profiles = new ArrayList<Profiles>();
-        }
-        return this.profiles;
-    }
+	/**
+	 * Gets the value of the profiles property.
+	 * <p>
+	 * This accessor method returns a reference to the live list, not a
+	 * snapshot. Therefore any modification you make to the returned list will
+	 * be present inside the JAXB object. This is why there is not a
+	 * <CODE>set</CODE> method for the profiles property.
+	 * <p>
+	 * For example, to add a new item, do as follows:
+	 * 
+	 * <pre>
+	 * getProfiles().add(newItem);
+	 * </pre>
+	 * <p>
+	 * Objects of the following type(s) are allowed in the list {@link Profiles
+	 * }
+	 */
+	public List<Profiles> getProfiles() {
+		if (profiles == null) {
+			profiles = new ArrayList<Profiles>();
+		}
+		return this.profiles;
+	}
 
-    /**
-     * Gets the value of the path property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getPath() {
-        return path;
-    }
+	/**
+	 * Gets the value of the path property.
+	 * 
+	 * @return possible object is {@link String }
+	 */
+	public String getPath() {
+		return path;
+	}
 
-    /**
-     * Sets the value of the path property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setPath(String value) {
-        this.path = value;
-    }
+	/**
+	 * Sets the value of the path property.
+	 * 
+	 * @param value allowed object is {@link String }
+	 */
+	public void setPath(
+			String value) {
+		this.path = value;
+	}
 
 }

@@ -5,7 +5,6 @@
 // Generated on: 2024.02.05 at 04:38:39 PM UTC 
 //
 
-
 package it.unive.ros.sros2policies.jaxb;
 
 import jakarta.xml.bind.annotation.XmlAccessType;
@@ -14,11 +13,12 @@ import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
 
-
 /**
- * <p>Java class for Policy complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * Java class for Policy complex type.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="Policy"&gt;
@@ -32,70 +32,58 @@ import jakarta.xml.bind.annotation.XmlType;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Policy", propOrder = {
-    "enclaves"
+		"enclaves"
 })
 public class Policy {
 
-    @XmlElement(required = true)
-    protected Enclaves enclaves;
-    @XmlAttribute(name = "version", required = true)
-    protected String version;
+	@XmlElement(required = true)
+	protected Enclaves enclaves;
+	@XmlAttribute(name = "version", required = true)
+	protected String version;
 
-    /**
-     * Gets the value of the enclaves property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Enclaves }
-     *     
-     */
-    public Enclaves getEnclaves() {
-        return enclaves;
-    }
+	/**
+	 * Gets the value of the enclaves property.
+	 * 
+	 * @return possible object is {@link Enclaves }
+	 */
+	public Enclaves getEnclaves() {
+		return enclaves;
+	}
 
-    /**
-     * Sets the value of the enclaves property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Enclaves }
-     *     
-     */
-    public void setEnclaves(Enclaves value) {
-        this.enclaves = value;
-    }
+	/**
+	 * Sets the value of the enclaves property.
+	 * 
+	 * @param value allowed object is {@link Enclaves }
+	 */
+	public void setEnclaves(
+			Enclaves value) {
+		this.enclaves = value;
+	}
 
-    /**
-     * Gets the value of the version property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getVersion() {
-        if (version == null) {
-            return "0.2.0";
-        } else {
-            return version;
-        }
-    }
+	/**
+	 * Gets the value of the version property.
+	 * 
+	 * @return possible object is {@link String }
+	 */
+	public String getVersion() {
+		if (version == null) {
+			return "0.2.0";
+		} else {
+			return version;
+		}
+	}
 
-    /**
-     * Sets the value of the version property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setVersion(String value) {
-        this.version = value;
-    }
+	/**
+	 * Sets the value of the version property.
+	 * 
+	 * @param value allowed object is {@link String }
+	 */
+	public void setVersion(
+			String value) {
+		this.version = value;
+	}
 
 }

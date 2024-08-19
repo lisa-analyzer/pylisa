@@ -5,18 +5,19 @@
 // Generated on: 2024.02.05 at 04:38:39 PM UTC 
 //
 
-
 package it.unive.ros.sros2policies.jaxb;
 
 import jakarta.xml.bind.annotation.XmlEnum;
 import jakarta.xml.bind.annotation.XmlType;
 
-
 /**
- * <p>Java class for RuleQualifier.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
  * <p>
+ * Java class for RuleQualifier.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
+ * <p>
+ * 
  * <pre>
  * &lt;simpleType name="RuleQualifier"&gt;
  *   &lt;restriction base="{http://www.w3.org/2001/XMLSchema}string"&gt;
@@ -25,21 +26,21 @@ import jakarta.xml.bind.annotation.XmlType;
  *   &lt;/restriction&gt;
  * &lt;/simpleType&gt;
  * </pre>
- * 
  */
 @XmlType(name = "RuleQualifier")
 @XmlEnum
 public enum RuleQualifier {
 
-    ALLOW,
-    DENY;
+	ALLOW,
+	DENY;
 
-    public String value() {
-        return name();
-    }
+	public String value() {
+		return name();
+	}
 
-    public static RuleQualifier fromValue(String v) {
-        return valueOf(v);
-    }
+	public static RuleQualifier fromValue(
+			String v) {
+		return valueOf(v);
+	}
 
 }

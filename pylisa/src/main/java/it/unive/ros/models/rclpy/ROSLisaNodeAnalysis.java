@@ -14,15 +14,27 @@ import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 
 public class ROSLisaNodeAnalysis<A extends AbstractState<A>> extends ROSLisaAnalysis {
 
-    InterproceduralAnalysis<A> interproceduralAnalysis;
-    public ROSLisaNodeAnalysis(SymbolicExpression symbolicExpression, Statement statement, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState) {
-        super(symbolicExpression, statement, analysisState);
-    }
-    public ROSLisaNodeAnalysis(SymbolicExpression symbolicExpression, Statement statement, AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>, TypeEnvironment<InferredTypes>>> analysisState, InterproceduralAnalysis<A> interproceduralAnalysis) {
-        this(symbolicExpression, statement, analysisState);
-        this.interproceduralAnalysis = interproceduralAnalysis;
-    }
-    public InterproceduralAnalysis<A> interproceduralAnalysis() {
-        return interproceduralAnalysis;
-    }
+	InterproceduralAnalysis<A> interproceduralAnalysis;
+
+	public ROSLisaNodeAnalysis(
+			SymbolicExpression symbolicExpression,
+			Statement statement,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState) {
+		super(symbolicExpression, statement, analysisState);
+	}
+
+	public ROSLisaNodeAnalysis(
+			SymbolicExpression symbolicExpression,
+			Statement statement,
+			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<InferredTypes>>> analysisState,
+			InterproceduralAnalysis<A> interproceduralAnalysis) {
+		this(symbolicExpression, statement, analysisState);
+		this.interproceduralAnalysis = interproceduralAnalysis;
+	}
+
+	public InterproceduralAnalysis<A> interproceduralAnalysis() {
+		return interproceduralAnalysis;
+	}
 }

@@ -5,25 +5,27 @@ import lombok.Getter;
 @Getter
 public enum Method {
 
-    GET("get"),
-    POST("post"),
-    PUT("put"),
-    DELETE("delete");
+	GET("get"),
+	POST("post"),
+	PUT("put"),
+	DELETE("delete");
 
-    private final String value;
+	private final String value;
 
-    Method(String method) {
-        this.value = method;
-    }
+	Method(
+			String method) {
+		this.value = method;
+	}
 
-    public static Method specify(String decoratorID) {
+	public static Method specify(
+			String decoratorID) {
 
-        for (Method method : Method.values()) {
-            if (decoratorID.contains(method.getValue())) {
-                return method;
-            }
-        }
+		for (Method method : Method.values()) {
+			if (decoratorID.contains(method.getValue())) {
+				return method;
+			}
+		}
 
-        return null;
-    }
+		return null;
+	}
 }

@@ -6,7 +6,6 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -14,20 +13,12 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.type.StringType;
-import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.TernaryExpression;
-import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.ros.lisa.symbolic.operators.ros.ROSTopicNameExpansion;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 public class CreateClient extends NaryExpression implements PluggableStatement {
 
@@ -69,7 +60,6 @@ public class CreateClient extends NaryExpression implements PluggableStatement {
 		String messageType = params[1].iterator().next().toString();
 		Constant c = new Constant(StringType.INSTANCE, messageType, getLocation());
 		params[1] = new ExpressionSet(c);
-
 
 		PyClassType clientClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_CLIENT);
 

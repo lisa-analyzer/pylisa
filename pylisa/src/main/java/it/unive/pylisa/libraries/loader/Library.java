@@ -10,6 +10,8 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
 import it.unive.pylisa.libraries.PyLibraryUnitType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
