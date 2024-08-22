@@ -20,11 +20,11 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.analysis.dataframes.symbolic.UnaryTransform;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.Axis;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.UnaryTransformKind;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
-import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
-import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 
 public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 

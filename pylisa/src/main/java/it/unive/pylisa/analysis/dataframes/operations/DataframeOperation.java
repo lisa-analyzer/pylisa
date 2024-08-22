@@ -1,5 +1,7 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
+import java.util.Objects;
+
 import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -9,7 +11,6 @@ import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
-import java.util.Objects;
 
 public abstract class DataframeOperation
 		implements

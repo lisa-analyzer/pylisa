@@ -1,13 +1,14 @@
-package it.unive.pylisa.symbolic.operators.dataframes;
+package it.unive.pylisa.analysis.dataframes.symbolic;
+
+import java.util.Collections;
+import java.util.Set;
 
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.Axis;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
-import java.util.Collections;
-import java.util.Set;
 
 public class AxisConcatenation implements UnaryOperator, DataframeOperator {
 

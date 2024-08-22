@@ -1,4 +1,4 @@
-package it.unive.pylisa.symbolic.operators.dataframes;
+package it.unive.pylisa.analysis.dataframes.symbolic;
 
 public interface DataframeOperator {
 

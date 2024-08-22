@@ -1,18 +1,19 @@
-package it.unive.pylisa.symbolic.operators.dataframes;
+package it.unive.pylisa.analysis.dataframes.symbolic;
+
+import java.util.Collections;
+import java.util.Set;
 
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.Collections;
-import java.util.Set;
 
-public class CopyDataframe implements UnaryOperator, DataframeOperator {
+public class AccessKeys implements UnaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public CopyDataframe(
+	public AccessKeys(
 			int index) {
 		this.index = index;
 	}
@@ -24,7 +25,7 @@ public class CopyDataframe implements UnaryOperator, DataframeOperator {
 
 	@Override
 	public String toString() {
-		return "copy";
+		return "keys()";
 	}
 
 	@Override
@@ -32,15 +33,8 @@ public class CopyDataframe implements UnaryOperator, DataframeOperator {
 			TypeSystem types,
 			Set<Type> arg) {
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		PyClassType series = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-		boolean notdf = arg.stream().noneMatch(t -> t.equals(df));
-		boolean notseries = arg.stream().noneMatch(t -> t.equals(series));
-		if (notdf && notseries)
+		if (arg.stream().noneMatch(t -> t.equals(df)))
 			return Collections.emptySet();
-		if (notdf)
-			return Collections.singleton(series);
-		if (notseries)
-			return Collections.singleton(df);
-		return Set.of(df, series);
+		return Collections.singleton(df);
 	}
 }

@@ -19,9 +19,9 @@ import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.analysis.dataframes.symbolic.RowProjection;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.RowProjection;
 
 public class Head extends BinaryExpression implements PluggableStatement {
 

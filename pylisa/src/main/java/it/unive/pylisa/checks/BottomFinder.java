@@ -92,8 +92,8 @@ public class BottomFinder<A extends AbstractState<A>> implements SemanticCheck<A
 			DataframeGraphDomain dgd) {
 		return dgd.graph.isTop() || dgd.graph.isBottom()
 				|| dgd.constants.isTop() || dgd.constants.isBottom()
-				|| dgd.pointers.isTop() || dgd.pointers.isBottom() || dgd.pointers.getMap().isEmpty()
-				|| dgd.operations.isTop() || dgd.operations.isBottom() || dgd.operations.getMap().isEmpty();
+				|| dgd.v.isTop() || dgd.v.isBottom() || dgd.v.getMap().isEmpty()
+				|| dgd.l.isTop() || dgd.l.isBottom() || dgd.l.getMap().isEmpty();
 
 	}
 }

@@ -1,5 +1,7 @@
 package it.unive.pylisa.libraries;
 
+import java.util.HashSet;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -19,7 +21,6 @@ import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyTypeTokenType;
-import java.util.HashSet;
 
 public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression implements PluggableStatement {
 	protected Statement st;

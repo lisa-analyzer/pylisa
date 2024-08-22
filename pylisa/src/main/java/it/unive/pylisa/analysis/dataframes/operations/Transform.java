@@ -1,13 +1,14 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
+import java.util.Optional;
+
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
-import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
-import it.unive.pylisa.symbolic.operators.Enumerations.TransformKind;
-import java.util.Optional;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.Axis;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.TransformKind;
 
 public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
 

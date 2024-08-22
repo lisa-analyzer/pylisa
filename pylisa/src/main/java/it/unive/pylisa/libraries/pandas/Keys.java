@@ -15,9 +15,9 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.analysis.dataframes.symbolic.AccessKeys;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.AccessKeys;
 
 public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 

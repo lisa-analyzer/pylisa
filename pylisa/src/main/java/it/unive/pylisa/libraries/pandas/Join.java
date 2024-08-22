@@ -15,9 +15,9 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.analysis.dataframes.symbolic.JoinCols;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
 
 public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression implements PluggableStatement {
 

@@ -12,10 +12,10 @@ import it.unive.lisa.program.cfg.statement.comparison.LessOrEqual;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.pylisa.analysis.dataframes.symbolic.aux.ComparisonOperator;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonLe;
-import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
 public class PyLessOrEqual extends LessOrEqual {
 

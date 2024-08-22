@@ -20,11 +20,12 @@ import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.analysis.dataframes.symbolic.AssignToConstant;
+import it.unive.pylisa.analysis.dataframes.symbolic.AssignToSelection;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
-import it.unive.pylisa.symbolic.operators.dataframes.AssignToConstant;
-import it.unive.pylisa.symbolic.operators.dataframes.AssignToSelection;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;

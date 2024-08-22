@@ -9,7 +9,7 @@ import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.Names;
 import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnListSelection;
-import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
+import it.unive.pylisa.analysis.dataframes.symbolic.aux.ComparisonOperator;
 
 public class ConditionalSelection extends BooleanSelection<ConditionalSelection> {
 

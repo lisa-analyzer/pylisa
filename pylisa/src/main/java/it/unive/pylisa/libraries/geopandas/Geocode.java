@@ -11,11 +11,11 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.pylisa.analysis.dataframes.symbolic.UnaryReshape;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.UnaryReshapeKind;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
-import it.unive.pylisa.symbolic.operators.Enumerations.UnaryReshapeKind;
-import it.unive.pylisa.symbolic.operators.dataframes.UnaryReshape;
 
 public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 

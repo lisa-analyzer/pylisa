@@ -1,18 +1,19 @@
-package it.unive.pylisa.symbolic.operators.dataframes;
+package it.unive.pylisa.analysis.dataframes.symbolic;
+
+import java.util.Collections;
+import java.util.Set;
 
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.Collections;
-import java.util.Set;
 
-public class AccessKeys implements UnaryOperator, DataframeOperator {
+public class Iterate implements UnaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public AccessKeys(
+	public Iterate(
 			int index) {
 		this.index = index;
 	}
@@ -24,16 +25,15 @@ public class AccessKeys implements UnaryOperator, DataframeOperator {
 
 	@Override
 	public String toString() {
-		return "keys()";
+		return "iterate";
 	}
 
 	@Override
 	public Set<Type> typeInference(
 			TypeSystem types,
 			Set<Type> arg) {
-		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		if (arg.stream().noneMatch(t -> t.equals(df)))
+		if (arg.stream().noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF))))
 			return Collections.emptySet();
-		return Collections.singleton(df);
+		return Collections.singleton(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES));
 	}
 }

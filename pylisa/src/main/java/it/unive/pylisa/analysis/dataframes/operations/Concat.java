@@ -2,7 +2,7 @@ package it.unive.pylisa.analysis.dataframes.operations;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.Axis;
 
 public class Concat extends DataframeOperation {
 

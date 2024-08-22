@@ -10,9 +10,9 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.comparison.Equal;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.pylisa.analysis.dataframes.symbolic.aux.ComparisonOperator;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.PandasSemantics;
-import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
 public class PyEquals extends Equal {
 

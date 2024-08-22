@@ -5,7 +5,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.operations.selection.DataframeSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
-import it.unive.pylisa.symbolic.operators.Enumerations.ReduceKind;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.ReduceKind;
 
 public class Reduce<R extends RowSelection<R>, C extends ColumnSelection<C>> extends DataframeOperation {
 

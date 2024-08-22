@@ -1,20 +1,26 @@
-package it.unive.pylisa.symbolic.operators.dataframes;
+package it.unive.pylisa.analysis.dataframes.symbolic;
+
+import java.util.Collections;
+import java.util.Set;
 
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
+import it.unive.pylisa.analysis.dataframes.symbolic.aux.ComparisonOperator;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.Collections;
-import java.util.Set;
 
-public class ColumnProjection implements BinaryOperator, DataframeOperator {
+public class SeriesComparison implements BinaryOperator, DataframeOperator {
+
+	private final ComparisonOperator op;
 
 	private final int index;
 
-	public ColumnProjection(
-			int index) {
+	public SeriesComparison(
+			int index,
+			ComparisonOperator op) {
 		this.index = index;
+		this.op = op;
 	}
 
 	@Override
@@ -24,7 +30,11 @@ public class ColumnProjection implements BinaryOperator, DataframeOperator {
 
 	@Override
 	public String toString() {
-		return "->";
+		return this.op.toString();
+	}
+
+	public ComparisonOperator getOp() {
+		return this.op;
 	}
 
 	@Override
@@ -34,14 +44,9 @@ public class ColumnProjection implements BinaryOperator, DataframeOperator {
 			Set<Type> right) {
 		if (left.stream().noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF))))
 			return Collections.emptySet();
-		if (right.stream()
-				.noneMatch(t -> t.isStringType() && t.isNumericType() && t.asNumericType().isIntegral()
-						&& t.equals(PyClassType.lookup(LibrarySpecificationProvider.LIST))
-						&& t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference())))
+		if (right.stream().noneMatch(t -> t.isStringType()))
 			return Collections.emptySet();
-		if (right.stream()
-				.anyMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference())))
-			return Collections.singleton(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF));
 		return Collections.singleton(PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES));
 	}
+
 }

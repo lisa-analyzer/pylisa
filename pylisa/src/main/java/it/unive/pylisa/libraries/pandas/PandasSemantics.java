@@ -1,5 +1,7 @@
 package it.unive.pylisa.libraries.pandas;
 
+import java.util.Set;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -16,12 +18,11 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.analysis.dataframes.symbolic.CopyDataframe;
+import it.unive.pylisa.analysis.dataframes.symbolic.SeriesComparison;
+import it.unive.pylisa.analysis.dataframes.symbolic.aux.ComparisonOperator;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
-import it.unive.pylisa.symbolic.operators.dataframes.SeriesComparison;
-import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
-import java.util.Set;
 
 public class PandasSemantics {
 

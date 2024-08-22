@@ -1,18 +1,19 @@
-package it.unive.pylisa.symbolic.operators.dataframes;
+package it.unive.pylisa.analysis.dataframes.symbolic;
 
-import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import java.util.Collections;
+import java.util.Set;
+
+import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.Collections;
-import java.util.Set;
 
-public class DropCols implements BinaryOperator, DataframeOperator {
+public class RowProjection implements TernaryOperator, DataframeOperator {
 
 	private final int index;
 
-	public DropCols(
+	public RowProjection(
 			int index) {
 		this.index = index;
 	}
@@ -24,18 +25,21 @@ public class DropCols implements BinaryOperator, DataframeOperator {
 
 	@Override
 	public String toString() {
-		return "drop_columns->";
+		return "head";
 	}
 
 	@Override
 	public Set<Type> typeInference(
 			TypeSystem types,
 			Set<Type> left,
+			Set<Type> middle,
 			Set<Type> right) {
 		PyClassType df = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		if (left.stream().noneMatch(t -> t.equals(df)))
 			return Collections.emptySet();
-		if (right.stream().noneMatch(t -> t.equals(PyClassType.lookup(LibrarySpecificationProvider.LIST))))
+		if (middle.stream().noneMatch(Type::isNumericType))
+			return Collections.emptySet();
+		if (right.stream().noneMatch(Type::isNumericType))
 			return Collections.emptySet();
 		return Collections.singleton(df);
 	}

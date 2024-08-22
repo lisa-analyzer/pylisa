@@ -11,9 +11,9 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
-import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
-import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
+import it.unive.pylisa.analysis.dataframes.symbolic.UnaryTransform;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.Axis;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.UnaryTransformKind;
 
 public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 

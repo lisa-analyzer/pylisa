@@ -14,10 +14,10 @@ import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.pylisa.analysis.dataframes.symbolic.AxisConcatenation;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.Axis;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
-import it.unive.pylisa.symbolic.operators.dataframes.AxisConcatenation;
 
 public class Concatenate extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 

@@ -1,5 +1,21 @@
 package it.unive.pylisa.analysis.dataframes;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
@@ -57,6 +73,29 @@ import it.unive.pylisa.analysis.dataframes.operations.selection.rows.AllRows;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.ConditionalSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowRangeSelection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.RowSelection;
+import it.unive.pylisa.analysis.dataframes.symbolic.AccessKeys;
+import it.unive.pylisa.analysis.dataframes.symbolic.AssignToConstant;
+import it.unive.pylisa.analysis.dataframes.symbolic.AssignToSelection;
+import it.unive.pylisa.analysis.dataframes.symbolic.AxisConcatenation;
+import it.unive.pylisa.analysis.dataframes.symbolic.BinaryTransform;
+import it.unive.pylisa.analysis.dataframes.symbolic.ColumnProjection;
+import it.unive.pylisa.analysis.dataframes.symbolic.CopyDataframe;
+import it.unive.pylisa.analysis.dataframes.symbolic.CreateDataframe;
+import it.unive.pylisa.analysis.dataframes.symbolic.DataframeOperator;
+import it.unive.pylisa.analysis.dataframes.symbolic.DataframeProjection;
+import it.unive.pylisa.analysis.dataframes.symbolic.DropCols;
+import it.unive.pylisa.analysis.dataframes.symbolic.Iterate;
+import it.unive.pylisa.analysis.dataframes.symbolic.JoinCols;
+import it.unive.pylisa.analysis.dataframes.symbolic.ReadDataframe;
+import it.unive.pylisa.analysis.dataframes.symbolic.RowProjection;
+import it.unive.pylisa.analysis.dataframes.symbolic.SeriesComparison;
+import it.unive.pylisa.analysis.dataframes.symbolic.UnaryReshape;
+import it.unive.pylisa.analysis.dataframes.symbolic.UnaryTransform;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.Axis;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.BinaryTransformKind;
+import it.unive.pylisa.analysis.dataframes.symbolic.Enumerations.UnaryTransformKind;
+import it.unive.pylisa.analysis.dataframes.symbolic.aux.DataframeColumnSlice;
+import it.unive.pylisa.analysis.dataframes.symbolic.aux.DataframeColumnSlice.ColumnSlice;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyLibraryUnitType;
 import it.unive.pylisa.symbolic.DictConstant;
@@ -65,51 +104,14 @@ import it.unive.pylisa.symbolic.SliceConstant;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
 import it.unive.pylisa.symbolic.SliceConstant.Slice;
 import it.unive.pylisa.symbolic.operators.DictPut;
-import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
-import it.unive.pylisa.symbolic.operators.Enumerations.BinaryTransformKind;
-import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
 import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
-import it.unive.pylisa.symbolic.operators.dataframes.AccessKeys;
-import it.unive.pylisa.symbolic.operators.dataframes.AssignToConstant;
-import it.unive.pylisa.symbolic.operators.dataframes.AssignToSelection;
-import it.unive.pylisa.symbolic.operators.dataframes.AxisConcatenation;
-import it.unive.pylisa.symbolic.operators.dataframes.BinaryTransform;
-import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
-import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
-import it.unive.pylisa.symbolic.operators.dataframes.CreateDataframe;
-import it.unive.pylisa.symbolic.operators.dataframes.DataframeOperator;
-import it.unive.pylisa.symbolic.operators.dataframes.DataframeProjection;
-import it.unive.pylisa.symbolic.operators.dataframes.DropCols;
-import it.unive.pylisa.symbolic.operators.dataframes.Iterate;
-import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
-import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
-import it.unive.pylisa.symbolic.operators.dataframes.RowProjection;
-import it.unive.pylisa.symbolic.operators.dataframes.SeriesComparison;
-import it.unive.pylisa.symbolic.operators.dataframes.UnaryReshape;
-import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
-import it.unive.pylisa.symbolic.operators.dataframes.aux.DataframeColumnSlice;
-import it.unive.pylisa.symbolic.operators.dataframes.aux.DataframeColumnSlice.ColumnSlice;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	private static final Logger LOG = LogManager.getLogger(DataframeGraphDomain.class);
 
-	private static final SetLattice<NodeId> NO_IDS = new SetLattice<NodeId>().bottom();
+	public static final SetLattice<NodeId> NO_IDS = new SetLattice<NodeId>().bottom();
 	private static final SetLattice<DataframeOperation> NO_NODES = new SetLattice<DataframeOperation>().bottom();
 
 	public final ValueEnvironment<ConstantPropagation> constants;
@@ -118,19 +120,19 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	public final DataframeForest graph;
 
-	public final CollectingMapLattice<Identifier, NodeId> pointers;
+	public final CollectingMapLattice<Identifier, NodeId> v;
 
-	public final SetLattice<NodeId> pointersStack;
+	public final SetLattice<NodeId> vStack;
 
-	public final CollectingMapLattice<NodeId, DataframeOperation> operations;
+	public final CollectingMapLattice<NodeId, DataframeOperation> l;
 
 	public DataframeGraphDomain() {
 		this.constants = new ValueEnvironment<>(new ConstantPropagation()).top();
 		this.graph = new DataframeForest(true).top();
-		this.pointers = new CollectingMapLattice<Identifier, NodeId>(new SetLattice<>()).top();
-		this.operations = new CollectingMapLattice<NodeId, DataframeOperation>(new SetLattice<>()).top();
+		this.v = new CollectingMapLattice<Identifier, NodeId>(new SetLattice<>()).top();
+		this.l = new CollectingMapLattice<NodeId, DataframeOperation>(new SetLattice<>()).top();
 		this.constStack = this.constants.lattice.top();
-		this.pointersStack = NO_IDS.top();
+		this.vStack = NO_IDS.top();
 	}
 
 	public DataframeForest getGraph() {
@@ -142,11 +144,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	public CollectingMapLattice<Identifier, NodeId> getPointers() {
-		return pointers;
+		return v;
 	}
 
 	public CollectingMapLattice<NodeId, DataframeOperation> getOperations() {
-		return operations;
+		return l;
 	}
 
 	private DataframeGraphDomain(
@@ -177,8 +179,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		this.constants = constants;
 		this.constStack = constStack;
 		this.graph = graph;
-		this.pointers = pointers;
-		this.pointersStack = pointersStack.isEmpty() ? NO_IDS : pointersStack;
+		this.v = pointers;
+		this.vStack = pointersStack.isEmpty() ? NO_IDS : pointersStack;
 
 		// cleanup unreachable nodes
 		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(operations.getMap());
@@ -186,14 +188,14 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			// get all the node ids used in the operations map
 			Set<NodeId> nodes = new HashSet<>(operations.getKeys());
 			// remove all the ones used in the pointers map
-			for (SetLattice<NodeId> used : this.pointers.getValues())
+			for (SetLattice<NodeId> used : this.v.getValues())
 				used.forEach(nodes::remove);
 			pointersStack.forEach(nodes::remove);
 			// the remaining ones are unused: forget about them
 			nodes.forEach(map::remove);
-			this.operations = new CollectingMapLattice<>(operations.lattice, map);
+			this.l = new CollectingMapLattice<>(operations.lattice, map);
 		} else
-			this.operations = operations;
+			this.l = operations;
 
 		// FIXME temporary sanity check
 //		SetLattice<DataframeOperation> pointed = resolvePointers(this);
@@ -214,17 +216,17 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return new DataframeGraphDomain(
 					sss.constants.putState(id, sss.constStack),
 					sss.graph,
-					sss.pointers,
-					sss.operations);
+					sss.v,
+					sss.l);
 		else if (!isDataframeRelated(expression, pp, oracle))
 			return sss;
-		else if (!sss.pointersStack.isBottom())
+		else if (!sss.vStack.isBottom())
 			return new DataframeGraphDomain(
 					sss.constants,
 					sss.graph,
-					sss.pointers.putState(id, sss.pointersStack),
-					sss.pointersStack,
-					sss.operations);
+					sss.v.putState(id, sss.vStack),
+					sss.vStack,
+					sss.l);
 		else
 			return sss;
 	}
@@ -270,20 +272,20 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return new DataframeGraphDomain(
 				constants.assume(expression, src, dest, oracle),
 				graph,
-				pointers,
-				operations);
+				v,
+				l);
 	}
 
 	@Override
 	public DataframeGraphDomain forgetIdentifier(
 			Identifier id)
 			throws SemanticException {
-		CollectingMapLattice<Identifier, NodeId> pointers = this.pointers.lift(i -> id.equals(i) ? null : i, e -> e);
+		CollectingMapLattice<Identifier, NodeId> pointers = this.v.lift(i -> id.equals(i) ? null : i, e -> e);
 		return new DataframeGraphDomain(
 				constants.forgetIdentifier(id),
 				graph,
 				pointers,
-				operations.lift(i -> reverseSearch(i, pointers) ? i : null, e -> e));
+				l.lift(i -> reverseSearch(i, pointers) ? i : null, e -> e));
 	}
 
 	private boolean reverseSearch(
@@ -300,12 +302,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public DataframeGraphDomain forgetIdentifiersIf(
 			Predicate<Identifier> test)
 			throws SemanticException {
-		CollectingMapLattice<Identifier, NodeId> pointers = this.pointers.lift(id -> test.test(id) ? null : id, e -> e);
+		CollectingMapLattice<Identifier, NodeId> pointers = this.v.lift(id -> test.test(id) ? null : id, e -> e);
 		return new DataframeGraphDomain(
 				constants.forgetIdentifiersIf(test),
 				graph,
 				pointers,
-				operations.lift(i -> reverseSearch(i, pointers) ? i : null, e -> e));
+				l.lift(i -> reverseSearch(i, pointers) ? i : null, e -> e));
 	}
 
 	@Override
@@ -347,9 +349,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return new ObjectRepresentation(Map.of(
 				"constants", constants.representation(),
 				"constants-stack", constStack.representation(),
-				"pointers", pointers.representation(StringRepresentation::new),
-				"pointers-stack", new SetRepresentation(pointersStack.elements(), StringRepresentation::new),
-				"operations", operations.representation(StringRepresentation::new),
+				"pointers", v.representation(StringRepresentation::new),
+				"pointers-stack", new SetRepresentation(vStack.elements(), StringRepresentation::new),
+				"operations", l.representation(StringRepresentation::new),
 				"graph", graph.representation()));
 	}
 
@@ -361,9 +363,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				constants.lub(other.constants),
 				constStack.lub(other.constStack),
 				graph.lub(other.graph),
-				pointers.lub(other.pointers),
-				pointersStack.lub(other.pointersStack),
-				operations.lub(other.operations));
+				v.lub(other.v),
+				vStack.lub(other.vStack),
+				l.lub(other.l));
 	}
 
 	@Override
@@ -374,9 +376,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				constants.widening(other.constants),
 				constStack.widening(other.constStack),
 				graph.widening(other.graph),
-				pointers.widening(other.pointers),
-				pointersStack.widening(other.pointersStack),
-				operations.widening(other.operations));
+				v.widening(other.v),
+				vStack.widening(other.vStack),
+				l.widening(other.l));
 	}
 
 	@Override
@@ -386,9 +388,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return constants.lessOrEqual(other.constants)
 				&& constStack.lessOrEqual(other.constStack)
 				&& graph.lessOrEqual(other.graph)
-				&& pointers.lessOrEqual(other.pointers)
-				&& pointersStack.lessOrEqual(other.pointersStack)
-				&& operations.lessOrEqual(other.operations);
+				&& v.lessOrEqual(other.v)
+				&& vStack.lessOrEqual(other.vStack)
+				&& l.lessOrEqual(other.l);
 	}
 
 	@Override
@@ -397,9 +399,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				constants.top(),
 				constStack.top(),
 				graph.top(),
-				pointers.top(),
+				v.top(),
 				NO_IDS,
-				operations.top());
+				l.top());
 	}
 
 	@Override
@@ -407,9 +409,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return constants.isTop()
 				&& constStack.isTop()
 				&& graph.isTop()
-				&& pointers.isTop()
-				&& pointersStack == NO_IDS
-				&& operations.isTop();
+				&& v.isTop()
+				&& vStack == NO_IDS
+				&& l.isTop();
 	}
 
 	@Override
@@ -418,9 +420,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				constants.bottom(),
 				constStack.bottom(),
 				graph.bottom(),
-				pointers.bottom(),
+				v.bottom(),
 				NO_IDS,
-				operations.bottom());
+				l.bottom());
 	}
 
 	@Override
@@ -428,9 +430,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return constants.isBottom()
 				&& constStack.isBottom()
 				&& graph.isBottom()
-				&& pointers.isBottom()
-				&& pointersStack == NO_IDS
-				&& operations.isBottom();
+				&& v.isBottom()
+				&& vStack == NO_IDS
+				&& l.isBottom();
 	}
 
 	public static boolean isDataframeRelated(
@@ -468,7 +470,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	private static SetLattice<DataframeOperation> resolvePointers(
 			DataframeGraphDomain domain) {
-		return resolvePointers(domain.operations, domain.pointersStack);
+		return resolvePointers(domain.l, domain.vStack);
 	}
 
 	private static SetLattice<DataframeOperation> resolvePointers(
@@ -594,9 +596,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				arg.constants,
 				arg.constStack.eval(expression, arg.constants, pp, oracle),
 				arg.graph,
-				arg.pointers,
+				arg.v,
 				NO_IDS,
-				arg.operations);
+				arg.l);
 	}
 
 	private static DataframeGraphDomain doAccessKeys(
@@ -616,13 +618,13 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		NodeId id = new NodeId(access);
 		SetLattice<NodeId> ids = new SetLattice<>(id);
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(arg.pointers, arg.pointersStack, ids);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(arg.v, arg.vStack, ids);
 		return new DataframeGraphDomain(
 				arg.constants,
 				forest,
 				pointers,
 				ids,
-				arg.operations.putState(id, new SetLattice<>(access)));
+				arg.l.putState(id, new SetLattice<>(access)));
 	}
 
 	private static DataframeGraphDomain doIterate(
@@ -642,13 +644,13 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		NodeId id = new NodeId(access);
 		SetLattice<NodeId> ids = new SetLattice<>(id);
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(arg.pointers, arg.pointersStack, ids);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(arg.v, arg.vStack, ids);
 		return new DataframeGraphDomain(
 				arg.constants,
 				forest,
 				pointers,
 				ids,
-				arg.operations.putState(id, new SetLattice<>(access)));
+				arg.l.putState(id, new SetLattice<>(access)));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -672,9 +674,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				return new DataframeGraphDomain(
 						arg.constants,
 						arg.graph,
-						arg.pointers,
+						arg.v,
 						(SetLattice<NodeId>) firstWrapped,
-						arg.operations);
+						arg.l);
 			else
 				return cleanStack(arg, pp);
 
@@ -683,7 +685,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				operator instanceof JoinCols ? Axis.COLS : Axis.ROWS);
 		forest.addNode(concatNode);
 
-		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(arg.operations.getMap());
+		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(arg.l.getMap());
 
 		// 1) if a leaf is an access it has to become a projection
 		// 2) the same leaf might appear multiple times as different
@@ -705,7 +707,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			if (!(element instanceof SetLattice<?>))
 				return cleanStack(arg, pp);
 
-			SetLattice<DataframeOperation> ops = resolvePointers(arg.operations, (SetLattice<NodeId>) element);
+			SetLattice<DataframeOperation> ops = resolvePointers(arg.l, (SetLattice<NodeId>) element);
 			List<Integer> value = entry.getValue();
 			if (value.size() == 1)
 				// appears once
@@ -737,12 +739,12 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		NodeId id = new NodeId(concatNode);
 		CollectingMapLattice<NodeId,
-				DataframeOperation> ops = new CollectingMapLattice<>(arg.operations.lattice, operations);
+				DataframeOperation> ops = new CollectingMapLattice<>(arg.l.lattice, operations);
 		// no shift necessary: this is a new dataframe creation
 		return new DataframeGraphDomain(
 				arg.constants,
 				forest,
-				arg.pointers,
+				arg.v,
 				new SetLattice<>(id),
 				ops.putState(id, new SetLattice<>(concatNode)));
 	}
@@ -762,7 +764,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		DataframeForest df = new DataframeForest(arg.graph);
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
-		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(arg.operations.getMap());
+		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(arg.l.getMap());
 		for (DataframeOperation leaf : stack) {
 			DataframeSelection<?, ?> selection;
 			if (leaf instanceof Project<?, ?>)
@@ -787,10 +789,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
 		CollectingMapLattice<NodeId,
-				DataframeOperation> ops = new CollectingMapLattice<>(arg.operations.lattice, map);
+				DataframeOperation> ops = new CollectingMapLattice<>(arg.l.lattice, map);
 		for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
 			ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(arg.pointers, arg.pointersStack, idsLattice);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(arg.v, arg.vStack, idsLattice);
 		return new DataframeGraphDomain(
 				arg.constants,
 				df,
@@ -814,7 +816,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		DataframeForest df = new DataframeForest(arg.graph);
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
-		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(arg.operations.getMap());
+		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(arg.l.getMap());
 		for (DataframeOperation leaf : stack) {
 			DataframeSelection<?, ?> selection;
 			if (leaf instanceof Project<?, ?>)
@@ -835,10 +837,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
 		CollectingMapLattice<NodeId,
-				DataframeOperation> ops = new CollectingMapLattice<>(arg.operations.lattice, map);
+				DataframeOperation> ops = new CollectingMapLattice<>(arg.l.lattice, map);
 		for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
 			ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(arg.pointers, arg.pointersStack, idsLattice);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(arg.v, arg.vStack, idsLattice);
 		return new DataframeGraphDomain(
 				arg.constants,
 				df,
@@ -852,24 +854,24 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			DataframeGraphDomain arg,
 			ProgramPoint pp)
 			throws SemanticException {
-		if (topOrBottom(arg.pointersStack))
+		if (topOrBottom(arg.vStack))
 			return cleanStack(arg, pp);
 
 		Set<NodeId> ids = new HashSet<>();
-		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(arg.operations.getMap());
-		for (NodeId id : arg.pointersStack) {
+		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(arg.l.getMap());
+		for (NodeId id : arg.vStack) {
 			NodeId copy = new NodeId(id, index);
 			ids.add(copy);
-			operations.put(copy, arg.operations.getState(id));
+			operations.put(copy, arg.l.getState(id));
 		}
 
 		// no shift necessary: this is a new dataframe creation
 		return new DataframeGraphDomain(
 				arg.constants,
 				arg.graph,
-				arg.pointers,
+				arg.v,
 				new SetLattice<>(ids, false),
-				new CollectingMapLattice<>(arg.operations.lattice, operations));
+				new CollectingMapLattice<>(arg.l.lattice, operations));
 	}
 
 	private static DataframeGraphDomain doReadDataframe(
@@ -892,9 +894,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return new DataframeGraphDomain(
 				arg.constants,
 				df,
-				arg.pointers,
+				arg.v,
 				ids,
-				arg.operations.putState(id, operations));
+				arg.l.putState(id, operations));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -930,9 +932,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return new DataframeGraphDomain(
 				arg.constants,
 				df,
-				arg.pointers,
+				arg.v,
 				ids,
-				arg.operations.putState(id, operations));
+				arg.l.putState(id, operations));
 	}
 
 	public DataframeGraphDomain visit(
@@ -993,7 +995,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			value = value.top();
 
 		DataframeForest forest = new DataframeForest(right.graph);
-		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(right.operations.getMap());
+		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(right.l.getMap());
 		SeriesComparison seriesCompOp = (SeriesComparison) operator;
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
@@ -1018,10 +1020,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
 		CollectingMapLattice<NodeId,
-				DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice, operations);
+				DataframeOperation> ops = new CollectingMapLattice<>(right.l.lattice, operations);
 		for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
 			ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointersStack, idsLattice);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.v, left.vStack, idsLattice);
 		return new DataframeGraphDomain(
 				right.constants,
 				forest,
@@ -1042,7 +1044,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return cleanStack(right, pp);
 
 		DataframeForest forest = new DataframeForest(right.graph);
-		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(right.operations.getMap());
+		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(right.l.getMap());
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
 		for (DataframeOperation op : df) {
@@ -1061,10 +1063,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
 		CollectingMapLattice<NodeId,
-				DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice, operations);
+				DataframeOperation> ops = new CollectingMapLattice<>(right.l.lattice, operations);
 		for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
 			ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointersStack, idsLattice);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.v, left.vStack, idsLattice);
 		return new DataframeGraphDomain(
 				right.constants,
 				forest,
@@ -1086,7 +1088,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return cleanStack(right, pp);
 
 		DataframeForest forest = new DataframeForest(right.graph);
-		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(right.operations.getMap());
+		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(right.l.getMap());
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
 		for (DataframeOperation op : df1) {
@@ -1107,10 +1109,10 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
 		CollectingMapLattice<NodeId,
-				DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice, operations);
+				DataframeOperation> ops = new CollectingMapLattice<>(right.l.lattice, operations);
 		for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
 			ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointersStack, idsLattice);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.v, left.vStack, idsLattice);
 		return new DataframeGraphDomain(
 				right.constants,
 				forest,
@@ -1131,7 +1133,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return cleanStack(right, pp);
 
 		DataframeForest forest = new DataframeForest(right.graph);
-		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(right.operations.getMap());
+		Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(right.l.getMap());
 
 		DataframeOperation concatNode = new Concat(pp.getLocation(), index, Axis.COLS);
 		forest.addNode(concatNode);
@@ -1152,8 +1154,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		NodeId id = new NodeId(concatNode);
 		SetLattice<NodeId> ids = new SetLattice<>(id);
 		CollectingMapLattice<NodeId,
-				DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice, operations);
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointersStack, ids);
+				DataframeOperation> ops = new CollectingMapLattice<>(right.l.lattice, operations);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.v, left.vStack, ids);
 		return new DataframeGraphDomain(
 				right.constants,
 				forest,
@@ -1197,13 +1199,13 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		NodeId id = new NodeId(drop);
 		SetLattice<NodeId> ids = new SetLattice<>(id);
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointersStack, ids);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.v, left.vStack, ids);
 		return new DataframeGraphDomain(
 				right.constants,
 				forest,
 				pointers,
 				ids,
-				right.operations.putState(id, new SetLattice<>(drop)));
+				right.l.putState(id, new SetLattice<>(drop)));
 	}
 
 	private static DataframeGraphDomain doBinaryTransformation(
@@ -1221,7 +1223,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		BinaryTransform op = (BinaryTransform) operator;
 		DataframeForest forest = new DataframeForest(right.graph);
 		Map<NodeId, DataframeOperation> ids = new HashMap<>();
-		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(left.operations.getMap());
+		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(left.l.getMap());
 		for (DataframeOperation leaf : stack) {
 			DataframeSelection<?, ?> selection;
 			if (leaf instanceof Project<?, ?>)
@@ -1243,8 +1245,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		}
 
 		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointersStack, idsLattice);
-		CollectingMapLattice<NodeId, DataframeOperation> ops = new CollectingMapLattice<>(left.operations.lattice, map);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.v, left.vStack, idsLattice);
+		CollectingMapLattice<NodeId, DataframeOperation> ops = new CollectingMapLattice<>(left.l.lattice, map);
 		for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
 			ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
 		return new DataframeGraphDomain(
@@ -1329,13 +1331,13 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		NodeId id = new NodeId(access);
 		SetLattice<NodeId> ids = new SetLattice<>(id);
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointersStack, ids);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.v, left.vStack, ids);
 		return new DataframeGraphDomain(
 				right.constants,
 				forest,
 				pointers,
 				ids,
-				right.operations.putState(id, new SetLattice<>(access)));
+				right.l.putState(id, new SetLattice<>(access)));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1352,8 +1354,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Lattice<?> tail;
 		if (!right.constStack.isBottom())
 			tail = right.constStack;
-		else if (!right.pointersStack.isBottom())
-			tail = right.pointersStack;
+		else if (!right.vStack.isBottom())
+			tail = right.vStack;
 		else
 			tail = right.constants.lattice.top();
 
@@ -1362,9 +1364,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				right.constants,
 				right.constStack.eval(listconst, right.constants, pp, oracle),
 				right.graph,
-				right.pointers,
+				right.v,
 				NO_IDS,
-				right.operations);
+				right.l);
 	}
 
 	public DataframeGraphDomain visit(
@@ -1422,14 +1424,14 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 		if (!left.constStack.isBottom())
 			rstart = getRangeBound(left.constStack);
-		else if (!topOrBottom(left.pointersStack)) {
+		else if (!topOrBottom(left.vStack)) {
 			l = resolvePointers(left);
 			cstart = getRangeBound(l);
 		}
 
 		if (!middle.constStack.isBottom())
 			rend = getRangeBound(middle.constStack);
-		else if (!topOrBottom(middle.pointersStack)) {
+		else if (!topOrBottom(middle.vStack)) {
 			// column slice
 			m = resolvePointers(middle);
 			if (l.equals(m))
@@ -1448,9 +1450,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				right.constants,
 				right.constStack.eval(slice, right.constants, pp, oracle),
 				right.graph,
-				right.pointers,
+				right.v,
 				NO_IDS,
-				right.operations);
+				right.l);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -1522,16 +1524,16 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			NodeId id = new NodeId(access);
 			SetLattice<NodeId> ids = new SetLattice<>(id);
 			CollectingMapLattice<Identifier,
-					NodeId> pointers = shift(right.pointers, left.pointersStack, ids);
+					NodeId> pointers = shift(right.v, left.vStack, ids);
 			return new DataframeGraphDomain(
 					right.constants,
 					forest,
 					pointers,
 					ids,
-					right.operations.putState(id, new SetLattice<>(access)));
-		} else if (!topOrBottom(middle.pointersStack)) {
+					right.l.putState(id, new SetLattice<>(access)));
+		} else if (!topOrBottom(middle.vStack)) {
 			SetLattice<DataframeOperation> middleGraph = resolvePointers(middle);
-			Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(right.operations.getMap());
+			Map<NodeId, SetLattice<DataframeOperation>> operations = new HashMap<>(right.l.getMap());
 			Map<NodeId, DataframeOperation> ids = new HashMap<>();
 
 			for (DataframeOperation op : middleGraph) {
@@ -1556,11 +1558,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 			SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
 			CollectingMapLattice<NodeId,
-					DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice, operations);
+					DataframeOperation> ops = new CollectingMapLattice<>(right.l.lattice, operations);
 			for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
 				ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
 			CollectingMapLattice<Identifier,
-					NodeId> pointers = shift(right.pointers, left.pointersStack, idsLattice);
+					NodeId> pointers = shift(right.v, left.vStack, idsLattice);
 			return new DataframeGraphDomain(
 					right.constants,
 					forest,
@@ -1579,13 +1581,13 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			NodeId id = new NodeId(access);
 			SetLattice<NodeId> ids = new SetLattice<>(id);
 			CollectingMapLattice<Identifier,
-					NodeId> pointers = shift(right.pointers, left.pointersStack, ids);
+					NodeId> pointers = shift(right.v, left.vStack, ids);
 			return new DataframeGraphDomain(
 					right.constants,
 					forest,
 					pointers,
 					ids,
-					right.operations.putState(id, new SetLattice<>(access)));
+					right.l.putState(id, new SetLattice<>(access)));
 		}
 	}
 
@@ -1612,13 +1614,13 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			forest.addEdge(new SimpleEdge(op, node));
 		NodeId id = new NodeId(node);
 		SetLattice<NodeId> ids = new SetLattice<>(id);
-		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointersStack, ids);
+		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.v, left.vStack, ids);
 		return new DataframeGraphDomain(
 				right.constants,
 				forest,
 				pointers,
 				ids,
-				right.operations.putState(id, new SetLattice<>(node)));
+				right.l.putState(id, new SetLattice<>(node)));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1636,14 +1638,14 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		Lattice<?> key, value;
 		if (!middle.constStack.isBottom())
 			key = middle.constStack;
-		else if (!middle.pointersStack.isBottom())
-			key = middle.pointersStack;
+		else if (!middle.vStack.isBottom())
+			key = middle.vStack;
 		else
 			key = middle.constants.lattice.top();
 		if (!right.constStack.isBottom())
 			value = right.constStack;
-		else if (!right.pointersStack.isBottom())
-			value = right.pointersStack;
+		else if (!right.vStack.isBottom())
+			value = right.vStack;
 		else
 			value = right.constants.lattice.top();
 
@@ -1652,9 +1654,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				right.constants,
 				right.constStack.eval(newdict, right.constants, pp, oracle),
 				right.graph,
-				right.pointers,
+				right.v,
 				NO_IDS,
-				right.operations);
+				right.l);
 	}
 
 	private static DataframeGraphDomain cleanStack(
@@ -1665,9 +1667,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return new DataframeGraphDomain(
 				right.constants,
 				right.graph,
-				right.pointers,
+				right.v,
 				NO_IDS,
-				right.operations);
+				right.l);
 	}
 
 	private static String getCaller() {
@@ -1689,17 +1691,17 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return new DataframeGraphDomain(
 					constants,
 					graph,
-					pointers,
+					v,
 					NO_IDS.top(),
-					operations.top());
+					l.top());
 		else
 			return new DataframeGraphDomain(
 					constants,
 					constStack.top(),
 					graph,
-					pointers,
+					v,
 					NO_IDS,
-					operations);
+					l);
 	}
 
 	public DataframeGraphDomain visit(
@@ -1711,9 +1713,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 				constants,
 				constStack.eval(expression, constants, pp, oracle),
 				graph,
-				pointers,
+				v,
 				NO_IDS,
-				operations);
+				l);
 	}
 
 	public DataframeGraphDomain visit(
@@ -1731,23 +1733,23 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 					constants,
 					constants.getState(expression),
 					graph,
-					pointers,
+					v,
 					NO_IDS,
-					operations);
-		else if (pointers.getKeys().contains(expression))
+					l);
+		else if (v.getKeys().contains(expression))
 			return new DataframeGraphDomain(
 					constants,
 					graph,
-					pointers,
-					pointers.getState(expression),
-					operations);
+					v,
+					v.getState(expression),
+					l);
 		else
 			return new DataframeGraphDomain(
 					constants,
 					graph,
-					pointers,
+					v,
 					NO_IDS,
-					operations);
+					l);
 	}
 
 	public static AllocationSite stripFields(
@@ -1765,7 +1767,7 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(constStack, constants, graph, operations, pointers, pointersStack);
+		return Objects.hash(constStack, constants, graph, l, v, vStack);
 	}
 
 	@Override
@@ -1781,9 +1783,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return Objects.equals(constStack, other.constStack)
 				&& Objects.equals(constants, other.constants)
 				&& Objects.equals(graph, other.graph)
-				&& Objects.equals(operations, other.operations)
-				&& Objects.equals(pointers, other.pointers)
-				&& Objects.equals(pointersStack, other.pointersStack);
+				&& Objects.equals(l, other.l)
+				&& Objects.equals(v, other.v)
+				&& Objects.equals(vStack, other.vStack);
 	}
 
 	@Override
@@ -1798,9 +1800,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		result.addNode(close);
 
 		Collection<DataframeOperation> exits = new HashSet<>();
-		for (SetLattice<NodeId> variable : pointers.getValues())
+		for (SetLattice<NodeId> variable : v.getValues())
 			for (NodeId id : variable)
-				exits.addAll(operations.getState(id).elements());
+				exits.addAll(l.getState(id).elements());
 
 		for (DataframeOperation op : exits)
 			result.addEdge(new SimpleEdge(op, close));
@@ -1843,11 +1845,11 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public Map<Identifier, DataframeForest> partitionByVarialbe() throws SemanticException {
 		Map<Identifier, DataframeForest> result = new HashMap<>();
 
-		for (Entry<Identifier, SetLattice<NodeId>> entry : pointers.getMap().entrySet())
+		for (Entry<Identifier, SetLattice<NodeId>> entry : v.getMap().entrySet())
 			if (!entry.getValue().isTop() && !entry.getValue().isBottom()) {
 				DataframeForest accumulator = null;
 				for (NodeId id : entry.getValue())
-					for (DataframeOperation op : operations.getState(id)) {
+					for (DataframeOperation op : l.getState(id)) {
 						DataframeForest sub = graph.bDFS(op,
 								o -> false,
 								edge -> true);
@@ -1865,6 +1867,6 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	@Override
 	public boolean knowsIdentifier(
 			Identifier id) {
-		return constants.knowsIdentifier(id) || pointers.getKeys().contains(id);
+		return constants.knowsIdentifier(id) || v.getKeys().contains(id);
 	}
 }
