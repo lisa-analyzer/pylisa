@@ -24,13 +24,6 @@ public class ColumnIteration extends ColumnSelection<ColumnIteration> {
 	}
 
 	@Override
-	public ColumnIteration wideningSameClass(
-			ColumnIteration other)
-			throws SemanticException {
-		return this;
-	}
-
-	@Override
 	public boolean lessOrEqualSameClass(
 			ColumnIteration other)
 			throws SemanticException {

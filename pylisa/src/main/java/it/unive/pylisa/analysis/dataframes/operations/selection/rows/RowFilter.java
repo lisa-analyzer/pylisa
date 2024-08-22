@@ -33,13 +33,6 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 	}
 
 	@Override
-	public RowFilter<B> wideningSameClass(
-			RowFilter<B> other)
-			throws SemanticException {
-		return lubAux(other);
-	}
-
-	@Override
 	public boolean lessOrEqualSameClass(
 			RowFilter<B> other)
 			throws SemanticException {

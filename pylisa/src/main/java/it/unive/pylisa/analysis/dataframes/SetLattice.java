@@ -44,6 +44,18 @@ public class SetLattice<E> extends it.unive.lisa.analysis.lattices.SetLattice<Se
 		return !SetUtils.intersection(elements, other.elements).isEmpty();
 	}
 
+	public SetLattice<E> remove(
+			SetLattice<E> elements) {
+		SetView<E> result = SetUtils.difference(this.elements, elements.elements);
+		return new SetLattice<>(new HashSet<>(result), false);
+	}
+
+	public SetLattice<E> remove(
+			Set<E> elements) {
+		SetView<E> result = SetUtils.difference(this.elements, elements);
+		return new SetLattice<>(new HashSet<>(result), false);
+	}
+
 	public SetLattice<E> replace(
 			SetLattice<E> elements,
 			SetLattice<E> targets) {

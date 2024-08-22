@@ -85,16 +85,6 @@ public class Reduce<R extends RowSelection<R>, C extends ColumnSelection<C>> ext
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(
-			DataframeOperation other)
-			throws SemanticException {
-		Reduce<?, ?> o = (Reduce<?, ?>) other;
-		if (type != o.type)
-			return top();
-		return new Reduce<>(where, index, type, selection.widening(o.selection));
-	}
-
-	@Override
 	protected int compareToSameOperation(
 			DataframeOperation o) {
 		Reduce<?, ?> other = (Reduce<?, ?>) o;

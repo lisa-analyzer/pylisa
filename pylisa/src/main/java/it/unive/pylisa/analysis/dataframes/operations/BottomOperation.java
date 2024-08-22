@@ -1,7 +1,6 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
 import it.unive.lisa.analysis.Lattice;
-import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CodeLocation;
 
@@ -54,12 +53,5 @@ public class BottomOperation extends DataframeOperation {
 	protected int compareToSameOperation(
 			DataframeOperation o) {
 		return 0;
-	}
-
-	@Override
-	protected DataframeOperation wideningSameOperation(
-			DataframeOperation other)
-			throws SemanticException {
-		return this;
 	}
 }

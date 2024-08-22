@@ -32,13 +32,6 @@ public class GetAxis extends DataframeOperation {
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(
-			DataframeOperation other)
-			throws SemanticException {
-		return new GetAxis(where, index, axis.widening(((GetAxis) other).axis));
-	}
-
-	@Override
 	protected int compareToSameOperation(
 			DataframeOperation o) {
 		return axis.compareTo(((GetAxis) o).axis);

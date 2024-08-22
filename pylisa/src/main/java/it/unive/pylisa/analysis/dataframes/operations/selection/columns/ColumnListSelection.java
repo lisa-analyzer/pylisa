@@ -44,13 +44,6 @@ public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 	}
 
 	@Override
-	public ColumnListSelection wideningSameClass(
-			ColumnListSelection other)
-			throws SemanticException {
-		return new ColumnListSelection(columns.widening(other.columns));
-	}
-
-	@Override
 	public boolean lessOrEqualSameClass(
 			ColumnListSelection other)
 			throws SemanticException {

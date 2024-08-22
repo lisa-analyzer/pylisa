@@ -37,14 +37,6 @@ public class Read extends DataframeOperation {
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(
-			DataframeOperation other)
-			throws SemanticException {
-		Read o = (Read) other;
-		return new Read(where, index, file.widening(o.file));
-	}
-
-	@Override
 	protected int compareToSameOperation(
 			DataframeOperation o) {
 		Read other = (Read) o;

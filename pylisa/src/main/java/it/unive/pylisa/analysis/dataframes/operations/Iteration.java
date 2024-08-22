@@ -1,6 +1,5 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
-import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 
 public class Iteration extends DataframeOperation {
@@ -20,13 +19,6 @@ public class Iteration extends DataframeOperation {
 	@Override
 	protected DataframeOperation lubSameOperation(
 			DataframeOperation other) {
-		return this;
-	}
-
-	@Override
-	protected DataframeOperation wideningSameOperation(
-			DataframeOperation other)
-			throws SemanticException {
 		return this;
 	}
 

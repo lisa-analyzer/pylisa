@@ -19,13 +19,6 @@ public class AllRows extends RowSelection<AllRows> {
 	}
 
 	@Override
-	protected AllRows wideningSameClass(
-			AllRows other)
-			throws SemanticException {
-		return this;
-	}
-
-	@Override
 	public boolean lessOrEqualSameClass(
 			AllRows other)
 			throws SemanticException {

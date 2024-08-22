@@ -69,14 +69,6 @@ public class Project<R extends RowSelection<R>, C extends ColumnSelection<C>> ex
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(
-			DataframeOperation other)
-			throws SemanticException {
-		Project<?, ?> o = (Project<?, ?>) other;
-		return new Project<>(where, index, selection.lub(o.selection));
-	}
-
-	@Override
 	protected int compareToSameOperation(
 			DataframeOperation o) {
 		Project<?, ?> other = (Project<?, ?>) o;

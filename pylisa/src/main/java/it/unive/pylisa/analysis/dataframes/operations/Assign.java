@@ -39,14 +39,6 @@ public class Assign<R extends RowSelection<R>, C extends ColumnSelection<C>> ext
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(
-			DataframeOperation other)
-			throws SemanticException {
-		Assign<?, ?> o = (Assign<?, ?>) other;
-		return new Assign<>(where, index, selection.lub(o.selection));
-	}
-
-	@Override
 	protected int compareToSameOperation(
 			DataframeOperation o) {
 		Assign<?, ?> other = (Assign<?, ?>) o;

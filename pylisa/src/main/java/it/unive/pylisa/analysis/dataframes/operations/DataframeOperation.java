@@ -75,20 +75,7 @@ public abstract class DataframeOperation
 	public final DataframeOperation lubAux(
 			DataframeOperation other)
 			throws SemanticException {
-		if (similar(other))
-			return lubSameOperation(other);
-		else
-			return TOP;
-	}
-
-	@Override
-	public final DataframeOperation wideningAux(
-			DataframeOperation other)
-			throws SemanticException {
-		if (similar(other))
-			return wideningSameOperation(other);
-		else
-			return TOP;
+		return similar(other) ? lubSameOperation(other) : TOP;
 	}
 
 	protected abstract boolean lessOrEqualSameOperation(
@@ -96,10 +83,6 @@ public abstract class DataframeOperation
 			throws SemanticException;
 
 	protected abstract DataframeOperation lubSameOperation(
-			DataframeOperation other)
-			throws SemanticException;
-
-	protected abstract DataframeOperation wideningSameOperation(
 			DataframeOperation other)
 			throws SemanticException;
 

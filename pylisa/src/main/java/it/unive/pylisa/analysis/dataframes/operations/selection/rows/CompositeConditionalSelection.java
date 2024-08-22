@@ -70,14 +70,6 @@ public class CompositeConditionalSelection<L extends BooleanSelection<L>, R exte
 	}
 
 	@Override
-	public CompositeConditionalSelection<L, R> wideningSameClass(
-			CompositeConditionalSelection<L, R> other)
-			throws SemanticException {
-		return type != other.type ? top()
-				: new CompositeConditionalSelection<>(type, left.widening(other.left), right.widening(other.right));
-	}
-
-	@Override
 	public boolean lessOrEqualSameClass(
 			CompositeConditionalSelection<L, R> other)
 			throws SemanticException {

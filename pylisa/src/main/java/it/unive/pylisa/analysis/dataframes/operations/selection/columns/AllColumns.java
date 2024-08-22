@@ -19,13 +19,6 @@ public class AllColumns extends ColumnSelection<AllColumns> {
 	}
 
 	@Override
-	protected AllColumns wideningSameClass(
-			AllColumns other)
-			throws SemanticException {
-		return this;
-	}
-
-	@Override
 	public boolean lessOrEqualSameClass(
 			AllColumns other)
 			throws SemanticException {

@@ -1,5 +1,6 @@
 package it.unive.pylisa.analysis.dataframes.edge;
 
+import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.lisa.util.datastructures.graph.code.CodeEdge;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
@@ -82,11 +83,37 @@ public abstract class DataframeEdge
 			return cmp;
 		if ((cmp = destination.compareTo(o.destination)) != 0)
 			return cmp;
-		return getClass().getName().compareTo(o.getClass().getName());
+		return compareKind(o);
+	}
+
+	public int compareKind(
+			DataframeEdge o) {
+		int cmp;
+		if ((cmp = getClass().getName().compareTo(o.getClass().getName())) != 0)
+			return cmp;
+		return compareToSameEdgeKind(o);
+	}
+
+	public boolean sameKind(
+			DataframeEdge o) {
+		return compareKind(o) == 0;
+	}
+
+	protected int compareToSameEdgeKind(
+			DataframeEdge o) {
+		return 0;
 	}
 
 	@Override
 	public boolean isUnconditional() {
 		return false;
+	}
+
+	public boolean lessOrEqual(
+			DataframeEdge other)
+			throws SemanticException {
+		return getClass() == other.getClass()
+				&& source.lessOrEqual(other.source)
+				&& destination.lessOrEqual(other.destination);
 	}
 }

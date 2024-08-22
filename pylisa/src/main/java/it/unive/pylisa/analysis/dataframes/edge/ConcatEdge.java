@@ -42,6 +42,12 @@ public class ConcatEdge extends DataframeEdge {
 	}
 
 	@Override
+	protected int compareToSameEdgeKind(
+			DataframeEdge o) {
+		return Integer.compare(edgeIndex, ((ConcatEdge) o).edgeIndex);
+	}
+
+	@Override
 	public String getEdgeSymbol() {
 		return "-" + edgeIndex + "->";
 	}

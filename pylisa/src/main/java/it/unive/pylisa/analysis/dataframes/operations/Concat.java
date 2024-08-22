@@ -33,14 +33,6 @@ public class Concat extends DataframeOperation {
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(
-			DataframeOperation other)
-			throws SemanticException {
-		Concat o = (Concat) other;
-		return new Concat(where, index, axis.widening(o.axis));
-	}
-
-	@Override
 	protected int compareToSameOperation(
 			DataframeOperation o) {
 		Concat other = (Concat) o;

@@ -47,14 +47,6 @@ public class Init extends DataframeOperation {
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(
-			DataframeOperation other)
-			throws SemanticException {
-		Init o = (Init) other;
-		return new Init(where, index, knownColumns.widening(o.knownColumns), existingRows.widening(existingRows));
-	}
-
-	@Override
 	protected int compareToSameOperation(
 			DataframeOperation o) {
 		Init other = (Init) o;

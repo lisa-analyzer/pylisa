@@ -85,16 +85,6 @@ public class Reshape<R extends RowSelection<R>, C extends ColumnSelection<C>> ex
 	}
 
 	@Override
-	protected DataframeOperation wideningSameOperation(
-			DataframeOperation other)
-			throws SemanticException {
-		Reshape<?, ?> o = (Reshape<?, ?>) other;
-		if (type != o.type)
-			return top();
-		return new Reshape<>(where, index, type, selection.widening(o.selection));
-	}
-
-	@Override
 	protected int compareToSameOperation(
 			DataframeOperation o) {
 		Reshape<?, ?> other = (Reshape<?, ?>) o;

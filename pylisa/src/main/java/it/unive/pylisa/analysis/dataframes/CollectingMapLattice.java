@@ -97,11 +97,6 @@ public class CollectingMapLattice<K, V>
 				set -> new SetRepresentation(set.elements(), valueMapper));
 	}
 
-	public CollectingMapLattice<K, V> setStack(
-			SetLattice<V> stack) {
-		return mk(stack, function == null ? null : mkNewFunction(function, false));
-	}
-
 	@Override
 	public SetLattice<V> stateOfUnknown(
 			K key) {

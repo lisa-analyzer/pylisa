@@ -73,14 +73,6 @@ public class ConditionalSelection extends BooleanSelection<ConditionalSelection>
 	}
 
 	@Override
-	public ConditionalSelection wideningSameClass(
-			ConditionalSelection other)
-			throws SemanticException {
-		return op != other.op ? top()
-				: new ConditionalSelection(cols.widening(other.cols), op, val.widening(other.val));
-	}
-
-	@Override
 	public boolean lessOrEqualSameClass(
 			ConditionalSelection other)
 			throws SemanticException {

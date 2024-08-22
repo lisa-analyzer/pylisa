@@ -16,13 +16,6 @@ public abstract class Selection<S extends Selection<S>> implements BaseLattice<S
 	}
 
 	@SuppressWarnings("unchecked")
-	public S widening(
-			Selection<?> other)
-			throws SemanticException {
-		return widening((S) other);
-	}
-
-	@SuppressWarnings("unchecked")
 	public boolean lessOrEqual(
 			Selection<?> other)
 			throws SemanticException {

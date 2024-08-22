@@ -138,14 +138,4 @@ public class Transform<R extends RowSelection<R>, C extends ColumnSelection<C>> 
 		// not much we can do here..
 		return Integer.compare(arg.hashCode(), other.arg.hashCode());
 	}
-
-	@Override
-	protected DataframeOperation wideningSameOperation(
-			DataframeOperation other)
-			throws SemanticException {
-		Transform<?, ?> o = (Transform<?, ?>) other;
-		if (type != o.type || !arg.equals(o.arg))
-			return top();
-		return new Transform<>(where, index, type, axis.widening(o.axis), selection.widening(o.selection), arg);
-	}
 }

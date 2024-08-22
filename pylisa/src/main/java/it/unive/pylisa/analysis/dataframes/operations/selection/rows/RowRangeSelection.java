@@ -55,13 +55,6 @@ public class RowRangeSelection extends RowSelection<RowRangeSelection> implement
 	}
 
 	@Override
-	public RowRangeSelection wideningSameClass(
-			RowRangeSelection other)
-			throws SemanticException {
-		return new RowRangeSelection(rows.widening(other.rows));
-	}
-
-	@Override
 	public boolean lessOrEqualSameClass(
 			RowRangeSelection other)
 			throws SemanticException {
