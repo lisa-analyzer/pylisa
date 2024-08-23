@@ -12,7 +12,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.program.CodeUnit;
 import it.unive.lisa.program.CompilationUnit;
@@ -28,7 +32,10 @@ import it.unive.pylisa.libraries.loader.Runtime;
 
 public class LibrarySpecificationProvider {
 
-	private static final String LIBS_FILE = "/libs.txt";
+	private static final Logger LOG = LogManager.getLogger(LibrarySpecificationProvider.class);
+
+	public static final String LIBS_FOLDER = "/libraries/";
+	private static final String STDLIB_FILE = "stdlib.txt";
 
 	public static final String SET = "Set";
 	public static final String DICT = "Dict";
@@ -74,27 +81,43 @@ public class LibrarySpecificationProvider {
 		AVAILABLE_LIBS.clear();
 		LOADED_LIBS.clear();
 
-		LibraryDefinitionLexer lexer = null;
-		try (InputStream stream = LibrarySpecificationParser.class.getResourceAsStream(LIBS_FILE);) {
-			lexer = new LibraryDefinitionLexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
-		} catch (IOException e) {
-			throw new AnalysisSetupException("Unable to parse '" + LIBS_FILE + "'", e);
-		}
-
-		LibraryDefinitionParser parser = new LibraryDefinitionParser(new CommonTokenStream(lexer));
-		LibrarySpecificationParser libParser = new LibrarySpecificationParser(LIBS_FILE);
-		Pair<Runtime, Collection<Library>> parsed = libParser.visitFile(parser.file());
-
+		Pair<Runtime, Collection<Library>> stdlib = readFile(LIBS_FOLDER + STDLIB_FILE);
 		AtomicReference<CompilationUnit> root = new AtomicReference<CompilationUnit>(null);
-		parsed.getLeft().fillProgram(program, root);
+		stdlib.getLeft().fillProgram(program, root);
 		if (root.get() == null)
 			throw new AnalysisSetupException("Runtime does not contain a hierarchy root");
 		hierarchyRoot = root.get();
 		makeInit(program);
-		parsed.getLeft().populateProgram(program, init, hierarchyRoot);
-
-		for (Library lib : parsed.getValue())
+		stdlib.getLeft().populateProgram(program, init, hierarchyRoot);
+		for (Library lib : stdlib.getValue())
 			AVAILABLE_LIBS.put(lib.getName(), lib);
+
+		try (ScanResult scanResult = new ClassGraph().acceptPaths(LIBS_FOLDER).scan()) {
+			for (String path : scanResult.getAllResources().getPaths())
+				if (!path.endsWith("/" + STDLIB_FILE)) {
+					// need to add the / since the returned paths are relative
+					Pair<Runtime, Collection<Library>> libs = readFile("/" + path);
+					libs.getLeft().fillProgram(program, root);
+					libs.getLeft().populateProgram(program, init, hierarchyRoot);
+					for (Library lib : libs.getValue())
+						AVAILABLE_LIBS.put(lib.getName(), lib);
+				}
+		}
+	}
+
+	private static Pair<Runtime, Collection<Library>> readFile(
+			String file)
+			throws AnalysisSetupException {
+		LibraryDefinitionLexer lexer = null;
+		try (InputStream stream = LibrarySpecificationParser.class.getResourceAsStream(file)) {
+			lexer = new LibraryDefinitionLexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			throw new AnalysisSetupException("Unable to parse '" + file + "'", e);
+		}
+
+		LibraryDefinitionParser parser = new LibraryDefinitionParser(new CommonTokenStream(lexer));
+		LibrarySpecificationParser libParser = new LibrarySpecificationParser(file);
+		return libParser.visitFile(parser.file());
 	}
 
 	private static CFG makeInit(
@@ -112,10 +135,11 @@ public class LibrarySpecificationProvider {
 			return;
 
 		Library library = AVAILABLE_LIBS.get(name);
-		if (library == null)
-			// TODO do we log? could also be imports to other files under
-			// analysis...
+		if (library == null) {
+			LOG.warn("Imported library '" + name + "' not found among available libraries");
 			return;
+		}
+
 		CodeUnit lib = library.toLiSAUnit(program, new AtomicReference<>(hierarchyRoot));
 		library.populateUnit(init, hierarchyRoot, lib);
 		LOADED_LIBS.add(name);

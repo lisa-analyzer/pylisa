@@ -1,0 +1,27 @@
+library miniapi:
+    location miniapi
+    method MiniAPI: it.unive.pylisa.libraries.miniapi.MiniAPI
+        libtype miniapi.MiniAPI*
+    class miniapi.MiniAPI:
+        instance method __init__: it.unive.pylisa.libraries.miniapi.Init
+            libtype miniapi.MiniAPI*
+            param self libtype miniapi.MiniAPI*
+        instance method get: it.unive.pylisa.libraries.miniapi.Operation
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype miniapi.MiniAPI*
+            param path type it.unive.lisa.program.type.StringType::INSTANCE
+            return it.unive.lisa.type.Untyped::INSTANCE
+        instance method post: it.unive.pylisa.libraries.miniapi.Operation
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype miniapi.MiniAPI*
+            param path type it.unive.lisa.program.type.StringType::INSTANCE
+            return it.unive.lisa.type.Untyped::INSTANCE
+        instance method serve: it.unive.pylisa.libraries.miniapi.Serve
+            type it.unive.lisa.program.type.StringType::INSTANCE
+            param self libtype miniapi.MiniAPI*
+            param path type it.unive.lisa.program.type.StringType::INSTANCE
+        instance method response: it.unive.pylisa.libraries.miniapi.Response
+            type it.unive.lisa.program.type.StringType::INSTANCE
+            param self libtype miniapi.MiniAPI*
+            param body type it.unive.lisa.program.type.Int32Type::INSTANCE
+            param status type it.unive.lisa.program.type.Int32Type::INSTANCE default 200

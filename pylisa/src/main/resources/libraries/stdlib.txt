@@ -1,0 +1,27 @@
+method super: it.unive.pylisa.libraries.Super
+    type it.unive.lisa.type.Untyped::INSTANCE
+    param arg1 type it.unive.lisa.type.Untyped::INSTANCE
+    param arg2 type it.unive.lisa.type.Untyped::INSTANCE
+method print: it.unive.pylisa.libraries.NoOpFunction
+	type it.unive.lisa.type.VoidType::INSTANCE
+	param arg1 type it.unive.lisa.type.Untyped::INSTANCE
+method str: it.unive.pylisa.libraries.Str
+    type it.unive.lisa.program.type.StringType::INSTANCE
+    param arg1 type it.unive.lisa.type.Untyped::INSTANCE
+method len: it.unive.pylisa.libraries.Len
+    type it.unive.lisa.program.type.Int32Type::INSTANCE
+    param arg1 type it.unive.lisa.type.Untyped::INSTANCE
+root class Object
+class Sequence:
+	instance method __getitem__: it.unive.pylisa.libraries.SequenceGetItem
+		libtype Object*
+		param this libtype Sequence*
+		param index type it.unive.lisa.program.type.Int32Type::INSTANCE
+	instance method __len__: it.unive.pylisa.libraries.SequenceLen
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param this libtype Sequence*
+sealed class List extends Sequence 
+sealed class Set extends Sequence
+sealed class Dict extends Sequence
+sealed class Tuple extends Sequence
+sealed class Slice extends Sequence

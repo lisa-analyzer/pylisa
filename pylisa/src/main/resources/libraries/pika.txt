@@ -1,0 +1,8 @@
+library pika:
+    location pika
+    method create_channel: it.unive.pylisa.libraries.pika.CreateChannel
+        libtype pika.Channel*
+    class pika.Channel:
+        instance method __init__: it.unive.pylisa.libraries.pika.ChannelInit
+            libtype pika.Channel*
+            param self libtype pika.Channel*
