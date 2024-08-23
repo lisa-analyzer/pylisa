@@ -45,6 +45,7 @@ dependencies {
     implementation 'com.sun.xml.bind:jaxb-impl:3.0.2'    
     implementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
     implementation 'com.google.code.gson:gson:2.8.7'
+    implementation 'io.github.classgraph:classgraph:4.8.175'
     
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
