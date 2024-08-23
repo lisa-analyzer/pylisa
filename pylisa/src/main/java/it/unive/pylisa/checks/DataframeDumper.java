@@ -115,11 +115,11 @@ public class DataframeDumper
 									TypeEnvironment<InferredTypes>>> post = result.getAnalysisStateAfter(node);
 					PointBasedHeap heap = post.getState().getDomainInstance(PointBasedHeap.class);
 					DataframeGraphDomain dom = post.getState().getDomainInstance(DataframeGraphDomain.class);
-					DataframeForest forest = dom.getGraph();
+					DataframeForest forest = dom.graph;
 					Collection<DataframeForest> subgraphs = forest.partitionByRoot();
 					Map<Identifier, DataframeForest> vargraphs = dom.partitionByVarialbe();
-					CollectingMapLattice<Identifier, NodeId> pointers = dom.getPointers();
-					CollectingMapLattice<NodeId, DataframeOperation> operations = dom.getOperations();
+					CollectingMapLattice<Identifier, NodeId> pointers = dom.v;
+					CollectingMapLattice<NodeId, DataframeOperation> operations = dom.l;
 
 					Map<DataframeOperation, Set<Identifier>> refs = new HashMap<>();
 					Map<Identifier, Set<Identifier>> reverseMap = new HashMap<>();

@@ -185,7 +185,8 @@ public class ConstantPropagation
 				|| t.toString().equals(LibrarySpecificationProvider.LIST)
 				|| t.toString().equals(LibrarySpecificationProvider.DICT)
 				|| t.toString().equals(LibrarySpecificationProvider.SLICE)
-				|| t.isNullType();
+				|| t.isNullType()
+				|| t.isBooleanType();
 	}
 
 	@Override
@@ -333,6 +334,7 @@ public class ConstantPropagation
 		if (left.isTop() || middle.isTop() || right.isTop()) {
 			return top();
 		}
+
 		DictConstant newdict = new DictConstant(pp.getLocation(), left.as(Map.class), Pair.of(middle, right));
 		return new ConstantPropagation(newdict);
 	}

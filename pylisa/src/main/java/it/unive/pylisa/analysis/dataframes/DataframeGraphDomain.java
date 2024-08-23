@@ -135,67 +135,51 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		this.vStack = NO_IDS.top();
 	}
 
-	public DataframeForest getGraph() {
-		return graph;
-	}
-
-	public ValueEnvironment<ConstantPropagation> getConstants() {
-		return constants;
-	}
-
-	public CollectingMapLattice<Identifier, NodeId> getPointers() {
-		return v;
-	}
-
-	public CollectingMapLattice<NodeId, DataframeOperation> getOperations() {
-		return l;
+	private DataframeGraphDomain(
+			ValueEnvironment<ConstantPropagation> constants,
+			DataframeForest graph,
+			CollectingMapLattice<Identifier, NodeId> v,
+			CollectingMapLattice<NodeId, DataframeOperation> l) {
+		this(constants, constants.lattice.bottom(), graph, v, NO_IDS, l);
 	}
 
 	private DataframeGraphDomain(
 			ValueEnvironment<ConstantPropagation> constants,
 			DataframeForest graph,
-			CollectingMapLattice<Identifier, NodeId> pointers,
-			CollectingMapLattice<NodeId, DataframeOperation> operations) {
-		this(constants, constants.lattice.bottom(), graph, pointers, NO_IDS, operations);
-	}
-
-	private DataframeGraphDomain(
-			ValueEnvironment<ConstantPropagation> constants,
-			DataframeForest graph,
-			CollectingMapLattice<Identifier, NodeId> pointers,
-			SetLattice<NodeId> pointersStack,
-			CollectingMapLattice<NodeId, DataframeOperation> operations) {
-		this(constants, constants.lattice.bottom(), graph, pointers, pointersStack, operations);
+			CollectingMapLattice<Identifier, NodeId> v,
+			SetLattice<NodeId> vStack,
+			CollectingMapLattice<NodeId, DataframeOperation> l) {
+		this(constants, constants.lattice.bottom(), graph, v, vStack, l);
 	}
 
 	private DataframeGraphDomain(
 			ValueEnvironment<ConstantPropagation> constants,
 			ConstantPropagation constStack,
 			DataframeForest graph,
-			CollectingMapLattice<Identifier, NodeId> pointers,
-			SetLattice<NodeId> pointersStack,
-			CollectingMapLattice<NodeId, DataframeOperation> operations) {
+			CollectingMapLattice<Identifier, NodeId> v,
+			SetLattice<NodeId> vStack,
+			CollectingMapLattice<NodeId, DataframeOperation> l) {
 		super();
 		this.constants = constants;
 		this.constStack = constStack;
 		this.graph = graph;
-		this.v = pointers;
-		this.vStack = pointersStack.isEmpty() ? NO_IDS : pointersStack;
+		this.v = v;
+		this.vStack = vStack.isEmpty() ? NO_IDS : vStack;
 
 		// cleanup unreachable nodes
-		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(operations.getMap());
+		Map<NodeId, SetLattice<DataframeOperation>> map = new HashMap<>(l.getMap());
 		if (map != null && !map.isEmpty()) {
 			// get all the node ids used in the operations map
-			Set<NodeId> nodes = new HashSet<>(operations.getKeys());
+			Set<NodeId> nodes = new HashSet<>(l.getKeys());
 			// remove all the ones used in the pointers map
 			for (SetLattice<NodeId> used : this.v.getValues())
 				used.forEach(nodes::remove);
-			pointersStack.forEach(nodes::remove);
+			vStack.forEach(nodes::remove);
 			// the remaining ones are unused: forget about them
 			nodes.forEach(map::remove);
-			this.l = new CollectingMapLattice<>(operations.lattice, map);
+			this.l = new CollectingMapLattice<>(l.lattice, map);
 		} else
-			this.l = operations;
+			this.l = l;
 
 		// FIXME temporary sanity check
 //		SetLattice<DataframeOperation> pointed = resolvePointers(this);
@@ -280,34 +264,24 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	public DataframeGraphDomain forgetIdentifier(
 			Identifier id)
 			throws SemanticException {
-		CollectingMapLattice<Identifier, NodeId> pointers = this.v.lift(i -> id.equals(i) ? null : i, e -> e);
+		CollectingMapLattice<Identifier, NodeId> v2 = this.v.lift(i -> id.equals(i) ? null : i, e -> e);
 		return new DataframeGraphDomain(
 				constants.forgetIdentifier(id),
 				graph,
-				pointers,
-				l.lift(i -> reverseSearch(i, pointers) ? i : null, e -> e));
-	}
-
-	private boolean reverseSearch(
-			NodeId id,
-			CollectingMapLattice<Identifier, NodeId> map) {
-		for (Entry<Identifier, SetLattice<NodeId>> entry : map)
-			if (entry.getValue().contains(id))
-				return true;
-
-		return false;
+				v2,
+				l);
 	}
 
 	@Override
 	public DataframeGraphDomain forgetIdentifiersIf(
 			Predicate<Identifier> test)
 			throws SemanticException {
-		CollectingMapLattice<Identifier, NodeId> pointers = this.v.lift(id -> test.test(id) ? null : id, e -> e);
+		CollectingMapLattice<Identifier, NodeId> v2 = this.v.lift(id -> test.test(id) ? null : id, e -> e);
 		return new DataframeGraphDomain(
 				constants.forgetIdentifiersIf(test),
 				graph,
-				pointers,
-				l.lift(i -> reverseSearch(i, pointers) ? i : null, e -> e));
+				v2,
+				l);
 	}
 
 	@Override
@@ -349,9 +323,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		return new ObjectRepresentation(Map.of(
 				"constants", constants.representation(),
 				"constants-stack", constStack.representation(),
-				"pointers", v.representation(StringRepresentation::new),
-				"pointers-stack", new SetRepresentation(vStack.elements(), StringRepresentation::new),
-				"operations", l.representation(StringRepresentation::new),
+				"v", v.representation(StringRepresentation::new),
+				"v-stack", new SetRepresentation(vStack.elements(), StringRepresentation::new),
+				"l", l.representation(StringRepresentation::new),
 				"graph", graph.representation()));
 	}
 
@@ -460,7 +434,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return PyLibraryUnitType.is(expression.getStaticType(), LibrarySpecificationProvider.PANDAS, false)
 					|| expression.getStaticType().isUntyped();
 
-		return rts.stream().anyMatch(t -> PyLibraryUnitType.is(t, LibrarySpecificationProvider.PANDAS, false));
+		return rts.stream().anyMatch(t -> PyLibraryUnitType.is(t, LibrarySpecificationProvider.PANDAS, false)
+				|| expression.getStaticType().isUntyped());
 	}
 
 	private static boolean topOrBottom(
@@ -474,14 +449,14 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	private static SetLattice<DataframeOperation> resolvePointers(
-			CollectingMapLattice<NodeId, DataframeOperation> operations,
-			SetLattice<NodeId> ids) {
-		if (topOrBottom(operations) || topOrBottom(ids))
+			CollectingMapLattice<NodeId, DataframeOperation> l,
+			SetLattice<NodeId> vStack) {
+		if (topOrBottom(l) || topOrBottom(vStack))
 			return NO_NODES;
 
 		Set<DataframeOperation> resolved = new HashSet<>();
-		for (NodeId pointer : ids)
-			resolved.addAll(operations.getState(pointer).elements());
+		for (NodeId pointer : vStack)
+			resolved.addAll(l.getState(pointer).elements());
 		return new SetLattice<>(resolved, false);
 	}
 
@@ -880,9 +855,6 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			ProgramPoint pp)
 			throws SemanticException {
 		ConstantPropagation filename = arg.constStack;
-		if (topOrBottom(filename))
-			return cleanStack(arg, pp);
-
 		DataframeForest df = new DataframeForest(arg.graph);
 		Read op = new Read(pp.getLocation(), index, filename);
 		df.addNode(op);
@@ -1660,16 +1632,16 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	private static DataframeGraphDomain cleanStack(
-			DataframeGraphDomain right,
+			DataframeGraphDomain dom,
 			ProgramPoint pp)
 			throws SemanticException {
 		LOG.debug("Evaluation of " + pp + " in " + getCaller() + " caused the stack to be cleaned");
 		return new DataframeGraphDomain(
-				right.constants,
-				right.graph,
-				right.v,
+				dom.constants,
+				dom.graph,
+				dom.v,
 				NO_IDS,
-				right.l);
+				dom.l);
 	}
 
 	private static String getCaller() {

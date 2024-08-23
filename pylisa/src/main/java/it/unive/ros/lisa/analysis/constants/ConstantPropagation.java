@@ -358,6 +358,7 @@ public class ConstantPropagation
 		return new ConstantPropagation(new Constant(StringType.INSTANCE, topicName, pp.getLocation()));
 	}
 
+	@SuppressWarnings("unchecked")
 	private ConstantPropagation dictPut(
 			ConstantPropagation left,
 			ConstantPropagation middle,
@@ -366,10 +367,12 @@ public class ConstantPropagation
 		if (left.isTop() || middle.isTop() || right.isTop()) {
 			return top();
 		}
+
 		DictConstant newdict = new DictConstant(pp.getLocation(), left.as(Map.class), Pair.of(middle, right));
 		return new ConstantPropagation(newdict);
 	}
 
+	@SuppressWarnings("unchecked")
 	private ConstantPropagation listAppend(
 			ConstantPropagation left,
 			ConstantPropagation right,
@@ -377,7 +380,6 @@ public class ConstantPropagation
 		if (left.isTop() || right.isTop() || !left.is(List.class)) {
 			return TOP;
 		}
-		Lattice<?> tail;
 
 		ListConstant listconst = new ListConstant(pp.getLocation(), left.as(List.class), right);
 		return new ConstantPropagation(listconst);

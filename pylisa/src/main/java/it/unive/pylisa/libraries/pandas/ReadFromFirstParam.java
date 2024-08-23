@@ -16,14 +16,22 @@ import it.unive.pylisa.analysis.dataframes.symbolic.ReadDataframe;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
-public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
+public class ReadFromFirstParam
+		extends
+		it.unive.lisa.program.cfg.statement.UnaryExpression
+		implements
+		PluggableStatement {
+
 	private Statement st;
 
-	public ReadCsv(
+	public ReadFromFirstParam(
 			CFG cfg,
 			CodeLocation location,
 			Expression arg) {
-		super(cfg, location, "read_csv", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
+		super(cfg,
+				location,
+				"read",
+				PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
 				arg);
 	}
 
@@ -39,11 +47,11 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 		this.st = st;
 	}
 
-	public static ReadCsv build(
+	public static ReadFromFirstParam build(
 			CFG cfg,
 			CodeLocation location,
 			Expression[] exprs) {
-		return new ReadCsv(cfg, location, exprs[0]);
+		return new ReadFromFirstParam(cfg, location, exprs[0]);
 	}
 
 	@Override

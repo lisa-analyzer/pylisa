@@ -1,11 +1,339 @@
 library pandas:
 	location pandas
-	method read_csv: it.unive.pylisa.libraries.pandas.ReadCsv
+	
+	method read_csv: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
 		libtype pandas.DataFrame*
 		param filepath_or_buffer type it.unive.lisa.program.type.StringType::INSTANCE
+	    param &sep type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &delimiter type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &header type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &names type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &index_col type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &usecols type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dtype type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &engine type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &converters type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &true_values type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &false_values type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &skipinitialspace type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &skiprows type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &skipfooter type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &nrows type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &na_values type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &keep_default_na type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &na_filter type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &verbose type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &skip_blank_lines type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &parse_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &infer_datetime_format type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &keep_date_col type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &date_parser type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &date_format type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dayfirst type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &cache_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &iterator type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &chunksize type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &compression type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &thousands type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &decimal type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &lineterminator type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &quotechar type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &quoting type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &doublequote type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &escapechar type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &comment type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &encoding type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &encoding_errors type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dialect type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &on_bad_lines type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &delim_whitespace type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &low_memory type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &memory_map type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &float_precision type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &storage_options type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+	    
+	method read_pickle: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+		param filepath_or_buffer type it.unive.lisa.program.type.StringType::INSTANCE
+	    param compression type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param storage_options type it.unive.lisa.type.Untyped::INSTANCE default none
+	    
+	method read_table: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+		param filepath_or_buffer type it.unive.lisa.program.type.StringType::INSTANCE
+		param &sep type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &delimiter type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &header type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &names type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &index_col type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &usecols type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dtype type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &engine type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &converters type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &true_values type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &false_values type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &skipinitialspace type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &skiprows type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &skipfooter type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &nrows type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &na_values type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &keep_default_na type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &na_filter type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &verbose type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &skip_blank_lines type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &parse_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &infer_datetime_format type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &keep_date_col type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &date_parser type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &date_format type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dayfirst type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &cache_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &iterator type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &chunksize type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &compression type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &thousands type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &decimal type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &lineterminator type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &quotechar type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &quoting type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &doublequote type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &escapechar type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &comment type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &encoding type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &encoding_errors type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dialect type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &on_bad_lines type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &delim_whitespace type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &low_memory type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &memory_map type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &float_precision type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &storage_options type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+	    
+	method read_fwf: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+		param filepath_or_buffer type it.unive.lisa.program.type.StringType::INSTANCE
+	    param &colspecs type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &widths type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &infer_nrows type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &iterator type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &chunksize type it.unive.lisa.type.Untyped::INSTANCE default none
+		param **kwds type it.unive.lisa.type.Untyped::INSTANCE
+		
+	method read_clipboard: it.unive.pylisa.libraries.pandas.ReadUnknown
+		param sep type it.unive.lisa.type.Untyped::INSTANCE default none
+		param dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+		param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+    
+    method read_excel: it.unive.pylisa.libraries.pandas.ReadExcel
+		libtype pandas.DataFrame*
+    	param io type it.unive.lisa.program.type.StringType::INSTANCE
+	    param sheet_name type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &header type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &names type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &index_col type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &usecols type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dtype type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &engine type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &converters type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &true_values type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &false_values type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &skiprows type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &nrows type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &na_values type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &keep_default_na type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &na_filter type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &verbose type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &parse_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &date_parser type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &date_format type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &thousands type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &decimal type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &comment type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &skipfooter type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &storage_options type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &engine_kwargs type it.unive.lisa.type.Untyped::INSTANCE default none
+    
+    method read_json: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+	    param path_or_buf type it.unive.lisa.program.type.StringType::INSTANCE
+	    param &orient type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &typ type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dtype type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &convert_axes type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &convert_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &keep_default_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &precise_float type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &date_unit type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &encoding type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &encoding_errors type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &lines type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &chunksize type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &compression type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &nrows type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &storage_options type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &engine type it.unive.lisa.type.Untyped::INSTANCE default none
+    
+    method read_html: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+	    param io type it.unive.lisa.program.type.StringType::INSTANCE
+	    param &match type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &flavor type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &header type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &index_col type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &skiprows type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &attrs type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &parse_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &thousands type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &encoding type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &decimal type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &converters type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &na_values type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &keep_default_na type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &displayed_only type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &extract_links type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &storage_options type it.unive.lisa.type.Untyped::INSTANCE default none
+    
+    method read_xml: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+	    param path_or_buffer type it.unive.lisa.program.type.StringType::INSTANCE
+	    param &xpath type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &namespaces type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &elems_only type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &attrs_only type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &names type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dtype type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &converters type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &parse_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &encoding type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &parser type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &stylesheet type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &iterparse type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &compression type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &storage_options type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+    
+    method read_hdf: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+	    param path_or_buf type it.unive.lisa.program.type.StringType::INSTANCE
+	    param key type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param mode type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param errors type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param where type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param start type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param stop type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param columns type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param iterator type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param chunksize type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+    
+    method read_feather: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+	    param path type it.unive.lisa.program.type.StringType::INSTANCE
+	    param columns type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param use_threads type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param storage_options type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+    
+    method read_parquet: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+	    param path type it.unive.lisa.program.type.StringType::INSTANCE
+	    param engine type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param columns type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param storage_options type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param use_nullable_dtypes type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param filesystem type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param filters type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+	    
+	method read_orc: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+	    param path type it.unive.lisa.program.type.StringType::INSTANCE
+	    param columns type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param filesystem type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+	    
+	method read_sas: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+	    param filepath_or_buffer type it.unive.lisa.program.type.StringType::INSTANCE
+	    param &format type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &index type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &encoding type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &chunksize type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &iterator type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &compression type it.unive.lisa.type.Untyped::INSTANCE default none
+	    
+	method read_spss: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+	    param path type it.unive.lisa.program.type.StringType::INSTANCE
+	    param usecols type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param convert_categoricals type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+	    
+	method read_stata: it.unive.pylisa.libraries.pandas.ReadFromFirstParam
+		libtype pandas.DataFrame*
+	    param filepath_or_buffer type it.unive.lisa.program.type.StringType::INSTANCE
+	    param &convert_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &convert_categoricals type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &index_col type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &convert_missing type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &preserve_dtypes type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &columns type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &order_categoricals type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &chunksize type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &iterator type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &compression type it.unive.lisa.type.Untyped::INSTANCE default none
+	    param &storage_options type it.unive.lisa.type.Untyped::INSTANCE default none
+	    
+	method read_sql: it.unive.pylisa.libraries.pandas.ReadSQL
+		libtype pandas.DataFrame*
+		param sql type it.unive.lisa.program.type.StringType::INSTANCE
+		param con type it.unive.lisa.program.type.StringType::INSTANCE
+		param index_col type it.unive.lisa.type.Untyped::INSTANCE default none
+		param coerce_float type it.unive.lisa.type.Untyped::INSTANCE default none
+		param params type it.unive.lisa.type.Untyped::INSTANCE default none
+		param parse_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+		param columns type it.unive.lisa.type.Untyped::INSTANCE default none
+		param chunksize type it.unive.lisa.type.Untyped::INSTANCE default none
+		param dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+		param dtype type it.unive.lisa.type.Untyped::INSTANCE default none
+	    
+	method read_sql_query: it.unive.pylisa.libraries.pandas.ReadSQL
+		libtype pandas.DataFrame*
+		param sql type it.unive.lisa.program.type.StringType::INSTANCE
+		param con type it.unive.lisa.program.type.StringType::INSTANCE
+		param index_col type it.unive.lisa.type.Untyped::INSTANCE default none
+		param coerce_float type it.unive.lisa.type.Untyped::INSTANCE default none
+		param params type it.unive.lisa.type.Untyped::INSTANCE default none
+		param parse_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+		param chunksize type it.unive.lisa.type.Untyped::INSTANCE default none
+		param dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+		param dtype type it.unive.lisa.type.Untyped::INSTANCE default none
+	    
+	method read_sql_table: it.unive.pylisa.libraries.pandas.ReadSQL
+		libtype pandas.DataFrame*
+		param table_name type it.unive.lisa.program.type.StringType::INSTANCE
+		param con type it.unive.lisa.program.type.StringType::INSTANCE
+		param index_col type it.unive.lisa.type.Untyped::INSTANCE default none
+		param coerce_float type it.unive.lisa.type.Untyped::INSTANCE default none
+		param params type it.unive.lisa.type.Untyped::INSTANCE default none
+		param parse_dates type it.unive.lisa.type.Untyped::INSTANCE default none
+		param columns type it.unive.lisa.type.Untyped::INSTANCE default none
+		param chunksize type it.unive.lisa.type.Untyped::INSTANCE default none
+		param dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
+		param dtype type it.unive.lisa.type.Untyped::INSTANCE default none 
+    
 	method DataFrame: it.unive.pylisa.libraries.pandas.DataFrame
 		libtype pandas.DataFrame*
 		param data libtype Dict
+	
 	method to_datetime: it.unive.pylisa.libraries.pandas.ToDatetime
 		libtype pandas.Series*
 		param arg libtype pandas.Series*
@@ -13,6 +341,7 @@ library pandas:
 		libtype pandas.DataFrame*
 		param objs libtype List
 		param axis type it.unive.lisa.program.type.Int32Type::INSTANCE default 0
+	
 	class pandas.DataFrame extends Sequence:
 		instance method head: it.unive.pylisa.libraries.pandas.Head
 			libtype pandas.DataFrame*
@@ -63,11 +392,13 @@ library pandas:
 			param color type it.unive.lisa.program.type.StringType::INSTANCE default "yellow"
 			param axis type it.unive.lisa.program.type.Int32Type::INSTANCE default 0
 			param props type it.unive.lisa.program.type.StringType::INSTANCE default ""
+
 	class pandas.Series extends Sequence:
 		instance method apply: it.unive.pylisa.libraries.pandas.Apply
 			type it.unive.lisa.type.Untyped::INSTANCE
 			param this libtype pandas.Series*
 			param function type it.unive.pylisa.cfg.type.PyLambdaType::INSTANCE
+
 library geopandas.tools:
 	location geopandas.tools
 	method geocode: it.unive.pylisa.libraries.geopandas.Geocode

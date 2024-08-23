@@ -35,16 +35,16 @@ public class PandasSemantics {
 			ProgramPoint pp)
 			throws SemanticException {
 		CodeLocation location = pp.getLocation();
-		AnalysisState<A> assigned = state.bottom();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 
 		MemoryAllocation allocation = new MemoryAllocation(dftype, location);
 		AnalysisState<A> allocated = state.smallStepSemantics(allocation, pp);
 
+		AnalysisState<A> assigned = state.bottom();
 		for (SymbolicExpression loc : allocated.getComputedExpressions()) {
+			AnalysisState<A> readState = allocated.assign(loc, init, pp);
 			HeapReference ref = new HeapReference(dfref, loc, location);
-			AnalysisState<A> readState = allocated.smallStepSemantics(init, pp).assign(loc, init, pp);
 			assigned = readState.smallStepSemantics(ref, pp);
 		}
 
