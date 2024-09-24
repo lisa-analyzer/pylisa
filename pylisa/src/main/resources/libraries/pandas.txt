@@ -123,6 +123,7 @@ library pandas:
 		param **kwds type it.unive.lisa.type.Untyped::INSTANCE
 		
 	method read_clipboard: it.unive.pylisa.libraries.pandas.ReadUnknown
+		libtype pandas.DataFrame*
 		param sep type it.unive.lisa.type.Untyped::INSTANCE default none
 		param dtype_backend type it.unive.lisa.type.Untyped::INSTANCE default none
 		param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
