@@ -473,8 +473,8 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 	}
 
 	/**
-	 * Yields a copy of v, with the same lattice, but where toReplace has
-	 * been replaced with replacement in all mappings.
+	 * Yields a copy of v, with the same lattice, but where toReplace has been
+	 * replaced with replacement in all mappings.
 	 */
 	private static CollectingMapLattice<Identifier, NodeId> replace(
 			CollectingMapLattice<Identifier, NodeId> v,
@@ -534,10 +534,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 			return arg;
 
 		UnaryOperator operator = expression.getOperator();
-		if (!(operator instanceof DataframeOperator))
-			throw new SemanticException(operator.getClass() + " is not a dataframe operator");
+		// it won't be used if it's not a datafarame operator
+		int index = operator instanceof DataframeOperator ? ((DataframeOperator) operator).getIndex() : -1;
 
-		int index = ((DataframeOperator) operator).getIndex();
 		if (operator instanceof ReadDataframe)
 			return doReadDataframe(index, arg, pp);
 		if (operator instanceof CreateDataframe)
@@ -926,10 +925,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		if (operator == ListAppend.INSTANCE)
 			return doListAppend(left, right, pp, oracle);
 
-		if (!(operator instanceof DataframeOperator))
-			throw new SemanticException(operator.getClass() + " is not a dataframe operator");
+		// it won't be used if it's not a datafarame operator
+		int index = operator instanceof DataframeOperator ? ((DataframeOperator) operator).getIndex() : -1;
 
-		int index = ((DataframeOperator) operator).getIndex();
 		if (operator instanceof ColumnProjection)
 			return doColumnAccess(index, left, right, pp);
 		if (operator instanceof BinaryTransform)
@@ -1363,10 +1361,9 @@ public class DataframeGraphDomain implements ValueDomain<DataframeGraphDomain> {
 		if (operator instanceof SliceCreation)
 			return doSliceCreation(left, middle, right, pp, oracle);
 
-		if (!(operator instanceof DataframeOperator))
-			throw new SemanticException(operator.getClass() + " is not a dataframe operator");
+		// it won't be used if it's not a datafarame operator
+		int index = operator instanceof DataframeOperator ? ((DataframeOperator) operator).getIndex() : -1;
 
-		int index = ((DataframeOperator) operator).getIndex();
 		if (operator instanceof RowProjection)
 			return doProjectRows(index, left, middle, right, pp, operator);
 		if (operator instanceof DataframeProjection)
