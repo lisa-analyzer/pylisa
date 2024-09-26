@@ -1,7 +1,40 @@
 package it.unive.pylisa;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.logging.IterationLogger;
 import it.unive.lisa.program.ClassUnit;
@@ -36,7 +69,6 @@ import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
-import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
 import it.unive.lisa.program.cfg.statement.literal.Float32Literal;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
@@ -182,13 +214,12 @@ import it.unive.pylisa.cfg.expression.PyIn;
 import it.unive.pylisa.cfg.expression.PyIs;
 import it.unive.pylisa.cfg.expression.PyMatMul;
 import it.unive.pylisa.cfg.expression.PyMultiplication;
-import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.expression.PyPower;
 import it.unive.pylisa.cfg.expression.PyRemainder;
 import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
 import it.unive.pylisa.cfg.expression.PyStringLiteral;
 import it.unive.pylisa.cfg.expression.PyTernaryOperator;
-import it.unive.pylisa.cfg.expression.PyTypeLiteral;
+import it.unive.pylisa.cfg.expression.PyUnresolvedCall;
 import it.unive.pylisa.cfg.expression.RangeValue;
 import it.unive.pylisa.cfg.expression.SetCreation;
 import it.unive.pylisa.cfg.expression.StarExpression;
@@ -205,41 +236,9 @@ import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.FunctionDef;
 import it.unive.pylisa.cfg.statement.Import;
-import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.libraries.NoOpFunction;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
@@ -284,6 +283,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	private final List<Integer> cellOrder;
 
 	/**
+	 * If true, all functions and methods parsed will be considered entrypoints
+	 * for the analysis. Useful for testing.
+	 */
+	private final boolean analyzeAll;
+
+	/**
 	 * Builds an instance of @PyToCFG for a given Python program given at the
 	 * location filePath.
 	 *
@@ -294,7 +299,24 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	public PyFrontend(
 			String filePath,
 			boolean notebook) {
-		this(filePath, notebook, Collections.emptyList());
+		this(filePath, notebook, Collections.emptyList(), false);
+	}
+
+	/**
+	 * Builds an instance of @PyToCFG for a given Python program given at the
+	 * location filePath.
+	 *
+	 * @param filePath   file path to a Python program
+	 * @param notebook   whether or not {@code filePath} points to a Jupyter
+	 *                       notebook file
+	 * @param analyzeAll whether or not all functions/methods should be
+	 *                       considered entrypoints
+	 */
+	public PyFrontend(
+			String filePath,
+			boolean notebook,
+			boolean analyzeAll) {
+		this(filePath, notebook, Collections.emptyList(), analyzeAll);
 	}
 
 	/**
@@ -312,7 +334,28 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			String filePath,
 			boolean notebook,
 			Integer... cellOrder) {
-		this(filePath, notebook, List.of(cellOrder));
+		this(filePath, notebook, List.of(cellOrder), false);
+	}
+
+	/**
+	 * Builds an instance of @PyToCFG for a given Python program given at the
+	 * location filePath.
+	 *
+	 * @param filePath   file path to a Python program
+	 * @param notebook   whether or not {@code filePath} points to a Jupyter
+	 *                       notebook file
+	 * @param cellOrder  sequence of the indexes of cells of a Jupyter notebook
+	 *                       in the order they are to be executed. Only valid if
+	 *                       {@code notebook} is {@code true}.
+	 * @param analyzeAll whether or not all functions/methods should be
+	 *                       considered entrypoints
+	 */
+	public PyFrontend(
+			String filePath,
+			boolean notebook,
+			boolean analyzeAll,
+			Integer... cellOrder) {
+		this(filePath, notebook, List.of(cellOrder), analyzeAll);
 	}
 
 	/**
@@ -330,10 +373,32 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			String filePath,
 			boolean notebook,
 			List<Integer> cellOrder) {
+		this(filePath, notebook, cellOrder, false);
+	}
+
+	/**
+	 * Builds an instance of @PyToCFG for a given Python program given at the
+	 * location filePath.
+	 *
+	 * @param filePath   file path to a Python program
+	 * @param notebook   whether or not {@code filePath} points to a Jupyter
+	 *                       notebook file
+	 * @param cellOrder  list of the indexes of cells of a Jupyter notebook in
+	 *                       the order they are to be executed. Only valid if
+	 *                       {@code notebook} is {@code true}.
+	 * @param analyzeAll whether or not all functions/methods should be
+	 *                       considered entrypoints
+	 */
+	public PyFrontend(
+			String filePath,
+			boolean notebook,
+			List<Integer> cellOrder,
+			boolean analyzeAll) {
 		this.program = new Program(new PythonFeatures(), new PythonTypeSystem());
 		this.filePath = filePath;
 		this.notebook = notebook;
 		this.cellOrder = cellOrder;
+		this.analyzeAll = analyzeAll;
 		this.currentUnit = new CodeUnit(new SourceCodeLocation(filePath, 0, 0),
 				program, FilenameUtils.removeExtension(filePath));
 		program.addUnit(currentUnit);
@@ -403,7 +468,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		PyClassType.all().forEach(types::registerType);
 
 		for (CFG cm : program.getAllCFGs())
-			if (cm.getDescriptor().getName().equals(INSTRUMENTED_MAIN_FUNCTION_NAME))
+			if (analyzeAll || cm.getDescriptor().getName().equals(INSTRUMENTED_MAIN_FUNCTION_NAME))
 				program.addEntryPoint(cm);
 
 		return program;
@@ -549,7 +614,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			SourceCodeLocation loc) {
 		PyParameter[] cfgArgs = new PyParameter[] {};
 
-		return new CodeMemberDescriptor(loc, currentUnit, false, INSTRUMENTED_MAIN_FUNCTION_NAME, cfgArgs);
+		return new CodeMemberDescriptor(
+				// this is just an arbitrary large value that hopefully we will
+				// never encounter
+				new SourceCodeLocation(loc.getSourceFile(), Integer.MAX_VALUE, Integer.MAX_VALUE),
+				currentUnit,
+				false,
+				INSTRUMENTED_MAIN_FUNCTION_NAME,
+				cfgArgs);
 	}
 
 	private CodeMemberDescriptor buildCFGDescriptor(
@@ -580,8 +652,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		params.add(new VariableRef(this.currentCFG, getLocation(ctx), varName));
 
 		if (ctx.arglist() != null)
-			for (ArgumentContext arg : ctx.arglist().argument())
-				params.add(visitArgument(arg));
+			for (Expression arg : visitArglist(ctx.arglist()))
+				params.add(arg);
 
 		List<ParseTree> trees = ctx.dotted_name().children.subList(1, ctx.dotted_name().children.size());
 		String target = trees.stream()
@@ -1923,136 +1995,78 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	@Override
 	public Expression visitAtom_expr(
 			Atom_exprContext ctx) {
-		/*
-		 * atom_expr: (AWAIT)? atom trailer*; atom: ('('
-		 * (yield_expr|testlist_comp)? ')' | '[' (testlist_comp)? ']' | '{'
-		 * (dictorsetmaker)? '}' | NAME | NUMBER | STRING+ | '...' | 'None' |
-		 * 'True' | 'False');
-		 */
 		if (ctx.AWAIT() != null)
 			throw new UnsupportedStatementException("await is not supported");
-		if (ctx.trailer().size() > 0) {
-			// trailer: '(' (arglist)? ')' | '[' subscriptlist ']' | '.' NAME;
-			Expression access = visitAtom(ctx.atom());
-			String last_name = access instanceof VariableRef ? ((VariableRef) access).getName() : null;
-			Expression previous_access = null;
-			for (TrailerContext expr : ctx.trailer()) {
-				if (expr.NAME() != null) {
-					last_name = expr.NAME().getSymbol().getText();
-					previous_access = access;
-					access = new UnresolvedCall(
+
+		Expression accumulator = visitAtom(ctx.atom());
+		List<Pair<Boolean, Expression[]>> trailers = new ArrayList<>(ctx.trailer().size());
+		for (TrailerContext t : ctx.trailer())
+			trailers.add(visitTrailer(t));
+
+		if (trailers.isEmpty())
+			return accumulator;
+
+		String last_literal = accumulator instanceof VariableRef ? ((VariableRef) accumulator).getName() : null;
+		// when we find a NAME in the trailer, we do not know if that is
+		// supposed to be a field name or a function name
+		// as the parameter list with the parentheses is in the next trailer
+		// so we have to keep track of the last accumulator value before the
+		// field access to swap out the field name and use it as function name
+		Expression before_last_field_access = null;
+
+		for (int i = 0; i < trailers.size(); i++) {
+			Pair<Boolean, Expression[]> trailer = trailers.get(i);
+			SourceCodeLocation loc = getLocation(ctx.trailer(i));
+
+			if (trailer.getLeft() == null) {
+				StringLiteral lit = (StringLiteral) trailer.getRight()[0];
+				last_literal = lit.getValue();
+				before_last_field_access = accumulator;
+				accumulator = new PyAccessInstanceGlobal(
+						currentCFG,
+						loc,
+						before_last_field_access,
+						last_literal);
+			} else if (trailer.getLeft()) {
+				if (last_literal == null)
+					// return new Empty(currentCFG, SyntheticLocation.INSTANCE);
+					throw new UnsupportedStatementException(
+							"When invoking a method we need to have always the name before the parentheses");
+				List<Expression> pars = new ArrayList<>();
+				if (before_last_field_access != null)
+					pars.add(before_last_field_access);
+				for (Expression arg : trailer.getRight())
+					pars.add(arg);
+				pars = convertAssignmentsToByNameParameters(pars);
+				accumulator = new PyUnresolvedCall(
+						currentCFG,
+						loc,
+						last_literal,
+						pars.toArray(Expression[]::new));
+				last_literal = null;
+				before_last_field_access = null;
+			} else {
+				last_literal = null;
+				if (trailer.getRight().length == 1)
+					accumulator = new PySingleArrayAccess(
 							currentCFG,
-							getLocation(expr),
-							CallType.INSTANCE,
-							null,
-							"__getattribute__",
-							access,
-							new PyStringLiteral(currentCFG, getLocation(expr), last_name, "'"));
-				} else if (expr.OPEN_PAREN() != null) {
-					if (last_name == null) {
-						/*
-						 * TODO throw new
-						 * UnsupportedStatementException("When invoking a method we need to have always the name before the parentheses"
-						 * );
-						 */
-						return new Empty(currentCFG, getLocation(expr));
-						// return null;
-					}
-					List<Expression> pars = new ArrayList<>();
-					String method_name = last_name;
-					boolean instance = access instanceof PyAccessInstanceGlobal;
-					if (instance)
-						pars.add(previous_access);
-					if (expr.arglist() != null)
-						for (ArgumentContext arg : expr.arglist().argument())
-							pars.add(visitArgument(arg));
-
-					pars = convertAssignmentsToByNameParameters(pars);
-					Unit cu;
-					cu = program.getUnit(method_name);
-					if (cu == null) {
-						cu = program.getUnit(access.toString().replace("::", "."));
-						if (cu == null) {
-							String unitName = imports.get(access.toString());
-							if (unitName != null)
-								cu = program.getUnit(unitName);
-						}
-						if (cu != null) {
-							for (Expression par : pars)
-								if (par instanceof AccessInstanceGlobal)
-									pars.remove(par);
-						}
-					}
-					if (cu != null && cu instanceof ClassUnit) {
-						access = new PyNewObj(
-								currentCFG,
-								getLocation(expr),
-								"__init__",
-								PyClassType.register(cu.getName(), (ClassUnit) cu),
-								pars.toArray(Expression[]::new));
-					} else {
-						access = new UnresolvedCall(
-								currentCFG,
-								getLocation(expr),
-								instance ? CallType.UNKNOWN : CallType.STATIC,
-								null,
-								method_name,
-								LeftToRightEvaluation.INSTANCE,
-								pars.toArray(Expression[]::new));
-						if (method_name.equals("super") && pars.isEmpty()) {
-							// if super() is inside an instance method
-							if (this.currentCFG.getDescriptor().isInstance()) {
-								VariableTableEntry vte = currentCFG.getDescriptor().getVariables().get(0);
-
-								Expression[] expressions = new Expression[2];
-								expressions[0] = new PyTypeLiteral(this.currentCFG, getLocation(expr),
-										this.currentUnit);
-								expressions[1] = new VariableRef(this.currentCFG, getLocation(expr), vte.getName());
-								access = new SimpleSuperUnresolvedCall(
-										currentCFG,
-										getLocation(expr),
-										instance ? CallType.UNKNOWN : CallType.STATIC,
-										null,
-										method_name,
-										expressions);
-							}
-						}
-					}
-					last_name = null;
-					previous_access = null;
-				} else if (expr.OPEN_BRACK() != null) {
-					previous_access = access;
-					last_name = null;
-					List<Expression> indexes = extractExpressionsFromSubscriptlist(expr.subscriptlist());
-					if (indexes.size() == 1)
-						access = new PySingleArrayAccess(
-								currentCFG,
-								getLocation(expr),
-								Untyped.INSTANCE,
-								access,
-								indexes.get(0));
-					else if (indexes.size() == 2)
-						access = new PyDoubleArrayAccess(
-								currentCFG,
-								getLocation(expr),
-								Untyped.INSTANCE,
-								access,
-								indexes.get(0),
-								indexes.get(1));
-					else {
-						return NoOpFunction.build(currentCFG, getLocation(ctx), null);
-						/*
-						 * throw new UnsupportedStatementException(
-						 * "Only array accesses with up to 2 indexes are supported"
-						 * );
-						 */
-					}
-				} else
-					throw new UnsupportedStatementException();
+							loc,
+							Untyped.INSTANCE,
+							accumulator,
+							trailer.getRight()[0]);
+				else if (trailer.getRight().length == 2)
+					accumulator = new PyDoubleArrayAccess(
+							currentCFG,
+							loc,
+							Untyped.INSTANCE,
+							accumulator,
+							trailer.getRight()[0],
+							trailer.getRight()[1]);
+				else
+					throw new UnsupportedStatementException("Only array accesses with up to 2 indexes are supported");
 			}
-			return access;
-		} else
-			return visitAtom(ctx.atom());
+		}
+		return accumulator;
 	}
 
 	private List<Expression> convertAssignmentsToByNameParameters(
@@ -2198,16 +2212,6 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			return visitTestlist(ctx.testlist());
 	}
 
-	private List<Expression> extractExpressionsFromSubscriptlist(
-			SubscriptlistContext ctx) {
-		List<Expression> result = new ArrayList<>();
-		if (ctx.subscript_().size() == 0)
-			return result;
-		for (Subscript_Context e : ctx.subscript_())
-			result.add(visitSubscript_(e));
-		return result;
-	}
-
 	private List<Expression> extractExpressionsFromTestlist_comp(
 			Testlist_compContext ctx) {
 		List<Expression> result = new ArrayList<>();
@@ -2236,16 +2240,28 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		return visitTest(ctx.test());
 	}
 
+	/**
+	 * The Boolean distinguishes the three cases: true for arglist, false for
+	 * subscripts, null for name
+	 */
 	@Override
-	public Object visitTrailer(
+	public Pair<Boolean, Expression[]> visitTrailer(
 			TrailerContext ctx) {
-		throw new UnsupportedStatementException();
+		if (ctx.NAME() != null)
+			return Pair.of(null,
+					new Expression[] { new StringLiteral(currentCFG, getLocation(ctx), ctx.NAME().getText()) });
+		if (ctx.arglist() != null)
+			return Pair.of(true, visitArglist(ctx.arglist()));
+		return Pair.of(false, visitSubscriptlist(ctx.subscriptlist()));
 	}
 
 	@Override
-	public Object visitSubscriptlist(
+	public Expression[] visitSubscriptlist(
 			SubscriptlistContext ctx) {
-		throw new UnsupportedStatementException();
+		Expression[] res = new Expression[ctx.subscript_().size()];
+		for (int i = 0; i < res.length; i++)
+			res[i] = visitSubscript_(ctx.subscript_(i));
+		return res;
 	}
 
 	@Override
@@ -2289,14 +2305,15 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		String name = ctx.NAME().getSymbol().getText();
 		// TODO inheritance
 		ClassUnit cu = new ClassUnit(new SourceCodeLocation(name, 0, 0), program, name, true);
-		ArrayList<ArgumentContext> superclasses = ctx.arglist() != null ? new ArrayList<>(ctx.arglist().argument())
-				: new ArrayList<>();
+		cu = (ClassUnit) PyClassType.register(name, cu).getUnit(); // FIXME
+																	// check
+		Expression[] superclasses = ctx.arglist() != null ? visitArglist(ctx.arglist()) : new Expression[0];
 		// parse anchestors
-		for (ArgumentContext superclass : superclasses) {
+		for (Expression superclass : superclasses) {
 			// if exists a class unit in the program with name
 			// superclass.getText(): add it
 			// to the anchestors
-			String superClassName = imports.getOrDefault(superclass.getText(), superclass.getText());
+			String superClassName = imports.getOrDefault(superclass.toString(), superclass.toString());
 			for (Unit programCu : this.program.getUnits())
 				if (programCu instanceof CompilationUnit && programCu.getName().equals(superClassName))
 					cu.addAncestor(((CompilationUnit) programCu));
@@ -2357,9 +2374,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitArglist(
+	public Expression[] visitArglist(
 			ArglistContext ctx) {
-		throw new UnsupportedStatementException();
+		Expression[] res = new Expression[ctx.argument().size()];
+		for (int i = 0; i < res.length; i++)
+			res[i] = visitArgument(ctx.argument(i));
+		return res;
 	}
 
 	@Override

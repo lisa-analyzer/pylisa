@@ -68,7 +68,7 @@ public class CreateService extends NaryExpression implements PluggableStatement 
 			callback.snooping(interprocedural, state, new ExpressionSet[] { params[3] }, expressions);
 		} catch (Exception e) {
 		}
-		PyNewObj serviceObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
+		PyNewObj serviceObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(),
 				serviceClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
 		AnalysisState<A> newServiceAS = serviceObj.forwardSemanticsAux(interprocedural,
 				state, Arrays.copyOfRange(params, 1, params.length), expressions);

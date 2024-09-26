@@ -56,7 +56,7 @@ public class CreateNode extends it.unive.lisa.program.cfg.statement.NaryExpressi
 			throws SemanticException {
 
 		PyClassType nodeClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE);
-		PyNewObj nodeObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
+		PyNewObj nodeObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(),
 				nodeClassType, getSubExpressions());
 
 		AnalysisState<A> newNodeAs = nodeObj.forwardSemanticsAux(interprocedural,

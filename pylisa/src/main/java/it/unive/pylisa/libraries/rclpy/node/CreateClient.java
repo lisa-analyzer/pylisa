@@ -63,7 +63,7 @@ public class CreateClient extends NaryExpression implements PluggableStatement {
 
 		PyClassType clientClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_CLIENT);
 
-		PyNewObj clientObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
+		PyNewObj clientObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(),
 				clientClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
 		AnalysisState<A> newClientAS = clientObj.forwardSemanticsAux(interprocedural,
 				state, Arrays.copyOfRange(params, 1, params.length), expressions);

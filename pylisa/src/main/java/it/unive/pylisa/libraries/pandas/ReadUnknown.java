@@ -4,23 +4,24 @@ import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.UnaryExpression;
-import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.analysis.dataframes.symbolic.ReadDataframe;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
 public class ReadUnknown
 		extends
-		it.unive.lisa.program.cfg.statement.Expression
+		// this could be a simple expression, but the casting in nativecfg
+		// forces this superclass
+		it.unive.lisa.program.cfg.statement.NaryExpression
 		implements
 		PluggableStatement {
 
@@ -31,12 +32,9 @@ public class ReadUnknown
 			CodeLocation location) {
 		super(cfg,
 				location,
-				PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference());
-	}
-
-	@Override
-	public String toString() {
-		return "read unknown";
+				"read unknown",
+				PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
+				new Expression[0]);
 	}
 
 	@Override
@@ -53,16 +51,22 @@ public class ReadUnknown
 	}
 
 	@Override
-	public <V> boolean accept(
-			GraphVisitor<CFG, Statement, Edge, V> visitor,
-			V tool) {
-		return visitor.visit(tool, getCFG(), st);
+	protected int compareSameClass(
+			Statement o) {
+		return 0;
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemantics(
-			AnalysisState<A> entryState,
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
+	}
+
+	@Override
+	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
 			InterproceduralAnalysis<A> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
 		CodeLocation location = getLocation();
@@ -70,12 +74,6 @@ public class ReadUnknown
 		UnaryExpression read = new UnaryExpression(dftype,
 				new PushAny(getCFG().getDescriptor().getUnit().getProgram().getTypes().getStringType(), location),
 				new ReadDataframe(0), location);
-		return PandasSemantics.createAndInitDataframe(entryState, read, st);
-	}
-
-	@Override
-	protected int compareSameClass(
-			Statement o) {
-		return 0;
+		return PandasSemantics.createAndInitDataframe(state, read, st);
 	}
 }

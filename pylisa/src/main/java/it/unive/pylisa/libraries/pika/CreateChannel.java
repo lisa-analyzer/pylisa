@@ -52,7 +52,7 @@ public class CreateChannel extends NaryExpression implements PluggableStatement 
 
 		PyClassType channelClassType = PyClassType.lookup("pika.Channel");
 
-		PyNewObj channelObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
+		PyNewObj channelObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(),
 				channelClassType);
 		AnalysisState<A> channelAS = channelObj.forwardSemanticsAux(interprocedural,
 				state, params, expressions);

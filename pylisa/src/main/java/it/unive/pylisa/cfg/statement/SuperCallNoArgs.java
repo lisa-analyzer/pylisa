@@ -1,5 +1,7 @@
 package it.unive.pylisa.cfg.statement;
 
+import java.util.Set;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -14,50 +16,22 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.cfg.statement.evaluation.EvaluationOrder;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import java.util.Set;
 
 /*
  * https://docs.python.org/3/library/functions.html#super
  */
-public class SimpleSuperUnresolvedCall extends UnresolvedCall {
-	UnresolvedCall call;
+public class SuperCallNoArgs extends UnresolvedCall {
+	private final UnresolvedCall call;
 
-	public SimpleSuperUnresolvedCall(
+	public SuperCallNoArgs(
 			CFG cfg,
 			CodeLocation location,
-			CallType callType,
-			String qualifier,
-			String targetName,
-			EvaluationOrder order,
-			Type staticType,
 			Expression... parameters) {
-		super(cfg, location, callType, qualifier, targetName, order, staticType, parameters);
-		call = new UnresolvedCall(cfg, location, callType, qualifier, targetName, order, staticType);
-	}
-
-	public SimpleSuperUnresolvedCall(
-			CFG cfg,
-			CodeLocation location,
-			CallType callType,
-			String qualifier,
-			String targetName,
-			Expression... parameters) {
-		this(cfg, location, callType, qualifier, targetName, Untyped.INSTANCE, parameters);
-	}
-
-	public SimpleSuperUnresolvedCall(
-			CFG cfg,
-			CodeLocation location,
-			CallType callType,
-			String qualifier,
-			String targetName,
-			Type staticType,
-			Expression... parameters) {
-		this(cfg, location, callType, qualifier, targetName, LeftToRightEvaluation.INSTANCE, staticType, parameters);
+		super(cfg, location, CallType.UNKNOWN, null, "super", LeftToRightEvaluation.INSTANCE, Untyped.INSTANCE, parameters);
+		call = new UnresolvedCall(cfg, location, CallType.UNKNOWN, null, "super", LeftToRightEvaluation.INSTANCE, Untyped.INSTANCE);
 	}
 
 	@Override
@@ -69,17 +43,20 @@ public class SimpleSuperUnresolvedCall extends UnresolvedCall {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Call resolved;
-		Set<Type>[] ptypes = parameterTypes(expressions);
 		try {
+			// we first try with the no-parameters version since someone might have redefined super()
+			// note: we only create this call if there are no parameters
 			resolved = interprocedural.resolve(
 					call,
 					new Set[0],
 					state.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
-			if (resolved instanceof OpenCall)
+			if (resolved instanceof OpenCall) {
+				Set<Type>[] ptypes = parameterTypes(expressions);
 				resolved = interprocedural.resolve(
 						this,
 						ptypes,
 						state.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
+			}
 		} catch (CallResolutionException e) {
 			throw new SemanticException("Unable to resolve call " + this, e);
 		}

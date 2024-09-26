@@ -62,7 +62,7 @@ public class CreateSubscription extends NaryExpression implements PluggableState
 
 		PyClassType subscriptionClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_SUBSCRIPTION);
 
-		PyNewObj subscriptionObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
+		PyNewObj subscriptionObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), 
 				subscriptionClassType, Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
 		ROSSubscriptionCallback callback = new ROSSubscriptionCallback(this.getCFG(),
 				(SourceCodeLocation) getLocation(), getSubExpressions()[3]);

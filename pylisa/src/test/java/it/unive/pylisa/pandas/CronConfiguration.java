@@ -1,4 +1,4 @@
-package it.unive.pylisa.notebooks;
+package it.unive.pylisa.pandas;
 
 import it.unive.lisa.conf.LiSAConfiguration;
 import java.util.List;

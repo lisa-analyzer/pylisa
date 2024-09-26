@@ -15,6 +15,8 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
+import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
@@ -65,7 +67,11 @@ public class ReadExcel
 			CFG cfg,
 			CodeLocation location,
 			Expression[] exprs) {
-		return new ReadExcel(cfg, location, exprs[0], exprs[1]);
+		for (int i = 1; i < exprs.length; i++) 
+			if (!(exprs[i] instanceof NamedParameterExpression) 
+					|| ((NamedParameterExpression) exprs[i]).getParameterName().equals("sheet_name"))
+				return new ReadExcel(cfg, location, exprs[0], exprs[i]);
+		return new ReadExcel(cfg, location, exprs[0], new StringLiteral(cfg, location, "0"));
 	}
 
 	@Override
@@ -79,9 +85,11 @@ public class ReadExcel
 		Set<Type> rts = state.getState().getRuntimeTypesOf(right, st, state.getState());
 		if (rts.contains(PyClassType.lookup(LibrarySpecificationProvider.LIST))) {
 			LOG.warn("Reading multiple excel sheets not supported, will lose knowledge of origin");
-			return ReadUnknown.build(getCFG(), getLocation(), null)
-					.forwardSemantics(state, interprocedural, expressions);
+			ReadUnknown delegate = ReadUnknown.build(getCFG(), getLocation(), null);
+			delegate.setOriginatingStatement(this.st);
+			return delegate.forwardSemantics(state, interprocedural, expressions);
 		}
+
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		StringType stringType = getCFG().getDescriptor().getUnit().getProgram().getTypes().getStringType();

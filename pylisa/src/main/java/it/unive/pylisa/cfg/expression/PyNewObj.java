@@ -1,13 +1,15 @@
 package it.unive.pylisa.cfg.expression;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.Statement;
@@ -20,7 +22,6 @@ import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
-import org.apache.commons.lang3.ArrayUtils;
 
 public class PyNewObj extends NaryExpression {
 
@@ -33,11 +34,10 @@ public class PyNewObj extends NaryExpression {
 	 */
 	public PyNewObj(
 			CFG cfg,
-			SourceCodeLocation location,
-			String constructName,
+			CodeLocation location,
 			Type type,
 			Expression... parameters) {
-		super(cfg, location, constructName, type, parameters);
+		super(cfg, location, "__init__", type, parameters);
 	}
 
 	@Override

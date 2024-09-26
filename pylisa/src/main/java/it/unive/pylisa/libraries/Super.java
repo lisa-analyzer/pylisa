@@ -28,9 +28,9 @@ public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression 
 	protected Super(
 			CFG cfg,
 			CodeLocation location,
-			String constructName,
-			Expression[] expressions) {
-		super(cfg, location, constructName, expressions[0], expressions[1]);
+			Expression left,
+			Expression right) {
+		super(cfg, location, "super", left, right);
 	}
 
 	@Override
@@ -43,7 +43,7 @@ public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression 
 			CFG cfg,
 			CodeLocation location,
 			Expression[] exprs) {
-		return new Super(cfg, location, "super", exprs);
+		return new Super(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override

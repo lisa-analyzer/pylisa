@@ -69,6 +69,9 @@ public class LibrarySpecificationProvider {
 
 	public static CompilationUnit hierarchyRoot;
 
+	/**
+	 * This servers as an initialization point for default parameter values coming from the libs
+	 */
 	private static CFG init;
 
 	private static final Collection<String> LOADED_LIBS = new HashSet<>();

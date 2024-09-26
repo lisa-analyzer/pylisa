@@ -1,4 +1,4 @@
-package it.unive.pylisa.notebooks;
+package it.unive.pylisa.pandas;
 
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
@@ -56,6 +56,33 @@ public abstract class AnalysisTestExecutor {
 	 */
 	public void perform(
 			CronConfiguration conf) {
+		perform(conf, false);
+	}
+
+	/**
+	 * Performs a test, running an analysis. The test will fail if:
+	 * <ul>
+	 * <li>The python file cannot be parsed</li>
+	 * <li>The previous working directory using for the test execution cannot be
+	 * deleted</li>
+	 * <li>The analysis run terminates with an {@link AnalysisException}</li>
+	 * <li>One of the json reports (either the one generated during the test
+	 * execution or the one used as baseline) cannot be found or cannot be
+	 * opened</li>
+	 * <li>The two json reports are different</li>
+	 * <li>The external files mentioned in the reports are different</li>
+	 * </ul>
+	 * 
+	 * @param conf       the configuration of the test to run (note that the
+	 *                       workdir present into the configuration will be
+	 *                       ignored, as it will be overwritten by the computed
+	 *                       workdir)
+	 * @param analyzeAll whether or not all functions/methods should be
+	 *                       considered entrypoints
+	 */
+	public void perform(
+			CronConfiguration conf,
+			boolean analyzeAll) {
 		String testMethod = getCaller();
 		System.out.println("### Testing " + testMethod);
 		Objects.requireNonNull(conf);
@@ -70,7 +97,7 @@ public abstract class AnalysisTestExecutor {
 			actualPath = Paths.get(actualPath.toString(), conf.testSubDir);
 		}
 
-		Program program = readProgram(target, conf);
+		Program program = readProgram(target, conf, analyzeAll);
 
 		setupWorkdir(conf, actualPath);
 
@@ -102,7 +129,7 @@ public abstract class AnalysisTestExecutor {
 
 			// we parse the program again since the analysis might have
 			// finalized it or modified it, and we want to start from scratch
-			program = readProgram(target, conf);
+			program = readProgram(target, conf, analyzeAll);
 
 			conf.optimize = true;
 			actualPath = Paths.get(actualPath.toString(), "optimized");
@@ -229,11 +256,12 @@ public abstract class AnalysisTestExecutor {
 
 	private Program readProgram(
 			Path target,
-			CronConfiguration conf) {
+			CronConfiguration conf,
+			boolean analyzeAll) {
 		String kind = FilenameUtils.getExtension(target.toString());
 		PyFrontend translator = conf.cellOrder == null
-				? new PyFrontend(target.toString(), kind.equals("ipynb"))
-				: new PyFrontend(target.toString(), kind.equals("ipynb"), conf.cellOrder);
+				? new PyFrontend(target.toString(), kind.equals("ipynb"), analyzeAll)
+				: new PyFrontend(target.toString(), kind.equals("ipynb"), conf.cellOrder, analyzeAll);
 
 		Program program = null;
 		try {

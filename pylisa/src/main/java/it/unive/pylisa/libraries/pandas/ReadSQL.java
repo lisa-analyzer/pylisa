@@ -79,8 +79,9 @@ public class ReadSQL
 		Set<Type> rts = state.getState().getRuntimeTypesOf(right, st, state.getState());
 		if (rts.stream().anyMatch(t -> !t.equals(PyClassType.lookup(LibrarySpecificationProvider.LIST)))) {
 			LOG.warn("Reading SQL from a non-string connection not supported, will lose knowledge of origin");
-			return ReadUnknown.build(getCFG(), getLocation(), null)
-					.forwardSemantics(state, interprocedural, expressions);
+			ReadUnknown delegate = ReadUnknown.build(getCFG(), getLocation(), null);
+			delegate.setOriginatingStatement(this.st);
+			return delegate.forwardSemantics(state, interprocedural, expressions);
 		}
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
