@@ -32,10 +32,10 @@ dependencies {
 
     testCompileOnly 'org.projectlombok:lombok:1.18.22'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
-    
-    implementation 'io.github.lisa-analyzer:lisa-sdk:0.1'
-    implementation 'io.github.lisa-analyzer:lisa-program:0.1'
-    implementation 'io.github.lisa-analyzer:lisa-analyses:0.1'
+
+    implementation 'io.github.lisa-analyzer:lisa-sdk:0.2-svcomp-SNAPSHOT'
+    implementation 'io.github.lisa-analyzer:lisa-analyses:0.2-svcomp-SNAPSHOT'
+    implementation 'io.github.lisa-analyzer:lisa-program:0.2-svcomp-SNAPSHOT'
 
     implementation 'guru.nidi:graphviz-java:0.18.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0'
@@ -46,7 +46,7 @@ dependencies {
     implementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
     implementation 'com.google.code.gson:gson:2.8.7'
     implementation 'io.github.classgraph:classgraph:4.8.175'
-    
+
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
 }
