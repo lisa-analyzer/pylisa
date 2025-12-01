@@ -1,9 +1,6 @@
 package it.unive.pylisa.libraries;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -29,6 +26,19 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 	}
 
 	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr, StatementStore<A> expressions) throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		Set<Type> rts = analysis.getRuntimeTypesOf(state, expr, this);
+		if (rts.stream().anyMatch(Type::isStringType) || rts.stream().anyMatch(Type::isNumericType)) {
+			return analysis.smallStepSemantics(
+					state,
+					new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
+		}
+		// TODO Handle other cases
+		return state;
+	}
+
+	@Override
 	protected int compareSameClassAndParams(
 			Statement o) {
 		return 0;
@@ -41,21 +51,6 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 		return new Str(cfg, location, "str", exprs[0]);
 	}
 
-	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression expr,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		Set<Type> rts = state.getState().getRuntimeTypesOf(expr, this, state.getState());
-		if (rts.stream().anyMatch(Type::isStringType) || rts.stream().anyMatch(Type::isNumericType)) {
-			return state.smallStepSemantics(
-					new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
-		}
-		// TODO Handle other cases
-		return state;
-	}
 
 	@Override
 	public String toString() {

@@ -1,9 +1,6 @@
 package it.unive.pylisa.cfg.statement;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
@@ -62,24 +59,20 @@ public class SimpleSuperUnresolvedCall extends UnresolvedCall {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params, StatementStore<A> expressions) throws SemanticException {
+
 		Call resolved;
-		Set<Type>[] ptypes = parameterTypes(expressions);
+		Set<Type>[] ptypes = parameterTypes(expressions, interprocedural.getAnalysis());
 		try {
 			resolved = interprocedural.resolve(
 					call,
 					new Set[0],
-					state.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
+					state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
 			if (resolved instanceof OpenCall)
 				resolved = interprocedural.resolve(
 						this,
 						ptypes,
-						state.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
+						state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
 		} catch (CallResolutionException e) {
 			throw new SemanticException("Unable to resolve call " + this, e);
 		}

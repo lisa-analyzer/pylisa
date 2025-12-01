@@ -1,9 +1,6 @@
 package it.unive.pylisa.libraries;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
@@ -51,14 +48,14 @@ public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression 
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression left,
-			SymbolicExpression right,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public void setOriginatingStatement(
+			Statement st) {
+		this.st = st;
+	}
 
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left, SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CompilationUnit superObj = ((CompilationUnit) ((Constant) left).getValue()).getImmediateAncestors().iterator()
 				.next();
 		PyClassType classTypeTo = PyClassType.lookup(superObj.getName());
@@ -72,12 +69,6 @@ public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression 
 				new Constant(tokenTypeTo, superObj, getLocation()),
 				TypeConv.INSTANCE,
 				getLocation());
-		return state.smallStepSemantics(be, this);
-	}
-
-	@Override
-	public void setOriginatingStatement(
-			Statement st) {
-		this.st = st;
+		return analysis.smallStepSemantics(state, be, this);
 	}
 }
