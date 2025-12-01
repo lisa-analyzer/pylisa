@@ -1,9 +1,6 @@
 package it.unive.pylisa.libraries;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -28,6 +25,11 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 	}
 
 	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr, StatementStore<A> expressions) throws SemanticException {
+		return interprocedural.getAnalysis().smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, getLocation()), st);
+	}
+
+	@Override
 	protected int compareSameClassAndParams(
 			Statement o) {
 		return 0;
@@ -44,15 +46,5 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 	final public void setOriginatingStatement(
 			Statement st) {
 		this.st = st;
-	}
-
-	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression expr,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		return state.smallStepSemantics(new PushAny(Int32Type.INSTANCE, getLocation()), st);
 	}
 }
