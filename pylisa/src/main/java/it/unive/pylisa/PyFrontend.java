@@ -161,38 +161,7 @@ import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.PyParameter;
 import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
-import it.unive.pylisa.cfg.expression.Break;
-import it.unive.pylisa.cfg.expression.Continue;
-import it.unive.pylisa.cfg.expression.DictionaryCreation;
-import it.unive.pylisa.cfg.expression.Empty;
-import it.unive.pylisa.cfg.expression.LambdaExpression;
-import it.unive.pylisa.cfg.expression.ListCreation;
-import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
-import it.unive.pylisa.cfg.expression.PyAddition;
-import it.unive.pylisa.cfg.expression.PyAssign;
-import it.unive.pylisa.cfg.expression.PyBitwiseAnd;
-import it.unive.pylisa.cfg.expression.PyBitwiseLeftShift;
-import it.unive.pylisa.cfg.expression.PyBitwiseNot;
-import it.unive.pylisa.cfg.expression.PyBitwiseOr;
-import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
-import it.unive.pylisa.cfg.expression.PyBitwiseXor;
-import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
-import it.unive.pylisa.cfg.expression.PyFloorDiv;
-import it.unive.pylisa.cfg.expression.PyIn;
-import it.unive.pylisa.cfg.expression.PyIs;
-import it.unive.pylisa.cfg.expression.PyMatMul;
-import it.unive.pylisa.cfg.expression.PyMultiplication;
-import it.unive.pylisa.cfg.expression.PyNewObj;
-import it.unive.pylisa.cfg.expression.PyPower;
-import it.unive.pylisa.cfg.expression.PyRemainder;
-import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
-import it.unive.pylisa.cfg.expression.PyStringLiteral;
-import it.unive.pylisa.cfg.expression.PyTernaryOperator;
-import it.unive.pylisa.cfg.expression.PyTypeLiteral;
-import it.unive.pylisa.cfg.expression.RangeValue;
-import it.unive.pylisa.cfg.expression.SetCreation;
-import it.unive.pylisa.cfg.expression.StarExpression;
-import it.unive.pylisa.cfg.expression.TupleCreation;
+import it.unive.pylisa.cfg.expression.*;
 import it.unive.pylisa.cfg.expression.comparison.PyAnd;
 import it.unive.pylisa.cfg.expression.comparison.PyEquals;
 import it.unive.pylisa.cfg.expression.comparison.PyGreaterOrEqual;
@@ -502,7 +471,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		}
 
 		addRetNodesToCurrentCFG();
-		cfs.forEach(currentCFG::addControlFlowStructure);
+		cfs.forEach(currentCFG.getDescriptor()::addControlFlowStructure);
 		currentCFG.simplify();
 		return currentCFG;
 	}
@@ -680,7 +649,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		currentCFG.getNodeList().mergeWith(r.getMiddle());
 		currentCFG.getEntrypoints().add(r.getLeft());
 		addRetNodesToCurrentCFG();
-		cfs.forEach(currentCFG::addControlFlowStructure);
+		cfs.forEach(currentCFG.getDescriptor()::addControlFlowStructure);
 		currentCFG.simplify();
 		if (currentUnit instanceof ClassUnit) {
 			((ClassUnit) currentUnit).addInstanceCodeMember(currentCFG);
