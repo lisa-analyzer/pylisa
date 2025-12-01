@@ -1,9 +1,6 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.SourceCodeLocation;
@@ -47,12 +44,7 @@ public class PyNewObj extends NaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params, StatementStore<A> expressions) throws SemanticException {
 		Type type = getStaticType();
 		ReferenceType reftype = new ReferenceType(type);
 		MemoryAllocation created = new MemoryAllocation(type, getLocation(), false);
@@ -65,9 +57,9 @@ public class PyNewObj extends NaryExpression {
 		// we also have to add the receiver inside the state
 		AnalysisState<A> callstate = paramThis.forwardSemantics(state, interprocedural, expressions);
 		AnalysisState<A> tmp = state.bottom();
-		for (SymbolicExpression v : callstate.getComputedExpressions())
-			tmp = tmp.lub(callstate.assign(v, ref, paramThis));
-		ExpressionSet[] fullParams = ArrayUtils.insert(0, params, callstate.getComputedExpressions());
+		for (SymbolicExpression v : callstate.getExecution().getComputedExpressions())
+			tmp = tmp.lub(interprocedural.getAnalysis().assign(callstate, v, ref, paramThis));
+		ExpressionSet[] fullParams = ArrayUtils.insert(0, params, callstate.getExecution().getComputedExpressions());
 		expressions.put(paramThis, tmp);
 
 		UnresolvedCall call = new UnresolvedCall(getCFG(), getLocation(), CallType.INSTANCE, type.toString(),
@@ -75,21 +67,21 @@ public class PyNewObj extends NaryExpression {
 		AnalysisState<A> sem = call.forwardSemanticsAux(interprocedural, tmp, fullParams, expressions);
 
 		if (!call.getMetaVariables().isEmpty())
-			sem = sem.forgetIdentifiers(call.getMetaVariables());
+			sem = sem.forgetIdentifiers(call.getMetaVariables(), this);
 
 		// now remove the instrumented receiver
 		expressions.forget(paramThis);
-		for (SymbolicExpression v : callstate.getComputedExpressions())
+		for (SymbolicExpression v : callstate.getExecution().getComputedExpressions())
 			if (v instanceof Identifier)
-				sem = sem.forgetIdentifier((Identifier) v);
+				sem = sem.forgetIdentifier((Identifier) v, this);
 
-		sem = sem.smallStepSemantics(created, this);
+		sem = interprocedural.getAnalysis().smallStepSemantics(sem, created, this);
 
 		AnalysisState<A> result = state.bottom();
-		for (SymbolicExpression loc : sem.getComputedExpressions()) {
+		for (SymbolicExpression loc : sem.getExecution().getComputedExpressions()) {
 			ReferenceType staticType = new ReferenceType(loc.getStaticType());
 			HeapReference locref = new HeapReference(staticType, loc, getLocation());
-			result = result.lub(sem.smallStepSemantics(locref, call));
+			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(sem, locref, call));
 		}
 
 		return result;
