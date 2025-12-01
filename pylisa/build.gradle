@@ -47,6 +47,8 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.7'
     implementation 'io.github.classgraph:classgraph:4.8.175'
 
+    implementation 'org.graphstream:gs-core:2.0'
+
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
 }
