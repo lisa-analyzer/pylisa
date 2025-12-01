@@ -1,9 +1,6 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -32,17 +29,12 @@ public class PyPower extends BinaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression left,
-			SymbolicExpression right,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		Set<Type> tleft = state.getState().getRuntimeTypesOf(left, this, state.getState());
-		Set<Type> tright = state.getState().getRuntimeTypesOf(right, this, state.getState());
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left, SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+		Set<Type> tleft = interprocedural.getAnalysis().getRuntimeTypesOf(state, left, this);
+		Set<Type> tright = interprocedural.getAnalysis().getRuntimeTypesOf(state, right, this);
 		if (tleft.stream().anyMatch(Type::isNumericType) && tright.stream().anyMatch(Type::isNumericType)) {
-			return state.smallStepSemantics(
+			return interprocedural.getAnalysis().smallStepSemantics(
+					state,
 					new it.unive.lisa.symbolic.value.BinaryExpression(
 							getStaticType(),
 							left,
