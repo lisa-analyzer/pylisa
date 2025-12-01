@@ -1,5 +1,6 @@
 package it.unive.pylisa.analysis.constants;
 
+import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
@@ -14,8 +15,7 @@ import it.unive.lisa.program.type.Int64Type;
 import it.unive.lisa.program.type.Int8Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.PushInv;
+import it.unive.lisa.symbolic.value.*;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.ArithmeticOperator;
 import it.unive.lisa.symbolic.value.operator.DivisionOperator;
@@ -51,7 +51,9 @@ import org.apache.commons.lang3.tuple.Pair;
 public class ConstantPropagation
 		implements
 		BaseNonRelationalValueDomain<ConstantPropagation>,
-		Comparable<ConstantPropagation> {
+		Comparable<ConstantPropagation>,
+		BaseLattice<ConstantPropagation>
+{
 
 	private static final ConstantPropagation TOP = new ConstantPropagation(null, true);
 	private static final ConstantPropagation BOTTOM = new ConstantPropagation(null, false);
@@ -115,7 +117,7 @@ public class ConstantPropagation
 
 	@Override
 	public boolean isTop() {
-		return BaseNonRelationalValueDomain.super.isTop() || (constant == null && isTop);
+		return BaseLattice.super.isTop() || (constant == null && isTop);
 	}
 
 	@Override
@@ -125,7 +127,7 @@ public class ConstantPropagation
 
 	@Override
 	public boolean isBottom() {
-		return BaseNonRelationalValueDomain.super.isBottom() || (constant == null && !isTop);
+		return BaseLattice.super.isBottom() || (constant == null && !isTop);
 	}
 
 	@Override
@@ -200,7 +202,7 @@ public class ConstantPropagation
 
 		Set<Type> rts = null;
 		try {
-			rts = oracle.getRuntimeTypesOf(expression, pp, oracle);
+			rts = oracle.getRuntimeTypesOf(expression, pp);
 		} catch (SemanticException e) {
 			return false;
 		}
@@ -217,15 +219,12 @@ public class ConstantPropagation
 	}
 
 	@Override
-	public ConstantPropagation evalNullConstant(
-			ProgramPoint pp,
-			SemanticOracle oracle)
-			throws SemanticException {
-		return new ConstantPropagation(new PyNoneConstant(pp.getLocation()));
+	public ConstantPropagation unknownValue(Identifier id) {
+		return BaseNonRelationalValueDomain.super.unknownValue(id);
 	}
 
 	@Override
-	public ConstantPropagation evalNonNullConstant(
+	public ConstantPropagation evalConstant(
 			Constant constant,
 			ProgramPoint pp,
 			SemanticOracle oracle)
@@ -237,12 +236,13 @@ public class ConstantPropagation
 
 	@Override
 	public ConstantPropagation evalUnaryExpression(
-			UnaryOperator operator,
+			UnaryExpression expression,
 			ConstantPropagation arg,
 			ProgramPoint pp,
 			SemanticOracle oracle) {
 		if (arg.isTop())
 			return top();
+		UnaryOperator operator = expression.getOperator();
 		if (operator == NumericNegation.INSTANCE)
 			if (arg.is(Integer.class))
 				return new ConstantPropagation(
@@ -264,11 +264,12 @@ public class ConstantPropagation
 
 	@Override
 	public ConstantPropagation evalBinaryExpression(
-			BinaryOperator operator,
+			BinaryExpression expression,
 			ConstantPropagation left,
 			ConstantPropagation right,
 			ProgramPoint pp,
 			SemanticOracle oracle) {
+		BinaryOperator operator = expression.getOperator();
 		if (operator instanceof ArithmeticOperator) {
 			if (left.isTop() || right.isTop() || !left.constant.getStaticType().isNumericType()
 					|| !right.constant.getStaticType().isNumericType())
@@ -312,13 +313,14 @@ public class ConstantPropagation
 
 	@Override
 	public ConstantPropagation evalTernaryExpression(
-			TernaryOperator operator,
+			TernaryExpression expression,
 			ConstantPropagation left,
 			ConstantPropagation middle,
 			ConstantPropagation right,
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
+		TernaryOperator operator = (TernaryOperator) expression.getOperator();
 		if (operator instanceof DictPut)
 			return dictPut(left, middle, right, pp);
 		return top();

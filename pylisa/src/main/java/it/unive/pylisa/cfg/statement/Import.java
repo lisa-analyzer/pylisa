@@ -1,9 +1,6 @@
 package it.unive.pylisa.cfg.statement;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.analysis.symbols.QualifierSymbol;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
@@ -56,10 +53,12 @@ public class Import extends Statement {
 
 		// same keys: just iterate over them and apply comparisons
 		// since fields is sorted, the order of iteration will be consistent
-		for (Entry<String, String> entry : this.libs.entrySet())
-			if ((cmp = entry.getValue().compareTo(other.libs.get(entry.getKey()))) != 0)
-				return cmp;
-
+		for (Entry<String, String> entry : this.libs.entrySet()) {
+			if (entry.getValue() != null) {
+				if ((cmp = entry.getValue().compareTo(other.libs.get(entry.getKey()))) != 0)
+					return cmp;
+			}
+		}
 		return 0;
 	}
 
@@ -81,6 +80,23 @@ public class Import extends Statement {
 		}
 		builder.delete(builder.length() - 2, builder.length());
 		return builder.toString();
+	}
+
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(AnalysisState<A> entryState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions) throws SemanticException {
+		AnalysisState<A> result = interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()), this);
+
+		if (result.getExecutionInfo(SymbolAliasing.INFO_KEY) == null)
+			result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
+
+		for (Entry<String, String> lib : libs.entrySet()) {
+			if (lib.getValue() != null)
+				result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY,
+						result.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class)
+								.alias(new QualifierSymbol(lib.getKey()), new QualifierSymbol(lib.getValue())));
+		}
+
+		return result;
 	}
 
 	@Override
@@ -107,26 +123,5 @@ public class Import extends Statement {
 		} else if (!libs.equals(other.libs))
 			return false;
 		return true;
-	}
-
-	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemantics(
-			AnalysisState<A> entryState,
-			InterproceduralAnalysis<A> interprocedural,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		AnalysisState<A> result = entryState.smallStepSemantics(new Skip(getLocation()), this);
-
-		if (result.getInfo(SymbolAliasing.INFO_KEY) == null)
-			result = result.storeInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
-
-		for (Entry<String, String> lib : libs.entrySet()) {
-			if (lib.getValue() != null)
-				result = result.storeInfo(SymbolAliasing.INFO_KEY,
-						result.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class)
-								.alias(new QualifierSymbol(lib.getKey()), new QualifierSymbol(lib.getValue())));
-		}
-
-		return result;
 	}
 }

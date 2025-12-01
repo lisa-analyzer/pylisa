@@ -104,7 +104,7 @@ public class DataframeForest
 			addEdge(out.newInstance(target, out.getDestination()));
 		list.removeNode(origin);
 	}
-
+	//TODO: FIX ME (lisa version update)
 	@Override
 	public SerializableGraph toSerializableGraph(
 			BiFunction<DataframeForest, DataframeOperation, SerializableValue> descriptionGenerator) {
@@ -114,7 +114,7 @@ public class DataframeForest
 		Map<DataframeOperation, Integer> nodeIds = new HashMap<>();
 		SortedSet<SerializableNodeDescription> descrs = new TreeSet<>();
 		SortedSet<SerializableEdge> edges = new TreeSet<>();
-
+		/*
 		int counter = 0;
 		for (DataframeOperation node : getNodes()) {
 			addNode(counter, nodes, descrs, node, descriptionGenerator);
@@ -131,7 +131,7 @@ public class DataframeForest
 					else
 						edges.add(new SerializableEdge(nodeIds.get(src), nodeIds.get(dest),
 								edge.getClass().getSimpleName()));
-
+		*/
 		return new CustomSerializableGraph(name, null, nodes, edges, descrs);
 	}
 
@@ -279,7 +279,7 @@ public class DataframeForest
 
 		return res.toString().trim();
 	}
-
+	// TODO: FIX ME (lisa version update)
 	static class ConcatSerializableEdge extends SerializableEdge {
 		private final int index;
 
@@ -288,7 +288,8 @@ public class DataframeForest
 				int destId,
 				String kind,
 				int index) {
-			super(sourceId, destId, kind);
+			//super(sourceId, destId, kind);
+			super(sourceId, destId, kind, "label"); // TODO: FIX THAT
 			this.index = index;
 		}
 
@@ -343,14 +344,14 @@ public class DataframeForest
 				String title) {
 			super(title);
 		}
-
+		// TODO: FIX ME (lisa version update)
 		@Override
 		public void addEdge(
 				SerializableEdge edge) {
 			long id = edge.getSourceId();
 			long id1 = edge.getDestId();
 
-			Edge e = graph.addEdge(edgeName(id, id1, edge), nodeName(id), nodeName(id1), true);
+			/*Edge e = graph.addEdge(edgeName(id, id1, edge), nodeName(id), nodeName(id1), true);
 
 			switch (edge.getKind()) {
 			case "ConcatEdge":
@@ -369,7 +370,7 @@ public class DataframeForest
 			default:
 				e.setAttribute(COLOR, COLOR_BLACK);
 				break;
-			}
+			}*/
 		}
 
 		protected static String edgeName(
@@ -387,6 +388,7 @@ public class DataframeForest
 				out.printf("%s {%n", "digraph");
 			}
 
+			// TODO: FIX ME (lisa version update)
 			@Override
 			protected String outputAttribute(
 					String key,
@@ -394,15 +396,16 @@ public class DataframeForest
 					boolean first) {
 				boolean quote = true;
 
-				if (value instanceof Number || key.equals(LABEL))
+				/*if (value instanceof Number || key.equals(LABEL))
 					// labels that we output are always in html format
 					// so no need to quote them
-					quote = false;
+					quote = false;*/
 
 				Object quoting = quote ? "\"" : "";
 				return String.format("%s%s=%s%s%s", first ? "" : ",", key, quoting, value, quoting);
 			}
 
+			// TODO: FIX ME (lisa version update)
 			@Override
 			protected String outputAttributes(
 					Element e) {
@@ -413,7 +416,8 @@ public class DataframeForest
 				e.attributeKeys().forEach(key -> attrs.put(key, outputAttribute(key, e.getAttribute(key), true)));
 
 				StringBuilder buffer = new StringBuilder("[");
-				for (Entry<String, String> entry : attrs.entrySet())
+				String result = buffer.toString();
+				/*for (Entry<String, String> entry : attrs.entrySet())
 					if (!entry.getKey().equals(LABEL))
 						buffer.append(entry.getValue()).append(",");
 
@@ -423,11 +427,11 @@ public class DataframeForest
 				String result = buffer.toString();
 				if (result.endsWith(","))
 					result = result.substring(0, result.length() - 1);
-
+			*/
 				return result + "]";
 			}
 		}
-
+		// TODO: FIX ME (lisa version update)
 		@Override
 		public void dump(
 				Writer writer)
@@ -444,7 +448,7 @@ public class DataframeForest
 				}
 			};
 			sink.setDirected(true);
-			sink.writeAll(graph, writer);
+			//sink.writeAll(graph, writer);
 		}
 
 		private class LegendClusterSink extends CustomDotSink {
@@ -461,9 +465,10 @@ public class DataframeForest
 		private static final class Legend {
 			private final org.graphstream.graph.Graph graph;
 
+			// TODO: FIX ME (lisa version update)
 			private Legend() {
 				graph = new MultiGraph("legend");
-				org.graphstream.graph.Node l = graph.addNode("legend");
+				/*org.graphstream.graph.Node l = graph.addNode("legend");
 				StringBuilder builder = new StringBuilder();
 				builder.append("<");
 				builder.append("<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">");
@@ -506,7 +511,7 @@ public class DataframeForest
 				builder.append("</td></tr>");
 				builder.append("</table>");
 				builder.append(">");
-				l.setAttribute("label", builder.toString());
+				l.setAttribute("label", builder.toString());*/
 			}
 		}
 	}

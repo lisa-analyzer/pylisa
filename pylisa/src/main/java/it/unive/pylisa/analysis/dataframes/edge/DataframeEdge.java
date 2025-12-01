@@ -89,4 +89,9 @@ public abstract class DataframeEdge
 	public boolean isUnconditional() {
 		return false;
 	}
+
+	@Override
+	public boolean isErrorHandling() {
+		return false;
+	}
 }

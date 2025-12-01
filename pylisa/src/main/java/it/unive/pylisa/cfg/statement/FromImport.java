@@ -1,9 +1,6 @@
 package it.unive.pylisa.cfg.statement;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.analysis.symbols.QualifiedNameSymbol;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
@@ -61,10 +58,13 @@ public class FromImport extends Statement {
 
 		// same keys: just iterate over them and apply comparisons
 		// since fields is sorted, the order of iteration will be consistent
-		for (Entry<String, String> entry : this.components.entrySet())
-			if ((cmp = entry.getValue().compareTo(other.components.get(entry.getKey()))) != 0)
-				return cmp;
-
+		System.out.println(this.components.entrySet());
+		for (Entry<String, String> entry : this.components.entrySet()) {
+			if (entry.getValue() != null) {
+				if ((cmp = entry.getValue().compareTo(other.components.get(entry.getKey()))) != 0)
+					return cmp;
+			}
+		}
 		return 0;
 	}
 
@@ -89,6 +89,29 @@ public class FromImport extends Statement {
 	}
 
 	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(AnalysisState<A> entryState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions) throws SemanticException {
+		AnalysisState<A> result = interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()), this);
+
+		if (result.getExecutionInfo(SymbolAliasing.INFO_KEY) == null)
+			result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
+
+		for (Entry<String, String> component : components.entrySet()) {
+			if (component.getValue() != null)
+				result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY,
+						result.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).alias(
+								new QualifiedNameSymbol(lib, component.getKey()),
+								new QualifiedNameSymbol(null, component.getValue())));
+			else
+				result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY,
+						result.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).alias(
+								new QualifiedNameSymbol(lib, component.getKey()),
+								new QualifiedNameSymbol(null, component.getKey())));
+		}
+
+		return result;
+	}
+
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
@@ -109,30 +132,4 @@ public class FromImport extends Statement {
 		return Objects.equals(components, other.components) && Objects.equals(lib, other.lib);
 	}
 
-	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemantics(
-			AnalysisState<A> entryState,
-			InterproceduralAnalysis<A> interprocedural,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		AnalysisState<A> result = entryState.smallStepSemantics(new Skip(getLocation()), this);
-
-		if (result.getInfo(SymbolAliasing.INFO_KEY) == null)
-			result = result.storeInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
-
-		for (Entry<String, String> component : components.entrySet()) {
-			if (component.getValue() != null)
-				result = result.storeInfo(SymbolAliasing.INFO_KEY,
-						result.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).alias(
-								new QualifiedNameSymbol(lib, component.getKey()),
-								new QualifiedNameSymbol(null, component.getValue())));
-			else
-				result = result.storeInfo(SymbolAliasing.INFO_KEY,
-						result.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).alias(
-								new QualifiedNameSymbol(lib, component.getKey()),
-								new QualifiedNameSymbol(null, component.getKey())));
-		}
-
-		return result;
-	}
 }

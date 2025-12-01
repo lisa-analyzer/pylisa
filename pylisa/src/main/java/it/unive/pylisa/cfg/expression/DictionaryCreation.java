@@ -1,9 +1,6 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
@@ -51,17 +48,12 @@ public class DictionaryCreation extends NaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params, StatementStore<A> expressions) throws SemanticException {
 		CodeLocation loc = getLocation();
 		DictConstant dict = new DictConstant(loc);
 
 		if (params.length == 0)
-			return state.smallStepSemantics(dict, this);
+			return interprocedural.getAnalysis().smallStepSemantics(state, dict, this);
 
 		Type dicttype = PyClassType.lookup(LibrarySpecificationProvider.DICT);
 		TernaryOperator append = DictPut.INSTANCE;
@@ -86,7 +78,7 @@ public class DictionaryCreation extends NaryExpression {
 
 		AnalysisState<A> result = state.bottom();
 		for (TernaryExpression completedict : ws)
-			result = result.lub(state.smallStepSemantics(completedict, this));
+			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state, completedict, this));
 
 		return result;
 	}
