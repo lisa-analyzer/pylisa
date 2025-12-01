@@ -1,9 +1,6 @@
 package it.unive.pylisa.libraries;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
@@ -42,24 +39,19 @@ public class Len extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 		return new Len(cfg, location, "len", exprs[0]);
 	}
 
-	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression expr,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		AnalysisState<A> result = state.bottom();
-		ExpressionSet exprSet = state.getState().rewrite(expr, st, state.getState());
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr, StatementStore<A> expressions) throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ExpressionSet exprSet = analysis.rewrite(state, expr, st);
 
 		for (SymbolicExpression e : exprSet) {
-			Set<Type> rts = state.getState().getRuntimeTypesOf(e, this, state.getState());
+			Set<Type> rts = analysis.getRuntimeTypesOf(state, e, this);
 			if (rts.stream().anyMatch(Type::isStringType)) {
-				return state.lub(result.smallStepSemantics(
+				return state.lub(analysis.smallStepSemantics(state,
 						new UnaryExpression(Int32Type.INSTANCE, e, StringLength.INSTANCE, getLocation()), this));
 			}
 
 			// String len
-			return state.smallStepSemantics(
+			return analysis.smallStepSemantics(state,
 					new UnaryExpression(Int32Type.INSTANCE, expr, StringLength.INSTANCE, getLocation()), this);
 		}
 		// TODO handle other cases
