@@ -1,12 +1,14 @@
 package it.unive.pylisa.libraries.loader;
 
+import it.unive.lisa.program.Program;
 import it.unive.lisa.program.Unit;
-import it.unive.lisa.program.cfg.CFG;
-import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.CodeMemberDescriptor;
-import it.unive.lisa.program.cfg.NativeCFG;
+import it.unive.lisa.program.cfg.*;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
+import it.unive.lisa.util.functional.Function;
+import it.unive.pylisa.cfg.type.PyFunctionType;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
+import it.unive.pylisa.program.FunctionUnit;
+
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -110,4 +112,33 @@ public class Method {
 			throw new LibraryCreationException(e);
 		}
 	}
+
+    public FunctionUnit toLiSAFunctionUnit(CodeLocation location,
+									   CFG init,
+									   Program program,
+									   Unit container) {
+		it.unive.lisa.program.cfg.Parameter[] pars = new it.unive.lisa.program.cfg.Parameter[params.size()];
+		for (int i = 0; i < pars.length; i++)
+			pars[i] = this.params.get(i).toLiSAParameter(location, init);
+
+		CodeMemberDescriptor desc = new CodeMemberDescriptor(
+				location,
+				container,
+				false,
+				"$call",
+				this.type.toLiSAType(),
+				pars);
+
+		desc.setOverridable(this.sealed);
+		try {
+				CodeMember function = new NativeCFG(desc,
+					(Class<? extends NaryExpression>) Class.forName(this.implementation));
+			FunctionUnit unit = new FunctionUnit(location, program, container.getName() + "." + getName(), function);
+			unit.addCodeMember(function);
+			PyFunctionType.register(container.getName() + "." + getName(), unit);
+			return unit;
+		} catch (ClassNotFoundException e) {
+			throw new LibraryCreationException(e);
+		}
+    }
 }

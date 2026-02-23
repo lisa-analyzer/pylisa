@@ -12,6 +12,6 @@ py-outputs
 test-outputs/*
 ros-test-outputs/*
 microservice-test-outputs/*
-
+tests/*
 # gradle configuration for accessing the snapshot of lisa
 gradle.properties

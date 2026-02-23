@@ -30,6 +30,17 @@ public class DecoratorsTest {
 		lisa.run(program);
 	}
 
+	@Test
+	public void testClassDecorators() throws IOException {
+		PyFrontend translator = new PyFrontend(
+				"py-testcases/decorators/class_decorator_test.py",
+				false);
+		Program program = translator.toLiSAProgram(false);
+		LiSAConfiguration conf = getLisaConf("class_decorators");
+		LiSA lisa = new LiSA(conf);
+		lisa.run(program);
+	}
+
 	public static LiSAConfiguration getLisaConf(
 			String workdir) {
 		LiSAConfiguration conf = new LiSAConfiguration();

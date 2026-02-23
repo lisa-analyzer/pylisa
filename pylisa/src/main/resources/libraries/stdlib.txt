@@ -1,27 +1,22 @@
-method super: it.unive.pylisa.libraries.Super
-    type it.unive.lisa.type.Untyped::INSTANCE
-    param arg1 type it.unive.lisa.type.Untyped::INSTANCE
-    param arg2 type it.unive.lisa.type.Untyped::INSTANCE
-method print: it.unive.pylisa.libraries.NoOpFunction
-	type it.unive.lisa.type.VoidType::INSTANCE
-	param arg1 type it.unive.lisa.type.Untyped::INSTANCE
-method str: it.unive.pylisa.libraries.Str
-    type it.unive.lisa.program.type.StringType::INSTANCE
-    param arg1 type it.unive.lisa.type.Untyped::INSTANCE
-method len: it.unive.pylisa.libraries.Len
-    type it.unive.lisa.program.type.Int32Type::INSTANCE
-    param arg1 type it.unive.lisa.type.Untyped::INSTANCE
-root class Object
-class Sequence:
-	instance method __getitem__: it.unive.pylisa.libraries.SequenceGetItem
-		libtype Object*
-		param this libtype Sequence*
-		param index type it.unive.lisa.program.type.Int32Type::INSTANCE
-	instance method __len__: it.unive.pylisa.libraries.SequenceLen
-		type it.unive.lisa.program.type.Int32Type::INSTANCE
-		param this libtype Sequence*
-sealed class List extends Sequence 
-sealed class Set extends Sequence
-sealed class Dict extends Sequence
-sealed class Tuple extends Sequence
-sealed class Slice extends Sequence
+library builtins:
+    location builtins
+    root class object:
+        method __new__: it.unive.pylisa.libraries.builtins.object.ObjectNew
+            libtype object*
+            param this type it.unive.lisa.type.Untyped::INSTANCE
+        method __init__: it.unive.pylisa.libraries.builtins.object.ObjectInit
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param this type it.unive.lisa.type.Untyped::INSTANCE
+    class sequence extends builtins.object:
+        instance method __getitem__: it.unive.pylisa.libraries.SequenceGetItem
+            libtype object*
+            param this libtype sequence*
+            param index type it.unive.lisa.program.type.Int32Type::INSTANCE
+        instance method __len__: it.unive.pylisa.libraries.SequenceLen
+            type it.unive.lisa.program.type.Int32Type::INSTANCE
+            param this libtype sequence*
+    class list extends builtins.sequence
+    class set extends builtins.sequence
+    class dict extends builtins.sequence
+    class tuple extends builtins.sequence
+    class slice extends builtins.sequence

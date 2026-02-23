@@ -3,8 +3,9 @@ package it.unive.pylisa.cfg.expression;
 import it.unive.lisa.analysis.*;
 import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.Statement;
@@ -30,7 +31,7 @@ public class PyNewObj extends NaryExpression {
 	 */
 	public PyNewObj(
 			CFG cfg,
-			SourceCodeLocation location,
+			CodeLocation location,
 			String constructName,
 			Type type,
 			Expression... parameters) {
@@ -49,10 +50,11 @@ public class PyNewObj extends NaryExpression {
 		ReferenceType reftype = new ReferenceType(type);
 		MemoryAllocation created = new MemoryAllocation(type, getLocation(), false);
 		HeapReference ref = new HeapReference(reftype, created, getLocation());
-
+		return interprocedural.getAnalysis().smallStepSemantics(state, ref, this);
 		// we need to add the receiver to the parameters
-		VariableRef paramThis = new VariableRef(getCFG(), getLocation(), "$self", reftype);
-		Expression[] fullExpressions = ArrayUtils.insert(0, getSubExpressions(), paramThis);
+		//VariableRef paramThis = new VariableRef(getCFG(), getLocation(), "$$" + reftype.getInnerType() , reftype);
+		//return paramThis.forwardSemantics(state, interprocedural, expressions);
+		/*Expression[] fullExpressions = ArrayUtils.insert(0, getSubExpressions(), paramThis);
 
 		// we also have to add the receiver inside the state
 		AnalysisState<A> callstate = paramThis.forwardSemantics(state, interprocedural, expressions);
@@ -82,8 +84,7 @@ public class PyNewObj extends NaryExpression {
 			ReferenceType staticType = new ReferenceType(loc.getStaticType());
 			HeapReference locref = new HeapReference(staticType, loc, getLocation());
 			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(sem, locref, call));
-		}
 
-		return result;
+		return result;*/
 	}
 }

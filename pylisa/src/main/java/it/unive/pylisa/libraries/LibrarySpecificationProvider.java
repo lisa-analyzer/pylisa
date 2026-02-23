@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import it.unive.pylisa.program.ModuleUnit;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.commons.lang3.tuple.Pair;
@@ -18,8 +19,6 @@ import org.apache.logging.log4j.Logger;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import it.unive.lisa.AnalysisSetupException;
-import it.unive.lisa.program.CodeUnit;
-import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
@@ -38,7 +37,7 @@ public class LibrarySpecificationProvider {
 	private static final String STDLIB_FILE = "stdlib.txt";
 
 	public static final String SET = "Set";
-	public static final String DICT = "Dict";
+	public static final String DICT = "builtins.dict";
 	public static final String LIST = "List";
 	public static final String TUPLE = "Tuple";
 	public static final String SLICE = "Slice";
@@ -67,28 +66,29 @@ public class LibrarySpecificationProvider {
 
 	private static final Map<String, Library> AVAILABLE_LIBS = new HashMap<>();
 
-	public static CompilationUnit hierarchyRoot;
+	public static it.unive.lisa.program.CompilationUnit hierarchyRoot;
 
 	private static CFG init;
 
 	private static final Collection<String> LOADED_LIBS = new HashSet<>();
 
 	public static void load(
-			Program program)
+			Program program,
+			CFG init)
 			throws AnalysisSetupException {
-		init = null;
+		init = init;
 		hierarchyRoot = null;
 		AVAILABLE_LIBS.clear();
 		LOADED_LIBS.clear();
 
 		Pair<Runtime, Collection<Library>> stdlib = readFile(LIBS_FOLDER + STDLIB_FILE);
-		AtomicReference<CompilationUnit> root = new AtomicReference<CompilationUnit>(null);
-		stdlib.getLeft().fillProgram(program, root);
-		if (root.get() == null)
-			throw new AnalysisSetupException("Runtime does not contain a hierarchy root");
-		hierarchyRoot = root.get();
-		makeInit(program);
-		stdlib.getLeft().populateProgram(program, init, hierarchyRoot);
+		AtomicReference<it.unive.lisa.program.CompilationUnit> root = new AtomicReference<it.unive.lisa.program.CompilationUnit>(null);
+		//stdlib.getLeft().fillProgram(program, root);
+		//if (root.get() == null)
+		//	throw new AnalysisSetupException("Runtime does not contain a hierarchy root");
+		//hierarchyRoot = root.get();
+		//makeInit(program);
+		//stdlib.getLeft().populateProgram(program, init, hierarchyRoot);
 		for (Library lib : stdlib.getValue())
 			AVAILABLE_LIBS.put(lib.getName(), lib);
 
@@ -97,8 +97,8 @@ public class LibrarySpecificationProvider {
 				if (!path.endsWith("/" + STDLIB_FILE)) {
 					// need to add the / since the returned paths are relative
 					Pair<Runtime, Collection<Library>> libs = readFile("/" + path);
-					libs.getLeft().fillProgram(program, root);
-					libs.getLeft().populateProgram(program, init, hierarchyRoot);
+					//libs.getLeft().fillProgram(program, root);
+					//libs.getLeft().populateProgram(program, init, hierarchyRoot);
 					for (Library lib : libs.getValue())
 						AVAILABLE_LIBS.put(lib.getName(), lib);
 				}
@@ -130,7 +130,8 @@ public class LibrarySpecificationProvider {
 
 	public static void importLibrary(
 			Program program,
-			String name) {
+			String name,
+			CFG init) {
 		if (LOADED_LIBS.contains(name))
 			return;
 
@@ -140,9 +141,30 @@ public class LibrarySpecificationProvider {
 			return;
 		}
 
-		CodeUnit lib = library.toLiSAUnit(program, new AtomicReference<>(hierarchyRoot));
-		library.populateUnit(init, hierarchyRoot, lib);
+		//CodeUnit lib = library.toLiSAUnit(program, new AtomicReference<>(hierarchyRoot));
+		ModuleUnit unit = library.toLiSAPythonModuleUnit(program, new AtomicReference<>(hierarchyRoot), init);
+		//library.populateUnit(init, hierarchyRoot, lib);
 		LOADED_LIBS.add(name);
+	}
+
+	public static ModuleUnit importPythonModule(
+			Program program,
+			String name,
+			CFG init) {
+		if (LOADED_LIBS.contains(name))
+			return null;
+
+		Library library = AVAILABLE_LIBS.get(name);
+		if (library == null) {
+			LOG.warn("Imported library '" + name + "' not found among available libraries");
+			return null;
+		}
+
+		//CodeUnit lib = library.toLiSAUnit(program, new AtomicReference<>(hierarchyRoot));
+		ModuleUnit unit = library.toLiSAPythonModuleUnit(program, new AtomicReference<>(hierarchyRoot), init);
+		//library.populateUnit(init, hierarchyRoot, lib);
+		LOADED_LIBS.add(name);
+		return unit;
 	}
 
 	public static Collection<Library> getLibraryUnits() {
@@ -158,4 +180,5 @@ public class LibrarySpecificationProvider {
 			String name) {
 		return LOADED_LIBS.contains(name);
 	}
+
 }

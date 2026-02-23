@@ -57,11 +57,11 @@ value
    ;
 
 param
-   : PARAM (STAR? | POWER? | AMP?) name = IDENTIFIER type (DEFAULT val = value)?
+   : PARAM (STAR? | POWER? | AMP?) name = IDENTIFIER paramType = type (ARROW syntheticType = type)?  (DEFAULT val = value)?
    ;
 
 field
-   : INSTANCE? FIELD name = IDENTIFIER type
+   : INSTANCE? FIELD name = IDENTIFIER paramType = type (ARROW syntheticType = type)?
    ;
 
 method
@@ -69,7 +69,7 @@ method
    ;
 
 classDef
-   : ROOT? SEALED? CLASS name = IDENTIFIER (EXTENDS base = IDENTIFIER)? (COLON (type_name = IDENTIFIER)? (method | field)*)?
+   : ROOT? SEALED? CLASS name = IDENTIFIER (ARROW syntheticType = type)? (EXTENDS base = IDENTIFIER)? (COLON (type_name = IDENTIFIER)? (method | field)*)?
    ;
 
 library

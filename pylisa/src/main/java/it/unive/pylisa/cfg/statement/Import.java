@@ -28,8 +28,8 @@ public class Import extends Statement {
 			CodeLocation loc) {
 		super(cfg, loc);
 		this.libs = libs;
-		for (String lib : libs.keySet())
-			LibrarySpecificationProvider.importLibrary(program, lib);
+		//for (String lib : libs.keySet())
+		//	LibrarySpecificationProvider.importLibrary(program, lib);
 	}
 
 	@Override

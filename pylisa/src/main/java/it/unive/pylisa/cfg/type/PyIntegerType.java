@@ -10,6 +10,11 @@ public class PyIntegerType implements NumericType {
 	public static final PyIntegerType INSTANCE = new PyIntegerType();
 
 	@Override
+	public int getNBits() {
+		return 0;
+	}
+
+	@Override
 	public boolean is8Bits() {
 		return false;
 	}

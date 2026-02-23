@@ -1,10 +1,8 @@
 package it.unive.pylisa.analysis.constants;
 
-import it.unive.lisa.analysis.BaseLattice;
-import it.unive.lisa.analysis.Lattice;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.SemanticOracle;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
+import it.unive.lisa.analysis.value.ValueLattice;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.type.Float32Type;
@@ -46,14 +44,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
+
 import org.apache.commons.lang3.tuple.Pair;
 
 public class ConstantPropagation
-		implements
-		BaseNonRelationalValueDomain<ConstantPropagation>,
-		Comparable<ConstantPropagation>,
-		BaseLattice<ConstantPropagation>
-{
+        implements
+        BaseNonRelationalValueDomain<ConstantPropagation>,
+        Comparable<ConstantPropagation>,
+        BaseLattice<ConstantPropagation>, ValueLattice<ConstantPropagation> {
 
 	private static final ConstantPropagation TOP = new ConstantPropagation(null, true);
 	private static final ConstantPropagation BOTTOM = new ConstantPropagation(null, false);
@@ -324,6 +323,11 @@ public class ConstantPropagation
 		if (operator instanceof DictPut)
 			return dictPut(left, middle, right, pp);
 		return top();
+	}
+
+	@Override
+	public ConstantPropagation evalVariadicExpression(VariadicExpression expression, ConstantPropagation[] values,  ProgramPoint pp, SemanticOracle oracle) {
+		return BaseNonRelationalValueDomain.super.evalVariadicExpression(expression, values, pp, oracle);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -603,5 +607,40 @@ public class ConstantPropagation
 
 		// not much we can do here..
 		return Integer.compare(constant.hashCode(), other.constant.hashCode());
+	}
+
+	@Override
+	public boolean knowsIdentifier(Identifier id) {
+		return false;
+	}
+
+	@Override
+	public ConstantPropagation forgetIdentifier(Identifier id, ProgramPoint pp) throws SemanticException {
+		return null;
+	}
+
+	@Override
+	public ConstantPropagation forgetIdentifiersIf(Predicate<Identifier> test, ProgramPoint pp) throws SemanticException {
+		return null;
+	}
+
+	@Override
+	public ConstantPropagation forgetIdentifiers(Iterable<Identifier> ids, ProgramPoint pp) throws SemanticException {
+		return null;
+	}
+
+	@Override
+	public ConstantPropagation pushScope(ScopeToken token, ProgramPoint pp) throws SemanticException {
+		return null;
+	}
+
+	@Override
+	public ConstantPropagation popScope(ScopeToken token, ProgramPoint pp) throws SemanticException {
+		return null;
+	}
+
+	@Override
+	public ConstantPropagation store(Identifier target, Identifier source) throws SemanticException {
+		return null;
 	}
 }

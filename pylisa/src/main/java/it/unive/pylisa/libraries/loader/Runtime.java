@@ -7,14 +7,11 @@ import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.NativeCFG;
-import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Runtime {
 
@@ -53,13 +50,15 @@ public class Runtime {
 				&& Objects.equals(methods, other.methods);
 	}
 
-	public void fillProgram(
+	/*public void fillProgram(
 			Program program,
 			AtomicReference<CompilationUnit> rootHolder) {
 		CodeLocation location = new SourceCodeLocation("standard_python_library", 0, 0);
+		PythonModuleUnit module = new PythonModuleUnit(location, program, "builtins");
+		program.addUnit(module);
 
 		for (ClassDef cls : this.classes) {
-			CompilationUnit c = cls.toLiSAUnit(location, program, rootHolder);
+			CompilationUnit c = cls.toLiSAClassUnit(program);
 			program.addUnit(c);
 			// create the corresponding type
 			if (cls.getTypeName() == null)
@@ -79,7 +78,7 @@ public class Runtime {
 					throw new LibraryCreationException(e);
 				}
 		}
-	}
+	}*/
 
 	public void populateProgram(
 			Program program,

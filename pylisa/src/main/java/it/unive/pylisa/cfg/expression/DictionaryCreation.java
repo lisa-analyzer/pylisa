@@ -55,7 +55,7 @@ public class DictionaryCreation extends NaryExpression {
 		if (params.length == 0)
 			return interprocedural.getAnalysis().smallStepSemantics(state, dict, this);
 
-		Type dicttype = PyClassType.lookup(LibrarySpecificationProvider.DICT);
+		Type dicttype = PyClassType.lookup("builtins.dict");
 		TernaryOperator append = DictPut.INSTANCE;
 
 		Set<TernaryExpression> ws = new HashSet<>(), tmp = new HashSet<>();

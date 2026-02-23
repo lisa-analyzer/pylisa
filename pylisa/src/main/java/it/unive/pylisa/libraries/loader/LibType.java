@@ -6,12 +6,15 @@ import java.util.Objects;
 public class LibType implements Type {
 	private final String name;
 	private final boolean pointer;
+	private final Library library;
 
 	public LibType(
 			String name,
-			boolean pointer) {
+			boolean pointer,
+			Library library) {
 		this.name = name;
 		this.pointer = pointer;
+		this.library = library;
 	}
 
 	public String getName() {
@@ -47,7 +50,7 @@ public class LibType implements Type {
 
 	@Override
 	public it.unive.lisa.type.Type toLiSAType() {
-		it.unive.lisa.type.Type t = PyClassType.lookup(this.name);
+		it.unive.lisa.type.Type t = PyClassType.lookup(library.getName() + "." + this.name);
 		if (this.pointer)
 			t = ((PyClassType) t).getReference();
 		return t;

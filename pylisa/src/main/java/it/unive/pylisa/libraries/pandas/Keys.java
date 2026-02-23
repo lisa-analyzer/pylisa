@@ -8,8 +8,10 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.symbolic.operators.dataframes.AccessKeys;
 
 public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 
