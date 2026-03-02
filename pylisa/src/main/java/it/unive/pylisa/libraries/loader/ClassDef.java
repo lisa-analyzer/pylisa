@@ -9,16 +9,12 @@ import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.pylisa.cfg.PyCFG;
-import it.unive.pylisa.cfg.expression.AttributeAccess;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.statement.ImportFunction;
 import it.unive.pylisa.cfg.statement.PythonUnitAttributeAccessRef;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.program.FunctionUnit;
-import it.unive.pylisa.program.ModuleUnit;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -34,6 +30,7 @@ public class ClassDef {
 	private final Collection<Field> fields = new HashSet<>();
 	private final Type reifiedTypeName;
 	private final Library library;
+
 	public ClassDef(
 			boolean root,
 			boolean sealed,
@@ -82,6 +79,7 @@ public class ClassDef {
 	public Type getReifiedTypeName() {
 		return reifiedTypeName;
 	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(base, fields, methods, name, root, sealed, typeName);
@@ -123,9 +121,9 @@ public class ClassDef {
 
 	public ClassUnit toLiSAClassUnit(
 			Program program,
-			CFG init
-	) {
-		ClassUnit unit = new ClassUnit(SyntheticLocation.INSTANCE, program, library.getName() + "." + getName(), this.sealed);
+			CFG init) {
+		ClassUnit unit = new ClassUnit(SyntheticLocation.INSTANCE, program, library.getName() + "." + getName(),
+				this.sealed);
 
 		PyClassType.register(unit.getName(), unit);
 		program.addUnit(unit);
@@ -140,8 +138,10 @@ public class ClassDef {
 			unit.addAncestor(PyClassType.lookup(this.base).getUnit());
 		for (Method mtd : this.methods) {
 			FunctionUnit functionUnit = mtd.toLiSAFunctionUnit(SyntheticLocation.INSTANCE, init, program, unit);
-			Expression target = new PythonUnitAttributeAccessRef(classInitCFG, SyntheticLocation.INSTANCE, unit, new Global(SyntheticLocation.INSTANCE, unit, mtd.getName(), false));
-			PyAssign funcAssign = new PyAssign(classInitCFG, SyntheticLocation.INSTANCE, target, new ImportFunction(classInitCFG, SyntheticLocation.INSTANCE, unit.getName(), functionUnit));
+			Expression target = new PythonUnitAttributeAccessRef(classInitCFG, SyntheticLocation.INSTANCE, unit,
+					new Global(SyntheticLocation.INSTANCE, unit, mtd.getName(), false));
+			PyAssign funcAssign = new PyAssign(classInitCFG, SyntheticLocation.INSTANCE, target,
+					new ImportFunction(classInitCFG, SyntheticLocation.INSTANCE, unit.getName(), functionUnit));
 			classInitCFG.addNode(funcAssign, first == null);
 			if (first == null) {
 				first = funcAssign;
@@ -150,8 +150,9 @@ public class ClassDef {
 				classInitCFG.addEdge(new SequentialEdge(last, funcAssign));
 			}
 			last = funcAssign;
-			//FunctionUnit unit = new FunctionUnit(getLocation(ctx), program, currentUnit + "." + ctx.NAME().getText());
-			//classInitCFG.addNode();
+			// FunctionUnit unit = new FunctionUnit(getLocation(ctx), program,
+			// currentUnit + "." + ctx.NAME().getText());
+			// classInitCFG.addNode();
 
 		}
 		Ret ret = new Ret(classInitCFG, SyntheticLocation.INSTANCE);

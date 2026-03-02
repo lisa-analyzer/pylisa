@@ -29,7 +29,13 @@ public class PyPower extends BinaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left, SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Set<Type> tleft = interprocedural.getAnalysis().getRuntimeTypesOf(state, left, this);
 		Set<Type> tright = interprocedural.getAnalysis().getRuntimeTypesOf(state, right, this);
 		if (tleft.stream().anyMatch(Type::isNumericType) && tright.stream().anyMatch(Type::isNumericType)) {

@@ -9,9 +9,7 @@ import it.unive.lisa.program.cfg.statement.comparison.LessThan;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonLt;
-import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
 public class PyLessThan extends LessThan {
 
@@ -24,19 +22,20 @@ public class PyLessThan extends LessThan {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left, SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		// FIX ME
-		/*if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
-			AnalysisState<A> sem = PandasSemantics.compare(
-					state,
-					left,
-					right,
-					this,
-					state.getState(),
-					ComparisonOperator.LT);
-			if (sem != null)
-				return sem;
-		}*/
+		/*
+		 * if (LibrarySpecificationProvider.isLibraryLoaded(
+		 * LibrarySpecificationProvider.PANDAS)) { AnalysisState<A> sem =
+		 * PandasSemantics.compare( state, left, right, this, state.getState(),
+		 * ComparisonOperator.LT); if (sem != null) return sem; }
+		 */
 
 		// python does not require the types to be numeric
 		return interprocedural.getAnalysis().smallStepSemantics(

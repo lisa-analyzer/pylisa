@@ -14,7 +14,6 @@ import it.unive.lisa.util.datastructures.graph.code.CodeGraph;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
-import it.unive.pylisa.analysis.dataframes.edge.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
@@ -38,7 +37,6 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.graphstream.graph.Edge;
 import org.graphstream.graph.Element;
 import org.graphstream.graph.implementations.MultiGraph;
 import org.graphstream.stream.file.FileSinkDOT;
@@ -104,7 +102,8 @@ public class DataframeForest
 			addEdge(out.newInstance(target, out.getDestination()));
 		list.removeNode(origin);
 	}
-	//TODO: FIX ME (lisa version update)
+
+	// TODO: FIX ME (lisa version update)
 	@Override
 	public SerializableGraph toSerializableGraph(
 			BiFunction<DataframeForest, DataframeOperation, SerializableValue> descriptionGenerator) {
@@ -115,23 +114,18 @@ public class DataframeForest
 		SortedSet<SerializableNodeDescription> descrs = new TreeSet<>();
 		SortedSet<SerializableEdge> edges = new TreeSet<>();
 		/*
-		int counter = 0;
-		for (DataframeOperation node : getNodes()) {
-			addNode(counter, nodes, descrs, node, descriptionGenerator);
-			nodeIds.put(node, counter);
-			counter++;
-		}
-
-		for (DataframeOperation src : getNodes())
-			for (DataframeOperation dest : followersOf(src))
-				for (DataframeEdge edge : list.getEdgesConnecting(src, dest))
-					if (edge instanceof ConcatEdge)
-						edges.add(new ConcatSerializableEdge(nodeIds.get(src), nodeIds.get(dest),
-								edge.getClass().getSimpleName(), ((ConcatEdge) edge).getEdgeIndex()));
-					else
-						edges.add(new SerializableEdge(nodeIds.get(src), nodeIds.get(dest),
-								edge.getClass().getSimpleName()));
-		*/
+		 * int counter = 0; for (DataframeOperation node : getNodes()) {
+		 * addNode(counter, nodes, descrs, node, descriptionGenerator);
+		 * nodeIds.put(node, counter); counter++; } for (DataframeOperation src
+		 * : getNodes()) for (DataframeOperation dest : followersOf(src)) for
+		 * (DataframeEdge edge : list.getEdgesConnecting(src, dest)) if (edge
+		 * instanceof ConcatEdge) edges.add(new
+		 * ConcatSerializableEdge(nodeIds.get(src), nodeIds.get(dest),
+		 * edge.getClass().getSimpleName(), ((ConcatEdge)
+		 * edge).getEdgeIndex())); else edges.add(new
+		 * SerializableEdge(nodeIds.get(src), nodeIds.get(dest),
+		 * edge.getClass().getSimpleName()));
+		 */
 		return new CustomSerializableGraph(name, null, nodes, edges, descrs);
 	}
 
@@ -279,6 +273,7 @@ public class DataframeForest
 
 		return res.toString().trim();
 	}
+
 	// TODO: FIX ME (lisa version update)
 	static class ConcatSerializableEdge extends SerializableEdge {
 		private final int index;
@@ -288,7 +283,7 @@ public class DataframeForest
 				int destId,
 				String kind,
 				int index) {
-			//super(sourceId, destId, kind);
+			// super(sourceId, destId, kind);
 			super(sourceId, destId, kind, "label"); // TODO: FIX THAT
 			this.index = index;
 		}
@@ -344,6 +339,7 @@ public class DataframeForest
 				String title) {
 			super(title);
 		}
+
 		// TODO: FIX ME (lisa version update)
 		@Override
 		public void addEdge(
@@ -351,26 +347,18 @@ public class DataframeForest
 			long id = edge.getSourceId();
 			long id1 = edge.getDestId();
 
-			/*Edge e = graph.addEdge(edgeName(id, id1, edge), nodeName(id), nodeName(id1), true);
-
-			switch (edge.getKind()) {
-			case "ConcatEdge":
-				e.setAttribute(COLOR, COLOR_RED);
-				e.setAttribute(LABEL, ((ConcatSerializableEdge) edge).getIndex());
-				break;
-			case "AssignEdge":
-				e.setAttribute(COLOR, COLOR_BLUE);
-				e.setAttribute(LABEL, "A");
-				break;
-			case "ConsumeEdge":
-				e.setAttribute(STYLE, CONDITIONAL_EDGE_STYLE);
-				e.setAttribute(COLOR, COLOR_BLACK);
-				break;
-			case "SimpleEdge":
-			default:
-				e.setAttribute(COLOR, COLOR_BLACK);
-				break;
-			}*/
+			/*
+			 * Edge e = graph.addEdge(edgeName(id, id1, edge), nodeName(id),
+			 * nodeName(id1), true); switch (edge.getKind()) { case
+			 * "ConcatEdge": e.setAttribute(COLOR, COLOR_RED);
+			 * e.setAttribute(LABEL, ((ConcatSerializableEdge)
+			 * edge).getIndex()); break; case "AssignEdge":
+			 * e.setAttribute(COLOR, COLOR_BLUE); e.setAttribute(LABEL, "A");
+			 * break; case "ConsumeEdge": e.setAttribute(STYLE,
+			 * CONDITIONAL_EDGE_STYLE); e.setAttribute(COLOR, COLOR_BLACK);
+			 * break; case "SimpleEdge": default: e.setAttribute(COLOR,
+			 * COLOR_BLACK); break; }
+			 */
 		}
 
 		protected static String edgeName(
@@ -396,10 +384,11 @@ public class DataframeForest
 					boolean first) {
 				boolean quote = true;
 
-				/*if (value instanceof Number || key.equals(LABEL))
-					// labels that we output are always in html format
-					// so no need to quote them
-					quote = false;*/
+				/*
+				 * if (value instanceof Number || key.equals(LABEL)) // labels
+				 * that we output are always in html format // so no need to
+				 * quote them quote = false;
+				 */
 
 				Object quoting = quote ? "\"" : "";
 				return String.format("%s%s=%s%s%s", first ? "" : ",", key, quoting, value, quoting);
@@ -417,20 +406,18 @@ public class DataframeForest
 
 				StringBuilder buffer = new StringBuilder("[");
 				String result = buffer.toString();
-				/*for (Entry<String, String> entry : attrs.entrySet())
-					if (!entry.getKey().equals(LABEL))
-						buffer.append(entry.getValue()).append(",");
-
-				if (attrs.containsKey(LABEL))
-					buffer.append(attrs.get(LABEL));
-
-				String result = buffer.toString();
-				if (result.endsWith(","))
-					result = result.substring(0, result.length() - 1);
-			*/
+				/*
+				 * for (Entry<String, String> entry : attrs.entrySet()) if
+				 * (!entry.getKey().equals(LABEL))
+				 * buffer.append(entry.getValue()).append(","); if
+				 * (attrs.containsKey(LABEL)) buffer.append(attrs.get(LABEL));
+				 * String result = buffer.toString(); if (result.endsWith(","))
+				 * result = result.substring(0, result.length() - 1);
+				 */
 				return result + "]";
 			}
 		}
+
 		// TODO: FIX ME (lisa version update)
 		@Override
 		public void dump(
@@ -448,7 +435,7 @@ public class DataframeForest
 				}
 			};
 			sink.setDirected(true);
-			//sink.writeAll(graph, writer);
+			// sink.writeAll(graph, writer);
 		}
 
 		private class LegendClusterSink extends CustomDotSink {
@@ -468,50 +455,44 @@ public class DataframeForest
 			// TODO: FIX ME (lisa version update)
 			private Legend() {
 				graph = new MultiGraph("legend");
-				/*org.graphstream.graph.Node l = graph.addNode("legend");
-				StringBuilder builder = new StringBuilder();
-				builder.append("<");
-				builder.append("<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">");
-				builder.append("<tr><td align=\"right\">node border&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(NORMAL_NODE_COLOR);
-				builder.append("\">");
-				builder.append(NORMAL_NODE_COLOR);
-				builder.append("</font>, single</td></tr>");
-				builder.append("<tr><td align=\"right\">entrypoint border&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(SPECIAL_NODE_COLOR);
-				builder.append("\">");
-				builder.append(SPECIAL_NODE_COLOR);
-				builder.append("</font>, single</td></tr>");
-				builder.append("<tr><td align=\"right\">exitpoint border&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(SPECIAL_NODE_COLOR);
-				builder.append("\">");
-				builder.append(SPECIAL_NODE_COLOR);
-				builder.append("</font>, double</td></tr>");
-				builder.append("<tr><td align=\"right\">sequential edge&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(COLOR_BLACK);
-				builder.append("\">");
-				builder.append(COLOR_BLACK);
-				builder.append("</font>, solid</td></tr>");
-				builder.append("<tr><td align=\"right\">assign edge&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(COLOR_BLUE);
-				builder.append("\">");
-				builder.append(COLOR_BLUE);
-				builder.append("</font>, solid</td></tr>");
-				builder.append("<tr><td align=\"right\">concat edge&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(COLOR_RED);
-				builder.append("\">");
-				builder.append(COLOR_RED);
-				builder.append("</font>, solid</td></tr>");
-				builder.append("<tr><td align=\"right\">consume edge&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(COLOR_BLACK);
-				builder.append("\">");
-				builder.append(COLOR_BLACK);
-				builder.append("</font>, ");
-				builder.append(CONDITIONAL_EDGE_STYLE);
-				builder.append("</td></tr>");
-				builder.append("</table>");
-				builder.append(">");
-				l.setAttribute("label", builder.toString());*/
+				/*
+				 * org.graphstream.graph.Node l = graph.addNode("legend");
+				 * StringBuilder builder = new StringBuilder();
+				 * builder.append("<"); builder.
+				 * append("<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">"
+				 * ); builder.
+				 * append("<tr><td align=\"right\">node border&nbsp;</td><td align=\"left\"><font color=\""
+				 * ); builder.append(NORMAL_NODE_COLOR); builder.append("\">");
+				 * builder.append(NORMAL_NODE_COLOR);
+				 * builder.append("</font>, single</td></tr>"); builder.
+				 * append("<tr><td align=\"right\">entrypoint border&nbsp;</td><td align=\"left\"><font color=\""
+				 * ); builder.append(SPECIAL_NODE_COLOR); builder.append("\">");
+				 * builder.append(SPECIAL_NODE_COLOR);
+				 * builder.append("</font>, single</td></tr>"); builder.
+				 * append("<tr><td align=\"right\">exitpoint border&nbsp;</td><td align=\"left\"><font color=\""
+				 * ); builder.append(SPECIAL_NODE_COLOR); builder.append("\">");
+				 * builder.append(SPECIAL_NODE_COLOR);
+				 * builder.append("</font>, double</td></tr>"); builder.
+				 * append("<tr><td align=\"right\">sequential edge&nbsp;</td><td align=\"left\"><font color=\""
+				 * ); builder.append(COLOR_BLACK); builder.append("\">");
+				 * builder.append(COLOR_BLACK);
+				 * builder.append("</font>, solid</td></tr>"); builder.
+				 * append("<tr><td align=\"right\">assign edge&nbsp;</td><td align=\"left\"><font color=\""
+				 * ); builder.append(COLOR_BLUE); builder.append("\">");
+				 * builder.append(COLOR_BLUE);
+				 * builder.append("</font>, solid</td></tr>"); builder.
+				 * append("<tr><td align=\"right\">concat edge&nbsp;</td><td align=\"left\"><font color=\""
+				 * ); builder.append(COLOR_RED); builder.append("\">");
+				 * builder.append(COLOR_RED);
+				 * builder.append("</font>, solid</td></tr>"); builder.
+				 * append("<tr><td align=\"right\">consume edge&nbsp;</td><td align=\"left\"><font color=\""
+				 * ); builder.append(COLOR_BLACK); builder.append("\">");
+				 * builder.append(COLOR_BLACK); builder.append("</font>, ");
+				 * builder.append(CONDITIONAL_EDGE_STYLE);
+				 * builder.append("</td></tr>"); builder.append("</table>");
+				 * builder.append(">"); l.setAttribute("label",
+				 * builder.toString());
+				 */
 			}
 		}
 	}
@@ -529,7 +510,7 @@ public class DataframeForest
 		NodeList<DataframeForest, DataframeOperation,
 				DataframeEdge> list = new NodeList<>(new SimpleEdge(null, null), false);
 		DataframeForest forest = new DataframeForest(Collections.singleton(entry), list, false);
-		VisitOnceWorkingSet<DataframeOperation> ws = VisitOnceLIFOWorkingSet.mk();
+		VisitOnceWorkingSet<DataframeOperation> ws = new VisitOnceLIFOWorkingSet<>();
 		Set<DataframeEdge> seenEdges = new TreeSet<>();
 		ws.push(entry);
 		list.addNode(entry);
@@ -558,7 +539,7 @@ public class DataframeForest
 		NodeList<DataframeForest, DataframeOperation,
 				DataframeEdge> list = new NodeList<>(new SimpleEdge(null, null), false);
 		DataframeForest forest = new DataframeForest(Collections.emptySet(), list, false);
-		VisitOnceWorkingSet<DataframeOperation> ws = VisitOnceLIFOWorkingSet.mk();
+		VisitOnceWorkingSet<DataframeOperation> ws = new VisitOnceLIFOWorkingSet<>();
 		Set<DataframeEdge> seenEdges = new TreeSet<>();
 		ws.push(leaf);
 		list.addNode(leaf);

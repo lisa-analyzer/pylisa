@@ -8,6 +8,7 @@ import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
+import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
@@ -31,13 +32,10 @@ public class PyParameterTest {
 			String workdir) {
 		LiSAConfiguration conf = new LiSAConfiguration();
 		conf.workdir = "outputs/" + workdir;
-		conf.serializeResults = true;
-		conf.jsonOutput = true;
-		conf.analysisGraphs = LiSAConfiguration.GraphType.HTML_WITH_SUBNODES;
+		conf.outputs.add(new JSONResults<>());
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
-		conf.optimize = false;
 
 		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap();
 

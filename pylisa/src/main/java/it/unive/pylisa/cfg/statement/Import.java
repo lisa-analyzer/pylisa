@@ -12,7 +12,6 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.collections.CollectionsDiffBuilder;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -28,8 +27,8 @@ public class Import extends Statement {
 			CodeLocation loc) {
 		super(cfg, loc);
 		this.libs = libs;
-		//for (String lib : libs.keySet())
-		//	LibrarySpecificationProvider.importLibrary(program, lib);
+		// for (String lib : libs.keySet())
+		// LibrarySpecificationProvider.importLibrary(program, lib);
 	}
 
 	@Override
@@ -83,8 +82,13 @@ public class Import extends Statement {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(AnalysisState<A> entryState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions) throws SemanticException {
-		AnalysisState<A> result = interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()), this);
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		AnalysisState<
+				A> result = interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()), this);
 
 		if (result.getExecutionInfo(SymbolAliasing.INFO_KEY) == null)
 			result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());

@@ -41,7 +41,12 @@ public class UninterestingDataframeFunction extends UnaryExpression implements P
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		// we just return the same dataframe
 		return interprocedural.getAnalysis().smallStepSemantics(state, expr, st);
 	}

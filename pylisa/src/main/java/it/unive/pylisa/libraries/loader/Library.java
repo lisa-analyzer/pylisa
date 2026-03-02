@@ -17,7 +17,6 @@ import it.unive.pylisa.cfg.statement.PythonUnitAttributeAccessRef;
 import it.unive.pylisa.cfg.type.*;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
 import it.unive.pylisa.program.ModuleUnit;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -83,51 +82,33 @@ public class Library {
 		return "Library [name=" + name + ", location=" + location + "]";
 	}
 
-	/*public CodeUnit toLiSAUnit(
+	/*
+	 * public CodeUnit toLiSAUnit( Program program,
+	 * AtomicReference<CompilationUnit> rootHolder) { CodeLocation location =
+	 * new SourceCodeLocation(this.location, 0, 0); CodeUnit unit = new
+	 * CodeUnit(location, program, name); //program.addUnit(unit); for (ClassDef
+	 * cls : this.classes) { CompilationUnit c = cls.toLiSAUnit(location,
+	 * program, rootHolder, unit); //program.addUnit(c); // type registration is
+	 * a side effect of the constructor if (cls.getTypeName() == null) {
+	 * PyClassType.register(c.getName(), c); /*if (cls.getReifiedTypeName() !=
+	 * null) { ReificationRegistry.registerRule(new ReifiedRoleType(unitType,
+	 * cls.getReifiedTypeName().toLiSAType())); } //; } else try { Class<?> type
+	 * = Class.forName(cls.getTypeName()); Constructor<?> constructor =
+	 * type.getConstructor(CompilationUnit.class); constructor.newInstance(c); }
+	 * catch (ClassNotFoundException | SecurityException |
+	 * IllegalArgumentException | IllegalAccessException | NoSuchMethodException
+	 * | InstantiationException | InvocationTargetException e) { throw new
+	 * LibraryCreationException(e); } } return unit; }
+	 */
+
+	public ModuleUnit toLiSAPythonModuleUnit(
 			Program program,
-			AtomicReference<CompilationUnit> rootHolder) {
-		CodeLocation location = new SourceCodeLocation(this.location, 0, 0);
-		CodeUnit unit = new CodeUnit(location, program, name);
-		//program.addUnit(unit);
-
-		for (ClassDef cls : this.classes) {
-			CompilationUnit c = cls.toLiSAUnit(location, program, rootHolder, unit);
-			//program.addUnit(c);
-			// type registration is a side effect of the constructor
-			if (cls.getTypeName() == null) {
-				PyClassType.register(c.getName(), c);
-				/*if (cls.getReifiedTypeName() != null) {
-					ReificationRegistry.registerRule(new ReifiedRoleType(unitType, cls.getReifiedTypeName().toLiSAType()));
-				}
-				//;
-			}
-			else
-				try {
-					Class<?> type = Class.forName(cls.getTypeName());
-					Constructor<?> constructor = type.getConstructor(CompilationUnit.class);
-					constructor.newInstance(c);
-				} catch (ClassNotFoundException
-						| SecurityException
-						| IllegalArgumentException
-						| IllegalAccessException
-						| NoSuchMethodException
-						| InstantiationException
-						| InvocationTargetException e) {
-					throw new LibraryCreationException(e);
-				}
-		}
-
-		return unit;
-	}*/
-
-public ModuleUnit toLiSAPythonModuleUnit(Program program,
-										 AtomicReference<it.unive.lisa.program.CompilationUnit> rootHolder,
-										 CFG init) {
+			AtomicReference<it.unive.lisa.program.CompilationUnit> rootHolder,
+			CFG init) {
 
 		CodeLocation location = new SourceCodeLocation(this.location, 0, 0);
 
-		ModuleUnit module =
-				new ModuleUnit(location, program, name);
+		ModuleUnit module = new ModuleUnit(location, program, name);
 
 		program.addUnit(module);
 
@@ -137,42 +118,30 @@ public ModuleUnit toLiSAPythonModuleUnit(Program program,
 
 		module.addCodeMember(moduleInit);
 
-		/*for (ClassDef cls : this.classes) {
-
-			CompilationUnit classUnit =
-					cls.toLiSAUnit(location, program, rootHolder);
-
-			program.addUnit(classUnit);
-
-			// register class type
-			PyClassType.register(classUnit.getName(), classUnit);
-
-
-			module.addInstanceGlobal(
-					new Global(location,
-							module,
-							classUnit.getName(),
-							PyClassType.lookup(classUnit.getName()))
-			);
-
-
-			addClassBindingToModuleInit(moduleInit, classUnit);*/
+		/*
+		 * for (ClassDef cls : this.classes) { CompilationUnit classUnit =
+		 * cls.toLiSAUnit(location, program, rootHolder);
+		 * program.addUnit(classUnit); // register class type
+		 * PyClassType.register(classUnit.getName(), classUnit);
+		 * module.addInstanceGlobal( new Global(location, module,
+		 * classUnit.getName(), PyClassType.lookup(classUnit.getName())) );
+		 * addClassBindingToModuleInit(moduleInit, classUnit);
+		 */
 
 		return module;
 	}
 
-	private CFG createModuleInitCFG(CodeLocation location,
-									Program program,
-									ModuleUnit module,
-									CFG init) {
-		CodeMemberDescriptor desc =
-				new CodeMemberDescriptor(
-						location,
-						module,
-						false,
-						"$init",
-						Untyped.INSTANCE
-				);
+	private CFG createModuleInitCFG(
+			CodeLocation location,
+			Program program,
+			ModuleUnit module,
+			CFG init) {
+		CodeMemberDescriptor desc = new CodeMemberDescriptor(
+				location,
+				module,
+				false,
+				"$init",
+				Untyped.INSTANCE);
 		desc.setOverridable(false);
 		PyCFG initCFG = new PyCFG(desc);
 		Expression e = null;
@@ -180,9 +149,11 @@ public ModuleUnit toLiSAPythonModuleUnit(Program program,
 			// Use the class type itself, not an instance
 			ClassUnit lisaClassUnit = cls.toLiSAClassUnit(program, init);
 			PyClassType classType = PyClassType.register(lisaClassUnit.getName(), lisaClassUnit);
-			Expression target = new PythonUnitAttributeAccessRef(initCFG, SyntheticLocation.INSTANCE, module, new Global(SyntheticLocation.INSTANCE, module, cls.getName(), false));
+			Expression target = new PythonUnitAttributeAccessRef(initCFG, SyntheticLocation.INSTANCE, module,
+					new Global(SyntheticLocation.INSTANCE, module, cls.getName(), false));
 
-			Assignment classVarAssign = new PyAssign(initCFG, SyntheticLocation.INSTANCE, target, new ImportClass(initCFG, SyntheticLocation.INSTANCE, cls.getName(), lisaClassUnit));
+			Assignment classVarAssign = new PyAssign(initCFG, SyntheticLocation.INSTANCE, target,
+					new ImportClass(initCFG, SyntheticLocation.INSTANCE, cls.getName(), lisaClassUnit));
 			initCFG.addNode(classVarAssign, e == null);
 			if (e != null) {
 				initCFG.addEdge(new SequentialEdge(e, classVarAssign));
@@ -190,28 +161,25 @@ public ModuleUnit toLiSAPythonModuleUnit(Program program,
 			e = classVarAssign;
 		}
 		// Assign functions
-		/*for (Method mtd : lib.getMethods()) {
-			SymbolicExpression funcExpr = new PyFunctionObject(mtd); // symbolic function object
-			Assignment assign = new Assignment(initCFG, location,
-					new MemberAccess(selfRef, mtd.getName()),
-					funcExpr);
-			initCFG.addNode(assign);
-		}*/
+		/*
+		 * for (Method mtd : lib.getMethods()) { SymbolicExpression funcExpr =
+		 * new PyFunctionObject(mtd); // symbolic function object Assignment
+		 * assign = new Assignment(initCFG, location, new MemberAccess(selfRef,
+		 * mtd.getName()), funcExpr); initCFG.addNode(assign); }
+		 */
 
 		// Assign fields / constants
-		/*for (Field fld : lib.getFields()) {
-			SymbolicExpression fieldExpr = createFieldExpression(fld); // symbolic constant
-			Assignment assign = new Assignment(initCFG, location,
-					new MemberAccess(selfRef, fld.getName()),
-					fieldExpr);
-			initCFG.addNode(assign);
-		}*/
+		/*
+		 * for (Field fld : lib.getFields()) { SymbolicExpression fieldExpr =
+		 * createFieldExpression(fld); // symbolic constant Assignment assign =
+		 * new Assignment(initCFG, location, new MemberAccess(selfRef,
+		 * fld.getName()), fieldExpr); initCFG.addNode(assign); }
+		 */
 		if (e != null) {
 			Ret ret = new Ret(initCFG, SyntheticLocation.INSTANCE);
 			initCFG.addNode(ret);
 			initCFG.addEdge(new SequentialEdge(e, ret));
-		}
-		else {
+		} else {
 			Ret ret = new Ret(initCFG, SyntheticLocation.INSTANCE);
 			initCFG.addNode(ret, true);
 		}

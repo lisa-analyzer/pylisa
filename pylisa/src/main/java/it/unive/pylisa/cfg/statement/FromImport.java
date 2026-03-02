@@ -12,7 +12,6 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.collections.CollectionsDiffBuilder;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -32,7 +31,7 @@ public class FromImport extends Statement {
 		super(cfg, loc);
 		this.lib = lib;
 		this.components = components;
-		//LibrarySpecificationProvider.importLibrary(program, lib);
+		// LibrarySpecificationProvider.importLibrary(program, lib);
 	}
 
 	@Override
@@ -89,8 +88,13 @@ public class FromImport extends Statement {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(AnalysisState<A> entryState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions) throws SemanticException {
-		AnalysisState<A> result = interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()), this);
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		AnalysisState<
+				A> result = interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()), this);
 
 		if (result.getExecutionInfo(SymbolAliasing.INFO_KEY) == null)
 			result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
@@ -107,8 +111,11 @@ public class FromImport extends Statement {
 								new QualifiedNameSymbol(lib, component.getKey()),
 								new QualifiedNameSymbol(null, component.getKey())));
 		}
-		//PythonModuleLattice newModule = new PythonModuleLattice(false, new PythonModule());
-		//result = result.storeExecutionInfo("meta_sys_modules", result.getExecutionInfo(MetaSysModules.INFO_KEY, MetaSysModules.class).putModule()
+		// PythonModuleLattice newModule = new PythonModuleLattice(false, new
+		// PythonModule());
+		// result = result.storeExecutionInfo("meta_sys_modules",
+		// result.getExecutionInfo(MetaSysModules.INFO_KEY,
+		// MetaSysModules.class).putModule()
 		return result;
 	}
 

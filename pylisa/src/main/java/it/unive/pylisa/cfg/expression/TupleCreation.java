@@ -1,8 +1,8 @@
 package it.unive.pylisa.cfg.expression;
 
 import it.unive.lisa.analysis.*;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -45,7 +45,12 @@ public class TupleCreation extends NaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
 
 		// a tuple creation is also created when parsing expressions between
 		// parentheses
@@ -73,7 +78,8 @@ public class TupleCreation extends NaryExpression {
 				for (SymbolicExpression init : params[i]) {
 					AnalysisState<A> fieldState = interprocedural.getAnalysis().smallStepSemantics(sem, fieldAcc, this);
 					for (SymbolicExpression lenId : fieldState.getExecution().getComputedExpressions())
-						fieldResult = fieldResult.lub(interprocedural.getAnalysis().assign(fieldState, lenId, init, this));
+						fieldResult = fieldResult
+								.lub(interprocedural.getAnalysis().assign(fieldState, lenId, init, this));
 				}
 				assign = assign.lub(fieldResult);
 			}

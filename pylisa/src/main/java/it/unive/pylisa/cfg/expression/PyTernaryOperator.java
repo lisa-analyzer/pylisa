@@ -1,8 +1,8 @@
 package it.unive.pylisa.cfg.expression;
 
 import it.unive.lisa.analysis.*;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -37,7 +37,11 @@ public class PyTernaryOperator extends NaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(AnalysisState<A> entryState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Expression[] sub = getSubExpressions();
 		Expression condition = sub[0];
 		Expression ifTrue = sub[1];
@@ -55,28 +59,28 @@ public class PyTernaryOperator extends NaryExpression {
 					cond.getCodeLocation());
 
 			switch (interprocedural.getAnalysis().satisfies(postCondition, cond, this)) {
-				case BOTTOM:
-					return entryState.bottom();
-				case NOT_SATISFIED:
-					return ifFalse.forwardSemantics(
-							interprocedural.getAnalysis().assume(postCondition, cond, condition, ifTrue),
-							interprocedural,
-							expressions);
-				case SATISFIED:
-					return ifTrue.forwardSemantics(
-							interprocedural.getAnalysis().assume(postCondition, negated, condition, ifFalse),
-							interprocedural,
-							expressions);
-				case UNKNOWN:
-					return ifTrue
-							.forwardSemantics(
-									interprocedural.getAnalysis().assume(postCondition, cond, condition, ifTrue),
-									interprocedural,
-									expressions)
-							.lub(ifFalse.forwardSemantics(
-									interprocedural.getAnalysis().assume(postCondition, negated, condition, ifFalse),
-									interprocedural,
-									expressions));
+			case BOTTOM:
+				return entryState.bottom();
+			case NOT_SATISFIED:
+				return ifFalse.forwardSemantics(
+						interprocedural.getAnalysis().assume(postCondition, cond, condition, ifTrue),
+						interprocedural,
+						expressions);
+			case SATISFIED:
+				return ifTrue.forwardSemantics(
+						interprocedural.getAnalysis().assume(postCondition, negated, condition, ifFalse),
+						interprocedural,
+						expressions);
+			case UNKNOWN:
+				return ifTrue
+						.forwardSemantics(
+								interprocedural.getAnalysis().assume(postCondition, cond, condition, ifTrue),
+								interprocedural,
+								expressions)
+						.lub(ifFalse.forwardSemantics(
+								interprocedural.getAnalysis().assume(postCondition, negated, condition, ifFalse),
+								interprocedural,
+								expressions));
 			}
 		}
 
@@ -84,7 +88,12 @@ public class PyTernaryOperator extends NaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		// this should be unreachable
 		throw new SemanticException("Auxiliary semantics should be unreachable");
 	}

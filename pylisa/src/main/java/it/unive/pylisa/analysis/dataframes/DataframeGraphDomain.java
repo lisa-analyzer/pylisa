@@ -1,9 +1,8 @@
 package it.unive.pylisa.analysis.dataframes;
 
 import it.unive.lisa.analysis.*;
-import it.unive.lisa.analysis.lattices.Satisfiability;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.value.ValueDomain;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.lattices.heap.allocations.AllocationSite;
 import it.unive.lisa.lattices.heap.allocations.HeapAllocationSite;
 import it.unive.lisa.lattices.heap.allocations.StackAllocationSite;
@@ -102,7 +101,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 // TODO: FIX ME (lisa version update)
-public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>*/ {
+public class DataframeGraphDomain /*
+									 * implements
+									 * ValueDomain<DataframeGraphDomain>
+									 */ {
 
 	private static final Logger LOG = LogManager.getLogger(DataframeGraphDomain.class);
 
@@ -181,8 +183,9 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 //			if (!graph.containsNode(op))
 //				throw new IllegalStateException();
 	}
+
 	// TODO: FIX ME (lisa version update)
-	//@Override
+	// @Override
 	public DataframeGraphDomain assign(
 			Identifier id,
 			ValueExpression expression,
@@ -207,6 +210,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 		else
 			return sss;
 	}
+
 	// TODO: FIX ME (lisa version update)
 	// @Override
 	public DataframeGraphDomain smallStepSemantics(
@@ -240,7 +244,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 	}
 
 	// TODO: FIX ME (lisa version update)
-	//@Override
+	// @Override
 	public DataframeGraphDomain assume(
 			ValueExpression expression,
 			ProgramPoint src,
@@ -248,11 +252,12 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 			SemanticOracle oracle)
 			throws SemanticException {
 		return new DataframeGraphDomain(
-				constants/*.assume(expression, src, dest, oracle)*/,
+				constants/* .assume(expression, src, dest, oracle) */,
 				graph,
 				pointers,
 				operations);
 	}
+
 	// TODO: FIX ME (lisa version update)
 	// @Override
 	public DataframeGraphDomain forgetIdentifier(
@@ -260,7 +265,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 			throws SemanticException {
 		CollectingMapLattice<Identifier, NodeId> pointers = this.pointers.lift(i -> id.equals(i) ? null : i, e -> e);
 		return new DataframeGraphDomain(
-				constants/*.forgetIdentifier(id, this)*/,
+				constants/* .forgetIdentifier(id, this) */,
 				graph,
 				pointers,
 				operations.lift(i -> reverseSearch(i, pointers) ? i : null, e -> e));
@@ -275,6 +280,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 
 		return false;
 	}
+
 	// TODO: FIX ME (lisa version update)
 	// @Override
 	public DataframeGraphDomain forgetIdentifiersIf(
@@ -282,11 +288,12 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 			throws SemanticException {
 		CollectingMapLattice<Identifier, NodeId> pointers = this.pointers.lift(id -> test.test(id) ? null : id, e -> e);
 		return new DataframeGraphDomain(
-				constants/*.forgetIdentifiersIf(test)*/,
+				constants/* .forgetIdentifiersIf(test) */,
 				graph,
 				pointers,
 				operations.lift(i -> reverseSearch(i, pointers) ? i : null, e -> e));
 	}
+
 	// TODO: FIX ME (lisa version update)
 	// @Override
 	public Satisfiability satisfies(
@@ -294,9 +301,11 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
-		/*Satisfiability c = constants.satisfies(expression, pp, oracle);
-		if (c == Satisfiability.SATISFIED || c == Satisfiability.NOT_SATISFIED)
-			return c;*/
+		/*
+		 * Satisfiability c = constants.satisfies(expression, pp, oracle); if (c
+		 * == Satisfiability.SATISFIED || c == Satisfiability.NOT_SATISFIED)
+		 * return c;
+		 */
 		return Satisfiability.UNKNOWN;
 	}
 
@@ -311,6 +320,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 					 * id.pushScope(token), e -> e), operations);
 					 */
 	}
+
 	// TODO: FIX ME (lisa version update)
 	// @Override
 	public DataframeGraphDomain popScope(
@@ -322,6 +332,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 					 * id.popScope(token), e -> e), operations);
 					 */
 	}
+
 	// TODO: FIX ME (lisa version update)
 	// @Override
 	public StructuredRepresentation representation() {
@@ -333,6 +344,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 				"operations", operations.representation(StringRepresentation::new),
 				"graph", graph.representation()));
 	}
+
 	// TODO: FIX ME (lisa version update)
 	// @Override
 	public DataframeGraphDomain lub(
@@ -566,6 +578,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 
 		return cleanStack(arg, pp);
 	}
+
 	// TODO: FIX ME (lisa version update)
 	private static DataframeGraphDomain delegateToConstants(
 			ValueExpression expression,
@@ -575,7 +588,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 			throws SemanticException {
 		return new DataframeGraphDomain(
 				arg.constants,
-				arg.constStack/*.eval(expression, arg.constants, pp, oracle)*/,
+				arg.constStack/* .eval(expression, arg.constants, pp, oracle) */,
 				arg.graph,
 				arg.pointers.setStack(NO_IDS),
 				arg.operations);
@@ -692,7 +705,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 			else {
 				// appears more than once
 				Set<DataframeOperation> operand = ops.elements();
-				FIFOWorkingSet<SetLattice<DataframeOperation>> ws = FIFOWorkingSet.mk();
+				FIFOWorkingSet<SetLattice<DataframeOperation>> ws = new FIFOWorkingSet<>();
 				for (int i = 0; i < value.size(); i++) {
 					Set<DataframeOperation> fixed = new HashSet<>();
 					for (DataframeOperation op : operand)
@@ -1313,7 +1326,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 			SemanticOracle oracle)
 			throws SemanticException {
 		ConstantPropagation list = left.constStack;
-		if (topOrBottom(list) /*|| topOrBottom(right) */|| !list.is(List.class))
+		if (topOrBottom(list) /* || topOrBottom(right) */ || !list.is(List.class))
 			return right;
 
 		Lattice<?> tail;
@@ -1327,7 +1340,9 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 		ListConstant listconst = new ListConstant(pp.getLocation(), list.as(List.class), tail);
 		return new DataframeGraphDomain(
 				right.constants,
-				right.constStack/*.eval(listconst, right.constants, pp, oracle)*/,
+				right.constStack/*
+								 * .eval(listconst, right.constants, pp, oracle)
+								 */,
 				right.graph,
 				right.pointers.setStack(NO_IDS),
 				right.operations);
@@ -1413,7 +1428,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 					rend == null ? cend : rend, skip, l, m), pp.getLocation());
 		return new DataframeGraphDomain(
 				right.constants,
-				right.constStack/*.eval(slice, right.constants, pp, oracle)*/,
+				right.constStack/* .eval(slice, right.constants, pp, oracle) */,
 				right.graph,
 				right.pointers.setStack(NO_IDS),
 				right.operations);
@@ -1432,7 +1447,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 		SetLattice<DataframeOperation> df = resolvePointers(left);
 		// right is a list of strings so we will handle that first
 		ConstantPropagation cols = right.constStack;
-		if (topOrBottom(df) /*|| topOrBottom(middle)*/ || topOrBottom(cols))
+		if (topOrBottom(df) /* || topOrBottom(middle) */ || topOrBottom(cols))
 			return cleanStack(right, pp);
 
 		DataframeForest forest = new DataframeForest(right.graph);
@@ -1593,7 +1608,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 			SemanticOracle oracle)
 			throws SemanticException {
 		ConstantPropagation dict = left.constStack;
-		if (topOrBottom(dict) /*|| topOrBottom(middle) || topOrBottom(right)*/ || !dict.is(Map.class))
+		if (topOrBottom(dict) /* || topOrBottom(middle) || topOrBottom(right) */ || !dict.is(Map.class))
 			return cleanStack(right, pp);
 
 		Lattice<?> key, value;
@@ -1613,7 +1628,9 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 		DictConstant newdict = new DictConstant(pp.getLocation(), dict.as(Map.class), Pair.of(key, value));
 		return new DataframeGraphDomain(
 				right.constants,
-				right.constStack/*.eval(newdict, right.constants, pp, oracle)*/,
+				right.constStack/*
+								 * .eval(newdict, right.constants, pp, oracle)
+								 */,
 				right.graph,
 				right.pointers.setStack(NO_IDS),
 				right.operations);
@@ -1669,7 +1686,7 @@ public class DataframeGraphDomain /*implements ValueDomain<DataframeGraphDomain>
 			throws SemanticException {
 		return new DataframeGraphDomain(
 				constants,
-				constStack/*.eval(expression, constants, pp, oracle)*/,
+				constStack/* .eval(expression, constants, pp, oracle) */,
 				graph,
 				pointers.setStack(NO_IDS),
 				operations);

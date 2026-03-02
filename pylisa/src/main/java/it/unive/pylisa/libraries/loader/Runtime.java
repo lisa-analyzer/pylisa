@@ -8,7 +8,6 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -50,35 +49,22 @@ public class Runtime {
 				&& Objects.equals(methods, other.methods);
 	}
 
-	/*public void fillProgram(
-			Program program,
-			AtomicReference<CompilationUnit> rootHolder) {
-		CodeLocation location = new SourceCodeLocation("standard_python_library", 0, 0);
-		PythonModuleUnit module = new PythonModuleUnit(location, program, "builtins");
-		program.addUnit(module);
-
-		for (ClassDef cls : this.classes) {
-			CompilationUnit c = cls.toLiSAClassUnit(program);
-			program.addUnit(c);
-			// create the corresponding type
-			if (cls.getTypeName() == null)
-				PyClassType.register(c.getName(), c);
-			else
-				try {
-					Class<?> type = Class.forName(cls.getTypeName());
-					Constructor<?> constructor = type.getConstructor(CompilationUnit.class);
-					constructor.newInstance(c);
-				} catch (ClassNotFoundException
-						| SecurityException
-						| IllegalArgumentException
-						| IllegalAccessException
-						| NoSuchMethodException
-						| InstantiationException
-						| InvocationTargetException e) {
-					throw new LibraryCreationException(e);
-				}
-		}
-	}*/
+	/*
+	 * public void fillProgram( Program program,
+	 * AtomicReference<CompilationUnit> rootHolder) { CodeLocation location =
+	 * new SourceCodeLocation("standard_python_library", 0, 0); PythonModuleUnit
+	 * module = new PythonModuleUnit(location, program, "builtins");
+	 * program.addUnit(module); for (ClassDef cls : this.classes) {
+	 * CompilationUnit c = cls.toLiSAClassUnit(program); program.addUnit(c); //
+	 * create the corresponding type if (cls.getTypeName() == null)
+	 * PyClassType.register(c.getName(), c); else try { Class<?> type =
+	 * Class.forName(cls.getTypeName()); Constructor<?> constructor =
+	 * type.getConstructor(CompilationUnit.class); constructor.newInstance(c); }
+	 * catch (ClassNotFoundException | SecurityException |
+	 * IllegalArgumentException | IllegalAccessException | NoSuchMethodException
+	 * | InstantiationException | InvocationTargetException e) { throw new
+	 * LibraryCreationException(e); } } }
+	 */
 
 	public void populateProgram(
 			Program program,

@@ -16,7 +16,6 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.DataframeProjection;
-
 import java.util.Set;
 
 public class PyDoubleArrayAccess extends TernaryExpression {
@@ -38,7 +37,14 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdTernarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left, SymbolicExpression middle, SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdTernarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression middle,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Type dereferencedType = Untyped.INSTANCE;
 		Type firstAccessedType = Untyped.INSTANCE;
 		Type childType = Untyped.INSTANCE;

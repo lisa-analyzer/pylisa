@@ -1,21 +1,5 @@
 package it.unive.pylisa.libraries;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-
-import it.unive.pylisa.program.ModuleUnit;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import it.unive.lisa.AnalysisSetupException;
@@ -28,6 +12,20 @@ import it.unive.pylisa.antlr.LibraryDefinitionLexer;
 import it.unive.pylisa.antlr.LibraryDefinitionParser;
 import it.unive.pylisa.libraries.loader.Library;
 import it.unive.pylisa.libraries.loader.Runtime;
+import it.unive.pylisa.program.ModuleUnit;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class LibrarySpecificationProvider {
 
@@ -82,13 +80,15 @@ public class LibrarySpecificationProvider {
 		LOADED_LIBS.clear();
 
 		Pair<Runtime, Collection<Library>> stdlib = readFile(LIBS_FOLDER + STDLIB_FILE);
-		AtomicReference<it.unive.lisa.program.CompilationUnit> root = new AtomicReference<it.unive.lisa.program.CompilationUnit>(null);
-		//stdlib.getLeft().fillProgram(program, root);
-		//if (root.get() == null)
-		//	throw new AnalysisSetupException("Runtime does not contain a hierarchy root");
-		//hierarchyRoot = root.get();
-		//makeInit(program);
-		//stdlib.getLeft().populateProgram(program, init, hierarchyRoot);
+		AtomicReference<it.unive.lisa.program.CompilationUnit> root = new AtomicReference<
+				it.unive.lisa.program.CompilationUnit>(null);
+		// stdlib.getLeft().fillProgram(program, root);
+		// if (root.get() == null)
+		// throw new AnalysisSetupException("Runtime does not contain a
+		// hierarchy root");
+		// hierarchyRoot = root.get();
+		// makeInit(program);
+		// stdlib.getLeft().populateProgram(program, init, hierarchyRoot);
 		for (Library lib : stdlib.getValue())
 			AVAILABLE_LIBS.put(lib.getName(), lib);
 
@@ -97,8 +97,9 @@ public class LibrarySpecificationProvider {
 				if (!path.endsWith("/" + STDLIB_FILE)) {
 					// need to add the / since the returned paths are relative
 					Pair<Runtime, Collection<Library>> libs = readFile("/" + path);
-					//libs.getLeft().fillProgram(program, root);
-					//libs.getLeft().populateProgram(program, init, hierarchyRoot);
+					// libs.getLeft().fillProgram(program, root);
+					// libs.getLeft().populateProgram(program, init,
+					// hierarchyRoot);
 					for (Library lib : libs.getValue())
 						AVAILABLE_LIBS.put(lib.getName(), lib);
 				}
@@ -141,9 +142,10 @@ public class LibrarySpecificationProvider {
 			return;
 		}
 
-		//CodeUnit lib = library.toLiSAUnit(program, new AtomicReference<>(hierarchyRoot));
+		// CodeUnit lib = library.toLiSAUnit(program, new
+		// AtomicReference<>(hierarchyRoot));
 		ModuleUnit unit = library.toLiSAPythonModuleUnit(program, new AtomicReference<>(hierarchyRoot), init);
-		//library.populateUnit(init, hierarchyRoot, lib);
+		// library.populateUnit(init, hierarchyRoot, lib);
 		LOADED_LIBS.add(name);
 	}
 
@@ -160,9 +162,10 @@ public class LibrarySpecificationProvider {
 			return null;
 		}
 
-		//CodeUnit lib = library.toLiSAUnit(program, new AtomicReference<>(hierarchyRoot));
+		// CodeUnit lib = library.toLiSAUnit(program, new
+		// AtomicReference<>(hierarchyRoot));
 		ModuleUnit unit = library.toLiSAPythonModuleUnit(program, new AtomicReference<>(hierarchyRoot), init);
-		//library.populateUnit(init, hierarchyRoot, lib);
+		// library.populateUnit(init, hierarchyRoot, lib);
 		LOADED_LIBS.add(name);
 		return unit;
 	}

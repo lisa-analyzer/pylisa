@@ -1,6 +1,5 @@
 package it.unive.pylisa.symbolic;
 
-import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.util.numeric.IntInterval;

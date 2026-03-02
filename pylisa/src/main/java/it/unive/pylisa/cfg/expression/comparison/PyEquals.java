@@ -7,8 +7,6 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.comparison.Equal;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
 public class PyEquals extends Equal {
 
@@ -19,20 +17,22 @@ public class PyEquals extends Equal {
 			Expression right) {
 		super(cfg, location, left, right);
 	}
+
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left, SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		// FIX ME
-		/*if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
-			AnalysisState<A> sem = PandasSemantics.compare(
-					state,
-					left,
-					right,
-					this,
-					state.getState(),
-					ComparisonOperator.EQ);
-			if (sem != null)
-				return sem;
-		}*/
+		/*
+		 * if (LibrarySpecificationProvider.isLibraryLoaded(
+		 * LibrarySpecificationProvider.PANDAS)) { AnalysisState<A> sem =
+		 * PandasSemantics.compare( state, left, right, this, state.getState(),
+		 * ComparisonOperator.EQ); if (sem != null) return sem; }
+		 */
 		return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
 	}
 }

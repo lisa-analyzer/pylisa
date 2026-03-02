@@ -16,7 +16,6 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.pandas.Keys;
-
 import java.util.Set;
 
 public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
@@ -30,24 +29,29 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 			Type dfreftype = dftype.getReference();
 			Set<Type> rts = interprocedural.getAnalysis().getRuntimeTypesOf(state, expr, this);
 			if (rts.stream().anyMatch(t -> (t.equals(dfreftype))))
 				switch (getTarget()) {
-					case "loc":
-					case "iloc":
-					case "style":
-						// for pandas dataframes we treat some properties as the
-						// dataframe itself
-						return interprocedural.getAnalysis().smallStepSemantics(state, expr, this);
-					case "columns":
-						// we treat this as a call to keys()
-						Keys keys = new Keys(getCFG(), getLocation(), getSubExpression());
-						keys.setOriginatingStatement(this);
-						return keys.fwdUnarySemantics(interprocedural, state, expr, expressions);
+				case "loc":
+				case "iloc":
+				case "style":
+					// for pandas dataframes we treat some properties as the
+					// dataframe itself
+					return interprocedural.getAnalysis().smallStepSemantics(state, expr, this);
+				case "columns":
+					// we treat this as a call to keys()
+					Keys keys = new Keys(getCFG(), getLocation(), getSubExpression());
+					keys.setOriginatingStatement(this);
+					return keys.fwdUnarySemantics(interprocedural, state, expr, expressions);
 				}
 		}
 		// FIXME

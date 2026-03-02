@@ -1,9 +1,8 @@
 package it.unive.pylisa.program.language.parameterassignment;
 
 import it.unive.lisa.analysis.*;
-
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.Parameter;
@@ -39,7 +38,14 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Pair<AnalysisState<A>, ExpressionSet[]> prepare(Call call, AnalysisState<A> callState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions, Parameter[] formals, ExpressionSet[] parameters) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Pair<AnalysisState<A>, ExpressionSet[]> prepare(
+			Call call,
+			AnalysisState<A> callState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions,
+			Parameter[] formals,
+			ExpressionSet[] parameters)
+			throws SemanticException {
 
 		ExpressionSet[] slots = new ExpressionSet[formals.length];
 		Set<Type>[] slotsTypes = new Set[formals.length];
@@ -80,17 +86,31 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		for (int i = 0; i < formals.length; i++) {
 			AnalysisState<A> temp = prepared.bottom();
 			for (SymbolicExpression exp : slots[i])
-				temp = temp.lub(interprocedural.getAnalysis().assign(prepared, formals[i].toSymbolicVariable(), exp, call));
+				temp = temp.lub(
+						interprocedural.getAnalysis().assign(prepared, formals[i].toSymbolicVariable(), exp, call));
 			prepared = temp;
 		}
 
 		// we remove expressions from the stack
-		//prepared = new AnalysisState<>(prepared, new ExpressionSet(), prepared.getExecution().getFixpointInformation());
+		// prepared = new AnalysisState<>(prepared, new ExpressionSet(),
+		// prepared.getExecution().getFixpointInformation());
 		prepared = prepared.withExecutionExpressions(new ExpressionSet());
 		return Pair.of(prepared, slots);
 	}
 
-	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> pythonLogic(Parameter[] formals, Expression[] actuals, ExpressionSet[] given, Set<Type>[] givenTypes, ExpressionSet[] defaults, Set<Type>[] defaultTypes, ExpressionSet[] slots, Set<Type>[] slotTypes, InterproceduralAnalysis<A,D> interprocedural, CFG callCFG, AnalysisState<A> failure) throws SemanticException {
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> pythonLogic(
+			Parameter[] formals,
+			Expression[] actuals,
+			ExpressionSet[] given,
+			Set<Type>[] givenTypes,
+			ExpressionSet[] defaults,
+			Set<Type>[] defaultTypes,
+			ExpressionSet[] slots,
+			Set<Type>[] slotTypes,
+			InterproceduralAnalysis<A, D> interprocedural,
+			CFG callCFG,
+			AnalysisState<A> failure)
+			throws SemanticException {
 		Set<String> namedPars = new HashSet<>();
 		int namedParOffset = getNamedParIndex(actuals);
 		if (namedParOffset >= 0)
@@ -182,7 +202,8 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			DictionaryCreation dictCreation = new DictionaryCreation(callCFG, SyntheticLocation.INSTANCE,
 					pairExprs.toArray(Pair[]::new));
 			AnalysisState dictSemantics = dictCreation.forwardSemanticsAux(interprocedural,
-					interprocedural.getAnalysis().makeLattice().bottom(), symbExprs.toArray(ExpressionSet[]::new), null);
+					interprocedural.getAnalysis().makeLattice().bottom(), symbExprs.toArray(ExpressionSet[]::new),
+					null);
 			slots[formals.length - 1] = dictSemantics.getExecution().getComputedExpressions();
 			slotTypes[formals.length - 1] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.DICT));
 		}

@@ -99,7 +99,7 @@ public class PyClassType implements InMemoryType, UnitType {
 
 	private Type scanForSupertypeOf(
 			UnitType other) {
-		WorkingSet<PyClassType> ws = FIFOWorkingSet.mk();
+		WorkingSet<PyClassType> ws = new FIFOWorkingSet<>();
 		Set<PyClassType> seen = new HashSet<>();
 		ws.push(this);
 		PyClassType current;

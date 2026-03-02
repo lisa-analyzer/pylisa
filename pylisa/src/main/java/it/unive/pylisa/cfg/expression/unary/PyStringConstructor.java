@@ -29,7 +29,12 @@ public class PyStringConstructor extends it.unive.lisa.program.cfg.statement.Una
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			StatementStore<A> expressions)
+			throws SemanticException {
 
 		Set<Type> rt = interprocedural.getAnalysis().getRuntimeTypesOf(state, expr, this);
 		if (rt.stream().anyMatch(Type::isStringType) || rt.stream().anyMatch(Type::isNumericType)) {

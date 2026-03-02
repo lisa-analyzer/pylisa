@@ -33,7 +33,9 @@ public class PythonTypeSystem extends TypeSystem {
 	}
 
 	@Override
-	public int distanceBetweenTypes(Type first, Type second) {
+	public int distanceBetweenTypes(
+			Type first,
+			Type second) {
 		return 0;
 	}
 

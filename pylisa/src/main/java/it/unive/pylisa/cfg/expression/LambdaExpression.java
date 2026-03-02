@@ -60,8 +60,13 @@ public class LambdaExpression extends Expression {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(AnalysisState<A> entryState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions) throws SemanticException {
-		return interprocedural.getAnalysis().smallStepSemantics(entryState, new LambdaConstant(PyLambdaType.INSTANCE, getLocation(), arguments, body),
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		return interprocedural.getAnalysis().smallStepSemantics(entryState,
+				new LambdaConstant(PyLambdaType.INSTANCE, getLocation(), arguments, body),
 				this);
 	}
 }

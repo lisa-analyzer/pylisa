@@ -7,8 +7,6 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.comparison.NotEqual;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
 public class PyNotEqual extends NotEqual {
 
@@ -21,18 +19,19 @@ public class PyNotEqual extends NotEqual {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left, SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
-		/*if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
-			AnalysisState<A> sem = PandasSemantics.compare(
-					state,
-					left,
-					right,
-					this,
-					state.getState(),
-					ComparisonOperator.NEQ);
-			if (sem != null)
-				return sem;
-		}*/
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		/*
+		 * if (LibrarySpecificationProvider.isLibraryLoaded(
+		 * LibrarySpecificationProvider.PANDAS)) { AnalysisState<A> sem =
+		 * PandasSemantics.compare( state, left, right, this, state.getState(),
+		 * ComparisonOperator.NEQ); if (sem != null) return sem; }
+		 */
 
 		return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
 	}

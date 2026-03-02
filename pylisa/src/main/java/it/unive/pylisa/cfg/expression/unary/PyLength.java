@@ -26,8 +26,14 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 			Statement o) {
 		return 0;
 	}
+
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			StatementStore<A> expressions)
+			throws SemanticException {
 
 		if (interprocedural.getAnalysis().getRuntimeTypesOf(state, expr, this).stream().anyMatch(Type::isStringType)) {
 			// String len

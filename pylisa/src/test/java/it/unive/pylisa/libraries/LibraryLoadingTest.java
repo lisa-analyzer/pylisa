@@ -2,17 +2,15 @@ package it.unive.pylisa.libraries;
 
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
-
+import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.statement.Ret;
-import org.junit.Test;
-
-import it.unive.lisa.program.Program;
 import it.unive.pylisa.PythonFeatures;
 import it.unive.pylisa.PythonTypeSystem;
+import java.io.File;
+import org.junit.Test;
 
 public class LibraryLoadingTest {
 

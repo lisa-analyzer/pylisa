@@ -32,6 +32,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 
 	private final String file;
 	private Library currentLibrary = null;
+
 	public LibrarySpecificationParser(
 			String file) {
 		this.file = file;

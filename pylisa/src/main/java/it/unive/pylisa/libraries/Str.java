@@ -26,7 +26,12 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Set<Type> rts = analysis.getRuntimeTypesOf(state, expr, this);
 		if (rts.stream().anyMatch(Type::isStringType) || rts.stream().anyMatch(Type::isNumericType)) {
@@ -50,7 +55,6 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 			Expression[] exprs) {
 		return new Str(cfg, location, "str", exprs[0]);
 	}
-
 
 	@Override
 	public String toString() {

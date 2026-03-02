@@ -24,12 +24,19 @@ public class PyRemainder extends Remainder {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left, SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		AnalysisState<A> result = state.bottom();
 		Set<Type> rts = interprocedural.getAnalysis().getRuntimeTypesOf(state, left, this);
 		if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(Type::isStringType))
 			// this might be a string formatting
-			result = interprocedural.getAnalysis().smallStepSemantics(state, new PushAny(StringType.INSTANCE, getLocation()), this);
+			result = interprocedural.getAnalysis().smallStepSemantics(state,
+					new PushAny(StringType.INSTANCE, getLocation()), this);
 		rts = interprocedural.getAnalysis().getRuntimeTypesOf(state, right, this);
 		if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(Predicate.not(Type::isStringType)))
 			// this might not be a string formatting

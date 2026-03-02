@@ -57,7 +57,7 @@ value
    ;
 
 param
-   : PARAM (STAR? | POWER? | AMP?) name = IDENTIFIER paramType = type (ARROW syntheticType = type)?  (DEFAULT val = value)?
+   : PARAM (STAR? | POWER? | AMP?) name = IDENTIFIER paramType = type (ARROW syntheticType = type)? (DEFAULT val = value)?
    ;
 
 field

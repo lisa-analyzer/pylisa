@@ -166,7 +166,8 @@ import it.unive.pylisa.cfg.type.PyFunctionType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.cfg.type.PyModuleType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-
+import it.unive.pylisa.program.FunctionUnit;
+import it.unive.pylisa.program.ModuleUnit;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -187,9 +188,6 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-
-import it.unive.pylisa.program.FunctionUnit;
-import it.unive.pylisa.program.ModuleUnit;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -374,18 +372,20 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		PyClassType.all().forEach(types::registerType);
 		ModuleUnit pyProgramUnit = new ModuleUnit(
-				new SourceCodeLocation("__lisa__",0,0),
+				new SourceCodeLocation("__lisa__", 0, 0),
 				program,
-				"$PythonProgram"
-		);
+				"$PythonProgram");
 		program.addUnit(pyProgramUnit);
-		CodeMemberDescriptor runDesc = new CodeMemberDescriptor(new SourceCodeLocation("__lisa__",0,0), pyProgramUnit, false, "run");
+		CodeMemberDescriptor runDesc = new CodeMemberDescriptor(new SourceCodeLocation("__lisa__", 0, 0), pyProgramUnit,
+				false, "run");
 		runDesc.setOverridable(false);
 		PyCFG runCFG = new PyCFG(runDesc);
 		pyProgramUnit.addCodeMember(runCFG);
-		ImportModule importModule_builtins = new ImportModule(runCFG, new SourceCodeLocation("__lisa__",0,0), "builtins", (ModuleUnit) PyModuleType.lookup("builtins").getUnit());
+		ImportModule importModule_builtins = new ImportModule(runCFG, new SourceCodeLocation("__lisa__", 0, 0),
+				"builtins", (ModuleUnit) PyModuleType.lookup("builtins").getUnit());
 		runCFG.addNode(importModule_builtins, true);
-		ImportModule importModuleMain = new ImportModule(runCFG, new SourceCodeLocation("__lisa__",0,0), "__main__", (ModuleUnit) PyModuleType.lookup("__main__").getUnit());
+		ImportModule importModuleMain = new ImportModule(runCFG, new SourceCodeLocation("__lisa__", 0, 0), "__main__",
+				(ModuleUnit) PyModuleType.lookup("__main__").getUnit());
 		runCFG.addNode(importModuleMain);
 		runCFG.addEdge(new SequentialEdge(importModule_builtins, importModuleMain));
 		Ret ret = new Ret(runCFG, SyntheticLocation.INSTANCE);
@@ -459,16 +459,21 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			File_inputContext ctx) {
 
 		currentCFG = new PyCFG(buildInitModuleCFGDesriptor(getLocation(ctx)));
-		ImportModule builtinsModule = new ImportModule(currentCFG, getLocation(ctx), "builtins", PyModuleType.lookup("builtins").getUnit());
-		Expression target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), currentModule, new Global(getLocation(ctx), currentModule, "__builtins__", false));
-		PyAssign builtInAssign =  new PyAssign(this.currentCFG, getLocation(ctx), target, builtinsModule);
+		ImportModule builtinsModule = new ImportModule(currentCFG, getLocation(ctx), "builtins",
+				PyModuleType.lookup("builtins").getUnit());
+		Expression target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), currentModule,
+				new Global(getLocation(ctx), currentModule, "__builtins__", false));
+		PyAssign builtInAssign = new PyAssign(this.currentCFG, getLocation(ctx), target, builtinsModule);
 		currentCFG.addNode(builtInAssign, true);
-		//return new ImportModule(currentCFG, getLocation(ctx), libs.keySet().stream().findFirst().get(), module);
+		// return new ImportModule(currentCFG, getLocation(ctx),
+		// libs.keySet().stream().findFirst().get(), module);
 		cfs = new HashSet<>();
 		currentModule.addCodeMember(currentCFG);
-		Expression targetName = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), currentModule, new Global(getLocation(ctx), currentModule, "__name__", false));
+		Expression targetName = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), currentModule,
+				new Global(getLocation(ctx), currentModule, "__name__", false));
 
-		PyAssign nameAssign =  new PyAssign(this.currentCFG, getLocation(ctx), targetName, new StringLiteral(this.currentCFG, getLocation(ctx), currentModule.getName()));
+		PyAssign nameAssign = new PyAssign(this.currentCFG, getLocation(ctx), targetName,
+				new StringLiteral(this.currentCFG, getLocation(ctx), currentModule.getName()));
 		currentCFG.addNode(nameAssign);
 		currentCFG.addEdge(new SequentialEdge(builtInAssign, nameAssign));
 		Statement last_stmt = nameAssign;
@@ -562,12 +567,12 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 	private CodeMemberDescriptor buildCFGDescriptor(
 			FuncdefContext funcDecl) {
-		//String funcName = funcDecl.NAME().getText();
+		// String funcName = funcDecl.NAME().getText();
 		String funcName = "$call";
 		PyParameter[] cfgArgs = visitParameters(funcDecl.parameters());
 
 		return new CodeMemberDescriptor(getLocation(funcDecl), currentUnit,
-                false,
+				false,
 				funcName, cfgArgs);
 	}
 
@@ -584,11 +589,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			throw new UnsupportedOperationException("Expecting a Dotted_nameContext in a DecoratorContext.");
 		}
 		if (ctx.arglist() == null && ctx.OPEN_PAREN() == null) {
-			throw new UnsupportedOperationException("DecoratedContext without arglist and parenthesis are not supported.");
+			throw new UnsupportedOperationException(
+					"DecoratedContext without arglist and parenthesis are not supported.");
 		}
 		Expression result = visitDotted_name(ctx.dotted_name());
-		/* If the result is a VariableRef, for example, @f() -> VariableRef(f), it means we are in the current scope. No need to add
-			a parameter in the function.
+		/*
+		 * If the result is a VariableRef, for example, @f() -> VariableRef(f),
+		 * it means we are in the current scope. No need to add a parameter in
+		 * the function.
 		 */
 
 		if (result instanceof VariableRef) {
@@ -598,13 +606,15 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				for (ArgumentContext arg : ctx.arglist().argument())
 					params.add(visitArgument(arg));
 			return new FunctionApply(currentCFG, getLocation(ctx), result, params.toArray(Expression[]::new));
-			//return new UnresolvedCall(currentCFG, getLocation(ctx), CallType.STATIC, null, target,
-			//		params.toArray(Expression[]::new));
+			// return new UnresolvedCall(currentCFG, getLocation(ctx),
+			// CallType.STATIC, null, target,
+			// params.toArray(Expression[]::new));
 		}
 		List<Expression> params = new ArrayList<>();
 		String varName = ctx.dotted_name().children.get(0).getText();
 		if (currentUnit instanceof ModuleUnit pmu && shouldPrependUnitAccess) {
-			params.add(new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu, new Global(getLocation(ctx), pmu, varName, false)));
+			params.add(new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu,
+					new Global(getLocation(ctx), pmu, varName, false)));
 		} else {
 			params.add(new VariableRef(this.currentCFG, getLocation(ctx), varName));
 		}
@@ -618,12 +628,16 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				.filter(text -> !text.equals("."))
 				.collect(Collectors.joining("."));
 		return new FunctionApply(currentCFG, getLocation(ctx), result, params.toArray(Expression[]::new));
-		//return new UnresolvedCall(currentCFG, getLocation(ctx), CallType.UNKNOWN, null, target,
-        //        params.toArray(Expression[]::new));
-		//return new AnnotationMember(ctx.dotted_name().getText(), new DecoratedAnnotation(params, uc));
+		// return new UnresolvedCall(currentCFG, getLocation(ctx),
+		// CallType.UNKNOWN, null, target,
+		// params.toArray(Expression[]::new));
+		// return new AnnotationMember(ctx.dotted_name().getText(), new
+		// DecoratedAnnotation(params, uc));
 	}
 
-	public Expression visitDecorators(DecoratorsContext ctx, Expression decoratedFunction) {
+	public Expression visitDecorators(
+			DecoratorsContext ctx,
+			Expression decoratedFunction) {
 		Expression result = decoratedFunction;
 
 		List<DecoratorContext> decorators = ctx.decorator();
@@ -639,8 +653,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 						currentCFG,
 						getLocation(ctx),
 						decorator,
-						List.of(result).toArray(Expression[]::new)
-				);
+						List.of(result).toArray(Expression[]::new));
 			}
 		}
 
@@ -666,9 +679,10 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		if (ctx.classdef() != null) {
 			throw new UnsupportedStatementException("Class Decorators are not supported yet.");
 		} else if (ctx.async_funcdef() != null) {
-			//PyCFG method = visitAsync_funcdef(ctx.async_funcdef());
-			//Expression decoratedFunction = new FunctionLiteral(this.currentCFG, getLocation(ctx), method);
-			//result = visitDecorators(ctx.decorators(), decoratedFunction);
+			// PyCFG method = visitAsync_funcdef(ctx.async_funcdef());
+			// Expression decoratedFunction = new
+			// FunctionLiteral(this.currentCFG, getLocation(ctx), method);
+			// result = visitDecorators(ctx.decorators(), decoratedFunction);
 		} else if (ctx.funcdef() != null) {
 			Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> funcDef = visitFuncdef(ctx.funcdef());
 			if (funcDef.getLeft() instanceof PyAssign pa) {
@@ -679,16 +693,19 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				throw new UnsupportedStatementException("Expecting a PyAssign while parsing funcDef");
 			}
 			int x = 10;
-			//Expression decoratedFunction = new FunctionLiteral(this.currentCFG, getLocation(ctx), method);
-			//result = visitDecorators(ctx.decorators(), decoratedFunction);
+			// Expression decoratedFunction = new
+			// FunctionLiteral(this.currentCFG, getLocation(ctx), method);
+			// result = visitDecorators(ctx.decorators(), decoratedFunction);
 		} else {
 			throw new UnsupportedStatementException("Expecting {'def', 'class', 'async'} after decorators.");
 		}
 		Expression target = null;
 		if (currentUnit instanceof ModuleUnit pmu) {
-			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu, new Global(getLocation(ctx), pmu, name, false));
+			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu,
+					new Global(getLocation(ctx), pmu, name, false));
 		} else {
-			target = new AttributeAccess(this.currentCFG, getLocation(ctx), new VariableRef(this.currentCFG, getLocation(ctx), "$self"), name);
+			target = new AttributeAccess(this.currentCFG, getLocation(ctx),
+					new VariableRef(this.currentCFG, getLocation(ctx), "$self"), name);
 		}
 		PyAssign pyAssign = new PyAssign(currentCFG, getLocation(ctx), innerAssign, result);
 		first = pyAssign;
@@ -696,50 +713,33 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		last = result;
 		return Triple.of(pyAssign, block, pyAssign);
 
-
-		/*if (ctx.decorators() != null) {
-			for (AnnotationMember ann : annotation.getAnnotationMembers())
-				if (ann.getValue() instanceof DecoratedAnnotation da) {
-					Call c = da.getCall();
-					if (first == null)
-						first = c;
-					block.addNode(c);
-					if (last != null) {
-						Edge e = new SequentialEdge(last, c);
-						block.addEdge(e);
-					}
-					last = c;
-				}
-
-			if (ctx.classdef() != null) {
-				ClassUnit classUnit = visitClassdef(ctx.classdef());
-				classUnit.getAnnotations().addAnnotation(annotation);
-			} else if (ctx.async_funcdef() != null) {
-				PyCFG method = visitAsync_funcdef(ctx.async_funcdef());
-				method.getDescriptor().getAnnotations().addAnnotation(annotation);
-				FunctionLiteral fdef = new FunctionLiteral(this.currentCFG, getLocation(ctx), method);
-				block.addNode(fdef);
-				if (last != null) {
-					Edge e = new SequentialEdge(last, fdef);
-					block.addEdge(e);
-				}
-				last = fdef;
-			} else if (ctx.funcdef() != null) {
-				PyCFG method = visitFuncdef(ctx.funcdef());
-				method.getDescriptor().getAnnotations().addAnnotation(annotation);
-				FunctionLiteral fdef = new FunctionLiteral(this.currentCFG, getLocation(ctx), method);
-				block.addNode(fdef);
-				if (last != null) {
-					Edge e = new SequentialEdge(last, fdef);
-					block.addEdge(e);
-				}
-				last = fdef;
-			} else {
-				throw new UnsupportedStatementException("Expecting {'def', 'class', 'async'} after decorators.");
-			}
-			return Triple.of(first, block, last);
-		}
-		throw new UnsupportedStatementException("Expecting a DecoratorsContext in DecoratedContext");*/
+		/*
+		 * if (ctx.decorators() != null) { for (AnnotationMember ann :
+		 * annotation.getAnnotationMembers()) if (ann.getValue() instanceof
+		 * DecoratedAnnotation da) { Call c = da.getCall(); if (first == null)
+		 * first = c; block.addNode(c); if (last != null) { Edge e = new
+		 * SequentialEdge(last, c); block.addEdge(e); } last = c; } if
+		 * (ctx.classdef() != null) { ClassUnit classUnit =
+		 * visitClassdef(ctx.classdef());
+		 * classUnit.getAnnotations().addAnnotation(annotation); } else if
+		 * (ctx.async_funcdef() != null) { PyCFG method =
+		 * visitAsync_funcdef(ctx.async_funcdef());
+		 * method.getDescriptor().getAnnotations().addAnnotation(annotation);
+		 * FunctionLiteral fdef = new FunctionLiteral(this.currentCFG,
+		 * getLocation(ctx), method); block.addNode(fdef); if (last != null) {
+		 * Edge e = new SequentialEdge(last, fdef); block.addEdge(e); } last =
+		 * fdef; } else if (ctx.funcdef() != null) { PyCFG method =
+		 * visitFuncdef(ctx.funcdef());
+		 * method.getDescriptor().getAnnotations().addAnnotation(annotation);
+		 * FunctionLiteral fdef = new FunctionLiteral(this.currentCFG,
+		 * getLocation(ctx), method); block.addNode(fdef); if (last != null) {
+		 * Edge e = new SequentialEdge(last, fdef); block.addEdge(e); } last =
+		 * fdef; } else { throw new
+		 * UnsupportedStatementException("Expecting {'def', 'class', 'async'} after decorators."
+		 * ); } return Triple.of(first, block, last); } throw new
+		 * UnsupportedStatementException("Expecting a DecoratorsContext in DecoratedContext"
+		 * );
+		 */
 	}
 
 	@Override
@@ -757,7 +757,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		PyCFG oldCFG = currentCFG;
 		Collection<ControlFlowStructure> oldCfs = cfs;
 		PyCFG newCFG = currentCFG = new PyCFG(buildCFGDescriptor(ctx));
-		FunctionUnit unit = new FunctionUnit(getLocation(ctx), program, currentUnit + "." + ctx.NAME().getText(), newCFG);
+		FunctionUnit unit = new FunctionUnit(getLocation(ctx), program, currentUnit + "." + ctx.NAME().getText(),
+				newCFG);
 		PyFunctionType.register(unit.getName(), unit);
 		unit.addCodeMember(newCFG);
 		cfs = new HashSet<>();
@@ -770,21 +771,24 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		addRetNodesToCurrentCFG();
 		cfs.forEach(currentCFG.getDescriptor()::addControlFlowStructure);
 		currentCFG.simplify();
-		/*if (currentUnit instanceof ClassUnit) {
-			((ClassUnit) currentUnit).addInstanceCodeMember(currentCFG);
-		} else {
-			currentUnit.addCodeMember(currentCFG);
-		}*/
+		/*
+		 * if (currentUnit instanceof ClassUnit) { ((ClassUnit)
+		 * currentUnit).addInstanceCodeMember(currentCFG); } else {
+		 * currentUnit.addCodeMember(currentCFG); }
+		 */
 		currentCFG = oldCFG;
 		cfs = oldCfs;
 		// assign FunctionLiteral to
 		Expression target;
 		if (currentUnit instanceof ModuleUnit pmu) {
-			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu, new Global(getLocation(ctx), pmu, ctx.NAME().getText(), false));
+			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu,
+					new Global(getLocation(ctx), pmu, ctx.NAME().getText(), false));
 		} else {
-			target = new AttributeAccess(this.currentCFG, getLocation(ctx), new VariableRef(this.currentCFG, getLocation(ctx), "$self"), unit.getName());
+			target = new AttributeAccess(this.currentCFG, getLocation(ctx),
+					new VariableRef(this.currentCFG, getLocation(ctx), "$self"), unit.getName());
 		}
-		PyAssign funcAssign = new PyAssign(this.currentCFG, getLocation(ctx), target, new ImportFunction(currentCFG, SyntheticLocation.INSTANCE, unit.getName(), unit));
+		PyAssign funcAssign = new PyAssign(this.currentCFG, getLocation(ctx), target,
+				new ImportFunction(currentCFG, SyntheticLocation.INSTANCE, unit.getName(), unit));
 		block.addNode(funcAssign);
 		return Triple.of(funcAssign, block, funcAssign);
 	}
@@ -1081,11 +1085,13 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 
 		if (ctx.import_as_names() == null) {
 			LibrarySpecificationProvider.importLibrary(program, name, init);
-			//LibrarySpecificationProvider.getLibraryUnit(name).toLiSAUnit();
+			// LibrarySpecificationProvider.getLibraryUnit(name).toLiSAUnit();
 			PyCFG pyCFG = new PyCFG(new CodeMemberDescriptor(getLocation(ctx), currentUnit, false, "__init__"));
 			pyCFG.addNode(new NoOp(pyCFG, SyntheticLocation.INSTANCE));
-			return new ImportModule(currentCFG, getLocation(ctx), name, (ModuleUnit) PyModuleType.lookup(name).getUnit());
-			//return new FromImport(program, name, Map.of("*", "*"), currentCFG, getLocation(ctx));
+			return new ImportModule(currentCFG, getLocation(ctx), name,
+					(ModuleUnit) PyModuleType.lookup(name).getUnit());
+			// return new FromImport(program, name, Map.of("*", "*"),
+			// currentCFG, getLocation(ctx));
 		}
 		Map<String, String> components = new HashMap<>();
 		for (Import_as_nameContext single : ctx.import_as_names().import_as_name()) {
@@ -1096,7 +1102,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		}
 		ModuleUnit module = importManager.importModule(name);
 		return new ImportModule(currentCFG, getLocation(ctx), name, module);
-		//return new FromImport(program, name, components, currentCFG, getLocation(ctx));
+		// return new FromImport(program, name, components, currentCFG,
+		// getLocation(ctx));
 	}
 
 	@Override
@@ -1112,13 +1119,18 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		ModuleUnit module = importManager.importModule(libs.keySet().stream().findFirst().get());
 		Expression target = null;
 		if (currentUnit instanceof ModuleUnit pmu) {
-			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu, new Global(getLocation(ctx), pmu, libs.keySet().stream().findFirst().get(), false));
+			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu,
+					new Global(getLocation(ctx), pmu, libs.keySet().stream().findFirst().get(), false));
 		} else {
-			target = new AttributeAccess(this.currentCFG, getLocation(ctx), new VariableRef(this.currentCFG, getLocation(ctx), "$self"), libs.keySet().stream().findFirst().get());
+			target = new AttributeAccess(this.currentCFG, getLocation(ctx),
+					new VariableRef(this.currentCFG, getLocation(ctx), "$self"),
+					libs.keySet().stream().findFirst().get());
 		}
-		return new PyAssign(this.currentCFG, getLocation(ctx), target, new ImportModule(currentCFG, getLocation(ctx), libs.keySet().stream().findFirst().get(), module));
-		//return new ImportModule(currentCFG, getLocation(ctx), libs.keySet().stream().findFirst().get(), module);
-		//return new Import(program, libs, currentCFG, getLocation(ctx));
+		return new PyAssign(this.currentCFG, getLocation(ctx), target,
+				new ImportModule(currentCFG, getLocation(ctx), libs.keySet().stream().findFirst().get(), module));
+		// return new ImportModule(currentCFG, getLocation(ctx),
+		// libs.keySet().stream().findFirst().get(), module);
+		// return new Import(program, libs, currentCFG, getLocation(ctx));
 	}
 
 	private String dottedNameToString(
@@ -1170,10 +1182,11 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		for (int i = 0; i < ctx.NAME().size(); i++) {
 			TerminalNode name = ctx.NAME(i);
 			if (targetName != null) {
-					result = new AttributeAccess(currentCFG, getLocation(ctx), result, name.getText());
+				result = new AttributeAccess(currentCFG, getLocation(ctx), result, name.getText());
 			} else {
 				if (currentUnit instanceof ModuleUnit pmu && shouldPrependUnitAccess) {
-					result = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu, new Global(getLocation(ctx), pmu, name.getText(), false));
+					result = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu,
+							new Global(getLocation(ctx), pmu, name.getText(), false));
 				} else {
 					result = new VariableRef(currentCFG, getLocation(ctx), targetName);
 				}
@@ -2069,7 +2082,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			// trailer: '(' (arglist)? ')' | '[' subscriptlist ']' | '.' NAME;
 			Expression access = visitAtom(ctx.atom());
 			accessChain[i] = access;
-			i+=1;
+			i += 1;
 			String last_name = access instanceof VariableRef ? ((VariableRef) access).getName() : null;
 			Expression previous_access = null;
 			for (TrailerContext expr : ctx.trailer()) {
@@ -2081,14 +2094,14 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								currentCFG,
 								getLocation(trailer),
 								access,
-								attr
-						);
+								attr);
 						accessChain[i] = access;
 					} else if (trailer.OPEN_PAREN() != null) {
 
 						List<Expression> args = new ArrayList<>();
 						if (i >= 2) {
-							// this is function referenced by an object or a class. We need to prepend the receiver.
+							// this is function referenced by an object or a
+							// class. We need to prepend the receiver.
 							args.add(accessChain[i - 2]);
 						}
 						if (trailer.arglist() != null)
@@ -2100,101 +2113,65 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 								currentCFG,
 								getLocation(trailer),
 								access,
-								args.toArray(Expression[]::new)
-						);
+								args.toArray(Expression[]::new));
 						accessChain[i] = access;
 					}
 					i++;
-					/*List<Expression> pars = new ArrayList<>();
-					String method_name = last_name;
-					boolean instance = access instanceof PyAccessInstanceGlobal;
-					if (instance)
-						pars.add(previous_access);
-					if (expr.arglist() != null)
-						for (ArgumentContext arg : expr.arglist().argument())
-							pars.add(visitArgument(arg));
-
-					pars = convertAssignmentsToByNameParameters(pars);
-					Unit cu;
-					cu = program.getUnit(method_name);
-					if (cu == null) {
-						cu = program.getUnit(access.toString().replace("::", "."));
-						if (cu == null) {
-							String unitName = imports.get(access.toString());
-							if (unitName != null)
-								cu = program.getUnit(unitName);
-						}
-						if (cu != null) {
-							for (Expression par : pars)
-								if (par instanceof AccessInstanceGlobal)
-									pars.remove(par);
-						}
-					}
-					if (cu != null && cu instanceof ClassUnit) {
-						access = new PyNewObj(
-								currentCFG,
-								getLocation(expr),
-								"__init__",
-								PyClassType.register(cu.getName(), (ClassUnit) cu),
-								pars.toArray(Expression[]::new));
-					} else {
-						access = new UnresolvedCall(
-								currentCFG,
-								getLocation(expr),
-								instance ? CallType.UNKNOWN : CallType.STATIC,
-								null,
-								method_name,
-								LeftToRightEvaluation.INSTANCE,
-								pars.toArray(Expression[]::new));
-						if (method_name.equals("super") && pars.isEmpty()) {
-							// if super() is inside an instance method
-							if (this.currentCFG.getDescriptor().isInstance()) {
-								VariableTableEntry vte = currentCFG.getDescriptor().getVariables().get(0);
-
-								Expression[] expressions = new Expression[2];
-								expressions[0] = new PyTypeLiteral(this.currentCFG, getLocation(expr),
-										this.currentUnit);
-								expressions[1] = new VariableRef(this.currentCFG, getLocation(expr), vte.getName());
-								access = new SimpleSuperUnresolvedCall(
-										currentCFG,
-										getLocation(expr),
-										instance ? CallType.UNKNOWN : CallType.STATIC,
-										null,
-										method_name,
-										expressions);
-							}
-						}
-					}
-					last_name = null;
-					previous_access = null;*/
-				}/* else if (expr.OPEN_BRACK() != null) {
-					previous_access = access;
-					last_name = null;
-					List<Expression> indexes = extractExpressionsFromSubscriptlist(expr.subscriptlist());
-					if (indexes.size() == 1)
-						access = new PySingleArrayAccess(
-								currentCFG,
-								getLocation(expr),
-								Untyped.INSTANCE,
-								access,
-								indexes.get(0));
-					else if (indexes.size() == 2)
-						access = new PyDoubleArrayAccess(
-								currentCFG,
-								getLocation(expr),
-								Untyped.INSTANCE,
-								access,
-								indexes.get(0),
-								indexes.get(1));
-					else {
-						return NoOpFunction.build(currentCFG, getLocation(ctx), null);
-						/*
-						 * throw new UnsupportedStatementException(
-						 * "Only array accesses with up to 2 indexes are supported"
-						 * );
-						 */
-				//} else
-				//	throw new UnsupportedStatementException();
+					/*
+					 * List<Expression> pars = new ArrayList<>(); String
+					 * method_name = last_name; boolean instance = access
+					 * instanceof PyAccessInstanceGlobal; if (instance)
+					 * pars.add(previous_access); if (expr.arglist() != null)
+					 * for (ArgumentContext arg : expr.arglist().argument())
+					 * pars.add(visitArgument(arg)); pars =
+					 * convertAssignmentsToByNameParameters(pars); Unit cu; cu =
+					 * program.getUnit(method_name); if (cu == null) { cu =
+					 * program.getUnit(access.toString().replace("::", ".")); if
+					 * (cu == null) { String unitName =
+					 * imports.get(access.toString()); if (unitName != null) cu
+					 * = program.getUnit(unitName); } if (cu != null) { for
+					 * (Expression par : pars) if (par instanceof
+					 * AccessInstanceGlobal) pars.remove(par); } } if (cu !=
+					 * null && cu instanceof ClassUnit) { access = new PyNewObj(
+					 * currentCFG, getLocation(expr), "__init__",
+					 * PyClassType.register(cu.getName(), (ClassUnit) cu),
+					 * pars.toArray(Expression[]::new)); } else { access = new
+					 * UnresolvedCall( currentCFG, getLocation(expr), instance ?
+					 * CallType.UNKNOWN : CallType.STATIC, null, method_name,
+					 * LeftToRightEvaluation.INSTANCE,
+					 * pars.toArray(Expression[]::new)); if
+					 * (method_name.equals("super") && pars.isEmpty()) { // if
+					 * super() is inside an instance method if
+					 * (this.currentCFG.getDescriptor().isInstance()) {
+					 * VariableTableEntry vte =
+					 * currentCFG.getDescriptor().getVariables().get(0);
+					 * Expression[] expressions = new Expression[2];
+					 * expressions[0] = new PyTypeLiteral(this.currentCFG,
+					 * getLocation(expr), this.currentUnit); expressions[1] =
+					 * new VariableRef(this.currentCFG, getLocation(expr),
+					 * vte.getName()); access = new SimpleSuperUnresolvedCall(
+					 * currentCFG, getLocation(expr), instance ?
+					 * CallType.UNKNOWN : CallType.STATIC, null, method_name,
+					 * expressions); } } } last_name = null; previous_access =
+					 * null;
+					 */
+				} /*
+					 * else if (expr.OPEN_BRACK() != null) { previous_access =
+					 * access; last_name = null; List<Expression> indexes =
+					 * extractExpressionsFromSubscriptlist(expr.subscriptlist())
+					 * ; if (indexes.size() == 1) access = new
+					 * PySingleArrayAccess( currentCFG, getLocation(expr),
+					 * Untyped.INSTANCE, access, indexes.get(0)); else if
+					 * (indexes.size() == 2) access = new PyDoubleArrayAccess(
+					 * currentCFG, getLocation(expr), Untyped.INSTANCE, access,
+					 * indexes.get(0), indexes.get(1)); else { return
+					 * NoOpFunction.build(currentCFG, getLocation(ctx), null);
+					 * /* throw new UnsupportedStatementException(
+					 * "Only array accesses with up to 2 indexes are supported"
+					 * );
+					 */
+				// } else
+				// throw new UnsupportedStatementException();
 				return access;
 			}
 		} else
@@ -2219,13 +2196,16 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			AtomContext ctx) {
 		if (ctx.NAME() != null) {
 			// crete a variable
-			//return new AttributeAccess(this.currentCFG, getLocation(ctx), new VariableRef(this.currentCFG, getLocation(ctx), "$self"), new PyStringLiteral(this.currentCFG, getLocation(ctx),ctx.NAME().getText(), ""));
+			// return new AttributeAccess(this.currentCFG, getLocation(ctx), new
+			// VariableRef(this.currentCFG, getLocation(ctx), "$self"), new
+			// PyStringLiteral(this.currentCFG,
+			// getLocation(ctx),ctx.NAME().getText(), ""));
 			if (currentUnit instanceof ModuleUnit pmu && shouldPrependUnitAccess) {
-				return new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu, new Global(getLocation(ctx), currentUnit, ctx.NAME().getText(), false));
+				return new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu,
+						new Global(getLocation(ctx), currentUnit, ctx.NAME().getText(), false));
 			}
 			return new VariableRef(currentCFG, getLocation(ctx), ctx.NAME().getText());
-		}
-		else if (ctx.NUMBER() != null) {
+		} else if (ctx.NUMBER() != null) {
 			String text = ctx.NUMBER().getText().toLowerCase().replaceAll("_", "");
 			if (text.endsWith("j"))
 				// complex number
@@ -2438,7 +2418,7 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitClassdef(
 			ClassdefContext ctx) {
 
-		 // attach classInit to the class unit
+		// attach classInit to the class unit
 		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 		Unit previous = this.currentUnit;
 		String name = ctx.NAME().getSymbol().getText();
@@ -2459,7 +2439,8 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 			// to the anchestors
 			String superClassName = imports.getOrDefault(superclass.getText(), superclass.getText());
 			for (Unit programCu : this.program.getUnits())
-				if (programCu instanceof it.unive.lisa.program.CompilationUnit && programCu.getName().equals(superClassName))
+				if (programCu instanceof it.unive.lisa.program.CompilationUnit
+						&& programCu.getName().equals(superClassName))
 					cu.addAncestor(((it.unive.lisa.program.CompilationUnit) programCu));
 		}
 		if (cu.getImmediateAncestors().isEmpty() && objectUnit != null)
@@ -2474,17 +2455,20 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 		PyClassType.register(cu.getName(), cu);
 		Expression target;
 		if (currentUnit instanceof ModuleUnit pmu) {
-			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu, new Global(getLocation(ctx), pmu, name, false));
+			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu,
+					new Global(getLocation(ctx), pmu, name, false));
 		} else {
-			target = new AttributeAccess(this.currentCFG, getLocation(ctx), new VariableRef(this.currentCFG, getLocation(ctx), "$self"), name);
+			target = new AttributeAccess(this.currentCFG, getLocation(ctx),
+					new VariableRef(this.currentCFG, getLocation(ctx), "$self"), name);
 		}
-		PyAssign classAssign = new PyAssign(this.currentCFG, getLocation(ctx), target, new ImportClass(currentCFG, SyntheticLocation.INSTANCE, name, cu));
+		PyAssign classAssign = new PyAssign(this.currentCFG, getLocation(ctx), target,
+				new ImportClass(currentCFG, SyntheticLocation.INSTANCE, name, cu));
 		block.addNode(classAssign);
-		//Ret ret = new Ret(currentCFG, SyntheticLocation.INSTANCE);
-		//block.addNode(ret);
-		//block.addEdge(new SequentialEdge(classAssign, ret));
+		// Ret ret = new Ret(currentCFG, SyntheticLocation.INSTANCE);
+		// block.addNode(ret);
+		// block.addEdge(new SequentialEdge(classAssign, ret));
 
-		return Triple.of(classAssign,block, classAssign);
+		return Triple.of(classAssign, block, classAssign);
 	}
 
 	private Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> parseClassBody(
@@ -2505,23 +2489,21 @@ public class PyFrontend extends Python3ParserBaseVisitor<Object> {
 				last = s;
 			} else if (stmt.compound_stmt().funcdef() != null) {
 				// parse the function CFG but don't attach yet
-				/*PyCFG funcCFG = visitFuncdef(stmt.compound_stmt().funcdef());
-
-				// create FunctionLiteral to hold the CFG
-				FunctionLiteral funcLiteral = new FunctionLiteral(this.currentCFG, getLocation(ctx), funcCFG);
-
-				// assign to the class/module object
-				AttributeAccess access = new AttributeAccess(currentCFG,
-						getLocation(stmt),
-						new VariableRef(currentCFG, getLocation(stmt), "$self", Untyped.INSTANCE), // or module object
-						funcCFG.getDescriptor().getName());
-
-				PyAssign assign = new PyAssign(currentCFG, getLocation(ctx), access, funcLiteral);
-				block.addNode(assign);
-				if (last != null) block.addEdge(new SequentialEdge(last, assign));
-				last = assign;*/
-			}
-			else if (stmt.compound_stmt().async_stmt() != null)
+				/*
+				 * PyCFG funcCFG = visitFuncdef(stmt.compound_stmt().funcdef());
+				 * // create FunctionLiteral to hold the CFG FunctionLiteral
+				 * funcLiteral = new FunctionLiteral(this.currentCFG,
+				 * getLocation(ctx), funcCFG); // assign to the class/module
+				 * object AttributeAccess access = new
+				 * AttributeAccess(currentCFG, getLocation(stmt), new
+				 * VariableRef(currentCFG, getLocation(stmt), "$self",
+				 * Untyped.INSTANCE), // or module object
+				 * funcCFG.getDescriptor().getName()); PyAssign assign = new
+				 * PyAssign(currentCFG, getLocation(ctx), access, funcLiteral);
+				 * block.addNode(assign); if (last != null) block.addEdge(new
+				 * SequentialEdge(last, assign)); last = assign;
+				 */
+			} else if (stmt.compound_stmt().async_stmt() != null)
 				visitAsync_stmt(stmt.compound_stmt().async_stmt());
 			else if (stmt.compound_stmt().decorated() != null)
 				visitDecorated(stmt.compound_stmt().decorated());
