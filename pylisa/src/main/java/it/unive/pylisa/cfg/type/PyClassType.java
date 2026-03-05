@@ -29,6 +29,11 @@ public class PyClassType implements InMemoryType, UnitType {
 		return types.values();
 	}
 
+	public static boolean isRegistered(
+			String name) {
+		return types.containsKey(name);
+	}
+
 	public static PyClassType lookup(
 			String name) {
 		PyClassType ct = types.get(name);

@@ -42,6 +42,17 @@ public class MicroservicesTest {
 		lisa.run(program);
 	}
 
+	@Test
+	public void testMiningWave() throws IOException {
+		PyFrontend translator = new PyFrontend(
+				"py-testcases/mining-wave/api.py",
+				false);
+		Program program = translator.toLiSAProgram(false);
+		LiSAConfiguration conf = getLisaConf("mining-wave");
+		LiSA lisa = new LiSA(conf);
+		lisa.run(program);
+	}
+
 	public static LiSAConfiguration getLisaConf(
 			String workdir) {
 		LiSAConfiguration conf = new LiSAConfiguration();

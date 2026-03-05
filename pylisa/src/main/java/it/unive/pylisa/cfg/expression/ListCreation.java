@@ -43,6 +43,8 @@ public class ListCreation extends NaryExpression {
 			throws SemanticException {
 
 		CodeLocation loc = getLocation();
+		if (!PyClassType.isRegistered(LibrarySpecificationProvider.LIST))
+			return state;
 		ListConstant list = new ListConstant(loc);
 
 		if (params.length == 0)

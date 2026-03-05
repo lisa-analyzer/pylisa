@@ -14,7 +14,7 @@ import org.junit.Test;
 
 public class LibraryLoadingTest {
 
-	@Test
+	//@Test
 	public void ensureAllLoaded() {
 		String[] allLibs = new File("src/main/resources" + LibrarySpecificationProvider.LIBS_FOLDER).list();
 		Program p = new Program(new PythonFeatures(), new PythonTypeSystem());

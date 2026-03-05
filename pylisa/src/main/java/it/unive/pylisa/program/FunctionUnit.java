@@ -25,7 +25,7 @@ public class FunctionUnit extends CompilationUnit {
 		this.function = function;
 	}
 
-	protected FunctionUnit(
+	public FunctionUnit(
 			CodeLocation location,
 			Program program,
 			String name,
@@ -60,5 +60,9 @@ public class FunctionUnit extends CompilationUnit {
 	@Override
 	public boolean canBeInstantiated() {
 		return false;
+	}
+
+	public void setFunction(CodeMember function) {
+		this.function = function;
 	}
 }

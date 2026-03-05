@@ -24,15 +24,26 @@ import java.util.Set;
 
 public class FunctionApply extends NaryExpression {
 	Expression identifier;
+	private final boolean hasReceiver;
 
 	public FunctionApply(
 			CFG cfg,
 			CodeLocation location,
 			Expression identifier,
 			Expression[] params) {
+		this(cfg, location, identifier, params, false);
+	}
+
+	public FunctionApply(
+			CFG cfg,
+			CodeLocation location,
+			Expression identifier,
+			Expression[] params,
+			boolean hasReceiver) {
 
 		super(cfg, location, "$FunctionApply", prependReceiver(params, identifier));
 		this.identifier = identifier;
+		this.hasReceiver = hasReceiver;
 	}
 
 	@Override
@@ -64,9 +75,12 @@ public class FunctionApply extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		AnalysisState<A> result = state.bottomExecution();
+		boolean anyTypeFound = false;
 		for (SymbolicExpression identifier : params[0]) {
 			Set<Type> runtimeTypes = interprocedural.getAnalysis().getRuntimeTypesOf(state, identifier, this);
+			System.out.println("[FunctionApply] identifier=" + identifier + " runtimeTypes=" + runtimeTypes + " @" + getLocation());
 			if (identifier instanceof LazyEvaluatedVariadicExpression lazyEval) {
+				anyTypeFound = true;
 				SymbolicExpression e = lazyEval.getExpression();
 				if (e instanceof VariadicExpression ve) {
 					VariadicExpression.Builder builder = new VariadicExpression.Builder()
@@ -91,11 +105,26 @@ public class FunctionApply extends NaryExpression {
 			} else {
 				for (Type t : runtimeTypes) {
 					if (t instanceof PyClassType pct) {
+						anyTypeFound = true;
+						Expression[] classParams;
+						if (hasReceiver && getSubExpressions().length > 1) {
+							// getSubExpressions() = [identifier, receiver,
+							// arg1, arg2, ...]
+							// ClassInstantiation should receive: [identifier,
+							// arg1, arg2, ...]
+							int len = getSubExpressions().length;
+							classParams = new Expression[len - 1];
+							classParams[0] = getSubExpressions()[0];
+							System.arraycopy(getSubExpressions(), 2, classParams, 1, len - 2);
+						} else {
+							classParams = getSubExpressions();
+						}
 						ClassInstantiation ci = new ClassInstantiation(this.getCFG(), getLocation(), pct,
-								getSubExpressions());
+								classParams);
 						result = result.lub(ci.forwardSemantics(state, interprocedural, expressions));
 					}
 					if (t instanceof PyFunctionType pft) {
+						anyTypeFound = true;
 						CodeMember cm = pft.getUnit().getFunction();
 						// here, maybe I need to add the main
 						Call c = null;
@@ -125,6 +154,9 @@ public class FunctionApply extends NaryExpression {
 				// result = result.lub(analysis.smallStepSemantics(state,
 				// identifier, this));
 			}
+		}
+		if (!anyTypeFound) {
+			return state;
 		}
 		// result.getExecution().getComputedExpressions().forEach())
 

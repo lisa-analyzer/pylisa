@@ -135,6 +135,7 @@ public class Method {
 			FunctionUnit unit = new FunctionUnit(location, program, container.getName() + "." + getName(), function);
 			unit.addCodeMember(function);
 			PyFunctionType.register(container.getName() + "." + getName(), unit);
+			//program.addUnit(unit);
 			return unit;
 		} catch (ClassNotFoundException e) {
 			throw new LibraryCreationException(e);
