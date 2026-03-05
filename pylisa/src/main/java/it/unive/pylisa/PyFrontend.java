@@ -7,6 +7,7 @@ import it.unive.lisa.logging.IterationLogger;
 import it.unive.lisa.program.*;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
+import it.unive.lisa.program.cfg.controlFlow.ControlFlowStructure;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -44,6 +45,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -140,6 +143,8 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		objectUnit = (it.unive.lisa.program.CompilationUnit) program.getUnit("builtins.object");
 		log.info("Reading file... " + filePath);
 
+		importManager.setProjectLoader(this::loadProjectModuleFile);
+
 		Python3Lexer lexer = null;
 		try (InputStream stream = mkStream();) {
 			lexer = new Python3Lexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
@@ -181,6 +186,49 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		return toLiSAProgram(true);
 	}
 
+	public ModuleUnit loadProjectModuleFile(
+			String moduleName,
+			String filePath)
+			throws IOException {
+		// Save current state
+		ModuleUnit savedModule = currentModule;
+		Unit savedUnit = currentUnit;
+		PyCFG savedCFG = currentCFG;
+		Map<String, String> savedImports = imports;
+		Collection<ControlFlowStructure> savedCfs = cfs;
+		boolean savedShouldPrependUnitAccess = shouldPrependUnitAccess;
+
+		// The ModuleUnit was already registered by loadProjectModule before
+		// calling us
+		ModuleUnit newModule = (ModuleUnit) PyModuleType.lookup(moduleName).getUnit();
+		currentModule = newModule;
+		currentUnit = newModule;
+		imports = new HashMap<>();
+		cfs = new HashSet<>();
+
+		try {
+			Python3Lexer lexer = new Python3Lexer(
+					CharStreams.fromFileName(filePath, StandardCharsets.UTF_8));
+			Python3Parser parser = new Python3Parser(new CommonTokenStream(lexer));
+			visitFile_input(parser.file_input());
+		} catch (Exception e) {
+			// Finalize the partially-built $init CFG so it passes LiSA
+			// validation
+			addRetNodesToCurrentCFG();
+			throw e;
+		} finally {
+			// Always restore state, even if parsing fails
+			currentModule = savedModule;
+			currentUnit = savedUnit;
+			currentCFG = savedCFG;
+			imports = savedImports;
+			cfs = savedCfs;
+			shouldPrependUnitAccess = savedShouldPrependUnitAccess;
+		}
+
+		return newModule;
+	}
+
 	@Override
 	public Object visit(
 			ParseTree tree) {
@@ -204,10 +252,10 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		currentCFG = new PyCFG(buildInitModuleCFGDesriptor(getLocation(ctx)));
 		ImportModule builtinsModule = new ImportModule(currentCFG, getLocation(ctx), "builtins",
 				PyModuleType.lookup("builtins").getUnit());
-		Expression target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), currentModule,
-				new Global(getLocation(ctx), currentModule, "__builtins__", false));
-		PyAssign builtInAssign = new PyAssign(this.currentCFG, getLocation(ctx), target, builtinsModule);
-		currentCFG.addNode(builtInAssign, true);
+		//Expression target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), currentModule,
+				//new Global(getLocation(ctx), currentModule, "__builtins__", false));
+		//PyAssign builtInAssign = new PyAssign(this.currentCFG, getLocation(ctx), target, builtinsModule);
+		currentCFG.addNode(builtinsModule, true);
 		cfs = new HashSet<>();
 		currentModule.addCodeMember(currentCFG);
 		Expression targetName = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), currentModule,
@@ -216,7 +264,7 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		PyAssign nameAssign = new PyAssign(this.currentCFG, getLocation(ctx), targetName,
 				new StringLiteral(this.currentCFG, getLocation(ctx), currentModule.getName()));
 		currentCFG.addNode(nameAssign);
-		currentCFG.addEdge(new SequentialEdge(builtInAssign, nameAssign));
+		currentCFG.addEdge(new SequentialEdge(builtinsModule, nameAssign));
 		Statement last_stmt = nameAssign;
 		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
 			Object visited;

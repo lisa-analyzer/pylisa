@@ -62,7 +62,8 @@ public class FunctionUnit extends CompilationUnit {
 		return false;
 	}
 
-	public void setFunction(CodeMember function) {
+	public void setFunction(
+			CodeMember function) {
 		this.function = function;
 	}
 }

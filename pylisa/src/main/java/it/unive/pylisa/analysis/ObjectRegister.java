@@ -8,10 +8,17 @@ import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.FunctionalLattice;
 import it.unive.lisa.lattices.string.StringConstant;
 import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Global;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
+import it.unive.pylisa.cfg.expression.PyAssign;
+import it.unive.pylisa.cfg.statement.ModuleLiteral;
+import it.unive.pylisa.cfg.statement.PythonUnitAttributeAccessRef;
 import it.unive.pylisa.program.FunctionUnit;
+import it.unive.pylisa.program.ModuleUnit;
+
 import java.util.Map;
 
 /**
@@ -83,7 +90,8 @@ public class ObjectRegister extends FunctionalLattice<ObjectRegister, String, St
 			AnalysisState<A> state,
 			Statement init,
 			CompilationUnit compilationUnit,
-			InterproceduralAnalysis<A, D> interprocedural)
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
 			throws SemanticException {
 		if (state.getExecutionInfo(SymbolAliasing.INFO_KEY) == null)
 			state = state.storeExecutionInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
@@ -111,30 +119,19 @@ public class ObjectRegister extends FunctionalLattice<ObjectRegister, String, St
 					Call.CallType.STATIC,
 					compilationUnit.getName(),
 					"$init");
-			return moduleInit.forwardSemanticsAux(interprocedural, state, new ExpressionSet[0],
+			state = moduleInit.forwardSemanticsAux(interprocedural, state, new ExpressionSet[0],
 					new StatementStore<>(state.bottom()));
-		}
-		// if needed, calling the class initializer (if the class has one)
+			VariableRef v = new VariableRef(init.getCFG(), init.getLocation(), "$" + compilationUnit.getName());
+			if (compilationUnit instanceof ModuleUnit) {
+				PythonUnitAttributeAccessRef access = new PythonUnitAttributeAccessRef(init.getCFG(), init.getLocation(), compilationUnit,
+						new Global(init.getLocation(), compilationUnit, "__name__", false));
+				PyAssign assign = new PyAssign(init.getCFG(), init.getLocation(), v, new ModuleLiteral(init.getCFG(), init.getLocation(), compilationUnit));
+				state = assign.forwardSemantics(state, interprocedural, expressions);
+			}
+			return state;
 
-		// Collection<CodeMember> target =
-		// PyModuleType.lookup(className).getUnit().getCodeMembersByName(name);
-		// we perform the call if (i) the clinit exits, (ii) we are not already
-		// executing
-		// it (to avoid recursion) and (iii) it has not been executed yet
-		// condition (ii) might happen if the state goes to bottom
-		// within the clinit, and we lose the information that we are executing
-		// it
-		/*
-		 * if (!target.isEmpty() && target.iterator().next() != init.getCFG() &&
-		 * !info.contains(className)) { UnresolvedCall clinit = new
-		 * UnresolvedCall( init.getCFG(), init.getLocation(),
-		 * Call.CallType.STATIC, className, name, new Expression[0]); result =
-		 * state.storeExecutionInfo(InitializedClassSet.INFO_KEY,
-		 * info.add(className)); result.withExecutionExpression(new
-		 * Skip(init.getLocation())); result =
-		 * clinit.forwardSemanticsAux(interprocedural, result, new
-		 * ExpressionSet[0], new StatementStore<>(result.bottom())); }
-		 */
+		}
+
 		return state;
 	}
 

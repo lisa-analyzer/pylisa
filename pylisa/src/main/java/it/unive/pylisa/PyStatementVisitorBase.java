@@ -122,7 +122,7 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 			block.addNode(st);
 			if (first == null)
 				first = st;
-			if (last != null)
+			if (last != null && !last.stopsExecution())
 				block.addEdge(new SequentialEdge(last, st));
 			last = st;
 		}
@@ -253,7 +253,8 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 		if (ctx.yield_stmt() != null) {
 			Yield_argContext yieldArg = ctx.yield_stmt().yield_expr().yield_arg();
 			if (yieldArg == null) {
-				// bare 'yield' — treat as a no-op (control flow continues to cleanup code)
+				// bare 'yield' — treat as a no-op (control flow continues to
+				// cleanup code)
 				return new NoOp(currentCFG, getLocation(ctx));
 			}
 			List<Expression> l = extractExpressionsFromYieldArg(yieldArg);
@@ -571,7 +572,8 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 		block.addEdge(new SequentialEdge(counter_init, condition));
 		block.addEdge(new TrueEdge(condition, element_assignment));
 		block.addEdge(new SequentialEdge(element_assignment, body.getLeft()));
-		block.addEdge(new SequentialEdge(body.getRight(), counter_increment));
+		if (!body.getRight().stopsExecution())
+			block.addEdge(new SequentialEdge(body.getRight(), counter_increment));
 		block.addEdge(new SequentialEdge(counter_increment, condition));
 		block.addEdge(new FalseEdge(condition, exit));
 
@@ -655,7 +657,7 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 					if (first == null)
 						// this is the first instruction
 						first = st.getLeft();
-					if (last != null)
+					if (last != null && !last.stopsExecution())
 						block.addEdge(new SequentialEdge(last, st.getLeft()));
 					last = st.getRight();
 				}
@@ -719,8 +721,9 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 					new VariableRef(this.currentCFG, getLocation(ctx), "$self"),
 					libs.keySet().stream().findFirst().get());
 		}
-		return new PyAssign(this.currentCFG, getLocation(ctx), target,
-				new ImportModule(currentCFG, getLocation(ctx), libs.keySet().stream().findFirst().get(), module));
+		//return new PyAssign(this.currentCFG, getLocation(ctx), target,
+		//		new ImportModule(currentCFG, getLocation(ctx), libs.keySet().stream().findFirst().get(), module));
+		return new ImportModule(currentCFG, getLocation(ctx), libs.keySet().stream().findFirst().get(), module);
 	}
 
 	@Override
@@ -747,28 +750,46 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 			imports.put(alias, name + "." + importedComponent);
 		}
 		importManager.importModule(name);
+
 		List<Pair<String, CompilationUnit>> classImports = new ArrayList<>();
+		List<Pair<String, ModuleUnit>> moduleImports = new ArrayList<>();
+		List<Pair<String, String>> memberImports = new ArrayList<>();
+
 		for (Map.Entry<String, String> entry : components.entrySet()) {
-			String qualifiedName = name + "." + entry.getKey();
+			String importedName = entry.getKey();
 			String alias = entry.getValue();
+			String qualifiedName = name + "." + importedName;
+			// Try class import first
 			try {
 				CompilationUnit unit = PyClassType.lookup(qualifiedName).getUnit();
 				classImports.add(Pair.of(alias, unit));
+				continue;
 			} catch (IllegalStateException ignored) {
-				// not a class — skip
+				// not a class
+			}
+			// Try sub-module import only if we know it can be resolved
+			if (importManager.canResolveModule(qualifiedName)) {
+				importManager.importModule(qualifiedName);
+				try {
+					ModuleUnit sub = (ModuleUnit) PyModuleType.lookup(qualifiedName).getUnit();
+					moduleImports.add(Pair.of(alias, sub));
+				} catch (IllegalStateException ignored) {
+					memberImports.add(Pair.of(alias, importedName));
+				}
+			} else {
+				// unresolved — treat as member access on source module
+				memberImports.add(Pair.of(alias, importedName));
 			}
 		}
-		if (!classImports.isEmpty()) {
-			ModuleUnit module = (currentUnit instanceof ModuleUnit pmu) ? pmu : null;
-			ModuleUnit sourceModule = null;
-			try {
-				sourceModule = (ModuleUnit) PyModuleType.lookup(name).getUnit();
-			} catch (IllegalStateException ignored) {
-			}
-			return new FromImportClasses(currentCFG, getLocation(ctx), module, classImports, sourceModule);
+
+		ModuleUnit currentModuleUnit = (currentUnit instanceof ModuleUnit pmu) ? pmu : null;
+		ModuleUnit sourceModule = null;
+		try {
+			sourceModule = (ModuleUnit) PyModuleType.lookup(name).getUnit();
+		} catch (IllegalStateException ignored) {
 		}
-		ModuleUnit module = (ModuleUnit) PyModuleType.lookup(name).getUnit();
-		return new ImportModule(currentCFG, getLocation(ctx), name, module);
+		return new FromImportClasses(currentCFG, getLocation(ctx), currentModuleUnit,
+				classImports, moduleImports, memberImports, sourceModule);
 	}
 
 	@Override

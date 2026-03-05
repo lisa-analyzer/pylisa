@@ -78,7 +78,8 @@ public class FunctionApply extends NaryExpression {
 		boolean anyTypeFound = false;
 		for (SymbolicExpression identifier : params[0]) {
 			Set<Type> runtimeTypes = interprocedural.getAnalysis().getRuntimeTypesOf(state, identifier, this);
-			System.out.println("[FunctionApply] identifier=" + identifier + " runtimeTypes=" + runtimeTypes + " @" + getLocation());
+			System.out.println("[FunctionApply] identifier=" + identifier + " runtimeTypes=" + runtimeTypes + " @"
+					+ getLocation());
 			if (identifier instanceof LazyEvaluatedVariadicExpression lazyEval) {
 				anyTypeFound = true;
 				SymbolicExpression e = lazyEval.getExpression();

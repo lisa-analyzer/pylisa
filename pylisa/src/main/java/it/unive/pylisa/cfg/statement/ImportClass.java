@@ -54,7 +54,7 @@ public class ImportClass extends Expression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		AnalysisState<A> state = entryState;
-		state = ObjectRegister.initialize(state, this, classUnit, interprocedural);
+		state = ObjectRegister.initialize(state, this, classUnit, interprocedural, expressions);
 		VariableRef v = new VariableRef(this.getCFG(), getLocation(), "$" + classUnit.getName());
 		PyAssign assign = new PyAssign(this.getCFG(), getLocation(), v,
 				new ClassLiteral(this.getCFG(), getLocation(), classUnit));

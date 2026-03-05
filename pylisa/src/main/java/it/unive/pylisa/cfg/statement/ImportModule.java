@@ -3,6 +3,7 @@ package it.unive.pylisa.cfg.statement;
 import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Global;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -45,7 +46,7 @@ public class ImportModule extends Expression {
 
 	@Override
 	public String toString() {
-		return "<module> " + moduleName;
+		return "import " + moduleName;
 	}
 
 	@Override
@@ -55,9 +56,11 @@ public class ImportModule extends Expression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		AnalysisState<A> state = entryState;
-		state = ObjectRegister.initialize(state, this, pythonModuleUnit, interprocedural);
-		VariableRef v = new VariableRef(this.getCFG(), getLocation(), "$" + pythonModuleUnit.getName());
-		PyAssign assign = new PyAssign(this.getCFG(), getLocation(), v,
+		state = ObjectRegister.initialize(state, this, pythonModuleUnit, interprocedural, expressions);
+
+		Expression target = new PythonUnitAttributeAccessRef(this.getCFG(), getLocation(), (CompilationUnit) this.getUnit(),
+				new Global(getLocation(), this.getUnit(), moduleName, false));
+		PyAssign assign = new PyAssign(this.getCFG(), getLocation(), target,
 				new ModuleLiteral(this.getCFG(), getLocation(), pythonModuleUnit));
 		state = assign.forwardSemantics(state, interprocedural, expressions);
 		return state;

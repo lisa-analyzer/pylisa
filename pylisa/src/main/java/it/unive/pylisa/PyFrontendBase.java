@@ -31,6 +31,7 @@ import it.unive.pylisa.cfg.expression.*;
 import it.unive.pylisa.cfg.statement.*;
 import it.unive.pylisa.cfg.type.PyModuleType;
 import it.unive.pylisa.program.ModuleUnit;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -147,7 +148,8 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 				program, "__main__");
 		this.currentUnit = currentModule;
 		makeInit(program);
-		this.importManager = new PythonModuleImportManager(program, init);
+		Path baseDir = (filePath != null) ? Path.of(filePath).getParent() : Path.of(".");
+		this.importManager = new PythonModuleImportManager(program, init, baseDir);
 		program.addUnit(currentModule);
 		PyModuleType.register("__main__", currentModule);
 	}
@@ -250,7 +252,8 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	}
 
 	protected CodeMemberDescriptor buildCFGDescriptor(
-			FuncdefContext funcDecl, Unit unit) {
+			FuncdefContext funcDecl,
+			Unit unit) {
 		String funcName = "$call";
 		PyParameter[] cfgArgs = visitParameters(funcDecl.parameters());
 

@@ -13,11 +13,10 @@ import it.unive.lisa.program.Program;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import java.io.IOException;
-import org.junit.Test;
 
 public class PyParameterTest {
 
-	//@Test
+	// @Test
 	public void test1() throws IOException {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/typehints/th01.py",

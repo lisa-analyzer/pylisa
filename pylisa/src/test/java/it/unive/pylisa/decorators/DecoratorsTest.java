@@ -13,11 +13,10 @@ import it.unive.lisa.program.Program;
 import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import java.io.IOException;
-import org.junit.Test;
 
 public class DecoratorsTest {
 
-	//@Test
+	// @Test
 	public void test01() throws IOException {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/decorators/dec01.py",
@@ -28,7 +27,7 @@ public class DecoratorsTest {
 		lisa.run(program);
 	}
 
-	//@Test
+	// @Test
 	public void testClassDecorators() throws IOException {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/decorators/class_decorator_test.py",

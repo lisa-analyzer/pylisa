@@ -150,6 +150,7 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 			if (ctx.arglist() != null)
 				for (ArgumentContext arg : ctx.arglist().argument())
 					params.add(visitArgument(arg));
+			params = convertAssignmentsToByNameParameters(params);
 			return new FunctionApply(currentCFG, getLocation(ctx), result, params.toArray(Expression[]::new));
 			// return new UnresolvedCall(currentCFG, getLocation(ctx),
 			// CallType.STATIC, null, target,
@@ -161,6 +162,7 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		if (ctx.arglist() != null)
 			for (ArgumentContext arg : ctx.arglist().argument())
 				params.add(visitArgument(arg));
+		params = convertAssignmentsToByNameParameters(params);
 
 		List<ParseTree> trees = ctx.dotted_name().children.subList(1, ctx.dotted_name().children.size());
 		String target = trees.stream()
@@ -213,7 +215,8 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		PyCFG oldCFG = currentCFG;
 		Collection<ControlFlowStructure> oldCfs = cfs;
 
-		FunctionUnit unit = new FunctionUnit(getLocation(ctx), program, currentUnit + "." + ctx.NAME().getText(), false);
+		FunctionUnit unit = new FunctionUnit(getLocation(ctx), program, currentUnit + "." + ctx.NAME().getText(),
+				false);
 		PyFunctionType.register(unit.getName(), unit);
 		PyCFG newCFG = currentCFG = new PyCFG(buildCFGDescriptor(ctx, unit));
 		unit.setFunction(newCFG);
@@ -222,26 +225,23 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		cfs = new HashSet<>();
 		Unit prevUnit = currentUnit;
 		currentUnit = unit;
-		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> r = visitSuite(ctx.suite());
-		currentUnit = prevUnit;
-		currentCFG.getNodeList().mergeWith(r.getMiddle());
-		currentCFG.getEntrypoints().add(r.getLeft());
-		addRetNodesToCurrentCFG();
-		cfs.forEach(currentCFG.getDescriptor()::addControlFlowStructure);
-		System.out.println("[CFG] Building " + currentCFG.getDescriptor().getUnit().getName() + "."
-				+ ctx.NAME().getText() + " nodes=" + currentCFG.getNodesCount());
-		for (it.unive.lisa.program.cfg.statement.Statement node : currentCFG.getNodes()) {
-			currentCFG.followersOf(node).forEach(follower -> System.out.println("  " + node.getClass().getSimpleName()
-					+ "@" + node.getLocation() + " -> " + follower.getClass().getSimpleName()
-					+ "@" + follower.getLocation()
-					+ (node.stopsExecution() ? " [STOPS]" : "")));
-			if (currentCFG.followersOf(node).isEmpty())
-				System.out.println("  " + node.getClass().getSimpleName() + "@" + node.getLocation()
-						+ " [no followers]" + (node.stopsExecution() ? " [STOPS]" : ""));
+		try {
+			Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> r = visitSuite(ctx.suite());
+			currentUnit = prevUnit;
+			currentCFG.getNodeList().mergeWith(r.getMiddle());
+			currentCFG.getEntrypoints().add(r.getLeft());
+			addRetNodesToCurrentCFG();
+			cfs.forEach(currentCFG.getDescriptor()::addControlFlowStructure);
+			currentCFG.simplify();
+		} catch (Exception e) {
+			// Finalize the function CFG even if parsing partially failed
+			addRetNodesToCurrentCFG();
+			currentUnit = prevUnit;
+			throw e;
+		} finally {
+			currentCFG = oldCFG;
+			cfs = oldCfs;
 		}
-		currentCFG.simplify();
-		currentCFG = oldCFG;
-		cfs = oldCfs;
 		Expression target;
 		if (currentUnit instanceof ModuleUnit pmu) {
 			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu,
@@ -439,7 +439,10 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		}
 		Ret ret = new Ret(currentCFG, SyntheticLocation.INSTANCE);
 		block.addNode(ret);
-		block.addEdge(new SequentialEdge(last, ret));
+		if (last != null)
+			block.addEdge(new SequentialEdge(last, ret));
+		else
+			first = ret;
 		last = ret;
 		return Triple.of(first, block, last);
 	}
