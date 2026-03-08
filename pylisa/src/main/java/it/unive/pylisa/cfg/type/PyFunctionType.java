@@ -15,6 +15,11 @@ public class PyFunctionType implements UnitType {
 		return types.computeIfAbsent(name, x -> new PyFunctionType(name, unit));
 	}
 
+	public static boolean isRegistered(
+			String name) {
+		return types.containsKey(name);
+	}
+
 	public static PyFunctionType lookup(
 			String name) {
 		PyFunctionType t = types.get(name);

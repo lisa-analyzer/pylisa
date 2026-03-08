@@ -46,7 +46,16 @@ public class APIRouterNew extends VariadicExpression implements PluggableStateme
 	@Override
 	protected int compareSameClassAndParams(
 			Statement o) {
-		return 0;
+		APIRouterNew other = (APIRouterNew) o;
+		int cmp = Integer.compare(getSubExpressions().length, other.getSubExpressions().length);
+		if (cmp != 0)
+			return cmp;
+		for (int i = 0; i < getSubExpressions().length; i++) {
+			cmp = getSubExpressions()[i].toString().compareTo(other.getSubExpressions()[i].toString());
+			if (cmp != 0)
+				return cmp;
+		}
+		return Integer.compare(System.identityHashCode(this), System.identityHashCode(other));
 	}
 
 	@Override

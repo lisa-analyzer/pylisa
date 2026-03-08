@@ -14,8 +14,10 @@ import it.unive.lisa.program.cfg.statement.call.CFGCall;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.NativeCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.VariadicExpression;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyFunctionType;
 import java.util.Arrays;
@@ -64,7 +66,19 @@ public class FunctionApply extends NaryExpression {
 	@Override
 	protected int compareSameClassAndParams(
 			Statement o) {
-		return 0;
+		FunctionApply other = (FunctionApply) o;
+		int cmp = Boolean.compare(hasReceiver, other.hasReceiver);
+		if (cmp != 0)
+			return cmp;
+		cmp = Integer.compare(getSubExpressions().length, other.getSubExpressions().length);
+		if (cmp != 0)
+			return cmp;
+		for (int i = 0; i < getSubExpressions().length; i++) {
+			cmp = getSubExpressions()[i].toString().compareTo(other.getSubExpressions()[i].toString());
+			if (cmp != 0)
+				return cmp;
+		}
+		return Integer.compare(System.identityHashCode(this), System.identityHashCode(other));
 	}
 
 	@Override
@@ -76,10 +90,12 @@ public class FunctionApply extends NaryExpression {
 			throws SemanticException {
 		AnalysisState<A> result = state.bottomExecution();
 		boolean anyTypeFound = false;
+		org.apache.logging.log4j.LogManager.getLogger(FunctionApply.class).debug(
+				"forwardSemanticsAux: this id={} subexpr={}", System.identityHashCode(this),
+				java.util.Arrays.asList(getSubExpressions()).stream().map(e -> e + "/" + System.identityHashCode(e)).toList());
 		for (SymbolicExpression identifier : params[0]) {
 			Set<Type> runtimeTypes = interprocedural.getAnalysis().getRuntimeTypesOf(state, identifier, this);
-			System.out.println("[FunctionApply] identifier=" + identifier + " runtimeTypes=" + runtimeTypes + " @"
-					+ getLocation());
+			boolean handledIdentifier = false;
 			if (identifier instanceof LazyEvaluatedVariadicExpression lazyEval) {
 				anyTypeFound = true;
 				SymbolicExpression e = lazyEval.getExpression();
@@ -106,6 +122,7 @@ public class FunctionApply extends NaryExpression {
 			} else {
 				for (Type t : runtimeTypes) {
 					if (t instanceof PyClassType pct) {
+						handledIdentifier = true;
 						anyTypeFound = true;
 						Expression[] classParams;
 						if (hasReceiver && getSubExpressions().length > 1) {
@@ -125,6 +142,7 @@ public class FunctionApply extends NaryExpression {
 						result = result.lub(ci.forwardSemantics(state, interprocedural, expressions));
 					}
 					if (t instanceof PyFunctionType pft) {
+						handledIdentifier = true;
 						anyTypeFound = true;
 						CodeMember cm = pft.getUnit().getFunction();
 						// here, maybe I need to add the main
@@ -133,13 +151,32 @@ public class FunctionApply extends NaryExpression {
 							c = new NativeCall(this.getCFG(), getLocation(), Call.CallType.STATIC, "", "$call",
 									List.of(cfg),
 									Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
+							org.apache.logging.log4j.LogManager.getLogger(FunctionApply.class).debug(
+									"NativeCall built: this(FA)id={} subexpr[1]={} id={}, NativeCFG={}",
+									System.identityHashCode(this),
+									getSubExpressions().length > 1 ? getSubExpressions()[1] : "n/a",
+									getSubExpressions().length > 1 ? System.identityHashCode(getSubExpressions()[1]) : -1,
+									cfg.getDescriptor().getName());
 						} else if (cm instanceof CFG cfg) {
 							c = new CFGCall(this.getCFG(), getLocation(), Call.CallType.STATIC, "", "$call",
 									List.of(cfg),
 									Arrays.copyOfRange(getSubExpressions(), 1, getSubExpressions().length));
 						}
 						if (c != null) {
-							result = result.lub(c.forwardSemantics(state, interprocedural, expressions));
+							AnalysisState<A> callResult = c.forwardSemantics(state, interprocedural, expressions);
+							if (callResult.isBottom()) {
+								result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state,
+										new PushAny(Untyped.INSTANCE, getLocation()), this));
+							} else {
+								result = result.lub(callResult);
+							}
+						} else {
+							// If we know this is a function value but cannot
+							// resolve a
+							// concrete callable body, stay conservative without
+							// collapsing to bottom.
+							result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state,
+									new PushAny(Untyped.INSTANCE, getLocation()), this));
 						}
 					}
 					// AttributeAccess access = new
@@ -152,12 +189,18 @@ public class FunctionApply extends NaryExpression {
 					// result = result.lub(apply.forwardSemantics(state,
 					// interprocedural, expressions));
 				}
+				if (!handledIdentifier) {
+					result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state,
+							new PushAny(Untyped.INSTANCE, getLocation()), this));
+					anyTypeFound = true;
+				}
 				// result = result.lub(analysis.smallStepSemantics(state,
 				// identifier, this));
 			}
 		}
 		if (!anyTypeFound) {
-			return state;
+			return interprocedural.getAnalysis().smallStepSemantics(state,
+					new PushAny(Untyped.INSTANCE, getLocation()), this);
 		}
 		// result.getExecution().getComputedExpressions().forEach())
 

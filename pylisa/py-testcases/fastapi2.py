@@ -23,7 +23,7 @@ def router_get_2():
 
 new_function_name = f
 h = new_function_name(10)
-app.include_router(router, prefix="test")
+app.include_router(router, prefix=h)
 @app.get("/foo")
 def hh():
     return

@@ -7,6 +7,10 @@ library builtins:
         method __init__: it.unive.pylisa.libraries.builtins.object.ObjectInit
             type it.unive.lisa.type.Untyped::INSTANCE
             param this type it.unive.lisa.type.Untyped::INSTANCE
+        method super: it.unive.pylisa.libraries.Super
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param cls type it.unive.lisa.type.Untyped::INSTANCE
+            param self type it.unive.lisa.type.Untyped::INSTANCE
     class sequence extends builtins.object:
         instance method __getitem__: it.unive.pylisa.libraries.SequenceGetItem
             libtype object*
@@ -20,3 +24,6 @@ library builtins:
     class dict extends builtins.sequence
     class tuple extends builtins.sequence
     class slice extends builtins.sequence
+    method staticmethod: it.unive.pylisa.libraries.builtins.functions.StaticMethod
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param f type it.unive.lisa.type.Untyped::INSTANCE

@@ -1,4 +1,4 @@
-package it.unive.pylisa;
+package it.unive.pylisa.frontend;
 
 import it.unive.lisa.program.*;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -10,6 +10,7 @@ import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.cfg.statement.logic.Not;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
+import it.unive.pylisa.UnsupportedStatementException;
 import it.unive.pylisa.antlr.Python3Parser.AddContext;
 import it.unive.pylisa.antlr.Python3Parser.And_exprContext;
 import it.unive.pylisa.antlr.Python3Parser.And_testContext;
@@ -66,6 +67,7 @@ import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
 import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.statement.*;
+import it.unive.pylisa.program.PyClassUnit;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
@@ -202,6 +204,43 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 						// this is function referenced by an object or a
 						// class. We need to prepend the receiver.
 						args.add(accessChain[i - 2]);
+					}
+					// ── Python 3 zero-arg super()
+					// ────────────────────────────────────
+					// super() with no arguments is equivalent to
+					// super(ClassName, self).
+					// We synthesise the two-arg form here by injecting the
+					// enclosing
+					// class name and the self parameter so the pluggable Super
+					// semantics
+					// can resolve the parent type at analysis time.
+					if (access instanceof PyNameRef superRef
+							&& "super".equals(superRef.getName())
+							&& trailer.arglist() == null
+							&& !receiverWasPrepended
+							&& objectUnit != null) {
+						PyClassUnit enclosingClass = findEnclosingPyClassUnit();
+						if (enclosingClass != null) {
+							String fullName = enclosingClass.getName();
+							String simpleName = fullName.contains(".")
+									? fullName.substring(fullName.lastIndexOf('.') + 1)
+									: fullName;
+							Expression classRef = makeRef(simpleName, getLocation(trailer));
+							log.debug("super() synthesis in '{}': simpleName='{}', classRef='{}' id={}",
+									currentUnit.getName(), simpleName, classRef, System.identityHashCode(classRef));
+							String firstParamName = currentCFG.getDescriptor().getFormals().length > 0
+								? currentCFG.getDescriptor().getFormals()[0].getName()
+								: "self";
+						Expression selfRef = new VariableRef(currentCFG, getLocation(trailer), firstParamName);
+							Expression superFunc = makeScopedAttributeRef(objectUnit, "super", getLocation(trailer));
+							access = new FunctionApply(currentCFG, getLocation(trailer), superFunc,
+									new Expression[] { classRef, selfRef }, false);
+							log.debug("super() FunctionApply created: id={}", System.identityHashCode(access));
+							accessChain[i] = selfRef;  // ← FIX: original self used as receiver, super proxy only for type resolution
+
+							i++;
+							continue;
+						}
 					}
 					if (trailer.arglist() != null)
 						for (ArgumentContext arg : trailer.arglist().argument())
@@ -698,6 +737,33 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 	public Object visitStar_expr(
 			Star_exprContext ctx) {
 		throw new UnsupportedStatementException();
+	}
+
+	/**
+	 * Returns the {@link PyClassUnit} that lexically encloses the current
+	 * function being parsed, or {@code null} if the current function is not
+	 * defined inside a Python class (e.g. it is a module-level function).
+	 * <p>
+	 * During method-body parsing, {@code currentUnit} is the
+	 * {@link it.unive.pylisa.program.FunctionUnit} for the method, not the
+	 * enclosing class. The enclosing class name is the prefix obtained by
+	 * stripping the last {@code ".<methodName>"} component from the function
+	 * unit name. The class is then looked up from the LiSA program.
+	 *
+	 * @return the enclosing {@link PyClassUnit}, or {@code null}
+	 */
+	protected PyClassUnit findEnclosingPyClassUnit() {
+		String funcName = currentUnit.getName();
+		int lastDot = funcName.lastIndexOf('.');
+		if (lastDot <= 0)
+			return null;
+		String classUnitName = funcName.substring(0, lastDot);
+		it.unive.lisa.program.Unit candidate = program.getUnit(classUnitName);
+		log.debug("findEnclosingPyClassUnit: funcName='{}', classUnitName='{}', candidate={}",
+				funcName, classUnitName, candidate == null ? "null" : candidate.getName());
+		if (candidate instanceof PyClassUnit pcu)
+			return pcu;
+		return null;
 	}
 
 	private List<Expression> extractNamesFromVarArgList(

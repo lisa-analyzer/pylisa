@@ -12,7 +12,7 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.statement.ImportFunction;
-import it.unive.pylisa.cfg.statement.PythonUnitAttributeAccessRef;
+import it.unive.pylisa.cfg.statement.PythonScopedAttributeAccessRef;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.program.FunctionUnit;
 import java.util.Collection;
@@ -138,7 +138,7 @@ public class ClassDef {
 			unit.addAncestor(PyClassType.lookup(this.base).getUnit());
 		for (Method mtd : this.methods) {
 			FunctionUnit functionUnit = mtd.toLiSAFunctionUnit(SyntheticLocation.INSTANCE, init, program, unit);
-			Expression target = new PythonUnitAttributeAccessRef(classInitCFG, SyntheticLocation.INSTANCE, unit,
+			Expression target = new PythonScopedAttributeAccessRef(classInitCFG, SyntheticLocation.INSTANCE, unit,
 					new Global(SyntheticLocation.INSTANCE, unit, mtd.getName(), false));
 			PyAssign funcAssign = new PyAssign(classInitCFG, SyntheticLocation.INSTANCE, target,
 					new ImportFunction(classInitCFG, SyntheticLocation.INSTANCE, unit.getName(), functionUnit));

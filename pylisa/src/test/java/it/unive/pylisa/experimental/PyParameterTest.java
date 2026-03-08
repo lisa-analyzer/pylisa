@@ -10,8 +10,8 @@ import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.program.Program;
-import it.unive.pylisa.PyFrontend;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
+import it.unive.pylisa.frontend.PyFrontend;
 import java.io.IOException;
 
 public class PyParameterTest {

@@ -1,4 +1,4 @@
-package it.unive.pylisa;
+package it.unive.pylisa.frontend;
 
 import it.unive.lisa.program.*;
 import it.unive.lisa.program.cfg.CFG;
@@ -14,6 +14,9 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
+import it.unive.pylisa.PythonFeatures;
+import it.unive.pylisa.PythonTypeSystem;
+import it.unive.pylisa.UnsupportedStatementException;
 import it.unive.pylisa.antlr.Python3Parser.DictorsetmakerContext;
 import it.unive.pylisa.antlr.Python3Parser.FuncdefContext;
 import it.unive.pylisa.antlr.Python3Parser.ParametersContext;
@@ -30,15 +33,20 @@ import it.unive.pylisa.cfg.PyParameter;
 import it.unive.pylisa.cfg.expression.*;
 import it.unive.pylisa.cfg.statement.*;
 import it.unive.pylisa.cfg.type.PyModuleType;
+import it.unive.pylisa.program.FunctionUnit;
 import it.unive.pylisa.program.ModuleUnit;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -48,9 +56,11 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 
 	public static final String INSTRUMENTED_MAIN_FUNCTION_NAME = "$main";
 
+	protected static final String SELF_PARAM_NAME = "$self";
+
 	protected static final SequentialEdge SEQUENTIAL_SINGLETON = new SequentialEdge();
 
-	protected static final Logger log = LogManager.getLogger(PyFrontend.class);
+	protected static final Logger log = LogManager.getLogger(PyFrontendBase.class);
 
 	protected Map<String, String> imports = new HashMap<>();
 	/**
@@ -58,7 +68,7 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	 */
 	protected final String filePath;
 
-	boolean shouldPrependUnitAccess = true;
+	protected boolean shouldPrependUnitAccess = true;
 	protected CFG init;
 	/**
 	 * The LiSA program obtained from the Python program at filePath.
@@ -81,6 +91,13 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	protected PyCFG currentCFG;
 
 	protected Collection<ControlFlowStructure> cfs;
+
+	/**
+	 * Stack of local scopes used to resolve Python names with LEGB-like
+	 * precedence. Module/class names are represented with scoped attribute
+	 * accesses, while names in this stack stay as variable references.
+	 */
+	private final Deque<Set<String>> localScopes = new ArrayDeque<>();
 
 	/**
 	 * Whether or not {@link #filePath} points to a Jupyter notebook file
@@ -180,10 +197,117 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	protected Expression makeRef(
 			String name,
 			CodeLocation loc) {
-		if (shouldPrependUnitAccess && currentModule != null)
-			return new PythonUnitAttributeAccessRef(currentCFG, loc, currentModule,
-					new Global(loc, currentModule, name, false));
+		if (!shouldPrependUnitAccess)
+			return new VariableRef(currentCFG, loc, name);
+
+		// ── CASE 1: Inside a function / method body
+		// ────────────────────────────
+		// Python LEGB for methods:
+		// L = method-local scope only (top frame). Class body scope is NOT part
+		// of LEGB — a bare name in a method does NOT see class attributes.
+		// E = enclosing function scopes — NOT YET IMPLEMENTED (future work).
+		// G = module (global) scope — the fallback when not found locally.
+		if (currentUnit instanceof FunctionUnit) {
+			if (isNameInTopLocalScope(name))
+				return new VariableRef(currentCFG, loc, name);
+			// Not in local scope: fall through to module (G) with B fallback.
+			if (currentModule != null)
+				return makeNameRef(name, loc);
+			return new VariableRef(currentCFG, loc, name);
+		}
+
+		// ── CASE 2: Inside a class body (not inside a method)
+		// ─────────────────
+		// When currentUnit is ClassUnit, parseClassBody has pushed exactly ONE
+		// scope frame. isNameInVisibleLocalScope is safe here — there is only
+		// the class body frame (method scope is only pushed by visitFuncdef,
+		// which changes currentUnit to FunctionUnit before pushing).
+		// Class-body names map to class-scoped attribute references.
+		if (currentUnit instanceof ClassUnit cu) {
+			if (isNameInVisibleLocalScope(name))
+				return makeScopedAttributeRef(cu, name, loc);
+			if (currentModule != null)
+				return makeNameRef(name, loc);
+			return new VariableRef(currentCFG, loc, name);
+		}
+
+		// ── CASE 3: Module-level code (ModuleUnit extends CompilationUnit)
+		// ─────
+		if (isNameInVisibleLocalScope(name)) {
+			if (currentUnit instanceof CompilationUnit cu)
+				return makeScopedAttributeRef(cu, name, loc);
+			return new VariableRef(currentCFG, loc, name);
+		}
+
+		if (currentUnit instanceof CompilationUnit)
+			return makeNameRef(name, loc);
+
+		if (currentModule != null)
+			return makeNameRef(name, loc);
+
 		return new VariableRef(currentCFG, loc, name);
+	}
+
+	protected Expression makeScopedAttributeRef(
+			CompilationUnit unit,
+			String name,
+			CodeLocation loc) {
+		return new PythonScopedAttributeAccessRef(currentCFG, loc, unit,
+				new Global(loc, unit, name, false));
+	}
+
+	protected Expression makeNameRef(
+			String name,
+			CodeLocation loc) {
+		String modName = (currentModule != null) ? currentModule.getName() : "__main__";
+		return new PyNameRef(currentCFG, loc, name, modName);
+	}
+
+	protected void enterLocalScope() {
+		localScopes.push(new HashSet<>());
+	}
+
+	protected void exitLocalScope() {
+		if (!localScopes.isEmpty())
+			localScopes.pop();
+	}
+
+	protected boolean isInsideLocalScope() {
+		return !localScopes.isEmpty();
+	}
+
+	protected void declareNameInCurrentScope(
+			String name) {
+		if (!localScopes.isEmpty() && name != null && !name.isEmpty())
+			localScopes.peek().add(name);
+	}
+
+	protected boolean isNameInVisibleLocalScope(
+			String name) {
+		if (name == null || name.isEmpty())
+			return false;
+		for (Set<String> scope : localScopes)
+			if (scope.contains(name))
+				return true;
+		return false;
+	}
+
+	/**
+	 * Returns true if {@code name} is declared in the topmost (innermost) scope
+	 * frame only. Used inside function/method bodies to implement the L step of
+	 * Python LEGB resolution: only the method's own local scope is considered;
+	 * enclosing class-body scope frames are intentionally excluded.
+	 *
+	 * @param name the name to look up
+	 * 
+	 * @return {@code true} if {@code name} is in the top scope frame
+	 */
+	protected boolean isNameInTopLocalScope(
+			String name) {
+		if (name == null || name.isEmpty())
+			return false;
+		Set<String> top = localScopes.peek();
+		return top != null && top.contains(name);
 	}
 
 	@FunctionalInterface
@@ -211,11 +335,8 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	}
 
 	protected static String transformToCode(
-			List<String> code_list) {
-		StringBuilder result = new StringBuilder();
-		for (String s : code_list)
-			result.append(s).append("\n");
-		return result.toString();
+			List<String> codeList) {
+		return String.join("\n", codeList) + "\n";
 	}
 
 	protected int getLine(
@@ -239,13 +360,13 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 		return new CodeMemberDescriptor(loc, currentModule, false, INSTRUMENTED_MAIN_FUNCTION_NAME, cfgArgs);
 	}
 
-	protected CodeMemberDescriptor buildInitModuleCFGDesriptor(
+	protected CodeMemberDescriptor buildInitModuleCFGDescriptor(
 			SourceCodeLocation loc) {
 		PyParameter[] cfgArgs = new PyParameter[] {};
 		return new CodeMemberDescriptor(loc, currentModule, false, "$init", cfgArgs);
 	}
 
-	protected CodeMemberDescriptor buildInitClassCFGDesriptor(
+	protected CodeMemberDescriptor buildInitClassCFGDescriptor(
 			CodeLocation loc) {
 		PyParameter[] cfgArgs = new PyParameter[] {};
 		return new CodeMemberDescriptor(loc, currentUnit, false, "$init", cfgArgs);
@@ -263,26 +384,64 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	}
 
 	protected void addRetNodesToCurrentCFG() {
-		Ret ret = new Ret(currentCFG, currentCFG.getDescriptor().getLocation());
 		if (currentCFG.getNodesCount() == 0) {
 			// empty method, so the ret is also the entrypoint
-			currentCFG.addNode(ret, true);
-		} else {
-			// every non-throwing instruction that does not have a follower
-			// is ending the method
-			Collection<Statement> preExits = new LinkedList<>();
-			for (Statement st : currentCFG.getNodes())
-				if (!st.stopsExecution() && currentCFG.followersOf(st).isEmpty())
-					preExits.add(st);
-			if (!preExits.isEmpty()) {
-				currentCFG.addNode(ret);
-				for (Statement st : preExits)
-					currentCFG.addEdge(new SequentialEdge(st, ret));
-				for (VariableTableEntry entry : currentCFG.getDescriptor().getVariables())
-					if (preExits.contains(entry.getScopeEnd()))
-						entry.setScopeEnd(ret);
-			}
+			currentCFG.addNode(new Ret(currentCFG, currentCFG.getDescriptor().getLocation()), true);
+			return;
 		}
+
+		Ret canonicalRet = null;
+		Collection<Ret> extraRets = new LinkedList<>();
+		for (Statement st : currentCFG.getNodes())
+			if (st instanceof Ret ret)
+				if (canonicalRet == null)
+					canonicalRet = ret;
+				else
+					extraRets.add(ret);
+
+		if (canonicalRet == null) {
+			boolean hasFallthroughExit = false;
+			for (Statement st : currentCFG.getNodes())
+				if (!st.stopsExecution() && currentCFG.followersOf(st).isEmpty()) {
+					hasFallthroughExit = true;
+					break;
+				}
+
+			// If every path already ends with an explicit stopping statement
+			// (eg,
+			// Return), we do not force-create an extra synthetic Ret.
+			if (!hasFallthroughExit)
+				return;
+
+			canonicalRet = new Ret(currentCFG, currentCFG.getDescriptor().getLocation());
+			currentCFG.addNode(canonicalRet);
+		}
+
+		// Merge all return exits to a single terminal node.
+		for (Ret extra : extraRets) {
+			Collection<Statement> preds = new LinkedList<>(currentCFG.predecessorsOf(extra));
+			for (Statement pred : preds) {
+				boolean hasNonRetFollower = currentCFG.followersOf(pred).stream()
+						.anyMatch(f -> !(f instanceof Ret));
+				if (!hasNonRetFollower)
+					currentCFG.addEdge(new SequentialEdge(pred, canonicalRet));
+			}
+			currentCFG.getNodeList().removeNode(extra);
+		}
+
+		// every non-throwing instruction that does not have a follower
+		// is ending the method
+		Collection<Statement> preExits = new LinkedList<>();
+		for (Statement st : currentCFG.getNodes())
+			if (st != canonicalRet && !st.stopsExecution() && currentCFG.followersOf(st).isEmpty())
+				preExits.add(st);
+
+		for (Statement st : preExits)
+			currentCFG.addEdge(new SequentialEdge(st, canonicalRet));
+
+		for (VariableTableEntry entry : currentCFG.getDescriptor().getVariables())
+			if (preExits.contains(entry.getScopeEnd()))
+				entry.setScopeEnd(canonicalRet);
 	}
 
 	private CFG makeInit(

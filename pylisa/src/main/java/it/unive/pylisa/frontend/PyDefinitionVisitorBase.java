@@ -1,4 +1,4 @@
-package it.unive.pylisa;
+package it.unive.pylisa.frontend;
 
 import it.unive.lisa.program.*;
 import it.unive.lisa.program.cfg.CFG;
@@ -13,6 +13,7 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
+import it.unive.pylisa.UnsupportedStatementException;
 import it.unive.pylisa.antlr.Python3Parser;
 import it.unive.pylisa.antlr.Python3Parser.ArgumentContext;
 import it.unive.pylisa.antlr.Python3Parser.Async_funcdefContext;
@@ -42,14 +43,13 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyFunctionType;
 import it.unive.pylisa.program.FunctionUnit;
 import it.unive.pylisa.program.ModuleUnit;
+import it.unive.pylisa.program.PyClassUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.tuple.Triple;
 
 public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
@@ -86,9 +86,7 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 			return unsupported(ctx, "Expecting a DecoratorsContext in DecoratedContext");
 		}
 		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
-		Statement first = null, last = null;
 		Expression result = null;
-		String name = "";
 		Expression innerAssign = null;
 		if (ctx.classdef() != null) {
 			return unsupported(ctx, "Class Decorators are not supported yet");
@@ -114,18 +112,8 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		} else {
 			return unsupported(ctx, "Expecting {'def', 'class', 'async'} after decorators");
 		}
-		Expression target = null;
-		if (currentUnit instanceof ModuleUnit pmu) {
-			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu,
-					new Global(getLocation(ctx), pmu, name, false));
-		} else {
-			target = new AttributeAccess(this.currentCFG, getLocation(ctx),
-					new VariableRef(this.currentCFG, getLocation(ctx), "$self"), name);
-		}
 		PyAssign pyAssign = new PyAssign(currentCFG, getLocation(ctx), innerAssign, result);
-		first = pyAssign;
 		block.addNode(pyAssign);
-		last = result;
 		return Triple.of(pyAssign, block, pyAssign);
 	}
 
@@ -146,15 +134,11 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 
 		if (result instanceof VariableRef) {
 			List<Expression> params = new ArrayList<>();
-			String target = ((VariableRef) result).getName();
 			if (ctx.arglist() != null)
 				for (ArgumentContext arg : ctx.arglist().argument())
 					params.add(visitArgument(arg));
 			params = convertAssignmentsToByNameParameters(params);
 			return new FunctionApply(currentCFG, getLocation(ctx), result, params.toArray(Expression[]::new));
-			// return new UnresolvedCall(currentCFG, getLocation(ctx),
-			// CallType.STATIC, null, target,
-			// params.toArray(Expression[]::new));
 		}
 		List<Expression> params = new ArrayList<>();
 		String varName = ctx.dotted_name().children.get(0).getText();
@@ -163,18 +147,7 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 			for (ArgumentContext arg : ctx.arglist().argument())
 				params.add(visitArgument(arg));
 		params = convertAssignmentsToByNameParameters(params);
-
-		List<ParseTree> trees = ctx.dotted_name().children.subList(1, ctx.dotted_name().children.size());
-		String target = trees.stream()
-				.map(ParseTree::getText)
-				.filter(text -> !text.equals("."))
-				.collect(Collectors.joining("."));
 		return new FunctionApply(currentCFG, getLocation(ctx), result, params.toArray(Expression[]::new));
-		// return new UnresolvedCall(currentCFG, getLocation(ctx),
-		// CallType.UNKNOWN, null, target,
-		// params.toArray(Expression[]::new));
-		// return new AnnotationMember(ctx.dotted_name().getText(), new
-		// DecoratedAnnotation(params, uc));
 	}
 
 	public Expression visitDecorators(
@@ -185,15 +158,24 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		List<DecoratorContext> decorators = ctx.decorator();
 
 		for (int i = decorators.size() - 1; i >= 0; i--) {
-			FunctionApply decorator = visitDecorator(decorators.get(i));
+			DecoratorContext decorCtx = decorators.get(i);
+			FunctionApply decorator = visitDecorator(decorCtx);
 
 			if (result == null) {
 				result = decorator;
 			} else {
+				// @f(args) → f(args)(func): decorator is a call, use it as
+				// target (double-wrap)
+				// @f → f(func): decorator IS the callable, extract target
+				// (single-wrap)
+				boolean hasExplicitParens = decorCtx.OPEN_PAREN() != null;
+				Expression callTarget = hasExplicitParens
+						? decorator
+						: decorator.getSubExpressions()[0];
 				result = new FunctionApply(
 						currentCFG,
 						getLocation(ctx),
-						decorator,
+						callTarget,
 						List.of(result).toArray(Expression[]::new));
 			}
 		}
@@ -225,6 +207,9 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		cfs = new HashSet<>();
 		Unit prevUnit = currentUnit;
 		currentUnit = unit;
+		enterLocalScope();
+		for (PyParameter parameter : visitParameters(ctx.parameters()))
+			declareNameInCurrentScope(parameter.getName());
 		try {
 			Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> r = visitSuite(ctx.suite());
 			currentUnit = prevUnit;
@@ -239,16 +224,18 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 			currentUnit = prevUnit;
 			throw e;
 		} finally {
+			exitLocalScope();
 			currentCFG = oldCFG;
 			cfs = oldCfs;
 		}
 		Expression target;
 		if (currentUnit instanceof ModuleUnit pmu) {
-			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu,
-					new Global(getLocation(ctx), pmu, ctx.NAME().getText(), false));
+			target = makeScopedAttributeRef(pmu, ctx.NAME().getText(), getLocation(ctx));
+		} else if (currentUnit instanceof ClassUnit cu) {
+			target = makeScopedAttributeRef(cu, ctx.NAME().getText(), getLocation(ctx));
 		} else {
-			target = new AttributeAccess(this.currentCFG, getLocation(ctx),
-					new VariableRef(this.currentCFG, getLocation(ctx), "$self"), unit.getName());
+			declareNameInCurrentScope(ctx.NAME().getText());
+			target = new VariableRef(this.currentCFG, getLocation(ctx), ctx.NAME().getText());
 		}
 		PyAssign funcAssign = new PyAssign(this.currentCFG, getLocation(ctx), target,
 				new ImportFunction(currentCFG, SyntheticLocation.INSTANCE, unit.getName(), unit));
@@ -352,10 +339,10 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		Unit previous = this.currentUnit;
 		String name = ctx.NAME().getSymbol().getText();
 		String fqName = previous.getName() + "." + name;
-		ClassUnit cu = new ClassUnit(new SourceCodeLocation(name, 0, 0), program, fqName, true);
+		PyClassUnit cu = new PyClassUnit(new SourceCodeLocation(name, 0, 0), program, fqName, false);
 		this.currentUnit = cu;
 		PyClassType.register(fqName, cu);
-		PyCFG classInit = new PyCFG(buildInitClassCFGDesriptor(SyntheticLocation.INSTANCE));
+		PyCFG classInit = new PyCFG(buildInitClassCFGDescriptor(SyntheticLocation.INSTANCE));
 		cu.addCodeMember(classInit);
 		// TODO inheritance
 
@@ -367,28 +354,50 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 			// superclass.getText(): add it
 			// to the anchestors
 			String superClassName = imports.getOrDefault(superclass.getText(), superclass.getText());
+			// Try exact match first, then FQN resolution using current module
+			// prefix,
+			// then suffix match for same-module classes referenced by simple
+			// name.
 			for (Unit programCu : this.program.getUnits())
-				if (programCu instanceof it.unive.lisa.program.CompilationUnit
-						&& programCu.getName().equals(superClassName))
-					cu.addAncestor(((it.unive.lisa.program.CompilationUnit) programCu));
+				if (programCu instanceof it.unive.lisa.program.CompilationUnit programCompUnit) {
+					String candidateName = programCu.getName();
+					if (candidateName.equals(superClassName)
+							|| (currentModule != null
+									&& candidateName.equals(currentModule.getName() + "." + superClassName))
+							|| candidateName.endsWith("." + superClassName))
+						cu.addAncestor(programCompUnit);
+				}
 		}
-		if (cu.getImmediateAncestors().isEmpty() && objectUnit != null)
-			cu.addAncestor(objectUnit);
+		if (cu.getImmediateAncestors().isEmpty()) {
+			if (objectUnit != null)
+				cu.addAncestor(objectUnit);
+			else
+				log.warn("builtins.object is not available; class '{}' will have no ancestor. "
+						+ "Ensure toLiSAProgram() completes library loading before parsing.", fqName);
+		}
+		log.debug("DEBUG visitClassdef: class '{}' ancestors = {}", fqName, cu.getImmediateAncestors());
+		// Register the class unit in the program BEFORE parsing the body so
+		// that
+		// super() detection in method bodies can look up the class by name.
+		program.addUnit(cu);
 		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> classInitBody = parseClassBody(ctx.suite());
 		classInit.getNodeList().mergeWith(classInitBody.getMiddle());
-		NoOp noOp = new NoOp(this.currentCFG, SyntheticLocation.INSTANCE);
-		classInit.addNode(noOp, true);
-		classInit.addEdge(new SequentialEdge(noOp, classInitBody.getRight()));
-		program.addUnit(cu);
+		if (ctx.suite().stmt().isEmpty()) {
+			NoOp noOp = new NoOp(classInit, SyntheticLocation.INSTANCE);
+			classInit.addNode(noOp, true);
+			classInit.addEdge(new SequentialEdge(noOp, classInitBody.getLeft()));
+		} else
+			classInit.addNodeIfNotPresent(classInitBody.getLeft(), true);
 		this.currentUnit = previous;
-		PyClassType.register(cu.getName(), cu);
 		Expression target;
 		if (currentUnit instanceof ModuleUnit pmu) {
-			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu,
-					new Global(getLocation(ctx), pmu, name, false));
-		} else {
+			target = makeScopedAttributeRef(pmu, name, getLocation(ctx));
+		} else if (currentUnit instanceof ClassUnit) {
 			target = new AttributeAccess(this.currentCFG, getLocation(ctx),
-					new VariableRef(this.currentCFG, getLocation(ctx), "$self"), name);
+					new VariableRef(this.currentCFG, getLocation(ctx), SELF_PARAM_NAME), name);
+		} else {
+			declareNameInCurrentScope(name);
+			target = new VariableRef(this.currentCFG, getLocation(ctx), name);
 		}
 		PyAssign classAssign = new PyAssign(this.currentCFG, getLocation(ctx), target,
 				new ImportClass(currentCFG, SyntheticLocation.INSTANCE, name, cu));
@@ -405,37 +414,64 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 		Statement first = null;
 		Statement last = null;
-		for (StmtContext stmt : ctx.stmt()) {
-			if (stmt.simple_stmt() != null) {
-				it.unive.lisa.program.cfg.statement.Statement s = parseField(stmt.simple_stmt());
-				block.addNode(s);
-				if (first == null) {
-					first = s;
+		enterLocalScope();
+		try {
+			for (StmtContext stmt : ctx.stmt()) {
+				if (stmt.simple_stmt() != null) {
+					it.unive.lisa.program.cfg.statement.Statement s = parseField(stmt.simple_stmt());
+					block.addNode(s);
+					if (first == null) {
+						first = s;
+					}
+					if (last != null) {
+						block.addEdge(new SequentialEdge(last, s));
+					}
+					last = s;
+				} else if (stmt.compound_stmt().funcdef() != null) {
+					Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> r = visitFuncdef(
+							stmt.compound_stmt().funcdef());
+					if (r.getLeft() != null) {
+						if (first == null)
+							first = r.getLeft();
+						block.mergeWith(r.getMiddle());
+						if (last != null)
+							block.addEdge(new SequentialEdge(last, r.getLeft()));
+						last = r.getRight();
+					}
+				} else if (stmt.compound_stmt().async_stmt() != null) {
+					Object async = visitAsync_stmt(stmt.compound_stmt().async_stmt());
+					if (async instanceof Triple<?, ?, ?> triple
+							&& triple.getLeft() instanceof Statement left
+							&& triple.getMiddle() instanceof NodeList<?, ?, ?> middle
+							&& triple.getRight() instanceof Statement right) {
+						@SuppressWarnings("unchecked")
+						NodeList<CFG, Statement, Edge> middleBlock = (NodeList<CFG, Statement, Edge>) middle;
+						if (first == null)
+							first = left;
+						block.mergeWith(middleBlock);
+						if (last != null)
+							block.addEdge(new SequentialEdge(last, left));
+						last = right;
+					}
+				} else if (stmt.compound_stmt().decorated() != null) {
+					Object decorated = visitDecorated(stmt.compound_stmt().decorated());
+					if (decorated instanceof Triple<?, ?, ?> triple
+							&& triple.getLeft() instanceof Statement left
+							&& triple.getMiddle() instanceof NodeList<?, ?, ?> middle
+							&& triple.getRight() instanceof Statement right) {
+						@SuppressWarnings("unchecked")
+						NodeList<CFG, Statement, Edge> middleBlock = (NodeList<CFG, Statement, Edge>) middle;
+						if (first == null)
+							first = left;
+						block.mergeWith(middleBlock);
+						if (last != null)
+							block.addEdge(new SequentialEdge(last, left));
+						last = right;
+					}
 				}
-				if (last != null) {
-					block.addEdge(new SequentialEdge(last, s));
-				}
-				last = s;
-			} else if (stmt.compound_stmt().funcdef() != null) {
-				// parse the function CFG but don't attach yet
-				/*
-				 * PyCFG funcCFG = visitFuncdef(stmt.compound_stmt().funcdef());
-				 * // create FunctionLiteral to hold the CFG FunctionLiteral
-				 * funcLiteral = new FunctionLiteral(this.currentCFG,
-				 * getLocation(ctx), funcCFG); // assign to the class/module
-				 * object AttributeAccess access = new
-				 * AttributeAccess(currentCFG, getLocation(stmt), new
-				 * VariableRef(currentCFG, getLocation(stmt), "$self",
-				 * Untyped.INSTANCE), // or module object
-				 * funcCFG.getDescriptor().getName()); PyAssign assign = new
-				 * PyAssign(currentCFG, getLocation(ctx), access, funcLiteral);
-				 * block.addNode(assign); if (last != null) block.addEdge(new
-				 * SequentialEdge(last, assign)); last = assign;
-				 */
-			} else if (stmt.compound_stmt().async_stmt() != null)
-				visitAsync_stmt(stmt.compound_stmt().async_stmt());
-			else if (stmt.compound_stmt().decorated() != null)
-				visitDecorated(stmt.compound_stmt().decorated());
+			}
+		} finally {
+			exitLocalScope();
 		}
 		Ret ret = new Ret(currentCFG, SyntheticLocation.INSTANCE);
 		block.addNode(ret);
@@ -453,8 +489,6 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		Collection<Statement> nodes = simple.getMiddle().getNodes();
 		if (nodes.size() != 1)
 			throw new UnsupportedStatementException("Expected a single statement, got " + nodes.size());
-		Statement result = nodes.iterator().next();
-		return result;
-
+		return nodes.iterator().next();
 	}
 }

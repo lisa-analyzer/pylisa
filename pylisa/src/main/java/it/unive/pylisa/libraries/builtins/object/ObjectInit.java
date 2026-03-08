@@ -49,7 +49,6 @@ public class ObjectInit extends it.unive.lisa.program.cfg.statement.UnaryExpress
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		System.out.println("OBJECT INIT!!!!");
 		return state;
 	}
 }

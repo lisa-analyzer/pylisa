@@ -2,7 +2,7 @@ library fastapi:
     location fastapi
 
     class APIRouter extends builtins.object:
-        instance method __new__: it.unive.pylisa.libraries.fastapi.APIRouterNew
+        instance method __new3__: it.unive.pylisa.libraries.fastapi.APIRouterNew
             libtype APIRouter
             param self libtype APIRouter
             param &prefix type it.unive.lisa.program.type.StringType::INSTANCE default ""
@@ -48,7 +48,7 @@ library fastapi:
             param path type it.unive.lisa.program.type.StringType::INSTANCE
 
     class FastAPI extends builtins.object:
-        instance method __new__: it.unive.pylisa.libraries.fastapi.FastAPINew
+        instance method __new3__: it.unive.pylisa.libraries.fastapi.FastAPINew
             libtype FastAPI
             param self libtype FastAPI
             param &debug type it.unive.lisa.program.type.BoolType::INSTANCE default false

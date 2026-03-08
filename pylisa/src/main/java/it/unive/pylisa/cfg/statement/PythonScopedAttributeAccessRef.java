@@ -11,12 +11,12 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 
-public class PythonUnitAttributeAccessRef extends Expression {
+public class PythonScopedAttributeAccessRef extends Expression {
 
 	/**
 	 * The receiver of the access
 	 */
-	private final CompilationUnit compilationUnit;
+	private final CompilationUnit containerUnit;
 
 	/**
 	 * The global being accessed
@@ -27,19 +27,19 @@ public class PythonUnitAttributeAccessRef extends Expression {
 	 * Builds the global access, happening at the given location in the program.
 	 * The type of this expression is the one of the accessed global.
 	 *
-	 * @param cfg             the cfg that this expression belongs to
-	 * @param location        the location where the expression is defined
-	 *                            within the program
-	 * @param compilationUnit the unit containing the accessed global
-	 * @param target          the accessed global
+	 * @param cfg           the cfg that this expression belongs to
+	 * @param location      the location where the expression is defined within
+	 *                          the program
+	 * @param containerUnit the unit containing the accessed global
+	 * @param target        the accessed global
 	 */
-	public PythonUnitAttributeAccessRef(
+	public PythonScopedAttributeAccessRef(
 			CFG cfg,
 			CodeLocation location,
-			CompilationUnit compilationUnit,
+			CompilationUnit containerUnit,
 			Global target) {
 		super(cfg, location, target.getStaticType());
-		this.compilationUnit = compilationUnit;
+		this.containerUnit = containerUnit;
 		this.target = target;
 	}
 
@@ -49,8 +49,8 @@ public class PythonUnitAttributeAccessRef extends Expression {
 	 *
 	 * @return the container of the global
 	 */
-	public CompilationUnit getContainer() {
-		return compilationUnit;
+	public CompilationUnit getContainerUnit() {
+		return containerUnit;
 	}
 
 	/**
@@ -73,7 +73,7 @@ public class PythonUnitAttributeAccessRef extends Expression {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((compilationUnit == null) ? 0 : compilationUnit.hashCode());
+		result = prime * result + ((containerUnit == null) ? 0 : containerUnit.hashCode());
 		result = prime * result + ((target == null) ? 0 : target.hashCode());
 		return result;
 	}
@@ -87,11 +87,11 @@ public class PythonUnitAttributeAccessRef extends Expression {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		PythonUnitAttributeAccessRef other = (PythonUnitAttributeAccessRef) obj;
-		if (compilationUnit == null) {
-			if (other.compilationUnit != null)
+		PythonScopedAttributeAccessRef other = (PythonScopedAttributeAccessRef) obj;
+		if (containerUnit == null) {
+			if (other.containerUnit != null)
 				return false;
-		} else if (!compilationUnit.equals(other.compilationUnit))
+		} else if (!containerUnit.equals(other.containerUnit))
 			return false;
 		if (target == null) {
 			if (other.target != null)
@@ -104,16 +104,16 @@ public class PythonUnitAttributeAccessRef extends Expression {
 	@Override
 	protected int compareSameClass(
 			Statement o) {
-		PythonUnitAttributeAccessRef other = (PythonUnitAttributeAccessRef) o;
+		PythonScopedAttributeAccessRef other = (PythonScopedAttributeAccessRef) o;
 		int cmp;
-		if ((cmp = compilationUnit.getName().compareTo(other.compilationUnit.getName())) != 0)
+		if ((cmp = containerUnit.getName().compareTo(other.containerUnit.getName())) != 0)
 			return cmp;
 		return target.getName().compareTo(other.target.getName());
 	}
 
 	@Override
 	public String toString() {
-		return compilationUnit.getName() + "::" + target.getName();
+		return containerUnit.getName() + "::" + target.getName();
 	}
 
 	@Override
@@ -126,10 +126,9 @@ public class PythonUnitAttributeAccessRef extends Expression {
 
 		GlobalVariable access = new GlobalVariable(
 				target.getStaticType(),
-				"$" + compilationUnit.getName() + "::" + target.getName(),
+				"$" + containerUnit.getName() + "::" + target.getName(),
 				target.getAnnotations(),
 				getLocation());
-		CodeLocation loc = getLocation();
 		return analysis.smallStepSemantics(state, access, this);
 	}
 }

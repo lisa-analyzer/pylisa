@@ -42,37 +42,12 @@ public class PyAssign extends Assignment {
 			throws SemanticException {
 
 		CodeLocation loc = getLocation();
-		// FIX ME
-		/*
-		 * if (LibrarySpecificationProvider.isLibraryLoaded(
-		 * LibrarySpecificationProvider.PANDAS)) { PyClassType dftype =
-		 * PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF); Type
-		 * dfreftype = dftype.getReference(); PyClassType seriestype =
-		 * PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES); Type
-		 * seriesreftype = seriestype.getReference(); if
-		 * (PandasSemantics.isDataframePortionThatCanBeAssignedTo(left, this,
-		 * state.getState())) { HeapDereference lderef =
-		 * PandasSemantics.getDataframeDereference(left, this,
-		 * state.getState()); SymbolicExpression write; Set<Type> rts =
-		 * state.getState().getRuntimeTypesOf(right, this, state.getState()); if
-		 * (rts.stream().anyMatch(t -> t.equals(dfreftype) ||
-		 * t.equals(seriesreftype))) { // asssigning part of a dataframe to
-		 * another dataframe so // get deref from right if
-		 * (PandasSemantics.isDataframePortionThatCanBeAssignedTo(right, this,
-		 * state.getState())) right =
-		 * PandasSemantics.getDataframeDereference(right, this,
-		 * state.getState()); write = new BinaryExpression(dftype, lderef,
-		 * right, new AssignToSelection(0), loc); } else // assigning a part of
-		 * a dataframe to a constant write = new BinaryExpression(dftype,
-		 * lderef, right, new AssignToConstant(0), loc); // we leave on the
-		 * stack the column that received the assignment return
-		 * state.smallStepSemantics(write, this).smallStepSemantics(left, this);
-		 * } }
-		 */
 
 		Expression lefthand = getLeft();
-		if (!(lefthand instanceof TupleCreation))
-			return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
+		if (!(lefthand instanceof TupleCreation)) {
+			AnalysisState<A> assigned = super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
+			return assigned;
+		}
 
 		// get the variables being assigned
 		Expression[] vars = ((TupleCreation) lefthand).getSubExpressions();

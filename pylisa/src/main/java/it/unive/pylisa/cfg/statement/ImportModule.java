@@ -58,8 +58,12 @@ public class ImportModule extends Expression {
 		AnalysisState<A> state = entryState;
 		state = ObjectRegister.initialize(state, this, pythonModuleUnit, interprocedural, expressions);
 
-		Expression target = new PythonUnitAttributeAccessRef(this.getCFG(), getLocation(), (CompilationUnit) this.getUnit(),
-				new Global(getLocation(), this.getUnit(), moduleName, false));
+		Expression target;
+		if (this.getUnit() instanceof CompilationUnit cu)
+			target = new PythonScopedAttributeAccessRef(this.getCFG(), getLocation(), cu,
+					new Global(getLocation(), cu, moduleName, false));
+		else
+			target = new VariableRef(this.getCFG(), getLocation(), moduleName);
 		PyAssign assign = new PyAssign(this.getCFG(), getLocation(), target,
 				new ModuleLiteral(this.getCFG(), getLocation(), pythonModuleUnit));
 		state = assign.forwardSemantics(state, interprocedural, expressions);

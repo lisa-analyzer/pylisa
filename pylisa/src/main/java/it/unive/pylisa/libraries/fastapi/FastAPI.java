@@ -65,7 +65,16 @@ public class FastAPI extends VariadicExpression implements PluggableStatement {
 	@Override
 	protected int compareSameClassAndParams(
 			Statement o) {
-		return 0;
+		FastAPI other = (FastAPI) o;
+		int cmp = Integer.compare(getSubExpressions().length, other.getSubExpressions().length);
+		if (cmp != 0)
+			return cmp;
+		for (int i = 0; i < getSubExpressions().length; i++) {
+			cmp = getSubExpressions()[i].toString().compareTo(other.getSubExpressions()[i].toString());
+			if (cmp != 0)
+				return cmp;
+		}
+		return Integer.compare(System.identityHashCode(this), System.identityHashCode(other));
 	}
 
 	@Override
@@ -75,11 +84,14 @@ public class FastAPI extends VariadicExpression implements PluggableStatement {
 			SymbolicExpression[] combination,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		System.out.println("FastAPI::fwdVariadicSemantics");
+		int rootPathIndex = getVarArgsIndex().get("root_path");
+		SymbolicExpression basePath = combination.length > rootPathIndex
+				? combination[rootPathIndex]
+				: new Constant(StringType.INSTANCE, "", getLocation());
 		it.unive.lisa.symbolic.value.VariadicExpression expr = new it.unive.lisa.symbolic.value.VariadicExpression.Builder()
 				.operator(HttpServiceCreation.INSTANCE)
 				.varargsOperand("concreteType", new Constant(StringType.INSTANCE, "FastAPI", getLocation()))
-				.varargsOperand("basePath", combination[getVarArgsIndex().get("root_path")])
+				.varargsOperand("basePath", basePath)
 				.varargsOperand("paramDelimiter", new Constant(StringType.INSTANCE, "{*}", getLocation()))
 				.staticType(LiSAHttpService.INSTANCE)
 				.location(getLocation())

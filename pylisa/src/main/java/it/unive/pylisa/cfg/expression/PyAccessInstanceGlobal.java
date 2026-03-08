@@ -54,15 +54,13 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 					return keys.fwdUnarySemantics(interprocedural, state, expr, expressions);
 				}
 		}
-		// FIXME
-		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		AnalysisState<A> sup = super.fwdUnarySemantics(interprocedural, state, expr, expressions);
-		if (!sup.isBottom())
-			return sup;
-
+		// Always write/read through the heap (instance attribute slot).
+		// LiSA's AccessInstanceGlobal.fwdUnarySemantics creates a
+		// GlobalVariable
+		// (e.g. $class1::Y) instead of a heap field, which is wrong for Python.
 		Variable var = new Variable(Untyped.INSTANCE, getTarget(), new Annotations(), getLocation());
 		HeapDereference container = new HeapDereference(Untyped.INSTANCE, expr, getLocation());
 		AccessChild access = new AccessChild(Untyped.INSTANCE, container, var, getLocation());
-		return analysis.smallStepSemantics(state, access, this);
+		return interprocedural.getAnalysis().smallStepSemantics(state, access, this);
 	}
 }

@@ -17,7 +17,33 @@ public class PyModuleType implements UnitType {
 	public static PyModuleType register(
 			String name,
 			CompilationUnit unit) {
-		return types.computeIfAbsent(name, x -> new PyModuleType(name, unit));
+		PyModuleType current = types.get(name);
+		if (current == null) {
+			current = new PyModuleType(name, unit, false);
+			types.put(name, current);
+		} else {
+			current.unit = unit;
+			current.unknown = false;
+		}
+		return current;
+	}
+
+	public static PyModuleType registerUnknown(
+			String name,
+			CompilationUnit unit) {
+		PyModuleType current = types.get(name);
+		if (current == null) {
+			current = new PyModuleType(name, unit, true);
+			types.put(name, current);
+		} else if (current.unknown) {
+			current.unit = unit;
+		}
+		return current;
+	}
+
+	public static boolean isRegistered(
+			String name) {
+		return types.containsKey(name);
 	}
 
 	public static PyModuleType lookup(
@@ -29,13 +55,20 @@ public class PyModuleType implements UnitType {
 	}
 
 	private final String name;
-	private final CompilationUnit unit;
+	private CompilationUnit unit;
+	private boolean unknown;
 
 	private PyModuleType(
 			String name,
-			CompilationUnit unit) {
+			CompilationUnit unit,
+			boolean unknown) {
 		this.name = name;
 		this.unit = unit;
+		this.unknown = unknown;
+	}
+
+	public boolean isUnknown() {
+		return unknown;
 	}
 
 	public CompilationUnit getUnit() {
@@ -72,7 +105,7 @@ public class PyModuleType implements UnitType {
 
 	@Override
 	public String toString() {
-		return name;
+		return unknown ? "(U)" + name : name;
 	}
 
 }

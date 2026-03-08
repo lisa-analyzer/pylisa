@@ -1,9 +1,10 @@
 library flask:
     location flask
-    class flask.Flask -> type it.unive.pylisa.cfg.type.LiSAHttpService::INSTANCE :
+
+    class Flask -> type it.unive.pylisa.cfg.type.LiSAHttpService::INSTANCE extends builtins.object:
         instance method __init__: it.unive.pylisa.libraries.flask.Flask
-            libtype flask.Flask
-            param self libtype flask.Flask*
+            libtype Flask
+            param self libtype Flask*
             param import_name type it.unive.lisa.program.type.StringType::INSTANCE
             param &static_url_path type it.unive.lisa.program.type.StringType::INSTANCE default ""
             param &static_folder type it.unive.lisa.program.type.StringType::INSTANCE default "static"
@@ -16,5 +17,5 @@ library flask:
             param &root_path type it.unive.lisa.program.type.StringType::INSTANCE default ""
         instance method route: it.unive.pylisa.libraries.flask.Route
             type it.unive.lisa.type.Untyped::INSTANCE
-            param self libtype flask.Flask*
+            param self libtype Flask*
             param path type it.unive.lisa.program.type.StringType::INSTANCE

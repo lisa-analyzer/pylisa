@@ -2,7 +2,7 @@ package it.unive.pylisa.cfg.statement;
 
 import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -15,7 +15,7 @@ import it.unive.pylisa.cfg.expression.PyAssign;
 
 public class ImportClass extends Expression {
 	private String className;
-	private ClassUnit classUnit;
+	private CompilationUnit classUnit;
 
 	/**
 	 * Builds a statement happening at the given source location.
@@ -35,7 +35,7 @@ public class ImportClass extends Expression {
 			CFG cfg,
 			CodeLocation location,
 			String className,
-			ClassUnit classUnit) {
+			CompilationUnit classUnit) {
 		this(cfg, location);
 		this.className = className;
 		this.classUnit = classUnit;

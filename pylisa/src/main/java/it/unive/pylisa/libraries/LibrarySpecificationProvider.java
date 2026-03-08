@@ -37,7 +37,7 @@ public class LibrarySpecificationProvider {
 	public static final String SET = "Set";
 	public static final String DICT = "builtins.dict";
 	public static final String LIST = "List";
-	public static final String TUPLE = "Tuple";
+	public static final String TUPLE = "builtins.tuple";
 	public static final String SLICE = "Slice";
 	public static final String OBJECT = "Object";
 

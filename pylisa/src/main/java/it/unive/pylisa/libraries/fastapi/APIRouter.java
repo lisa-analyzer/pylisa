@@ -46,7 +46,16 @@ public class APIRouter extends VariadicExpression implements PluggableStatement 
 	@Override
 	protected int compareSameClassAndParams(
 			Statement o) {
-		return 0;
+		APIRouter other = (APIRouter) o;
+		int cmp = Integer.compare(getSubExpressions().length, other.getSubExpressions().length);
+		if (cmp != 0)
+			return cmp;
+		for (int i = 0; i < getSubExpressions().length; i++) {
+			cmp = getSubExpressions()[i].toString().compareTo(other.getSubExpressions()[i].toString());
+			if (cmp != 0)
+				return cmp;
+		}
+		return Integer.compare(System.identityHashCode(this), System.identityHashCode(other));
 	}
 
 	@Override
@@ -57,7 +66,10 @@ public class APIRouter extends VariadicExpression implements PluggableStatement 
 			StatementStore<A> expressions)
 			throws SemanticException {
 
-		System.out.println("APIRouter::fwdVariadicSemantics");
+		int prefixIndex = getVarArgsIndex().get("prefix");
+		SymbolicExpression basePath = combination.length > prefixIndex
+				? combination[prefixIndex]
+				: new Constant(StringType.INSTANCE, "", getLocation());
 
 		it.unive.lisa.symbolic.value.VariadicExpression expr = new it.unive.lisa.symbolic.value.VariadicExpression.Builder()
 				.operator(HttpServiceCreation.INSTANCE)
@@ -66,7 +78,7 @@ public class APIRouter extends VariadicExpression implements PluggableStatement 
 						new Constant(StringType.INSTANCE, "APIRouter", getLocation()))
 				.varargsOperand(
 						"basePath",
-						combination[getVarArgsIndex().get("prefix")])
+						basePath)
 				.varargsOperand(
 						"paramDelimiter",
 						new Constant(StringType.INSTANCE, "{*}", getLocation()))

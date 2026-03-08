@@ -37,7 +37,16 @@ public class FastAPIIncludeRouter extends VariadicExpression implements Pluggabl
 	@Override
 	protected int compareSameClassAndParams(
 			Statement o) {
-		return 0;
+		FastAPIIncludeRouter other = (FastAPIIncludeRouter) o;
+		int cmp = Integer.compare(getSubExpressions().length, other.getSubExpressions().length);
+		if (cmp != 0)
+			return cmp;
+		for (int i = 0; i < getSubExpressions().length; i++) {
+			cmp = getSubExpressions()[i].toString().compareTo(other.getSubExpressions()[i].toString());
+			if (cmp != 0)
+				return cmp;
+		}
+		return Integer.compare(System.identityHashCode(this), System.identityHashCode(other));
 	}
 
 	@Override

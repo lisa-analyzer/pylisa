@@ -1,7 +1,5 @@
-package it.unive.pylisa;
+package it.unive.pylisa.frontend;
 
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.logging.IterationLogger;
 import it.unive.lisa.program.*;
@@ -23,6 +21,7 @@ import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.VoidType;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
+import it.unive.pylisa.UnsupportedStatementException;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
 import it.unive.pylisa.antlr.Python3Parser.Eval_inputContext;
@@ -37,31 +36,26 @@ import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.cfg.type.PyModuleType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.program.ModuleUnit;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.tuple.Triple;
 
 public class PyFrontend extends PyDefinitionVisitorBase {
 
 	/**
-	 * Builds an instance of @PyToCFG for a given Python program given at the
+	 * Builds an instance of @PyFrontend for a given Python program given at the
 	 * location filePath.
 	 *
 	 * @param filePath file path to a Python program
@@ -75,7 +69,7 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 	}
 
 	/**
-	 * Builds an instance of @PyToCFG for a given Python program given at the
+	 * Builds an instance of @PyFrontend for a given Python program given at the
 	 * location filePath.
 	 *
 	 * @param filePath  file path to a Python program
@@ -93,7 +87,7 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 	}
 
 	/**
-	 * Builds an instance of @PyToCFG for a given Python program given at the
+	 * Builds an instance of @PyFrontend for a given Python program given at the
 	 * location filePath.
 	 *
 	 * @param filePath  file path to a Python program
@@ -120,7 +114,6 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 	 * @throws AnalysisSetupException if something goes wrong while setting up
 	 *                                    the program
 	 */
-
 	public Program toLiSAProgram(
 			boolean clearClassType)
 			throws IOException,
@@ -141,19 +134,23 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 
 		LibrarySpecificationProvider.importPythonModule(program, "builtins", init);
 		objectUnit = (it.unive.lisa.program.CompilationUnit) program.getUnit("builtins.object");
+		if (objectUnit == null)
+			log.warn("Could not resolve 'builtins.object' after library loading; "
+					+ "classes without explicit parents will have no ancestor");
 		log.info("Reading file... " + filePath);
 
 		importManager.setProjectLoader(this::loadProjectModuleFile);
 
-		Python3Lexer lexer = null;
-		try (InputStream stream = mkStream();) {
-			lexer = new Python3Lexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
+		String source;
+		Python3Lexer lexer;
+		try {
+			source = new SourceReader(filePath, notebook, cellOrder).readNormalizedSource();
+			lexer = new Python3Lexer(CharStreams.fromString(source, filePath));
 		} catch (IOException e) {
 			throw new IOException("Unable to parse '" + filePath + "'", e);
 		}
 
-		Python3Parser parser = new Python3Parser(new CommonTokenStream(lexer));
-		ParseTree tree = parser.file_input();
+		ParseTree tree = parseFileInputStrict(lexer, filePath, source);
 
 		visit(tree);
 
@@ -207,11 +204,10 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		cfs = new HashSet<>();
 
 		try {
-			Python3Lexer lexer = new Python3Lexer(
-					CharStreams.fromFileName(filePath, StandardCharsets.UTF_8));
-			Python3Parser parser = new Python3Parser(new CommonTokenStream(lexer));
-			visitFile_input(parser.file_input());
-		} catch (Exception e) {
+			String source = SourceReader.readNormalizedFile(filePath);
+			Python3Lexer lexer = new Python3Lexer(CharStreams.fromString(source, filePath));
+			visitFile_input(parseFileInputStrict(lexer, filePath, source));
+		} catch (IOException | RuntimeException e) {
 			// Finalize the partially-built $init CFG so it passes LiSA
 			// validation
 			addRetNodesToCurrentCFG();
@@ -249,23 +245,20 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 	public PyCFG visitFile_input(
 			File_inputContext ctx) {
 
-		currentCFG = new PyCFG(buildInitModuleCFGDesriptor(getLocation(ctx)));
+		currentCFG = new PyCFG(buildInitModuleCFGDescriptor(getLocation(ctx)));
 		ImportModule builtinsModule = new ImportModule(currentCFG, getLocation(ctx), "builtins",
 				PyModuleType.lookup("builtins").getUnit());
-		//Expression target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), currentModule,
-				//new Global(getLocation(ctx), currentModule, "__builtins__", false));
-		//PyAssign builtInAssign = new PyAssign(this.currentCFG, getLocation(ctx), target, builtinsModule);
 		currentCFG.addNode(builtinsModule, true);
 		cfs = new HashSet<>();
 		currentModule.addCodeMember(currentCFG);
-		Expression targetName = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), currentModule,
+		Expression targetName = new PythonScopedAttributeAccessRef(this.currentCFG, getLocation(ctx), currentModule,
 				new Global(getLocation(ctx), currentModule, "__name__", false));
 
 		PyAssign nameAssign = new PyAssign(this.currentCFG, getLocation(ctx), targetName,
 				new StringLiteral(this.currentCFG, getLocation(ctx), currentModule.getName()));
 		currentCFG.addNode(nameAssign);
 		currentCFG.addEdge(new SequentialEdge(builtinsModule, nameAssign));
-		Statement last_stmt = nameAssign;
+		Statement lastStmt = nameAssign;
 		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
 			Object visited;
 			if (stmt.compound_stmt() != null)
@@ -276,18 +269,16 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 			if (!(visited instanceof Triple<?, ?, ?>))
 				continue;
 
-			if (visited != null) {
-				@SuppressWarnings("unchecked")
-				Triple<Statement, NodeList<CFG, Statement, Edge>,
-						Statement> st = (Triple<Statement, NodeList<CFG, Statement, Edge>, Statement>) visited;
-				currentCFG.getNodeList().mergeWith(st.getMiddle());
-				if (last_stmt == null)
-					// this is the first instruction
-					currentCFG.getEntrypoints().add(st.getLeft());
-				else
-					currentCFG.addEdge(new SequentialEdge(last_stmt, st.getLeft()));
-				last_stmt = st.getRight();
-			}
+			@SuppressWarnings("unchecked")
+			Triple<Statement, NodeList<CFG, Statement, Edge>,
+					Statement> st = (Triple<Statement, NodeList<CFG, Statement, Edge>, Statement>) visited;
+			currentCFG.getNodeList().mergeWith(st.getMiddle());
+			if (lastStmt == null)
+				// this is the first instruction
+				currentCFG.getEntrypoints().add(st.getLeft());
+			else if (!lastStmt.stopsExecution())
+				currentCFG.addEdge(new SequentialEdge(lastStmt, st.getLeft()));
+			lastStmt = st.getRight();
 		}
 
 		addRetNodesToCurrentCFG();
@@ -302,42 +293,38 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		throw new UnsupportedStatementException();
 	}
 
-	private InputStream mkStream() throws FileNotFoundException {
-		if (!this.notebook)
-			return new FileInputStream(getFilePath());
-
-		Gson gson = new Gson();
-		JsonReader reader = gson.newJsonReader(new FileReader(filePath));
-		Map<?, ?> map = gson.fromJson(reader, Map.class);
-		@SuppressWarnings("unchecked")
-		List<Map<?, ?>> cells = (ArrayList<Map<?, ?>>) map.get("cells");
-		SortedMap<Integer, String> codeBlocks = new TreeMap<>();
-		for (int i = 0; i < cells.size(); i++) {
-			Map<?, ?> cell = cells.get(i);
-			String ctype = (String) cell.get("cell_type");
-			if (ctype.equals("code")) {
-				@SuppressWarnings("unchecked")
-				List<String> code_list = (List<String>) cell.get("source");
-				codeBlocks.put(i, transformToCode(code_list));
+	private File_inputContext parseFileInputStrict(
+			Python3Lexer lexer,
+			String sourceName,
+			String source)
+			throws IOException {
+		BaseErrorListener strictErrors = new BaseErrorListener() {
+			@Override
+			public void syntaxError(
+					Recognizer<?, ?> recognizer,
+					Object offendingSymbol,
+					int line,
+					int charPositionInLine,
+					String msg,
+					RecognitionException e) {
+				throw new ParseCancellationException(SyntaxErrorFormatter.format(sourceName, source, offendingSymbol,
+						line, charPositionInLine, msg));
 			}
+		};
+
+		lexer.removeErrorListeners();
+		lexer.addErrorListener(strictErrors);
+
+		Python3Parser parser = new Python3Parser(new CommonTokenStream(lexer));
+		parser.removeErrorListeners();
+		parser.addErrorListener(strictErrors);
+		parser.setErrorHandler(new BailErrorStrategy());
+
+		try {
+			return parser.file_input();
+		} catch (ParseCancellationException ex) {
+			throw new IOException("Invalid Python input in '" + sourceName + "': " + ex.getMessage(), ex);
 		}
-
-		StringBuilder code = new StringBuilder();
-
-		if (cellOrder.isEmpty())
-			for (Entry<Integer, String> c : codeBlocks.entrySet())
-				code.append(c.getValue()).append("\n");
-		else {
-			log.warn("The following cells contain code and can be analyzed: " + codeBlocks.keySet());
-			for (int idx : cellOrder) {
-				String str = codeBlocks.get(idx);
-				if (str == null)
-					log.warn("Cell " + idx + " does not contain code and will be skipped");
-				else
-					code.append(str).append("\n");
-			}
-		}
-
-		return new ByteArrayInputStream(code.toString().getBytes());
 	}
+
 }

@@ -66,7 +66,16 @@ public class FastAPINew extends VariadicExpression implements PluggableStatement
 	@Override
 	protected int compareSameClassAndParams(
 			Statement o) {
-		return 0;
+		FastAPINew other = (FastAPINew) o;
+		int cmp = Integer.compare(getSubExpressions().length, other.getSubExpressions().length);
+		if (cmp != 0)
+			return cmp;
+		for (int i = 0; i < getSubExpressions().length; i++) {
+			cmp = getSubExpressions()[i].toString().compareTo(other.getSubExpressions()[i].toString());
+			if (cmp != 0)
+				return cmp;
+		}
+		return Integer.compare(System.identityHashCode(this), System.identityHashCode(other));
 	}
 
 	@Override
@@ -76,7 +85,6 @@ public class FastAPINew extends VariadicExpression implements PluggableStatement
 			SymbolicExpression[] combination,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		System.out.println("FastAPINew::fwdVariadicSemantics");
 		PyNewObj newObj = new PyNewObj(this.getCFG(), getLocation(), "__init__", PyClassType.lookup("fastapi.FastAPI"),
 				getSubExpressions());
 		return newObj.forwardSemantics(state, interprocedural, expressions);

@@ -15,10 +15,9 @@ import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.statement.ModuleLiteral;
-import it.unive.pylisa.cfg.statement.PythonUnitAttributeAccessRef;
+import it.unive.pylisa.cfg.statement.PythonScopedAttributeAccessRef;
 import it.unive.pylisa.program.FunctionUnit;
 import it.unive.pylisa.program.ModuleUnit;
-
 import java.util.Map;
 
 /**
@@ -123,9 +122,11 @@ public class ObjectRegister extends FunctionalLattice<ObjectRegister, String, St
 					new StatementStore<>(state.bottom()));
 			VariableRef v = new VariableRef(init.getCFG(), init.getLocation(), "$" + compilationUnit.getName());
 			if (compilationUnit instanceof ModuleUnit) {
-				PythonUnitAttributeAccessRef access = new PythonUnitAttributeAccessRef(init.getCFG(), init.getLocation(), compilationUnit,
+				PythonScopedAttributeAccessRef access = new PythonScopedAttributeAccessRef(init.getCFG(),
+						init.getLocation(), compilationUnit,
 						new Global(init.getLocation(), compilationUnit, "__name__", false));
-				PyAssign assign = new PyAssign(init.getCFG(), init.getLocation(), v, new ModuleLiteral(init.getCFG(), init.getLocation(), compilationUnit));
+				PyAssign assign = new PyAssign(init.getCFG(), init.getLocation(), v,
+						new ModuleLiteral(init.getCFG(), init.getLocation(), compilationUnit));
 				state = assign.forwardSemantics(state, interprocedural, expressions);
 			}
 			return state;

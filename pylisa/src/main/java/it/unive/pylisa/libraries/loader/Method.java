@@ -119,10 +119,10 @@ public class Method {
 		it.unive.lisa.program.cfg.Parameter[] pars = new it.unive.lisa.program.cfg.Parameter[params.size()];
 		for (int i = 0; i < pars.length; i++)
 			pars[i] = this.params.get(i).toLiSAParameter(location, init);
-
+		FunctionUnit unit = new FunctionUnit(location, program, container.getName() + "." + getName(), false);
 		CodeMemberDescriptor desc = new CodeMemberDescriptor(
 				location,
-				container,
+				unit,
 				false,
 				"$call",
 				this.type.toLiSAType(),
@@ -132,10 +132,10 @@ public class Method {
 		try {
 			CodeMember function = new NativeCFG(desc,
 					(Class<? extends NaryExpression>) Class.forName(this.implementation));
-			FunctionUnit unit = new FunctionUnit(location, program, container.getName() + "." + getName(), function);
+			unit.setFunction(function);
 			unit.addCodeMember(function);
 			PyFunctionType.register(container.getName() + "." + getName(), unit);
-			// program.addUnit(unit);
+			program.addUnit(unit);
 			return unit;
 		} catch (ClassNotFoundException e) {
 			throw new LibraryCreationException(e);

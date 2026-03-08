@@ -13,9 +13,11 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.statement.ImportClass;
-import it.unive.pylisa.cfg.statement.PythonUnitAttributeAccessRef;
+import it.unive.pylisa.cfg.statement.ImportFunction;
+import it.unive.pylisa.cfg.statement.PythonScopedAttributeAccessRef;
 import it.unive.pylisa.cfg.type.*;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
+import it.unive.pylisa.program.FunctionUnit;
 import it.unive.pylisa.program.ModuleUnit;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -149,7 +151,7 @@ public class Library {
 			// Use the class type itself, not an instance
 			ClassUnit lisaClassUnit = cls.toLiSAClassUnit(program, init);
 			PyClassType classType = PyClassType.register(lisaClassUnit.getName(), lisaClassUnit);
-			Expression target = new PythonUnitAttributeAccessRef(initCFG, SyntheticLocation.INSTANCE, module,
+			Expression target = new PythonScopedAttributeAccessRef(initCFG, SyntheticLocation.INSTANCE, module,
 					new Global(SyntheticLocation.INSTANCE, module, cls.getName(), false));
 
 			Assignment classVarAssign = new PyAssign(initCFG, SyntheticLocation.INSTANCE, target,
@@ -160,15 +162,26 @@ public class Library {
 			}
 			e = classVarAssign;
 		}
-		// Assign functions
-		/*
-		 * for (Method mtd : lib.getMethods()) { SymbolicExpression funcExpr =
-		 * new PyFunctionObject(mtd); // symbolic function object Assignment
-		 * assign = new Assignment(initCFG, location, new MemberAccess(selfRef,
-		 * mtd.getName()), funcExpr); initCFG.addNode(assign); }
-		 */
+		// TODO: Ww should assign methods like we did for classes.
+		// builtins.staticmethod should become accessible by a attribute of
+		// builtins.
+		for (Method mtd : getMethods()) {
+			// IMPLEMENT THIS
 
+			FunctionUnit functionUnit = mtd.toLiSAFunctionUnit(SyntheticLocation.INSTANCE, init, program, module);
+			PyFunctionType functionType = PyFunctionType.register(functionUnit.getName(), functionUnit);
+			Expression target = new PythonScopedAttributeAccessRef(initCFG, SyntheticLocation.INSTANCE, module,
+					new Global(SyntheticLocation.INSTANCE, module, mtd.getName(), false));
+			PyAssign funcAssign = new PyAssign(initCFG, SyntheticLocation.INSTANCE, target,
+					new ImportFunction(initCFG, SyntheticLocation.INSTANCE, functionUnit.getName(), functionUnit));
+			initCFG.addNode(funcAssign, e == null);
+			if (e != null) {
+				initCFG.addEdge(new SequentialEdge(e, funcAssign));
+			}
+			e = funcAssign;
+		}
 		// Assign fields / constants
+		// TODO: KEEP IT FOR LATER.
 		/*
 		 * for (Field fld : lib.getFields()) { SymbolicExpression fieldExpr =
 		 * createFieldExpression(fld); // symbolic constant Assignment assign =

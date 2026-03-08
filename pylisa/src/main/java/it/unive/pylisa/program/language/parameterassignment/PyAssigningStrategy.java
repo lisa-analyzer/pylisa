@@ -14,7 +14,9 @@ import it.unive.lisa.program.language.parameterassignment.ParameterAssigningStra
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
 import it.unive.pylisa.cfg.expression.DictionaryCreation;
@@ -78,8 +80,35 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 				interprocedural,
 				call.getCFG(),
 				callState.bottom());
-		if (logic != null)
-			return Pair.of(logic, parameters);
+		if (logic != null) {
+			if (isSimplePositionalCall(actuals, formals, parameters)) {
+				AnalysisState<A> prepared = callState;
+				for (int i = 0; i < formals.length; i++) {
+					AnalysisState<A> temp = prepared.bottom();
+					for (SymbolicExpression exp : parameters[i])
+						temp = temp.lub(interprocedural.getAnalysis().assign(
+								prepared,
+								formals[i].toSymbolicVariable(),
+								exp,
+								call));
+					prepared = temp;
+				}
+				prepared = prepared.withExecutionExpressions(new ExpressionSet());
+				return Pair.of(prepared, parameters);
+			}
+
+			// Keep analysis soundly conservative: parameter matching failures
+			// should not collapse execution to bottom.
+			AnalysisState<A> prepared = callState;
+			for (Parameter formal : formals)
+				prepared = interprocedural.getAnalysis().assign(
+						prepared,
+						formal.toSymbolicVariable(),
+						new PushAny(Untyped.INSTANCE, SyntheticLocation.INSTANCE),
+						call);
+			prepared = prepared.withExecutionExpressions(new ExpressionSet());
+			return Pair.of(prepared, parameters);
+		}
 
 		// prepare the state for the call: assign the value to each parameter
 		AnalysisState<A> prepared = callState;
@@ -96,6 +125,24 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		// prepared.getExecution().getFixpointInformation());
 		prepared = prepared.withExecutionExpressions(new ExpressionSet());
 		return Pair.of(prepared, slots);
+	}
+
+	private boolean isSimplePositionalCall(
+			Expression[] actuals,
+			Parameter[] formals,
+			ExpressionSet[] parameters) {
+		if (actuals.length != formals.length || parameters.length != formals.length)
+			return false;
+
+		for (Expression actual : actuals)
+			if (actual instanceof NamedParameterExpression)
+				return false;
+
+		for (Parameter formal : formals)
+			if (formal instanceof VarKeywordParameter || formal instanceof VarPositionalParameter)
+				return false;
+
+		return true;
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> pythonLogic(
@@ -115,9 +162,10 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		int namedParOffset = getNamedParIndex(actuals);
 		if (namedParOffset >= 0)
 			for (int i = namedParOffset; i < actuals.length; i++)
-				namedPars.add(((NamedParameterExpression) actuals[i]).getParameterName());
-		else
-			namedParOffset = actuals.length;
+				if (actuals[i] instanceof NamedParameterExpression)
+					namedPars.add(((NamedParameterExpression) actuals[i]).getParameterName());
+				else
+					namedParOffset = actuals.length;
 
 		int aPos = 0;
 		int fPos = 0;
@@ -176,6 +224,9 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			List<Pair<Expression, Expression>> pairExprs = new ArrayList<>();
 			List<ExpressionSet> symbExprs = new ArrayList<>();
 			for (int i = aPos; i < actuals.length; i++) {
+				if (!(actuals[i] instanceof NamedParameterExpression))
+					continue;
+
 				boolean found = false;
 				// ACTUAL VAR. NAME
 				String name = ((NamedParameterExpression) actuals[i]).getParameterName();
@@ -210,6 +261,9 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 
 		// fourth phase: keyword arguments
 		for (; aPos < actuals.length; aPos++) {
+			if (!(actuals[aPos] instanceof NamedParameterExpression))
+				continue;
+
 			String name = ((NamedParameterExpression) actuals[aPos]).getParameterName();
 			for (int i = fPos; i < formals.length; i++)
 				if (formals[i].getName().equals(name)) {

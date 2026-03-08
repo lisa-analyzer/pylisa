@@ -1,4 +1,4 @@
-package it.unive.pylisa;
+package it.unive.pylisa.frontend;
 
 import it.unive.lisa.program.*;
 import it.unive.lisa.program.cfg.CFG;
@@ -22,6 +22,7 @@ import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
+import it.unive.pylisa.UnsupportedStatementException;
 import it.unive.pylisa.antlr.Python3Parser.AnnassignContext;
 import it.unive.pylisa.antlr.Python3Parser.Assert_stmtContext;
 import it.unive.pylisa.antlr.Python3Parser.Async_stmtContext;
@@ -66,7 +67,6 @@ import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.expression.*;
 import it.unive.pylisa.cfg.statement.*;
-import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyModuleType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.program.ModuleUnit;
@@ -155,14 +155,39 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 	@Override
 	public Expression visitExpr_stmt(
 			Expr_stmtContext ctx) {
+		if (ctx.annassign() != null) {
+			boolean oldPrepend = shouldPrependUnitAccess;
+			shouldPrependUnitAccess = false;
+			Expression rawTarget = visitTestlist_star_expr(ctx.testlist_star_expr(0));
+			shouldPrependUnitAccess = oldPrepend;
+
+			declareAssignedNames(rawTarget);
+			Expression target = scopeAssignmentTarget(rawTarget);
+			if (ctx.annassign().ASSIGN() != null && ctx.annassign().test().size() > 1)
+				return new PyAssign(currentCFG, getLocation(ctx), target, visitTest(ctx.annassign().test(1)));
+
+			// Type-only annotations do not carry runtime effects in our current
+			// model.
+			return target;
+		}
+
 		if (ctx.ASSIGN().size() == 0)
 			if (ctx.testlist_star_expr().size() != 1)
 				// augassign or annassign have been used, both not supported
 				throw new UnsupportedStatementException();
 			else
 				return visitTestlist_star_expr(ctx.testlist_star_expr(0));
+
+		boolean oldPrepend = shouldPrependUnitAccess;
+		shouldPrependUnitAccess = false;
+		Expression rawTarget = visitTestlist_star_expr(ctx.testlist_star_expr(0));
+		shouldPrependUnitAccess = oldPrepend;
+
+		declareAssignedNames(rawTarget);
+		Expression target = scopeAssignmentTarget(rawTarget);
+
 		PyAssign assign = new PyAssign(currentCFG, getLocation(ctx),
-				visitTestlist_star_expr(ctx.testlist_star_expr(0)),
+				target,
 				visitTestlist_star_expr(ctx.testlist_star_expr(1)));
 		return assign;
 	}
@@ -329,8 +354,6 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 			return this.visitTry_stmt(ctx.try_stmt());
 		else if (ctx.with_stmt() != null)
 			return this.visitWith_stmt(ctx.with_stmt());
-		else if (ctx.if_stmt() != null)
-			return this.visitIf_stmt(ctx.if_stmt());
 		else if (ctx.classdef() != null)
 			return this.visitClassdef(ctx.classdef());
 		else if (ctx.decorated() != null)
@@ -456,7 +479,8 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 				block.addEdge(new SequentialEdge(s, whileExitNode));
 			}
 		block.addEdge(new TrueEdge(condition, trueBlock.getLeft()));
-		block.addEdge(new SequentialEdge(trueBlock.getRight(), condition));
+		if (!trueBlock.getRight().stopsExecution())
+			block.addEdge(new SequentialEdge(trueBlock.getRight(), condition));
 
 		// check if there's an else condition for the while
 		Statement firstFollower;
@@ -464,7 +488,8 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 			Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> falseBlock = visitSuite(ctx.suite(1));
 			block.mergeWith(falseBlock.getMiddle());
 			block.addEdge(new FalseEdge(condition, falseBlock.getLeft()));
-			block.addEdge(new SequentialEdge(falseBlock.getRight(), whileExitNode));
+			if (!falseBlock.getRight().stopsExecution())
+				block.addEdge(new SequentialEdge(falseBlock.getRight(), whileExitNode));
 			firstFollower = falseBlock.getLeft();
 		} else {
 			block.addEdge(new FalseEdge(condition, whileExitNode));
@@ -649,18 +674,16 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 				if (!(parsed instanceof Triple<?, ?, ?>))
 					continue;
 
-				if (parsed != null) {
-					@SuppressWarnings("unchecked")
-					Triple<Statement, NodeList<CFG, Statement, Edge>,
-							Statement> st = (Triple<Statement, NodeList<CFG, Statement, Edge>, Statement>) parsed;
-					block.mergeWith(st.getMiddle());
-					if (first == null)
-						// this is the first instruction
-						first = st.getLeft();
-					if (last != null && !last.stopsExecution())
-						block.addEdge(new SequentialEdge(last, st.getLeft()));
-					last = st.getRight();
-				}
+				@SuppressWarnings("unchecked")
+				Triple<Statement, NodeList<CFG, Statement, Edge>,
+						Statement> st = (Triple<Statement, NodeList<CFG, Statement, Edge>, Statement>) parsed;
+				block.mergeWith(st.getMiddle());
+				if (first == null)
+					// this is the first instruction
+					first = st.getLeft();
+				if (last != null && !last.stopsExecution())
+					block.addEdge(new SequentialEdge(last, st.getLeft()));
+				last = st.getRight();
 			}
 			return Triple.of(first, block, last);
 		}
@@ -711,19 +734,15 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 			libs.put(importedLibrary, as);
 		}
 
-		ModuleUnit module = importManager.importModule(libs.keySet().stream().findFirst().get());
-		Expression target = null;
-		if (currentUnit instanceof ModuleUnit pmu) {
-			target = new PythonUnitAttributeAccessRef(this.currentCFG, getLocation(ctx), pmu,
-					new Global(getLocation(ctx), pmu, libs.keySet().stream().findFirst().get(), false));
-		} else {
-			target = new AttributeAccess(this.currentCFG, getLocation(ctx),
-					new VariableRef(this.currentCFG, getLocation(ctx), "$self"),
-					libs.keySet().stream().findFirst().get());
+		Map.Entry<String, String> binding = libs.entrySet().stream().findFirst().orElse(null);
+		if (binding != null) {
+			String boundName = binding.getValue() == null ? binding.getKey() : binding.getValue();
+			declareNameInCurrentScope(boundName);
 		}
-		//return new PyAssign(this.currentCFG, getLocation(ctx), target,
-		//		new ImportModule(currentCFG, getLocation(ctx), libs.keySet().stream().findFirst().get(), module));
-		return new ImportModule(currentCFG, getLocation(ctx), libs.keySet().stream().findFirst().get(), module);
+
+		String moduleName = libs.keySet().stream().findFirst().get();
+		ModuleUnit module = importManager.importModule(moduleName);
+		return new ImportModule(currentCFG, getLocation(ctx), moduleName, module);
 	}
 
 	@Override
@@ -748,48 +767,20 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 			String alias = single.NAME().size() == 2 ? single.NAME(1).getSymbol().getText() : importedComponent;
 			components.put(importedComponent, alias);
 			imports.put(alias, name + "." + importedComponent);
+			declareNameInCurrentScope(alias);
 		}
 		importManager.importModule(name);
 
-		List<Pair<String, CompilationUnit>> classImports = new ArrayList<>();
-		List<Pair<String, ModuleUnit>> moduleImports = new ArrayList<>();
-		List<Pair<String, String>> memberImports = new ArrayList<>();
-
 		for (Map.Entry<String, String> entry : components.entrySet()) {
-			String importedName = entry.getKey();
-			String alias = entry.getValue();
-			String qualifiedName = name + "." + importedName;
-			// Try class import first
-			try {
-				CompilationUnit unit = PyClassType.lookup(qualifiedName).getUnit();
-				classImports.add(Pair.of(alias, unit));
-				continue;
-			} catch (IllegalStateException ignored) {
-				// not a class
-			}
-			// Try sub-module import only if we know it can be resolved
-			if (importManager.canResolveModule(qualifiedName)) {
-				importManager.importModule(qualifiedName);
-				try {
-					ModuleUnit sub = (ModuleUnit) PyModuleType.lookup(qualifiedName).getUnit();
-					moduleImports.add(Pair.of(alias, sub));
-				} catch (IllegalStateException ignored) {
-					memberImports.add(Pair.of(alias, importedName));
-				}
-			} else {
-				// unresolved — treat as member access on source module
-				memberImports.add(Pair.of(alias, importedName));
-			}
+			String qualifiedName = name + "." + entry.getKey();
+			importManager.importModule(qualifiedName);
 		}
 
 		ModuleUnit currentModuleUnit = (currentUnit instanceof ModuleUnit pmu) ? pmu : null;
-		ModuleUnit sourceModule = null;
-		try {
-			sourceModule = (ModuleUnit) PyModuleType.lookup(name).getUnit();
-		} catch (IllegalStateException ignored) {
-		}
-		return new FromImportClasses(currentCFG, getLocation(ctx), currentModuleUnit,
-				classImports, moduleImports, memberImports, sourceModule);
+		List<Pair<String, String>> importPairs = components.entrySet().stream()
+				.map(e -> Pair.of(e.getValue(), e.getKey()))
+				.collect(java.util.stream.Collectors.toList());
+		return new FromImport(currentCFG, getLocation(ctx), currentModuleUnit, name, importPairs);
 	}
 
 	@Override
@@ -838,15 +829,95 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 
 	protected String dottedNameToString(
 			Dotted_nameContext dotted_name) {
-		StringBuilder result = new StringBuilder();
-		boolean first = true;
-		for (TerminalNode name : dotted_name.NAME()) {
-			if (first)
-				first = false;
-			else
-				result.append(".");
-			result.append(name.getSymbol().getText());
+		return dotted_name.NAME().stream().map(t -> t.getSymbol().getText())
+				.collect(java.util.stream.Collectors.joining("."));
+	}
+
+	private void declareAssignedNames(
+			Expression target) {
+		if (target instanceof VariableRef var) {
+			declareNameInCurrentScope(var.getName());
+			return;
 		}
-		return result.toString();
+
+		if (target instanceof TupleCreation tuple)
+			for (Expression sub : tuple.getSubExpressions())
+				declareAssignedNames(sub);
+		else if (target instanceof ListCreation list)
+			for (Expression sub : list.getSubExpressions())
+				declareAssignedNames(sub);
+	}
+
+	private Expression scopeAssignmentTarget(
+			Expression target) {
+		if (target instanceof AttributeAccess attr) {
+			Expression receiver = attr.getSubExpression();
+			if (receiver instanceof VariableRef var) {
+				if (isNameInVisibleLocalScope(var.getName()))
+					return new PyAccessInstanceGlobal(currentCFG, attr.getLocation(), receiver, attr.getTarget());
+				// Try to resolve receiver as a CompilationUnit (e.g. Class.Y =
+				// 100)
+				String receiverName = var.getName();
+				String fqName = imports.getOrDefault(receiverName,
+						currentModule != null ? currentModule.getName() + "." + receiverName : null);
+				if (fqName != null) {
+					for (Unit u : program.getUnits()) {
+						if (u instanceof CompilationUnit cu && cu.getName().equals(fqName))
+							return makeScopedAttributeRef(cu, attr.getTarget(), attr.getLocation());
+					}
+				}
+				// Receiver is not a known class — treat as module-level
+				// instance
+				// variable. Wrap it in a scoped ref so the heap domain can
+				// resolve it to the correct heap location.
+				if (currentModule != null) {
+					Expression scopedReceiver = makeScopedAttributeRef(currentModule, receiverName,
+							var.getLocation());
+					return new PyAccessInstanceGlobal(currentCFG, attr.getLocation(), scopedReceiver,
+							attr.getTarget());
+				}
+			}
+			if (receiver instanceof PythonScopedAttributeAccessRef scopedRef) {
+				String receiverName = scopedRef.getTarget().getName();
+				String fqName = imports.getOrDefault(receiverName,
+						currentModule != null ? currentModule.getName() + "." + receiverName : null);
+				if (fqName != null) {
+					for (Unit u : program.getUnits()) {
+						if (u instanceof CompilationUnit cu && cu.getName().equals(fqName))
+							return makeScopedAttributeRef(cu, attr.getTarget(), attr.getLocation());
+					}
+				}
+				// Receiver is an instance variable -> instance attribute heap
+				// write
+				return new PyAccessInstanceGlobal(currentCFG, attr.getLocation(), receiver, attr.getTarget());
+			}
+			return target;
+		}
+
+		if (target instanceof VariableRef var) {
+			if (isInsideLocalScope() && !(currentUnit instanceof ClassUnit))
+				return var;
+			if (currentUnit instanceof CompilationUnit cu)
+				return makeScopedAttributeRef(cu, var.getName(), var.getLocation());
+			if (currentModule != null)
+				return makeScopedAttributeRef(currentModule, var.getName(), var.getLocation());
+			return var;
+		}
+
+		if (target instanceof TupleCreation tuple) {
+			Expression[] scopedSubs = new Expression[tuple.getSubExpressions().length];
+			for (int i = 0; i < scopedSubs.length; i++)
+				scopedSubs[i] = scopeAssignmentTarget(tuple.getSubExpressions()[i]);
+			return new TupleCreation(tuple.getCFG(), tuple.getLocation(), scopedSubs);
+		}
+
+		if (target instanceof ListCreation list) {
+			Expression[] scopedSubs = new Expression[list.getSubExpressions().length];
+			for (int i = 0; i < scopedSubs.length; i++)
+				scopedSubs[i] = scopeAssignmentTarget(list.getSubExpressions()[i]);
+			return new ListCreation(list.getCFG(), list.getLocation(), scopedSubs);
+		}
+
+		return target;
 	}
 }

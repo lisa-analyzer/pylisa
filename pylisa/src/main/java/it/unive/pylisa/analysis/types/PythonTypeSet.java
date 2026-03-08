@@ -6,6 +6,7 @@ import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
+import it.unive.pylisa.program.type.NoInfoType;
 import java.util.Collections;
 import java.util.Set;
 
@@ -22,6 +23,7 @@ public class PythonTypeSet
 
 	public static final PythonTypeSet NULL_TYPE = new PythonTypeSet(false, Set.of(NullType.INSTANCE));
 
+	public static final PythonTypeSet NO_INFO_TYPE = new PythonTypeSet(false, Set.of(NoInfoType.INSTANCE));
 	/**
 	 * The bottom element of the type lattice, representing no types at all.
 	 */
@@ -106,7 +108,7 @@ public class PythonTypeSet
 	@Override
 	public PythonTypeSet unknownValue(
 			Identifier id) {
-		return NULL_TYPE;
+		return NO_INFO_TYPE;
 	}
 
 	@Override
