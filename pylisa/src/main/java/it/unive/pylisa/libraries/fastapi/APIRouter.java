@@ -1,14 +1,14 @@
 package it.unive.pylisa.libraries.fastapi;
 
 import it.unive.lisa.analysis.*;
-import it.unive.lisa.cfg.type.LiSAHttpService;
+import it.unive.lisa.cfg.type.LiSANetworkActiveNode;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.*;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.operators.network.HttpServiceCreation;
+import it.unive.lisa.symbolic.operators.network.ActiveNodeCreation;
 import it.unive.lisa.symbolic.value.Constant;
 import java.util.HashMap;
 
@@ -72,7 +72,7 @@ public class APIRouter extends VariadicExpression implements PluggableStatement 
 				: new Constant(StringType.INSTANCE, "", getLocation());
 
 		it.unive.lisa.symbolic.value.VariadicExpression expr = new it.unive.lisa.symbolic.value.VariadicExpression.Builder()
-				.operator(HttpServiceCreation.INSTANCE)
+				.operator(ActiveNodeCreation.INSTANCE)
 				.varargsOperand(
 						"concreteType",
 						new Constant(StringType.INSTANCE, "APIRouter", getLocation()))
@@ -82,7 +82,7 @@ public class APIRouter extends VariadicExpression implements PluggableStatement 
 				.varargsOperand(
 						"paramDelimiter",
 						new Constant(StringType.INSTANCE, "{*}", getLocation()))
-				.staticType(LiSAHttpService.INSTANCE)
+				.staticType(LiSANetworkActiveNode.INSTANCE)
 				.location(getLocation())
 				.build();
 

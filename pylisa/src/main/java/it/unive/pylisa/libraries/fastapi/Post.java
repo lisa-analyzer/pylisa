@@ -1,13 +1,13 @@
 package it.unive.pylisa.libraries.fastapi;
 
 import it.unive.lisa.analysis.*;
-import it.unive.lisa.cfg.type.LiSAHttpServiceEndpoint;
+import it.unive.lisa.cfg.type.LiSANetworkResource;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.*;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.operators.network.HttpServiceEndpointCreation;
+import it.unive.lisa.symbolic.operators.network.ChannelEndpointCreation;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.statement.LazyEvaluatedVariadicExpression;
 import it.unive.pylisa.symbolic.operators.LazyEvaluatedExpressionOperator;
@@ -51,10 +51,10 @@ public class Post extends VariadicExpression implements PluggableStatement {
 			throws SemanticException {
 		System.out.println("fastapi.post::fwdVariadicSemantics");
 		it.unive.lisa.symbolic.value.VariadicExpression expr = new it.unive.lisa.symbolic.value.VariadicExpression.Builder()
-				.operator(HttpServiceEndpointCreation.POST)
+				.operator(ChannelEndpointCreation.HTTP_POST)
 				.varargsOperand("target", combination[0])
 				.varargsOperand("path", combination[getVarArgsIndex().get("path")])
-				.staticType(LiSAHttpServiceEndpoint.INSTANCE)
+				.staticType(LiSANetworkResource.INSTANCE)
 				.location(getLocation())
 				.build();
 		Expression[] params = new Expression[1];

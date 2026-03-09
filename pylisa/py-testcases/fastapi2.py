@@ -31,3 +31,4 @@ def hh():
 @app.post("/bar")
 def router_foo():
     return
+app2.include_router(router, prefix="bar")

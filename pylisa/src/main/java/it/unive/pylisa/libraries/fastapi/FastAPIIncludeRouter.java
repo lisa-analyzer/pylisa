@@ -1,13 +1,13 @@
 package it.unive.pylisa.libraries.fastapi;
 
 import it.unive.lisa.analysis.*;
-import it.unive.lisa.cfg.type.LiSAHttpService;
+import it.unive.lisa.cfg.type.LiSANetworkActiveNode;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.*;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.operators.network.HttpServiceInclude;
+import it.unive.lisa.symbolic.operators.network.ActiveNodeCompose;
 import java.util.HashMap;
 
 public class FastAPIIncludeRouter extends VariadicExpression implements PluggableStatement {
@@ -60,15 +60,15 @@ public class FastAPIIncludeRouter extends VariadicExpression implements Pluggabl
 		System.out.println("FastApiIncludeRouter::fwdVariadicSemantics");
 
 		it.unive.lisa.symbolic.value.VariadicExpression expr = new it.unive.lisa.symbolic.value.VariadicExpression.Builder()
-				.operator(HttpServiceInclude.INSTANCE)
+				.operator(ActiveNodeCompose.INSTANCE)
 				.varargsOperand("target", combination[0])
 				.varargsOperand(
-						"router",
+						"child",
 						combination[getVarArgsIndex().get("router")])
 				.varargsOperand(
 						"prefix",
 						combination[getVarArgsIndex().get("prefix")])
-				.staticType(LiSAHttpService.INSTANCE)
+				.staticType(LiSANetworkActiveNode.INSTANCE)
 				.location(getLocation())
 				.build();
 		return interprocedural.getAnalysis().smallStepSemantics(state, expr, this);

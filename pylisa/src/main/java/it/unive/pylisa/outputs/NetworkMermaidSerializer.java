@@ -120,7 +120,7 @@ public class NetworkMermaidSerializer {
 			classAssignments.add("\tclass " + svcNodeId + " entity" + (idx % PALETTE.length) + "\n");
 
 			// Interface (endpoint) nodes
-			SerializableValue ifacesVal = svcObj.getFields().get("interfaces");
+			SerializableValue ifacesVal = svcObj.getFields().get("endpoints");
 			List<String> endpointNodeIds = new ArrayList<>();
 			if (ifacesVal instanceof SerializableObject) {
 				SerializableObject ifacesObj = (SerializableObject) ifacesVal;
@@ -138,7 +138,7 @@ public class NetworkMermaidSerializer {
 						"\tclass " + String.join(",", endpointNodeIds) + " endpoint" + (idx % PALETTE.length) + "\n");
 
 			// Prefix / inner-service inclusion nodes
-			SerializableValue innerVal = svcObj.getFields().get("innerHttpService");
+			SerializableValue innerVal = svcObj.getFields().get("innerNodes");
 			if (innerVal instanceof SerializableObject) {
 				SerializableObject innerObj = (SerializableObject) innerVal;
 				for (Entry<String, SerializableValue> prefixEntry : innerObj.getFields().entrySet()) {
@@ -196,23 +196,24 @@ public class NetworkMermaidSerializer {
 		if (!(ifaceVal instanceof SerializableObject))
 			return "?";
 		SerializableObject obj = (SerializableObject) ifaceVal;
-		SerializableValue interfaceVal = obj.getFields().get("interface");
-		if (!(interfaceVal instanceof SerializableObject))
+		// "resource" is the new key (was "interface" in the old model)
+		SerializableValue resourceVal = obj.getFields().get("resource");
+		if (!(resourceVal instanceof SerializableObject))
 			return "?";
-		SerializableObject interfaceObj = (SerializableObject) interfaceVal;
+		SerializableObject resourceObj = (SerializableObject) resourceVal;
 
 		String path = "";
-		String method = "";
-		SerializableValue pathVal = interfaceObj.getFields().get("path");
-		SerializableValue methodVal = interfaceObj.getFields().get("method");
+		String methods = "";
+		SerializableValue pathVal = resourceObj.getFields().get("path");
+		SerializableValue methodsVal = resourceObj.getFields().get("methods");
 		if (pathVal instanceof SerializableString)
 			path = prettyValue(pathVal.toString());
-		if (methodVal instanceof SerializableString)
-			method = prettyMethod(methodVal.toString());
+		if (methodsVal != null)
+			methods = prettyMethod(methodsVal.toString());
 
-		if (method.isEmpty())
+		if (methods.isEmpty())
 			return path;
-		return path + " [" + method + "]";
+		return path + " [" + methods + "]";
 	}
 
 	static String prettyValue(
