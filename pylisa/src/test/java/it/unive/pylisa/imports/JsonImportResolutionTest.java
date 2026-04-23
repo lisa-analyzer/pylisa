@@ -1,10 +1,10 @@
 package it.unive.pylisa.imports;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
@@ -22,7 +22,7 @@ import it.unive.pylisa.program.ModuleUnit;
 import it.unive.pylisa.program.PyClassUnit;
 import java.io.IOException;
 import java.util.Collection;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Exercises the Python-accurate import resolution in
@@ -56,42 +56,42 @@ public class JsonImportResolutionTest {
 		Program program = translator.toLiSAProgram(true);
 
 		assertTrue(
-				"Expected the stdlib `json` spec to be loaded when no local json.py exists",
-				LibrarySpecificationProvider.isLibraryLoaded("json"));
+				LibrarySpecificationProvider.isLibraryLoaded("json"),
+				"Expected the stdlib `json` spec to be loaded when no local json.py exists");
 
 		ModuleUnit jsonUnit = (ModuleUnit) PyModuleType.lookup("json").getUnit();
-		assertNotNull("json ModuleUnit must be registered", jsonUnit);
+		assertNotNull(jsonUnit, "json ModuleUnit must be registered");
 
 		// Library-spec units carry a SourceCodeLocation built from `location
 		// json`.
 		CodeLocation loc = jsonUnit.getLocation();
 		assertTrue(
-				"Expected json unit to come from the library spec (SourceCodeLocation); got " + loc,
-				loc instanceof SourceCodeLocation);
+				loc instanceof SourceCodeLocation,
+				"Expected json unit to come from the library spec (SourceCodeLocation); got " + loc);
 		assertEquals(
-				"Library-spec unit should carry the `location json` declared in json.txt",
 				"json",
-				((SourceCodeLocation) loc).getSourceFile());
+				((SourceCodeLocation) loc).getSourceFile(),
+				"Library-spec unit should carry the `location json` declared in json.txt");
 		assertFalse(
-				"Stub-backed json unit must not carry SyntheticLocation",
-				loc == SyntheticLocation.INSTANCE);
+				loc == SyntheticLocation.INSTANCE,
+				"Stub-backed json unit must not carry SyntheticLocation");
 
 		// The two stub methods were registered on the Program under their
 		// qualified names during library loading.
 		Unit dumpsUnit = program.getUnit("json.dumps");
-		assertNotNull("Library-backed json.dumps FunctionUnit must be registered", dumpsUnit);
+		assertNotNull(dumpsUnit, "Library-backed json.dumps FunctionUnit must be registered");
 		assertNotNull(
-				"Library-backed json.loads FunctionUnit must be registered",
-				program.getUnit("json.loads"));
+				program.getUnit("json.loads"),
+				"Library-backed json.loads FunctionUnit must be registered");
 
 		// Stub bodies are NativeCFGs wrapping the NoOpFunction implementation
 		// declared in json.txt. This is the positive fingerprint that
 		// `json.dumps(...)` in main.py is dispatched to the stub, not to a
 		// parsed function.
 		assertTrue(
+				((FunctionUnit) dumpsUnit).getCodeMembers().stream().anyMatch(m -> m instanceof NativeCFG),
 				"json.dumps body must be a NativeCFG (stub wrapping NoOpFunction); code members: "
-						+ ((FunctionUnit) dumpsUnit).getCodeMembers(),
-				((FunctionUnit) dumpsUnit).getCodeMembers().stream().anyMatch(m -> m instanceof NativeCFG));
+						+ ((FunctionUnit) dumpsUnit).getCodeMembers());
 	}
 
 	@Test
@@ -104,19 +104,19 @@ public class JsonImportResolutionTest {
 		// Python-accurate: sys.path[0] beats stdlib. The library spec must NOT
 		// have been consulted because `json.py` sits next to main.py.
 		assertFalse(
-				"Local json.py must shadow the stdlib `json` library spec",
-				LibrarySpecificationProvider.isLibraryLoaded("json"));
+				LibrarySpecificationProvider.isLibraryLoaded("json"),
+				"Local json.py must shadow the stdlib `json` library spec");
 
 		ModuleUnit jsonUnit = (ModuleUnit) PyModuleType.lookup("json").getUnit();
-		assertNotNull("json ModuleUnit must be registered", jsonUnit);
+		assertNotNull(jsonUnit, "json ModuleUnit must be registered");
 
 		// loadProjectModule stamps SyntheticLocation on project-file-backed
 		// units — the distinguishing fingerprint vs. the library-spec unit
 		// (which would carry a SourceCodeLocation("json", 0, 0)).
 		CodeLocation loc = jsonUnit.getLocation();
 		assertTrue(
-				"Expected json unit to come from loadProjectModule (SyntheticLocation); got " + loc,
-				loc == SyntheticLocation.INSTANCE);
+				loc == SyntheticLocation.INSTANCE,
+				"Expected json unit to come from loadProjectModule (SyntheticLocation); got " + loc);
 
 		// `def dumps` and `def loads` from json.py become FunctionUnits whose
 		// bodies are regular PyCFGs — NOT NativeCFGs. The absence of any
@@ -124,18 +124,18 @@ public class JsonImportResolutionTest {
 		// for `json.dumps(...)` in main.py is the user's parsed function, not
 		// the library stub.
 		Unit dumpsUnit = program.getUnit("json.dumps");
-		assertNotNull("Local json.dumps must be registered on the Program", dumpsUnit);
+		assertNotNull(dumpsUnit, "Local json.dumps must be registered on the Program");
 		for (CodeMember m : ((FunctionUnit) dumpsUnit).getCodeMembers())
 			assertFalse(
-					"Local json.dumps must NOT be backed by a NativeCFG (found " + m + ")",
-					m instanceof NativeCFG);
+					m instanceof NativeCFG,
+					"Local json.dumps must NOT be backed by a NativeCFG (found " + m + ")");
 
 		Unit loadsUnit = program.getUnit("json.loads");
-		assertNotNull("Local json.loads must be registered on the Program", loadsUnit);
+		assertNotNull(loadsUnit, "Local json.loads must be registered on the Program");
 		for (CodeMember m : ((FunctionUnit) loadsUnit).getCodeMembers())
 			assertFalse(
-					"Local json.loads must NOT be backed by a NativeCFG (found " + m + ")",
-					m instanceof NativeCFG);
+					m instanceof NativeCFG,
+					"Local json.loads must NOT be backed by a NativeCFG (found " + m + ")");
 	}
 
 	/**
@@ -153,23 +153,23 @@ public class JsonImportResolutionTest {
 		translator.toLiSAProgram(true);
 
 		// The full name is unresolved → unknown module, as before.
-		assertTrue("unspecced_pkg.submod.deep must be registered",
-				PyModuleType.isRegistered("unspecced_pkg.submod.deep"));
-		assertTrue("unspecced_pkg.submod.deep must be marked unknown",
-				PyModuleType.lookup("unspecced_pkg.submod.deep").isUnknown());
+		assertTrue(PyModuleType.isRegistered("unspecced_pkg.submod.deep"),
+				"unspecced_pkg.submod.deep must be registered");
+		assertTrue(PyModuleType.lookup("unspecced_pkg.submod.deep").isUnknown(),
+				"unspecced_pkg.submod.deep must be marked unknown");
 
 		// Ancestor prefixes must ALSO be registered as unknown modules — the
 		// previous behavior left them un-registered, so a downstream type
 		// query on `unspecced_pkg` or `unspecced_pkg.submod` would throw.
-		assertTrue("ancestor unspecced_pkg must be registered",
-				PyModuleType.isRegistered("unspecced_pkg"));
-		assertTrue("ancestor unspecced_pkg must be marked unknown",
-				PyModuleType.lookup("unspecced_pkg").isUnknown());
+		assertTrue(PyModuleType.isRegistered("unspecced_pkg"),
+				"ancestor unspecced_pkg must be registered");
+		assertTrue(PyModuleType.lookup("unspecced_pkg").isUnknown(),
+				"ancestor unspecced_pkg must be marked unknown");
 
-		assertTrue("ancestor unspecced_pkg.submod must be registered",
-				PyModuleType.isRegistered("unspecced_pkg.submod"));
-		assertTrue("ancestor unspecced_pkg.submod must be marked unknown",
-				PyModuleType.lookup("unspecced_pkg.submod").isUnknown());
+		assertTrue(PyModuleType.isRegistered("unspecced_pkg.submod"),
+				"ancestor unspecced_pkg.submod must be registered");
+		assertTrue(PyModuleType.lookup("unspecced_pkg.submod").isUnknown(),
+				"ancestor unspecced_pkg.submod must be marked unknown");
 	}
 
 	/**
@@ -191,29 +191,29 @@ public class JsonImportResolutionTest {
 		// source.
 		Collection<PyClassType> secrets = PyClassType.lookupAllByBaseName("__main__.Secret");
 		assertEquals(
-				"Expected two Secret def-sites (one per branch); got " + secrets,
 				2,
-				secrets.size());
+				secrets.size(),
+				"Expected two Secret def-sites (one per branch); got " + secrets);
 
 		// Each def-site unit must carry the base name `__main__.Secret` while
 		// its identity name includes the `@line:col` allocation-site suffix.
 		for (PyClassType t : secrets) {
 			Unit u = t.getUnit();
 			assertTrue(
-					"Expected PyClassUnit backing the Secret def-site; got " + u.getClass(),
-					u instanceof PyClassUnit);
+					u instanceof PyClassUnit,
+					"Expected PyClassUnit backing the Secret def-site; got " + u.getClass());
 			PyClassUnit pcu = (PyClassUnit) u;
 			assertEquals(
-					"base name must be the Python-visible qualified name",
 					"__main__.Secret",
-					pcu.getBaseName());
-			assertTrue(
-					"identity name must include the `@line:col` allocation-site suffix; got " + pcu.getName(),
-					pcu.getName().startsWith("__main__.Secret@"));
-			assertNotEquals(
-					"identity name must differ from base name",
 					pcu.getBaseName(),
-					pcu.getName());
+					"base name must be the Python-visible qualified name");
+			assertTrue(
+					pcu.getName().startsWith("__main__.Secret@"),
+					"identity name must include the `@line:col` allocation-site suffix; got " + pcu.getName());
+			assertNotEquals(
+					pcu.getBaseName(),
+					pcu.getName(),
+					"identity name must differ from base name");
 		}
 
 		// The two identity names must be distinct from each other.
@@ -221,8 +221,8 @@ public class JsonImportResolutionTest {
 				.map(t -> t.getUnit().getName())
 				.collect(java.util.stream.Collectors.toSet());
 		assertEquals(
-				"Expected two distinct identity names across the Secret def-sites",
 				2,
-				identityNames.size());
+				identityNames.size(),
+				"Expected two distinct identity names across the Secret def-sites");
 	}
 }

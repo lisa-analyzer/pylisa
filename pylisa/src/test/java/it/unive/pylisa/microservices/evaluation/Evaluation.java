@@ -21,7 +21,7 @@ import it.unive.pylisa.outputs.ApplicationStructure;
 import it.unive.pylisa.outputs.FinalNetworkMermaidResults;
 import it.unive.pylisa.outputs.MermaidNetworkResults;
 import java.io.IOException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class Evaluation {
 

@@ -7,7 +7,7 @@ import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.frontend.PyFrontend;
 import java.io.IOException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ROS2test {
 

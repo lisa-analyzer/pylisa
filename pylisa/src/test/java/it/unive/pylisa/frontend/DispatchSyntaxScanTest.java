@@ -17,16 +17,14 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Walks every .py file under the dispatch test bundle, parses each with the
  * current ANTLR grammar using a non-bailing error listener, and writes a
- * human-readable summary of every FIRST syntax error per file (since the
- * parser recovers clumsily, only the first error per file is the root cause;
- * trailing errors are recovery noise).
- *
- * Diagnostic only — never fails the build.
+ * human-readable summary of every FIRST syntax error per file (since the parser
+ * recovers clumsily, only the first error per file is the root cause; trailing
+ * errors are recovery noise). Diagnostic only — never fails the build.
  */
 public class DispatchSyntaxScanTest {
 
@@ -102,7 +100,8 @@ public class DispatchSyntaxScanTest {
 		System.out.println("Report: " + report.toAbsolutePath());
 	}
 
-	private static FileReport parseOne(Path file) {
+	private static FileReport parseOne(
+			Path file) {
 		FileReport r = new FileReport();
 		r.path = file;
 		String source;
@@ -145,32 +144,51 @@ public class DispatchSyntaxScanTest {
 		return r;
 	}
 
-	private static String classifyBySource(String line, String[] allLines, int idx) {
-		if (line == null) return "unknown";
-		if (WALRUS.matcher(line).find()) return "walrus-:=";
-		if (MATCH_STMT.matcher(line).find()) return "match-case";
-		if (EXCEPT_STAR.matcher(line).find()) return "except*";
-		if (TYPE_ALIAS.matcher(line).find()) return "type-alias-stmt (PEP 695)";
-		if (PAREN_WITH.matcher(line).find()) return "parenthesised-with (PEP 617)";
-		if (POS_ONLY.matcher(line).find()) return "positional-only-/";
-		if (UNION_PIPE_TYPE.matcher(line).find() && line.contains(":")) return "union-| in types (PEP 604)";
+	private static String classifyBySource(
+			String line,
+			String[] allLines,
+			int idx) {
+		if (line == null)
+			return "unknown";
+		if (WALRUS.matcher(line).find())
+			return "walrus-:=";
+		if (MATCH_STMT.matcher(line).find())
+			return "match-case";
+		if (EXCEPT_STAR.matcher(line).find())
+			return "except*";
+		if (TYPE_ALIAS.matcher(line).find())
+			return "type-alias-stmt (PEP 695)";
+		if (PAREN_WITH.matcher(line).find())
+			return "parenthesised-with (PEP 617)";
+		if (POS_ONLY.matcher(line).find())
+			return "positional-only-/";
+		if (UNION_PIPE_TYPE.matcher(line).find() && line.contains(":"))
+			return "union-| in types (PEP 604)";
 		// Look a few lines back for a preceding walrus/match in case the error
 		// actually is a recovery-delayed report of a previous-line construct.
 		for (int back = 1; back <= 3 && idx - back >= 0; back++) {
 			String prev = allLines[idx - back];
-			if (WALRUS.matcher(prev).find()) return "walrus-:=";
-			if (MATCH_STMT.matcher(prev).find()) return "match-case";
-			if (PAREN_WITH.matcher(prev).find()) return "parenthesised-with (PEP 617)";
+			if (WALRUS.matcher(prev).find())
+				return "walrus-:=";
+			if (MATCH_STMT.matcher(prev).find())
+				return "match-case";
+			if (PAREN_WITH.matcher(prev).find())
+				return "parenthesised-with (PEP 617)";
 		}
 		return "unclassified";
 	}
 
-	private static String pad(String s, int w) {
+	private static String pad(
+			String s,
+			int w) {
 		return s.length() >= w ? s + " " : s + " ".repeat(w - s.length());
 	}
 
-	private static String truncate(String s, int n) {
-		if (s == null) return "";
+	private static String truncate(
+			String s,
+			int n) {
+		if (s == null)
+			return "";
 		s = s.replace('\n', ' ').replace('\r', ' ');
 		return s.length() <= n ? s : s.substring(0, n) + "...";
 	}
@@ -183,12 +201,17 @@ public class DispatchSyntaxScanTest {
 		String feature = "unclassified";
 	}
 
-	private record Err(int line, int col, String msg) {}
+	private record Err(
+			int line,
+			int col,
+			String msg) {
+	}
 
 	private static final class CollectingListener extends BaseErrorListener {
 		private final List<Err> errs;
 
-		CollectingListener(List<Err> errs) {
+		CollectingListener(
+				List<Err> errs) {
 			this.errs = errs;
 		}
 

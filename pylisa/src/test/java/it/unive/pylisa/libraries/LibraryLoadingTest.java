@@ -1,6 +1,6 @@
 package it.unive.pylisa.libraries;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SyntheticLocation;

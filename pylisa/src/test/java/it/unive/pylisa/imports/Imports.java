@@ -1,8 +1,10 @@
 package it.unive.pylisa.imports;
 
 import static it.unive.pylisa.microservices.MicroservicesTest.getLisaConf;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +18,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class Imports {
 	// @Test DO NOT RUN THIS - TESTCASE IS A BROKEN PYTHON (can't do import
@@ -30,9 +32,9 @@ public class Imports {
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
 
-		assertNotNull("missing __new__ builtins.object.__new__.", program.getUnit("builtins.object.__new__"));
-		assertNotNull("missing __init__ builtins.object.__init__.", program.getUnit("builtins.object.__init__"));
-		assertNotNull("missing super builtins.object.super.", program.getUnit("builtins.object.super"));
+		assertNotNull(program.getUnit("builtins.object.__new__"), "missing __new__ builtins.object.__new__.");
+		assertNotNull(program.getUnit("builtins.object.__init__"), "missing __init__ builtins.object.__init__.");
+		assertNotNull(program.getUnit("builtins.object.super"), "missing super builtins.object.super.");
 
 		assertImports("imports/import2");
 	}
@@ -47,9 +49,9 @@ public class Imports {
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
 
-		assertNotNull("missing __new__ builtins.object.__new__.", program.getUnit("builtins.object.__new__"));
-		assertNotNull("missing __init__ builtins.object.__init__.", program.getUnit("builtins.object.__init__"));
-		assertNotNull("missing super builtins.object.super.", program.getUnit("builtins.object.super"));
+		assertNotNull(program.getUnit("builtins.object.__new__"), "missing __new__ builtins.object.__new__.");
+		assertNotNull(program.getUnit("builtins.object.__init__"), "missing __init__ builtins.object.__init__.");
+		assertNotNull(program.getUnit("builtins.object.super"), "missing super builtins.object.super.");
 
 		assertImports("imports/import3");
 	}
@@ -64,9 +66,9 @@ public class Imports {
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
 
-		assertNotNull("missing __new__ builtins.object.__new__.", program.getUnit("builtins.object.__new__"));
-		assertNotNull("missing __init__ builtins.object.__init__.", program.getUnit("builtins.object.__init__"));
-		assertNotNull("missing super builtins.object.super.", program.getUnit("builtins.object.super"));
+		assertNotNull(program.getUnit("builtins.object.__new__"), "missing __new__ builtins.object.__new__.");
+		assertNotNull(program.getUnit("builtins.object.__init__"), "missing __init__ builtins.object.__init__.");
+		assertNotNull(program.getUnit("builtins.object.super"), "missing super builtins.object.super.");
 		assertImports4("imports/import4");
 	}
 
@@ -80,9 +82,9 @@ public class Imports {
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
 
-		assertNotNull("missing __new__ builtins.object.__new__.", program.getUnit("builtins.object.__new__"));
-		assertNotNull("missing __init__ builtins.object.__init__.", program.getUnit("builtins.object.__init__"));
-		assertNotNull("missing super builtins.object.super.", program.getUnit("builtins.object.super"));
+		assertNotNull(program.getUnit("builtins.object.__new__"), "missing __new__ builtins.object.__new__.");
+		assertNotNull(program.getUnit("builtins.object.__init__"), "missing __init__ builtins.object.__init__.");
+		assertNotNull(program.getUnit("builtins.object.super"), "missing super builtins.object.super.");
 
 		assertImports("imports/import1");
 	}
@@ -99,7 +101,7 @@ public class Imports {
 					.max(Comparator.comparing(path -> path.getFileName().toString()));
 		}
 
-		assertTrue("Missing __main__.$init() ", reportJson.isPresent());
+		assertTrue(reportJson.isPresent(), "Missing __main__.$init() ");
 
 		ObjectMapper mapper = new ObjectMapper();
 
@@ -113,7 +115,7 @@ public class Imports {
 		assertNotNull(value);
 		assertNotNull(type);
 		assertNotNull(heap);
-		assertNotNull("$_main::z must be not null", value.get("$__main__::z"));
+		assertNotNull(value.get("$__main__::z"), "$_main::z must be not null");
 		assertEquals("\"3\"", value.get("$__main__::z").toString());
 		assertEquals("\"3\"", value.get("$__main__::z").toString());
 		System.out.println("[T] $__main__::y == [\"fastapi.APIRouter*\"]");
@@ -132,7 +134,7 @@ public class Imports {
 					.max(Comparator.comparing(path -> path.getFileName().toString()));
 		}
 
-		assertTrue("Missing __main__.$init() ", reportJson.isPresent());
+		assertTrue(reportJson.isPresent(), "Missing __main__.$init() ");
 
 		ObjectMapper mapper = new ObjectMapper();
 
@@ -146,20 +148,20 @@ public class Imports {
 		assertNotNull(value);
 		assertNotNull(type);
 		assertNotNull(heap);
-		assertNotNull("$_main::x must be not null", value.get("$__main__::x"));
+		assertNotNull(value.get("$__main__::x"), "$_main::x must be not null");
 		// Class-member keys now carry the def-site suffix (e.g.
 		// `$config.Settings@10:0::DEBUG`) because each `class` statement mints
 		// a fresh allocation-site identity. Match the base prefix rather than
 		// the exact name so the assertion stays stable across source edits
 		// that shift line numbers.
 		JsonNode settingsDebug = findFirstFieldMatching(value, "$config.Settings@", "::DEBUG");
-		assertNotNull("$config.Settings@…::DEBUG must be not null", settingsDebug);
-		assertNotNull("$_main::z must be not null", value.get("$__main__::z"));
-		assertEquals("$__main__::x is not 3.", "\"3\"", value.get("$__main__::x").toString());
-		assertEquals("$config.Settings@…::DEBUG is not true.", "\"true\"", settingsDebug.toString());
-		assertEquals("$__main__::z is not true.", "\"true\"", value.get("$__main__::z").toString());
-		assertNull("$config.settings should not be present, only $config::settings (probabaly, a problem with import.",
-				type.get("$config.settings"));
+		assertNotNull(settingsDebug, "$config.Settings@…::DEBUG must be not null");
+		assertNotNull(value.get("$__main__::z"), "$_main::z must be not null");
+		assertEquals("\"3\"", value.get("$__main__::x").toString(), "$__main__::x is not 3.");
+		assertEquals("\"true\"", settingsDebug.toString(), "$config.Settings@…::DEBUG is not true.");
+		assertEquals("\"true\"", value.get("$__main__::z").toString(), "$__main__::z is not true.");
+		assertNull(type.get("$config.settings"),
+				"$config.settings should not be present, only $config::settings (probabaly, a problem with import.");
 	}
 
 	private static JsonNode findFirstFieldMatching(

@@ -1,8 +1,12 @@
 package it.unive.pylisa.classes;
 
 import static it.unive.pylisa.microservices.MicroservicesTest.getLisaConf;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,7 +22,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class Classes {
 
@@ -32,9 +36,9 @@ public class Classes {
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
 
-		assertNotNull("missing __new__ builtins.object.__new__.", program.getUnit("builtins.object.__new__"));
-		assertNotNull("missing __init__ builtins.object.__init__.", program.getUnit("builtins.object.__init__"));
-		assertNotNull("missing super builtins.object.super.", program.getUnit("builtins.object.super"));
+		assertNotNull(program.getUnit("builtins.object.__new__"), "missing __new__ builtins.object.__new__.");
+		assertNotNull(program.getUnit("builtins.object.__init__"), "missing __init__ builtins.object.__init__.");
+		assertNotNull(program.getUnit("builtins.object.super"), "missing super builtins.object.super.");
 
 		assertClass1Correctness("classes/class1");
 	}
@@ -49,9 +53,9 @@ public class Classes {
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
 
-		assertNotNull("missing __new__ builtins.object.__new__.", program.getUnit("builtins.object.__new__"));
-		assertNotNull("missing __init__ builtins.object.__init__.", program.getUnit("builtins.object.__init__"));
-		assertNotNull("missing super builtins.object.super.", program.getUnit("builtins.object.super"));
+		assertNotNull(program.getUnit("builtins.object.__new__"), "missing __new__ builtins.object.__new__.");
+		assertNotNull(program.getUnit("builtins.object.__init__"), "missing __init__ builtins.object.__init__.");
+		assertNotNull(program.getUnit("builtins.object.super"), "missing super builtins.object.super.");
 
 		assertClassGlobalsCorrectness("classes/global_fields");
 	}
@@ -68,7 +72,7 @@ public class Classes {
 					.max(Comparator.comparing(path -> path.getFileName().toString()));
 		}
 
-		assertTrue("Missing __main__.$init() ht", reportJson.isPresent());
+		assertTrue(reportJson.isPresent(), "Missing __main__.$init() ht");
 
 		ObjectMapper mapper = new ObjectMapper();
 
@@ -180,7 +184,7 @@ public class Classes {
 					.max(Comparator.comparing(path -> path.getFileName().toString()));
 		}
 
-		assertTrue("Missing __main__.$init() ht", reportJson.isPresent());
+		assertTrue(reportJson.isPresent(), "Missing __main__.$init() ht");
 
 		ObjectMapper mapper = new ObjectMapper();
 
@@ -287,7 +291,7 @@ public class Classes {
 					.max(Comparator.comparing(path -> path.getFileName().toString()));
 		}
 
-		assertTrue("Missing __main__.$init() missing", reportJson.isPresent());
+		assertTrue(reportJson.isPresent(), "Missing __main__.$init() missing");
 
 		ObjectMapper mapper = new ObjectMapper();
 
@@ -350,12 +354,12 @@ public class Classes {
 				"py-testcases/classes/staticmethod.py",
 				false);
 		Program program = translator.toLiSAProgram(true);
-		assertNotNull("missing functionunit builtins.staticmethod.", program.getUnit("builtins.staticmethod"));
-		assertTrue("builtins.staticmethod should be of type FunctionUnit.",
-				program.getUnit("builtins.staticmethod") instanceof FunctionUnit);
-		assertNotNull("missing __new__ builtins.object.__new__.", program.getUnit("builtins.object.__new__"));
-		assertNotNull("missing __init__ builtins.object.__init__.", program.getUnit("builtins.object.__init__"));
-		assertNotNull("missing super builtins.object.super.", program.getUnit("builtins.object.super"));
+		assertNotNull(program.getUnit("builtins.staticmethod"), "missing functionunit builtins.staticmethod.");
+		assertTrue(program.getUnit("builtins.staticmethod") instanceof FunctionUnit,
+				"builtins.staticmethod should be of type FunctionUnit.");
+		assertNotNull(program.getUnit("builtins.object.__new__"), "missing __new__ builtins.object.__new__.");
+		assertNotNull(program.getUnit("builtins.object.__init__"), "missing __init__ builtins.object.__init__.");
+		assertNotNull(program.getUnit("builtins.object.super"), "missing super builtins.object.super.");
 		LiSAConfiguration conf = getLisaConf("classes/staticmethod");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
@@ -368,13 +372,13 @@ public class Classes {
 				"py-testcases/classes/classes_super.py",
 				false);
 		Program program = translator.toLiSAProgram(true);
-		assertNotNull("missing functionunit builtins.staticmethod.", program.getUnit("builtins.staticmethod"));
-		assertTrue("builtins.staticmethod should be of type FunctionUnit.",
-				program.getUnit("builtins.staticmethod") instanceof FunctionUnit);
-		assertNotNull("missing __new__ builtins.object.__new__.", program.getUnit("builtins.object.__new__"));
-		assertNotNull("missing __init__ builtins.object.__init__.", program.getUnit("builtins.object.__init__"));
-		// assertNotNull("missing super builtins.object.super.",
-		// program.getUnit("builtins.object.super"));
+		assertNotNull(program.getUnit("builtins.staticmethod"), "missing functionunit builtins.staticmethod.");
+		assertTrue(program.getUnit("builtins.staticmethod") instanceof FunctionUnit,
+				"builtins.staticmethod should be of type FunctionUnit.");
+		assertNotNull(program.getUnit("builtins.object.__new__"), "missing __new__ builtins.object.__new__.");
+		assertNotNull(program.getUnit("builtins.object.__init__"), "missing __init__ builtins.object.__init__.");
+		// assertNotNull(program.getUnit("builtins.object.super"), "missing
+		// super builtins.object.super.");
 		LiSAConfiguration conf = getLisaConf("classes/classes_super");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
@@ -393,7 +397,7 @@ public class Classes {
 					.max(Comparator.comparing(path -> path.getFileName().toString()));
 		}
 
-		assertTrue("Missing __main__.$init() missing", reportJson.isPresent());
+		assertTrue(reportJson.isPresent(), "Missing __main__.$init() missing");
 
 		ObjectMapper mapper = new ObjectMapper();
 
@@ -437,7 +441,7 @@ public class Classes {
 				.filter(u -> u.getName().contains("method_local"))
 				.findFirst()
 				.orElse(null);
-		assertNotNull("method_local unit must exist", methodUnit);
+		assertNotNull(methodUnit, "method_local unit must exist");
 
 		// Find the ClassUnit for Foo and verify it has builtins.object as
 		// ancestor
@@ -446,9 +450,9 @@ public class Classes {
 				.filter(u -> u.getName().endsWith(".Foo"))
 				.findFirst()
 				.orElse(null);
-		assertNotNull("Foo class unit must exist", fooUnit);
-		assertFalse("Foo must have at least one ancestor (builtins.object)",
-				fooUnit.getImmediateAncestors().isEmpty());
+		assertNotNull(fooUnit, "Foo class unit must exist");
+		assertFalse(fooUnit.getImmediateAncestors().isEmpty(),
+				"Foo must have at least one ancestor (builtins.object)");
 	}
 
 }

@@ -1,8 +1,10 @@
 package it.unive.pylisa.conditions;
 
 import static it.unive.pylisa.microservices.MicroservicesTest.getLisaConf;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +18,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class Conditions {
 	@Test
@@ -29,9 +31,9 @@ public class Conditions {
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
 
-		assertNotNull("missing __new__ builtins.object.__new__.", program.getUnit("builtins.object.__new__"));
-		assertNotNull("missing __init__ builtins.object.__init__.", program.getUnit("builtins.object.__init__"));
-		assertNotNull("missing super builtins.object.super.", program.getUnit("builtins.object.super"));
+		assertNotNull(program.getUnit("builtins.object.__new__"), "missing __new__ builtins.object.__new__.");
+		assertNotNull(program.getUnit("builtins.object.__init__"), "missing __init__ builtins.object.__init__.");
+		assertNotNull(program.getUnit("builtins.object.super"), "missing super builtins.object.super.");
 
 		assertConditions1("conditions/condition1");
 	}
@@ -48,7 +50,7 @@ public class Conditions {
 					.max(Comparator.comparing(path -> path.getFileName().toString()));
 		}
 
-		assertTrue("Missing __main__.$init() ", reportJson.isPresent());
+		assertTrue(reportJson.isPresent(), "Missing __main__.$init() ");
 
 		ObjectMapper mapper = new ObjectMapper();
 
@@ -61,8 +63,8 @@ public class Conditions {
 		JsonNode value = exitAnalysisState.get("value");
 		System.out.println("[V] $__main__::x == \"3\"");
 		assertNull(
-				"$config.settings should not be present, only $config::settings (probabaly, a problem with from config import settings.",
-				type.get("$config.settings"));
+				type.get("$config.settings"),
+				"$config.settings should not be present, only $config::settings (probabaly, a problem with from config import settings.");
 		assertEquals("\"3\"", value.get("$__main__::x").toString());
 	}
 }
