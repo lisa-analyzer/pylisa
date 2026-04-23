@@ -148,6 +148,16 @@ public class SliceConstant extends Constant {
 		}
 
 		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((start == null) ? 0 : start.hashCode());
+			result = prime * result + ((end == null) ? 0 : end.hashCode());
+			result = prime * result + ((skip == null) ? 0 : skip.hashCode());
+			return result;
+		}
+
+		@Override
 		public String toString() {
 			return start + ":" + end + ":" + skip;
 		}

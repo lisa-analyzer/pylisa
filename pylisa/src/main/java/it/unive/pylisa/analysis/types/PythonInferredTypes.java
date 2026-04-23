@@ -41,7 +41,12 @@ public class PythonInferredTypes
 			MemoryPointer mp = (MemoryPointer) id;
 			PythonTypeSet inner = evalIdentifier(mp.getReferencedLocation(), environment, pp, oracle);
 			if (inner.isTop())
-				return new PythonTypeSet(types, id.getStaticType().allInstances(types));
+				// Unknown heap-cell type → return TOP so callers (e.g.
+				// FunctionApply)
+				// fall through to the conservative PushAny path instead of
+				// materialising every registered type and causing a type
+				// explosion.
+				return top();
 			if (inner.isBottom())
 				return PythonTypeSet.BOTTOM;
 			TypeSystem ts = pp.getProgram().getTypes();
@@ -56,6 +61,15 @@ public class PythonInferredTypes
 		if (eval.isTop() && !eval.isEmpty()) {
 			return eval;
 		}
+		// Fallback path: the environment has no mapping for `id`, so we use
+		// the static type's allInstances. For Untyped this is EVERY registered
+		// type — a classic source of type-set explosion.
+		if (id.toString().contains("api_router") || id.toString().contains("include_router"))
+			org.apache.logging.log4j.LogManager.getLogger(PythonInferredTypes.class).info(
+					"[PIT-FALLBACK] id={} staticType={} envSize={} allInstances.size={}",
+					id, id.getStaticType(),
+					environment.function == null ? 0 : environment.function.size(),
+					id.getStaticType().allInstances(types).size());
 		return new PythonTypeSet(types, id.getStaticType().allInstances(types));
 	}
 

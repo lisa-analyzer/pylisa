@@ -7,14 +7,15 @@ import it.unive.lisa.analysis.network.NetworkAwareAbstractDomain;
 import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
-import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.outputs.HtmlResults;
 import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.types.PythonInferredTypes;
 import it.unive.pylisa.frontend.PyFrontend;
+import it.unive.pylisa.interprocedural.NetworkAwareContextBasedAnalysis;
 import it.unive.pylisa.outputs.ApplicationStructure;
+import it.unive.pylisa.outputs.FinalNetworkMermaidResults;
 import it.unive.pylisa.outputs.MermaidNetworkResults;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,7 +32,7 @@ public class MicroservicesTest {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/fastapi2.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("microservices-01");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
@@ -43,7 +44,7 @@ public class MicroservicesTest {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/flask.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("microservices-02");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
@@ -54,8 +55,20 @@ public class MicroservicesTest {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/mining-wave/api.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("mining-wave");
+		LiSA lisa = new LiSA(conf);
+		lisa.run(program);
+	}
+
+	@Test
+	public void testBoundaries() throws IOException {
+		PyFrontend translator = new PyFrontend(
+				"py-testcases/boundaries/main.py",
+				false);
+		Program program = translator.toLiSAProgram(true);
+		LiSAConfiguration conf = getLisaConf("boundaries");
+		// conf.outputs.add(new FinalNetworkMermaidResults<>());
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
 	}
@@ -68,7 +81,8 @@ public class MicroservicesTest {
 		conf.outputs.add(new HtmlResults<>(true));
 		conf.outputs.add(new MermaidNetworkResults<>(false));
 		conf.outputs.add(new ApplicationStructure());
-		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+		conf.outputs.add(new FinalNetworkMermaidResults<>());
+		conf.interproceduralAnalysis = new NetworkAwareContextBasedAnalysis<>();
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 
@@ -78,7 +92,9 @@ public class MicroservicesTest {
 		// PythonValueDomain<ConstantPropagation> valueDomain = new
 		// PythonValueDomain<ConstantPropagation>(new ConstantPropagation());
 		ConstantPropagation domain = new ConstantPropagation();
-		conf.analysis = new NetworkAwareAbstractDomain<>(new SimpleAbstractDomain<>(heap, domain, type));
+		conf.analysis = new NetworkAwareAbstractDomain<>(
+				new SimpleAbstractDomain<>(heap, domain, type),
+				NetworkAwareContextBasedAnalysis.pyFunctionNameExtractor());
 		return conf;
 	}
 

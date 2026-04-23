@@ -58,6 +58,11 @@ public class ClassInstantiation extends NaryExpression {
 					foundClassRuntimeType = true;
 					ResolvedAttributeResolution newResolution = resolveCallableAttribute(interprocedural, state, pct,
 							"__new__");
+					if (pct.toString().contains("APIRouter") || pct.toString().contains("FastAPI"))
+						org.apache.logging.log4j.LogManager.getLogger(ClassInstantiation.class).info(
+								"[CI-APIR] pct={} __new__ resolution owner={} runtimeTypes={} mode={} lookupPath={}",
+								pct, newResolution.owner(), newResolution.runtimeTypes(), newResolution.mode(),
+								newResolution.lookupPath());
 					recordResolution(pct, "__new__", newResolution);
 					for (Type _t : newResolution.runtimeTypes()) {
 						if (_t instanceof PyFunctionType ft) {
@@ -135,6 +140,21 @@ public class ClassInstantiation extends NaryExpression {
 				String mode = visited.size() == 1 ? "direct" : "inherited";
 				return new ResolvedAttributeResolution(current, types, String.join(" -> ", visited), mode);
 			}
+			// Registry fallback: state-based lookup can fail in deep CBA
+			// contexts
+			// where the callee's state doesn't carry the method binding
+			// (observed
+			// for `builtins.object.__new__` when analyzing dispatch submodules
+			// via `from fastapi import APIRouter` hint path). Consult the
+			// PyFunctionType registry directly — a library-spec method always
+			// has a stable qualified name.
+			String qualifiedMember = current.getName() + "." + attributeName;
+			if (PyFunctionType.isRegistered(qualifiedMember)) {
+				PyFunctionType pft = PyFunctionType.lookup(qualifiedMember);
+				String mode = visited.size() == 1 ? "direct-registry" : "inherited-registry";
+				return new ResolvedAttributeResolution(current, java.util.Set.of(pft),
+						String.join(" -> ", visited), mode);
+			}
 
 			Collection<CompilationUnit> ancestors = current.getImmediateAncestors();
 			if (ancestors.size() > 1)
@@ -195,6 +215,11 @@ public class ClassInstantiation extends NaryExpression {
 			if (cmp != 0)
 				return cmp;
 		}
-		return Integer.compare(System.identityHashCode(this), System.identityHashCode(other));
+		// Same reasoning as FunctionApply: identity hash as tiebreaker prevents
+		// convergence when ClassInstantiation objects are dynamically created
+		// per
+		// fixpoint iteration at the same code location with identical
+		// parameters.
+		return 0;
 	}
 }

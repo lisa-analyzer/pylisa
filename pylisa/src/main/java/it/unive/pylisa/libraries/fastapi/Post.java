@@ -23,6 +23,28 @@ public class Post extends VariadicExpression implements PluggableStatement {
 		super(cfg, location, "fastapi.post", params, new HashMap<>() {
 			{
 				put("path", 1);
+				put("response_model", 2);
+				put("status_code", 3);
+				put("tags", 4);
+				put("dependencies", 5);
+				put("summary", 6);
+				put("description", 7);
+				put("response_description", 8);
+				put("responses", 9);
+				put("deprecated", 10);
+				put("operation_id", 11);
+				put("response_model_include", 12);
+				put("response_model_exclude", 13);
+				put("response_model_by_alias", 14);
+				put("response_model_exclude_unset", 15);
+				put("response_model_exclude_defaults", 16);
+				put("response_model_exclude_none", 17);
+				put("include_in_schema", 18);
+				put("response_class", 19);
+				put("name", 20);
+				put("callbacks", 21);
+				put("openapi_extra", 22);
+				put("generate_unique_id_function", 23);
 			}
 		});
 	}

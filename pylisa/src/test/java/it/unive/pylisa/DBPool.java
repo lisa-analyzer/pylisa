@@ -15,7 +15,7 @@ public class DBPool {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/mining-wave/database.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("database");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
@@ -26,7 +26,7 @@ public class DBPool {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/mining-wave/config.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("config");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);

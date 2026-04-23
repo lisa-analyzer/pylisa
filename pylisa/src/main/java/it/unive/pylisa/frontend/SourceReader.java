@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -79,13 +81,27 @@ class SourceReader {
 		return code.toString();
 	}
 
+	/**
+	 * Regex matching a Python numeric literal that may contain underscore
+	 * separators (PEP 515, Python 3.6+). The negative lookbehind ensures we do
+	 * not match a digit that is part of an identifier (e.g. {@code x1_000}).
+	 */
+	private static final Pattern UNDERSCORE_NUMBER = Pattern.compile("(?<![a-zA-Z_])\\d[\\d_]*");
+
 	static String readNormalizedFile(
 			String path)
 			throws IOException {
 		String source = Files.readString(Path.of(path), StandardCharsets.UTF_8);
 		if (source.isEmpty() || source.charAt(source.length() - 1) != '\n')
 			source = source + "\n";
-		return source;
+		// Strip underscore separators from numeric literals so the ANTLR
+		// grammar (which predates PEP 515) can parse them.
+		Matcher m = UNDERSCORE_NUMBER.matcher(source);
+		StringBuffer sb = new StringBuffer();
+		while (m.find())
+			m.appendReplacement(sb, m.group().replace("_", ""));
+		m.appendTail(sb);
+		return sb.toString();
 	}
 
 	private static String transformToCode(

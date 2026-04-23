@@ -23,6 +23,28 @@ public class Get extends VariadicExpression implements PluggableStatement {
 		super(cfg, location, "fastapi.get", params, new HashMap<>() {
 			{
 				put("path", 1);
+				put("response_model", 2);
+				put("status_code", 3);
+				put("tags", 4);
+				put("dependencies", 5);
+				put("summary", 6);
+				put("description", 7);
+				put("response_description", 8);
+				put("responses", 9);
+				put("deprecated", 10);
+				put("operation_id", 11);
+				put("response_model_include", 12);
+				put("response_model_exclude", 13);
+				put("response_model_by_alias", 14);
+				put("response_model_exclude_unset", 15);
+				put("response_model_exclude_defaults", 16);
+				put("response_model_exclude_none", 17);
+				put("include_in_schema", 18);
+				put("response_class", 19);
+				put("name", 20);
+				put("callbacks", 21);
+				put("openapi_extra", 22);
+				put("generate_unique_id_function", 23);
 			}
 		});
 	}
@@ -49,7 +71,6 @@ public class Get extends VariadicExpression implements PluggableStatement {
 			SymbolicExpression[] combination,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		System.out.println("fastapi.get::fwdVariadicSemantics");
 		it.unive.lisa.symbolic.value.VariadicExpression expr = new it.unive.lisa.symbolic.value.VariadicExpression.Builder()
 				.operator(ChannelEndpointCreation.HTTP_GET)
 				.varargsOperand("target", combination[0])
@@ -61,9 +82,6 @@ public class Get extends VariadicExpression implements PluggableStatement {
 		params[0] = new VariableRef(getCFG(), getLocation(), "callback");
 		LazyEvaluatedVariadicExpression lazy = new LazyEvaluatedVariadicExpression(Untyped.INSTANCE, expr,
 				LazyEvaluatedExpressionOperator.INSTANCE, getLocation(), params);
-		// return interprocedural.getAnalysis().assign(state, new
-		// NetworkIdentifier(.INSTANCE, "FastAPI_HTTPService", false, null,
-		// getLocation()), expr, this);*/
 		return interprocedural.getAnalysis().smallStepSemantics(state, lazy, this);
 	}
 

@@ -8,14 +8,33 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class UnknownAttributeType implements InMemoryType {
 
+	private static final Logger LOG = LogManager.getLogger(UnknownAttributeType.class);
+
 	private static final Map<String, UnknownAttributeType> TYPES = new ConcurrentHashMap<>();
+
+	private static final AtomicInteger CREATED = new AtomicInteger(0);
+
+	public static int getRegisteredCount() {
+		return TYPES.size();
+	}
 
 	public static UnknownAttributeType lookup(
 			String qualifiedName) {
-		return TYPES.computeIfAbsent(qualifiedName, UnknownAttributeType::new);
+		UnknownAttributeType existing = TYPES.get(qualifiedName);
+		if (existing != null)
+			return existing;
+		UnknownAttributeType created = TYPES.computeIfAbsent(qualifiedName, UnknownAttributeType::new);
+		int count = CREATED.incrementAndGet();
+		if (count % 100 == 0 || count < 20)
+			LOG.info("[UAT-TRACK] UnknownAttributeType created #{} total={} name={}", count, TYPES.size(),
+					qualifiedName);
+		return created;
 	}
 
 	private final String qualifiedName;

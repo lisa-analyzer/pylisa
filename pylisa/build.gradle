@@ -9,6 +9,7 @@ plugins {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven {
         name = 'GitHubPackages'
@@ -26,16 +27,12 @@ mainClassName = 'it.unive.pylisa.PyLiSA'
 
 dependencies {
     antlr 'org.antlr:antlr4:4.8-1'
-    
-    compileOnly 'org.projectlombok:lombok:1.18.22'
-    annotationProcessor 'org.projectlombok:lombok:1.18.22'
 
-    testCompileOnly 'org.projectlombok:lombok:1.18.22'
-    testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
 
-    implementation 'io.github.lisa-analyzer:lisa-sdk:0.2-svcomp-SNAPSHOT'
-    implementation 'io.github.lisa-analyzer:lisa-analyses:0.2-svcomp-SNAPSHOT'
-    implementation 'io.github.lisa-analyzer:lisa-program:0.2-svcomp-SNAPSHOT'
+    implementation 'it.unive:lisa-sdk:0.1'
+    implementation 'it.unive:lisa-analyses:0.1'
+    implementation 'it.unive:lisa-program:0.1'
+    implementation 'it.unive:lisa-network:0.1'
 
     implementation 'guru.nidi:graphviz-java:0.18.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0'
@@ -73,10 +70,6 @@ java {
     withSourcesJar()
 }
 
-compileJava   {
-  sourceCompatibility = '17'
-  targetCompatibility = '17'
-}
 
 javadoc {
 	if(JavaVersion.current().isJava9Compatible()) {
@@ -109,6 +102,10 @@ spotless {
         target 'src/*/antlr/**/*.g4'
         antlr4Formatter() 
     }
+}
+
+test {
+    maxHeapSize = "4g"
 }
 
 spotlessJava {

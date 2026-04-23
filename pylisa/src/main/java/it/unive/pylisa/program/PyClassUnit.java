@@ -51,7 +51,18 @@ public class PyClassUnit extends ClassUnit {
 	private final Set<Unit> instances = new LinkedHashSet<>();
 
 	/**
-	 * Builds a Python class unit.
+	 * The Python-visible qualified name (e.g. {@code dispatch.config.Secret}).
+	 * Multiple units can share a base name when the same simple name is
+	 * conditionally redefined in the same scope — each definition site still
+	 * has a unique identity ({@link #getName()}), but they collapse to the same
+	 * base name at the language level (imports, attribute access).
+	 */
+	private final String baseName;
+
+	/**
+	 * Builds a Python class unit. The {@code name} is taken as both the
+	 * identity name and the Python-visible base name — use this overload for
+	 * classes coming from library specs (one def-site per name).
 	 *
 	 * @param location the source location of the class definition
 	 * @param program  the LiSA program this unit belongs to
@@ -63,7 +74,42 @@ public class PyClassUnit extends ClassUnit {
 			Program program,
 			String name,
 			boolean sealed) {
+		this(location, program, name, name, sealed);
+	}
+
+	/**
+	 * Builds a Python class unit with an explicit base name, allowing multiple
+	 * def-sites to share the same Python-visible qualified name while each
+	 * retaining a unique identity. Intended for user code where the same class
+	 * name is declared in multiple control-flow branches.
+	 *
+	 * @param location the source location of the class definition
+	 * @param program  the LiSA program this unit belongs to
+	 * @param name     the unique identity name (typically base name +
+	 *                     {@code "@line:col"})
+	 * @param baseName the Python-visible qualified name (without location
+	 *                     suffix)
+	 * @param sealed   whether this class is sealed (cannot be subclassed)
+	 */
+	public PyClassUnit(
+			CodeLocation location,
+			Program program,
+			String name,
+			String baseName,
+			boolean sealed) {
 		super(location, program, name, sealed);
+		this.baseName = baseName;
+	}
+
+	/**
+	 * Yields the Python-visible qualified name of this class (no location
+	 * suffix). Two conditionally-defined classes with the same textual name
+	 * share a base name but differ in {@link #getName()}.
+	 *
+	 * @return the base name
+	 */
+	public String getBaseName() {
+		return baseName;
 	}
 
 	/**

@@ -57,7 +57,10 @@ public class TupleCreation extends NaryExpression {
 		// if we only have one sub-expression, we assume to be in that case
 		if (params.length == 1)
 			return state;
-
+		// unsound: fix me (handle empty tuple case).
+		if (params.length == 0) {
+			return state;
+		}
 		AnalysisState<A> result = state.bottom();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 

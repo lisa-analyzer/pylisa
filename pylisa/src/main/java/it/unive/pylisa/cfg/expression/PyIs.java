@@ -9,7 +9,6 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.UnsupportedStatementException;
 
 public class PyIs extends BinaryExpression {
 
@@ -35,6 +34,7 @@ public class PyIs extends BinaryExpression {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		throw new UnsupportedStatementException(this);
+		return state;
+		// throw new UnsupportedStatementException(this);
 	}
 }

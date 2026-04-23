@@ -72,7 +72,7 @@ class VisionNode(Node):
     self.get_logger().debug(f'finish message received: {id}')
     if id not in self.enroute:
       self.get_logger().info(f'Error: Collector {id} not in enroute')
-      return
+      #return
     _, end = self.enroute[id]
     if end == (0, 0):
       del self.enroute[id]
@@ -83,7 +83,7 @@ class VisionNode(Node):
       self.get_logger().info(f'{len(self.remaining_fruits)} fruits remaining')
       if len(self.remaining_fruits) == 0 and len(self.enroute) == 0:
         self.restart()
-        return
+        #return
     self.move_collector()
 
 

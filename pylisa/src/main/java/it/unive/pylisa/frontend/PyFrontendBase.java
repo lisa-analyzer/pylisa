@@ -69,6 +69,7 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	protected final String filePath;
 
 	protected boolean shouldPrependUnitAccess = true;
+	protected boolean currentFileIsPackage = false;
 	protected CFG init;
 	/**
 	 * The LiSA program obtained from the Python program at filePath.
@@ -103,6 +104,20 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	 * Whether or not {@link #filePath} points to a Jupyter notebook file
 	 */
 	protected final boolean notebook;
+
+	/**
+	 * When {@code true}, per-statement exceptions in {@code visitFile_input}
+	 * and parameter parsing are caught and logged rather than propagated. Used
+	 * when loading project sub-modules so a single unsupported construct does
+	 * not prevent the rest of the module from being loaded.
+	 */
+	protected boolean continueOnUnsupportedStatement = false;
+
+	public PyFrontendBase setContinueOnUnsupportedStatement(
+			boolean value) {
+		this.continueOnUnsupportedStatement = value;
+		return this;
+	}
 
 	/**
 	 * List of the indexes of cells of a Jupyter notebook in the order they are
@@ -157,15 +172,40 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 			String filePath,
 			boolean notebook,
 			List<Integer> cellOrder) {
+		this(filePath, notebook, cellOrder, null);
+	}
+
+	/**
+	 * Builds an instance of @PyToCFG for a given Python program given at the
+	 * location filePath, with an explicit source root for module resolution.
+	 *
+	 * @param filePath   file path to a Python program
+	 * @param notebook   whether or not {@code filePath} points to a Jupyter
+	 *                       notebook file
+	 * @param cellOrder  list of the indexes of cells of a Jupyter notebook in
+	 *                       the order they are to be executed. Only valid if
+	 *                       {@code notebook} is {@code true}.
+	 * @param sourceRoot explicit root directory for resolving project-relative
+	 *                       imports; if {@code null}, defaults to the parent of
+	 *                       {@code filePath}
+	 */
+	public PyFrontendBase(
+			String filePath,
+			boolean notebook,
+			List<Integer> cellOrder,
+			String sourceRoot) {
 		this.program = new Program(new PythonFeatures(), new PythonTypeSystem());
 		this.filePath = filePath;
 		this.notebook = notebook;
 		this.cellOrder = cellOrder;
+		this.currentFileIsPackage = (filePath != null && filePath.endsWith("__init__.py"));
 		this.currentModule = new ModuleUnit(new SourceCodeLocation(filePath, 0, 0),
 				program, "__main__");
 		this.currentUnit = currentModule;
 		makeInit(program);
-		Path baseDir = (filePath != null) ? Path.of(filePath).getParent() : Path.of(".");
+		Path baseDir = (sourceRoot != null)
+				? Path.of(sourceRoot)
+				: (filePath != null) ? Path.of(filePath).getParent() : Path.of(".");
 		this.importManager = new PythonModuleImportManager(program, init, baseDir);
 		program.addUnit(currentModule);
 		PyModuleType.register("__main__", currentModule);
@@ -260,7 +300,12 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 			String name,
 			CodeLocation loc) {
 		String modName = (currentModule != null) ? currentModule.getName() : "__main__";
-		return new PyNameRef(currentCFG, loc, name, modName);
+		// Parse-time hint: if the current module recorded a
+		// `from <X> import <name>` (or `... as name`) binding, pass the
+		// qualified name (e.g. "fastapi.APIRouter") to PyNameRef for use
+		// as a fallback when runtime-scope lookup fails.
+		String qualified = (imports != null) ? imports.get(name) : null;
+		return new it.unive.pylisa.cfg.statement.PyNameRef(currentCFG, loc, name, modName, qualified);
 	}
 
 	protected void enterLocalScope() {
@@ -351,7 +396,22 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 
 	public SourceCodeLocation getLocation(
 			ParserRuleContext ctx) {
-		return new SourceCodeLocation(this.getFilePath(), getLine(ctx), getCol(ctx));
+		// Read the source file from the token's CharStream. This stays correct
+		// when `loadProjectModuleFile` recursively re-enters the visitor on a
+		// sub-module (config.py, logging.py, …) — those tokens come from a
+		// different CharStream whose name is the sub-module path. Falling back
+		// to the frontend's own filePath would stamp every sub-module node
+		// with the entry file's path (the bug this guards against).
+		String source = this.getFilePath();
+		if (ctx != null && ctx.getStart() != null) {
+			org.antlr.v4.runtime.CharStream cs = ctx.getStart().getInputStream();
+			if (cs != null) {
+				String csName = cs.getSourceName();
+				if (csName != null && !csName.isEmpty() && !"<unknown>".equals(csName))
+					source = csName;
+			}
+		}
+		return new SourceCodeLocation(source, getLine(ctx), getCol(ctx));
 	}
 
 	protected CodeMemberDescriptor buildMainCFGDescriptor(
@@ -426,6 +486,8 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 				if (!hasNonRetFollower)
 					currentCFG.addEdge(new SequentialEdge(pred, canonicalRet));
 			}
+			for (ControlFlowStructure cf : cfs)
+				cf.replace(extra, canonicalRet);
 			currentCFG.getNodeList().removeNode(extra);
 		}
 

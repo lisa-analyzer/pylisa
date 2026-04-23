@@ -34,7 +34,7 @@ public class LibrarySpecificationProvider {
 	public static final String LIBS_FOLDER = "/libraries/";
 	private static final String STDLIB_FILE = "stdlib.txt";
 
-	public static final String SET = "Set";
+	public static final String SET = "builtins.set";
 	public static final String DICT = "builtins.dict";
 	public static final String LIST = "List";
 	public static final String TUPLE = "builtins.tuple";

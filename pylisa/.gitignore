@@ -15,3 +15,4 @@ microservice-test-outputs/*
 tests/*
 # gradle configuration for accessing the snapshot of lisa
 gradle.properties
+/py-testcases/microservices/

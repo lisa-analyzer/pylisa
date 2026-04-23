@@ -32,12 +32,14 @@ import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.expression.*;
 import it.unive.pylisa.cfg.statement.*;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.cfg.type.PyFunctionType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.cfg.type.PyModuleType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.program.ModuleUnit;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -105,6 +107,24 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 	}
 
 	/**
+	 * Builds an instance of @PyFrontend for a given Python program given at the
+	 * location filePath, with an explicit source root for module resolution.
+	 *
+	 * @param filePath   file path to a Python program
+	 * @param notebook   whether or not {@code filePath} points to a Jupyter
+	 *                       notebook file
+	 * @param sourceRoot explicit root directory for resolving project-relative
+	 *                       imports; if {@code null}, defaults to the parent of
+	 *                       {@code filePath}
+	 */
+	public PyFrontend(
+			String filePath,
+			boolean notebook,
+			String sourceRoot) {
+		super(filePath, notebook, Collections.emptyList(), sourceRoot);
+	}
+
+	/**
 	 * Returns the collection of @CFG in a Python program at filePath.
 	 *
 	 * @return collection of @CFG in file
@@ -118,8 +138,13 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 			boolean clearClassType)
 			throws IOException,
 			AnalysisSetupException {
-		if (clearClassType)
+		if (clearClassType) {
 			PyClassType.clearAll();
+			PyFunctionType.clearAll();
+			PyModuleType.clearAll();
+			// Re-register __main__ which was set up in the constructor
+			PyModuleType.register(currentModule.getName(), currentModule);
+		}
 
 		TypeSystem types = program.getTypes();
 		types.registerType(PyLambdaType.INSTANCE);
@@ -194,6 +219,8 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		Map<String, String> savedImports = imports;
 		Collection<ControlFlowStructure> savedCfs = cfs;
 		boolean savedShouldPrependUnitAccess = shouldPrependUnitAccess;
+		boolean savedFileIsPackage = currentFileIsPackage;
+		currentFileIsPackage = filePath.endsWith("__init__.py");
 
 		// The ModuleUnit was already registered by loadProjectModule before
 		// calling us
@@ -203,6 +230,8 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		imports = new HashMap<>();
 		cfs = new HashSet<>();
 
+		boolean savedContinue = continueOnUnsupportedStatement;
+		continueOnUnsupportedStatement = true; // resilient for sub-module loads
 		try {
 			String source = SourceReader.readNormalizedFile(filePath);
 			Python3Lexer lexer = new Python3Lexer(CharStreams.fromString(source, filePath));
@@ -213,6 +242,7 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 			addRetNodesToCurrentCFG();
 			throw e;
 		} finally {
+			continueOnUnsupportedStatement = savedContinue;
 			// Always restore state, even if parsing fails
 			currentModule = savedModule;
 			currentUnit = savedUnit;
@@ -220,6 +250,7 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 			imports = savedImports;
 			cfs = savedCfs;
 			shouldPrependUnitAccess = savedShouldPrependUnitAccess;
+			currentFileIsPackage = savedFileIsPackage;
 		}
 
 		return newModule;
@@ -261,10 +292,19 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		Statement lastStmt = nameAssign;
 		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
 			Object visited;
-			if (stmt.compound_stmt() != null)
-				visited = visitCompound_stmt(stmt.compound_stmt());
-			else
-				visited = visitSimple_stmt(stmt.simple_stmt());
+			try {
+				if (stmt.compound_stmt() != null)
+					visited = visitCompound_stmt(stmt.compound_stmt());
+				else
+					visited = visitSimple_stmt(stmt.simple_stmt());
+			} catch (RuntimeException e) {
+				if (!continueOnUnsupportedStatement)
+					throw e;
+				log.warn("[PyLiSA] Skipping unsupported statement at "
+						+ getLocation(stmt) + ": " + e.getClass().getSimpleName()
+						+ ": " + e.getMessage());
+				continue;
+			}
 
 			if (!(visited instanceof Triple<?, ?, ?>))
 				continue;
@@ -323,7 +363,21 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		try {
 			return parser.file_input();
 		} catch (ParseCancellationException ex) {
-			throw new IOException("Invalid Python input in '" + sourceName + "': " + ex.getMessage(), ex);
+			String detail = ex.getMessage();
+			if (detail == null && ex.getCause() instanceof RecognitionException) {
+				RecognitionException re = (RecognitionException) ex.getCause();
+				org.antlr.v4.runtime.Token tok = re.getOffendingToken();
+				if (tok != null) {
+					detail = SyntaxErrorFormatter.format(
+							sourceName,
+							source,
+							tok,
+							tok.getLine(),
+							tok.getCharPositionInLine(),
+							"unexpected token '" + tok.getText() + "'");
+				}
+			}
+			throw new IOException("Invalid Python input in '" + sourceName + "': " + detail, ex);
 		}
 	}
 

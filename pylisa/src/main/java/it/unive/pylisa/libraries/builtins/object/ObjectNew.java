@@ -58,14 +58,20 @@ public class ObjectNew extends it.unive.lisa.program.cfg.statement.UnaryExpressi
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		AnalysisState<A> result = state.bottomExecution();
 		Set<Type> runtimeTypes = analysis.getRuntimeTypesOf(state, expr, this);
+		// Use the originating call-site location so that each call site gets
+		// its
+		// own abstract heap cell. Falling back to getLocation() (the static
+		// location inside builtins.object.__new__) would merge ALL allocated
+		// objects into one abstract cell, causing a type-explosion loop.
+		CodeLocation allocLoc = (st != null) ? st.getLocation() : getLocation();
 		for (Type runtimeType : runtimeTypes) {
 			if (runtimeType instanceof PyClassType classType) {
-				MemoryAllocation created = new MemoryAllocation(classType, getLocation(), false);
-				HeapReference ref = new HeapReference(new ReferenceType(classType), created, getLocation());
+				MemoryAllocation created = new MemoryAllocation(classType, allocLoc, false);
+				HeapReference ref = new HeapReference(new ReferenceType(classType), created, allocLoc);
 				// allocate the memory region
 				AnalysisState<A> allocated = analysis.smallStepSemantics(state, created, this);
 				// create the synthetic variable
-				InstrumentedReceiverRef newObj = new InstrumentedReceiverRef(getCFG(), getLocation(), false,
+				InstrumentedReceiverRef newObj = new InstrumentedReceiverRef(getCFG(), allocLoc, false,
 						new ReferenceType(classType));
 				AnalysisState<A> callState = newObj.forwardSemantics(allocated, interprocedural, expressions);
 				AnalysisState<A> tmp = state.bottomExecution();

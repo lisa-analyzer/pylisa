@@ -103,6 +103,14 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 		super(filePath, notebook, cellOrder);
 	}
 
+	public PyStatementVisitorBase(
+			String filePath,
+			boolean notebook,
+			List<Integer> cellOrder,
+			String sourceRoot) {
+		super(filePath, notebook, cellOrder, sourceRoot);
+	}
+
 	@Override
 	public Object visitStmt(
 			StmtContext ctx) {
@@ -186,6 +194,21 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 		declareAssignedNames(rawTarget);
 		Expression target = scopeAssignmentTarget(rawTarget);
 
+		// Subscript write: d["key"] = value → d.__setitem__("key", value)
+		// (instead of PyAssign(d.__getitem__("key"), value) which crashes LiSA)
+		if (rawTarget instanceof FunctionApply fa
+				&& fa.getSubExpressions().length == 3
+				&& fa.getSubExpressions()[0] instanceof AttributeAccess aa
+				&& "__getitem__".equals(aa.getTarget())) {
+			Expression receiver = fa.getSubExpressions()[1];
+			Expression key = fa.getSubExpressions()[2];
+			Expression rhs = visitTestlist_star_expr(ctx.testlist_star_expr(1));
+			Expression setitemAttr = new AttributeAccess(
+					currentCFG, getLocation(ctx), receiver, "__setitem__");
+			return new FunctionApply(currentCFG, getLocation(ctx), setitemAttr,
+					new Expression[] { receiver, key, rhs }, true);
+		}
+
 		PyAssign assign = new PyAssign(currentCFG, getLocation(ctx),
 				target,
 				visitTestlist_star_expr(ctx.testlist_star_expr(1)));
@@ -198,10 +221,8 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 		if (ctx.test().size() == 1)
 			return visitTest(ctx.test(0));
 
-		List<Expression> elements = new ArrayList<>();
-		for (TestContext test : ctx.test())
-			elements.add(visitTest(test));
-		return new TupleCreation(currentCFG, getLocation(ctx), elements.toArray(Expression[]::new));
+		unsound(ctx, "tuple creation treated as first element");
+		return visitTest(ctx.test(0));
 	}
 
 	@Override
@@ -309,10 +330,10 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 			return new Ret(currentCFG, getLocation(ctx));
 		if (ctx.testlist().test().size() == 1)
 			return new Return(currentCFG, getLocation(ctx), visitTest(ctx.testlist().test(0)));
-		else
-			return new Return(currentCFG, getLocation(ctx), new TupleCreation(
-					currentCFG, getLocation(ctx),
-					visitTestlist(ctx.testlist()).toArray(Expression[]::new)));
+		else {
+			unsound(ctx, "multiple return values treated as first value");
+			return new Return(currentCFG, getLocation(ctx), visitTest(ctx.testlist().test(0)));
+		}
 	}
 
 	@Override
@@ -612,8 +633,38 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 	@Override
 	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitTry_stmt(
 			Try_stmtContext ctx) {
-		unsound(ctx, "try block: except clauses ignored");
-		return visitSuite(ctx.suite(0));
+		unsound(ctx, "try block: except clauses conservatively modeled as a bypass");
+		// Model `try: BODY except: …` as "BODY may execute fully OR an
+		// exception may be caught anywhere inside, in which case control
+		// resumes at the try-exit carrying the pre-try state". Structurally:
+		//
+		// entry(NoOp) ──► BODY.entry ──► … ──► BODY.exit ──► exit(NoOp)
+		// └─────────────────────────────────────────────► exit
+		//
+		// The parallel edge from entry to exit gives the fixpoint a path that
+		// preserves the pre-try state, so if the body produces bottom (e.g.
+		// because an unresolvable `from X import Y` cascaded), the exit still
+		// receives at least the entry state by lattice join — matching the
+		// semantics of Python's bare-`except` over cross-import try/blocks
+		// common in package `__init__.py` files.
+		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> body = visitSuite(ctx.suite(0));
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+		NoOp entry = new NoOp(currentCFG, getLocation(ctx));
+		NoOp exit = new NoOp(currentCFG, getLocation(ctx));
+		block.addNode(entry);
+		block.addNode(exit);
+		block.mergeWith(body.getMiddle());
+		block.addEdge(new SequentialEdge(entry, body.getLeft()));
+		// Only connect the body's natural exit to our wrapper exit when the
+		// body's last node can fall through — return/raise/break/continue are
+		// execution-stopping and must not have outgoing edges (CFG.validate
+		// would reject it).
+		if (body.getRight() != null && !body.getRight().stopsExecution())
+			block.addEdge(new SequentialEdge(body.getRight(), exit));
+		// The bypass edge — control jumps straight to the exit as if every
+		// statement in the body had raised an exception that was caught.
+		block.addEdge(new SequentialEdge(entry, exit));
+		return Triple.of(entry, block, exit);
 	}
 
 	@Override
@@ -748,11 +799,14 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 	@Override
 	public Statement visitImport_from(
 			Import_fromContext ctx) {
+		int dotCount = ctx.DOT().size() + ctx.ELLIPSIS().size() * 3;
 		String name;
-		if (ctx.dotted_name() != null)
-			name = dottedNameToString(ctx.dotted_name());
-		else
-			name = ".";
+		if (dotCount == 0) {
+			name = ctx.dotted_name() != null ? dottedNameToString(ctx.dotted_name()) : ".";
+		} else {
+			name = resolveRelativeImport(dotCount,
+					ctx.dotted_name() != null ? dottedNameToString(ctx.dotted_name()) : null);
+		}
 
 		if (ctx.import_as_names() == null) {
 			LibrarySpecificationProvider.importLibrary(program, name, init);
@@ -773,7 +827,8 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 
 		for (Map.Entry<String, String> entry : components.entrySet()) {
 			String qualifiedName = name + "." + entry.getKey();
-			importManager.importModule(qualifiedName);
+			if (importManager.canResolveModule(qualifiedName))
+				importManager.importModule(qualifiedName);
 		}
 
 		ModuleUnit currentModuleUnit = (currentUnit instanceof ModuleUnit pmu) ? pmu : null;
@@ -825,6 +880,38 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 			targetName = name.getText();
 		}
 		return result;
+	}
+
+	private String resolveRelativeImport(
+			int dotCount,
+			String dottedName) {
+		String moduleName = (currentModule != null) ? currentModule.getName() : "__main__";
+		String packageName;
+		if (currentFileIsPackage) {
+			packageName = moduleName;
+		} else {
+			int lastDot = moduleName.lastIndexOf('.');
+			packageName = (lastDot >= 0) ? moduleName.substring(0, lastDot) : "";
+		}
+		// Entry-file fallback: the top-level main file carries the hardcoded
+		// module name "__main__" and therefore has no package prefix to pull
+		// from. When it lives inside a package (baseDir has __init__.py), the
+		// import manager has already detected the dotted package name from
+		// the directory chain — use it as the anchor, matching Python's
+		// __package__ behavior for `python -m <pkg>.<mod>` execution.
+		if (packageName.isEmpty()) {
+			String detected = importManager.getPackageName();
+			if (detected != null)
+				packageName = detected;
+		}
+		String anchor = packageName;
+		for (int i = 1; i < dotCount; i++) {
+			int lastDot = anchor.lastIndexOf('.');
+			anchor = (lastDot >= 0) ? anchor.substring(0, lastDot) : "";
+		}
+		if (dottedName == null || dottedName.isEmpty())
+			return anchor;
+		return anchor.isEmpty() ? dottedName : anchor + "." + dottedName;
 	}
 
 	protected String dottedNameToString(

@@ -32,12 +32,16 @@ public class NoInfoType
 	@Override
 	public boolean equals(
 			Object other) {
-		return other instanceof it.unive.lisa.type.NullType;
+		// All NoInfoType instances are equal. Previous code compared against
+		// NullType (a copy-paste error) causing every ReferenceType(NoInfoType)
+		// to be treated as distinct in sets/maps, so PythonTypeSets accumulated
+		// duplicate NO_INFO* entries across CBA passes and never converged.
+		return other instanceof NoInfoType;
 	}
 
 	@Override
 	public int hashCode() {
-		return it.unive.lisa.type.NullType.class.hashCode();
+		return NoInfoType.class.hashCode();
 	}
 
 	@Override

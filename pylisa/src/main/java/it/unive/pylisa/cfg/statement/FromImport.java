@@ -12,7 +12,6 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.analysis.ObjectRegister;
 import it.unive.pylisa.cfg.expression.PyAssign;
-import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyFunctionType;
 import it.unive.pylisa.cfg.type.PyModuleType;
 import it.unive.pylisa.program.FunctionUnit;
@@ -65,12 +64,31 @@ public class FromImport extends Expression {
 			String alias = entry.getLeft();
 			String originalName = entry.getRight();
 			String qualifiedName = sourceModuleName + "." + originalName;
+			Expression target = makeTarget(alias);
+			// Class resolution is base-name-driven: conditionally redefined
+			// classes share a qualified name but live under distinct
+			// allocation-site identities (e.g. `X.Y@24:4` vs. `X.Y@38:4`).
+			// Collect every matching def-site and lattice-join the per-unit
+			// assignments so the target binds a set of ClassLiterals.
+			java.util.Collection<
+					it.unive.pylisa.cfg.type.PyClassType> classMatches = it.unive.pylisa.cfg.type.PyClassType
+							.lookupAllByBaseName(qualifiedName);
+			if (!classMatches.isEmpty()) {
+				AnalysisState<A> joined = state.bottom();
+				for (it.unive.pylisa.cfg.type.PyClassType t : classMatches) {
+					var unit = t.getUnit();
+					AnalysisState<A> branch = ObjectRegister.initialize(state, this, unit, interprocedural,
+							expressions);
+					Expression value = new ClassLiteral(getCFG(), getLocation(), unit);
+					branch = new PyAssign(getCFG(), getLocation(), target, value)
+							.forwardSemantics(branch, interprocedural, expressions);
+					joined = joined.lub(branch);
+				}
+				state = joined;
+				continue;
+			}
 			Expression value;
-			if (PyClassType.isRegistered(qualifiedName)) {
-				var unit = PyClassType.lookup(qualifiedName).getUnit();
-				state = ObjectRegister.initialize(state, this, unit, interprocedural, expressions);
-				value = new ClassLiteral(getCFG(), getLocation(), unit);
-			} else if (PyFunctionType.isRegistered(qualifiedName)) {
+			if (PyFunctionType.isRegistered(qualifiedName)) {
 				FunctionUnit unit = (FunctionUnit) PyFunctionType.lookup(qualifiedName).getUnit();
 				state = ObjectRegister.initialize(state, this, unit, interprocedural, expressions);
 				value = new ImportFunction(getCFG(), getLocation(), qualifiedName, unit);
@@ -78,10 +96,19 @@ public class FromImport extends Expression {
 				var unit = PyModuleType.lookup(qualifiedName).getUnit();
 				state = ObjectRegister.initialize(state, this, unit, interprocedural, expressions);
 				value = new ModuleLiteral(getCFG(), getLocation(), unit);
+			} else if (PyModuleType.isRegistered(sourceModuleName)
+					&& !PyModuleType.lookup(sourceModuleName).isUnknown()) {
+				// Source module is a known project/library module — the member
+				// is a
+				// module-level variable. Read it directly from the module's
+				// scope
+				// without overwriting its value with PushAny.
+				var sourceModule = PyModuleType.lookup(sourceModuleName).getUnit();
+				value = new PythonScopedAttributeAccessRef(getCFG(), getLocation(), sourceModule,
+						new it.unive.lisa.program.Global(getLocation(), sourceModule, originalName, false));
 			} else {
 				value = new UnknownAttributeSymbolRef(getCFG(), getLocation(), sourceModuleName, originalName);
 			}
-			Expression target = makeTarget(alias);
 			state = new PyAssign(getCFG(), getLocation(), target, value)
 					.forwardSemantics(state, interprocedural, expressions);
 		}

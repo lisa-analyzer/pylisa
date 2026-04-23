@@ -78,7 +78,15 @@ public class FunctionApply extends NaryExpression {
 			if (cmp != 0)
 				return cmp;
 		}
-		return Integer.compare(System.identityHashCode(this), System.identityHashCode(other));
+		// Two FunctionApply nodes at the same location with identical
+		// sub-expressions
+		// are the same logical call site. Using identity hash as a tiebreaker
+		// would
+		// cause dynamically-created FA objects (e.g. from ClassInstantiation)
+		// to appear
+		// as distinct call sites on every fixpoint iteration, preventing
+		// convergence.
+		return 0;
 	}
 
 	@Override
@@ -92,10 +100,88 @@ public class FunctionApply extends NaryExpression {
 		boolean anyTypeFound = false;
 		org.apache.logging.log4j.LogManager.getLogger(FunctionApply.class).debug(
 				"forwardSemanticsAux: this id={} subexpr={}", System.identityHashCode(this),
-				java.util.Arrays.asList(getSubExpressions()).stream().map(e -> e + "/" + System.identityHashCode(e)).toList());
+				java.util.Arrays.asList(getSubExpressions()).stream().map(e -> e + "/" + System.identityHashCode(e))
+						.toList());
 		for (SymbolicExpression identifier : params[0]) {
+			// Fix 1: PushAny early-exit guard — avoids expanding Untyped to all
+			// registered types, which causes an interprocedural explosion /
+			// infinite loop
+			if (identifier instanceof PushAny) {
+				result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state,
+						new PushAny(Untyped.INSTANCE, getLocation()), this));
+				anyTypeFound = true;
+				continue;
+			}
 			Set<Type> runtimeTypes = interprocedural.getAnalysis().getRuntimeTypesOf(state, identifier, this);
+			// Registry fallback: in deep CBA sub-contexts the callee state may
+			// not carry type bindings for library globals referenced by
+			// qualified name (e.g. "$fastapi.APIRouter::__init__"). If the
+			// identifier's name matches a registered PyFunctionType /
+			// PyClassType, inject it into the runtime-type set so dispatch
+			// proceeds.
+			if ((runtimeTypes.isEmpty()
+					|| runtimeTypes.stream()
+							.allMatch(t -> t == it.unive.pylisa.program.type.NoInfoType.INSTANCE))
+					&& identifier instanceof it.unive.lisa.symbolic.value.GlobalVariable gv) {
+				String n = gv.getName();
+				String qualified = n.startsWith("$") ? n.substring(1).replace("::", ".") : n;
+				if (PyFunctionType.isRegistered(qualified)) {
+					runtimeTypes = new java.util.HashSet<>(runtimeTypes);
+					runtimeTypes.add(PyFunctionType.lookup(qualified));
+				} else {
+					// Class resolution goes through base-name lookup so that
+					// conditional class redefinition (multiple def-sites
+					// sharing
+					// a qualified name) surfaces all candidate classes to
+					// ClassInstantiation dispatch.
+					java.util.Collection<PyClassType> classMatches = PyClassType.lookupAllByBaseName(qualified);
+					if (!classMatches.isEmpty()) {
+						runtimeTypes = new java.util.HashSet<>(runtimeTypes);
+						runtimeTypes.addAll(classMatches);
+					}
+				}
+			}
+			// Safety net: if the type set has exploded (e.g. because an
+			// unresolved heap cell accumulated every registered type), filter
+			// to only the types this method knows how to dispatch on —
+			// PyFunctionType (triggers NativeCall/CFGCall) and PyClassType
+			// (triggers ClassInstantiation). Skipping the filter entirely (as
+			// before) lost pluggable-statement dispatch for calls whose
+			// receiver had an untyped static type but resolved through MRO
+			// to a real library function (e.g. api_router.include_router(...)
+			// in deeply-imported code).
+			if (runtimeTypes.size() > 20) {
+				Set<Type> filtered = new java.util.HashSet<>();
+				for (Type t : runtimeTypes)
+					if (t instanceof PyFunctionType || t instanceof PyClassType
+							|| (t instanceof it.unive.lisa.type.ReferenceType rt
+									&& (rt.getInnerType() instanceof PyFunctionType
+											|| rt.getInnerType() instanceof PyClassType)))
+						filtered.add(t);
+				if (filtered.isEmpty() || filtered.size() > 20) {
+					result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state,
+							new PushAny(Untyped.INSTANCE, getLocation()), this));
+					anyTypeFound = true;
+					continue;
+				}
+				runtimeTypes = filtered;
+			}
 			boolean handledIdentifier = false;
+			// Fix 3d: PassThroughLazyExpression — return the argument
+			// unchanged.
+			// Used by decorators such as @cache(...) that wrap without changing
+			// the
+			// HTTP interface, so the outer @router.get(...) still receives the
+			// handler.
+			if (identifier instanceof PassThroughLazyExpression) {
+				anyTypeFound = true;
+				if (params.length > 1) {
+					for (SymbolicExpression callback : params[1]) {
+						result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state, callback, this));
+					}
+				}
+				continue;
+			}
 			if (identifier instanceof LazyEvaluatedVariadicExpression lazyEval) {
 				anyTypeFound = true;
 				SymbolicExpression e = lazyEval.getExpression();
@@ -155,7 +241,8 @@ public class FunctionApply extends NaryExpression {
 									"NativeCall built: this(FA)id={} subexpr[1]={} id={}, NativeCFG={}",
 									System.identityHashCode(this),
 									getSubExpressions().length > 1 ? getSubExpressions()[1] : "n/a",
-									getSubExpressions().length > 1 ? System.identityHashCode(getSubExpressions()[1]) : -1,
+									getSubExpressions().length > 1 ? System.identityHashCode(getSubExpressions()[1])
+											: -1,
 									cfg.getDescriptor().getName());
 						} else if (cm instanceof CFG cfg) {
 							c = new CFGCall(this.getCFG(), getLocation(), Call.CallType.STATIC, "", "$call",

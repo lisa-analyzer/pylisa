@@ -21,7 +21,7 @@ public class PyParameterTest {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/typehints/th01.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("tests/");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);

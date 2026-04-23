@@ -74,6 +74,14 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		super(filePath, notebook, cellOrder);
 	}
 
+	public PyDefinitionVisitorBase(
+			String filePath,
+			boolean notebook,
+			List<Integer> cellOrder,
+			String sourceRoot) {
+		super(filePath, notebook, cellOrder, sourceRoot);
+	}
+
 	/*
 	 * decorated : decorators (classdef | funcdef | async_funcdef) ;
 	 * @param ctx the parse tree
@@ -208,8 +216,16 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		Unit prevUnit = currentUnit;
 		currentUnit = unit;
 		enterLocalScope();
-		for (PyParameter parameter : visitParameters(ctx.parameters()))
-			declareNameInCurrentScope(parameter.getName());
+		try {
+			for (PyParameter parameter : visitParameters(ctx.parameters()))
+				declareNameInCurrentScope(parameter.getName());
+		} catch (UnsupportedStatementException e) {
+			if (!continueOnUnsupportedStatement)
+				throw e;
+			log.warn("[PyLiSA] Skipping unsupported parameter in " + unit.getName()
+					+ ": " + e.getMessage());
+			// currentCFG is still newCFG; the finally below will restore it
+		}
 		try {
 			Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> r = visitSuite(ctx.suite());
 			currentUnit = prevUnit;
@@ -338,35 +354,49 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 		Unit previous = this.currentUnit;
 		String name = ctx.NAME().getSymbol().getText();
-		String fqName = previous.getName() + "." + name;
-		PyClassUnit cu = new PyClassUnit(new SourceCodeLocation(name, 0, 0), program, fqName, false);
-		this.currentUnit = cu;
+		String baseFqName = previous.getName() + "." + name;
+		// Allocation-site abstraction: each `class` statement mints a fresh
+		// unit keyed by its def-site. Two conditionally-defined classes with
+		// the same textual name (e.g. `if cond: class Secret: … else: class
+		// Secret: …`) share `baseFqName` but get distinct identity names like
+		// `dispatch.config.Secret@24:4` and `…@38:4`, so the PyClassType
+		// registry never silently merges them. Name-level resolution
+		// (imports, attribute access, inheritance) goes through
+		// {@link PyClassType#lookupAllByBaseName} which returns the set of
+		// def-sites for a given qualified name.
+		SourceCodeLocation classLoc = getLocation(ctx);
+		String fqName = baseFqName + "@" + classLoc.getLine() + ":" + classLoc.getCol();
+		PyClassUnit cu = new PyClassUnit(classLoc, program, fqName, baseFqName, false);
 		PyClassType.register(fqName, cu);
+		this.currentUnit = cu;
 		PyCFG classInit = new PyCFG(buildInitClassCFGDescriptor(SyntheticLocation.INSTANCE));
 		cu.addCodeMember(classInit);
-		// TODO inheritance
 
 		ArrayList<ArgumentContext> superclasses = ctx.arglist() != null ? new ArrayList<>(ctx.arglist().argument())
 				: new ArrayList<>();
-		// parse anchestors
+		// Resolve ancestors by Python-visible name. If a simple name resolves
+		// to multiple def-sites (conditional class redefinition), we add ALL
+		// matching units as ancestors — a sound over-approximation that lets
+		// downstream subclass checks succeed against any possible parent.
 		for (ArgumentContext superclass : superclasses) {
-			// if exists a class unit in the program with name
-			// superclass.getText(): add it
-			// to the anchestors
 			String superClassName = imports.getOrDefault(superclass.getText(), superclass.getText());
-			// Try exact match first, then FQN resolution using current module
-			// prefix,
-			// then suffix match for same-module classes referenced by simple
-			// name.
-			for (Unit programCu : this.program.getUnits())
-				if (programCu instanceof it.unive.lisa.program.CompilationUnit programCompUnit) {
-					String candidateName = programCu.getName();
-					if (candidateName.equals(superClassName)
-							|| (currentModule != null
-									&& candidateName.equals(currentModule.getName() + "." + superClassName))
-							|| candidateName.endsWith("." + superClassName))
-						cu.addAncestor(programCompUnit);
-				}
+			java.util.Set<it.unive.lisa.program.CompilationUnit> matches = new java.util.LinkedHashSet<>();
+			for (Unit programCu : this.program.getUnits()) {
+				if (!(programCu instanceof it.unive.lisa.program.CompilationUnit programCompUnit))
+					continue;
+				String candidateIdentity = programCu.getName();
+				String candidateBase = (programCu instanceof PyClassUnit pcu) ? pcu.getBaseName()
+						: candidateIdentity;
+				if (candidateIdentity.equals(superClassName) || candidateBase.equals(superClassName))
+					matches.add(programCompUnit);
+				else if (currentModule != null
+						&& candidateBase.equals(currentModule.getName() + "." + superClassName))
+					matches.add(programCompUnit);
+				else if (candidateBase.endsWith("." + superClassName))
+					matches.add(programCompUnit);
+			}
+			for (it.unive.lisa.program.CompilationUnit match : matches)
+				cu.addAncestor(match);
 		}
 		if (cu.getImmediateAncestors().isEmpty()) {
 			if (objectUnit != null)
@@ -375,7 +405,8 @@ public abstract class PyDefinitionVisitorBase extends PyStatementVisitorBase {
 				log.warn("builtins.object is not available; class '{}' will have no ancestor. "
 						+ "Ensure toLiSAProgram() completes library loading before parsing.", fqName);
 		}
-		log.debug("DEBUG visitClassdef: class '{}' ancestors = {}", fqName, cu.getImmediateAncestors());
+		log.debug("DEBUG visitClassdef: class '{}' (base '{}') ancestors = {}", fqName, baseFqName,
+				cu.getImmediateAncestors());
 		// Register the class unit in the program BEFORE parsing the body so
 		// that
 		// super() detection in method bodies can look up the class by name.

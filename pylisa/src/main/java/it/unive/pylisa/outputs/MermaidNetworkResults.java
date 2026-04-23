@@ -102,10 +102,15 @@ public class MermaidNetworkResults<A extends AbstractLattice<A>, D extends Abstr
 			String mermaid = (desc != null)
 					? NetworkMermaidSerializer.toMermaid(desc)
 					: NetworkMermaidSerializer.emptyDiagram();
+			String endpointList = (desc != null)
+					? NetworkMermaidSerializer.toEndpointListHtml(desc)
+					: "";
 
 			descrs.append("<div id=\"header-").append(nodeName)
 					.append("\" class=\"header-info header-hidden\">\n");
 			descrs.append("<div class=\"mermaid\">").append(mermaid).append("</div>\n");
+			if (!endpointList.isEmpty())
+				descrs.append(endpointList);
 			descrs.append("</div>\n");
 		});
 

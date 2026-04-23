@@ -19,11 +19,19 @@ library builtins:
         instance method __len__: it.unive.pylisa.libraries.SequenceLen
             type it.unive.lisa.program.type.Int32Type::INSTANCE
             param this libtype sequence*
+        instance method __contains__: it.unive.pylisa.libraries.SequenceContains
+            type it.unive.lisa.program.type.BoolType::INSTANCE
+            param this libtype sequence*
+            param item type it.unive.lisa.type.Untyped::INSTANCE
     class list extends builtins.sequence
     class set extends builtins.sequence
     class dict extends builtins.sequence
     class tuple extends builtins.sequence
     class slice extends builtins.sequence
+    class ellipsis extends builtins.object:
+        method __new__: it.unive.pylisa.libraries.builtins.ellipsis.EllipsisNew
+            libtype object*
+            param this type it.unive.lisa.type.Untyped::INSTANCE
     method staticmethod: it.unive.pylisa.libraries.builtins.functions.StaticMethod
         type it.unive.lisa.type.Untyped::INSTANCE
         param f type it.unive.lisa.type.Untyped::INSTANCE

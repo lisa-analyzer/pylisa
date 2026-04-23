@@ -6,8 +6,10 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.*;
+import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.operators.network.ActiveNodeCompose;
+import it.unive.lisa.symbolic.value.Constant;
 import java.util.HashMap;
 
 public class FastAPIIncludeRouter extends VariadicExpression implements PluggableStatement {
@@ -57,8 +59,13 @@ public class FastAPIIncludeRouter extends VariadicExpression implements Pluggabl
 			StatementStore<A> expressions)
 			throws SemanticException {
 
-		System.out.println("FastApiIncludeRouter::fwdVariadicSemantics");
-
+		SymbolicExpression routerArg = combination[getVarArgsIndex().get("router")];
+		if (routerArg.getStaticType() instanceof it.unive.pylisa.program.type.UnknownAttributeType)
+			return state;
+		int prefix = getVarArgsIndex().get("prefix");
+		SymbolicExpression prefixExpr = combination.length > prefix
+				? combination[prefix]
+				: new Constant(StringType.INSTANCE, "", getLocation());
 		it.unive.lisa.symbolic.value.VariadicExpression expr = new it.unive.lisa.symbolic.value.VariadicExpression.Builder()
 				.operator(ActiveNodeCompose.INSTANCE)
 				.varargsOperand("target", combination[0])
@@ -67,7 +74,7 @@ public class FastAPIIncludeRouter extends VariadicExpression implements Pluggabl
 						combination[getVarArgsIndex().get("router")])
 				.varargsOperand(
 						"prefix",
-						combination[getVarArgsIndex().get("prefix")])
+						prefixExpr)
 				.staticType(LiSANetworkActiveNode.INSTANCE)
 				.location(getLocation())
 				.build();

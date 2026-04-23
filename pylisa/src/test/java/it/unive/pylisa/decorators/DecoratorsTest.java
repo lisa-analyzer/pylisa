@@ -21,7 +21,7 @@ public class DecoratorsTest {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/decorators/dec01.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("dec01");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
@@ -32,7 +32,7 @@ public class DecoratorsTest {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/decorators/class_decorator_test.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("class_decorators");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);

@@ -27,7 +27,7 @@ public class Classes {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/classes/class1.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("classes/class1");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
@@ -44,7 +44,7 @@ public class Classes {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/classes/global_fields.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("classes/global_fields");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
@@ -338,7 +338,7 @@ public class Classes {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/classes/class2.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("classes/class2");
 		LiSA lisa = new LiSA(conf);
 		lisa.run(program);
@@ -349,7 +349,7 @@ public class Classes {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/classes/staticmethod.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		assertNotNull("missing functionunit builtins.staticmethod.", program.getUnit("builtins.staticmethod"));
 		assertTrue("builtins.staticmethod should be of type FunctionUnit.",
 				program.getUnit("builtins.staticmethod") instanceof FunctionUnit);
@@ -367,7 +367,7 @@ public class Classes {
 		PyFrontend translator = new PyFrontend(
 				"py-testcases/classes/classes_super.py",
 				false);
-		Program program = translator.toLiSAProgram(false);
+		Program program = translator.toLiSAProgram(true);
 		assertNotNull("missing functionunit builtins.staticmethod.", program.getUnit("builtins.staticmethod"));
 		assertTrue("builtins.staticmethod should be of type FunctionUnit.",
 				program.getUnit("builtins.staticmethod") instanceof FunctionUnit);
@@ -426,7 +426,7 @@ public class Classes {
 	public void testLEGBScopeIsolation() throws IOException {
 		String path = "py-testcases/classes/class_scope_legb.py";
 		PyFrontend frontend = new PyFrontend(path, false);
-		Program program = frontend.toLiSAProgram(false);
+		Program program = frontend.toLiSAProgram(true);
 
 		// Verify the program parses without exception and has the expected
 		// units

@@ -65,6 +65,7 @@ import it.unive.pylisa.cfg.expression.comparison.PyLessOrEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
+import it.unive.pylisa.cfg.expression.literal.PyEllipsisLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.statement.*;
 import it.unive.pylisa.program.PyClassUnit;
@@ -92,6 +93,14 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 			boolean notebook,
 			List<Integer> cellOrder) {
 		super(filePath, notebook, cellOrder);
+	}
+
+	public PyExpressionVisitorBase(
+			String filePath,
+			boolean notebook,
+			List<Integer> cellOrder,
+			String sourceRoot) {
+		super(filePath, notebook, cellOrder, sourceRoot);
 	}
 
 	@Override
@@ -142,11 +151,10 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 			if (ctx.yield_expr() != null)
 				throw new UnsupportedStatementException("yield expressions not supported");
 			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
-			TupleCreation tupleCreation = new TupleCreation(currentCFG, getLocation(ctx),
-					sts.toArray(Expression[]::new));
-			if (tupleCreation.getSubExpressions().length == 1)
-				return tupleCreation.getSubExpressions()[0];
-			return tupleCreation;
+			if (sts.size() <= 1)
+				return sts.isEmpty() ? new TupleCreation(currentCFG, getLocation(ctx)) : sts.get(0);
+			unsound(ctx, "tuple creation treated as first element");
+			return sts.get(0);
 		} else if (ctx.OPEN_BRACE() != null) {
 			// check if it is a dict or a set
 			if (!isADict(ctx.dictorsetmaker())) {
@@ -161,7 +169,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 					values.toArray(Pair[]::new));
 			return r;
 		} else if (ctx.ELLIPSIS() != null)
-			throw new UnsupportedStatementException();
+			return new PyEllipsisLiteral(currentCFG, getLocation(ctx));
 		throw new UnsupportedStatementException();
 	}
 
@@ -229,14 +237,17 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 							log.debug("super() synthesis in '{}': simpleName='{}', classRef='{}' id={}",
 									currentUnit.getName(), simpleName, classRef, System.identityHashCode(classRef));
 							String firstParamName = currentCFG.getDescriptor().getFormals().length > 0
-								? currentCFG.getDescriptor().getFormals()[0].getName()
-								: "self";
-						Expression selfRef = new VariableRef(currentCFG, getLocation(trailer), firstParamName);
+									? currentCFG.getDescriptor().getFormals()[0].getName()
+									: "self";
+							Expression selfRef = new VariableRef(currentCFG, getLocation(trailer), firstParamName);
 							Expression superFunc = makeScopedAttributeRef(objectUnit, "super", getLocation(trailer));
 							access = new FunctionApply(currentCFG, getLocation(trailer), superFunc,
 									new Expression[] { classRef, selfRef }, false);
 							log.debug("super() FunctionApply created: id={}", System.identityHashCode(access));
-							accessChain[i] = selfRef;  // ← FIX: original self used as receiver, super proxy only for type resolution
+							accessChain[i] = selfRef; // ← FIX: original self
+														// used as receiver,
+														// super proxy only for
+														// type resolution
 
 							i++;
 							continue;
@@ -253,6 +264,22 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 							access,
 							args.toArray(Expression[]::new),
 							receiverWasPrepended);
+					accessChain[i] = access;
+				} else if (trailer.OPEN_BRACK() != null) {
+					// subscript access: expr[key] → modelled as
+					// expr.__getitem__(key)
+					List<Subscript_Context> subs = trailer.subscriptlist().subscript_();
+					if (subs.size() == 1) {
+						Expression key = visitSubscript_(subs.get(0));
+						Expression receiver = access;
+						Expression getitemAttr = new AttributeAccess(
+								currentCFG, getLocation(trailer), receiver, "__getitem__");
+						access = new FunctionApply(
+								currentCFG, getLocation(trailer), getitemAttr,
+								new Expression[] { receiver, key }, true);
+					} else {
+						unsound(trailer, "multiple subscripts not supported");
+					}
 					accessChain[i] = access;
 				}
 				i++;
@@ -374,12 +401,22 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 			if (operator.GT_EQ() != null)
 				result = new PyGreaterOrEqual(currentCFG, getLocation(ctx), left, right);
 
+			// Python not in (not in) — must be checked before plain IN
+			if (operator.NOT() != null && operator.IN() != null)
+				result = new Not(currentCFG, getLocation(ctx),
+						new PyIn(currentCFG, getLocation(ctx), left, right));
+
 			// Python in (in)
-			if (operator.IN() != null)
+			else if (operator.IN() != null)
 				result = new PyIn(currentCFG, getLocation(ctx), left, right);
 
+			// Python is not (is not) — must be checked before plain IS
+			if (operator.IS() != null && operator.NOT() != null)
+				result = new Not(currentCFG, getLocation(ctx),
+						new PyIs(currentCFG, getLocation(ctx), left, right));
+
 			// Python is (is)
-			if (operator.IS() != null)
+			else if (operator.IS() != null)
 				result = new PyIs(currentCFG, getLocation(ctx), left, right);
 
 			// Python less (<)
@@ -389,10 +426,6 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 			// Python less equal (<=)
 			if (operator.LT_EQ() != null)
 				result = new PyLessOrEqual(currentCFG, getLocation(ctx), left, right);
-
-			// Python not (not)
-			if (operator.NOT() != null)
-				result = new Not(currentCFG, getLocation(ctx), left);
 
 			// Python not equals (<>)
 			if (operator.NOT_EQ_1() != null)
