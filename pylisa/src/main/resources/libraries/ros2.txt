@@ -1,0 +1,38 @@
+library rclpy.node:
+    location rclpy.node
+
+    class Node extends builtins.object:
+        instance method __init__: it.unive.pylisa.libraries.ros2.ROS2NodeInit
+            libtype Node
+            param self libtype Node*
+            param node_name type it.unive.lisa.program.type.StringType::INSTANCE
+            param &namespace type it.unive.lisa.program.type.StringType::INSTANCE default ""
+            param &context type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &cli_args type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &use_global_arguments type it.unive.lisa.program.type.BoolType::INSTANCE default true
+            param &enable_rosout type it.unive.lisa.program.type.BoolType::INSTANCE default true
+            param &start_parameter_services type it.unive.lisa.program.type.BoolType::INSTANCE default true
+            param &parameter_overrides type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &allow_undeclared_parameters type it.unive.lisa.program.type.BoolType::INSTANCE default false
+            param &automatically_declare_parameters_from_overrides type it.unive.lisa.program.type.BoolType::INSTANCE default false
+        instance method create_publisher: it.unive.pylisa.libraries.ros2.CreatePublisher
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype Node*
+            param msg_type type it.unive.lisa.type.Untyped::INSTANCE
+            param topic type it.unive.lisa.program.type.StringType::INSTANCE
+            param qos_profile type it.unive.lisa.type.Untyped::INSTANCE
+            param &callback_group type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &event_callbacks type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &qos_overriding_options type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &publisher_class type it.unive.lisa.type.Untyped::INSTANCE default none
+        instance method create_subscription: it.unive.pylisa.libraries.ros2.CreateSubscription
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype Node*
+            param msg_type type it.unive.lisa.type.Untyped::INSTANCE
+            param topic type it.unive.lisa.program.type.StringType::INSTANCE
+            param callback type it.unive.lisa.type.Untyped::INSTANCE
+            param qos_profile type it.unive.lisa.type.Untyped::INSTANCE
+            param &callback_group type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &event_callbacks type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &qos_overriding_options type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &raw type it.unive.lisa.program.type.BoolType::INSTANCE default false

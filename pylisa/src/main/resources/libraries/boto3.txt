@@ -1,0 +1,33 @@
+library boto3:
+	location boto3
+
+	method client: it.unive.pylisa.libraries.boto3.Boto3ClientFactory
+		libtype S3Client
+		param service_name type it.unive.lisa.program.type.StringType::INSTANCE default "s3"
+
+	class S3Client extends builtins.object:
+		instance method __init__: it.unive.pylisa.libraries.boto3.S3ClientInit
+			libtype S3Client
+			param self libtype S3Client*
+			param service_name type it.unive.lisa.program.type.StringType::INSTANCE default "s3"
+		instance method delete_object: it.unive.pylisa.libraries.boto3.S3DeleteObject
+			type it.unive.lisa.type.Untyped::INSTANCE
+			param self libtype S3Client*
+			param &Bucket type it.unive.lisa.program.type.StringType::INSTANCE default ""
+			param &Key    type it.unive.lisa.program.type.StringType::INSTANCE default ""
+		instance method get_object: it.unive.pylisa.libraries.boto3.S3GetObject
+			type it.unive.lisa.type.Untyped::INSTANCE
+			param self libtype S3Client*
+			param &Bucket type it.unive.lisa.program.type.StringType::INSTANCE default ""
+			param &Key    type it.unive.lisa.program.type.StringType::INSTANCE default ""
+		instance method put_object: it.unive.pylisa.libraries.boto3.S3PutObject
+			type it.unive.lisa.type.Untyped::INSTANCE
+			param self libtype S3Client*
+			param &Bucket type it.unive.lisa.program.type.StringType::INSTANCE default ""
+			param &Key    type it.unive.lisa.program.type.StringType::INSTANCE default ""
+			param &Body   type it.unive.lisa.type.Untyped::INSTANCE default none
+		instance method list_objects_v2: it.unive.pylisa.libraries.boto3.S3ListObjectsV2
+			type it.unive.lisa.type.Untyped::INSTANCE
+			param self libtype S3Client*
+			param &Bucket type it.unive.lisa.program.type.StringType::INSTANCE default ""
+			param &Prefix type it.unive.lisa.program.type.StringType::INSTANCE default ""

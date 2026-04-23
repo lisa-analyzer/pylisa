@@ -1,0 +1,8 @@
+library fastapi_cache.decorator:
+    location fastapi_cache.decorator
+    method cache: it.unive.pylisa.libraries.fastapi_cache.CacheDecoratorFactory
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param &expire type it.unive.lisa.type.Untyped::INSTANCE default none
+        param &key_builder type it.unive.lisa.type.Untyped::INSTANCE default none
+        param &namespace type it.unive.lisa.type.Untyped::INSTANCE default none
+        param &coder type it.unive.lisa.type.Untyped::INSTANCE default none
