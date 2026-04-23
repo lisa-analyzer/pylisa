@@ -36,17 +36,11 @@ import it.unive.pylisa.cfg.type.PyModuleType;
 import it.unive.pylisa.program.FunctionUnit;
 import it.unive.pylisa.program.ModuleUnit;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -62,43 +56,20 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 
 	protected static final Logger log = LogManager.getLogger(PyFrontendBase.class);
 
-	protected Map<String, String> imports = new HashMap<>();
+	/**
+	 * Mutable parsing state shared across every visitor. Introduced in Chunk 1
+	 * of the front-end refactor; replaces the protected fields that used to
+	 * live here and leak across the four-level inheritance chain.
+	 */
+	protected final ParserContext ctx = new ParserContext();
+
 	/**
 	 * Python program file path.
 	 */
 	protected final String filePath;
 
-	protected boolean shouldPrependUnitAccess = true;
 	protected boolean currentFileIsPackage = false;
 	protected CFG init;
-	/**
-	 * The LiSA program obtained from the Python program at filePath.
-	 */
-	protected final Program program;
-	protected final PythonModuleImportManager importManager;
-	/**
-	 * The module currently under parsing
-	 */
-	protected ModuleUnit currentModule;
-	protected it.unive.lisa.program.CompilationUnit objectUnit;
-
-	/**
-	 * The unit currently under parsing
-	 */
-	protected Unit currentUnit;
-	/**
-	 * Current CFG to parse
-	 */
-	protected PyCFG currentCFG;
-
-	protected Collection<ControlFlowStructure> cfs;
-
-	/**
-	 * Stack of local scopes used to resolve Python names with LEGB-like
-	 * precedence. Module/class names are represented with scoped attribute
-	 * accesses, while names in this stack stay as variable references.
-	 */
-	private final Deque<Set<String>> localScopes = new ArrayDeque<>();
 
 	/**
 	 * Whether or not {@link #filePath} points to a Jupyter notebook file
@@ -194,21 +165,21 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 			boolean notebook,
 			List<Integer> cellOrder,
 			String sourceRoot) {
-		this.program = new Program(new PythonFeatures(), new PythonTypeSystem());
+		ctx.program(new Program(new PythonFeatures(), new PythonTypeSystem()));
 		this.filePath = filePath;
 		this.notebook = notebook;
 		this.cellOrder = cellOrder;
 		this.currentFileIsPackage = (filePath != null && filePath.endsWith("__init__.py"));
-		this.currentModule = new ModuleUnit(new SourceCodeLocation(filePath, 0, 0),
-				program, "__main__");
-		this.currentUnit = currentModule;
-		makeInit(program);
+		ctx.currentModule(new ModuleUnit(new SourceCodeLocation(filePath, 0, 0),
+				ctx.program(), "__main__"));
+		ctx.currentUnit(ctx.currentModule());
+		makeInit(ctx.program());
 		Path baseDir = (sourceRoot != null)
 				? Path.of(sourceRoot)
 				: (filePath != null) ? Path.of(filePath).getParent() : Path.of(".");
-		this.importManager = new PythonModuleImportManager(program, init, baseDir);
-		program.addUnit(currentModule);
-		PyModuleType.register("__main__", currentModule);
+		ctx.importManager(new PythonModuleImportManager(ctx.program(), init, baseDir));
+		ctx.program().addUnit(ctx.currentModule());
+		PyModuleType.register("__main__", ctx.currentModule());
 	}
 
 	/**
@@ -237,8 +208,8 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	protected Expression makeRef(
 			String name,
 			CodeLocation loc) {
-		if (!shouldPrependUnitAccess)
-			return new VariableRef(currentCFG, loc, name);
+		if (!ctx.shouldPrependUnitAccess())
+			return new VariableRef(ctx.currentCFG(), loc, name);
 
 		// ── CASE 1: Inside a function / method body
 		// ────────────────────────────
@@ -247,13 +218,13 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 		// of LEGB — a bare name in a method does NOT see class attributes.
 		// E = enclosing function scopes — NOT YET IMPLEMENTED (future work).
 		// G = module (global) scope — the fallback when not found locally.
-		if (currentUnit instanceof FunctionUnit) {
+		if (ctx.currentUnit() instanceof FunctionUnit) {
 			if (isNameInTopLocalScope(name))
-				return new VariableRef(currentCFG, loc, name);
+				return new VariableRef(ctx.currentCFG(), loc, name);
 			// Not in local scope: fall through to module (G) with B fallback.
-			if (currentModule != null)
+			if (ctx.currentModule() != null)
 				return makeNameRef(name, loc);
-			return new VariableRef(currentCFG, loc, name);
+			return new VariableRef(ctx.currentCFG(), loc, name);
 		}
 
 		// ── CASE 2: Inside a class body (not inside a method)
@@ -263,78 +234,71 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 		// the class body frame (method scope is only pushed by visitFuncdef,
 		// which changes currentUnit to FunctionUnit before pushing).
 		// Class-body names map to class-scoped attribute references.
-		if (currentUnit instanceof ClassUnit cu) {
+		if (ctx.currentUnit() instanceof ClassUnit cu) {
 			if (isNameInVisibleLocalScope(name))
 				return makeScopedAttributeRef(cu, name, loc);
-			if (currentModule != null)
+			if (ctx.currentModule() != null)
 				return makeNameRef(name, loc);
-			return new VariableRef(currentCFG, loc, name);
+			return new VariableRef(ctx.currentCFG(), loc, name);
 		}
 
 		// ── CASE 3: Module-level code (ModuleUnit extends CompilationUnit)
 		// ─────
 		if (isNameInVisibleLocalScope(name)) {
-			if (currentUnit instanceof CompilationUnit cu)
+			if (ctx.currentUnit() instanceof CompilationUnit cu)
 				return makeScopedAttributeRef(cu, name, loc);
-			return new VariableRef(currentCFG, loc, name);
+			return new VariableRef(ctx.currentCFG(), loc, name);
 		}
 
-		if (currentUnit instanceof CompilationUnit)
+		if (ctx.currentUnit() instanceof CompilationUnit)
 			return makeNameRef(name, loc);
 
-		if (currentModule != null)
+		if (ctx.currentModule() != null)
 			return makeNameRef(name, loc);
 
-		return new VariableRef(currentCFG, loc, name);
+		return new VariableRef(ctx.currentCFG(), loc, name);
 	}
 
 	protected Expression makeScopedAttributeRef(
 			CompilationUnit unit,
 			String name,
 			CodeLocation loc) {
-		return new PythonScopedAttributeAccessRef(currentCFG, loc, unit,
+		return new PythonScopedAttributeAccessRef(ctx.currentCFG(), loc, unit,
 				new Global(loc, unit, name, false));
 	}
 
 	protected Expression makeNameRef(
 			String name,
 			CodeLocation loc) {
-		String modName = (currentModule != null) ? currentModule.getName() : "__main__";
+		String modName = (ctx.currentModule() != null) ? ctx.currentModule().getName() : "__main__";
 		// Parse-time hint: if the current module recorded a
 		// `from <X> import <name>` (or `... as name`) binding, pass the
 		// qualified name (e.g. "fastapi.APIRouter") to PyNameRef for use
 		// as a fallback when runtime-scope lookup fails.
-		String qualified = (imports != null) ? imports.get(name) : null;
-		return new it.unive.pylisa.cfg.statement.PyNameRef(currentCFG, loc, name, modName, qualified);
+		String qualified = (ctx.imports() != null) ? ctx.imports().get(name) : null;
+		return new it.unive.pylisa.cfg.statement.PyNameRef(ctx.currentCFG(), loc, name, modName, qualified);
 	}
 
 	protected void enterLocalScope() {
-		localScopes.push(new HashSet<>());
+		ctx.enterLocalScope();
 	}
 
 	protected void exitLocalScope() {
-		if (!localScopes.isEmpty())
-			localScopes.pop();
+		ctx.exitLocalScope();
 	}
 
 	protected boolean isInsideLocalScope() {
-		return !localScopes.isEmpty();
+		return ctx.isInsideLocalScope();
 	}
 
 	protected void declareNameInCurrentScope(
 			String name) {
-		if (!localScopes.isEmpty() && name != null && !name.isEmpty())
-			localScopes.peek().add(name);
+		ctx.declareNameInCurrentScope(name);
 	}
 
 	protected boolean isNameInVisibleLocalScope(
 			String name) {
-		if (name == null || name.isEmpty())
-			return false;
-		for (Set<String> scope : localScopes)
-			if (scope.contains(name))
-				return true;
-		return false;
+		return ctx.isNameInVisibleLocalScope(name);
 	}
 
 	/**
@@ -344,15 +308,12 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	 * enclosing class-body scope frames are intentionally excluded.
 	 *
 	 * @param name the name to look up
-	 * 
+	 *
 	 * @return {@code true} if {@code name} is in the top scope frame
 	 */
 	protected boolean isNameInTopLocalScope(
 			String name) {
-		if (name == null || name.isEmpty())
-			return false;
-		Set<String> top = localScopes.peek();
-		return top != null && top.contains(name);
+		return ctx.isNameInTopLocalScope(name);
 	}
 
 	@FunctionalInterface
@@ -372,10 +333,10 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 		int n = operands.size();
 		if (n == 1)
 			return sub.apply(operands.get(0));
-		Expression acc = factory.make(currentCFG, loc,
+		Expression acc = factory.make(ctx.currentCFG(), loc,
 				sub.apply(operands.get(n - 2)), sub.apply(operands.get(n - 1)));
 		for (int i = n - 3; i >= 0; i--)
-			acc = factory.make(currentCFG, loc, sub.apply(operands.get(i)), acc);
+			acc = factory.make(ctx.currentCFG(), loc, sub.apply(operands.get(i)), acc);
 		return acc;
 	}
 
@@ -417,19 +378,19 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	protected CodeMemberDescriptor buildMainCFGDescriptor(
 			SourceCodeLocation loc) {
 		PyParameter[] cfgArgs = new PyParameter[] {};
-		return new CodeMemberDescriptor(loc, currentModule, false, INSTRUMENTED_MAIN_FUNCTION_NAME, cfgArgs);
+		return new CodeMemberDescriptor(loc, ctx.currentModule(), false, INSTRUMENTED_MAIN_FUNCTION_NAME, cfgArgs);
 	}
 
 	protected CodeMemberDescriptor buildInitModuleCFGDescriptor(
 			SourceCodeLocation loc) {
 		PyParameter[] cfgArgs = new PyParameter[] {};
-		return new CodeMemberDescriptor(loc, currentModule, false, "$init", cfgArgs);
+		return new CodeMemberDescriptor(loc, ctx.currentModule(), false, "$init", cfgArgs);
 	}
 
 	protected CodeMemberDescriptor buildInitClassCFGDescriptor(
 			CodeLocation loc) {
 		PyParameter[] cfgArgs = new PyParameter[] {};
-		return new CodeMemberDescriptor(loc, currentUnit, false, "$init", cfgArgs);
+		return new CodeMemberDescriptor(loc, ctx.currentUnit(), false, "$init", cfgArgs);
 	}
 
 	protected CodeMemberDescriptor buildCFGDescriptor(
@@ -444,6 +405,7 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	}
 
 	protected void addRetNodesToCurrentCFG() {
+		PyCFG currentCFG = ctx.currentCFG();
 		if (currentCFG.getNodesCount() == 0) {
 			// empty method, so the ret is also the entrypoint
 			currentCFG.addNode(new Ret(currentCFG, currentCFG.getDescriptor().getLocation()), true);
@@ -486,7 +448,7 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 				if (!hasNonRetFollower)
 					currentCFG.addEdge(new SequentialEdge(pred, canonicalRet));
 			}
-			for (ControlFlowStructure cf : cfs)
+			for (ControlFlowStructure cf : ctx.cfs())
 				cf.replace(extra, canonicalRet);
 			currentCFG.getNodeList().removeNode(extra);
 		}
@@ -517,6 +479,7 @@ public abstract class PyFrontendBase extends Python3ParserBaseVisitor<Object> {
 	protected StringLiteral strip(
 			CodeLocation location,
 			String string) {
+		PyCFG currentCFG = ctx.currentCFG();
 		// ', ''', ", """
 		if (string.startsWith("'''") && string.endsWith("'''"))
 			return new PyStringLiteral(currentCFG, location, string.substring(3, string.length() - 3), "'''");

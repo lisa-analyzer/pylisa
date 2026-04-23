@@ -57,10 +57,10 @@ import org.apache.commons.lang3.tuple.Triple;
 public class PyFrontend extends PyDefinitionVisitorBase {
 
 	/**
-	 * Builds an instance of @PyFrontend for a given Python program given at the
-	 * location filePath.
+	 * Builds an instance of @PyFrontend for a given Python this.ctx.program()
+	 * given at the location filePath.
 	 *
-	 * @param filePath file path to a Python program
+	 * @param filePath file path to a Python this.ctx.program()
 	 * @param notebook whether or not {@code filePath} points to a Jupyter
 	 *                     notebook file
 	 */
@@ -71,10 +71,10 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 	}
 
 	/**
-	 * Builds an instance of @PyFrontend for a given Python program given at the
-	 * location filePath.
+	 * Builds an instance of @PyFrontend for a given Python this.ctx.program()
+	 * given at the location filePath.
 	 *
-	 * @param filePath  file path to a Python program
+	 * @param filePath  file path to a Python this.ctx.program()
 	 * @param notebook  whether or not {@code filePath} points to a Jupyter
 	 *                      notebook file
 	 * @param cellOrder sequence of the indexes of cells of a Jupyter notebook
@@ -89,10 +89,10 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 	}
 
 	/**
-	 * Builds an instance of @PyFrontend for a given Python program given at the
-	 * location filePath.
+	 * Builds an instance of @PyFrontend for a given Python this.ctx.program()
+	 * given at the location filePath.
 	 *
-	 * @param filePath  file path to a Python program
+	 * @param filePath  file path to a Python this.ctx.program()
 	 * @param notebook  whether or not {@code filePath} points to a Jupyter
 	 *                      notebook file
 	 * @param cellOrder list of the indexes of cells of a Jupyter notebook in
@@ -107,15 +107,16 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 	}
 
 	/**
-	 * Builds an instance of @PyFrontend for a given Python program given at the
-	 * location filePath, with an explicit source root for module resolution.
+	 * Builds an instance of @PyFrontend for a given Python this.ctx.program()
+	 * given at the location filePath, with an explicit source root for module
+	 * resolution.
 	 *
-	 * @param filePath   file path to a Python program
+	 * @param filePath   file path to a Python this.ctx.program()
 	 * @param notebook   whether or not {@code filePath} points to a Jupyter
 	 *                       notebook file
 	 * @param sourceRoot explicit root directory for resolving project-relative
-	 *                       imports; if {@code null}, defaults to the parent of
-	 *                       {@code filePath}
+	 *                       this.ctx.imports(); if {@code null}, defaults to
+	 *                       the parent of {@code filePath}
 	 */
 	public PyFrontend(
 			String filePath,
@@ -125,14 +126,15 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 	}
 
 	/**
-	 * Returns the collection of @CFG in a Python program at filePath.
+	 * Returns the collection of @CFG in a Python this.ctx.program() at
+	 * filePath.
 	 *
 	 * @return collection of @CFG in file
 	 *
 	 * @throws IOException            if {@code stream} to file cannot be read
 	 *                                    from or closed
 	 * @throws AnalysisSetupException if something goes wrong while setting up
-	 *                                    the program
+	 *                                    the this.ctx.program()
 	 */
 	public Program toLiSAProgram(
 			boolean clearClassType)
@@ -143,10 +145,10 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 			PyFunctionType.clearAll();
 			PyModuleType.clearAll();
 			// Re-register __main__ which was set up in the constructor
-			PyModuleType.register(currentModule.getName(), currentModule);
+			PyModuleType.register(this.ctx.currentModule().getName(), this.ctx.currentModule());
 		}
 
-		TypeSystem types = program.getTypes();
+		TypeSystem types = this.ctx.program().getTypes();
 		types.registerType(PyLambdaType.INSTANCE);
 		types.registerType(BoolType.INSTANCE);
 		types.registerType(StringType.INSTANCE);
@@ -155,16 +157,16 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		types.registerType(NullType.INSTANCE);
 		types.registerType(VoidType.INSTANCE);
 		types.registerType(Untyped.INSTANCE);
-		LibrarySpecificationProvider.load(program, init);
+		LibrarySpecificationProvider.load(this.ctx.program(), init);
 
-		LibrarySpecificationProvider.importPythonModule(program, "builtins", init);
-		objectUnit = (it.unive.lisa.program.CompilationUnit) program.getUnit("builtins.object");
-		if (objectUnit == null)
+		LibrarySpecificationProvider.importPythonModule(this.ctx.program(), "builtins", init);
+		this.ctx.objectUnit((it.unive.lisa.program.CompilationUnit) this.ctx.program().getUnit("builtins.object"));
+		if (this.ctx.objectUnit() == null)
 			log.warn("Could not resolve 'builtins.object' after library loading; "
 					+ "classes without explicit parents will have no ancestor");
 		log.info("Reading file... " + filePath);
 
-		importManager.setProjectLoader(this::loadProjectModuleFile);
+		this.ctx.importManager().setProjectLoader(this::loadProjectModuleFile);
 
 		String source;
 		Python3Lexer lexer;
@@ -182,9 +184,9 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		PyClassType.all().forEach(types::registerType);
 		ModuleUnit pyProgramUnit = new ModuleUnit(
 				new SourceCodeLocation("__lisa__", 0, 0),
-				program,
+				this.ctx.program(),
 				"$PythonProgram");
-		program.addUnit(pyProgramUnit);
+		this.ctx.program().addUnit(pyProgramUnit);
 		CodeMemberDescriptor runDesc = new CodeMemberDescriptor(new SourceCodeLocation("__lisa__", 0, 0), pyProgramUnit,
 				false, "run");
 		runDesc.setOverridable(false);
@@ -200,8 +202,8 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		Ret ret = new Ret(runCFG, SyntheticLocation.INSTANCE);
 		runCFG.addNode(ret);
 		runCFG.addEdge(new SequentialEdge(importModuleMain, ret));
-		program.addEntryPoint(runCFG);
-		return program;
+		this.ctx.program().addEntryPoint(runCFG);
+		return this.ctx.program();
 	}
 
 	public Program toLiSAProgram() throws IOException, AnalysisSetupException {
@@ -213,22 +215,22 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 			String filePath)
 			throws IOException {
 		// Save current state
-		ModuleUnit savedModule = currentModule;
-		Unit savedUnit = currentUnit;
-		PyCFG savedCFG = currentCFG;
-		Map<String, String> savedImports = imports;
-		Collection<ControlFlowStructure> savedCfs = cfs;
-		boolean savedShouldPrependUnitAccess = shouldPrependUnitAccess;
+		ModuleUnit savedModule = this.ctx.currentModule();
+		Unit savedUnit = this.ctx.currentUnit();
+		PyCFG savedCFG = this.ctx.currentCFG();
+		Map<String, String> savedImports = this.ctx.imports();
+		Collection<ControlFlowStructure> savedCfs = this.ctx.cfs();
+		boolean savedShouldPrependUnitAccess = this.ctx.shouldPrependUnitAccess();
 		boolean savedFileIsPackage = currentFileIsPackage;
 		currentFileIsPackage = filePath.endsWith("__init__.py");
 
 		// The ModuleUnit was already registered by loadProjectModule before
 		// calling us
 		ModuleUnit newModule = (ModuleUnit) PyModuleType.lookup(moduleName).getUnit();
-		currentModule = newModule;
-		currentUnit = newModule;
-		imports = new HashMap<>();
-		cfs = new HashSet<>();
+		this.ctx.currentModule(newModule);
+		this.ctx.currentUnit(newModule);
+		this.ctx.imports(new HashMap<>());
+		this.ctx.cfs(new HashSet<>());
 
 		boolean savedContinue = continueOnUnsupportedStatement;
 		continueOnUnsupportedStatement = true; // resilient for sub-module loads
@@ -244,12 +246,12 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		} finally {
 			continueOnUnsupportedStatement = savedContinue;
 			// Always restore state, even if parsing fails
-			currentModule = savedModule;
-			currentUnit = savedUnit;
-			currentCFG = savedCFG;
-			imports = savedImports;
-			cfs = savedCfs;
-			shouldPrependUnitAccess = savedShouldPrependUnitAccess;
+			this.ctx.currentModule(savedModule);
+			this.ctx.currentUnit(savedUnit);
+			this.ctx.currentCFG(savedCFG);
+			this.ctx.imports(savedImports);
+			this.ctx.cfs(savedCfs);
+			this.ctx.shouldPrependUnitAccess(savedShouldPrependUnitAccess);
 			currentFileIsPackage = savedFileIsPackage;
 		}
 
@@ -276,19 +278,20 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 	public PyCFG visitFile_input(
 			File_inputContext ctx) {
 
-		currentCFG = new PyCFG(buildInitModuleCFGDescriptor(getLocation(ctx)));
-		ImportModule builtinsModule = new ImportModule(currentCFG, getLocation(ctx), "builtins",
+		this.ctx.currentCFG(new PyCFG(buildInitModuleCFGDescriptor(getLocation(ctx))));
+		ImportModule builtinsModule = new ImportModule(this.ctx.currentCFG(), getLocation(ctx), "builtins",
 				PyModuleType.lookup("builtins").getUnit());
-		currentCFG.addNode(builtinsModule, true);
-		cfs = new HashSet<>();
-		currentModule.addCodeMember(currentCFG);
-		Expression targetName = new PythonScopedAttributeAccessRef(this.currentCFG, getLocation(ctx), currentModule,
-				new Global(getLocation(ctx), currentModule, "__name__", false));
+		this.ctx.currentCFG().addNode(builtinsModule, true);
+		this.ctx.cfs(new HashSet<>());
+		this.ctx.currentModule().addCodeMember(this.ctx.currentCFG());
+		Expression targetName = new PythonScopedAttributeAccessRef(this.ctx.currentCFG(), getLocation(ctx),
+				this.ctx.currentModule(),
+				new Global(getLocation(ctx), this.ctx.currentModule(), "__name__", false));
 
-		PyAssign nameAssign = new PyAssign(this.currentCFG, getLocation(ctx), targetName,
-				new StringLiteral(this.currentCFG, getLocation(ctx), currentModule.getName()));
-		currentCFG.addNode(nameAssign);
-		currentCFG.addEdge(new SequentialEdge(builtinsModule, nameAssign));
+		PyAssign nameAssign = new PyAssign(this.ctx.currentCFG(), getLocation(ctx), targetName,
+				new StringLiteral(this.ctx.currentCFG(), getLocation(ctx), this.ctx.currentModule().getName()));
+		this.ctx.currentCFG().addNode(nameAssign);
+		this.ctx.currentCFG().addEdge(new SequentialEdge(builtinsModule, nameAssign));
 		Statement lastStmt = nameAssign;
 		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
 			Object visited;
@@ -312,19 +315,19 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 			@SuppressWarnings("unchecked")
 			Triple<Statement, NodeList<CFG, Statement, Edge>,
 					Statement> st = (Triple<Statement, NodeList<CFG, Statement, Edge>, Statement>) visited;
-			currentCFG.getNodeList().mergeWith(st.getMiddle());
+			this.ctx.currentCFG().getNodeList().mergeWith(st.getMiddle());
 			if (lastStmt == null)
 				// this is the first instruction
-				currentCFG.getEntrypoints().add(st.getLeft());
+				this.ctx.currentCFG().getEntrypoints().add(st.getLeft());
 			else if (!lastStmt.stopsExecution())
-				currentCFG.addEdge(new SequentialEdge(lastStmt, st.getLeft()));
+				this.ctx.currentCFG().addEdge(new SequentialEdge(lastStmt, st.getLeft()));
 			lastStmt = st.getRight();
 		}
 
 		addRetNodesToCurrentCFG();
-		cfs.forEach(currentCFG.getDescriptor()::addControlFlowStructure);
-		currentCFG.simplify();
-		return currentCFG;
+		this.ctx.cfs().forEach(this.ctx.currentCFG().getDescriptor()::addControlFlowStructure);
+		this.ctx.currentCFG().simplify();
+		return this.ctx.currentCFG();
 	}
 
 	@Override

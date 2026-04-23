@@ -117,25 +117,28 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 
 			if (text.contains("e") || text.contains("."))
 				// floating point
-				return new Float32Literal(currentCFG, getLocation(ctx), Float.parseFloat(text));
+				return new Float32Literal(this.ctx.currentCFG(), getLocation(ctx), Float.parseFloat(text));
 
 			// integer
 			if (text.startsWith("0x"))
-				return new Int32Literal(currentCFG, getLocation(ctx), Integer.parseInt(text.substring(2), 16));
+				return new Int32Literal(this.ctx.currentCFG(), getLocation(ctx),
+						Integer.parseInt(text.substring(2), 16));
 			if (text.startsWith("0o"))
-				return new Int32Literal(currentCFG, getLocation(ctx), Integer.parseInt(text.substring(2), 8));
+				return new Int32Literal(this.ctx.currentCFG(), getLocation(ctx),
+						Integer.parseInt(text.substring(2), 8));
 			if (text.startsWith("0b"))
-				return new Int32Literal(currentCFG, getLocation(ctx), Integer.parseInt(text.substring(2), 2));
-			return new Int32Literal(currentCFG, getLocation(ctx), Integer.parseInt(text));
+				return new Int32Literal(this.ctx.currentCFG(), getLocation(ctx),
+						Integer.parseInt(text.substring(2), 2));
+			return new Int32Literal(this.ctx.currentCFG(), getLocation(ctx), Integer.parseInt(text));
 		} else if (ctx.FALSE() != null)
 			// create a literal false
-			return new FalseLiteral(currentCFG, getLocation(ctx));
+			return new FalseLiteral(this.ctx.currentCFG(), getLocation(ctx));
 		else if (ctx.TRUE() != null)
 			// create a literal true
-			return new TrueLiteral(currentCFG, getLocation(ctx));
+			return new TrueLiteral(this.ctx.currentCFG(), getLocation(ctx));
 		else if (ctx.NONE() != null)
 			// create a literal false
-			return new PyNoneLiteral(currentCFG, getLocation(ctx));
+			return new PyNoneLiteral(this.ctx.currentCFG(), getLocation(ctx));
 		else if (ctx.STRING().size() > 0)
 			// create a string
 			return strip(getLocation(ctx), ctx.STRING(0).getText());
@@ -146,30 +149,31 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 			return visitDictorsetmaker(ctx.dictorsetmaker());
 		else if (ctx.OPEN_BRACK() != null) {
 			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
-			return new ListCreation(currentCFG, getLocation(ctx), sts.toArray(Expression[]::new));
+			return new ListCreation(this.ctx.currentCFG(), getLocation(ctx), sts.toArray(Expression[]::new));
 		} else if (ctx.OPEN_PAREN() != null) {
 			if (ctx.yield_expr() != null)
 				throw new UnsupportedStatementException("yield expressions not supported");
 			List<Expression> sts = extractExpressionsFromTestlist_comp(ctx.testlist_comp());
 			if (sts.size() <= 1)
-				return sts.isEmpty() ? new TupleCreation(currentCFG, getLocation(ctx)) : sts.get(0);
+				return sts.isEmpty() ? new TupleCreation(this.ctx.currentCFG(), getLocation(ctx)) : sts.get(0);
 			unsound(ctx, "tuple creation treated as first element");
 			return sts.get(0);
 		} else if (ctx.OPEN_BRACE() != null) {
 			// check if it is a dict or a set
 			if (!isADict(ctx.dictorsetmaker())) {
 				List<Expression> values = extractElementsFromSet(ctx.dictorsetmaker());
-				SetCreation s = new SetCreation(currentCFG, getLocation(ctx), values.toArray(Expression[]::new));
+				SetCreation s = new SetCreation(this.ctx.currentCFG(), getLocation(ctx),
+						values.toArray(Expression[]::new));
 				return s;
 			}
 
 			List<Pair<Expression, Expression>> values = extractPairsFromDict(ctx.dictorsetmaker());
 			@SuppressWarnings("unchecked")
-			DictionaryCreation r = new DictionaryCreation(currentCFG, getLocation(ctx),
+			DictionaryCreation r = new DictionaryCreation(this.ctx.currentCFG(), getLocation(ctx),
 					values.toArray(Pair[]::new));
 			return r;
 		} else if (ctx.ELLIPSIS() != null)
-			return new PyEllipsisLiteral(currentCFG, getLocation(ctx));
+			return new PyEllipsisLiteral(this.ctx.currentCFG(), getLocation(ctx));
 		throw new UnsupportedStatementException();
 	}
 
@@ -199,7 +203,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 					// a.b
 					String attr = trailer.NAME().getText();
 					access = new AttributeAccess(
-							currentCFG,
+							this.ctx.currentCFG(),
 							getLocation(trailer),
 							access,
 							attr);
@@ -226,7 +230,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 							&& "super".equals(superRef.getName())
 							&& trailer.arglist() == null
 							&& !receiverWasPrepended
-							&& objectUnit != null) {
+							&& this.ctx.objectUnit() != null) {
 						PyClassUnit enclosingClass = findEnclosingPyClassUnit();
 						if (enclosingClass != null) {
 							String fullName = enclosingClass.getName();
@@ -235,13 +239,16 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 									: fullName;
 							Expression classRef = makeRef(simpleName, getLocation(trailer));
 							log.debug("super() synthesis in '{}': simpleName='{}', classRef='{}' id={}",
-									currentUnit.getName(), simpleName, classRef, System.identityHashCode(classRef));
-							String firstParamName = currentCFG.getDescriptor().getFormals().length > 0
-									? currentCFG.getDescriptor().getFormals()[0].getName()
+									this.ctx.currentUnit().getName(), simpleName, classRef,
+									System.identityHashCode(classRef));
+							String firstParamName = this.ctx.currentCFG().getDescriptor().getFormals().length > 0
+									? this.ctx.currentCFG().getDescriptor().getFormals()[0].getName()
 									: "self";
-							Expression selfRef = new VariableRef(currentCFG, getLocation(trailer), firstParamName);
-							Expression superFunc = makeScopedAttributeRef(objectUnit, "super", getLocation(trailer));
-							access = new FunctionApply(currentCFG, getLocation(trailer), superFunc,
+							Expression selfRef = new VariableRef(this.ctx.currentCFG(), getLocation(trailer),
+									firstParamName);
+							Expression superFunc = makeScopedAttributeRef(this.ctx.objectUnit(), "super",
+									getLocation(trailer));
+							access = new FunctionApply(this.ctx.currentCFG(), getLocation(trailer), superFunc,
 									new Expression[] { classRef, selfRef }, false);
 							log.debug("super() FunctionApply created: id={}", System.identityHashCode(access));
 							accessChain[i] = selfRef; // ← FIX: original self
@@ -259,7 +266,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 
 					args = convertAssignmentsToByNameParameters(args);
 					access = new FunctionApply(
-							currentCFG,
+							this.ctx.currentCFG(),
 							getLocation(trailer),
 							access,
 							args.toArray(Expression[]::new),
@@ -273,9 +280,9 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 						Expression key = visitSubscript_(subs.get(0));
 						Expression receiver = access;
 						Expression getitemAttr = new AttributeAccess(
-								currentCFG, getLocation(trailer), receiver, "__getitem__");
+								this.ctx.currentCFG(), getLocation(trailer), receiver, "__getitem__");
 						access = new FunctionApply(
-								currentCFG, getLocation(trailer), getitemAttr,
+								this.ctx.currentCFG(), getLocation(trailer), getitemAttr,
 								new Expression[] { receiver, key }, true);
 					} else {
 						unsound(trailer, "multiple subscripts not supported");
@@ -299,7 +306,8 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 			Expression booleanGuard = visitOr_test(ctx.or_test(1));
 			Expression falseCase = visitTest(ctx.test());
 
-			PyTernaryOperator ternary = new PyTernaryOperator(currentCFG, getLocation(ctx), booleanGuard, trueCase,
+			PyTernaryOperator ternary = new PyTernaryOperator(this.ctx.currentCFG(), getLocation(ctx), booleanGuard,
+					trueCase,
 					falseCase);
 
 			return ternary;
@@ -332,7 +340,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		return new LambdaExpression(
 				args,
 				body,
-				currentCFG,
+				this.ctx.currentCFG(),
 				getLocation(ctx));
 	}
 
@@ -349,7 +357,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		return new LambdaExpression(
 				args,
 				body,
-				currentCFG,
+				this.ctx.currentCFG(),
 				getLocation(ctx));
 	}
 
@@ -369,7 +377,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 	public Expression visitNot_test(
 			Not_testContext ctx) {
 		if (ctx.NOT() != null)
-			return new Not(currentCFG, getLocation(ctx), visitNot_test(ctx.not_test()));
+			return new Not(this.ctx.currentCFG(), getLocation(ctx), visitNot_test(ctx.not_test()));
 		else
 			return visitComparison(ctx.comparison());
 	}
@@ -391,49 +399,49 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 			Expression left = visitExpr(ctx.expr(0));
 			Expression right = visitExpr(ctx.expr(1));
 			if (operator.EQUALS() != null)
-				result = new PyEquals(currentCFG, getLocation(ctx), left, right);
+				result = new PyEquals(this.ctx.currentCFG(), getLocation(ctx), left, right);
 
 			// Python greater (>)
 			if (operator.GREATER_THAN() != null) {
-				result = new PyGreaterThan(currentCFG, getLocation(ctx), left, right);
+				result = new PyGreaterThan(this.ctx.currentCFG(), getLocation(ctx), left, right);
 			}
 			// Python greater equal (>=)
 			if (operator.GT_EQ() != null)
-				result = new PyGreaterOrEqual(currentCFG, getLocation(ctx), left, right);
+				result = new PyGreaterOrEqual(this.ctx.currentCFG(), getLocation(ctx), left, right);
 
 			// Python not in (not in) — must be checked before plain IN
 			if (operator.NOT() != null && operator.IN() != null)
-				result = new Not(currentCFG, getLocation(ctx),
-						new PyIn(currentCFG, getLocation(ctx), left, right));
+				result = new Not(this.ctx.currentCFG(), getLocation(ctx),
+						new PyIn(this.ctx.currentCFG(), getLocation(ctx), left, right));
 
 			// Python in (in)
 			else if (operator.IN() != null)
-				result = new PyIn(currentCFG, getLocation(ctx), left, right);
+				result = new PyIn(this.ctx.currentCFG(), getLocation(ctx), left, right);
 
 			// Python is not (is not) — must be checked before plain IS
 			if (operator.IS() != null && operator.NOT() != null)
-				result = new Not(currentCFG, getLocation(ctx),
-						new PyIs(currentCFG, getLocation(ctx), left, right));
+				result = new Not(this.ctx.currentCFG(), getLocation(ctx),
+						new PyIs(this.ctx.currentCFG(), getLocation(ctx), left, right));
 
 			// Python is (is)
 			else if (operator.IS() != null)
-				result = new PyIs(currentCFG, getLocation(ctx), left, right);
+				result = new PyIs(this.ctx.currentCFG(), getLocation(ctx), left, right);
 
 			// Python less (<)
 			if (operator.LESS_THAN() != null)
-				result = new PyLessThan(currentCFG, getLocation(ctx), left, right);
+				result = new PyLessThan(this.ctx.currentCFG(), getLocation(ctx), left, right);
 
 			// Python less equal (<=)
 			if (operator.LT_EQ() != null)
-				result = new PyLessOrEqual(currentCFG, getLocation(ctx), left, right);
+				result = new PyLessOrEqual(this.ctx.currentCFG(), getLocation(ctx), left, right);
 
 			// Python not equals (<>)
 			if (operator.NOT_EQ_1() != null)
-				result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
+				result = new PyNotEqual(this.ctx.currentCFG(), getLocation(ctx), left, right);
 
 			// Python not equals (!=)
 			if (operator.NOT_EQ_2() != null)
-				result = new PyNotEqual(currentCFG, getLocation(ctx), left, right);
+				result = new PyNotEqual(this.ctx.currentCFG(), getLocation(ctx), left, right);
 			break;
 		}
 
@@ -464,17 +472,17 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		if (nShift == 1)
 			return visitRight_shift(ctx.right_shift());
 		else if (nShift == 2)
-			return new PyBitwiseLeftShift(currentCFG, getLocation(ctx),
+			return new PyBitwiseLeftShift(this.ctx.currentCFG(), getLocation(ctx),
 					visitRight_shift(ctx.right_shift()),
 					visitLeft_shift(ctx.left_shift(0)));
 		else {
-			Expression temp = new PyBitwiseLeftShift(currentCFG, getLocation(ctx),
+			Expression temp = new PyBitwiseLeftShift(this.ctx.currentCFG(), getLocation(ctx),
 					visitLeft_shift(ctx.left_shift(nShift - 3)),
 					visitLeft_shift(ctx.left_shift(nShift - 2)));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new PyBitwiseLeftShift(currentCFG, getLocation(ctx),
+				temp = new PyBitwiseLeftShift(this.ctx.currentCFG(), getLocation(ctx),
 						visitLeft_shift(ctx.left_shift(--nShift - 1)),
 						temp);
 			}
@@ -489,17 +497,17 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		if (nShift == 1)
 			return visitArith_expr(ctx.arith_expr());
 		else if (nShift == 2)
-			return new PyBitwiseRIghtShift(currentCFG, getLocation(ctx),
+			return new PyBitwiseRIghtShift(this.ctx.currentCFG(), getLocation(ctx),
 					visitArith_expr(ctx.arith_expr()),
 					visitRight_shift(ctx.right_shift(0)));
 		else {
-			Expression temp = new PyBitwiseRIghtShift(currentCFG, getLocation(ctx),
+			Expression temp = new PyBitwiseRIghtShift(this.ctx.currentCFG(), getLocation(ctx),
 					visitRight_shift(ctx.right_shift(nShift - 3)),
 					visitRight_shift(ctx.right_shift(nShift - 2)));
 			nShift = nShift - 2;
 			// concatenate all the Shift expressions together
 			while (nShift > 0) {
-				temp = new PyBitwiseRIghtShift(currentCFG, getLocation(ctx),
+				temp = new PyBitwiseRIghtShift(this.ctx.currentCFG(), getLocation(ctx),
 						visitRight_shift(ctx.right_shift(--nShift - 1)),
 						temp);
 			}
@@ -525,7 +533,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		if (ctx.arith_expr() == null)
 			return visitTerm(ctx.term());
 		else
-			return new Subtraction(currentCFG, getLocation(ctx),
+			return new Subtraction(this.ctx.currentCFG(), getLocation(ctx),
 					visitTerm(ctx.term()),
 					visitArith_expr(ctx.arith_expr()));
 	}
@@ -536,7 +544,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		if (ctx.arith_expr() == null)
 			return visitTerm(ctx.term());
 		else
-			return new PyAddition(currentCFG, getLocation(ctx),
+			return new PyAddition(this.ctx.currentCFG(), getLocation(ctx),
 					visitTerm(ctx.term()),
 					visitArith_expr(ctx.arith_expr()));
 	}
@@ -566,7 +574,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		if (ctx.term() == null)
 			return visitFactor(ctx.factor());
 		else
-			return new PyMultiplication(currentCFG, getLocation(ctx),
+			return new PyMultiplication(this.ctx.currentCFG(), getLocation(ctx),
 					visitFactor(ctx.factor()),
 					visitTerm(ctx.term()));
 	}
@@ -576,7 +584,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		if (ctx.term() == null)
 			return visitFactor(ctx.factor());
 		else
-			return new PyMatMul(currentCFG, getLocation(ctx),
+			return new PyMatMul(this.ctx.currentCFG(), getLocation(ctx),
 					visitFactor(ctx.factor()),
 					visitTerm(ctx.term()));
 	}
@@ -586,7 +594,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		if (ctx.term() == null)
 			return visitFactor(ctx.factor());
 		else
-			return new Division(currentCFG, getLocation(ctx),
+			return new Division(this.ctx.currentCFG(), getLocation(ctx),
 					visitFactor(ctx.factor()),
 					visitTerm(ctx.term()));
 	}
@@ -596,7 +604,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		if (ctx.term() == null)
 			return visitFactor(ctx.factor());
 		else
-			return new PyRemainder(currentCFG, getLocation(ctx),
+			return new PyRemainder(this.ctx.currentCFG(), getLocation(ctx),
 					visitFactor(ctx.factor()),
 					visitTerm(ctx.term()));
 	}
@@ -606,7 +614,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		if (ctx.term() == null)
 			return visitFactor(ctx.factor());
 		else
-			return new PyFloorDiv(currentCFG, getLocation(ctx),
+			return new PyFloorDiv(this.ctx.currentCFG(), getLocation(ctx),
 					visitFactor(ctx.factor()),
 					visitTerm(ctx.term()));
 	}
@@ -617,11 +625,11 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		if (ctx.power() != null)
 			return visitPower(ctx.power());
 		else if (ctx.NOT_OP() != null)
-			return new PyBitwiseNot(currentCFG, getLocation(ctx),
+			return new PyBitwiseNot(this.ctx.currentCFG(), getLocation(ctx),
 					visitFactor(ctx.factor()));
 		else if (ctx.MINUS() != null)
-			return new PyMultiplication(currentCFG, getLocation(ctx),
-					new Int32Literal(currentCFG, getLocation(ctx), -1),
+			return new PyMultiplication(this.ctx.currentCFG(), getLocation(ctx),
+					new Int32Literal(this.ctx.currentCFG(), getLocation(ctx), -1),
 					visitFactor(ctx.factor()));
 		return visitFactor(ctx.factor());
 	}
@@ -630,7 +638,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 	public Expression visitPower(
 			PowerContext ctx) {
 		if (ctx.POWER() != null)
-			return new PyPower(currentCFG, getLocation(ctx),
+			return new PyPower(this.ctx.currentCFG(), getLocation(ctx),
 					visitAtom_expr(ctx.atom_expr()),
 					visitFactor(ctx.factor()));
 		else
@@ -641,18 +649,18 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 	public Expression visitArgument(
 			ArgumentContext ctx) {
 		if (ctx.ASSIGN() != null) {
-			boolean prevShouldPrependUnitAccess = shouldPrependUnitAccess;
-			shouldPrependUnitAccess = false;
+			boolean prevShouldPrependUnitAccess = this.ctx.shouldPrependUnitAccess();
+			this.ctx.shouldPrependUnitAccess(false);
 			Expression left = visitTest(ctx.test(0));
-			shouldPrependUnitAccess = prevShouldPrependUnitAccess;
+			this.ctx.shouldPrependUnitAccess(prevShouldPrependUnitAccess);
 			Expression right = visitTest(ctx.test(1));
-			return new PyAssign(currentCFG, getLocation(ctx), left, right);
+			return new PyAssign(this.ctx.currentCFG(), getLocation(ctx), left, right);
 		}
 
 		else if (ctx.STAR() != null)
-			return new StarExpression(currentCFG, getLocation(ctx), visitTest(ctx.test(0)));
+			return new StarExpression(this.ctx.currentCFG(), getLocation(ctx), visitTest(ctx.test(0)));
 		else if (ctx.comp_for() != null || ctx.POWER() != null || ctx.test().size() != 1)
-			return new Empty(currentCFG, getLocation(ctx));
+			return new Empty(this.ctx.currentCFG(), getLocation(ctx));
 		// throw new UnsupportedStatementException("We support only simple
 		// arguments in method calls");
 		// return null;
@@ -673,7 +681,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 			List<Expression> values = new ArrayList<>();
 			for (TestContext exp : ctx.test())
 				values.add(visitTest(exp));
-			return new SetCreation(currentCFG, getLocation(ctx), values.toArray(Expression[]::new));
+			return new SetCreation(this.ctx.currentCFG(), getLocation(ctx), values.toArray(Expression[]::new));
 		} else
 			throw new UnsupportedStatementException();
 	}
@@ -683,13 +691,14 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 			Subscript_Context ctx) {
 		if (ctx.COLON() != null) {
 			SourceCodeLocation loc = getLocation(ctx);
-			Expression left = ctx.test1() == null ? new Empty(currentCFG, loc)
+			Expression left = ctx.test1() == null ? new Empty(this.ctx.currentCFG(), loc)
 					: visitTest(ctx.test1().test());
-			Expression middle = ctx.test2() == null ? new Empty(currentCFG, loc)
+			Expression middle = ctx.test2() == null ? new Empty(this.ctx.currentCFG(), loc)
 					: visitTest(ctx.test2().test());
-			Expression right = ctx.sliceop() == null || ctx.sliceop().test() == null ? new Empty(currentCFG, loc)
+			Expression right = ctx.sliceop() == null || ctx.sliceop().test() == null
+					? new Empty(this.ctx.currentCFG(), loc)
 					: visitTest(ctx.sliceop().test());
-			return new RangeValue(currentCFG, loc, left, middle, right);
+			return new RangeValue(this.ctx.currentCFG(), loc, left, middle, right);
 		} else
 			return visitTest(ctx.test());
 	}
@@ -777,21 +786,21 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 	 * function being parsed, or {@code null} if the current function is not
 	 * defined inside a Python class (e.g. it is a module-level function).
 	 * <p>
-	 * During method-body parsing, {@code currentUnit} is the
+	 * During method-body parsing, {@code this.ctx.currentUnit()} is the
 	 * {@link it.unive.pylisa.program.FunctionUnit} for the method, not the
 	 * enclosing class. The enclosing class name is the prefix obtained by
 	 * stripping the last {@code ".<methodName>"} component from the function
-	 * unit name. The class is then looked up from the LiSA program.
+	 * unit name. The class is then looked up from the LiSA this.ctx.program().
 	 *
 	 * @return the enclosing {@link PyClassUnit}, or {@code null}
 	 */
 	protected PyClassUnit findEnclosingPyClassUnit() {
-		String funcName = currentUnit.getName();
+		String funcName = this.ctx.currentUnit().getName();
 		int lastDot = funcName.lastIndexOf('.');
 		if (lastDot <= 0)
 			return null;
 		String classUnitName = funcName.substring(0, lastDot);
-		it.unive.lisa.program.Unit candidate = program.getUnit(classUnitName);
+		it.unive.lisa.program.Unit candidate = this.ctx.program().getUnit(classUnitName);
 		log.debug("findEnclosingPyClassUnit: funcName='{}', classUnitName='{}', candidate={}",
 				funcName, classUnitName, candidate == null ? "null" : candidate.getName());
 		if (candidate instanceof PyClassUnit pcu)
@@ -806,7 +815,7 @@ public abstract class PyExpressionVisitorBase extends PyFrontendBase {
 		if (names.size() == 0)
 			return result;
 		for (VfpdefContext e : names)
-			result.add(new VariableRef(currentCFG, getLocation(e), (String) visitVfpdef(e)));
+			result.add(new VariableRef(this.ctx.currentCFG(), getLocation(e), (String) visitVfpdef(e)));
 		return result;
 	}
 }
