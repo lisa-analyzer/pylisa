@@ -1,17 +1,16 @@
 package it.unive.pylisa.frontend;
 
 import it.unive.lisa.AnalysisSetupException;
-import it.unive.lisa.logging.IterationLogger;
-import it.unive.lisa.program.*;
+import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Program;
+import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.lisa.program.SyntheticLocation;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.controlFlow.ControlFlowStructure;
-import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
-import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Ret;
-import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Int32Type;
@@ -20,24 +19,24 @@ import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.TypeSystem;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.type.VoidType;
-import it.unive.lisa.util.datastructures.graph.code.NodeList;
-import it.unive.pylisa.UnsupportedStatementException;
+import it.unive.pylisa.PythonFeatures;
+import it.unive.pylisa.PythonTypeSystem;
 import it.unive.pylisa.antlr.Python3Lexer;
 import it.unive.pylisa.antlr.Python3Parser;
-import it.unive.pylisa.antlr.Python3Parser.Eval_inputContext;
 import it.unive.pylisa.antlr.Python3Parser.File_inputContext;
-import it.unive.pylisa.antlr.Python3Parser.Single_inputContext;
-import it.unive.pylisa.antlr.Python3Parser.StmtContext;
 import it.unive.pylisa.cfg.PyCFG;
-import it.unive.pylisa.cfg.expression.*;
-import it.unive.pylisa.cfg.statement.*;
+import it.unive.pylisa.cfg.statement.ImportModule;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyFunctionType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.cfg.type.PyModuleType;
+import it.unive.pylisa.frontend.definition.DefinitionVisitor;
+import it.unive.pylisa.frontend.expression.ExpressionVisitor;
+import it.unive.pylisa.frontend.statement.StatementVisitor;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.program.ModuleUnit;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,91 +50,110 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.apache.commons.lang3.tuple.Triple;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public class PyFrontend extends PyDefinitionVisitorBase {
+/**
+ * Public entry point to the PyLiSA front-end: parses a Python source file (or
+ * Jupyter notebook) into a LiSA {@link Program}.
+ * <p>
+ * After Chunk 2 this class is an orchestrator: it owns the shared
+ * {@link ParserContext}, the stateless {@link ParserSupport} helper, and the
+ * three sibling category visitors (expression / statement / definition) that
+ * collectively replace the old four-level inheritance chain.
+ */
+public final class PyFrontend {
 
-	/**
-	 * Builds an instance of @PyFrontend for a given Python this.ctx.program()
-	 * given at the location filePath.
-	 *
-	 * @param filePath file path to a Python this.ctx.program()
-	 * @param notebook whether or not {@code filePath} points to a Jupyter
-	 *                     notebook file
-	 */
+	private static final Logger LOG = LogManager.getLogger(PyFrontend.class);
+
+	private final ParserContext ctx;
+	private final ParserSupport support;
+	private final ExpressionVisitor expr;
+	private final StatementVisitor stmt;
+	private final DefinitionVisitor def;
+
+	private final String filePath;
+	private final boolean notebook;
+	private final List<Integer> cellOrder;
+
+	private CFG init;
+
 	public PyFrontend(
 			String filePath,
 			boolean notebook) {
-		super(filePath, notebook);
+		this(filePath, notebook, Collections.emptyList(), null);
 	}
 
-	/**
-	 * Builds an instance of @PyFrontend for a given Python this.ctx.program()
-	 * given at the location filePath.
-	 *
-	 * @param filePath  file path to a Python this.ctx.program()
-	 * @param notebook  whether or not {@code filePath} points to a Jupyter
-	 *                      notebook file
-	 * @param cellOrder sequence of the indexes of cells of a Jupyter notebook
-	 *                      in the order they are to be executed. Only valid if
-	 *                      {@code notebook} is {@code true}.
-	 */
 	public PyFrontend(
 			String filePath,
 			boolean notebook,
 			Integer... cellOrder) {
-		super(filePath, notebook, cellOrder);
+		this(filePath, notebook, List.of(cellOrder), null);
 	}
 
-	/**
-	 * Builds an instance of @PyFrontend for a given Python this.ctx.program()
-	 * given at the location filePath.
-	 *
-	 * @param filePath  file path to a Python this.ctx.program()
-	 * @param notebook  whether or not {@code filePath} points to a Jupyter
-	 *                      notebook file
-	 * @param cellOrder list of the indexes of cells of a Jupyter notebook in
-	 *                      the order they are to be executed. Only valid if
-	 *                      {@code notebook} is {@code true}.
-	 */
 	public PyFrontend(
 			String filePath,
 			boolean notebook,
 			List<Integer> cellOrder) {
-		super(filePath, notebook, cellOrder);
+		this(filePath, notebook, cellOrder, null);
 	}
 
-	/**
-	 * Builds an instance of @PyFrontend for a given Python this.ctx.program()
-	 * given at the location filePath, with an explicit source root for module
-	 * resolution.
-	 *
-	 * @param filePath   file path to a Python this.ctx.program()
-	 * @param notebook   whether or not {@code filePath} points to a Jupyter
-	 *                       notebook file
-	 * @param sourceRoot explicit root directory for resolving project-relative
-	 *                       this.ctx.imports(); if {@code null}, defaults to
-	 *                       the parent of {@code filePath}
-	 */
 	public PyFrontend(
 			String filePath,
 			boolean notebook,
 			String sourceRoot) {
-		super(filePath, notebook, Collections.emptyList(), sourceRoot);
+		this(filePath, notebook, Collections.emptyList(), sourceRoot);
 	}
 
-	/**
-	 * Returns the collection of @CFG in a Python this.ctx.program() at
-	 * filePath.
-	 *
-	 * @return collection of @CFG in file
-	 *
-	 * @throws IOException            if {@code stream} to file cannot be read
-	 *                                    from or closed
-	 * @throws AnalysisSetupException if something goes wrong while setting up
-	 *                                    the this.ctx.program()
-	 */
+	public PyFrontend(
+			String filePath,
+			boolean notebook,
+			List<Integer> cellOrder,
+			String sourceRoot) {
+		this.filePath = filePath;
+		this.notebook = notebook;
+		this.cellOrder = cellOrder;
+
+		this.ctx = new ParserContext();
+		this.ctx.filePath(filePath);
+		this.ctx.currentFileIsPackage(filePath != null && filePath.endsWith("__init__.py"));
+
+		Program program = new Program(new PythonFeatures(), new PythonTypeSystem());
+		this.ctx.program(program);
+		ModuleUnit currentModule = new ModuleUnit(new SourceCodeLocation(filePath, 0, 0), program, "__main__");
+		this.ctx.currentModule(currentModule);
+		this.ctx.currentUnit(currentModule);
+		this.init = makeInit(program);
+		this.ctx.init(this.init);
+		Path baseDir = (sourceRoot != null)
+				? Path.of(sourceRoot)
+				: (filePath != null) ? Path.of(filePath).getParent() : Path.of(".");
+		this.ctx.importManager(new PythonModuleImportManager(program, init, baseDir));
+		program.addUnit(currentModule);
+		PyModuleType.register("__main__", currentModule);
+
+		this.support = new ParserSupport(ctx);
+		this.expr = new ExpressionVisitor(ctx, support);
+		this.stmt = new StatementVisitor(ctx, support);
+		this.def = new DefinitionVisitor(ctx, support);
+		this.ctx.wireVisitors(expr, stmt, def);
+		LOG.debug("PyFrontend wired for {}", filePath);
+	}
+
+	public PyFrontend setContinueOnUnsupportedStatement(
+			boolean value) {
+		this.ctx.continueOnUnsupportedStatement(value);
+		return this;
+	}
+
+	public String getFilePath() {
+		return filePath;
+	}
+
+	public Program toLiSAProgram() throws IOException, AnalysisSetupException {
+		return toLiSAProgram(true);
+	}
+
 	public Program toLiSAProgram(
 			boolean clearClassType)
 			throws IOException,
@@ -144,11 +162,11 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 			PyClassType.clearAll();
 			PyFunctionType.clearAll();
 			PyModuleType.clearAll();
-			// Re-register __main__ which was set up in the constructor
-			PyModuleType.register(this.ctx.currentModule().getName(), this.ctx.currentModule());
+			PyModuleType.register(ctx.currentModule().getName(), ctx.currentModule());
 		}
 
-		TypeSystem types = this.ctx.program().getTypes();
+		Program program = ctx.program();
+		TypeSystem types = program.getTypes();
 		types.registerType(PyLambdaType.INSTANCE);
 		types.registerType(BoolType.INSTANCE);
 		types.registerType(StringType.INSTANCE);
@@ -157,16 +175,16 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		types.registerType(NullType.INSTANCE);
 		types.registerType(VoidType.INSTANCE);
 		types.registerType(Untyped.INSTANCE);
-		LibrarySpecificationProvider.load(this.ctx.program(), init);
+		LibrarySpecificationProvider.load(program, init);
 
-		LibrarySpecificationProvider.importPythonModule(this.ctx.program(), "builtins", init);
-		this.ctx.objectUnit((it.unive.lisa.program.CompilationUnit) this.ctx.program().getUnit("builtins.object"));
-		if (this.ctx.objectUnit() == null)
-			log.warn("Could not resolve 'builtins.object' after library loading; "
+		LibrarySpecificationProvider.importPythonModule(program, "builtins", init);
+		ctx.objectUnit((CompilationUnit) program.getUnit("builtins.object"));
+		if (ctx.objectUnit() == null)
+			LOG.warn("Could not resolve 'builtins.object' after library loading; "
 					+ "classes without explicit parents will have no ancestor");
-		log.info("Reading file... " + filePath);
+		LOG.info("Reading file... {}", filePath);
 
-		this.ctx.importManager().setProjectLoader(this::loadProjectModuleFile);
+		ctx.importManager().setProjectLoader(this::loadProjectModuleFile);
 
 		String source;
 		Python3Lexer lexer;
@@ -177,18 +195,18 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 			throw new IOException("Unable to parse '" + filePath + "'", e);
 		}
 
-		ParseTree tree = parseFileInputStrict(lexer, filePath, source);
+		File_inputContext tree = parseFileInputStrict(lexer, filePath, source);
 
-		visit(tree);
+		stmt.visitFile_input(tree);
 
 		PyClassType.all().forEach(types::registerType);
 		ModuleUnit pyProgramUnit = new ModuleUnit(
 				new SourceCodeLocation("__lisa__", 0, 0),
-				this.ctx.program(),
+				program,
 				"$PythonProgram");
-		this.ctx.program().addUnit(pyProgramUnit);
-		CodeMemberDescriptor runDesc = new CodeMemberDescriptor(new SourceCodeLocation("__lisa__", 0, 0), pyProgramUnit,
-				false, "run");
+		program.addUnit(pyProgramUnit);
+		CodeMemberDescriptor runDesc = new CodeMemberDescriptor(new SourceCodeLocation("__lisa__", 0, 0),
+				pyProgramUnit, false, "run");
 		runDesc.setOverridable(false);
 		PyCFG runCFG = new PyCFG(runDesc);
 		pyProgramUnit.addCodeMember(runCFG);
@@ -202,138 +220,62 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 		Ret ret = new Ret(runCFG, SyntheticLocation.INSTANCE);
 		runCFG.addNode(ret);
 		runCFG.addEdge(new SequentialEdge(importModuleMain, ret));
-		this.ctx.program().addEntryPoint(runCFG);
-		return this.ctx.program();
-	}
-
-	public Program toLiSAProgram() throws IOException, AnalysisSetupException {
-		return toLiSAProgram(true);
+		program.addEntryPoint(runCFG);
+		return program;
 	}
 
 	public ModuleUnit loadProjectModuleFile(
 			String moduleName,
-			String filePath)
+			String modulePath)
 			throws IOException {
-		// Save current state
-		ModuleUnit savedModule = this.ctx.currentModule();
-		Unit savedUnit = this.ctx.currentUnit();
-		PyCFG savedCFG = this.ctx.currentCFG();
-		Map<String, String> savedImports = this.ctx.imports();
-		Collection<ControlFlowStructure> savedCfs = this.ctx.cfs();
-		boolean savedShouldPrependUnitAccess = this.ctx.shouldPrependUnitAccess();
-		boolean savedFileIsPackage = currentFileIsPackage;
-		currentFileIsPackage = filePath.endsWith("__init__.py");
+		ModuleUnit savedModule = ctx.currentModule();
+		Unit savedUnit = ctx.currentUnit();
+		PyCFG savedCFG = ctx.currentCFG();
+		Map<String, String> savedImports = ctx.imports();
+		Collection<ControlFlowStructure> savedCfs = ctx.cfs();
+		boolean savedShouldPrependUnitAccess = ctx.shouldPrependUnitAccess();
+		boolean savedFileIsPackage = ctx.currentFileIsPackage();
+		ctx.currentFileIsPackage(modulePath.endsWith("__init__.py"));
 
 		// The ModuleUnit was already registered by loadProjectModule before
 		// calling us
 		ModuleUnit newModule = (ModuleUnit) PyModuleType.lookup(moduleName).getUnit();
-		this.ctx.currentModule(newModule);
-		this.ctx.currentUnit(newModule);
-		this.ctx.imports(new HashMap<>());
-		this.ctx.cfs(new HashSet<>());
+		ctx.currentModule(newModule);
+		ctx.currentUnit(newModule);
+		ctx.imports(new HashMap<>());
+		ctx.cfs(new HashSet<>());
 
-		boolean savedContinue = continueOnUnsupportedStatement;
-		continueOnUnsupportedStatement = true; // resilient for sub-module loads
+		boolean savedContinue = ctx.continueOnUnsupportedStatement();
+		ctx.continueOnUnsupportedStatement(true);
 		try {
-			String source = SourceReader.readNormalizedFile(filePath);
-			Python3Lexer lexer = new Python3Lexer(CharStreams.fromString(source, filePath));
-			visitFile_input(parseFileInputStrict(lexer, filePath, source));
+			String source = SourceReader.readNormalizedFile(modulePath);
+			Python3Lexer lexer = new Python3Lexer(CharStreams.fromString(source, modulePath));
+			stmt.visitFile_input(parseFileInputStrict(lexer, modulePath, source));
 		} catch (IOException | RuntimeException e) {
 			// Finalize the partially-built $init CFG so it passes LiSA
 			// validation
-			addRetNodesToCurrentCFG();
+			support.addRetNodesToCurrentCFG();
 			throw e;
 		} finally {
-			continueOnUnsupportedStatement = savedContinue;
-			// Always restore state, even if parsing fails
-			this.ctx.currentModule(savedModule);
-			this.ctx.currentUnit(savedUnit);
-			this.ctx.currentCFG(savedCFG);
-			this.ctx.imports(savedImports);
-			this.ctx.cfs(savedCfs);
-			this.ctx.shouldPrependUnitAccess(savedShouldPrependUnitAccess);
-			currentFileIsPackage = savedFileIsPackage;
+			ctx.continueOnUnsupportedStatement(savedContinue);
+			ctx.currentModule(savedModule);
+			ctx.currentUnit(savedUnit);
+			ctx.currentCFG(savedCFG);
+			ctx.imports(savedImports);
+			ctx.cfs(savedCfs);
+			ctx.shouldPrependUnitAccess(savedShouldPrependUnitAccess);
+			ctx.currentFileIsPackage(savedFileIsPackage);
 		}
 
 		return newModule;
 	}
 
-	@Override
-	public Object visit(
-			ParseTree tree) {
-
-		if (tree instanceof File_inputContext)
-			return visitFile_input((File_inputContext) tree);
-
-		return null;
-	}
-
-	@Override
-	public Object visitSingle_input(
-			Single_inputContext ctx) {
-		throw new UnsupportedStatementException();
-	}
-
-	@Override
-	public PyCFG visitFile_input(
-			File_inputContext ctx) {
-
-		this.ctx.currentCFG(new PyCFG(buildInitModuleCFGDescriptor(getLocation(ctx))));
-		ImportModule builtinsModule = new ImportModule(this.ctx.currentCFG(), getLocation(ctx), "builtins",
-				PyModuleType.lookup("builtins").getUnit());
-		this.ctx.currentCFG().addNode(builtinsModule, true);
-		this.ctx.cfs(new HashSet<>());
-		this.ctx.currentModule().addCodeMember(this.ctx.currentCFG());
-		Expression targetName = new PythonScopedAttributeAccessRef(this.ctx.currentCFG(), getLocation(ctx),
-				this.ctx.currentModule(),
-				new Global(getLocation(ctx), this.ctx.currentModule(), "__name__", false));
-
-		PyAssign nameAssign = new PyAssign(this.ctx.currentCFG(), getLocation(ctx), targetName,
-				new StringLiteral(this.ctx.currentCFG(), getLocation(ctx), this.ctx.currentModule().getName()));
-		this.ctx.currentCFG().addNode(nameAssign);
-		this.ctx.currentCFG().addEdge(new SequentialEdge(builtinsModule, nameAssign));
-		Statement lastStmt = nameAssign;
-		for (StmtContext stmt : IterationLogger.iterate(log, ctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
-			Object visited;
-			try {
-				if (stmt.compound_stmt() != null)
-					visited = visitCompound_stmt(stmt.compound_stmt());
-				else
-					visited = visitSimple_stmt(stmt.simple_stmt());
-			} catch (RuntimeException e) {
-				if (!continueOnUnsupportedStatement)
-					throw e;
-				log.warn("[PyLiSA] Skipping unsupported statement at "
-						+ getLocation(stmt) + ": " + e.getClass().getSimpleName()
-						+ ": " + e.getMessage());
-				continue;
-			}
-
-			if (!(visited instanceof Triple<?, ?, ?>))
-				continue;
-
-			@SuppressWarnings("unchecked")
-			Triple<Statement, NodeList<CFG, Statement, Edge>,
-					Statement> st = (Triple<Statement, NodeList<CFG, Statement, Edge>, Statement>) visited;
-			this.ctx.currentCFG().getNodeList().mergeWith(st.getMiddle());
-			if (lastStmt == null)
-				// this is the first instruction
-				this.ctx.currentCFG().getEntrypoints().add(st.getLeft());
-			else if (!lastStmt.stopsExecution())
-				this.ctx.currentCFG().addEdge(new SequentialEdge(lastStmt, st.getLeft()));
-			lastStmt = st.getRight();
-		}
-
-		addRetNodesToCurrentCFG();
-		this.ctx.cfs().forEach(this.ctx.currentCFG().getDescriptor()::addControlFlowStructure);
-		this.ctx.currentCFG().simplify();
-		return this.ctx.currentCFG();
-	}
-
-	@Override
-	public Object visitEval_input(
-			Eval_inputContext ctx) {
-		throw new UnsupportedStatementException();
+	private CFG makeInit(
+			Program program) {
+		CFG init = new CFG(new CodeMemberDescriptor(SyntheticLocation.INSTANCE, program, false, "LiSA$init"));
+		init.addNode(new Ret(init, SyntheticLocation.INSTANCE), true);
+		program.addCodeMember(init);
+		return init;
 	}
 
 	private File_inputContext parseFileInputStrict(
@@ -383,5 +325,4 @@ public class PyFrontend extends PyDefinitionVisitorBase {
 			throw new IOException("Invalid Python input in '" + sourceName + "': " + detail, ex);
 		}
 	}
-
 }

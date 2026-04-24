@@ -1,6 +1,12 @@
-package it.unive.pylisa.frontend;
+package it.unive.pylisa.frontend.statement;
 
-import it.unive.lisa.program.*;
+import it.unive.lisa.logging.IterationLogger;
+import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Global;
+import it.unive.lisa.program.Program;
+import it.unive.lisa.program.SyntheticLocation;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.controlFlow.IfThenElse;
@@ -20,6 +26,7 @@ import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
+import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
 import it.unive.pylisa.UnsupportedStatementException;
@@ -38,6 +45,7 @@ import it.unive.pylisa.antlr.Python3Parser.Except_clauseContext;
 import it.unive.pylisa.antlr.Python3Parser.ExprContext;
 import it.unive.pylisa.antlr.Python3Parser.Expr_stmtContext;
 import it.unive.pylisa.antlr.Python3Parser.ExprlistContext;
+import it.unive.pylisa.antlr.Python3Parser.File_inputContext;
 import it.unive.pylisa.antlr.Python3Parser.Flow_stmtContext;
 import it.unive.pylisa.antlr.Python3Parser.For_stmtContext;
 import it.unive.pylisa.antlr.Python3Parser.Global_stmtContext;
@@ -64,69 +72,131 @@ import it.unive.pylisa.antlr.Python3Parser.With_itemContext;
 import it.unive.pylisa.antlr.Python3Parser.With_stmtContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_argContext;
 import it.unive.pylisa.antlr.Python3Parser.Yield_stmtContext;
+import it.unive.pylisa.antlr.Python3ParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
-import it.unive.pylisa.cfg.expression.*;
-import it.unive.pylisa.cfg.statement.*;
+import it.unive.pylisa.cfg.expression.AttributeAccess;
+import it.unive.pylisa.cfg.expression.Break;
+import it.unive.pylisa.cfg.expression.Continue;
+import it.unive.pylisa.cfg.expression.ListCreation;
+import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
+import it.unive.pylisa.cfg.expression.PyAddition;
+import it.unive.pylisa.cfg.expression.PyAssign;
+import it.unive.pylisa.cfg.expression.TupleCreation;
+import it.unive.pylisa.cfg.statement.FromImport;
+import it.unive.pylisa.cfg.statement.FunctionApply;
+import it.unive.pylisa.cfg.statement.ImportModule;
+import it.unive.pylisa.cfg.statement.PythonScopedAttributeAccessRef;
 import it.unive.pylisa.cfg.type.PyModuleType;
+import it.unive.pylisa.frontend.ParserContext;
+import it.unive.pylisa.frontend.ParserSupport;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.program.ModuleUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
+/**
+ * Handles Python statements and the top-level {@code file_input} production.
+ * One of three sibling category visitors introduced in Chunk 2; shares state
+ * with {@link ParserContext} and cross-dispatches via {@code ctx.expr()} /
+ * {@code ctx.def()}.
+ */
+public final class StatementVisitor extends Python3ParserBaseVisitor<Object> {
 
-	public PyStatementVisitorBase(
-			String filePath,
-			boolean notebook) {
-		super(filePath, notebook);
+	private static final Logger LOG = LogManager.getLogger(StatementVisitor.class);
+
+	private final ParserContext ctx;
+	private final ParserSupport support;
+
+	public StatementVisitor(
+			ParserContext ctx,
+			ParserSupport support) {
+		this.ctx = Objects.requireNonNull(ctx);
+		this.support = Objects.requireNonNull(support);
 	}
 
-	public PyStatementVisitorBase(
-			String filePath,
-			boolean notebook,
-			Integer... cellOrder) {
-		super(filePath, notebook, cellOrder);
-	}
+	@Override
+	public PyCFG visitFile_input(
+			File_inputContext pctx) {
+		ctx.currentCFG(new PyCFG(support.buildInitModuleCFGDescriptor(support.getLocation(pctx))));
+		ImportModule builtinsModule = new ImportModule(ctx.currentCFG(), support.getLocation(pctx), "builtins",
+				PyModuleType.lookup("builtins").getUnit());
+		ctx.currentCFG().addNode(builtinsModule, true);
+		ctx.cfs(new HashSet<>());
+		ctx.currentModule().addCodeMember(ctx.currentCFG());
+		Expression targetName = new PythonScopedAttributeAccessRef(ctx.currentCFG(), support.getLocation(pctx),
+				ctx.currentModule(),
+				new Global(support.getLocation(pctx), ctx.currentModule(), "__name__", false));
 
-	public PyStatementVisitorBase(
-			String filePath,
-			boolean notebook,
-			List<Integer> cellOrder) {
-		super(filePath, notebook, cellOrder);
-	}
+		PyAssign nameAssign = new PyAssign(ctx.currentCFG(), support.getLocation(pctx), targetName,
+				new StringLiteral(ctx.currentCFG(), support.getLocation(pctx), ctx.currentModule().getName()));
+		ctx.currentCFG().addNode(nameAssign);
+		ctx.currentCFG().addEdge(new SequentialEdge(builtinsModule, nameAssign));
+		Statement lastStmt = nameAssign;
+		for (StmtContext stmt : IterationLogger.iterate(LOG, pctx.stmt(), "Parsing stmt lists...", "Global stmt")) {
+			Object visited;
+			try {
+				if (stmt.compound_stmt() != null)
+					visited = visitCompound_stmt(stmt.compound_stmt());
+				else
+					visited = visitSimple_stmt(stmt.simple_stmt());
+			} catch (RuntimeException e) {
+				if (!ctx.continueOnUnsupportedStatement())
+					throw e;
+				LOG.warn("[PyLiSA] Skipping unsupported statement at "
+						+ support.getLocation(stmt) + ": " + e.getClass().getSimpleName()
+						+ ": " + e.getMessage());
+				continue;
+			}
 
-	public PyStatementVisitorBase(
-			String filePath,
-			boolean notebook,
-			List<Integer> cellOrder,
-			String sourceRoot) {
-		super(filePath, notebook, cellOrder, sourceRoot);
+			if (!(visited instanceof Triple<?, ?, ?>))
+				continue;
+
+			@SuppressWarnings("unchecked")
+			Triple<Statement, NodeList<CFG, Statement, Edge>,
+					Statement> st = (Triple<Statement, NodeList<CFG, Statement, Edge>, Statement>) visited;
+			ctx.currentCFG().getNodeList().mergeWith(st.getMiddle());
+			if (lastStmt == null)
+				ctx.currentCFG().getEntrypoints().add(st.getLeft());
+			else if (!lastStmt.stopsExecution())
+				ctx.currentCFG().addEdge(new SequentialEdge(lastStmt, st.getLeft()));
+			lastStmt = st.getRight();
+		}
+
+		support.addRetNodesToCurrentCFG();
+		ctx.cfs().forEach(ctx.currentCFG().getDescriptor()::addControlFlowStructure);
+		ctx.currentCFG().simplify();
+		return ctx.currentCFG();
 	}
 
 	@Override
 	public Object visitStmt(
-			StmtContext ctx) {
-		if (ctx.simple_stmt() != null)
-			return visitSimple_stmt(ctx.simple_stmt());
+			StmtContext pctx) {
+		if (pctx.simple_stmt() != null)
+			return visitSimple_stmt(pctx.simple_stmt());
 		else
-			return visitCompound_stmt(ctx.compound_stmt());
+			return visitCompound_stmt(pctx.compound_stmt());
 	}
 
 	@Override
 	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitSimple_stmt(
-			Simple_stmtContext ctx) {
-		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+			Simple_stmtContext pctx) {
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(ParserContext.SEQUENTIAL_SINGLETON);
 		Statement first = null, last = null;
-		for (int i = 0; i < ctx.small_stmt().size(); i++) {
-			Statement st = visitSmall_stmt(ctx.small_stmt(i));
+		for (int i = 0; i < pctx.small_stmt().size(); i++) {
+			Statement st = visitSmall_stmt(pctx.small_stmt(i));
 			block.addNode(st);
 			if (first == null)
 				first = st;
@@ -140,57 +210,54 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 
 	@Override
 	public Statement visitSmall_stmt(
-			Small_stmtContext ctx) {
-		if (ctx.expr_stmt() != null)
-			return visitExpr_stmt(ctx.expr_stmt());
-		else if (ctx.del_stmt() != null)
-			return visitDel_stmt(ctx.del_stmt());
-		else if (ctx.pass_stmt() != null)
-			return visitPass_stmt(ctx.pass_stmt());
-		else if (ctx.import_stmt() != null)
-			return visitImport_stmt(ctx.import_stmt());
-		else if (ctx.assert_stmt() != null)
-			return visitAssert_stmt(ctx.assert_stmt());
-		else if (ctx.flow_stmt() != null)
-			return visitFlow_stmt(ctx.flow_stmt());
-		else if (ctx.nonlocal_stmt() != null)
-			return new NoOp(this.ctx.currentCFG(), getLocation(ctx)); // TODO
-		else if (ctx.global_stmt() != null)
-			return new NoOp(this.ctx.currentCFG(), getLocation(ctx)); // TODO
+			Small_stmtContext pctx) {
+		if (pctx.expr_stmt() != null)
+			return visitExpr_stmt(pctx.expr_stmt());
+		else if (pctx.del_stmt() != null)
+			return visitDel_stmt(pctx.del_stmt());
+		else if (pctx.pass_stmt() != null)
+			return visitPass_stmt(pctx.pass_stmt());
+		else if (pctx.import_stmt() != null)
+			return visitImport_stmt(pctx.import_stmt());
+		else if (pctx.assert_stmt() != null)
+			return visitAssert_stmt(pctx.assert_stmt());
+		else if (pctx.flow_stmt() != null)
+			return visitFlow_stmt(pctx.flow_stmt());
+		else if (pctx.nonlocal_stmt() != null)
+			return new NoOp(ctx.currentCFG(), support.getLocation(pctx)); // TODO
+		else if (pctx.global_stmt() != null)
+			return new NoOp(ctx.currentCFG(), support.getLocation(pctx)); // TODO
 		throw new UnsupportedStatementException("Simple statement not yet supported");
 	}
 
 	@Override
 	public Expression visitExpr_stmt(
-			Expr_stmtContext ctx) {
-		if (ctx.annassign() != null) {
-			boolean oldPrepend = this.ctx.shouldPrependUnitAccess();
-			this.ctx.shouldPrependUnitAccess(false);
-			Expression rawTarget = visitTestlist_star_expr(ctx.testlist_star_expr(0));
-			this.ctx.shouldPrependUnitAccess(oldPrepend);
+			Expr_stmtContext pctx) {
+		if (pctx.annassign() != null) {
+			boolean oldPrepend = ctx.shouldPrependUnitAccess();
+			ctx.shouldPrependUnitAccess(false);
+			Expression rawTarget = visitTestlist_star_expr(pctx.testlist_star_expr(0));
+			ctx.shouldPrependUnitAccess(oldPrepend);
 
 			declareAssignedNames(rawTarget);
 			Expression target = scopeAssignmentTarget(rawTarget);
-			if (ctx.annassign().ASSIGN() != null && ctx.annassign().test().size() > 1)
-				return new PyAssign(this.ctx.currentCFG(), getLocation(ctx), target,
-						visitTest(ctx.annassign().test(1)));
+			if (pctx.annassign().ASSIGN() != null && pctx.annassign().test().size() > 1)
+				return new PyAssign(ctx.currentCFG(), support.getLocation(pctx), target,
+						ctx.expr().visitTest(pctx.annassign().test(1)));
 
-			// Type-only annotations do not carry runtime effects in our current
-			// model.
 			return target;
 		}
 
-		if (ctx.ASSIGN().size() == 0)
-			if (ctx.testlist_star_expr().size() != 1)
-				// augassign or annassign have been used, both not supported
+		if (pctx.ASSIGN().size() == 0)
+			if (pctx.testlist_star_expr().size() != 1)
 				throw new UnsupportedStatementException();
 			else
-				return visitTestlist_star_expr(ctx.testlist_star_expr(0));
+				return visitTestlist_star_expr(pctx.testlist_star_expr(0));
 
-		boolean oldPrepend = this.ctx.shouldPrependUnitAccess();
-		this.ctx.shouldPrependUnitAccess(false);
-		Expression rawTarget = visitTestlist_star_expr(ctx.testlist_star_expr(0));
-		this.ctx.shouldPrependUnitAccess(oldPrepend);
+		boolean oldPrepend = ctx.shouldPrependUnitAccess();
+		ctx.shouldPrependUnitAccess(false);
+		Expression rawTarget = visitTestlist_star_expr(pctx.testlist_star_expr(0));
+		ctx.shouldPrependUnitAccess(oldPrepend);
 
 		declareAssignedNames(rawTarget);
 		Expression target = scopeAssignmentTarget(rawTarget);
@@ -203,111 +270,106 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 				&& "__getitem__".equals(aa.getTarget())) {
 			Expression receiver = fa.getSubExpressions()[1];
 			Expression key = fa.getSubExpressions()[2];
-			Expression rhs = visitTestlist_star_expr(ctx.testlist_star_expr(1));
+			Expression rhs = visitTestlist_star_expr(pctx.testlist_star_expr(1));
 			Expression setitemAttr = new AttributeAccess(
-					this.ctx.currentCFG(), getLocation(ctx), receiver, "__setitem__");
-			return new FunctionApply(this.ctx.currentCFG(), getLocation(ctx), setitemAttr,
+					ctx.currentCFG(), support.getLocation(pctx), receiver, "__setitem__");
+			return new FunctionApply(ctx.currentCFG(), support.getLocation(pctx), setitemAttr,
 					new Expression[] { receiver, key, rhs }, true);
 		}
 
-		PyAssign assign = new PyAssign(this.ctx.currentCFG(), getLocation(ctx),
+		return new PyAssign(ctx.currentCFG(), support.getLocation(pctx),
 				target,
-				visitTestlist_star_expr(ctx.testlist_star_expr(1)));
-		return assign;
+				visitTestlist_star_expr(pctx.testlist_star_expr(1)));
 	}
 
 	@Override
 	public Expression visitTestlist_star_expr(
-			Testlist_star_exprContext ctx) {
-		if (ctx.test().size() == 1)
-			return visitTest(ctx.test(0));
+			Testlist_star_exprContext pctx) {
+		if (pctx.test().size() == 1)
+			return ctx.expr().visitTest(pctx.test(0));
 
-		unsound(ctx, "tuple creation treated as first element");
-		return visitTest(ctx.test(0));
+		support.unsound(pctx, "tuple creation treated as first element");
+		return ctx.expr().visitTest(pctx.test(0));
 	}
 
 	@Override
 	public Object visitAnnassign(
-			AnnassignContext ctx) {
+			AnnassignContext pctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Object visitAugassign(
-			AugassignContext ctx) {
+			AugassignContext pctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Statement visitDel_stmt(
-			Del_stmtContext ctx) {
-		if (ctx.exprlist().star_expr().size() > 0)
-			return unsupported(ctx, "We support only expressions without * in del statements");
-		Statement result = new UnresolvedCall(
-				this.ctx.currentCFG(),
-				getLocation(ctx),
+			Del_stmtContext pctx) {
+		if (pctx.exprlist().star_expr().size() > 0)
+			return support.unsupported(pctx, "We support only expressions without * in del statements");
+		return new UnresolvedCall(
+				ctx.currentCFG(),
+				support.getLocation(pctx),
 				CallType.STATIC,
 				Program.PROGRAM_NAME,
 				"del",
 				LeftToRightEvaluation.INSTANCE,
-				visitExprlist(ctx.exprlist()).toArray(new Expression[ctx.exprlist().expr().size()]));
-		return result;
+				visitExprlist(pctx.exprlist()).toArray(new Expression[pctx.exprlist().expr().size()]));
 	}
 
 	@Override
 	public Statement visitPass_stmt(
-			Pass_stmtContext ctx) {
-		return new NoOp(this.ctx.currentCFG(), getLocation(ctx));
+			Pass_stmtContext pctx) {
+		return new NoOp(ctx.currentCFG(), support.getLocation(pctx));
 	}
 
 	@Override
 	public Object visitGlobal_stmt(
-			Global_stmtContext ctx) {
+			Global_stmtContext pctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Object visitNonlocal_stmt(
-			Nonlocal_stmtContext ctx) {
+			Nonlocal_stmtContext pctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Expression visitAssert_stmt(
-			Assert_stmtContext ctx) {
+			Assert_stmtContext pctx) {
 		return new UnresolvedCall(
-				this.ctx.currentCFG(),
-				getLocation(ctx),
+				ctx.currentCFG(),
+				support.getLocation(pctx),
 				CallType.STATIC,
 				"assert",
 				Program.PROGRAM_NAME,
 				LeftToRightEvaluation.INSTANCE,
-				visitTestlist(ctx.testlist())
-						.toArray(new Expression[ctx.testlist().test().size()]));
+				visitTestlist(pctx.testlist()).toArray(new Expression[pctx.testlist().test().size()]));
 	}
 
 	@Override
 	public Statement visitFlow_stmt(
-			Flow_stmtContext ctx) {
-		if (ctx.return_stmt() != null)
-			return visitReturn_stmt(ctx.return_stmt());
+			Flow_stmtContext pctx) {
+		if (pctx.return_stmt() != null)
+			return visitReturn_stmt(pctx.return_stmt());
 
-		if (ctx.raise_stmt() != null) {
-			unsound(ctx, "raise treated as no-op");
-			return new NoOp(this.ctx.currentCFG(), getLocation(ctx));
+		if (pctx.raise_stmt() != null) {
+			support.unsound(pctx, "raise treated as no-op");
+			return new NoOp(ctx.currentCFG(), support.getLocation(pctx));
 		}
 
-		if (ctx.yield_stmt() != null) {
-			Yield_argContext yieldArg = ctx.yield_stmt().yield_expr().yield_arg();
+		if (pctx.yield_stmt() != null) {
+			Yield_argContext yieldArg = pctx.yield_stmt().yield_expr().yield_arg();
 			if (yieldArg == null) {
-				// bare 'yield' — treat as a no-op (control flow continues to
-				// cleanup code)
-				return new NoOp(this.ctx.currentCFG(), getLocation(ctx));
+				return new NoOp(ctx.currentCFG(), support.getLocation(pctx));
 			}
-			List<Expression> l = extractExpressionsFromYieldArg(yieldArg);
+			List<Expression> l = ctx.expr().extractExpressionsFromYieldArg(yieldArg);
 			return new UnresolvedCall(
-					this.ctx.currentCFG(),
-					getLocation(ctx),
+					ctx.currentCFG(),
+					support.getLocation(pctx),
 					CallType.STATIC,
 					Program.PROGRAM_NAME,
 					"yield from",
@@ -315,105 +377,105 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 					l.toArray(new Expression[0]));
 		}
 
-		if (ctx.continue_stmt() != null)
-			return visitContinue_stmt(ctx.continue_stmt());
+		if (pctx.continue_stmt() != null)
+			return visitContinue_stmt(pctx.continue_stmt());
 
-		if (ctx.break_stmt() != null)
-			return visitBreak_stmt(ctx.break_stmt());
+		if (pctx.break_stmt() != null)
+			return visitBreak_stmt(pctx.break_stmt());
 
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Statement visitReturn_stmt(
-			Return_stmtContext ctx) {
-		if (ctx.testlist() == null)
-			return new Ret(this.ctx.currentCFG(), getLocation(ctx));
-		if (ctx.testlist().test().size() == 1)
-			return new Return(this.ctx.currentCFG(), getLocation(ctx), visitTest(ctx.testlist().test(0)));
+			Return_stmtContext pctx) {
+		if (pctx.testlist() == null)
+			return new Ret(ctx.currentCFG(), support.getLocation(pctx));
+		if (pctx.testlist().test().size() == 1)
+			return new Return(ctx.currentCFG(), support.getLocation(pctx),
+					ctx.expr().visitTest(pctx.testlist().test(0)));
 		else {
-			unsound(ctx, "multiple return values treated as first value");
-			return new Return(this.ctx.currentCFG(), getLocation(ctx), visitTest(ctx.testlist().test(0)));
+			support.unsound(pctx, "multiple return values treated as first value");
+			return new Return(ctx.currentCFG(), support.getLocation(pctx),
+					ctx.expr().visitTest(pctx.testlist().test(0)));
 		}
 	}
 
 	@Override
 	public Statement visitBreak_stmt(
-			Break_stmtContext ctx) {
-		return new Break(this.ctx.currentCFG(), getLocation(ctx));
+			Break_stmtContext pctx) {
+		return new Break(ctx.currentCFG(), support.getLocation(pctx));
 	}
 
 	@Override
 	public Statement visitContinue_stmt(
-			Continue_stmtContext ctx) {
-		return new Continue(this.ctx.currentCFG(), getLocation(ctx));
+			Continue_stmtContext pctx) {
+		return new Continue(ctx.currentCFG(), support.getLocation(pctx));
 	}
 
 	@Override
 	public Object visitYield_stmt(
-			Yield_stmtContext ctx) {
+			Yield_stmtContext pctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Object visitRaise_stmt(
-			Raise_stmtContext ctx) {
+			Raise_stmtContext pctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Object visitCompound_stmt(
-			Compound_stmtContext ctx) {
-		if (ctx.funcdef() != null)
-			return this.visitFuncdef(ctx.funcdef());
-		else if (ctx.if_stmt() != null)
-			return this.visitIf_stmt(ctx.if_stmt());
-		else if (ctx.while_stmt() != null)
-			return this.visitWhile_stmt(ctx.while_stmt());
-		else if (ctx.for_stmt() != null)
-			return this.visitFor_stmt(ctx.for_stmt());
-		else if (ctx.try_stmt() != null)
-			return this.visitTry_stmt(ctx.try_stmt());
-		else if (ctx.with_stmt() != null)
-			return this.visitWith_stmt(ctx.with_stmt());
-		else if (ctx.classdef() != null)
-			return this.visitClassdef(ctx.classdef());
-		else if (ctx.decorated() != null)
-			return this.visitDecorated(ctx.decorated());
-		else if (ctx.async_stmt() != null)
-			return this.visitAsync_stmt(ctx.async_stmt());
-		return unsupported(ctx, "Statement not yet supported");
+			Compound_stmtContext pctx) {
+		if (pctx.funcdef() != null)
+			return ctx.def().visitFuncdef(pctx.funcdef());
+		else if (pctx.if_stmt() != null)
+			return visitIf_stmt(pctx.if_stmt());
+		else if (pctx.while_stmt() != null)
+			return visitWhile_stmt(pctx.while_stmt());
+		else if (pctx.for_stmt() != null)
+			return visitFor_stmt(pctx.for_stmt());
+		else if (pctx.try_stmt() != null)
+			return visitTry_stmt(pctx.try_stmt());
+		else if (pctx.with_stmt() != null)
+			return visitWith_stmt(pctx.with_stmt());
+		else if (pctx.classdef() != null)
+			return ctx.def().visitClassdef(pctx.classdef());
+		else if (pctx.decorated() != null)
+			return ctx.def().visitDecorated(pctx.decorated());
+		else if (pctx.async_stmt() != null)
+			return visitAsync_stmt(pctx.async_stmt());
+		return support.unsupported(pctx, "Statement not yet supported");
 	}
 
 	@Override
 	public Object visitAsync_stmt(
-			Async_stmtContext ctx) {
-		unsound(ctx, "async stmt treated as sync");
-		if (ctx.funcdef() != null)
-			return visitFuncdef(ctx.funcdef());
+			Async_stmtContext pctx) {
+		support.unsound(pctx, "async stmt treated as sync");
+		if (pctx.funcdef() != null)
+			return ctx.def().visitFuncdef(pctx.funcdef());
 
-		if (ctx.for_stmt() != null)
-			return visitFor_stmt(ctx.for_stmt());
+		if (pctx.for_stmt() != null)
+			return visitFor_stmt(pctx.for_stmt());
 
-		if (ctx.with_stmt() != null)
-			return visitWith_stmt(ctx.with_stmt());
+		if (pctx.with_stmt() != null)
+			return visitWith_stmt(pctx.with_stmt());
 
 		throw new UnsupportedStatementException("Expecting with, for, def, in Async_stmtContext.");
 	}
 
 	@Override
 	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitIf_stmt(
-			If_stmtContext ctx) {
-		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
-		Statement booleanGuard = visitTest(ctx.test(0));
+			If_stmtContext pctx) {
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(ParserContext.SEQUENTIAL_SINGLETON);
+		Statement booleanGuard = ctx.expr().visitTest(pctx.test(0));
 		block.addNode(booleanGuard);
 
-		// Created if exit node
-		NoOp ifExitNode = new NoOp(this.ctx.currentCFG(), getLocation(ctx));
+		NoOp ifExitNode = new NoOp(ctx.currentCFG(), support.getLocation(pctx));
 		block.addNode(ifExitNode);
 
-		// Visit if true block
-		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> trueBlock = visitSuite(ctx.suite(0));
+		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> trueBlock = visitSuite(pctx.suite(0));
 		block.mergeWith(trueBlock.getMiddle());
 		Statement trueEntry = trueBlock.getLeft();
 		Statement trueExit = trueBlock.getRight();
@@ -423,16 +485,15 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 			block.addEdge(new SequentialEdge(trueExit, ifExitNode));
 
 		List<Pair<Statement, Collection<Statement>>> branches = new LinkedList<>();
-		int testLength = ctx.test().size();
+		int testLength = pctx.test().size();
 		Statement lastElifGuard = booleanGuard;
 		if (testLength > 1)
-			// if testLength is >1 the context contains elif
 			for (int i = 1; i < testLength; i++) {
-				Statement elifGuard = visitTest(ctx.test(i));
+				Statement elifGuard = ctx.expr().visitTest(pctx.test(i));
 				block.addNode(elifGuard);
 				block.addEdge(new FalseEdge(lastElifGuard, elifGuard));
 				lastElifGuard = elifGuard;
-				Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> elifBlock = visitSuite(ctx.suite(i));
+				Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> elifBlock = visitSuite(pctx.suite(i));
 				block.mergeWith(elifBlock.getMiddle());
 				branches.add(Pair.of(elifGuard, elifBlock.getMiddle().getNodes()));
 				Statement elifEntry = elifBlock.getLeft();
@@ -443,11 +504,10 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 					block.addEdge(new SequentialEdge(elifExit, ifExitNode));
 			}
 
-		// If statement with else
 		Collection<Statement> falseStatements = new HashSet<>();
-		if (ctx.ELSE() != null) {
+		if (pctx.ELSE() != null) {
 			Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> falseBlock = visitSuite(
-					ctx.suite(ctx.suite().size() - 1));
+					pctx.suite(pctx.suite().size() - 1));
 			block.mergeWith(falseBlock.getMiddle());
 			falseStatements.addAll(falseBlock.getMiddle().getNodes());
 			Statement falseEntry = falseBlock.getLeft();
@@ -457,7 +517,6 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 			if (!falseExit.stopsExecution() && !(falseExit instanceof Continue) && !(falseExit instanceof Break))
 				block.addEdge(new SequentialEdge(falseExit, ifExitNode));
 		} else {
-			// If statement with no else
 			if (!lastElifGuard.stopsExecution() && !(lastElifGuard instanceof Continue)
 					&& !(lastElifGuard instanceof Break))
 				block.addEdge(new FalseEdge(lastElifGuard, ifExitNode));
@@ -465,11 +524,11 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 
 		for (int k = branches.size() - 1; k >= 0; k--) {
 			Pair<Statement, Collection<Statement>> branch = branches.get(k);
-			this.ctx.cfs().add(new IfThenElse(this.ctx.currentCFG().getNodeList(), branch.getLeft(), ifExitNode,
+			ctx.cfs().add(new IfThenElse(ctx.currentCFG().getNodeList(), branch.getLeft(), ifExitNode,
 					branch.getRight(),
 					new HashSet<>(falseStatements)));
 		}
-		this.ctx.cfs().add(new IfThenElse(this.ctx.currentCFG().getNodeList(), booleanGuard, ifExitNode,
+		ctx.cfs().add(new IfThenElse(ctx.currentCFG().getNodeList(), booleanGuard, ifExitNode,
 				trueBlock.getMiddle().getNodes(),
 				falseStatements));
 		return Triple.of(booleanGuard, block, ifExitNode);
@@ -477,18 +536,16 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 
 	@Override
 	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitWhile_stmt(
-			While_stmtContext ctx) {
-		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
-		// create and add exit point of while
-		NoOp whileExitNode = new NoOp(this.ctx.currentCFG(), getLocation(ctx));
+			While_stmtContext pctx) {
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(ParserContext.SEQUENTIAL_SINGLETON);
+		NoOp whileExitNode = new NoOp(ctx.currentCFG(), support.getLocation(pctx));
 		block.addNode(whileExitNode);
 
-		Statement condition = visitTest(ctx.test());
+		Statement condition = ctx.expr().visitTest(pctx.test());
 		block.addNode(condition);
 
-		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> trueBlock = visitSuite(ctx.suite(0));
+		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> trueBlock = visitSuite(pctx.suite(0));
 
-		// Fix Break and Continue stmt
 		block.mergeWith(trueBlock.getMiddle());
 		for (Statement s : trueBlock.getMiddle())
 			if (s instanceof Continue) {
@@ -504,10 +561,9 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 		if (!trueBlock.getRight().stopsExecution())
 			block.addEdge(new SequentialEdge(trueBlock.getRight(), condition));
 
-		// check if there's an else condition for the while
 		Statement firstFollower;
-		if (ctx.ELSE() != null) {
-			Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> falseBlock = visitSuite(ctx.suite(1));
+		if (pctx.ELSE() != null) {
+			Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> falseBlock = visitSuite(pctx.suite(1));
 			block.mergeWith(falseBlock.getMiddle());
 			block.addEdge(new FalseEdge(condition, falseBlock.getLeft()));
 			if (!falseBlock.getRight().stopsExecution())
@@ -518,54 +574,52 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 			firstFollower = whileExitNode;
 		}
 
-		this.ctx.cfs().add(new Loop(this.ctx.currentCFG().getNodeList(), condition, firstFollower,
+		ctx.cfs().add(new Loop(ctx.currentCFG().getNodeList(), condition, firstFollower,
 				trueBlock.getMiddle().getNodes()));
 		return Triple.of(condition, block, whileExitNode);
 	}
 
 	@Override
 	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitFor_stmt(
-			For_stmtContext ctx) {
-		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
-		// create and add exit point of for
-		NoOp exit = new NoOp(this.ctx.currentCFG(), getLocation(ctx));
+			For_stmtContext pctx) {
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(ParserContext.SEQUENTIAL_SINGLETON);
+		NoOp exit = new NoOp(ctx.currentCFG(), support.getLocation(pctx));
 		block.addNode(exit);
 
-		List<Expression> exprs = visitExprlist(ctx.exprlist());
+		List<Expression> exprs = visitExprlist(pctx.exprlist());
 		Expression variable;
 		if (exprs.size() == 1)
 			variable = exprs.get(0);
 		else
-			variable = new TupleCreation(this.ctx.currentCFG(), getLocation(ctx), exprs.toArray(Expression[]::new));
+			variable = new TupleCreation(ctx.currentCFG(), support.getLocation(pctx),
+					exprs.toArray(Expression[]::new));
 
-		List<Expression> list = visitTestlist(ctx.testlist());
+		List<Expression> list = visitTestlist(pctx.testlist());
 		Expression collection = list.iterator().next();
 
 		VariableRef counter = new VariableRef(
-				this.ctx.currentCFG(),
-				getLocation(ctx),
-				"__counter_location" + getLocation(ctx).getLine(), Int32Type.INSTANCE);
+				ctx.currentCFG(),
+				support.getLocation(pctx),
+				"__counter_location" + support.getLocation(pctx).getLine(), Int32Type.INSTANCE);
 		Expression[] counter_pars = { collection, counter };
 
-		// counter = 0;
 		Assignment counter_init = new Assignment(
-				this.ctx.currentCFG(),
-				getLocation(ctx),
+				ctx.currentCFG(),
+				support.getLocation(pctx),
 				counter,
-				new Int32Literal(this.ctx.currentCFG(), getLocation(ctx), 0));
+				new Int32Literal(ctx.currentCFG(), support.getLocation(pctx), 0));
 		block.addNode(counter_init);
 
-		// counter < collection.size()
 		UnresolvedCall condition = new UnresolvedCall(
-				this.ctx.currentCFG(),
-				getLocation(ctx),
+				ctx.currentCFG(),
+				support.getLocation(pctx),
 				CallType.INSTANCE,
 				null,
 				"__lt__",
 				counter,
 				new UnresolvedCall(
-						this.ctx.currentCFG(),
-						getLocation(ctx),
+						ctx.currentCFG(),
+						support.getLocation(pctx),
 						CallType.INSTANCE,
 						null,
 						"__len__",
@@ -573,14 +627,13 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 						collection));
 		block.addNode(condition);
 
-		// element = collection.at(counter)
 		Assignment element_assignment = new Assignment(
-				this.ctx.currentCFG(),
-				getLocation(ctx),
+				ctx.currentCFG(),
+				support.getLocation(pctx),
 				variable,
 				new UnresolvedCall(
-						this.ctx.currentCFG(),
-						getLocation(ctx),
+						ctx.currentCFG(),
+						support.getLocation(pctx),
 						CallType.INSTANCE,
 						null,
 						"__getitem__",
@@ -588,22 +641,21 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 						counter_pars));
 		block.addNode(element_assignment);
 
-		// counter = counter + 1;
 		Assignment counter_increment = new Assignment(
-				this.ctx.currentCFG(),
-				getLocation(ctx),
+				ctx.currentCFG(),
+				support.getLocation(pctx),
 				counter,
 				new PyAddition(
-						this.ctx.currentCFG(),
-						getLocation(ctx),
+						ctx.currentCFG(),
+						support.getLocation(pctx),
 						counter,
 						new Int32Literal(
-								this.ctx.currentCFG(),
-								getLocation(ctx),
+								ctx.currentCFG(),
+								support.getLocation(pctx),
 								1)));
 		block.addNode(counter_increment);
 
-		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> body = visitSuite(ctx.suite(0));
+		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> body = visitSuite(pctx.suite(0));
 		block.mergeWith(body.getMiddle());
 
 		for (Statement s : body.getMiddle())
@@ -628,65 +680,49 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 		Collection<Statement> nodes = new HashSet<>(body.getMiddle().getNodes());
 		nodes.add(element_assignment);
 		nodes.add(counter_increment);
-		this.ctx.cfs().add(new Loop(this.ctx.currentCFG().getNodeList(), condition, exit, nodes));
+		ctx.cfs().add(new Loop(ctx.currentCFG().getNodeList(), condition, exit, nodes));
 		return Triple.of(counter_init, block, exit);
 	}
 
 	@Override
 	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitTry_stmt(
-			Try_stmtContext ctx) {
-		unsound(ctx, "try block: except clauses conservatively modeled as a bypass");
+			Try_stmtContext pctx) {
+		support.unsound(pctx, "try block: except clauses conservatively modeled as a bypass");
 		// Model `try: BODY except: …` as "BODY may execute fully OR an
 		// exception may be caught anywhere inside, in which case control
-		// resumes at the try-exit carrying the pre-try state". Structurally:
-		//
-		// entry(NoOp) ──► BODY.entry ──► … ──► BODY.exit ──► exit(NoOp)
-		// └─────────────────────────────────────────────► exit
-		//
-		// The parallel edge from entry to exit gives the fixpoint a path that
-		// preserves the pre-try state, so if the body produces bottom (e.g.
-		// because an unresolvable `from X import Y` cascaded), the exit still
-		// receives at least the entry state by lattice join — matching the
-		// semantics of Python's bare-`except` over cross-import try/blocks
-		// common in package `__init__.py` files.
-		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> body = visitSuite(ctx.suite(0));
-		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
-		NoOp entry = new NoOp(this.ctx.currentCFG(), getLocation(ctx));
-		NoOp exit = new NoOp(this.ctx.currentCFG(), getLocation(ctx));
+		// resumes at the try-exit carrying the pre-try state".
+		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> body = visitSuite(pctx.suite(0));
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(ParserContext.SEQUENTIAL_SINGLETON);
+		NoOp entry = new NoOp(ctx.currentCFG(), support.getLocation(pctx));
+		NoOp exit = new NoOp(ctx.currentCFG(), support.getLocation(pctx));
 		block.addNode(entry);
 		block.addNode(exit);
 		block.mergeWith(body.getMiddle());
 		block.addEdge(new SequentialEdge(entry, body.getLeft()));
-		// Only connect the body's natural exit to our wrapper exit when the
-		// body's last node can fall through — return/raise/break/continue are
-		// execution-stopping and must not have outgoing edges (CFG.validate
-		// would reject it).
 		if (body.getRight() != null && !body.getRight().stopsExecution())
 			block.addEdge(new SequentialEdge(body.getRight(), exit));
-		// The bypass edge — control jumps straight to the exit as if every
-		// statement in the body had raised an exception that was caught.
 		block.addEdge(new SequentialEdge(entry, exit));
 		return Triple.of(entry, block, exit);
 	}
 
 	@Override
 	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitWith_stmt(
-			With_stmtContext ctx) {
-		int withSize = ctx.with_item().size();
-		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
-		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> curr = visitWith_item(ctx.with_item(0));
+			With_stmtContext pctx) {
+		int withSize = pctx.with_item().size();
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(ParserContext.SEQUENTIAL_SINGLETON);
+		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> curr = visitWith_item(pctx.with_item(0));
 		Statement start = curr.getLeft();
 		Statement prev = curr.getRight();
 		block.mergeWith(curr.getMiddle());
 
 		for (int i = 1; i < withSize; i++) {
-			curr = visitWith_item(ctx.with_item(i));
+			curr = visitWith_item(pctx.with_item(i));
 			block.mergeWith(curr.getMiddle());
 			block.addEdge(new SequentialEdge(prev, curr.getLeft()));
 			prev = curr.getRight();
 		}
 
-		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> suite = visitSuite(ctx.suite());
+		Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> suite = visitSuite(pctx.suite());
 		block.mergeWith(suite.getMiddle());
 		block.addEdge(new SequentialEdge(prev, suite.getLeft()));
 
@@ -695,13 +731,13 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 
 	@Override
 	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitWith_item(
-			With_itemContext ctx) {
-		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
-		Statement test = visitTest(ctx.test());
+			With_itemContext pctx) {
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(ParserContext.SEQUENTIAL_SINGLETON);
+		Statement test = ctx.expr().visitTest(pctx.test());
 		block.addNode(test);
 		Statement expr = test;
-		if (ctx.expr() != null) {
-			expr = visitExpr(ctx.expr());
+		if (pctx.expr() != null) {
+			expr = ctx.expr().visitExpr(pctx.expr());
 			block.addNode(expr);
 			block.addEdge(new SequentialEdge(test, expr));
 		}
@@ -710,19 +746,19 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 
 	@Override
 	public Object visitExcept_clause(
-			Except_clauseContext ctx) {
+			Except_clauseContext pctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> visitSuite(
-			SuiteContext ctx) {
-		if (ctx.simple_stmt() != null)
-			return visitSimple_stmt(ctx.simple_stmt());
+			SuiteContext pctx) {
+		if (pctx.simple_stmt() != null)
+			return visitSimple_stmt(pctx.simple_stmt());
 		else {
-			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+			NodeList<CFG, Statement, Edge> block = new NodeList<>(ParserContext.SEQUENTIAL_SINGLETON);
 			Statement last = null, first = null;
-			for (StmtContext element : ctx.stmt()) {
+			for (StmtContext element : pctx.stmt()) {
 				Object parsed = visitStmt(element);
 				if (!(parsed instanceof Triple<?, ?, ?>))
 					continue;
@@ -732,7 +768,6 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 						Statement> st = (Triple<Statement, NodeList<CFG, Statement, Edge>, Statement>) parsed;
 				block.mergeWith(st.getMiddle());
 				if (first == null)
-					// this is the first instruction
 					first = st.getLeft();
 				if (last != null && !last.stopsExecution())
 					block.addEdge(new SequentialEdge(last, st.getLeft()));
@@ -744,44 +779,43 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 
 	@Override
 	public List<Expression> visitTestlist(
-			TestlistContext ctx) {
-		List<Expression> result = new ArrayList<>(ctx.test().size());
-		if (ctx.test().size() == 0)
+			TestlistContext pctx) {
+		List<Expression> result = new ArrayList<>(pctx.test().size());
+		if (pctx.test().size() == 0)
 			return result;
-		for (TestContext e : ctx.test())
-			result.add(visitTest(e));
+		for (TestContext e : pctx.test())
+			result.add(ctx.expr().visitTest(e));
 		return result;
 	}
 
 	@Override
 	public List<Expression> visitExprlist(
-			ExprlistContext ctx) {
-		if (!ctx.star_expr().isEmpty())
-			// star expr is not supported
+			ExprlistContext pctx) {
+		if (!pctx.star_expr().isEmpty())
 			throw new UnsupportedStatementException();
 
-		List<Expression> result = new ArrayList<>(ctx.expr().size());
-		if (ctx.expr().size() == 0)
+		List<Expression> result = new ArrayList<>(pctx.expr().size());
+		if (pctx.expr().size() == 0)
 			return result;
-		for (ExprContext e : ctx.expr())
-			result.add(visitExpr(e));
+		for (ExprContext e : pctx.expr())
+			result.add(ctx.expr().visitExpr(e));
 		return result;
 	}
 
 	@Override
 	public Statement visitImport_stmt(
-			Import_stmtContext ctx) {
-		if (ctx.import_from() != null)
-			return visitImport_from(ctx.import_from());
+			Import_stmtContext pctx) {
+		if (pctx.import_from() != null)
+			return visitImport_from(pctx.import_from());
 		else
-			return visitImport_name(ctx.import_name());
+			return visitImport_name(pctx.import_name());
 	}
 
 	@Override
 	public Statement visitImport_name(
-			Import_nameContext ctx) {
+			Import_nameContext pctx) {
 		Map<String, String> libs = new HashMap<>();
-		for (Dotted_as_nameContext single : ctx.dotted_as_names().dotted_as_name()) {
+		for (Dotted_as_nameContext single : pctx.dotted_as_names().dotted_as_name()) {
 			String importedLibrary = dottedNameToString(single.dotted_name());
 			String as = single.NAME() != null ? single.NAME().getSymbol().getText() : null;
 			libs.put(importedLibrary, as);
@@ -790,107 +824,115 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 		Map.Entry<String, String> binding = libs.entrySet().stream().findFirst().orElse(null);
 		if (binding != null) {
 			String boundName = binding.getValue() == null ? binding.getKey() : binding.getValue();
-			declareNameInCurrentScope(boundName);
+			ctx.declareNameInCurrentScope(boundName);
 		}
 
 		String moduleName = libs.keySet().stream().findFirst().get();
-		ModuleUnit module = this.ctx.importManager().importModule(moduleName);
-		return new ImportModule(this.ctx.currentCFG(), getLocation(ctx), moduleName, module);
+		ModuleUnit module = ctx.importManager().importModule(moduleName);
+		return new ImportModule(ctx.currentCFG(), support.getLocation(pctx), moduleName, module);
 	}
 
 	@Override
 	public Statement visitImport_from(
-			Import_fromContext ctx) {
-		int dotCount = ctx.DOT().size() + ctx.ELLIPSIS().size() * 3;
+			Import_fromContext pctx) {
+		int dotCount = pctx.DOT().size() + pctx.ELLIPSIS().size() * 3;
 		String name;
 		if (dotCount == 0) {
-			name = ctx.dotted_name() != null ? dottedNameToString(ctx.dotted_name()) : ".";
+			name = pctx.dotted_name() != null ? dottedNameToString(pctx.dotted_name()) : ".";
 		} else {
 			name = resolveRelativeImport(dotCount,
-					ctx.dotted_name() != null ? dottedNameToString(ctx.dotted_name()) : null);
+					pctx.dotted_name() != null ? dottedNameToString(pctx.dotted_name()) : null);
 		}
 
-		if (ctx.import_as_names() == null) {
-			LibrarySpecificationProvider.importLibrary(this.ctx.program(), name, init);
+		if (pctx.import_as_names() == null) {
+			LibrarySpecificationProvider.importLibrary(ctx.program(), name, ctx.init());
 			PyCFG pyCFG = new PyCFG(
-					new CodeMemberDescriptor(getLocation(ctx), this.ctx.currentUnit(), false, "__init__"));
+					new CodeMemberDescriptor(support.getLocation(pctx), ctx.currentUnit(), false, "__init__"));
 			pyCFG.addNode(new NoOp(pyCFG, SyntheticLocation.INSTANCE));
-			return new ImportModule(this.ctx.currentCFG(), getLocation(ctx), name,
+			return new ImportModule(ctx.currentCFG(), support.getLocation(pctx), name,
 					(ModuleUnit) PyModuleType.lookup(name).getUnit());
 		}
-		Map<String, String> components = new java.util.LinkedHashMap<>();
-		for (Import_as_nameContext single : ctx.import_as_names().import_as_name()) {
+		Map<String, String> components = new LinkedHashMap<>();
+		for (Import_as_nameContext single : pctx.import_as_names().import_as_name()) {
 			String importedComponent = single.NAME(0).getSymbol().getText();
 			String alias = single.NAME().size() == 2 ? single.NAME(1).getSymbol().getText() : importedComponent;
 			components.put(importedComponent, alias);
-			this.ctx.imports().put(alias, name + "." + importedComponent);
-			declareNameInCurrentScope(alias);
+			ctx.imports().put(alias, name + "." + importedComponent);
+			ctx.declareNameInCurrentScope(alias);
 		}
-		this.ctx.importManager().importModule(name);
+		ctx.importManager().importModule(name);
 
 		for (Map.Entry<String, String> entry : components.entrySet()) {
 			String qualifiedName = name + "." + entry.getKey();
-			if (this.ctx.importManager().canResolveModule(qualifiedName))
-				this.ctx.importManager().importModule(qualifiedName);
+			if (ctx.importManager().canResolveModule(qualifiedName))
+				ctx.importManager().importModule(qualifiedName);
 		}
 
-		ModuleUnit currentModuleUnit = (this.ctx.currentUnit() instanceof ModuleUnit pmu) ? pmu : null;
+		ModuleUnit currentModuleUnit = (ctx.currentUnit() instanceof ModuleUnit pmu) ? pmu : null;
 		List<Pair<String, String>> importPairs = components.entrySet().stream()
 				.map(e -> Pair.of(e.getValue(), e.getKey()))
-				.collect(java.util.stream.Collectors.toList());
-		return new FromImport(this.ctx.currentCFG(), getLocation(ctx), currentModuleUnit, name, importPairs);
+				.collect(Collectors.toList());
+		return new FromImport(ctx.currentCFG(), support.getLocation(pctx), currentModuleUnit, name, importPairs);
 	}
 
 	@Override
 	public Object visitImport_as_name(
-			Import_as_nameContext ctx) {
+			Import_as_nameContext pctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Object visitDotted_as_name(
-			Dotted_as_nameContext ctx) {
+			Dotted_as_nameContext pctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Object visitImport_as_names(
-			Import_as_namesContext ctx) {
+			Import_as_namesContext pctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Object visitDotted_as_names(
-			Dotted_as_namesContext ctx) {
+			Dotted_as_namesContext pctx) {
 		throw new UnsupportedStatementException();
 	}
 
 	@Override
 	public Expression visitDotted_name(
-			Dotted_nameContext ctx) {
-		if (ctx.NAME().isEmpty()) {
-			return unsupported(ctx, "At least one name expected in Dotted_nameContext");
+			Dotted_nameContext pctx) {
+		if (pctx.NAME().isEmpty()) {
+			return support.unsupported(pctx, "At least one name expected in Dotted_nameContext");
 		}
 		Expression result = null;
 		String targetName = null;
-		for (int i = 0; i < ctx.NAME().size(); i++) {
-			TerminalNode name = ctx.NAME(i);
+		for (int i = 0; i < pctx.NAME().size(); i++) {
+			TerminalNode name = pctx.NAME(i);
 			if (targetName != null) {
-				result = new AttributeAccess(this.ctx.currentCFG(), getLocation(ctx), result, name.getText());
+				result = new AttributeAccess(ctx.currentCFG(), support.getLocation(pctx), result, name.getText());
 			} else {
-				result = makeRef(name.getText(), getLocation(ctx));
+				result = support.makeRef(name.getText(), support.getLocation(pctx));
 			}
 			targetName = name.getText();
 		}
 		return result;
 	}
 
+	// === helpers used by this class and other sibling visitors ===
+
+	public String dottedNameToString(
+			Dotted_nameContext dotted_name) {
+		return dotted_name.NAME().stream().map(t -> t.getSymbol().getText())
+				.collect(Collectors.joining("."));
+	}
+
 	private String resolveRelativeImport(
 			int dotCount,
 			String dottedName) {
-		String moduleName = (this.ctx.currentModule() != null) ? this.ctx.currentModule().getName() : "__main__";
+		String moduleName = (ctx.currentModule() != null) ? ctx.currentModule().getName() : "__main__";
 		String packageName;
-		if (currentFileIsPackage) {
+		if (ctx.currentFileIsPackage()) {
 			packageName = moduleName;
 		} else {
 			int lastDot = moduleName.lastIndexOf('.');
@@ -899,11 +941,11 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 		// Entry-file fallback: the top-level main file carries the hardcoded
 		// module name "__main__" and therefore has no package prefix to pull
 		// from. When it lives inside a package (baseDir has __init__.py), the
-		// import manager has already detected the dotted package name from
-		// the directory chain — use it as the anchor, matching Python's
+		// import manager has already detected the dotted package name from the
+		// directory chain — use it as the anchor, matching Python's
 		// __package__ behavior for `python -m <pkg>.<mod>` execution.
 		if (packageName.isEmpty()) {
-			String detected = this.ctx.importManager().getPackageName();
+			String detected = ctx.importManager().getPackageName();
 			if (detected != null)
 				packageName = detected;
 		}
@@ -917,16 +959,10 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 		return anchor.isEmpty() ? dottedName : anchor + "." + dottedName;
 	}
 
-	protected String dottedNameToString(
-			Dotted_nameContext dotted_name) {
-		return dotted_name.NAME().stream().map(t -> t.getSymbol().getText())
-				.collect(java.util.stream.Collectors.joining("."));
-	}
-
-	private void declareAssignedNames(
+	public void declareAssignedNames(
 			Expression target) {
 		if (target instanceof VariableRef var) {
-			declareNameInCurrentScope(var.getName());
+			ctx.declareNameInCurrentScope(var.getName());
 			return;
 		}
 
@@ -938,63 +974,58 @@ public abstract class PyStatementVisitorBase extends PyExpressionVisitorBase {
 				declareAssignedNames(sub);
 	}
 
-	private Expression scopeAssignmentTarget(
+	public Expression scopeAssignmentTarget(
 			Expression target) {
 		if (target instanceof AttributeAccess attr) {
 			Expression receiver = attr.getSubExpression();
 			if (receiver instanceof VariableRef var) {
-				if (isNameInVisibleLocalScope(var.getName()))
-					return new PyAccessInstanceGlobal(this.ctx.currentCFG(), attr.getLocation(), receiver,
+				if (ctx.isNameInVisibleLocalScope(var.getName()))
+					return new PyAccessInstanceGlobal(ctx.currentCFG(), attr.getLocation(), receiver,
 							attr.getTarget());
-				// Try to resolve receiver as a CompilationUnit (e.g. Class.Y =
-				// 100)
 				String receiverName = var.getName();
-				String fqName = this.ctx.imports().getOrDefault(receiverName,
-						this.ctx.currentModule() != null ? this.ctx.currentModule().getName() + "." + receiverName
+				String fqName = ctx.imports().getOrDefault(receiverName,
+						ctx.currentModule() != null ? ctx.currentModule().getName() + "." + receiverName
 								: null);
 				if (fqName != null) {
-					for (Unit u : this.ctx.program().getUnits()) {
+					for (Unit u : ctx.program().getUnits()) {
 						if (u instanceof CompilationUnit cu && cu.getName().equals(fqName))
-							return makeScopedAttributeRef(cu, attr.getTarget(), attr.getLocation());
+							return support.makeScopedAttributeRef(cu, attr.getTarget(), attr.getLocation());
 					}
 				}
 				// Receiver is not a known class — treat as module-level
-				// instance
-				// variable. Wrap it in a scoped ref so the heap domain can
-				// resolve it to the correct heap location.
-				if (this.ctx.currentModule() != null) {
-					Expression scopedReceiver = makeScopedAttributeRef(this.ctx.currentModule(), receiverName,
+				// instance variable. Wrap it in a scoped ref so the heap
+				// domain can resolve it to the correct heap location.
+				if (ctx.currentModule() != null) {
+					Expression scopedReceiver = support.makeScopedAttributeRef(ctx.currentModule(), receiverName,
 							var.getLocation());
-					return new PyAccessInstanceGlobal(this.ctx.currentCFG(), attr.getLocation(), scopedReceiver,
+					return new PyAccessInstanceGlobal(ctx.currentCFG(), attr.getLocation(), scopedReceiver,
 							attr.getTarget());
 				}
 			}
 			if (receiver instanceof PythonScopedAttributeAccessRef scopedRef) {
 				String receiverName = scopedRef.getTarget().getName();
-				String fqName = this.ctx.imports().getOrDefault(receiverName,
-						this.ctx.currentModule() != null ? this.ctx.currentModule().getName() + "." + receiverName
+				String fqName = ctx.imports().getOrDefault(receiverName,
+						ctx.currentModule() != null ? ctx.currentModule().getName() + "." + receiverName
 								: null);
 				if (fqName != null) {
-					for (Unit u : this.ctx.program().getUnits()) {
+					for (Unit u : ctx.program().getUnits()) {
 						if (u instanceof CompilationUnit cu && cu.getName().equals(fqName))
-							return makeScopedAttributeRef(cu, attr.getTarget(), attr.getLocation());
+							return support.makeScopedAttributeRef(cu, attr.getTarget(), attr.getLocation());
 					}
 				}
-				// Receiver is an instance variable -> instance attribute heap
-				// write
-				return new PyAccessInstanceGlobal(this.ctx.currentCFG(), attr.getLocation(), receiver,
+				return new PyAccessInstanceGlobal(ctx.currentCFG(), attr.getLocation(), receiver,
 						attr.getTarget());
 			}
 			return target;
 		}
 
 		if (target instanceof VariableRef var) {
-			if (isInsideLocalScope() && !(this.ctx.currentUnit() instanceof ClassUnit))
+			if (ctx.isInsideLocalScope() && !(ctx.currentUnit() instanceof ClassUnit))
 				return var;
-			if (this.ctx.currentUnit() instanceof CompilationUnit cu)
-				return makeScopedAttributeRef(cu, var.getName(), var.getLocation());
-			if (this.ctx.currentModule() != null)
-				return makeScopedAttributeRef(this.ctx.currentModule(), var.getName(), var.getLocation());
+			if (ctx.currentUnit() instanceof CompilationUnit cu)
+				return support.makeScopedAttributeRef(cu, var.getName(), var.getLocation());
+			if (ctx.currentModule() != null)
+				return support.makeScopedAttributeRef(ctx.currentModule(), var.getName(), var.getLocation());
 			return var;
 		}
 

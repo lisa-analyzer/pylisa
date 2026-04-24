@@ -20,7 +20,7 @@ final class UnsoundnessCatalogTest {
 
 	private static final Logger LOG = LogManager.getLogger(UnsoundnessCatalogTest.class);
 
-	private static final String FRONTEND_LOGGER = "it.unive.pylisa.frontend.PyFrontendBase";
+	private static final String FRONTEND_LOGGER = "it.unive.pylisa.frontend";
 
 	@Test
 	void async_def_is_treated_as_def_with_warning() throws Exception {
