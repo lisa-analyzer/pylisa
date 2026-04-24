@@ -55,13 +55,48 @@ public final class FrontendTestSupport {
 	public static ParseResult parseSnippet(
 			String snippet)
 			throws Exception {
+		return parseSnippetWithFrontend(snippet).result();
+	}
+
+	/**
+	 * Like {@link #parseSnippet(String)} but also exposes the
+	 * {@link PyFrontend} instance so callers can inspect its
+	 * {@link DiagnosticReporter} after the parse completes. Introduced in Chunk
+	 * 6 so {@code UnsoundnessCatalogTest} can verify diagnostic events
+	 * structurally in addition to scraping logs.
+	 */
+	public static ParseWithFrontend parseSnippetWithFrontend(
+			String snippet)
+			throws Exception {
 		Objects.requireNonNull(snippet, "snippet");
 		Path tmp = Files.createTempFile("pylisa-test-", ".py");
 		tmp.toFile().deleteOnExit();
 		Files.writeString(tmp, snippet, StandardOpenOption.TRUNCATE_EXISTING);
 		LOG.debug("parsing snippet at {} ({} chars)", tmp, snippet.length());
 		PyFrontend fe = new PyFrontend(tmp.toString(), false);
-		return new ParseResult(fe.toLiSAProgram(false), tmp);
+		Program program = fe.toLiSAProgram(false);
+		return new ParseWithFrontend(new ParseResult(program, tmp), fe);
+	}
+
+	/**
+	 * Materialises a snippet to a temp file and returns the path without
+	 * parsing it. Used by tests that drive {@link PyFrontend} themselves — e.g.
+	 * strict-mode tests that expect the parse to throw.
+	 */
+	public static Path writeTempSnippet(
+			String snippet)
+			throws IOException {
+		Objects.requireNonNull(snippet, "snippet");
+		Path tmp = Files.createTempFile("pylisa-test-", ".py");
+		tmp.toFile().deleteOnExit();
+		Files.writeString(tmp, snippet, StandardOpenOption.TRUNCATE_EXISTING);
+		return tmp;
+	}
+
+	/** Result of {@link #parseSnippetWithFrontend(String)}. */
+	public record ParseWithFrontend(
+			ParseResult result,
+			PyFrontend frontend) {
 	}
 
 	/**

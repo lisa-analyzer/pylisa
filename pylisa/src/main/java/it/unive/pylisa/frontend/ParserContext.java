@@ -55,6 +55,7 @@ public final class ParserContext {
 	private String filePath;
 	private boolean currentFileIsPackage;
 	private boolean continueOnUnsupportedStatement;
+	private DiagnosticReporter reporter;
 
 	private Program program;
 	private PythonModuleImportManager importManager;
@@ -99,6 +100,20 @@ public final class ParserContext {
 	public void continueOnUnsupportedStatement(
 			boolean v) {
 		this.continueOnUnsupportedStatement = v;
+	}
+
+	/**
+	 * Returns the structured diagnostic sink used by the frontend. The reporter
+	 * is installed by {@link PyFrontend} during construction and must be
+	 * non-null before any visitor runs.
+	 */
+	public DiagnosticReporter reporter() {
+		return reporter;
+	}
+
+	public void reporter(
+			DiagnosticReporter r) {
+		this.reporter = r;
 	}
 
 	// === parser state fields ===

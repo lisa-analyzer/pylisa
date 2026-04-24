@@ -86,11 +86,17 @@ public final class ParserSupport {
 		return new SourceCodeLocation(source, getLine(pctx), getCol(pctx));
 	}
 
-	// === diagnostics (will move to DiagnosticReporter in Chunk 6) ===
+	// === diagnostics ===
 
 	public <T> T unsupported(
 			ParserRuleContext pctx,
 			String description) {
+		SourceCodeLocation loc = getLocation(pctx);
+		ctx.reporter().report(
+				DiagnosticReporter.Severity.UNSUPPORTED,
+				loc,
+				featureLabel(description, pctx),
+				description);
 		throw new UnsupportedStatementException(
 				description + " at line " + getLine(pctx) + " of " + ctx.filePath());
 	}
@@ -98,8 +104,30 @@ public final class ParserSupport {
 	public void unsound(
 			ParserRuleContext pctx,
 			String description) {
-		LOG.warn(description + " (unsound translation) at line "
-				+ getLine(pctx) + " of " + ctx.filePath());
+		SourceCodeLocation loc = getLocation(pctx);
+		ctx.reporter().report(
+				DiagnosticReporter.Severity.UNSOUND,
+				loc,
+				featureLabel(description, pctx),
+				description + " (unsound translation) at line "
+						+ getLine(pctx) + " of " + ctx.filePath());
+	}
+
+	/**
+	 * Extracts a short, lower-cased feature label from a diagnostic
+	 * description. Used so callers can filter events by category (e.g. "async",
+	 * "return") without coupling to full message wording. Falls back to the
+	 * ANTLR rule-context class name when the description is empty.
+	 */
+	private static String featureLabel(
+			String description,
+			ParserRuleContext pctx) {
+		if (description != null && !description.isBlank()) {
+			String first = description.trim().split("\\s+", 2)[0];
+			if (!first.isEmpty())
+				return first.toLowerCase();
+		}
+		return pctx != null ? pctx.getClass().getSimpleName() : "unknown";
 	}
 
 	// === name resolution ===

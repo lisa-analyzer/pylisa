@@ -75,34 +75,35 @@ public final class PyFrontend {
 	private final String filePath;
 	private final boolean notebook;
 	private final List<Integer> cellOrder;
+	private final boolean strict;
 
 	private CFG init;
 
 	public PyFrontend(
 			String filePath,
 			boolean notebook) {
-		this(filePath, notebook, Collections.emptyList(), null);
+		this(filePath, notebook, Collections.emptyList(), null, false);
 	}
 
 	public PyFrontend(
 			String filePath,
 			boolean notebook,
 			Integer... cellOrder) {
-		this(filePath, notebook, List.of(cellOrder), null);
+		this(filePath, notebook, List.of(cellOrder), null, false);
 	}
 
 	public PyFrontend(
 			String filePath,
 			boolean notebook,
 			List<Integer> cellOrder) {
-		this(filePath, notebook, cellOrder, null);
+		this(filePath, notebook, cellOrder, null, false);
 	}
 
 	public PyFrontend(
 			String filePath,
 			boolean notebook,
 			String sourceRoot) {
-		this(filePath, notebook, Collections.emptyList(), sourceRoot);
+		this(filePath, notebook, Collections.emptyList(), sourceRoot, false);
 	}
 
 	public PyFrontend(
@@ -110,11 +111,33 @@ public final class PyFrontend {
 			boolean notebook,
 			List<Integer> cellOrder,
 			String sourceRoot) {
+		this(filePath, notebook, cellOrder, sourceRoot, false);
+	}
+
+	/**
+	 * Returns a {@link PyFrontend} in strict mode: any {@code UNSOUND}
+	 * diagnostic emitted during parsing is promoted to a
+	 * {@link DiagnosticReporter.StrictModeViolation}. Useful for regression
+	 * tests that want to guarantee no silent approximations occur.
+	 */
+	public static PyFrontend strict(
+			String filePath) {
+		return new PyFrontend(filePath, false, Collections.emptyList(), null, true);
+	}
+
+	public PyFrontend(
+			String filePath,
+			boolean notebook,
+			List<Integer> cellOrder,
+			String sourceRoot,
+			boolean strict) {
 		this.filePath = filePath;
 		this.notebook = notebook;
 		this.cellOrder = cellOrder;
+		this.strict = strict;
 
 		this.ctx = new ParserContext();
+		this.ctx.reporter(new DiagnosticReporter(strict));
 		this.ctx.filePath(filePath);
 		this.ctx.currentFileIsPackage(filePath != null && filePath.endsWith("__init__.py"));
 
@@ -148,6 +171,22 @@ public final class PyFrontend {
 
 	public String getFilePath() {
 		return filePath;
+	}
+
+	/**
+	 * Returns the diagnostic reporter associated with this frontend instance.
+	 * Tests and tooling can inspect {@link DiagnosticReporter#events()} after
+	 * {@link #toLiSAProgram(boolean)} completes to see what the parse produced.
+	 */
+	public DiagnosticReporter reporter() {
+		return ctx.reporter();
+	}
+
+	/**
+	 * Returns {@code true} iff this frontend was constructed in strict mode.
+	 */
+	public boolean strict() {
+		return strict;
 	}
 
 	public Program toLiSAProgram() throws IOException, AnalysisSetupException {
