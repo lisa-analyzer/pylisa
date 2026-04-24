@@ -109,6 +109,9 @@ spotless {
 test {
     useJUnitPlatform()
     maxHeapSize = "4g"
+    // Forward lisa.* system properties (e.g. lisa.cron.update=true) from the
+    // Gradle invocation to the test JVM so tests that read them pick them up.
+    systemProperties System.properties.findAll { k, v -> k.toString().startsWith("lisa.") }
 }
 
 spotlessJava {

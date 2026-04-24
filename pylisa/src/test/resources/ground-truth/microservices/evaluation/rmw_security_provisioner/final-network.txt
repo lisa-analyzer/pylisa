@@ -1,0 +1,10 @@
+COUNT: 6
+GET: 3
+	/ca/cert: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_security_provisioner/rmw_security_provisioner/main.py:54:0
+	/enclaves: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_security_provisioner/rmw_security_provisioner/main.py:54:0
+	/health: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_security_provisioner/rmw_security_provisioner/main.py:54:0
+POST: 2
+	/ca/rotate: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_security_provisioner/rmw_security_provisioner/main.py:54:0
+	/provision: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_security_provisioner/rmw_security_provisioner/main.py:54:0
+DELETE: 1
+	/enclaves/{node_path:path}: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_security_provisioner/rmw_security_provisioner/main.py:54:0

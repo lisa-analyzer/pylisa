@@ -1,0 +1,11 @@
+COUNT: 8
+GET: 7
+	/api/v1/health_check: py-testcases/microservices/evaluation/FastVector/main.py:19:0
+	/api/v1/table/tables.json: py-testcases/microservices/evaluation/FastVector/routers/table.py:5:19
+	/api/v1/table/{database}/{scheme}/{table}.json: py-testcases/microservices/evaluation/FastVector/routers/table.py:5:19
+	/api/v1/tiles/cache_size: py-testcases/microservices/evaluation/FastVector/routers/tiles.py:7:19
+	/api/v1/tiles/{database}/{scheme}/{table}.json: py-testcases/microservices/evaluation/FastVector/routers/table.py:5:19
+	/api/v1/tiles/{database}/{scheme}/{table}/{z}/{x}/{y}.pbf: py-testcases/microservices/evaluation/FastVector/routers/tiles.py:7:19
+	/viewer/{database}/{scheme}/{table_name}: py-testcases/microservices/evaluation/FastVector/main.py:19:0
+DELETE: 1
+	/api/v1/tiles/cache: py-testcases/microservices/evaluation/FastVector/routers/tiles.py:7:19

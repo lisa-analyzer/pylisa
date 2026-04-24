@@ -70,7 +70,7 @@ public class FinalNetworkMermaidResults<A extends AbstractLattice<A>, D extends 
 		// Sibling plain-text Mermaid source so that very large graphs (which
 		// the in-browser renderer may refuse to draw) can be rendered offline
 		// at arbitrary resolution via the Mermaid CLI, e.g.
-		//   mmdc -i final-network.mmd -o final-network.pdf
+		// mmdc -i final-network.mmd -o final-network.pdf
 		fileManager.mkOutputFile("final-network.mmd", writer -> writer.write(mermaid));
 		fileManager.usedHtmlViewer();
 	}

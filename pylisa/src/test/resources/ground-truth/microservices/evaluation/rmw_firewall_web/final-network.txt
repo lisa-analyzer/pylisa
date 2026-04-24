@@ -1,0 +1,29 @@
+COUNT: 24
+GET: 15
+	/api/agents: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/events: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/graph: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/network: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/nodes: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/nodes/{ns}/{name}: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/policies: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/policies/default-decision: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/policies/{topic_name:path}: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/security/ca/cert: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/security/enclaves: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/security/health: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/events/log-stream: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/events/stream: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/{full_path:path}: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+POST: 4
+	/api/policies: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/policies/baseline: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/security/provision: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/auth/login: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+PUT: 3
+	/api/policies: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/policies/default-decision: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/policies/{topic_name:path}: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+DELETE: 2
+	/api/policies/{topic_name:path}: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0
+	/api/security/enclaves/{enclave_path:path}: /Users/giacomo/02-work/01-ros2-rmw/src/rmw_firewall_web/rmw_firewall_web/main.py:53:0

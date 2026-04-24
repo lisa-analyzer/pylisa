@@ -718,43 +718,9 @@ public class NetworkMermaidSerializer {
 	private static String buildEndpointListHtml(
 			SerializableObject netObj,
 			SerializableValue handlerMapVal) {
-		// Build lookup: prettyEndpointKey (path segment from handler map) →
-		// handlers
 		Map<String, List<String>> keyToHandlers = new LinkedHashMap<>();
-		if (handlerMapVal instanceof SerializableObject) {
-			SerializableObject handlerMapObj = (SerializableObject) handlerMapVal;
-			for (Entry<String, SerializableValue> hmEntry : handlerMapObj.getFields().entrySet()) {
-				// ekStr format:
-				// HTTP: "protocol:role:method:path@siteId"
-				// Other: "protocol:role:path@siteId"
-				String ekStr = hmEntry.getKey();
-				int atIdx = ekStr.indexOf('@');
-				String withoutSite = atIdx > 0 ? ekStr.substring(0, atIdx) : ekStr;
-				int fc = withoutSite.indexOf(':');
-				if (fc < 0)
-					continue;
-				if (!"http".equals(withoutSite.substring(0, fc)))
-					continue;
-				int sc = withoutSite.indexOf(':', fc + 1);
-				if (sc < 0)
-					continue;
-				// For HTTP, there is a third colon: "http:role:method:path"
-				int tc = withoutSite.indexOf(':', sc + 1);
-				String methodPart;
-				String keyPath;
-				if (tc >= 0) {
-					methodPart = withoutSite.substring(sc + 1, tc);
-					keyPath = prettyValue(withoutSite.substring(tc + 1));
-				} else {
-					// Fallback: old format without method
-					methodPart = "";
-					keyPath = prettyValue(withoutSite.substring(sc + 1));
-				}
-				String mapKey = methodPart.isEmpty() ? keyPath : methodPart + ":" + keyPath;
-				keyToHandlers.computeIfAbsent(mapKey, k -> new ArrayList<>())
-						.addAll(extractStringElements(hmEntry.getValue()));
-			}
-		}
+		Map<String, String> keyToLocation = new LinkedHashMap<>();
+		buildHttpHandlerMaps(handlerMapVal, keyToHandlers, keyToLocation);
 
 		// Collect endpoint rows via recursive traversal of the innerNodes
 		// hierarchy
@@ -786,7 +752,8 @@ public class NetworkMermaidSerializer {
 		List<String[]> rows = new ArrayList<>();
 		for (String siteId : sites.keySet())
 			if (!childSiteIds.contains(siteId))
-				collectEndpointRows(siteId, "", sites, keyToHandlers, rows, new LinkedHashSet<>());
+				collectEndpointRows(siteId, "", sites, keyToHandlers, keyToLocation, rows,
+						new LinkedHashSet<>());
 
 		if (rows.isEmpty())
 			return "";
@@ -821,6 +788,59 @@ public class NetworkMermaidSerializer {
 		return sb.toString();
 	}
 
+	/**
+	 * Populates {@code keyToHandlers} and {@code keyToLocation} lookups from
+	 * the serialised handler map. Keys have the form {@code "METHOD:path"} (or
+	 * {@code "path"} when the method segment is missing). The location value is
+	 * the raw allocation-site ID captured in the {@code EndpointKey} (the part
+	 * after the first {@code '@'}).
+	 */
+	private static void buildHttpHandlerMaps(
+			SerializableValue handlerMapVal,
+			Map<String, List<String>> keyToHandlers,
+			Map<String, String> keyToLocation) {
+		if (!(handlerMapVal instanceof SerializableObject))
+			return;
+		SerializableObject handlerMapObj = (SerializableObject) handlerMapVal;
+		for (Entry<String, SerializableValue> hmEntry : handlerMapObj.getFields().entrySet()) {
+			// ekStr format:
+			// HTTP: "protocol:role:method:path@siteId"
+			// Other: "protocol:role:path@siteId"
+			String ekStr = hmEntry.getKey();
+			int atIdx = ekStr.indexOf('@');
+			String withoutSite = atIdx > 0 ? ekStr.substring(0, atIdx) : ekStr;
+			String siteId = atIdx > 0 ? ekStr.substring(atIdx + 1) : "";
+			int fc = withoutSite.indexOf(':');
+			if (fc < 0)
+				continue;
+			if (!"http".equals(withoutSite.substring(0, fc)))
+				continue;
+			int sc = withoutSite.indexOf(':', fc + 1);
+			if (sc < 0)
+				continue;
+			// For HTTP, there is a third colon: "http:role:method:path"
+			int tc = withoutSite.indexOf(':', sc + 1);
+			String methodPart;
+			String keyPath;
+			if (tc >= 0) {
+				methodPart = withoutSite.substring(sc + 1, tc);
+				keyPath = prettyValue(withoutSite.substring(tc + 1));
+			} else {
+				// Fallback: old format without method
+				methodPart = "";
+				keyPath = prettyValue(withoutSite.substring(sc + 1));
+			}
+			String mapKey = methodPart.isEmpty() ? keyPath : methodPart + ":" + keyPath;
+			keyToHandlers.computeIfAbsent(mapKey, k -> new ArrayList<>())
+					.addAll(extractStringElements(hmEntry.getValue()));
+			// First write wins: the handler map can have several entries for
+			// the
+			// same logical endpoint if the router was allocated at multiple
+			// sites, but we only display one location.
+			keyToLocation.putIfAbsent(mapKey, siteId);
+		}
+	}
+
 	private static String th(
 			String label) {
 		return "<th style=\"text-align:left;padding:4px 8px;background:#ecf0f1;border:1px solid #dfe6e9;\">"
@@ -831,8 +851,8 @@ public class NetworkMermaidSerializer {
 	 * Builds the per-HTTP-method summary block rendered above the endpoint
 	 * table. Counts are taken from the collected endpoint rows (first column)
 	 * so the summary stays in sync with whatever the endpoint table shows.
-	 * Methods are listed in a canonical order; any method seen in rows but
-	 * not in that order is appended alphabetically afterwards under "Other".
+	 * Methods are listed in a canonical order; any method seen in rows but not
+	 * in that order is appended alphabetically afterwards under "Other".
 	 */
 	private static String buildEndpointSummaryHtml(
 			List<String[]> rows) {
@@ -874,13 +894,18 @@ public class NetworkMermaidSerializer {
 	/**
 	 * Recursively collects endpoint rows for a site and all its inner
 	 * (included) child sites, accumulating the full prefix from the root down.
+	 * Each collected row is {@code {method, fullPath, handlers, location}}
+	 * where {@code location} is the endpoint's allocation-site ID (may be empty
+	 * if no handler-map entry matches).
 	 *
 	 * @param siteId        the current site to process
 	 * @param prefixSoFar   accumulated path prefix from the parent (already
 	 *                          includes basePath of all ancestors + include
 	 *                          prefixes)
 	 * @param sites         all HTTP sites keyed by allocation-site ID
-	 * @param keyToHandlers handler lookup
+	 * @param keyToHandlers handler lookup by "METHOD:path" / "path"
+	 * @param keyToLocation allocation-site lookup by "METHOD:path" / "path"
+	 *                          (may be {@code null})
 	 * @param rows          output accumulator
 	 * @param visited       cycle guard
 	 */
@@ -889,6 +914,7 @@ public class NetworkMermaidSerializer {
 			String prefixSoFar,
 			Map<String, SerializableObject> sites,
 			Map<String, List<String>> keyToHandlers,
+			Map<String, String> keyToLocation,
 			List<String[]> rows,
 			Set<String> visited) {
 		if (!visited.add(siteId))
@@ -956,7 +982,13 @@ public class NetworkMermaidSerializer {
 				List<String> handlers = keyToHandlers.getOrDefault(mapKey,
 						keyToHandlers.getOrDefault(keyPathPretty,
 								keyToHandlers.getOrDefault(epPath, List.of())));
-				rows.add(new String[] { methodFromKey, fullPath, String.join(", ", handlers) });
+				String location = keyToLocation == null ? ""
+						: keyToLocation.getOrDefault(mapKey,
+								keyToLocation.getOrDefault(keyPathPretty,
+										keyToLocation.getOrDefault(epPath, "")));
+				rows.add(new String[] {
+						methodFromKey, fullPath, String.join(", ", handlers), location
+				});
 			}
 		}
 
@@ -973,8 +1005,8 @@ public class NetworkMermaidSerializer {
 				if (innerEntry.getValue() instanceof SerializableArray) {
 					for (SerializableValue sv : ((SerializableArray) innerEntry.getValue()).getElements()) {
 						Set<String> childVisited = new LinkedHashSet<>(visited);
-						collectEndpointRows(sv.toString(), childPrefixSoFar, sites, keyToHandlers, rows,
-								childVisited);
+						collectEndpointRows(sv.toString(), childPrefixSoFar, sites, keyToHandlers,
+								keyToLocation, rows, childVisited);
 					}
 				}
 			}
@@ -1014,5 +1046,158 @@ public class NetworkMermaidSerializer {
 		if (s == null)
 			return "";
 		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+	}
+
+	// -----------------------------------------------------------------------
+	// Plain-text network dump
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Produces a plain-text dump of the HTTP endpoints in the network state.
+	 * The output is a grand total followed by one section per method, each
+	 * listing the endpoint paths and their allocation-site locations:
+	 *
+	 * <pre>
+	 * COUNT: 2
+	 * GET: 1
+	 * 	/api/v1: 'app.py':10:5
+	 * POST: 1
+	 * 	/api/v1/customer: 'app.py':12:5
+	 * </pre>
+	 *
+	 * @param nodeDesc the node description to convert
+	 *
+	 * @return the plain-text dump
+	 */
+	public static String toNetworkTxt(
+			SerializableNodeDescription nodeDesc) {
+		if (nodeDesc == null)
+			return "COUNT: 0\n";
+		SerializableValue description = nodeDesc.getDescription();
+		if (!(description instanceof SerializableObject))
+			return "COUNT: 0\n";
+		SerializableObject topObj = (SerializableObject) description;
+		SerializableValue normalVal = topObj.getFields().get("normal");
+		if (!(normalVal instanceof SerializableObject))
+			return "COUNT: 0\n";
+		return toNetworkTxtFromState(((SerializableObject) normalVal).getFields().get("state"));
+	}
+
+	/**
+	 * Variant of {@link #toNetworkTxt(SerializableNodeDescription)} that
+	 * accepts a serialised {@code NetworkAbstractState} directly.
+	 *
+	 * @param stateVal the serialised state value
+	 *
+	 * @return the plain-text dump
+	 */
+	public static String toNetworkTxtFromState(
+			SerializableValue stateVal) {
+		if (!(stateVal instanceof SerializableObject))
+			return "COUNT: 0\n";
+		SerializableObject stateObj = (SerializableObject) stateVal;
+		SerializableValue netStateVal = stateObj.getFields().get("Network State");
+		if (!(netStateVal instanceof SerializableObject))
+			return "COUNT: 0\n";
+		SerializableObject netObj = (SerializableObject) netStateVal;
+		if (netObj.getFields().isEmpty())
+			return "COUNT: 0\n";
+		return buildNetworkTxt(netObj, stateObj.getFields().get("Handler Map"));
+	}
+
+	private static String buildNetworkTxt(
+			SerializableObject netObj,
+			SerializableValue handlerMapVal) {
+		Map<String, List<String>> keyToHandlers = new LinkedHashMap<>();
+		Map<String, String> keyToLocation = new LinkedHashMap<>();
+		buildHttpHandlerMaps(handlerMapVal, keyToHandlers, keyToLocation);
+
+		SerializableValue httpVal = netObj.getFields().get("http");
+		if (!(httpVal instanceof SerializableObject))
+			return "COUNT: 0\n";
+		SerializableObject httpObj = (SerializableObject) httpVal;
+
+		Map<String, SerializableObject> sites = new LinkedHashMap<>();
+		for (Entry<String, SerializableValue> e : httpObj.getFields().entrySet())
+			if (e.getValue() instanceof SerializableObject)
+				sites.put(e.getKey(), (SerializableObject) e.getValue());
+
+		Set<String> childSiteIds = new LinkedHashSet<>();
+		for (SerializableObject svcObj : sites.values()) {
+			SerializableValue innerVal = svcObj.getFields().get("innerNodes");
+			if (!(innerVal instanceof SerializableObject))
+				continue;
+			for (Entry<String, SerializableValue> ie : ((SerializableObject) innerVal).getFields().entrySet()) {
+				if (ie.getValue() instanceof SerializableArray)
+					for (SerializableValue sv : ((SerializableArray) ie.getValue()).getElements())
+						childSiteIds.add(sv.toString());
+			}
+		}
+
+		List<String[]> rows = new ArrayList<>();
+		for (String siteId : sites.keySet())
+			if (!childSiteIds.contains(siteId))
+				collectEndpointRows(siteId, "", sites, keyToHandlers, keyToLocation, rows,
+						new LinkedHashSet<>());
+
+		// Group by method, keeping a canonical method order for output
+		// stability
+		Map<String, List<String[]>> byMethod = new LinkedHashMap<>();
+		for (String[] row : rows) {
+			String m = row[0] == null ? "" : row[0].toUpperCase();
+			byMethod.computeIfAbsent(m, k -> new ArrayList<>()).add(row);
+		}
+		// Sort each group's rows by path for stable output
+		for (List<String[]> group : byMethod.values())
+			group.sort((
+					a,
+					b) -> a[1].compareTo(b[1]));
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("COUNT: ").append(rows.size()).append("\n");
+		String[] canonical = { "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD" };
+		for (String m : canonical) {
+			List<String[]> group = byMethod.remove(m);
+			if (group != null)
+				appendMethodSection(sb, m, group);
+		}
+		// Any non-canonical methods (unusual) — append in insertion order
+		for (Entry<String, List<String[]>> e : byMethod.entrySet()) {
+			String label = e.getKey().isEmpty() ? "OTHER" : e.getKey();
+			appendMethodSection(sb, label, e.getValue());
+		}
+		return sb.toString();
+	}
+
+	private static void appendMethodSection(
+			StringBuilder sb,
+			String method,
+			List<String[]> group) {
+		sb.append(method).append(": ").append(group.size()).append("\n");
+		for (String[] row : group) {
+			String path = row[1];
+			String location = row.length > 3 ? prettyLocation(row[3]) : "";
+			sb.append("\t").append(path).append(": ").append(location).append("\n");
+		}
+	}
+
+	/**
+	 * Extracts the file:line:col portion from a raw allocation-site ID. The raw
+	 * form is typically {@code "heap[s]:pp@'file.py':10:5"}; we strip the
+	 * heap/program-point prefix by taking everything after the last {@code '@'}
+	 * and drop surrounding single quotes from the filename.
+	 */
+	static String prettyLocation(
+			String raw) {
+		if (raw == null || raw.isEmpty())
+			return "";
+		int at = raw.lastIndexOf('@');
+		String loc = at >= 0 ? raw.substring(at + 1) : raw;
+		if (loc.length() >= 2 && loc.charAt(0) == '\'') {
+			int end = loc.indexOf('\'', 1);
+			if (end > 0)
+				loc = loc.substring(1, end) + loc.substring(end + 1);
+		}
+		return loc;
 	}
 }

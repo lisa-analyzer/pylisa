@@ -9,21 +9,53 @@ import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.listeners.BottomTopListener;
 import it.unive.lisa.listeners.TracingListener;
-import it.unive.lisa.outputs.HtmlResults;
-import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.analysis.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.types.PythonInferredTypes;
 import it.unive.pylisa.frontend.PyFrontend;
 import it.unive.pylisa.interprocedural.NetworkAwareContextBasedAnalysis;
-import it.unive.pylisa.outputs.ApplicationStructure;
 import it.unive.pylisa.outputs.FinalNetworkMermaidResults;
+import it.unive.pylisa.outputs.FinalNetworkTxtResults;
 import it.unive.pylisa.outputs.MermaidNetworkResults;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 
 public class Evaluation {
+
+	/**
+	 * Root folder under which ground-truth {@code final-network.txt} files are
+	 * checked in, one per evaluation test. The directory ships with the test
+	 * sources so it is not subject to the {@code tests/} gitignore rule.
+	 */
+	private static final Path GROUND_TRUTH_ROOT = Paths.get("src/test/resources/ground-truth");
+
+	/**
+	 * Runs LiSA with the given configuration and then asserts that the
+	 * generated {@code final-network.txt} matches the checked-in ground truth.
+	 * <p>
+	 * The expected path is derived from {@code conf.workdir} by stripping the
+	 * leading {@code tests/} segment; e.g. a workdir of
+	 * {@code tests/microservices/evaluation/FastVector} yields
+	 * {@code src/test/resources/ground-truth/microservices/evaluation/FastVector/final-network.txt}.
+	 * <p>
+	 * Set {@code -Dlisa.cron.update=true} to seed a missing ground-truth or
+	 * regenerate one whose output has intentionally changed.
+	 */
+	private static void runAndAssertNetworkTxt(
+			LiSAConfiguration conf,
+			Program program)
+			throws IOException {
+		LiSA lisa = new LiSA(conf);
+		lisa.run(program);
+		Path actual = Paths.get(conf.workdir, "final-network.txt");
+		String suffix = conf.workdir.startsWith("tests/") ? conf.workdir.substring("tests/".length())
+				: conf.workdir;
+		Path expected = GROUND_TRUTH_ROOT.resolve(suffix).resolve("final-network.txt");
+		FinalNetworkTxtComparer.assertMatches(expected, actual);
+	}
 
 	@Test
 	public void FastVector() throws IOException {
@@ -32,9 +64,7 @@ public class Evaluation {
 				false);
 		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("microservices/evaluation/FastVector");
-		// conf.outputs.add(new FinalNetworkMermaidResults<>());
-		LiSA lisa = new LiSA(conf);
-		lisa.run(program);
+		runAndAssertNetworkTxt(conf, program);
 	}
 
 	@Test
@@ -45,9 +75,7 @@ public class Evaluation {
 				"py-testcases/microservices/evaluation/hexagonal-architecture-python");
 		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("microservices/evaluation/hexagonal-architecture-python");
-		// conf.outputs.add(new FinalNetworkMermaidResults<>());
-		LiSA lisa = new LiSA(conf);
-		lisa.run(program);
+		runAndAssertNetworkTxt(conf, program);
 	}
 
 	@Test
@@ -58,9 +86,7 @@ public class Evaluation {
 				"py-testcases/microservices/evaluation/astrobase");
 		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("microservices/evaluation/astrobase");
-		// conf.outputs.add(new FinalNetworkMermaidResults<>());
-		LiSA lisa = new LiSA(conf);
-		lisa.run(program);
+		runAndAssertNetworkTxt(conf, program);
 	}
 
 	@Test
@@ -71,25 +97,9 @@ public class Evaluation {
 				"py-testcases/microservices/evaluation/dispatch/src/dispatch");
 		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("microservices/evaluation/dispatch");
-		conf.outputs.add(new FinalNetworkMermaidResults<>());
-		conf.outputs.add(new HtmlResults<>(false));
 		conf.asynchronousListeners.add(new TracingListener(TracingListener.TraceLevel.ALL));
 		conf.asynchronousListeners.add(new BottomTopListener());
-		LiSA lisa = new LiSA(conf);
-		lisa.run(program);
-	}
-
-	@Test
-	public void testAir() throws IOException {
-		PyFrontend translator = new PyFrontend(
-				"py-testcases/microservices/evaluation/dispatch/src/air/main.py",
-				false,
-				"py-testcases/microservices/evaluation/dispatch/src/dispatch");
-		Program program = translator.toLiSAProgram(true);
-		LiSAConfiguration conf = getLisaConf("microservices/evaluation/dispatch");
-		// conf.outputs.add(new FinalNetworkMermaidResults<>());
-		LiSA lisa = new LiSA(conf);
-		lisa.run(program);
+		runAndAssertNetworkTxt(conf, program);
 	}
 
 	@Test
@@ -101,8 +111,7 @@ public class Evaluation {
 		LiSAConfiguration conf = getLisaConf("microservices/evaluation/E-commerce-FastAPI");
 		conf.outputs.add(new FinalNetworkMermaidResults<>());
 		conf.outputs.add(new MermaidNetworkResults<>(false));
-		LiSA lisa = new LiSA(conf);
-		lisa.run(program);
+		runAndAssertNetworkTxt(conf, program);
 	}
 
 	@Test
@@ -112,9 +121,7 @@ public class Evaluation {
 				false);
 		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("microservices/evaluation/rmw_firewall_web");
-		conf.outputs.add(new FinalNetworkMermaidResults<>());
-		LiSA lisa = new LiSA(conf);
-		lisa.run(program);
+		runAndAssertNetworkTxt(conf, program);
 	}
 
 	@Test
@@ -124,20 +131,19 @@ public class Evaluation {
 				false);
 		Program program = translator.toLiSAProgram(true);
 		LiSAConfiguration conf = getLisaConf("microservices/evaluation/rmw_security_provisioner");
-		// conf.outputs.add(new FinalNetworkMermaidResults<>());
-		LiSA lisa = new LiSA(conf);
-		lisa.run(program);
+		runAndAssertNetworkTxt(conf, program);
 	}
 
 	public static LiSAConfiguration getLisaConf(
 			String workdir) {
 		LiSAConfiguration conf = new LiSAConfiguration();
 		conf.workdir = "tests/" + workdir;
-		conf.outputs.add(new JSONResults<>());
+		// conf.outputs.add(new JSONResults<>());
 		// conf.outputs.add(new HtmlResults<>(false));
 		// conf.outputs.add(new MermaidNetworkResults<>(false));
-		conf.outputs.add(new ApplicationStructure());
-		conf.outputs.add(new FinalNetworkMermaidResults<>());
+		// conf.outputs.add(new ApplicationStructure());
+		// conf.outputs.add(new FinalNetworkMermaidResults<>());
+		conf.outputs.add(new FinalNetworkTxtResults<>());
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;

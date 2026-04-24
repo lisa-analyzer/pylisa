@@ -1,0 +1,18 @@
+COUNT: 13
+GET: 3
+	/classes: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/gym_classes/controllers.py:9:19
+	/classes/{class_id}: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/gym_classes/controllers.py:9:19
+	/gym-passes/{gym_pass_id}/verification: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/gym_passes/controllers.py:9:19
+POST: 5
+	/classes: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/gym_classes/controllers.py:9:19
+	/clients: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/clients/controllers.py:15:19
+	/clients/exports: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/clients/controllers.py:15:19
+	/gym-passes: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/gym_passes/controllers.py:9:19
+	/gym-passes/{gym_pass_id}/pauses: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/gym_passes/controllers.py:9:19
+PUT: 3
+	/classes/{class_id}: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/gym_classes/controllers.py:9:19
+	/clients/{client_id}: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/clients/controllers.py:15:19
+	/gym-passes/{gym_pass_id}/renewal: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/gym_passes/controllers.py:9:19
+DELETE: 2
+	/classes/{class_id}: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/gym_classes/controllers.py:9:19
+	/clients/{client_id}: py-testcases/microservices/evaluation/hexagonal-architecture-python/src/clients/controllers.py:15:19

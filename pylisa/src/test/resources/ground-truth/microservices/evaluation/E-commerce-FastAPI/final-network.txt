@@ -1,0 +1,18 @@
+COUNT: 13
+GET: 4
+	/products: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
+	/products/{id}: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
+	/users/: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
+	/verification/email: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
+POST: 6
+	/products/: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
+	/token: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
+	/uploadfile/product/{id}: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
+	/uploadfile/profile: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
+	/users/: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
+	/users/me: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
+PUT: 2
+	/business/{id}: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
+	/products/{id}: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
+DELETE: 1
+	/products/{id}: py-testcases/microservices/evaluation/E-commerce-FastAPI/main.py:38:86
