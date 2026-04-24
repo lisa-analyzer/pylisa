@@ -283,7 +283,7 @@ public final class ExpressionVisitor extends Python3ParserBaseVisitor<Object> {
 						Expression key = visitSubscript_(subs.get(0));
 						Expression receiver = access;
 						Expression getitemAttr = new AttributeAccess(
-								ctx.currentCFG(), support.getLocation(trailer), receiver, "__getitem__");
+								ctx.currentCFG(), support.getLocation(trailer), receiver, DunderMethods.GETITEM);
 						access = new FunctionApply(
 								ctx.currentCFG(), support.getLocation(trailer), getitemAttr,
 								new Expression[] { receiver, key }, true);

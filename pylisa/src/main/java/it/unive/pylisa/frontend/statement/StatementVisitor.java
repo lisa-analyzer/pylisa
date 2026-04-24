@@ -89,6 +89,7 @@ import it.unive.pylisa.cfg.statement.PythonScopedAttributeAccessRef;
 import it.unive.pylisa.cfg.type.PyModuleType;
 import it.unive.pylisa.frontend.ParserContext;
 import it.unive.pylisa.frontend.ParserSupport;
+import it.unive.pylisa.frontend.expression.DunderMethods;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.program.ModuleUnit;
 import java.util.ArrayList;
@@ -267,12 +268,12 @@ public final class StatementVisitor extends Python3ParserBaseVisitor<Object> {
 		if (rawTarget instanceof FunctionApply fa
 				&& fa.getSubExpressions().length == 3
 				&& fa.getSubExpressions()[0] instanceof AttributeAccess aa
-				&& "__getitem__".equals(aa.getTarget())) {
+				&& DunderMethods.GETITEM.equals(aa.getTarget())) {
 			Expression receiver = fa.getSubExpressions()[1];
 			Expression key = fa.getSubExpressions()[2];
 			Expression rhs = visitTestlist_star_expr(pctx.testlist_star_expr(1));
 			Expression setitemAttr = new AttributeAccess(
-					ctx.currentCFG(), support.getLocation(pctx), receiver, "__setitem__");
+					ctx.currentCFG(), support.getLocation(pctx), receiver, DunderMethods.SETITEM);
 			return new FunctionApply(ctx.currentCFG(), support.getLocation(pctx), setitemAttr,
 					new Expression[] { receiver, key, rhs }, true);
 		}
@@ -615,14 +616,14 @@ public final class StatementVisitor extends Python3ParserBaseVisitor<Object> {
 				support.getLocation(pctx),
 				CallType.INSTANCE,
 				null,
-				"__lt__",
+				DunderMethods.LT,
 				counter,
 				new UnresolvedCall(
 						ctx.currentCFG(),
 						support.getLocation(pctx),
 						CallType.INSTANCE,
 						null,
-						"__len__",
+						DunderMethods.LEN,
 						LeftToRightEvaluation.INSTANCE,
 						collection));
 		block.addNode(condition);
@@ -636,7 +637,7 @@ public final class StatementVisitor extends Python3ParserBaseVisitor<Object> {
 						support.getLocation(pctx),
 						CallType.INSTANCE,
 						null,
-						"__getitem__",
+						DunderMethods.GETITEM,
 						LeftToRightEvaluation.INSTANCE,
 						counter_pars));
 		block.addNode(element_assignment);
@@ -847,7 +848,7 @@ public final class StatementVisitor extends Python3ParserBaseVisitor<Object> {
 		if (pctx.import_as_names() == null) {
 			LibrarySpecificationProvider.importLibrary(ctx.program(), name, ctx.init());
 			PyCFG pyCFG = new PyCFG(
-					new CodeMemberDescriptor(support.getLocation(pctx), ctx.currentUnit(), false, "__init__"));
+					new CodeMemberDescriptor(support.getLocation(pctx), ctx.currentUnit(), false, DunderMethods.INIT));
 			pyCFG.addNode(new NoOp(pyCFG, SyntheticLocation.INSTANCE));
 			return new ImportModule(ctx.currentCFG(), support.getLocation(pctx), name,
 					(ModuleUnit) PyModuleType.lookup(name).getUnit());
