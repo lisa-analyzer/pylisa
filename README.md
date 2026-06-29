@@ -1,3 +1,5 @@
+<img src="logo.png" alt="logo" width="300"/>
+
 # PyLiSA
 
 Python frontend for LiSA
@@ -13,8 +15,10 @@ Sometimes, PyLiSA will refer to a snapshot release of LiSA to exploit unreleased
 ```
 
 Then you have to perform the following:
+
 - Create a GitHub PAT following [this guide](https://docs.github.com/en/enterprise-cloud@latest/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and grant `read:packages` permission
 - Create a `gradle.properties` file in the project root folder (where the `gradlew` scripts are located) with the following content:
+
 ```
 gpr.user=your-github-username
 gpr.key=github-access-token
