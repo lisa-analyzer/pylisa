@@ -1,4 +1,4 @@
-package it.unive.pylisa.notebooks;
+package it.unive.pylisa.helpers;
 
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
