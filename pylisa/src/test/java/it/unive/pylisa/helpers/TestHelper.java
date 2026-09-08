@@ -4,12 +4,12 @@ import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.numeric.IntegerConstantPropagation;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.conf.LiSAConfiguration.GraphType;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
+import it.unive.pylisa.analysis.constants.ConstantPropagation;
 
 public class TestHelper {
 
@@ -36,14 +36,15 @@ public class TestHelper {
 		conf.optimize = false;
 		conf.jsonOutput = true;
 		conf.serializeResults = true;
-		conf.analysisGraphs = GraphType.HTML_WITH_SUBNODES;
+//		conf.forceUpdate = true;
+//		conf.analysisGraphs = GraphType.HTML_WITH_SUBNODES;
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 
 		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap();
-		ValueEnvironment<IntegerConstantPropagation> constants = new ValueEnvironment<>(
-				new IntegerConstantPropagation());
+		ValueEnvironment<ConstantPropagation> constants = new ValueEnvironment<>(
+				new ConstantPropagation());
 		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
 		conf.abstractState = new SimpleAbstractState<>(heap, constants, type);
 

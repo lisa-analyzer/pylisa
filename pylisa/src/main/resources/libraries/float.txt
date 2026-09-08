@@ -1,0 +1,10 @@
+class Real:
+	method __add__: it.unive.pylisa.libraries.FloatAdd
+		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __radd__: it.unive.pylisa.libraries.FloatRAdd
+		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE

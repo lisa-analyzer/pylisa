@@ -1,0 +1,38 @@
+{
+  "warnings" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_basic_basic.$main().json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "87ms",
+    "end" : "2026-09-08T15:49:14.323+02:00",
+    "expressions" : "16",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "12",
+    "programs" : "1",
+    "start" : "2026-09-08T15:49:14.236+02:00",
+    "statements" : "8",
+    "units" : "10",
+    "version" : "0.1",
+    "warnings" : "0"
+  },
+  "configuration" : {
+    "analysisGraphs" : "NONE",
+    "descendingPhaseType" : "NONE",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "DuplicateFreeFIFOWorkingSet",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "jsonOutput" : "true",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "optimize" : "false",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "",
+    "serializeInputs" : "false",
+    "serializeResults" : "true",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/basic"
+  }
+}
