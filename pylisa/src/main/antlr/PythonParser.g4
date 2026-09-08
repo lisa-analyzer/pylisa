@@ -31,6 +31,11 @@ THE SOFTWARE.
 
 parser grammar PythonParser;
 
+@ header
+{
+    package it.unive.pylisa.antlr;
+}
+
 options { tokenVocab=PythonLexer; }
 
 // STARTING RULES

@@ -29,6 +29,8 @@ THE SOFTWARE.
 // https://docs.python.org/3.14/reference/lexical_analysis.html
 lexer grammar PythonLexer;
 
+@lexer::header {package it.unive.pylisa.antlr;}
+
 // the helper class for this grammar that assists in tokenizing indentation, interpolated strings, and the encoding declaration
 options { superClass=PythonLexerBase; }
 
