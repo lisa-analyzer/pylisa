@@ -1,12 +1,15 @@
 package it.unive.pylisa.cfg.expression;
 
+import java.util.Collections;
 import java.util.Set;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -46,12 +49,14 @@ public class PyAddition extends Addition {
 		Set<Type> rtsl = state.getState().getRuntimeTypesOf(left, this, state.getState());
 		Set<Type> rtsr = state.getState().getRuntimeTypesOf(right, this, state.getState());
 		
+		SymbolAliasing aliasing = state.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
+
 		AnalysisState<A> result = state.bottom();
 		for (Type tl : rtsl) {
 			for (Type tr : rtsr) {
 				if (tr.canBeAssignedTo(tl)) {
 					// int + int (and subtypes thereof): call int.__add__,
-					// falling back to int.__radd__ if it does not apply
+					// falling back to int.__radd__ if it does not resolve
 					UnresolvedCall add = new UnresolvedCall(
 							getCFG(),
 							getLocation(),
@@ -61,9 +66,17 @@ public class PyAddition extends Addition {
 							LeftToRightEvaluation.INSTANCE,
 							getLeft(),
 							getRight());
-					AnalysisState<A> addResult = add.forwardSemantics(state, interprocedural, expressions);
-					if (!addResult.isBottom())
-						result = result.lub(addResult);
+					boolean addResolves;
+					try {
+						interprocedural.resolve(add,
+								new Set[] { Collections.singleton(tl), Collections.singleton(tr) }, aliasing);
+						addResolves = true;
+					} catch (CallResolutionException e) {
+						addResolves = false;
+					}
+
+					if (addResolves)
+						result = result.lub(add.forwardSemantics(state, interprocedural, expressions));
 					else {
 						UnresolvedCall radd = new UnresolvedCall(
 								getCFG(),
@@ -76,10 +89,10 @@ public class PyAddition extends Addition {
 								getLeft());
 						result = result.lub(radd.forwardSemantics(state, interprocedural, expressions));
 					}
-				} 
+				}
 			}
 		}
-		
+
 		return result;
 	}
 }
