@@ -1,0 +1,47 @@
+{
+  "warnings" : [ {
+    "message" : "[EXPRESSION] POSSIBLE: the assertion MAY (NOT) BE hold"
+  } ],
+  "notices" : [
+    {
+      "message" : ""
+    }
+  ],
+  "info" : {
+    "cfgs" : "0",
+    "duration" : "",
+    "end" : "",
+    "expressions" : "0",
+    "files" : "0",
+    "globals" : "0",
+    "members" : "0",
+    "notices" : "0",
+    "programs" : "0",
+    "start" : "",
+    "statements" : "0",
+    "units" : "0",
+    "version" : "0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "",
+    "backwardFixpoint" : "",
+    "dumpForcesUnwinding" : "",
+    "fixpointWorkingSet" : "",
+    "forwardDescendingFixpoint" : "",
+    "forwardFixpoint" : "",
+    "glbThreshold" : "0",
+    "hotspots" : "",
+    "openCallPolicy" : "",
+    "outputs" : "",
+    "recursionWideningThreshold" : "0",
+    "semanticChecks" : "",
+    "shouldSmashError" : "",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "",
+    "wideningThreshold" : "0",
+    "workdir" : ""
+  }
+}

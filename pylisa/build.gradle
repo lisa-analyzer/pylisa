@@ -46,6 +46,7 @@ dependencies {
     implementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
     implementation 'com.google.code.gson:gson:2.8.7'
     implementation 'io.github.classgraph:classgraph:4.8.175'
+    implementation 'commons-cli:commons-cli:1.4'
     
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
