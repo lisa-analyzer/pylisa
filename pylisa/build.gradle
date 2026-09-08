@@ -25,13 +25,13 @@ version = '0.1'
 mainClassName = 'it.unive.pylisa.PyLiSA'
 
 dependencies {
-    antlr 'org.antlr:antlr4:4.8-1'
+    antlr 'org.antlr:antlr4:4.13.2'
     
-    compileOnly 'org.projectlombok:lombok:1.18.22'
-    annotationProcessor 'org.projectlombok:lombok:1.18.22'
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
 
-    testCompileOnly 'org.projectlombok:lombok:1.18.22'
-    testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
+    testCompileOnly 'org.projectlombok:lombok:1.18.34'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
     
     implementation 'io.github.lisa-analyzer:lisa-sdk:0.1'
     implementation 'io.github.lisa-analyzer:lisa-program:0.1'
@@ -69,11 +69,6 @@ generateGrammarSource {
 java {
     withJavadocJar()
     withSourcesJar()
-}
-
-compileJava   {
-  sourceCompatibility = '17'
-  targetCompatibility = '17'
 }
 
 javadoc {
