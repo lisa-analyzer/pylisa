@@ -1,40 +1,7 @@
 package it.unive.pylisa;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.logging.IterationLogger;
 import it.unive.lisa.program.ClassUnit;
@@ -64,7 +31,6 @@ import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
-import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
@@ -92,11 +58,11 @@ import it.unive.pylisa.annotationvalues.DecoratedAnnotation;
 import it.unive.pylisa.antlr.PythonLexer;
 import it.unive.pylisa.antlr.PythonParser;
 import it.unive.pylisa.antlr.PythonParser.Annotated_rhsContext;
+import it.unive.pylisa.antlr.PythonParser.ArgumentsContext;
 import it.unive.pylisa.antlr.PythonParser.Assert_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.AssignmentContext;
 import it.unive.pylisa.antlr.PythonParser.Assignment_expressionContext;
 import it.unive.pylisa.antlr.PythonParser.AtomContext;
-import it.unive.pylisa.antlr.PythonParser.ArgumentsContext;
 import it.unive.pylisa.antlr.PythonParser.AugassignContext;
 import it.unive.pylisa.antlr.PythonParser.Await_primaryContext;
 import it.unive.pylisa.antlr.PythonParser.Bitwise_andContext;
@@ -106,23 +72,24 @@ import it.unive.pylisa.antlr.PythonParser.BlockContext;
 import it.unive.pylisa.antlr.PythonParser.Break_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Class_defContext;
 import it.unive.pylisa.antlr.PythonParser.Class_def_rawContext;
-import it.unive.pylisa.antlr.PythonParser.ComparisonContext;
 import it.unive.pylisa.antlr.PythonParser.Compare_op_bitwise_or_pairContext;
+import it.unive.pylisa.antlr.PythonParser.ComparisonContext;
 import it.unive.pylisa.antlr.PythonParser.Compound_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.ConjunctionContext;
 import it.unive.pylisa.antlr.PythonParser.Continue_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.DecoratorsContext;
 import it.unive.pylisa.antlr.PythonParser.Default_assignmentContext;
 import it.unive.pylisa.antlr.PythonParser.Del_stmtContext;
-import it.unive.pylisa.antlr.PythonParser.Del_targetContext;
-import it.unive.pylisa.antlr.PythonParser.Del_targetsContext;
 import it.unive.pylisa.antlr.PythonParser.Del_t_atomContext;
+import it.unive.pylisa.antlr.PythonParser.Del_targetContext;
 import it.unive.pylisa.antlr.PythonParser.DisjunctionContext;
 import it.unive.pylisa.antlr.PythonParser.Dotted_as_nameContext;
 import it.unive.pylisa.antlr.PythonParser.Dotted_as_namesContext;
 import it.unive.pylisa.antlr.PythonParser.Dotted_nameContext;
 import it.unive.pylisa.antlr.PythonParser.Double_starred_kvpairContext;
 import it.unive.pylisa.antlr.PythonParser.Double_starred_kvpairsContext;
+import it.unive.pylisa.antlr.PythonParser.Elif_stmtContext;
+import it.unive.pylisa.antlr.PythonParser.Else_blockContext;
 import it.unive.pylisa.antlr.PythonParser.ExpressionContext;
 import it.unive.pylisa.antlr.PythonParser.FactorContext;
 import it.unive.pylisa.antlr.PythonParser.File_inputContext;
@@ -130,8 +97,6 @@ import it.unive.pylisa.antlr.PythonParser.For_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Function_defContext;
 import it.unive.pylisa.antlr.PythonParser.Function_def_rawContext;
 import it.unive.pylisa.antlr.PythonParser.Global_stmtContext;
-import it.unive.pylisa.antlr.PythonParser.Elif_stmtContext;
-import it.unive.pylisa.antlr.PythonParser.Else_blockContext;
 import it.unive.pylisa.antlr.PythonParser.If_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Import_fromContext;
 import it.unive.pylisa.antlr.PythonParser.Import_from_as_nameContext;
@@ -158,8 +123,6 @@ import it.unive.pylisa.antlr.PythonParser.Shift_exprContext;
 import it.unive.pylisa.antlr.PythonParser.Simple_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.SliceContext;
 import it.unive.pylisa.antlr.PythonParser.SlicesContext;
-import it.unive.pylisa.antlr.PythonParser.StatementContext;
-import it.unive.pylisa.antlr.PythonParser.Starred_expressionContext;
 import it.unive.pylisa.antlr.PythonParser.Star_atomContext;
 import it.unive.pylisa.antlr.PythonParser.Star_etcContext;
 import it.unive.pylisa.antlr.PythonParser.Star_expressionContext;
@@ -168,10 +131,12 @@ import it.unive.pylisa.antlr.PythonParser.Star_named_expressionContext;
 import it.unive.pylisa.antlr.PythonParser.Star_named_expressionsContext;
 import it.unive.pylisa.antlr.PythonParser.Star_targetContext;
 import it.unive.pylisa.antlr.PythonParser.Star_targetsContext;
+import it.unive.pylisa.antlr.PythonParser.Starred_expressionContext;
+import it.unive.pylisa.antlr.PythonParser.StatementContext;
 import it.unive.pylisa.antlr.PythonParser.SumContext;
+import it.unive.pylisa.antlr.PythonParser.T_primaryContext;
 import it.unive.pylisa.antlr.PythonParser.Target_with_star_atomContext;
 import it.unive.pylisa.antlr.PythonParser.TermContext;
-import it.unive.pylisa.antlr.PythonParser.T_primaryContext;
 import it.unive.pylisa.antlr.PythonParser.Try_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.TupleContext;
 import it.unive.pylisa.antlr.PythonParser.While_stmtContext;
@@ -227,13 +192,41 @@ import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
 import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.statement.FromImport;
-import it.unive.pylisa.cfg.statement.FunctionDef;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.NoOpFunction;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class PyFrontend extends PythonParserBaseVisitor<Object> {
 
@@ -463,7 +456,8 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		cfs = new HashSet<>();
 		currentUnit.addCodeMember(currentCFG);
 		Statement last_stmt = null;
-		for (StatementContext stmt : IterationLogger.iterate(log, ctx.statements().statement(), "Parsing stmt lists...", "Global stmt")) {
+		for (StatementContext stmt : IterationLogger.iterate(log, ctx.statements().statement(), "Parsing stmt lists...",
+				"Global stmt")) {
 			List<Object> visitedStmts = new ArrayList<>();
 			if (stmt.compound_stmt() != null)
 				visitedStmts.add(visitCompound_stmt(stmt.compound_stmt()));
@@ -473,7 +467,8 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 
 			for (Object visited : visitedStmts) {
 				if (!(visited instanceof Triple<?, ?, ?>))
-					// compound statement can be a class or function definition, and
+					// compound statement can be a class or function definition,
+					// and
 					// we don't have to add anything here
 					continue;
 
@@ -555,7 +550,6 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 				currentUnit instanceof ClassUnit ? true : false,
 				funcName, cfgArgs);
 	}
-
 
 	public AnnotationMember visitDecorator(
 			Named_expressionContext ctx) {
@@ -728,7 +722,6 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		return pars;
 	}
 
-	
 	@Override
 	public Object visitStatement(
 			StatementContext ctx) {
@@ -919,7 +912,8 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 						indexes.get(0), indexes.get(1));
 			throw new UnsupportedStatementException("Only array accesses with up to 2 indexes are supported");
 		} else
-			throw new UnsupportedStatementException("Call/generator expressions are not supported as assignment targets");
+			throw new UnsupportedStatementException(
+					"Call/generator expressions are not supported as assignment targets");
 	}
 
 	@Override
@@ -1187,7 +1181,8 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 			block.addNode(elifGuard);
 			block.addEdge(new FalseEdge(lastElifGuard, elifGuard));
 			lastElifGuard = elifGuard;
-			Triple<Statement, NodeList<CFG, Statement, Edge>, Statement> elifBlock = visitBlock(clauses.get(i).getRight());
+			Triple<Statement, NodeList<CFG, Statement, Edge>,
+					Statement> elifBlock = visitBlock(clauses.get(i).getRight());
 			block.mergeWith(elifBlock.getMiddle());
 			branches.add(Pair.of(elifGuard, elifBlock.getMiddle().getNodes()));
 			Statement elifEntry = elifBlock.getLeft();
@@ -1661,7 +1656,6 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		throw new UnsupportedStatementException();
 	}
 
-
 	public Expression visitMul(
 			TermContext ctx) {
 		if (ctx.term() == null)
@@ -2121,7 +2115,6 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		return r;
 	}
 
-
 	public ClassUnit visitClassdef(
 			Class_defContext ctx) {
 		ClassUnit cu = visitClass_def_raw(ctx.class_def_raw());
@@ -2207,5 +2200,5 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		throw new UnsupportedStatementException(
 				"Only variables or assignments of variable are supported as field declarations");
 	}
-	
+
 }
