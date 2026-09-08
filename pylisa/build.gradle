@@ -3,7 +3,7 @@ plugins {
     id 'application'
    	id 'antlr'
    	id 'eclipse'
-   	id "com.diffplug.spotless" version "6.18.0"
+   	id "com.diffplug.spotless" version "7.0.3"
    	id 'maven-publish'
     id 'signing'
 }
@@ -100,7 +100,8 @@ spotless {
     }
     antlr4 {
         target 'src/*/antlr/**/*.g4'
-        antlr4Formatter() 
+        targetExclude 'src/*/antlr/PythonLexer.g4'
+        antlr4Formatter()
     }
 }
 
@@ -109,11 +110,11 @@ spotlessJava {
 	dependsOn 'compileJava', 'compileTestJava', 'processTestResources', 'spotlessAntlr4'
 }
 
-spotlessJavaCheck { 
+spotlessJavaCheck {
     finalizedBy 'spotlessErrorMessage'
 }
 
-spotlessAntlr4Check { 
+spotlessAntlr4Check {
     finalizedBy 'spotlessErrorMessage'
 }
 
