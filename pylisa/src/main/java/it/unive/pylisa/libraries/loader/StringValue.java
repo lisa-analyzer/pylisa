@@ -1,10 +1,9 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Objects;
-
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
+import java.util.Objects;
 
 public class StringValue implements Value {
 	private final String value;

@@ -96,8 +96,12 @@ public class FillNA extends it.unive.lisa.program.cfg.statement.BinaryExpression
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
-			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation location = getLocation();
 		AnalysisState<A> base = state;
@@ -119,7 +123,8 @@ public class FillNA extends it.unive.lisa.program.cfg.statement.BinaryExpression
 			SymbolicExpression ref = loc instanceof HeapDereference
 					? ((HeapDereference) loc).getExpression()
 					: new HeapReference(dfref, loc, location);
-			filtered = filtered.lub(analysis.smallStepSemantics(analysis.smallStepSemantics(base, filter, st), ref, st));
+			filtered = filtered
+					.lub(analysis.smallStepSemantics(analysis.smallStepSemantics(base, filter, st), ref, st));
 		}
 
 		return filtered;

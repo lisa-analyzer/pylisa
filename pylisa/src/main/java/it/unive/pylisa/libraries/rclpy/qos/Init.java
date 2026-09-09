@@ -65,8 +65,11 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
-			StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		AnalysisState<A> result = state;
 		Expression self = getSubExpressions()[0];
 		UnaryExpression _avoid_ros_namespace_conventions = getNamedParameterExpr("avoid_ros_namespace_conventions");

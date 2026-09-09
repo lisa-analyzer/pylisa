@@ -43,8 +43,11 @@ public class PyTernaryOperator extends NaryExpression {
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
-			StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Expression[] sub = getSubExpressions();
 		Expression condition = sub[0];
@@ -81,7 +84,7 @@ public class PyTernaryOperator extends NaryExpression {
 								interprocedural,
 								expressions)
 						.lub(ifFalse.forwardSemantics(
-								analysis.assume(postCondition,negated, condition, ifFalse),
+								analysis.assume(postCondition, negated, condition, ifFalse),
 								interprocedural,
 								expressions));
 			}

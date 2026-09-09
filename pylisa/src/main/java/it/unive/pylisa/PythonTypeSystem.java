@@ -39,7 +39,9 @@ public class PythonTypeSystem extends TypeSystem {
 	}
 
 	@Override
-	public int distanceBetweenTypes(Type first, Type second) {
+	public int distanceBetweenTypes(
+			Type first,
+			Type second) {
 		// TODO Auto-generated method stub
 		return 0;
 	}

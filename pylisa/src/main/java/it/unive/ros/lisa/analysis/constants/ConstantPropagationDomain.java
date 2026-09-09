@@ -1,11 +1,5 @@
 package it.unive.ros.lisa.analysis.constants;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.lang3.tuple.Pair;
-
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
@@ -49,11 +43,14 @@ import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
 import it.unive.pylisa.symbolic.operators.value.StringFormat;
 import it.unive.ros.lisa.symbolic.operators.ros.ROSTopicNameExpansion;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
- * The domain evaluating expressions over {@link ConstantPropagation}
- * instances. The lattice structure itself lives in
- * {@link ConstantPropagation}.
+ * The domain evaluating expressions over {@link ConstantPropagation} instances.
+ * The lattice structure itself lives in {@link ConstantPropagation}.
  */
 public class ConstantPropagationDomain
 		implements

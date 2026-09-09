@@ -19,10 +19,12 @@ public class PyNoneLiteral extends Literal<Object> {
 			CodeLocation location) {
 		super(cfg, location, null, NullType.INSTANCE);
 	}
-	
+
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
-			AnalysisState<A> entryState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions)
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
 			throws SemanticException {
 		return interprocedural.getAnalysis().smallStepSemantics(entryState, new PyNoneConstant(getLocation()), this);
 

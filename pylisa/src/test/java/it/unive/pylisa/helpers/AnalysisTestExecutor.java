@@ -6,19 +6,6 @@ import static java.nio.file.Files.delete;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-
-import org.apache.commons.io.FilenameUtils;
-
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.AnalysisSetupException;
 import it.unive.lisa.LiSA;
@@ -32,6 +19,17 @@ import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.fixpoints.optforward.OptimizedForwardAscendingFixpoint;
 import it.unive.lisa.util.file.FileManager;
 import it.unive.pylisa.PyFrontend;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import org.apache.commons.io.FilenameUtils;
 
 public abstract class AnalysisTestExecutor {
 
@@ -89,11 +87,13 @@ public abstract class AnalysisTestExecutor {
 		if (!expFile.exists()) {
 			boolean update = "true".equals(System.getProperty("lisa.cron.update")) || conf.forceUpdate;
 			if (!update) {
-				System.out.println("No '" + JSONReportDumper.REPORT_NAME + "' found in the expected folder, exiting...");
+				System.out
+						.println("No '" + JSONReportDumper.REPORT_NAME + "' found in the expected folder, exiting...");
 				return;
 			} else {
 				System.out
-						.println("No '" + JSONReportDumper.REPORT_NAME + "' found in the expected folder, copying results...");
+						.println("No '" + JSONReportDumper.REPORT_NAME
+								+ "' found in the expected folder, copying results...");
 				copyFiles(expectedPath, actualPath, expFile, actFile);
 			}
 		}

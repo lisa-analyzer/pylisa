@@ -1,13 +1,5 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.function.Predicate;
-
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
@@ -25,6 +17,13 @@ import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * The lattice structure of the dataframe-graph abstract domain. The domain

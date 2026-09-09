@@ -45,8 +45,12 @@ public class RangeValue extends TernaryExpression {
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdTernarySemantics(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
-			SymbolicExpression middle, SymbolicExpression right, StatementStore<A> expressions)
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression middle,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		Type type = PyClassType.lookup(LibrarySpecificationProvider.SLICE);

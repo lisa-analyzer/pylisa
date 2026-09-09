@@ -1,15 +1,5 @@
 package it.unive.pylisa.libraries.fastapi.analysis.syntax;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import org.apache.http.client.utils.URIBuilder;
-
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.annotations.AnnotationMember;
@@ -29,7 +19,15 @@ import it.unive.pylisa.libraries.fastapi.definitions.Method;
 import it.unive.pylisa.libraries.fastapi.definitions.Param;
 import it.unive.pylisa.libraries.fastapi.definitions.Role;
 import it.unive.pylisa.libraries.fastapi.helpers.TextHelper;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import lombok.experimental.UtilityClass;
+import org.apache.http.client.utils.URIBuilder;
 
 @UtilityClass
 public class EndpointService {

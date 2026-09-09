@@ -78,8 +78,12 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
-			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		if (right instanceof Constant && right.getStaticType().isNullType())
 			// no subset - we access the whole dataframe
 			return interprocedural.getAnalysis().smallStepSemantics(state, left, st);
@@ -89,6 +93,7 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 		HeapDereference derefLeft = new HeapDereference(dftype, left, location);
 		BinaryExpression access = new BinaryExpression(dftype, derefLeft, right,
 				new ColumnProjection(0), location);
-		return interprocedural.getAnalysis().smallStepSemantics(interprocedural.getAnalysis().smallStepSemantics(state, access, st), left, st);
+		return interprocedural.getAnalysis()
+				.smallStepSemantics(interprocedural.getAnalysis().smallStepSemantics(state, access, st), left, st);
 	}
 }

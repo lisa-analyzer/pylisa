@@ -1,8 +1,5 @@
 package it.unive.ros.models.rclpy;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.nonrelational.heap.HeapEnvironment;
 import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
@@ -14,6 +11,8 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
 import it.unive.ros.network.NetworkEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class ROSTopicBasedNetworkEntity extends ROSNetworkEntity<ROSTopic> {
 

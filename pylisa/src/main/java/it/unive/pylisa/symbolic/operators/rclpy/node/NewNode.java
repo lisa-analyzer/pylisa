@@ -1,10 +1,9 @@
 package it.unive.pylisa.symbolic.operators.rclpy.node;
 
-import java.util.Set;
-
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
+import java.util.Set;
 
 public class NewNode implements BinaryOperator {
 

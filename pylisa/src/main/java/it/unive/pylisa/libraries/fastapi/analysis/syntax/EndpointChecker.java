@@ -1,9 +1,5 @@
 package it.unive.pylisa.libraries.fastapi.analysis.syntax;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
 import it.unive.lisa.ReportingTool;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.AnnotationMember;
@@ -18,6 +14,9 @@ import it.unive.pylisa.cfg.expression.PyStringLiteral;
 import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
 import it.unive.pylisa.libraries.fastapi.definitions.Method;
 import it.unive.pylisa.libraries.fastapi.definitions.Param;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass

@@ -3,31 +3,14 @@ package it.unive.pylisa.libraries.fastapi.graph;
 import static guru.nidi.graphviz.attribute.Color.GREY80;
 import static guru.nidi.graphviz.attribute.Color.TRANSPARENT;
 import static guru.nidi.graphviz.attribute.Color.WHITE;
-import static guru.nidi.graphviz.attribute.GraphAttr.splines;
 import static guru.nidi.graphviz.attribute.GraphAttr.SplineMode.ORTHO;
+import static guru.nidi.graphviz.attribute.GraphAttr.splines;
 import static guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT;
 import static guru.nidi.graphviz.model.Factory.mutGraph;
 import static guru.nidi.graphviz.model.Factory.mutNode;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-import org.springframework.web.util.UriTemplate;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
-import org.thymeleaf.templatemode.TemplateMode;
-import org.thymeleaf.templateresolver.StringTemplateResolver;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import guru.nidi.graphviz.attribute.Color;
 import guru.nidi.graphviz.attribute.Font;
 import guru.nidi.graphviz.attribute.Image;
@@ -44,6 +27,20 @@ import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
 import it.unive.pylisa.libraries.fastapi.definitions.GroupBy;
 import it.unive.pylisa.libraries.fastapi.definitions.Role;
 import it.unive.pylisa.libraries.fastapi.helpers.TextHelper;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import org.springframework.web.util.UriTemplate;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.StringTemplateResolver;
 
 public class EndpointGraphBuilder {
 

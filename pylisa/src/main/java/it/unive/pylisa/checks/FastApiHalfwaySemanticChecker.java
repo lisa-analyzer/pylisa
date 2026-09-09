@@ -11,7 +11,8 @@ import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 
 public class FastApiHalfwaySemanticChecker<A extends AbstractLattice<A>, D extends AbstractDomain<A>>
-		implements SemanticCheck<A, D> {
+		implements
+		SemanticCheck<A, D> {
 
 	// private List<Endpoint> endpoints;
 

@@ -32,9 +32,9 @@ public class TestHelper {
 	}
 
 	/**
-	 * Builds a configuration that runs a full analysis using integer
-	 * constant propagation as the value domain, paired with a
-	 * field-sensitive point-based heap domain and type inference.
+	 * Builds a configuration that runs a full analysis using integer constant
+	 * propagation as the value domain, paired with a field-sensitive
+	 * point-based heap domain and type inference.
 	 */
 	public static CronConfiguration constantPropagationConfig() {
 		CronConfiguration conf = new CronConfiguration();

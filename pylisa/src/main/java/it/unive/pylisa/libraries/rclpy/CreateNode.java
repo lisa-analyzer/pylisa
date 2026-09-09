@@ -50,8 +50,11 @@ public class CreateNode extends it.unive.lisa.program.cfg.statement.NaryExpressi
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
-			StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		PyClassType nodeClassType = PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE);
 		PyNewObj nodeObj = new PyNewObj(this.getCFG(), (SourceCodeLocation) getLocation(), "__init__",
 				nodeClassType, getSubExpressions());

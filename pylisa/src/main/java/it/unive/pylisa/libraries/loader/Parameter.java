@@ -1,7 +1,5 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Objects;
-
 import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -9,6 +7,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.pylisa.cfg.KeywordOnlyParameter;
 import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
+import java.util.Objects;
 
 public class Parameter {
 

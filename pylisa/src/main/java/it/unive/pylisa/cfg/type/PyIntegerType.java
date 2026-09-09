@@ -1,10 +1,9 @@
 package it.unive.pylisa.cfg.type;
 
-import java.util.Set;
-
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
+import java.util.Set;
 
 public class PyIntegerType implements NumericType {
 

@@ -40,7 +40,6 @@ public class CreateTimer extends NaryExpression implements PluggableStatement {
 		return new CreateTimer(cfg, location, "create_timer", exprs);
 	}
 
-
 	@Override
 	public void setOriginatingStatement(
 			Statement st) {
@@ -49,8 +48,11 @@ public class CreateTimer extends NaryExpression implements PluggableStatement {
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
-			StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		ROSTimerCallback callback = new ROSTimerCallback(this.getCFG(), (SourceCodeLocation) getLocation(),
 				getSubExpressions()[2]);
 		try {

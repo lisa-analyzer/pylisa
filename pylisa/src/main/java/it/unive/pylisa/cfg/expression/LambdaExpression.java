@@ -1,8 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.Arrays;
-import java.util.List;
-
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
@@ -17,6 +14,8 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.symbolic.LambdaConstant;
+import java.util.Arrays;
+import java.util.List;
 
 public class LambdaExpression extends Expression {
 
@@ -66,9 +65,12 @@ public class LambdaExpression extends Expression {
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
-			AnalysisState<A> entryState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions)
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
 			throws SemanticException {
-		return interprocedural.getAnalysis().smallStepSemantics(entryState, new LambdaConstant(PyLambdaType.INSTANCE, getLocation(), arguments, body),
+		return interprocedural.getAnalysis().smallStepSemantics(entryState,
+				new LambdaConstant(PyLambdaType.INSTANCE, getLocation(), arguments, body),
 				this);
 	}
 }

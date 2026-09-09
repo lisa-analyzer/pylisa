@@ -1,9 +1,5 @@
 package it.unive.pylisa.analysis.dataflow.rospropagation;
 
-import java.util.Collections;
-import java.util.Objects;
-import java.util.Set;
-
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.dataflow.DataflowDomain;
 import it.unive.lisa.analysis.dataflow.PossibleSet;
@@ -11,6 +7,9 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.ValueExpression;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * The dataflow domain tracking {@link RosTopic}s created through

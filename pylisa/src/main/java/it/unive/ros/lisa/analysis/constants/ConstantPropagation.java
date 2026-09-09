@@ -1,7 +1,5 @@
 package it.unive.ros.lisa.analysis.constants;
 
-import java.util.Objects;
-
 import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
@@ -10,10 +8,11 @@ import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
+import java.util.Objects;
 
 /**
- * The lattice structure tracking a single constant value. The domain
- * operations (i.e. the evaluation of expressions) live in
+ * The lattice structure tracking a single constant value. The domain operations
+ * (i.e. the evaluation of expressions) live in
  * {@link ConstantPropagationDomain}.
  */
 public class ConstantPropagation

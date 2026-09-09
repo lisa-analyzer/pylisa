@@ -5,7 +5,7 @@ import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.statement.Statement;
 
 public class PyCFG extends CFG {
-	
+
 	public PyCFG(
 			CodeMemberDescriptor descriptor) {
 		super(descriptor);

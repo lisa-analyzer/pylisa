@@ -1,16 +1,5 @@
 package it.unive.pylisa.checks;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.function.Function;
-
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SimpleAbstractDomain;
@@ -39,6 +28,16 @@ import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.NodeId;
 import it.unive.pylisa.analysis.dataframes.SetLattice;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Function;
 
 public class DataframeDumper
 		implements
@@ -58,22 +57,28 @@ public class DataframeDumper
 	@Override
 	public void beforeExecution(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool) {
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool) {
 	}
 
 	@Override
 	public void afterExecution(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool) {
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool) {
 	}
 
 	@Override
 	public boolean visitUnit(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			Unit unit) {
 		return true;
 	}
@@ -81,8 +86,10 @@ public class DataframeDumper
 	@Override
 	public void visitGlobal(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			Unit unit,
 			Global global,
 			boolean instance) {
@@ -91,8 +98,10 @@ public class DataframeDumper
 	@Override
 	public boolean visit(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			CFG graph) {
 		return true;
 	}
@@ -100,8 +109,10 @@ public class DataframeDumper
 	@Override
 	public boolean visit(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Statement node) {
 		if (!graph.getDescriptor().getName().equals(PyFrontend.INSTRUMENTED_MAIN_FUNCTION_NAME))
@@ -229,8 +240,10 @@ public class DataframeDumper
 	@Override
 	public boolean visit(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Edge edge) {
 		return true;

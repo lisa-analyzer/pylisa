@@ -1,14 +1,5 @@
 package it.unive.pylisa.checks;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import org.apache.commons.lang3.tuple.Pair;
-
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.BaseLattice;
@@ -54,6 +45,13 @@ import it.unive.pylisa.analysis.dataframes.operations.Transform;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.BooleanSelection;
 import it.unive.pylisa.symbolic.operators.Enumerations.BinaryTransformKind;
 import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class DataframeStructureConstructor
 		implements
@@ -70,22 +68,28 @@ public class DataframeStructureConstructor
 	@Override
 	public void beforeExecution(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool) {
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool) {
 	}
 
 	@Override
 	public void afterExecution(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool) {
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool) {
 	}
 
 	@Override
 	public boolean visitUnit(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			Unit unit) {
 		return true;
 	}
@@ -93,8 +97,10 @@ public class DataframeStructureConstructor
 	@Override
 	public void visitGlobal(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			Unit unit,
 			Global global,
 			boolean instance) {
@@ -103,8 +109,10 @@ public class DataframeStructureConstructor
 	@Override
 	public boolean visit(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			CFG graph) {
 		return true;
 	}
@@ -112,8 +120,10 @@ public class DataframeStructureConstructor
 	@Override
 	public boolean visit(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Edge edge) {
 		return true;
@@ -122,8 +132,10 @@ public class DataframeStructureConstructor
 	@Override
 	public boolean visit(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Statement node) {
 		if (!graph.getDescriptor().getName().equals(PyFrontend.INSTRUMENTED_MAIN_FUNCTION_NAME))
@@ -189,116 +201,116 @@ public class DataframeStructureConstructor
 
 		ForwardFixpoint<DataframeForest, DataframeOperation, DataframeEdge, ColumnsDomain> fix = new ForwardFixpoint<
 				DataframeForest, DataframeOperation, DataframeEdge, DataframeStructureConstructor.ColumnsDomain>(graph,
-				false) {
+						false) {
 
-					@Override
-					public ColumnsDomain union(
-							DataframeOperation node,
-							ColumnsDomain left,
-							ColumnsDomain right)
-							throws Exception {
-						return join(node, left, right);
-					}
+			@Override
+			public ColumnsDomain union(
+					DataframeOperation node,
+					ColumnsDomain left,
+					ColumnsDomain right)
+					throws Exception {
+				return join(node, left, right);
+			}
 
-					@Override
-					public ColumnsDomain traverse(
-							DataframeEdge edge,
-							ColumnsDomain entrystate)
-							throws Exception {
-						return entrystate;
-					}
+			@Override
+			public ColumnsDomain traverse(
+					DataframeEdge edge,
+					ColumnsDomain entrystate)
+					throws Exception {
+				return entrystate;
+			}
 
-					@Override
-					public boolean leq(
-							DataframeOperation node,
-							ColumnsDomain approx,
-							ColumnsDomain old)
-							throws Exception {
-						return approx.lessOrEqual(old);
-					}
+			@Override
+			public boolean leq(
+					DataframeOperation node,
+					ColumnsDomain approx,
+					ColumnsDomain old)
+					throws Exception {
+				return approx.lessOrEqual(old);
+			}
 
-					@Override
-					public Pair<ColumnsDomain, DataframeOperation> semantics(
-							DataframeOperation node,
-							ColumnsDomain entrystate,
-							Map<DataframeOperation, ColumnsDomain> expected)
-							throws Exception {
-						Names sources = extractSources(node, graph);
+			@Override
+			public Pair<ColumnsDomain, DataframeOperation> semantics(
+					DataframeOperation node,
+					ColumnsDomain entrystate,
+					Map<DataframeOperation, ColumnsDomain> expected)
+					throws Exception {
+				Names sources = extractSources(node, graph);
 
-						if (node instanceof Assign<?, ?>)
-							return Pair.of(entrystate.assign(sources,
-									((Assign<?, ?>) node).getSelection().extractColumnNames()), node);
-						else if (node instanceof Project<?, ?>) {
-							boolean allConsume = true;
-							Project<?, ?> proj = (Project<?, ?>) node;
-							for (DataframeEdge edge : graph.getOutgoingEdges(node))
-								if (edge.getDestination().equals(exit))
-									continue;
-								else if (!(edge instanceof ConsumeEdge)) {
-									allConsume = false;
-									break;
-								}
-							if (proj.getSelection().getRowSelection() instanceof BooleanSelection<?>)
-								// boolean selections are always used to produce
-								// the boolean masks, even when they are on the
-								// lhs of an assignment
-								entrystate = entrystate.access(sources,
-										proj.getSelection().getRowSelection().extractColumnNames());
+				if (node instanceof Assign<?, ?>)
+					return Pair.of(entrystate.assign(sources,
+							((Assign<?, ?>) node).getSelection().extractColumnNames()), node);
+				else if (node instanceof Project<?, ?>) {
+					boolean allConsume = true;
+					Project<?, ?> proj = (Project<?, ?>) node;
+					for (DataframeEdge edge : graph.getOutgoingEdges(node))
+						if (edge.getDestination().equals(exit))
+							continue;
+						else if (!(edge instanceof ConsumeEdge)) {
+							allConsume = false;
+							break;
+						}
+					if (proj.getSelection().getRowSelection() instanceof BooleanSelection<?>)
+						// boolean selections are always used to produce
+						// the boolean masks, even when they are on the
+						// lhs of an assignment
+						entrystate = entrystate.access(sources,
+								proj.getSelection().getRowSelection().extractColumnNames());
 
-							if (allConsume)
-								// will be reported separately as selection of
-								// the consumer
-								return Pair.of(entrystate, node);
-							return Pair.of(entrystate.access(sources, proj.getSelection().extractColumnNames()), node);
-						} else if (node instanceof Transform<?, ?>) {
-							Transform<?, ?> transform = (Transform<?, ?>) node;
-							if (transform.getType() == BinaryTransformKind.ASSIGN)
-								return Pair.of(entrystate.assign(sources, transform.getSelection().extractColumnNames()),
-										node);
-							else if (transform.getType() == UnaryTransformKind.DROP_COLS)
-								return Pair.of(entrystate.remove(sources, transform.getSelection().extractColumnNames()),
-										node);
-							else
-								return Pair.of(entrystate.access(sources, transform.getSelection().extractColumnNames()),
-										node);
-						} else if (node instanceof Reshape<?, ?>)
-							return Pair.of(entrystate.define(sources), node);
-						else if (node instanceof Read || node instanceof Concat)
-							return Pair.of(entrystate.define(sources), node);
-						else if (node instanceof Init || node instanceof BottomOperation
-								|| node instanceof CloseOperation || node instanceof Iteration
-								|| node instanceof GetAxis)
-							return Pair.of(entrystate, node);
-						else
-							return Pair.of(entrystate.top(), node);
-					}
+					if (allConsume)
+						// will be reported separately as selection of
+						// the consumer
+						return Pair.of(entrystate, node);
+					return Pair.of(entrystate.access(sources, proj.getSelection().extractColumnNames()), node);
+				} else if (node instanceof Transform<?, ?>) {
+					Transform<?, ?> transform = (Transform<?, ?>) node;
+					if (transform.getType() == BinaryTransformKind.ASSIGN)
+						return Pair.of(entrystate.assign(sources, transform.getSelection().extractColumnNames()),
+								node);
+					else if (transform.getType() == UnaryTransformKind.DROP_COLS)
+						return Pair.of(entrystate.remove(sources, transform.getSelection().extractColumnNames()),
+								node);
+					else
+						return Pair.of(entrystate.access(sources, transform.getSelection().extractColumnNames()),
+								node);
+				} else if (node instanceof Reshape<?, ?>)
+					return Pair.of(entrystate.define(sources), node);
+				else if (node instanceof Read || node instanceof Concat)
+					return Pair.of(entrystate.define(sources), node);
+				else if (node instanceof Init || node instanceof BottomOperation
+						|| node instanceof CloseOperation || node instanceof Iteration
+						|| node instanceof GetAxis)
+					return Pair.of(entrystate, node);
+				else
+					return Pair.of(entrystate.top(), node);
+			}
 
-					private Names extractSources(
-							DataframeOperation node,
-							DataframeForest graph) {
-						DataframeForest cut = graph.bDFS(node,
-								op -> op instanceof Reshape<?, ?>,
-								edge -> !(edge instanceof AssignEdge));
-						Set<String> names = new HashSet<>();
-						for (DataframeOperation op : cut.getNodeList().getEntries())
-							if (op instanceof Read
-									&& !((Read) op).getFile().isTop()
-									&& !((Read) op).getFile().isBottom())
-								names.add(((Read) op).getFile().as(String.class));
-							else
-								names.add(op.toString());
-						return new Names(names);
-					}
+			private Names extractSources(
+					DataframeOperation node,
+					DataframeForest graph) {
+				DataframeForest cut = graph.bDFS(node,
+						op -> op instanceof Reshape<?, ?>,
+						edge -> !(edge instanceof AssignEdge));
+				Set<String> names = new HashSet<>();
+				for (DataframeOperation op : cut.getNodeList().getEntries())
+					if (op instanceof Read
+							&& !((Read) op).getFile().isTop()
+							&& !((Read) op).getFile().isBottom())
+						names.add(((Read) op).getFile().as(String.class));
+					else
+						names.add(op.toString());
+				return new Names(names);
+			}
 
-					@Override
-					public ColumnsDomain join(
-							DataframeOperation node,
-							ColumnsDomain approx,
-							ColumnsDomain old)
-							throws Exception {
-						return approx.lub(old);
-					}
-				};
+			@Override
+			public ColumnsDomain join(
+					DataframeOperation node,
+					ColumnsDomain approx,
+					ColumnsDomain old)
+					throws Exception {
+				return approx.lub(old);
+			}
+		};
 
 		Map<DataframeOperation, ColumnsDomain> fixpoint = fix.fixpoint(entrypoints, new FIFOWorkingSet<>());
 

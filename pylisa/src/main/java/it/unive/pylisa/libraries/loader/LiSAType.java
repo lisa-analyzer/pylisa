@@ -1,9 +1,8 @@
 package it.unive.pylisa.libraries.loader;
 
+import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
 import java.lang.reflect.Field;
 import java.util.Objects;
-
-import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
 
 public class LiSAType implements Type {
 	private final String name;

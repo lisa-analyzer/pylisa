@@ -1,7 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.Set;
-
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
@@ -23,6 +21,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
+import java.util.Set;
 
 public class PySingleArrayAccess extends BinaryExpression {
 
@@ -43,11 +42,15 @@ public class PySingleArrayAccess extends BinaryExpression {
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
-			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		AnalysisState<A> result = state.bottom();
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		
+
 		Type dereferencedType = null;
 		Type childType = getStaticType();
 		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);

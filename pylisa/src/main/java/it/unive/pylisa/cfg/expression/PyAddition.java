@@ -1,8 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.Collections;
-import java.util.Set;
-
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
@@ -21,6 +18,8 @@ import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.program.cfg.statement.numeric.Addition;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
+import java.util.Collections;
+import java.util.Set;
 
 public class PyAddition extends Addition {
 
@@ -42,11 +41,15 @@ public class PyAddition extends Addition {
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
-			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Set<Type> rtsl = analysis.getRuntimeTypesOf(state, left, this);
-		Set<Type> rtsr = analysis.getRuntimeTypesOf(state, right, this);		
+		Set<Type> rtsr = analysis.getRuntimeTypesOf(state, right, this);
 		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
 
 		AnalysisState<A> result = state.bottom();
@@ -92,5 +95,5 @@ public class PyAddition extends Addition {
 		}
 
 		return result;
-	}		
+	}
 }

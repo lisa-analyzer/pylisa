@@ -1,9 +1,5 @@
 package it.unive.pylisa.cfg.statement;
 
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
@@ -21,6 +17,9 @@ import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.collections.CollectionsDiffBuilder;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 
 public class FromImport extends Statement {
 
@@ -113,25 +112,29 @@ public class FromImport extends Statement {
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
-			AnalysisState<A> entryState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions) throws SemanticException {
-	AnalysisState<A> result = interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()), this);
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		AnalysisState<
+				A> result = interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()), this);
 
-	if (result.getExecutionInfo(SymbolAliasing.INFO_KEY) == null)
-		result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
+		if (result.getExecutionInfo(SymbolAliasing.INFO_KEY) == null)
+			result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
 
-	for (Entry<String, String> component : components.entrySet()) {
-		if (component.getValue() != null)
-			result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY,
-					result.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).alias(
-							new QualifiedNameSymbol(lib, component.getKey()),
-							new QualifiedNameSymbol(null, component.getValue())));
-		else
-			result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY,
-					result.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).alias(
-							new QualifiedNameSymbol(lib, component.getKey()),
-							new QualifiedNameSymbol(null, component.getKey())));
-	}
+		for (Entry<String, String> component : components.entrySet()) {
+			if (component.getValue() != null)
+				result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY,
+						result.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).alias(
+								new QualifiedNameSymbol(lib, component.getKey()),
+								new QualifiedNameSymbol(null, component.getValue())));
+			else
+				result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY,
+						result.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).alias(
+								new QualifiedNameSymbol(lib, component.getKey()),
+								new QualifiedNameSymbol(null, component.getKey())));
+		}
 
-	return result;
+		return result;
 	}
 }

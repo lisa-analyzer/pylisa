@@ -1,7 +1,5 @@
 package it.unive.pylisa.libraries.pandas;
 
-import java.util.Set;
-
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
@@ -24,6 +22,7 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.CopyDataframe;
 import it.unive.pylisa.symbolic.operators.dataframes.SeriesComparison;
 import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
+import java.util.Set;
 
 public class PandasSemantics {
 
@@ -42,11 +41,12 @@ public class PandasSemantics {
 		Type dfref = ((PyClassType) dftype).getReference();
 
 		MemoryAllocation allocation = new MemoryAllocation(dftype, location);
-		AnalysisState<A> allocated = analysis.smallStepSemantics(state,allocation, pp);
+		AnalysisState<A> allocated = analysis.smallStepSemantics(state, allocation, pp);
 
 		for (SymbolicExpression loc : allocated.getExecutionExpressions()) {
 			HeapReference ref = new HeapReference(dfref, loc, location);
-			AnalysisState<A> readState = analysis.assign(analysis.smallStepSemantics(allocated, init, pp), loc, init, pp);
+			AnalysisState<
+					A> readState = analysis.assign(analysis.smallStepSemantics(allocated, init, pp), loc, init, pp);
 			assigned = analysis.smallStepSemantics(readState, ref, pp);
 		}
 
@@ -110,11 +110,12 @@ public class PandasSemantics {
 		return result;
 	}
 
-	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean isDataframePortionThatCanBeAssignedTo(
-			SymbolicExpression left,
-			ProgramPoint pp,
-			Analysis<A, D> analysis,
-			AnalysisState<A> state) {
+	public static <A extends AbstractLattice<A>,
+			D extends AbstractDomain<A>> boolean isDataframePortionThatCanBeAssignedTo(
+					SymbolicExpression left,
+					ProgramPoint pp,
+					Analysis<A, D> analysis,
+					AnalysisState<A> state) {
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		if (!(left instanceof HeapReference))

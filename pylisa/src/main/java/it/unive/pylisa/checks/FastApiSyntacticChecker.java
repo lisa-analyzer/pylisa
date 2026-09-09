@@ -1,8 +1,5 @@
 package it.unive.pylisa.checks;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import it.unive.lisa.ReportingTool;
 import it.unive.lisa.checks.syntactic.SyntacticCheck;
 import it.unive.lisa.program.CodeUnit;
@@ -15,6 +12,8 @@ import it.unive.pylisa.libraries.fastapi.analysis.syntax.EndpointChecker;
 import it.unive.pylisa.libraries.fastapi.analysis.syntax.EndpointService;
 import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
 import it.unive.pylisa.libraries.fastapi.helpers.TextHelper;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FastApiSyntacticChecker implements SyntacticCheck {
 

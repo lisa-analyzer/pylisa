@@ -55,15 +55,19 @@ public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression i
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
-			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation loc = getLocation();
 		AnalysisState<A> result = state.bottom();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 
-		AnalysisState<A> copy = PandasSemantics.copyDataframe(analysis,state, left, st);
+		AnalysisState<A> copy = PandasSemantics.copyDataframe(analysis, state, left, st);
 		ExpressionSet recs = copy.getExecutionExpressions();
 		for (SymbolicExpression rec : recs) {
 			BinaryExpression cat = new BinaryExpression(dftype, rec, right, new JoinCols(0), loc);

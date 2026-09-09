@@ -1,8 +1,5 @@
 package it.unive.ros.models.rclpy;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.nonrelational.heap.HeapEnvironment;
 import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
@@ -13,6 +10,8 @@ import it.unive.lisa.lattices.types.TypeSet;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ROSActionClient extends ROSActionBasedNetworkEntity {
 

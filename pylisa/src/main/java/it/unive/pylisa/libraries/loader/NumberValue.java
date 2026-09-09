@@ -1,10 +1,9 @@
 package it.unive.pylisa.libraries.loader;
 
-import java.util.Objects;
-
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
+import java.util.Objects;
 
 public class NumberValue implements Value {
 	private final int value;

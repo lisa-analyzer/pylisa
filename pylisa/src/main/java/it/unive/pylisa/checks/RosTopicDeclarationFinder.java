@@ -1,7 +1,5 @@
 package it.unive.pylisa.checks;
 
-import java.util.Objects;
-
 import it.unive.lisa.ReportingTool;
 import it.unive.lisa.checks.syntactic.SyntacticCheck;
 import it.unive.lisa.program.Global;
@@ -10,6 +8,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.Call;
+import java.util.Objects;
 
 public class RosTopicDeclarationFinder implements SyntacticCheck {
 

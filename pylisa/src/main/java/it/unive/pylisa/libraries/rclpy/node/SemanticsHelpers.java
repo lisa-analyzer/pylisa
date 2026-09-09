@@ -1,8 +1,5 @@
 package it.unive.pylisa.libraries.rclpy.node;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
@@ -18,6 +15,8 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.ros.lisa.symbolic.operators.ros.ROSTopicNameExpansion;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SemanticsHelpers {
 

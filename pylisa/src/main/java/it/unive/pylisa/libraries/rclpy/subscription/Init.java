@@ -1,7 +1,5 @@
 package it.unive.pylisa.libraries.rclpy.subscription;
 
-import java.util.Set;
-
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
@@ -26,6 +24,7 @@ import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.type.NullType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import java.util.Set;
 
 public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression implements PluggableStatement {
 	protected Statement st;
@@ -63,10 +62,13 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
-			StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		AnalysisState<A> result = state.bottom();
-		
+
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		for (SymbolicExpression v : params[0]) {
 			Set<Type> rts = analysis.getRuntimeTypesOf(state, v, this);
@@ -104,7 +106,8 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 					for (SymbolicExpression t : params[4]) {
 						if (t instanceof AccessChild) {
 							tmp = tmp.lub(
-									analysis.assign(partial, access, new Constant(NullType.INSTANCE, null, getLocation()), this));
+									analysis.assign(partial, access,
+											new Constant(NullType.INSTANCE, null, getLocation()), this));
 						} else {
 							tmp = tmp.lub(analysis.assign(partial, access, t, this));
 						}

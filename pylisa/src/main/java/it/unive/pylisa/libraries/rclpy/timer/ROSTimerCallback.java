@@ -37,7 +37,7 @@ public class ROSTimerCallback extends NaryExpression {
 		return 0;
 	}
 
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>>  AnalysisState<A> snooping(
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> snooping(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
@@ -79,11 +79,13 @@ public class ROSTimerCallback extends NaryExpression {
 		return state;
 	}
 
-
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
-			StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Expression e = getSubExpressions()[0];
 		if (e instanceof AccessInstanceGlobal) {
 			AccessInstanceGlobal aig = (AccessInstanceGlobal) e;

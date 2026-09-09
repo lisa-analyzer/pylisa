@@ -51,8 +51,11 @@ public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr,
-			StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			StatementStore<A> expressions)
+			throws SemanticException {
 
 		UnaryReshape op = new UnaryReshape(0, UnaryReshapeKind.TO_GEOCODE);
 		return PandasSemantics.applyUnary(interprocedural.getAnalysis(), state, expr, st, op);

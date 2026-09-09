@@ -1,11 +1,10 @@
 package it.unive.ros.models.rclpy;
 
-import java.util.List;
-
 import it.unive.ros.network.Network;
 import it.unive.ros.network.NetworkChannel;
 import it.unive.ros.network.NetworkEvent;
 import it.unive.ros.network.NetworkMessage;
+import java.util.List;
 
 public class PublishMessageEvent implements NetworkEvent {
 	ROSNetworkEntity initiator;

@@ -95,8 +95,11 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr,
-			StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation location = getLocation();
 		AnalysisState<A> base = state;
@@ -118,7 +121,8 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 			SymbolicExpression ref = loc instanceof HeapDereference
 					? ((HeapDereference) loc).getExpression()
 					: new HeapReference(dfref, loc, location);
-			filtered = filtered.lub(analysis.smallStepSemantics(analysis.smallStepSemantics(base, filter, st), ref, st));
+			filtered = filtered
+					.lub(analysis.smallStepSemantics(analysis.smallStepSemantics(base, filter, st), ref, st));
 		}
 
 		return filtered;

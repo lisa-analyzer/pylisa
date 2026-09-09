@@ -1,11 +1,5 @@
 package it.unive.pylisa.analysis.constants;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.lang3.tuple.Pair;
-
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -47,11 +41,14 @@ import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
 import it.unive.pylisa.symbolic.operators.value.StringFormat;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
- * The domain evaluating expressions over {@link ConstantPropagation}
- * instances. The lattice structure itself lives in
- * {@link ConstantPropagation}.
+ * The domain evaluating expressions over {@link ConstantPropagation} instances.
+ * The lattice structure itself lives in {@link ConstantPropagation}.
  */
 public class ConstantPropagationDomain
 		implements

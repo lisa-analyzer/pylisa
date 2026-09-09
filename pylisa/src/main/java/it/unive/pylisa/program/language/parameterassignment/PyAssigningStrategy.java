@@ -1,12 +1,5 @@
 package it.unive.pylisa.program.language.parameterassignment;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.commons.lang3.tuple.Pair;
-
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
@@ -32,6 +25,11 @@ import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class PyAssigningStrategy implements ParameterAssigningStrategy {
 
@@ -91,18 +89,18 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		for (int i = 0; i < formals.length; i++) {
 			AnalysisState<A> temp = prepared.bottom();
 			for (SymbolicExpression exp : slots[i])
-				temp = temp.lub(interprocedural.getAnalysis().assign(prepared, formals[i].toSymbolicVariable(), exp, call));
+				temp = temp.lub(
+						interprocedural.getAnalysis().assign(prepared, formals[i].toSymbolicVariable(), exp, call));
 			prepared = temp;
 		}
 
 		// we remove expressions from the stack
 		prepared = prepared.withExecutionExpressions(new ExpressionSet());
-		return Pair.of(prepared, slots);		
-	}	
-
+		return Pair.of(prepared, slots);
+	}
 
 	@SuppressWarnings("unchecked")
-	private<A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> pythonLogic(
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> pythonLogic(
 			Parameter[] formals,
 			Expression[] actuals,
 			ExpressionSet[] given,

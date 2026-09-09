@@ -1,27 +1,26 @@
 package it.unive.ros.lisa.checks.semantics;
 
-import java.util.Collection;
-
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.SimpleAbstractDomain;
+import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.heap.HeapEnvironment;
 import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.symbols.QualifiedNameSymbol;
 import it.unive.lisa.analysis.symbols.Symbol;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
-import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.types.InferredTypes;
-import it.unive.lisa.lattices.heap.allocations.AllocationSites;
-import it.unive.lisa.lattices.types.TypeSet;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.checks.semantic.SemanticTool;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.SimpleAbstractState;
+import it.unive.lisa.lattices.heap.allocations.AllocationSites;
 import it.unive.lisa.lattices.heap.allocations.HeapAllocationSite;
+import it.unive.lisa.lattices.types.TypeSet;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.Unit;
@@ -39,7 +38,6 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.lisa.symbolic.heap.HeapReference;
-import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
@@ -67,11 +65,14 @@ import it.unive.ros.models.rclpy.ROSTopicPublisher;
 import it.unive.ros.models.rclpy.ROSTopicSubscription;
 import it.unive.ros.models.rclpy.RosComputationalGraph;
 import it.unive.ros.network.NetworkMessage;
+import java.util.Collection;
 
 public class ROSComputationGraphDumper
 		implements
 		SemanticCheck<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-				TypeEnvironment<TypeSet>>, SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>, TypeEnvironment<TypeSet>>> {
+				TypeEnvironment<TypeSet>>,
+				SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+						TypeEnvironment<TypeSet>>> {
 
 	private RosComputationalGraph rosGraph;
 
@@ -117,19 +118,25 @@ public class ROSComputationGraphDumper
 	@Override
 	public void beforeExecution(
 			SemanticTool<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<TypeSet>>, SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>, TypeEnvironment<TypeSet>>> tool) {
+					TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<TypeSet>>> tool) {
 	}
 
 	@Override
 	public void afterExecution(
 			SemanticTool<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<TypeSet>>, SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>, TypeEnvironment<TypeSet>>> tool) {
+					TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<TypeSet>>> tool) {
 	}
 
 	@Override
 	public boolean visitUnit(
 			SemanticTool<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<TypeSet>>, SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>, TypeEnvironment<TypeSet>>> tool,
+					TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<TypeSet>>> tool,
 			Unit unit) {
 		return true;
 	}
@@ -137,7 +144,9 @@ public class ROSComputationGraphDumper
 	@Override
 	public void visitGlobal(
 			SemanticTool<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<TypeSet>>, SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>, TypeEnvironment<TypeSet>>> tool,
+					TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<TypeSet>>> tool,
 			Unit unit,
 			Global global,
 			boolean instance) {
@@ -147,7 +156,9 @@ public class ROSComputationGraphDumper
 	@Override
 	public boolean visit(
 			SemanticTool<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<TypeSet>>, SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>, TypeEnvironment<TypeSet>>> tool,
+					TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<TypeSet>>> tool,
 			CFG graph) {
 
 		return true;
@@ -259,7 +270,9 @@ public class ROSComputationGraphDumper
 			Statement node,
 			HeapExpression expr,
 			SemanticTool<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<TypeSet>>, SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>, TypeEnvironment<TypeSet>>> tool)
+					TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<TypeSet>>> tool)
 			throws Exception {
 		String nodeName = "<undefined>";
 		String namespace = "<undefined>";
@@ -339,7 +352,7 @@ public class ROSComputationGraphDumper
 		HeapDereference nodeDeref = new HeapDereference(nodeHR.getExpression().getStaticType(), nodeHR,
 				nodeSemantics.getExecutionExpressions().elements.iterator().next().getCodeLocation());
 		ExpressionSet nodeHAS = rewriteExpr(nodeDeref,
-						node, nodeSemantics);
+				node, nodeSemantics);
 		return nodeHAS.iterator().next();
 	}
 
@@ -642,7 +655,9 @@ public class ROSComputationGraphDumper
 
 	public void visitAnalyzedCFG(
 			SemanticTool<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<TypeSet>>, SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>, TypeEnvironment<TypeSet>>> tool,
+					TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<TypeSet>>> tool,
 			AnalyzedCFG<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
 					TypeEnvironment<TypeSet>>> analyzedCFG,
 			Statement node)
@@ -655,8 +670,9 @@ public class ROSComputationGraphDumper
 				if (pyCObjClassType.getUnit().getImmediateAncestors()
 						.contains(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE).getUnit())) {
 					// we are creating a rclpy Node.
-					AnalysisState<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-							TypeEnvironment<TypeSet>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
+					AnalysisState<
+							SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+									TypeEnvironment<TypeSet>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
 					// in the analysis state we have a rclpy Node.
 					for (SymbolicExpression expr : analysisState.getExecutionExpressions()) {
 						if (expr instanceof HeapReference
@@ -672,8 +688,9 @@ public class ROSComputationGraphDumper
 				}
 			}
 			if (staticType.equals(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_ACTIONCLIENT))) {
-				AnalysisState<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-						TypeEnvironment<TypeSet>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
+				AnalysisState<
+						SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+								TypeEnvironment<TypeSet>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
 				for (SymbolicExpression expr : analysisState.getExecutionExpressions()) {
 					if (expr instanceof HeapReference
 					/*
@@ -688,8 +705,9 @@ public class ROSComputationGraphDumper
 					}
 				}
 			} else if (staticType.equals(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_ACTIONSERVER))) {
-				AnalysisState<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-						TypeEnvironment<TypeSet>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
+				AnalysisState<
+						SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+								TypeEnvironment<TypeSet>>> analysisState = analyzedCFG.getAnalysisStateAfter(node);
 				for (SymbolicExpression expr : analysisState.getExecutionExpressions()) {
 					if (expr instanceof HeapReference
 					/*
@@ -735,7 +753,7 @@ public class ROSComputationGraphDumper
 		HeapDereference qosDeref = new HeapDereference(qosHR.getExpression().getStaticType(), qosHR,
 				qosSemantics.getExecutionExpressions().elements.iterator().next().getCodeLocation());
 		ExpressionSet qosHAS = rewriteExpr(qosDeref,
-						qosProfile, qosSemantics);
+				qosProfile, qosSemantics);
 		SymbolicExpression e = qosHAS.iterator().next();
 		if (e instanceof HeapAllocationSite) {
 
@@ -757,7 +775,9 @@ public class ROSComputationGraphDumper
 
 	public void visitNativeCFG(
 			SemanticTool<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<TypeSet>>, SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>, TypeEnvironment<TypeSet>>> tool,
+					TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<TypeSet>>> tool,
 			NativeCFG nativeCFG,
 			AnalyzedCFG<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
 					TypeEnvironment<TypeSet>>> analyzedCFG,
@@ -907,8 +927,11 @@ public class ROSComputationGraphDumper
 
 			Expression publisherExpression = ((UnresolvedCall) node).getSubExpressions()[0];
 			Expression message = ((UnresolvedCall) node).getSubExpressions()[1];
-			AnalysisState<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>, TypeEnvironment<
-					TypeSet>>> publisherSemantics = analyzedCFG.getAnalysisStateAfter(publisherExpression);
+			AnalysisState<
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<
+									TypeSet>>> publisherSemantics = analyzedCFG
+											.getAnalysisStateAfter(publisherExpression);
 
 			HeapReference publisherHR = new HeapReference(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE),
 					publisherSemantics.getExecutionExpressions().elements.iterator().next(),
@@ -917,7 +940,7 @@ public class ROSComputationGraphDumper
 					publisherHR,
 					publisherSemantics.getExecutionExpressions().elements.iterator().next().getCodeLocation());
 			ExpressionSet publisherExprSet = rewriteExpr(publisherDeref,
-							node, publisherSemantics);
+					node, publisherSemantics);
 			ROSNetworkEntity ne = rosNetwork
 					.getNetworkEntity(publisherExprSet.iterator().next().getCodeLocation().toString());
 			System.out.println(ne);
@@ -939,15 +962,19 @@ public class ROSComputationGraphDumper
 	@Override
 	public boolean visit(
 			SemanticTool<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<TypeSet>>, SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>, TypeEnvironment<TypeSet>>> tool,
+					TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Statement node) {
-		Collection<AnalyzedCFG<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-				TypeEnvironment<TypeSet>>>> results = tool
-						.getResultOf(graph);
+		Collection<
+				AnalyzedCFG<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+						TypeEnvironment<TypeSet>>>> results = tool
+								.getResultOf(graph);
 		try {
-			for (AnalyzedCFG<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<TypeSet>>> result : results) {
+			for (AnalyzedCFG<
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<TypeSet>>> result : results) {
 				visitAnalyzedCFG(tool, result, node);
 				if (node instanceof UnresolvedCall) {
 
@@ -973,7 +1000,9 @@ public class ROSComputationGraphDumper
 	@Override
 	public boolean visit(
 			SemanticTool<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<TypeSet>>, SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>, TypeEnvironment<TypeSet>>> tool,
+					TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+							TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Edge edge) {
 		if (graph.getDescriptor().getName().equals("$main")) {

@@ -1,7 +1,5 @@
 package it.unive.pylisa.libraries.rclpy.action.server;
 
-import java.util.Set;
-
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
@@ -27,6 +25,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.rclpy.node.SemanticsHelpers;
+import java.util.Set;
 
 public class Init extends NaryExpression implements PluggableStatement {
 	protected Statement st;
@@ -59,8 +58,11 @@ public class Init extends NaryExpression implements PluggableStatement {
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
-			StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		AnalysisState<A> result = state.bottom();
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Expression node = getSubExpressions()[1] instanceof NamedParameterExpression

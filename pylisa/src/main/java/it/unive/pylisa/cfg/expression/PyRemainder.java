@@ -1,8 +1,5 @@
 package it.unive.pylisa.cfg.expression;
 
-import java.util.Set;
-import java.util.function.Predicate;
-
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
@@ -18,6 +15,8 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
+import java.util.Set;
+import java.util.function.Predicate;
 
 public class PyRemainder extends Remainder {
 
@@ -31,8 +30,12 @@ public class PyRemainder extends Remainder {
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
-			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		AnalysisState<A> result = state.bottom();
 		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);

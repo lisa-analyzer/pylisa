@@ -1,10 +1,9 @@
 package it.unive.pylisa.cron;
 
-import org.junit.Test;
-
 import it.unive.pylisa.helpers.AnalysisTestExecutor;
 import it.unive.pylisa.helpers.CronConfiguration;
 import it.unive.pylisa.helpers.TestHelper;
+import org.junit.Test;
 
 public class BasicTest extends AnalysisTestExecutor {
 

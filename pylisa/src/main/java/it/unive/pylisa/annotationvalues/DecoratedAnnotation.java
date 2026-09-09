@@ -1,10 +1,9 @@
 package it.unive.pylisa.annotationvalues;
 
-import java.util.List;
-
 import it.unive.lisa.program.annotations.values.AnnotationValue;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.call.Call;
+import java.util.List;
 
 public class DecoratedAnnotation implements AnnotationValue {
 	private List<Expression> params;

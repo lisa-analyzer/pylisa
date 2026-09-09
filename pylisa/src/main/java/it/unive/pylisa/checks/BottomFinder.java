@@ -1,9 +1,7 @@
 package it.unive.pylisa.checks;
 
-import it.unive.lisa.AnalysisExecutionException;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.AnalyzedCFG;
-import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractDomain;
 import it.unive.lisa.analysis.nonrelational.heap.HeapEnvironment;
 import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
@@ -34,22 +32,28 @@ public class BottomFinder
 	@Override
 	public void beforeExecution(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool) {
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool) {
 	}
 
 	@Override
 	public void afterExecution(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool) {
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool) {
 	}
 
 	@Override
 	public boolean visitUnit(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			Unit unit) {
 		return true;
 	}
@@ -57,8 +61,10 @@ public class BottomFinder
 	@Override
 	public void visitGlobal(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			Unit unit,
 			Global global,
 			boolean instance) {
@@ -67,8 +73,10 @@ public class BottomFinder
 	@Override
 	public boolean visit(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			CFG graph) {
 		return true;
 	}
@@ -76,8 +84,10 @@ public class BottomFinder
 	@Override
 	public boolean visit(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Statement node) {
 		return true;
@@ -86,8 +96,10 @@ public class BottomFinder
 	@Override
 	public boolean visit(
 			SemanticTool<
-					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
-					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Edge edge) {
 		Statement source = edge.getSource();
