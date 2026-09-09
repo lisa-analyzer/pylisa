@@ -7,6 +7,10 @@ u = -x
 g = x / y
 t = x | y
 s = ~x
+r = x << y
+q = y >> x
+p = x & y
+o = x ^ y
 
 a = 1.5
 b = 2.5

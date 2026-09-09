@@ -19,7 +19,11 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.ArithmeticOperator;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseAnd;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseOr;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseXor;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftLeft;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftRight;
 import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.ModuloOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
@@ -193,6 +197,14 @@ public class ConstantPropagationDomain
 			return stringFormat(left, right, pp);
 		} else if (operator instanceof BitwiseOr)
 			return bitwiseOr(left, right, pp);
+		else if (operator instanceof BitwiseAnd)
+			return bitwiseAnd(left, right, pp);
+		else if (operator instanceof BitwiseXor)
+			return bitwiseXor(left, right, pp);
+		else if (operator instanceof BitwiseShiftLeft)
+			return bitwiseLeftShift(left, right, pp);
+		else if (operator instanceof BitwiseShiftRight)
+			return bitwiseRightShift(left, right, pp);
 		if (operator instanceof StringMult)
 			return stringRepeat(left, right, pp);
 		if (operator instanceof ListAppend)
@@ -473,6 +485,66 @@ public class ConstantPropagationDomain
 			return new ConstantPropagation(
 					new Constant(Int32Type.INSTANCE, left.as(Integer.class) | right.as(Integer.class),
 							pp.getLocation()));
+		return ConstantPropagation.TOP;
+	}
+
+	private ConstantPropagation bitwiseAnd(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+		if (left.isTop() || right.isTop())
+			return ConstantPropagation.TOP;
+		if (left.is(Integer.class) && right.is(Integer.class))
+			return new ConstantPropagation(
+					new Constant(Int32Type.INSTANCE, left.as(Integer.class) & right.as(Integer.class),
+							pp.getLocation()));
+		return ConstantPropagation.TOP;
+	}
+
+	private ConstantPropagation bitwiseXor(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+		if (left.isTop() || right.isTop())
+			return ConstantPropagation.TOP;
+		if (left.is(Integer.class) && right.is(Integer.class))
+			return new ConstantPropagation(
+					new Constant(Int32Type.INSTANCE, left.as(Integer.class) ^ right.as(Integer.class),
+							pp.getLocation()));
+		return ConstantPropagation.TOP;
+	}
+
+	private ConstantPropagation bitwiseLeftShift(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+		if (left.isTop() || right.isTop())
+			return ConstantPropagation.TOP;
+		if (left.is(Integer.class) && right.is(Integer.class)) {
+			int shift = right.as(Integer.class);
+			if (shift < 0)
+				// Python raises ValueError for a negative shift count
+				return ConstantPropagation.BOTTOM;
+			return new ConstantPropagation(
+					new Constant(Int32Type.INSTANCE, left.as(Integer.class) << shift, pp.getLocation()));
+		}
+		return ConstantPropagation.TOP;
+	}
+
+	private ConstantPropagation bitwiseRightShift(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+		if (left.isTop() || right.isTop())
+			return ConstantPropagation.TOP;
+		if (left.is(Integer.class) && right.is(Integer.class)) {
+			int shift = right.as(Integer.class);
+			if (shift < 0)
+				// Python raises ValueError for a negative shift count
+				return ConstantPropagation.BOTTOM;
+			return new ConstantPropagation(
+					new Constant(Int32Type.INSTANCE, left.as(Integer.class) >> shift, pp.getLocation()));
+		}
 		return ConstantPropagation.TOP;
 	}
 
