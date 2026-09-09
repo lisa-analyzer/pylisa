@@ -157,6 +157,7 @@ import it.unive.pylisa.cfg.expression.LambdaExpression;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
 import it.unive.pylisa.cfg.expression.PyAddition;
+import it.unive.pylisa.cfg.expression.PyNegation;
 import it.unive.pylisa.cfg.expression.PySubtraction;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.expression.PyBitwiseAnd;
@@ -1733,8 +1734,7 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 			return new PyBitwiseNot(currentCFG, getLocation(ctx),
 					visitFactor(ctx.factor()));
 		else if (ctx.MINUS() != null)
-			return new PyMultiplication(currentCFG, getLocation(ctx),
-					new Int32Literal(currentCFG, getLocation(ctx), -1),
+			return new PyNegation(currentCFG, getLocation(ctx),
 					visitFactor(ctx.factor()));
 		return visitFactor(ctx.factor());
 	}

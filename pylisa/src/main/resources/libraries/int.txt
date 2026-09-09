@@ -28,3 +28,7 @@ class Integral:
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __neg__: it.unive.pylisa.libraries.IntNeg
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE

@@ -28,3 +28,7 @@ class Real:
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __neg__: it.unive.pylisa.libraries.FloatNeg
+		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
