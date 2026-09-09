@@ -1,6 +1,7 @@
 package it.unive.pylisa.cfg.statement;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -26,16 +27,6 @@ public class FunctionDef extends Statement {
 	@Override
 	public String toString() {
 		return "def " + method.toString();
-	}
-
-	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemantics(
-			AnalysisState<A> entryState,
-			InterproceduralAnalysis<A> interprocedural,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		// keep the state as-is
-		return entryState;
 	}
 
 	@Override
@@ -70,6 +61,13 @@ public class FunctionDef extends Statement {
 			GraphVisitor<CFG, Statement, Edge, V> visitor,
 			V tool) {
 		return visitor.visit(tool, getCFG(), this);
+	}
+
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions)
+			throws SemanticException {
+		return entryState;
 	}
 
 }

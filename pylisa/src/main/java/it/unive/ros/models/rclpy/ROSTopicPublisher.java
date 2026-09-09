@@ -1,11 +1,12 @@
 package it.unive.ros.models.rclpy;
 
 import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SimpleAbstractState;
-import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
-import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
+import it.unive.lisa.analysis.nonrelational.heap.HeapEnvironment;
+import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.types.InferredTypes;
+import it.unive.lisa.lattices.SimpleAbstractState;
+import it.unive.lisa.lattices.heap.allocations.AllocationSites;
+import it.unive.lisa.lattices.types.TypeSet;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
@@ -28,8 +29,8 @@ public class ROSTopicPublisher extends ROSTopicBasedNetworkEntity {
 			String msgType,
 			Statement publisherStmt,
 			HeapExpression expr,
-			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<InferredTypes>>> analysisState) {
+			AnalysisState<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<TypeSet>>> analysisState) {
 		super(containerID, topic, msgType, expr, publisherStmt, analysisState);
 	}
 

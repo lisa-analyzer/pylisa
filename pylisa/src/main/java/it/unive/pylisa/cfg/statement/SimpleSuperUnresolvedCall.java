@@ -1,13 +1,17 @@
 package it.unive.pylisa.cfg.statement;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.Set;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -18,7 +22,6 @@ import it.unive.lisa.program.cfg.statement.evaluation.EvaluationOrder;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import java.util.Set;
 
 /*
  * https://docs.python.org/3/library/functions.html#super
@@ -61,25 +64,22 @@ public class SimpleSuperUnresolvedCall extends UnresolvedCall {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
+			StatementStore<A> expressions) throws SemanticException {
 		Call resolved;
-		Set<Type>[] ptypes = parameterTypes(expressions);
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		Set<Type>[] ptypes = parameterTypes(expressions, analysis);
 		try {
 			resolved = interprocedural.resolve(
 					call,
 					new Set[0],
-					state.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
+					state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
 			if (resolved instanceof OpenCall)
 				resolved = interprocedural.resolve(
 						this,
 						ptypes,
-						state.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
+						state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
 		} catch (CallResolutionException e) {
 			throw new SemanticException("Unable to resolve call " + this, e);
 		}

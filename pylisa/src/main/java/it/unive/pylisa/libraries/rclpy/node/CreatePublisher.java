@@ -1,11 +1,14 @@
 package it.unive.pylisa.libraries.rclpy.node;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.Arrays;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -18,7 +21,6 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.Arrays;
 
 public class CreatePublisher extends NaryExpression implements PluggableStatement {
 	protected Statement st;
@@ -45,12 +47,15 @@ public class CreatePublisher extends NaryExpression implements PluggableStatemen
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public void setOriginatingStatement(
+			Statement st) {
+		this.st = st;
+	}
+
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
+			StatementStore<A> expressions) throws SemanticException {
 		AnalysisState<A> result = state.bottom();
 
 		params[2] = SemanticsHelpers.nameExpansion(this, getSubExpressions()[0], params[2], interprocedural, state,
@@ -70,11 +75,5 @@ public class CreatePublisher extends NaryExpression implements PluggableStatemen
 		result = result.lub(newPublisherAS);
 
 		return result;
-	}
-
-	@Override
-	public void setOriginatingStatement(
-			Statement st) {
-		this.st = st;
 	}
 }

@@ -1,12 +1,13 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import it.unive.lisa.analysis.lattices.SetLattice;
-import it.unive.lisa.util.collections.CollectionsDiffBuilder;
 import java.util.Collections;
 import java.util.Set;
+
 import org.apache.commons.collections4.SetUtils;
 
-public class Names extends SetLattice<Names, String> implements Comparable<Names> {
+import it.unive.lisa.util.collections.CollectionsDiffBuilder;
+
+public class Names extends it.unive.lisa.lattices.SetLattice<Names, String> implements Comparable<Names> {
 
 	public static final Names BOTTOM = new Names(false);
 	public static final Names TOP = new Names();

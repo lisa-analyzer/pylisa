@@ -1,11 +1,19 @@
 package it.unive.pylisa.program.language.parameterassignment;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.lang3.tuple.Pair;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.Parameter;
@@ -24,11 +32,6 @@ import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import org.apache.commons.lang3.tuple.Pair;
 
 public class PyAssigningStrategy implements ParameterAssigningStrategy {
 
@@ -41,16 +44,14 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public <A extends AbstractState<A>> Pair<AnalysisState<A>, ExpressionSet[]> prepare(
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Pair<AnalysisState<A>, ExpressionSet[]> prepare(
 			Call call,
 			AnalysisState<A> callState,
-			InterproceduralAnalysis<A> interprocedural,
+			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions,
 			Parameter[] formals,
 			ExpressionSet[] parameters)
 			throws SemanticException {
-
 		ExpressionSet[] slots = new ExpressionSet[formals.length];
 		Set<Type>[] slotsTypes = new Set[formals.length];
 		Expression[] actuals = call.getParameters();
@@ -62,10 +63,10 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			if (def != null) {
 				callState = def.forwardSemantics(callState, interprocedural, expressions);
 				expressions.put(def, callState);
-				defaults[pos] = callState.getComputedExpressions();
+				defaults[pos] = callState.getExecutionExpressions();
 				Set<Type> types = new HashSet<>();
 				for (SymbolicExpression e : defaults[pos])
-					types.addAll(callState.getState().getRuntimeTypesOf(e, call, callState.getState()));
+					types.addAll(interprocedural.getAnalysis().getRuntimeTypesOf(callState, e, call));
 				defaultTypes[pos] = types;
 			}
 		}
@@ -74,7 +75,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 				formals,
 				actuals,
 				parameters,
-				call.parameterTypes(expressions),
+				call.parameterTypes(expressions, interprocedural.getAnalysis()),
 				defaults,
 				defaultTypes,
 				slots,
@@ -90,17 +91,18 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		for (int i = 0; i < formals.length; i++) {
 			AnalysisState<A> temp = prepared.bottom();
 			for (SymbolicExpression exp : slots[i])
-				temp = temp.lub(prepared.assign(formals[i].toSymbolicVariable(), exp, call));
+				temp = temp.lub(interprocedural.getAnalysis().assign(prepared, formals[i].toSymbolicVariable(), exp, call));
 			prepared = temp;
 		}
 
 		// we remove expressions from the stack
-		prepared = new AnalysisState<>(prepared.getState(), new ExpressionSet(), prepared.getFixpointInformation());
-		return Pair.of(prepared, slots);
-	}
+		prepared = prepared.withExecutionExpressions(new ExpressionSet());
+		return Pair.of(prepared, slots);		
+	}	
+
 
 	@SuppressWarnings("unchecked")
-	private <A extends AbstractState<A>> AnalysisState<A> pythonLogic(
+	private<A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> pythonLogic(
 			Parameter[] formals,
 			Expression[] actuals,
 			ExpressionSet[] given,
@@ -109,7 +111,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			Set<Type>[] defaultTypes,
 			ExpressionSet[] slots,
 			Set<Type>[] slotTypes,
-			InterproceduralAnalysis<A> interprocedural,
+			InterproceduralAnalysis<A, D> interprocedural,
 			CFG callCFG,
 			AnalysisState<A> failure)
 			throws SemanticException {
@@ -164,7 +166,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 					vargsList.toArray(Expression[]::new));
 			AnalysisState<A> listSemantics = listCreation.forwardSemanticsAux(interprocedural,
 					failure.bottom(), symbolicExprs, null);
-			slots[fPos] = listSemantics.getComputedExpressions();
+			slots[fPos] = listSemantics.getExecutionExpressions();
 			slotTypes[fPos] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
 			fPos++;
 		}
@@ -205,7 +207,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 					pairExprs.toArray(Pair[]::new));
 			AnalysisState<A> dictSemantics = dictCreation.forwardSemanticsAux(interprocedural,
 					failure.bottom(), symbExprs.toArray(ExpressionSet[]::new), null);
-			slots[formals.length - 1] = dictSemantics.getComputedExpressions();
+			slots[formals.length - 1] = dictSemantics.getExecutionExpressions();
 			slotTypes[formals.length - 1] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.DICT));
 		}
 

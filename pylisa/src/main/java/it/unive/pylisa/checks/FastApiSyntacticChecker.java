@@ -1,6 +1,9 @@
 package it.unive.pylisa.checks;
 
-import it.unive.lisa.checks.syntactic.CheckTool;
+import java.util.ArrayList;
+import java.util.List;
+
+import it.unive.lisa.ReportingTool;
 import it.unive.lisa.checks.syntactic.SyntacticCheck;
 import it.unive.lisa.program.CodeUnit;
 import it.unive.lisa.program.Global;
@@ -12,8 +15,6 @@ import it.unive.pylisa.libraries.fastapi.analysis.syntax.EndpointChecker;
 import it.unive.pylisa.libraries.fastapi.analysis.syntax.EndpointService;
 import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
 import it.unive.pylisa.libraries.fastapi.helpers.TextHelper;
-import java.util.ArrayList;
-import java.util.List;
 
 public class FastApiSyntacticChecker implements SyntacticCheck {
 
@@ -21,18 +22,18 @@ public class FastApiSyntacticChecker implements SyntacticCheck {
 
 	@Override
 	public void beforeExecution(
-			CheckTool tool) {
+			ReportingTool tool) {
 	}
 
 	@Override
 	public void afterExecution(
-			CheckTool tool) {
+			ReportingTool tool) {
 		EndpointChecker.doAfterChecks(tool, endpoints);
 	}
 
 	@Override
 	public boolean visitUnit(
-			CheckTool tool,
+			ReportingTool tool,
 			Unit unit) {
 
 		if (unit instanceof CodeUnit && !unit.getName().equals("fastapi")) {
@@ -50,7 +51,7 @@ public class FastApiSyntacticChecker implements SyntacticCheck {
 
 	@Override
 	public void visitGlobal(
-			CheckTool tool,
+			ReportingTool tool,
 			Unit unit,
 			Global global,
 			boolean instance) {
@@ -58,7 +59,7 @@ public class FastApiSyntacticChecker implements SyntacticCheck {
 
 	@Override
 	public boolean visit(
-			CheckTool tool,
+			ReportingTool tool,
 			CFG graph) {
 
 		// Check-ups for Microservice B endpoints are temporally withheld as
@@ -68,7 +69,7 @@ public class FastApiSyntacticChecker implements SyntacticCheck {
 
 	@Override
 	public boolean visit(
-			CheckTool tool,
+			ReportingTool tool,
 			CFG graph,
 			Statement node) {
 
@@ -86,7 +87,7 @@ public class FastApiSyntacticChecker implements SyntacticCheck {
 
 	@Override
 	public boolean visit(
-			CheckTool tool,
+			ReportingTool tool,
 			CFG graph,
 			Edge edge) {
 

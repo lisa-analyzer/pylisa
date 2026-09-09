@@ -1,11 +1,17 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.commons.lang3.tuple.Pair;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -19,9 +25,6 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.DictConstant;
 import it.unive.pylisa.symbolic.operators.DictPut;
-import java.util.HashSet;
-import java.util.Set;
-import org.apache.commons.lang3.tuple.Pair;
 
 public class DictionaryCreation extends NaryExpression {
 
@@ -51,17 +54,14 @@ public class DictionaryCreation extends NaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
+			StatementStore<A> expressions) throws SemanticException {
 		CodeLocation loc = getLocation();
 		DictConstant dict = new DictConstant(loc);
 
 		if (params.length == 0)
-			return state.smallStepSemantics(dict, this);
+			return interprocedural.getAnalysis().smallStepSemantics(state, dict, this);
 
 		Type dicttype = PyClassType.lookup(LibrarySpecificationProvider.DICT);
 		TernaryOperator append = DictPut.INSTANCE;
@@ -86,7 +86,7 @@ public class DictionaryCreation extends NaryExpression {
 
 		AnalysisState<A> result = state.bottom();
 		for (TernaryExpression completedict : ws)
-			result = result.lub(state.smallStepSemantics(completedict, this));
+			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state, completedict, this));
 
 		return result;
 	}

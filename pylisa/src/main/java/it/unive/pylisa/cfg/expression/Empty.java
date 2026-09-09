@@ -1,6 +1,7 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -40,11 +41,10 @@ public class Empty extends Expression {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemantics(
-			AnalysisState<A> entryState,
-			InterproceduralAnalysis<A> interprocedural,
-			StatementStore<A> expressions)
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions)
 			throws SemanticException {
-		return entryState.smallStepSemantics(new Skip(getLocation()), this);
+		return interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()), this);
+
 	}
 }

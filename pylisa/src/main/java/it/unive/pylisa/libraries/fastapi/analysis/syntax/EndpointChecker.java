@@ -1,6 +1,10 @@
 package it.unive.pylisa.libraries.fastapi.analysis.syntax;
 
-import it.unive.lisa.checks.syntactic.CheckTool;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import it.unive.lisa.ReportingTool;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.CFG;
@@ -14,16 +18,13 @@ import it.unive.pylisa.cfg.expression.PyStringLiteral;
 import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
 import it.unive.pylisa.libraries.fastapi.definitions.Method;
 import it.unive.pylisa.libraries.fastapi.definitions.Param;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class EndpointChecker {
 
 	public void doCheck(
-			CheckTool tool,
+			ReportingTool tool,
 			Unit unit,
 			List<Endpoint> endpoints) {
 
@@ -40,7 +41,7 @@ public class EndpointChecker {
 	}
 
 	public void validateGENERL(
-			CheckTool tool,
+			ReportingTool tool,
 			Unit unit,
 			Endpoint endpoint) {
 
@@ -54,7 +55,7 @@ public class EndpointChecker {
 	}
 
 	public void validateGET(
-			CheckTool tool,
+			ReportingTool tool,
 			Unit unit,
 			Endpoint endpoint) {
 
@@ -85,7 +86,7 @@ public class EndpointChecker {
 	}
 
 	public void validatePOST(
-			CheckTool tool,
+			ReportingTool tool,
 			Unit unit,
 			Endpoint endpoint) {
 
@@ -107,7 +108,7 @@ public class EndpointChecker {
 	}
 
 	public void validatePUT(
-			CheckTool tool,
+			ReportingTool tool,
 			Unit unit,
 			Endpoint endpoint) {
 
@@ -132,7 +133,7 @@ public class EndpointChecker {
 	}
 
 	public Boolean validateDELETE(
-			CheckTool tool,
+			ReportingTool tool,
 			CFG graph,
 			Edge edge,
 			List<Endpoint> endpoints) {
@@ -194,7 +195,7 @@ public class EndpointChecker {
 	}
 
 	public void doAfterChecks(
-			CheckTool tool,
+			ReportingTool tool,
 			List<Endpoint> endpoints) {
 
 		long countGET = endpoints.stream().filter(endpoint -> endpoint.getMethod().equals(Method.GET)).count();

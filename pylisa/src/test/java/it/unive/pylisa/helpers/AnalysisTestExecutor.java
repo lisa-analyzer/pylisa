@@ -6,19 +6,6 @@ import static java.nio.file.Files.delete;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import it.unive.lisa.AnalysisException;
-import it.unive.lisa.AnalysisSetupException;
-import it.unive.lisa.LiSA;
-import it.unive.lisa.conf.LiSAConfiguration;
-import it.unive.lisa.outputs.compare.JsonReportComparer;
-import it.unive.lisa.outputs.compare.JsonReportComparer.BaseDiffAlgorithm;
-import it.unive.lisa.outputs.compare.JsonReportComparer.DiffAlgorithm;
-import it.unive.lisa.outputs.compare.JsonReportComparer.REPORTED_COMPONENT;
-import it.unive.lisa.outputs.compare.JsonReportComparer.REPORT_TYPE;
-import it.unive.lisa.outputs.json.JsonReport;
-import it.unive.lisa.program.Program;
-import it.unive.lisa.util.file.FileManager;
-import it.unive.pylisa.PyFrontend;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -29,7 +16,22 @@ import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
+
 import org.apache.commons.io.FilenameUtils;
+
+import it.unive.lisa.AnalysisException;
+import it.unive.lisa.AnalysisSetupException;
+import it.unive.lisa.LiSA;
+import it.unive.lisa.conf.LiSAConfiguration;
+import it.unive.lisa.outputs.JSONReportDumper;
+import it.unive.lisa.outputs.compare.ResultComparer;
+import it.unive.lisa.outputs.compare.ResultComparer.REPORTED_COMPONENT;
+import it.unive.lisa.outputs.compare.ResultComparer.REPORT_TYPE;
+import it.unive.lisa.outputs.json.JsonReport;
+import it.unive.lisa.program.Program;
+import it.unive.lisa.program.cfg.fixpoints.optforward.OptimizedForwardAscendingFixpoint;
+import it.unive.lisa.util.file.FileManager;
+import it.unive.pylisa.PyFrontend;
 
 public abstract class AnalysisTestExecutor {
 
@@ -74,23 +76,24 @@ public abstract class AnalysisTestExecutor {
 
 		setupWorkdir(conf, actualPath);
 
-		conf.jsonOutput = true;
+		conf.outputs.add(new JSONReportDumper());
 
 		// save disk space!
 		System.clearProperty("lisa.json.indent");
 
 		run(conf, program);
 
-		File expFile = Paths.get(expectedPath.toString(), LiSA.REPORT_NAME).toFile();
-		File actFile = Paths.get(actualPath.toString(), LiSA.REPORT_NAME).toFile();
+		File expFile = Paths.get(expectedPath.toString(), JSONReportDumper.REPORT_NAME).toFile();
+		File actFile = Paths.get(actualPath.toString(), JSONReportDumper.REPORT_NAME).toFile();
 
 		if (!expFile.exists()) {
 			boolean update = "true".equals(System.getProperty("lisa.cron.update")) || conf.forceUpdate;
 			if (!update) {
-				System.out.println("No '" + LiSA.REPORT_NAME + "' found in the expected folder, exiting...");
+				System.out.println("No '" + JSONReportDumper.REPORT_NAME + "' found in the expected folder, exiting...");
 				return;
 			} else {
-				System.out.println("No '" + LiSA.REPORT_NAME + "' found in the expected folder, copying results...");
+				System.out
+						.println("No '" + JSONReportDumper.REPORT_NAME + "' found in the expected folder, copying results...");
 				copyFiles(expectedPath, actualPath, expFile, actFile);
 			}
 		}
@@ -105,13 +108,14 @@ public abstract class AnalysisTestExecutor {
 			program = readProgram(target, conf);
 
 			conf.optimize = true;
+			conf.forwardFixpoint = new OptimizedForwardAscendingFixpoint<>();
 			actualPath = Paths.get(actualPath.toString(), "optimized");
 			conf.workdir = actualPath.toFile().toString();
 			conf.dumpForcesUnwinding = true;
 
 			run(conf, program);
 
-			actFile = Paths.get(actualPath.toString(), LiSA.REPORT_NAME).toFile();
+			actFile = Paths.get(actualPath.toString(), JSONReportDumper.REPORT_NAME).toFile();
 			compare(conf, expectedPath, actualPath, expFile, actFile, true);
 		}
 	}
@@ -130,25 +134,23 @@ public abstract class AnalysisTestExecutor {
 			Accumulator acc = new Accumulator(expectedPath);
 			if (optimized)
 				assertTrue("Optimized results are different",
-						JsonReportComparer.compare(
-								expected,
-								actual,
-								expectedPath.toFile(),
-								actualPath.toFile(),
-								new OptimizedRunDiff()));
-			else if (!update)
-				assertTrue("Results are different",
-						JsonReportComparer.compare(
+						new OptimizedRunDiff().compare(
 								expected,
 								actual,
 								expectedPath.toFile(),
 								actualPath.toFile()));
-			else if (!JsonReportComparer.compare(
+			else if (!update)
+				assertTrue("Results are different",
+						new ResultComparer().compare(
+								expected,
+								actual,
+								expectedPath.toFile(),
+								actualPath.toFile()));
+			else if (!acc.compare(
 					expected,
 					actual,
 					expectedPath.toFile(),
-					actualPath.toFile(),
-					acc)) {
+					actualPath.toFile())) {
 				System.err.println("Results are different, regenerating differences");
 				regen(expectedPath, actualPath, expFile, actFile, acc);
 			}
@@ -172,11 +174,11 @@ public abstract class AnalysisTestExecutor {
 			createDirectories(expectedPath);
 
 			copy(actFile.toPath(), expFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-			System.err.println("- Copied " + LiSA.REPORT_NAME);
+			System.err.println("- Copied " + JSONReportDumper.REPORT_NAME);
 
 			for (String file : actual.getFiles()) {
 				Path f = Paths.get(file);
-				if (!f.getFileName().toString().equals(LiSA.REPORT_NAME)) {
+				if (!f.getFileName().toString().equals(JSONReportDumper.REPORT_NAME)) {
 					Path path = Paths.get(expectedPath.toString(), f.toString());
 					createDirectories(path.getParent());
 					copy(Paths.get(actualPath.toString(), f.toString()), path);
@@ -205,14 +207,14 @@ public abstract class AnalysisTestExecutor {
 				|| !acc.changedFileName.isEmpty();
 		if (updateReport) {
 			copy(actFile.toPath(), expFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-			System.err.println("- Updated " + LiSA.REPORT_NAME);
+			System.err.println("- Updated " + JSONReportDumper.REPORT_NAME);
 		}
 		for (Path f : acc.removedFilePaths) {
 			delete(Paths.get(expectedPath.toString(), f.toString()));
 			System.err.println("- Deleted " + f);
 		}
 		for (Path f : acc.addedFilePaths)
-			if (!f.getFileName().toString().equals(LiSA.REPORT_NAME)) {
+			if (!f.getFileName().toString().equals(JSONReportDumper.REPORT_NAME)) {
 				Path path = Paths.get(expectedPath.toString(), f.toString());
 				createDirectories(path.getParent());
 				copy(Paths.get(actualPath.toString(), f.toString()), path);
@@ -270,7 +272,7 @@ public abstract class AnalysisTestExecutor {
 		configuration.workdir = workdir.toString();
 	}
 
-	private class Accumulator implements DiffAlgorithm {
+	private class Accumulator extends ResultComparer {
 
 		private final Collection<Path> changedFileName = new HashSet<>();
 		private final Collection<Path> addedFilePaths = new HashSet<>();
@@ -361,7 +363,7 @@ public abstract class AnalysisTestExecutor {
 		}
 	}
 
-	private static class OptimizedRunDiff extends BaseDiffAlgorithm {
+	private static class OptimizedRunDiff extends ResultComparer {
 		@Override
 		public boolean shouldCompareConfigurations() {
 			// optimized runs use the same configuration except for

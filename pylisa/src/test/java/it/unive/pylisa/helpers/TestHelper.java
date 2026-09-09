@@ -1,24 +1,29 @@
 package it.unive.pylisa.helpers;
 
-import it.unive.lisa.analysis.SimpleAbstractState;
+import it.unive.lisa.analysis.SimpleAbstractDomain;
 import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
-import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
+import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
-import it.unive.lisa.conf.LiSAConfiguration.GraphType;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
+import it.unive.lisa.lattices.heap.allocations.HeapEnvWithFields;
+import it.unive.lisa.lattices.types.TypeSet;
+import it.unive.lisa.outputs.HtmlInputs;
+import it.unive.lisa.outputs.JSONResults;
+import it.unive.lisa.program.cfg.fixpoints.optforward.OptimizedForwardAscendingFixpoint;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
+import it.unive.pylisa.analysis.constants.ConstantPropagationDomain;
 
 public class TestHelper {
 
 	public static CronConfiguration cfgConfig() {
 		CronConfiguration conf = new CronConfiguration();
 		conf.optimize = true;
-		conf.jsonOutput = true;
-		conf.serializeInputs = true;
-		conf.analysisGraphs = GraphType.HTML_WITH_SUBNODES;
+		conf.forwardFixpoint = new OptimizedForwardAscendingFixpoint<>();
+		conf.outputs.add(new JSONResults<>());
+		conf.outputs.add(new HtmlInputs(true));
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
@@ -34,19 +39,16 @@ public class TestHelper {
 	public static CronConfiguration constantPropagationConfig() {
 		CronConfiguration conf = new CronConfiguration();
 		conf.optimize = false;
-		conf.jsonOutput = true;
-		conf.serializeResults = true;
+		conf.outputs.add(new JSONResults<>());
 //		conf.forceUpdate = true;
-//		conf.analysisGraphs = GraphType.HTML_WITH_SUBNODES;
+//		conf.outputs.add(new HtmlResults<>(true));
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 
-		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap();
-		ValueEnvironment<ConstantPropagation> constants = new ValueEnvironment<>(
-				new ConstantPropagation());
-		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
-		conf.abstractState = new SimpleAbstractState<>(heap, constants, type);
+		conf.analysis = new SimpleAbstractDomain<HeapEnvWithFields, ValueEnvironment<ConstantPropagation>,
+				TypeEnvironment<TypeSet>>(
+						new FieldSensitivePointBasedHeap(), new ConstantPropagationDomain(), new InferredTypes());
 
 		return conf;
 	}

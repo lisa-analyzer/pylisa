@@ -1,11 +1,12 @@
 package it.unive.pylisa.libraries.fastapi.sarl;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -55,13 +56,10 @@ public class FastAPI extends NaryExpression implements PluggableStatement {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interproceduralAnalysis,
-			AnalysisState<A> analysisState,
-			ExpressionSet[] expressionSets,
-			StatementStore<A> statementStore)
-			throws SemanticException {
-		AnalysisState<A> result = analysisState.bottom();
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
+			StatementStore<A> expressions) throws SemanticException {
+		AnalysisState<A> result = state.bottom();
 		CodeLocation location = getLocation();
 		CFG cfg = st.getCFG();
 		AccessInstanceGlobal aig;
@@ -78,12 +76,12 @@ public class FastAPI extends NaryExpression implements PluggableStatement {
 		// self.debug = true | false
 		aig = new AccessInstanceGlobal(cfg, location, self, "debug");
 		ass = new PyAssign(cfg, location, aig, debug);
-		result = result.lub(ass.forwardSemantics(analysisState, interproceduralAnalysis, statementStore));
+		result = result.lub(ass.forwardSemantics(state, interprocedural, expressions));
 
 		// self.redirect_slashes = true | false
 		aig = new AccessInstanceGlobal(cfg, location, self, "redirect_slashes");
 		ass = new PyAssign(cfg, location, aig, redirectSlashes);
-		result = result.lub(ass.forwardSemantics(analysisState, interproceduralAnalysis, statementStore));
+		result = result.lub(ass.forwardSemantics(state, interprocedural, expressions));
 
 		return result;
 	}

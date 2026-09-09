@@ -1,11 +1,15 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.HashSet;
+import java.util.Set;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -19,8 +23,6 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.SetConstant;
 import it.unive.pylisa.symbolic.operators.SetAdd;
-import java.util.HashSet;
-import java.util.Set;
 
 public class SetCreation extends NaryExpression {
 
@@ -38,16 +40,13 @@ public class SetCreation extends NaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
+			StatementStore<A> expressions) throws SemanticException {
 		CodeLocation loc = getLocation();
 		SetConstant set = new SetConstant(loc);
 		if (params.length == 0)
-			return state.smallStepSemantics(set, this);
+			return interprocedural.getAnalysis().smallStepSemantics(state, set, this);
 		Type setType = PyClassType.lookup(LibrarySpecificationProvider.SET);
 		BinaryOperator add = SetAdd.INSTANCE;
 
@@ -65,7 +64,7 @@ public class SetCreation extends NaryExpression {
 
 		AnalysisState<A> result = state.bottom();
 		for (BinaryExpression completeSet : ws)
-			result = result.lub(state.smallStepSemantics(completeSet, this));
+			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state, completeSet, this));
 
 		return result;
 	}

@@ -1,6 +1,9 @@
 package it.unive.pylisa.libraries;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.Set;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -15,7 +18,6 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
-import java.util.Set;
 
 public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	protected Statement st;
@@ -42,22 +44,6 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression expr,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		Set<Type> rts = state.getState().getRuntimeTypesOf(expr, this, state.getState());
-		if (rts.stream().anyMatch(Type::isStringType) || rts.stream().anyMatch(Type::isNumericType)) {
-			return state.smallStepSemantics(
-					new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
-		}
-		// TODO Handle other cases
-		return state;
-	}
-
-	@Override
 	public String toString() {
 		return "str";
 	}
@@ -66,5 +52,18 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 	public void setOriginatingStatement(
 			Statement st) {
 		this.st = st;
+	}
+
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr,
+			StatementStore<A> expressions) throws SemanticException {
+		Set<Type> rts = interprocedural.getAnalysis().getRuntimeTypesOf(state, expr, this);
+		if (rts.stream().anyMatch(Type::isStringType) || rts.stream().anyMatch(Type::isNumericType)) {
+			return interprocedural.getAnalysis().smallStepSemantics(state,
+					new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
+		}
+		// TODO Handle other cases
+		return state;
 	}
 }

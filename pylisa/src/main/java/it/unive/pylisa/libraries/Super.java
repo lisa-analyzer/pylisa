@@ -1,6 +1,9 @@
 package it.unive.pylisa.libraries;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.HashSet;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -19,7 +22,6 @@ import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyTypeTokenType;
-import java.util.HashSet;
 
 public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression implements PluggableStatement {
 	protected Statement st;
@@ -51,14 +53,15 @@ public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression 
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression left,
-			SymbolicExpression right,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public void setOriginatingStatement(
+			Statement st) {
+		this.st = st;
+	}
 
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
+			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
 		CompilationUnit superObj = ((CompilationUnit) ((Constant) left).getValue()).getImmediateAncestors().iterator()
 				.next();
 		PyClassType classTypeTo = PyClassType.lookup(superObj.getName());
@@ -72,12 +75,6 @@ public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression 
 				new Constant(tokenTypeTo, superObj, getLocation()),
 				TypeConv.INSTANCE,
 				getLocation());
-		return state.smallStepSemantics(be, this);
-	}
-
-	@Override
-	public void setOriginatingStatement(
-			Statement st) {
-		this.st = st;
+		return interprocedural.getAnalysis().smallStepSemantics(state, be, this);
 	}
 }

@@ -2,11 +2,13 @@ package it.unive.pylisa.libraries;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
+
+import org.junit.Test;
+
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.PythonFeatures;
 import it.unive.pylisa.PythonTypeSystem;
-import java.io.File;
-import org.junit.Test;
 
 public class LibraryLoadingTest {
 

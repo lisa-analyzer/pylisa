@@ -1,11 +1,15 @@
 package it.unive.pylisa.libraries.rclpy.node;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.HashSet;
+import java.util.Set;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
@@ -14,16 +18,14 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.ros.lisa.symbolic.operators.ros.ROSTopicNameExpansion;
-import java.util.HashSet;
-import java.util.Set;
 
 public class SemanticsHelpers {
 
-	public static <A extends AbstractState<A>> ExpressionSet nameExpansion(
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> ExpressionSet nameExpansion(
 			Statement st,
 			Expression node,
 			ExpressionSet exprs,
-			InterproceduralAnalysis<A> interprocedural,
+			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			StatementStore<A> expressions)
 			throws SemanticException {
@@ -42,10 +44,10 @@ public class SemanticsHelpers {
 				A> aigSemanticsNodeName = aigNodeName.forwardSemantics(aigSemanticsNS, interprocedural, expressions);
 
 		for (SymbolicExpression s : exprs) {
-			for (SymbolicExpression eNS : aigSemanticsNS.getComputedExpressions()) {
-				ExpressionSet vesNS = state.getState().rewrite(eNS, st, state.getState());
-				for (SymbolicExpression eNodeName : aigSemanticsNodeName.getComputedExpressions()) {
-					ExpressionSet vesNodeName = state.getState().rewrite(eNodeName, st, state.getState());
+			for (SymbolicExpression eNS : aigSemanticsNS.getExecutionExpressions()) {
+				ExpressionSet vesNS = interprocedural.getAnalysis().rewrite(state, eNS, st);
+				for (SymbolicExpression eNodeName : aigSemanticsNodeName.getExecutionExpressions()) {
+					ExpressionSet vesNodeName = interprocedural.getAnalysis().rewrite(state, eNodeName, st);
 					for (SymbolicExpression veNS : vesNS) {
 						for (SymbolicExpression veNodeName : vesNodeName)
 							exprSet.add(new TernaryExpression(StringType.INSTANCE, s, veNS, veNodeName,

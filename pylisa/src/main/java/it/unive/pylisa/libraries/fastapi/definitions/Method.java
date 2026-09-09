@@ -17,6 +17,10 @@ public enum Method {
 		this.value = method;
 	}
 
+	public String getValue() {
+		return value;
+	}
+
 	public static Method specify(
 			String decoratorID) {
 

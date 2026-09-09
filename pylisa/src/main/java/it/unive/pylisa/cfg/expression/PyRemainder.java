@@ -1,6 +1,11 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.Set;
+import java.util.function.Predicate;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -13,8 +18,6 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
-import java.util.Set;
-import java.util.function.Predicate;
 
 public class PyRemainder extends Remainder {
 
@@ -27,19 +30,16 @@ public class PyRemainder extends Remainder {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression left,
-			SymbolicExpression right,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
+			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		AnalysisState<A> result = state.bottom();
-		Set<Type> rts = state.getState().getRuntimeTypesOf(left, this, state.getState());
+		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);
 		if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(Type::isStringType))
 			// this might be a string formatting
-			result = state.smallStepSemantics(new PushAny(StringType.INSTANCE, getLocation()), this);
-		rts = state.getState().getRuntimeTypesOf(right, this, state.getState());
+			result = analysis.smallStepSemantics(state, new PushAny(StringType.INSTANCE, getLocation()), this);
+		rts = analysis.getRuntimeTypesOf(state, right, this);
 		if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(Predicate.not(Type::isStringType)))
 			// this might not be a string formatting
 			result = result.lub(super.fwdBinarySemantics(interprocedural, state, left, right, expressions));

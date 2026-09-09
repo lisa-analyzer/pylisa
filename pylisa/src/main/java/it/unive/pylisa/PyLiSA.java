@@ -1,18 +1,27 @@
 package it.unive.pylisa;
 
+import java.io.IOException;
+import java.util.Arrays;
+
+import org.apache.commons.io.FilenameUtils;
+
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAReport;
-import it.unive.lisa.analysis.SimpleAbstractState;
+import it.unive.lisa.analysis.SimpleAbstractDomain;
 import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
-import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
+import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
-import it.unive.lisa.checks.warnings.Warning;
 import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
 import it.unive.lisa.interprocedural.callgraph.RTACallGraph;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
+import it.unive.lisa.lattices.heap.allocations.HeapEnvWithFields;
+import it.unive.lisa.lattices.types.TypeSet;
+import it.unive.lisa.outputs.JSONReportDumper;
+import it.unive.lisa.outputs.messages.Message;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
+import it.unive.pylisa.analysis.dataframes.DataframeGraphValueDomain;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
 import it.unive.ros.application.PythonROSNodeBuilder;
@@ -21,9 +30,6 @@ import it.unive.ros.application.RosApplicationBuilder;
 import it.unive.ros.application.exceptions.ROSApplicationBuildException;
 import it.unive.ros.application.exceptions.ROSNodeBuildException;
 import it.unive.ros.models.rclpy.ROSNetwork;
-import java.io.IOException;
-import java.util.Arrays;
-import org.apache.commons.io.FilenameUtils;
 
 public class PyLiSA {
 
@@ -86,25 +92,22 @@ public class PyLiSA {
 		Program program = translator.toLiSAProgram();
 
 		LiSAConfiguration conf = new LiSAConfiguration();
-		conf.optimize = true;
 		conf.workdir = workdir;
-		conf.jsonOutput = true;
+		conf.outputs.add(new JSONReportDumper());
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 		conf.semanticChecks.add(new DataframeDumper());
 		conf.semanticChecks.add(new DataframeStructureConstructor());
 
-		FieldSensitivePointBasedHeap heap = new FieldSensitivePointBasedHeap();
-		TypeEnvironment<InferredTypes> type = new TypeEnvironment<>(new InferredTypes());
-		DataframeGraphDomain df = new DataframeGraphDomain();
-		conf.abstractState = new SimpleAbstractState<>(heap, df, type);
+		conf.analysis = new SimpleAbstractDomain<HeapEnvWithFields, DataframeGraphDomain, TypeEnvironment<TypeSet>>(
+				new FieldSensitivePointBasedHeap(), new DataframeGraphValueDomain(), new InferredTypes());
 
 		LiSA lisa = new LiSA(conf);
 		LiSAReport report = lisa.run(program);
 		if (!report.getWarnings().isEmpty()) {
 			System.out.println("The analysis generated the following warnings:");
-			for (Warning w : report.getWarnings())
+			for (Message w : report.getWarnings())
 				System.out.println("  " + w);
 		}
 	}

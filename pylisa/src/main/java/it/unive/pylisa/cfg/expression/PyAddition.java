@@ -3,7 +3,9 @@ package it.unive.pylisa.cfg.expression;
 import java.util.Collections;
 import java.util.Set;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -39,17 +41,13 @@ public class PyAddition extends Addition {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression left,
-			SymbolicExpression right,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		Set<Type> rtsl = state.getState().getRuntimeTypesOf(left, this, state.getState());
-		Set<Type> rtsr = state.getState().getRuntimeTypesOf(right, this, state.getState());
-		
-		SymbolAliasing aliasing = state.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
+			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		Set<Type> rtsl = analysis.getRuntimeTypesOf(state, left, this);
+		Set<Type> rtsr = analysis.getRuntimeTypesOf(state, right, this);		
+		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
 
 		AnalysisState<A> result = state.bottom();
 		for (Type tl : rtsl) {
@@ -94,5 +92,5 @@ public class PyAddition extends Addition {
 		}
 
 		return result;
-	}
+	}		
 }

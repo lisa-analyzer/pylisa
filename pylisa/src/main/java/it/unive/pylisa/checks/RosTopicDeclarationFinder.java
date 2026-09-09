@@ -1,6 +1,8 @@
 package it.unive.pylisa.checks;
 
-import it.unive.lisa.checks.syntactic.CheckTool;
+import java.util.Objects;
+
+import it.unive.lisa.ReportingTool;
 import it.unive.lisa.checks.syntactic.SyntacticCheck;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Unit;
@@ -8,23 +10,22 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.Call;
-import java.util.Objects;
 
 public class RosTopicDeclarationFinder implements SyntacticCheck {
 
 	@Override
 	public void beforeExecution(
-			CheckTool checkTool) {
+			ReportingTool checkTool) {
 	}
 
 	@Override
 	public void afterExecution(
-			CheckTool checkTool) {
+			ReportingTool checkTool) {
 	}
 
 	@Override
 	public boolean visitUnit(
-			CheckTool checkTool,
+			ReportingTool checkTool,
 			Unit unit) {
 
 		return true;
@@ -32,7 +33,7 @@ public class RosTopicDeclarationFinder implements SyntacticCheck {
 
 	@Override
 	public void visitGlobal(
-			CheckTool checkTool,
+			ReportingTool checkTool,
 			Unit unit,
 			Global global,
 			boolean b) {
@@ -40,14 +41,14 @@ public class RosTopicDeclarationFinder implements SyntacticCheck {
 
 	@Override
 	public boolean visit(
-			CheckTool checkTool,
+			ReportingTool checkTool,
 			CFG cfg) {
 		return true;
 	}
 
 	@Override
 	public boolean visit(
-			CheckTool checkTool,
+			ReportingTool checkTool,
 			CFG cfg,
 			Statement statement) {
 
@@ -70,7 +71,7 @@ public class RosTopicDeclarationFinder implements SyntacticCheck {
 
 	@Override
 	public boolean visit(
-			CheckTool checkTool,
+			ReportingTool checkTool,
 			CFG cfg,
 			Edge edge) {
 		return true;

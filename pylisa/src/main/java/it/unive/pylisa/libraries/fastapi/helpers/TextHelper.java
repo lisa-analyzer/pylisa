@@ -1,10 +1,11 @@
 package it.unive.pylisa.libraries.fastapi.helpers;
 
-import it.unive.lisa.program.Unit;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
+
+import it.unive.lisa.program.Unit;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -28,7 +29,7 @@ public class TextHelper {
 		return filepath.substring(lastSlashIndex + 1);
 	}
 
-	public String getCodeline(
+	public static String getCodeline(
 			String filepath) {
 
 		int lastIndex = filepath.lastIndexOf('/');

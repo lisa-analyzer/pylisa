@@ -1,8 +1,9 @@
 package it.unive.ros.models.rclpy;
 
-import it.unive.lisa.interprocedural.ScopeId;
 import java.util.HashSet;
 import java.util.Set;
+
+import it.unive.lisa.interprocedural.ScopeId;
 
 public class RosComputationalGraph {
 	private Set<ROSNode> nodes;

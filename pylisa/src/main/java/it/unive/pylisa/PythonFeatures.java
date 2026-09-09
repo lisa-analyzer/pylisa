@@ -1,7 +1,7 @@
 package it.unive.pylisa;
 
 import it.unive.lisa.program.language.LanguageFeatures;
-import it.unive.lisa.program.language.hierarchytraversal.HierarcyTraversalStrategy;
+import it.unive.lisa.program.language.hierarchytraversal.HierarchyTraversalStrategy;
 import it.unive.lisa.program.language.hierarchytraversal.SingleInheritanceTraversalStrategy;
 import it.unive.lisa.program.language.parameterassignment.ParameterAssigningStrategy;
 import it.unive.lisa.program.language.resolution.ParameterMatchingStrategy;
@@ -19,7 +19,7 @@ public class PythonFeatures extends LanguageFeatures {
 	}
 
 	@Override
-	public HierarcyTraversalStrategy getTraversalStrategy() {
+	public HierarchyTraversalStrategy getTraversalStrategy() {
 		// TODO this is not right, but its fine for now
 		return SingleInheritanceTraversalStrategy.INSTANCE;
 	}

@@ -1,7 +1,8 @@
 package it.unive.pylisa.helpers;
 
-import it.unive.lisa.conf.LiSAConfiguration;
 import java.util.List;
+
+import it.unive.lisa.conf.LiSAConfiguration;
 
 /**
  * An extended {@link LiSAConfiguration} that also holds test configuration
@@ -35,6 +36,20 @@ public class CronConfiguration extends LiSAConfiguration {
 	 * If {@code true}, baselines will be updated if the test fails.
 	 */
 	public boolean forceUpdate = false;
+
+	/**
+	 * If {@code true}, marks that this run should use (or already used) an
+	 * optimized fixpoint execution.
+	 * <p>
+	 * Note: unlike in the old LiSA API, this field does not by itself drive
+	 * the analysis, since {@link LiSAConfiguration} no longer exposes an
+	 * {@code optimize} toggle. It only tracks whether an optimized run has
+	 * already happened, for the "run twice, once optimized" comparison logic
+	 * in {@code AnalysisTestExecutor#perform(CronConfiguration)}; the actual
+	 * optimization there is enabled by swapping in an
+	 * {@code OptimizedForwardAscendingFixpoint} for {@link #forwardFixpoint}.
+	 */
+	public boolean optimize = false;
 
 	/**
 	 * If {@code true}, a second analysis will be ran with optimization enabled

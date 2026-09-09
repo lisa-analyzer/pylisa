@@ -1,11 +1,12 @@
 package it.unive.pylisa.libraries.rclpy.node;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -39,13 +40,17 @@ public class CreateTimer extends NaryExpression implements PluggableStatement {
 		return new CreateTimer(cfg, location, "create_timer", exprs);
 	}
 
+
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public void setOriginatingStatement(
+			Statement st) {
+		this.st = st;
+	}
+
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
+			StatementStore<A> expressions) throws SemanticException {
 		ROSTimerCallback callback = new ROSTimerCallback(this.getCFG(), (SourceCodeLocation) getLocation(),
 				getSubExpressions()[2]);
 		try {
@@ -53,11 +58,5 @@ public class CreateTimer extends NaryExpression implements PluggableStatement {
 		} catch (Exception e) {
 		}
 		return state;
-	}
-
-	@Override
-	public void setOriginatingStatement(
-			Statement st) {
-		this.st = st;
 	}
 }

@@ -1,6 +1,7 @@
 package it.unive.pylisa.libraries.miniapi;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -46,12 +47,9 @@ public class MiniAPI extends UnaryExpression implements PluggableStatement {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression arg,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr,
+			StatementStore<A> expressions) throws SemanticException {
 		return state;
 	}
 }

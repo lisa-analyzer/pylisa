@@ -1,6 +1,6 @@
 package it.unive.pylisa.checks;
 
-import it.unive.lisa.checks.syntactic.CheckTool;
+import it.unive.lisa.ReportingTool;
 import it.unive.lisa.checks.syntactic.SyntacticCheck;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Unit;
@@ -14,20 +14,20 @@ public class TestFunctionFinder implements SyntacticCheck {
 
 	@Override
 	public void beforeExecution(
-			CheckTool tool) {
+			ReportingTool tool) {
 		// initialization
 		count = 0;
 	}
 
 	@Override
 	public void afterExecution(
-			CheckTool tool) {
+			ReportingTool tool) {
 		tool.warn("Found " + count + " functions with name test");
 	}
 
 	@Override
 	public boolean visitUnit(
-			CheckTool tool,
+			ReportingTool tool,
 			Unit unit) {
 		// A unit could be a Class. This method should return true since we
 		// could have a function test defined inside it.
@@ -36,7 +36,7 @@ public class TestFunctionFinder implements SyntacticCheck {
 
 	@Override
 	public void visitGlobal(
-			CheckTool tool,
+			ReportingTool tool,
 			Unit unit,
 			Global global,
 			boolean instance) {
@@ -45,7 +45,7 @@ public class TestFunctionFinder implements SyntacticCheck {
 
 	@Override
 	public boolean visit(
-			CheckTool tool,
+			ReportingTool tool,
 			CFG graph) {
 
 		if (graph.getDescriptor().getName().equals("test")) {
@@ -59,7 +59,7 @@ public class TestFunctionFinder implements SyntacticCheck {
 
 	@Override
 	public boolean visit(
-			CheckTool tool,
+			ReportingTool tool,
 			CFG graph,
 			Statement node) {
 		return false;
@@ -67,7 +67,7 @@ public class TestFunctionFinder implements SyntacticCheck {
 
 	@Override
 	public boolean visit(
-			CheckTool tool,
+			ReportingTool tool,
 			CFG graph,
 			Edge edge) {
 		return false;

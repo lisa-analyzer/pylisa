@@ -1,5 +1,36 @@
 package it.unive.pylisa.analysis.dataframes;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.function.BiFunction;
+import java.util.function.Predicate;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import guru.nidi.graphviz.attribute.Color;
+import guru.nidi.graphviz.attribute.Label;
+import guru.nidi.graphviz.attribute.Shape;
+import guru.nidi.graphviz.attribute.Style;
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.model.Factory;
+import guru.nidi.graphviz.model.Link;
+import guru.nidi.graphviz.model.MutableGraph;
+import guru.nidi.graphviz.model.MutableNode;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.outputs.DotGraph;
@@ -18,30 +49,6 @@ import it.unive.pylisa.analysis.dataframes.edge.ConcatEdge;
 import it.unive.pylisa.analysis.dataframes.edge.DataframeEdge;
 import it.unive.pylisa.analysis.dataframes.edge.SimpleEdge;
 import it.unive.pylisa.analysis.dataframes.operations.DataframeOperation;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.function.BiFunction;
-import java.util.function.Predicate;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.graphstream.graph.Edge;
-import org.graphstream.graph.Element;
-import org.graphstream.graph.implementations.MultiGraph;
-import org.graphstream.stream.file.FileSinkDOT;
 
 public class DataframeForest
 		extends
@@ -130,7 +137,7 @@ public class DataframeForest
 								edge.getClass().getSimpleName(), ((ConcatEdge) edge).getEdgeIndex()));
 					else
 						edges.add(new SerializableEdge(nodeIds.get(src), nodeIds.get(dest),
-								edge.getClass().getSimpleName()));
+								edge.getClass().getSimpleName(), null));
 
 		return new CustomSerializableGraph(name, null, nodes, edges, descrs);
 	}
@@ -288,7 +295,7 @@ public class DataframeForest
 				int destId,
 				String kind,
 				int index) {
-			super(sourceId, destId, kind);
+			super(sourceId, destId, kind, null);
 			this.index = index;
 		}
 
@@ -339,9 +346,31 @@ public class DataframeForest
 
 	static class CustomDotGraph extends DotGraph {
 
+		private static final String COLOR_BLACK = "black";
+		private static final String COLOR_BLUE = "blue";
+		private static final String COLOR_RED = "red";
+		private static final String NORMAL_NODE_COLOR = "gray";
+		private static final String SPECIAL_NODE_COLOR = "black";
+		private static final String CONDITIONAL_EDGE_STYLE = "dashed";
+
 		public CustomDotGraph(
 				String title) {
 			super(title);
+		}
+
+		// DotGraph.graph is package-private in it.unive.lisa.outputs, so it
+		// cannot be reached from this package directly; reflection is the
+		// only way to add custom-styled links into the same wrapped graph
+		// that the inherited addNode(...) already populates.
+		private static MutableGraph wrapped(
+				DotGraph g) {
+			try {
+				Field f = DotGraph.class.getDeclaredField("graph");
+				f.setAccessible(true);
+				return (MutableGraph) f.get(g);
+			} catch (ReflectiveOperationException e) {
+				throw new IllegalStateException(e);
+			}
 		}
 
 		@Override
@@ -350,164 +379,70 @@ public class DataframeForest
 			long id = edge.getSourceId();
 			long id1 = edge.getDestId();
 
-			Edge e = graph.addEdge(edgeName(id, id1, edge), nodeName(id), nodeName(id1), true);
+			MutableNode src = Factory.mutNode(nodeName(id));
+			MutableNode dest = Factory.mutNode(nodeName(id1));
+			Link link = src.linkTo(dest);
 
 			switch (edge.getKind()) {
 			case "ConcatEdge":
-				e.setAttribute(COLOR, COLOR_RED);
-				e.setAttribute(LABEL, ((ConcatSerializableEdge) edge).getIndex());
+				link = link.with(Color.named(COLOR_RED));
+				link = link.with(Label.of(String.valueOf(((ConcatSerializableEdge) edge).getIndex())));
 				break;
 			case "AssignEdge":
-				e.setAttribute(COLOR, COLOR_BLUE);
-				e.setAttribute(LABEL, "A");
+				link = link.with(Color.named(COLOR_BLUE));
+				link = link.with(Label.of("A"));
 				break;
 			case "ConsumeEdge":
-				e.setAttribute(STYLE, CONDITIONAL_EDGE_STYLE);
-				e.setAttribute(COLOR, COLOR_BLACK);
+				link = link.with(Style.DASHED);
+				link = link.with(Color.named(COLOR_BLACK));
 				break;
 			case "SimpleEdge":
 			default:
-				e.setAttribute(COLOR, COLOR_BLACK);
+				link = link.with(Color.named(COLOR_BLACK));
 				break;
 			}
-		}
 
-		protected static String edgeName(
-				long src,
-				long dest,
-				SerializableEdge edge) {
-			return "edge-" + src + "-" + dest + "-" + edge.getKind();
-		}
-
-		private class CustomDotSink extends FileSinkDOT {
-
-			@Override
-			protected void outputHeader() throws IOException {
-				out = (PrintWriter) output;
-				out.printf("%s {%n", "digraph");
-			}
-
-			@Override
-			protected String outputAttribute(
-					String key,
-					Object value,
-					boolean first) {
-				boolean quote = true;
-
-				if (value instanceof Number || key.equals(LABEL))
-					// labels that we output are always in html format
-					// so no need to quote them
-					quote = false;
-
-				Object quoting = quote ? "\"" : "";
-				return String.format("%s%s=%s%s%s", first ? "" : ",", key, quoting, value, quoting);
-			}
-
-			@Override
-			protected String outputAttributes(
-					Element e) {
-				if (e.getAttributeCount() == 0)
-					return "";
-
-				Map<String, String> attrs = new HashMap<>();
-				e.attributeKeys().forEach(key -> attrs.put(key, outputAttribute(key, e.getAttribute(key), true)));
-
-				StringBuilder buffer = new StringBuilder("[");
-				for (Entry<String, String> entry : attrs.entrySet())
-					if (!entry.getKey().equals(LABEL))
-						buffer.append(entry.getValue()).append(",");
-
-				if (attrs.containsKey(LABEL))
-					buffer.append(attrs.get(LABEL));
-
-				String result = buffer.toString();
-				if (result.endsWith(","))
-					result = result.substring(0, result.length() - 1);
-
-				return result + "]";
-			}
+			src.links().add(link);
+			wrapped(this).add(src);
 		}
 
 		@Override
 		public void dump(
 				Writer writer)
 				throws IOException {
-			FileSinkDOT sink = new CustomDotSink() {
-				@Override
-				protected void outputEndOfFile() throws IOException {
-					LegendClusterSink legend = new LegendClusterSink();
-					legend.setDirected(true);
-					StringWriter sw = new StringWriter();
-					legend.writeAll(new Legend().graph, sw);
-					out.printf("%s%n", sw.toString());
-					super.outputEndOfFile();
-				}
-			};
-			sink.setDirected(true);
-			sink.writeAll(graph, writer);
+			MutableGraph copy = wrapped(this).copy();
+			copy.graphAttrs().add(Label.of(getTitle())).graphAttrs().add("labelloc", "t");
+			copy.add(buildLegend());
+			String exportedGraph = Graphviz.fromGraph(copy).render(Format.DOT).toString();
+			writer.write(exportedGraph);
 		}
 
-		private class LegendClusterSink extends CustomDotSink {
-			@Override
-			protected void outputHeader() throws IOException {
-				out = (PrintWriter) output;
-				out.printf("%s {%n", "subgraph cluster_legend");
-				out.printf("\tlabel=\"Legend\";%n");
-				out.printf("\tstyle=dotted;%n");
-				out.printf("\tnode [shape=plaintext];%n");
-			}
-		}
+		private static MutableGraph buildLegend() {
+			MutableGraph legend = Factory.mutGraph("legend")
+					.graphAttrs()
+					.add(Label.html("Legend"))
+					.graphAttrs()
+					.add("style", "dotted")
+					.setCluster(true);
 
-		private static final class Legend {
-			private final org.graphstream.graph.Graph graph;
+			StringBuilder builder = new StringBuilder();
+			String row = "<tr><td align=\"right\">%s&nbsp;</td><td align=\"left\"><font color=\"%s\">%s</font>, %s</td></tr>";
+			builder.append("<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">");
+			builder.append(String.format(row, "node border", NORMAL_NODE_COLOR, NORMAL_NODE_COLOR, "single"));
+			builder.append(String.format(row, "entrypoint border", SPECIAL_NODE_COLOR, SPECIAL_NODE_COLOR, "single"));
+			builder.append(String.format(row, "exitpoint border", SPECIAL_NODE_COLOR, SPECIAL_NODE_COLOR, "double"));
+			builder.append(String.format(row, "sequential edge", COLOR_BLACK, COLOR_BLACK, "solid"));
+			builder.append(String.format(row, "assign edge", COLOR_BLUE, COLOR_BLUE, "solid"));
+			builder.append(String.format(row, "concat edge", COLOR_RED, COLOR_RED, "solid"));
+			builder.append(String.format(row, "consume edge", COLOR_BLACK, COLOR_BLACK, CONDITIONAL_EDGE_STYLE));
+			builder.append("</table>");
 
-			private Legend() {
-				graph = new MultiGraph("legend");
-				org.graphstream.graph.Node l = graph.addNode("legend");
-				StringBuilder builder = new StringBuilder();
-				builder.append("<");
-				builder.append("<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">");
-				builder.append("<tr><td align=\"right\">node border&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(NORMAL_NODE_COLOR);
-				builder.append("\">");
-				builder.append(NORMAL_NODE_COLOR);
-				builder.append("</font>, single</td></tr>");
-				builder.append("<tr><td align=\"right\">entrypoint border&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(SPECIAL_NODE_COLOR);
-				builder.append("\">");
-				builder.append(SPECIAL_NODE_COLOR);
-				builder.append("</font>, single</td></tr>");
-				builder.append("<tr><td align=\"right\">exitpoint border&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(SPECIAL_NODE_COLOR);
-				builder.append("\">");
-				builder.append(SPECIAL_NODE_COLOR);
-				builder.append("</font>, double</td></tr>");
-				builder.append("<tr><td align=\"right\">sequential edge&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(COLOR_BLACK);
-				builder.append("\">");
-				builder.append(COLOR_BLACK);
-				builder.append("</font>, solid</td></tr>");
-				builder.append("<tr><td align=\"right\">assign edge&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(COLOR_BLUE);
-				builder.append("\">");
-				builder.append(COLOR_BLUE);
-				builder.append("</font>, solid</td></tr>");
-				builder.append("<tr><td align=\"right\">concat edge&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(COLOR_RED);
-				builder.append("\">");
-				builder.append(COLOR_RED);
-				builder.append("</font>, solid</td></tr>");
-				builder.append("<tr><td align=\"right\">consume edge&nbsp;</td><td align=\"left\"><font color=\"");
-				builder.append(COLOR_BLACK);
-				builder.append("\">");
-				builder.append(COLOR_BLACK);
-				builder.append("</font>, ");
-				builder.append(CONDITIONAL_EDGE_STYLE);
-				builder.append("</td></tr>");
-				builder.append("</table>");
-				builder.append(">");
-				l.setAttribute("label", builder.toString());
-			}
+			MutableNode n = Factory.mutNode("legend").setName("legend").add(Label.html(builder.toString()))
+					.add(Shape.NONE);
+
+			legend.add(n);
+
+			return legend;
 		}
 	}
 
@@ -524,7 +459,7 @@ public class DataframeForest
 		NodeList<DataframeForest, DataframeOperation,
 				DataframeEdge> list = new NodeList<>(new SimpleEdge(null, null), false);
 		DataframeForest forest = new DataframeForest(Collections.singleton(entry), list, false);
-		VisitOnceWorkingSet<DataframeOperation> ws = VisitOnceLIFOWorkingSet.mk();
+		VisitOnceWorkingSet<DataframeOperation> ws = new VisitOnceLIFOWorkingSet<>();
 		Set<DataframeEdge> seenEdges = new TreeSet<>();
 		ws.push(entry);
 		list.addNode(entry);
@@ -553,7 +488,7 @@ public class DataframeForest
 		NodeList<DataframeForest, DataframeOperation,
 				DataframeEdge> list = new NodeList<>(new SimpleEdge(null, null), false);
 		DataframeForest forest = new DataframeForest(Collections.emptySet(), list, false);
-		VisitOnceWorkingSet<DataframeOperation> ws = VisitOnceLIFOWorkingSet.mk();
+		VisitOnceWorkingSet<DataframeOperation> ws = new VisitOnceLIFOWorkingSet<>();
 		Set<DataframeEdge> seenEdges = new TreeSet<>();
 		ws.push(leaf);
 		list.addNode(leaf);

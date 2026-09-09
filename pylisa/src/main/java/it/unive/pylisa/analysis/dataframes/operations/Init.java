@@ -1,10 +1,11 @@
 package it.unive.pylisa.analysis.dataframes.operations;
 
+import java.util.Objects;
+
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.pylisa.analysis.dataframes.Names;
 import it.unive.pylisa.analysis.dataframes.NumberSlice;
-import java.util.Objects;
 
 public class Init extends DataframeOperation {
 

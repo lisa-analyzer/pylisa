@@ -33,9 +33,10 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok:1.18.34'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
     
-    implementation 'io.github.lisa-analyzer:lisa-sdk:0.1'
-    implementation 'io.github.lisa-analyzer:lisa-program:0.1'
-    implementation 'io.github.lisa-analyzer:lisa-analyses:0.1'
+
+    implementation 'io.github.lisa-analyzer:lisa-sdk:1.1-svcomp-2027-SNAPSHOT'
+    implementation 'io.github.lisa-analyzer:lisa-analyses:1.1-svcomp-2027-SNAPSHOT'
+    implementation 'io.github.lisa-analyzer:lisa-program:1.1-svcomp-2027-SNAPSHOT'
 
     implementation 'guru.nidi:graphviz-java:0.18.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0'
@@ -46,7 +47,8 @@ dependencies {
     implementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
     implementation 'com.google.code.gson:gson:2.8.7'
     implementation 'io.github.classgraph:classgraph:4.8.175'
-    
+    implementation 'org.graphstream:gs-core:2.0'
+
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
 }
@@ -69,6 +71,60 @@ generateGrammarSource {
 java {
     withJavadocJar()
     withSourcesJar()
+}
+
+// Eclipse's JDT compiler runs annotation processors (lombok's @Getter,
+// @Setter, @UtilityClass, ...) only if a .factorypath file lists them and
+// APT is explicitly enabled; the 'eclipse' plugin does not generate either
+// of these on its own, so lombok-annotated code silently gets no generated
+// methods when built from Eclipse (methods/fields just don't appear, no
+// error). This wires both up so `./gradlew eclipse` produces a working setup.
+eclipse {
+    classpath {
+        plusConfigurations += [configurations.annotationProcessor]
+    }
+}
+
+tasks.register('eclipseFactorypath') {
+    def factorypathFile = file('.factorypath')
+    outputs.file factorypathFile
+    doLast {
+        def entries = configurations.annotationProcessor.collect { jar ->
+            "  <factorypathentry kind=\"EXTJAR\" id=\"${jar.absolutePath}\" enabled=\"true\" runInBatchMode=\"false\"/>"
+        }.join('\n')
+        factorypathFile.text = "<factorypath>\n${entries}\n</factorypath>\n"
+    }
+}
+
+tasks.register('eclipseJdtApt') {
+    def aptPrefsFile = file('.settings/org.eclipse.jdt.apt.core.prefs')
+    outputs.file aptPrefsFile
+    doLast {
+        aptPrefsFile.parentFile.mkdirs()
+        aptPrefsFile.text = '''eclipse.preferences.version=1
+org.eclipse.jdt.apt.aptEnabled=true
+org.eclipse.jdt.apt.genSrcDir=.apt_generated
+org.eclipse.jdt.apt.reconcileEnabled=true
+'''
+    }
+}
+
+tasks.named('eclipseJdt') {
+    def jdtPrefsFile = file('.settings/org.eclipse.jdt.core.prefs')
+    doLast {
+        // enables running annotation processors as part of a normal build,
+        // which is what actually makes JDT invoke lombok, on top of the
+        // APT settings above
+        def props = new Properties()
+        jdtPrefsFile.withInputStream { props.load(it) }
+        props.setProperty('org.eclipse.jdt.core.compiler.processAnnotations', 'enabled')
+        jdtPrefsFile.withOutputStream { props.store(it, null) }
+    }
+}
+
+tasks.named('eclipse') {
+    dependsOn tasks.named('eclipseFactorypath')
+    dependsOn tasks.named('eclipseJdtApt')
 }
 
 javadoc {

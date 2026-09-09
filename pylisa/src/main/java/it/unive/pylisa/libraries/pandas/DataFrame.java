@@ -1,6 +1,7 @@
 package it.unive.pylisa.libraries.pandas;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -47,15 +48,12 @@ public class DataFrame extends it.unive.lisa.program.cfg.statement.UnaryExpressi
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression arg,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr,
+			StatementStore<A> expressions) throws SemanticException {
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		UnaryExpression read = new UnaryExpression(dftype, arg, new CreateDataframe(0), location);
-		return PandasSemantics.createAndInitDataframe(state, read, st);
+		UnaryExpression read = new UnaryExpression(dftype, expr, new CreateDataframe(0), location);
+		return PandasSemantics.createAndInitDataframe(interprocedural.getAnalysis(), state, read, st);
 	}
 }

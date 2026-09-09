@@ -1,14 +1,15 @@
 package it.unive.pylisa.symbolic;
 
-import it.unive.lisa.analysis.numeric.Interval;
+import java.util.Optional;
+
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.operations.selection.SliceElement;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.Optional;
 
 public class SliceConstant extends Constant {
 
@@ -39,11 +40,11 @@ public class SliceConstant extends Constant {
 			this.bound = Optional.of(value);
 		}
 
-		public Interval toInterval() {
+		public IntInterval toInterval() {
 			if (bound.isPresent())
-				return new Interval(bound.get(), bound.get());
+				return new IntInterval(bound.get(), bound.get());
 			else
-				return new Interval(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
+				return new IntInterval(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
 		}
 
 		public ConstantPropagation toConstant() {

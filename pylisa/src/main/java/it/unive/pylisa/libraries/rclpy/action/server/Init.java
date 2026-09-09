@@ -1,11 +1,15 @@
 package it.unive.pylisa.libraries.rclpy.action.server;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.Set;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.cfg.CFG;
@@ -20,10 +24,9 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.rclpy.node.SemanticsHelpers;
-import java.util.Set;
 
 public class Init extends NaryExpression implements PluggableStatement {
 	protected Statement st;
@@ -55,13 +58,11 @@ public class Init extends NaryExpression implements PluggableStatement {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
+			StatementStore<A> expressions) throws SemanticException {
 		AnalysisState<A> result = state.bottom();
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Expression node = getSubExpressions()[1] instanceof NamedParameterExpression
 				? SemanticsHelpers.getNamedParameterExpr(getSubExpressions(),
 						"node").getSubExpression()
@@ -69,7 +70,7 @@ public class Init extends NaryExpression implements PluggableStatement {
 		ExpressionSet nameExpansion = SemanticsHelpers.nameExpansion(this, node,
 				params[3], interprocedural, state, expressions);
 		for (SymbolicExpression v : params[0]) {
-			Set<Type> rts = state.getState().getRuntimeTypesOf(v, this, state.getState());
+			Set<Type> rts = analysis.getRuntimeTypesOf(state, v, this);
 			for (Type recType : rts)
 				if (recType.isPointerType()) {
 					Type inner = recType.asPointerType().getInnerType();
@@ -85,18 +86,18 @@ public class Init extends NaryExpression implements PluggableStatement {
 					params[2] = new ExpressionSet(c);
 
 					Global global = new Global(getLocation(), unit, "action_type", false, StringType.INSTANCE);
-					Variable var = global.toSymbolicVariable(getLocation());
+					GlobalVariable var = global.toSymbolicVariable(getLocation());
 					AccessChild access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					AnalysisState<A> tmp = state.bottom();
 					for (SymbolicExpression t : params[2])
-						tmp = tmp.lub(partial.assign(access, t, this));
+						tmp = tmp.lub(analysis.assign(partial, access, t, this));
 					partial = tmp;
 					global = new Global(getLocation(), unit, "action_name", false, StringType.INSTANCE);
 					var = global.toSymbolicVariable(getLocation());
 					access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					tmp = state.bottom();
 					for (SymbolicExpression t : nameExpansion)
-						tmp = tmp.lub(partial.assign(access, t, this));
+						tmp = tmp.lub(analysis.assign(partial, access, t, this));
 					partial = tmp;
 					result = result.lub(partial);
 				}
@@ -135,5 +136,4 @@ public class Init extends NaryExpression implements PluggableStatement {
 		return result;
 		// return result;
 	}
-
 }

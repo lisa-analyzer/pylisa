@@ -1,6 +1,10 @@
 package it.unive.pylisa.cfg.statement;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -16,8 +20,6 @@ import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.collections.CollectionsDiffBuilder;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class Import extends Statement {
 
@@ -110,20 +112,18 @@ public class Import extends Statement {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemantics(
-			AnalysisState<A> entryState,
-			InterproceduralAnalysis<A> interprocedural,
-			StatementStore<A> expressions)
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState, InterproceduralAnalysis<A, D> interprocedural, StatementStore<A> expressions)
 			throws SemanticException {
-		AnalysisState<A> result = entryState.smallStepSemantics(new Skip(getLocation()), this);
+		AnalysisState<A> result = interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()), this);
 
-		if (result.getInfo(SymbolAliasing.INFO_KEY) == null)
-			result = result.storeInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
+		if (result.getExecutionInfo(SymbolAliasing.INFO_KEY) == null)
+			result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
 
 		for (Entry<String, String> lib : libs.entrySet()) {
 			if (lib.getValue() != null)
-				result = result.storeInfo(SymbolAliasing.INFO_KEY,
-						result.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class)
+				result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY,
+						result.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class)
 								.alias(new QualifierSymbol(lib.getKey()), new QualifierSymbol(lib.getValue())));
 		}
 

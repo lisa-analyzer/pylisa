@@ -1,10 +1,11 @@
 package it.unive.pylisa.symbolic.operators;
 
+import java.util.Collections;
+import java.util.Set;
+
 import it.unive.lisa.symbolic.value.operator.binary.StringOperation;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
-import java.util.Collections;
-import java.util.Set;
 
 public class StringMult extends StringOperation {
 	public static final StringMult INSTANCE = new StringMult();

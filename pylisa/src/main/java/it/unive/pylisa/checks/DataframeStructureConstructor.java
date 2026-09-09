@@ -1,26 +1,35 @@
 package it.unive.pylisa.checks;
 
-import it.unive.lisa.AnalysisExecutionException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import org.apache.commons.lang3.tuple.Pair;
+
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.BaseLattice;
 import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.SimpleAbstractState;
-import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
-import it.unive.lisa.analysis.lattices.FunctionalLattice;
-import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
-import it.unive.lisa.analysis.types.InferredTypes;
-import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
+import it.unive.lisa.analysis.SimpleAbstractDomain;
+import it.unive.lisa.analysis.nonrelational.heap.HeapEnvironment;
+import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
 import it.unive.lisa.checks.semantic.SemanticCheck;
+import it.unive.lisa.checks.semantic.SemanticTool;
+import it.unive.lisa.lattices.FunctionalLattice;
+import it.unive.lisa.lattices.SimpleAbstractState;
+import it.unive.lisa.lattices.heap.allocations.AllocationSites;
+import it.unive.lisa.lattices.types.TypeSet;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.util.collections.workset.FIFOWorkingSet;
-import it.unive.lisa.util.datastructures.graph.algorithms.Fixpoint;
-import it.unive.lisa.util.datastructures.graph.algorithms.Fixpoint.FixpointImplementation;
 import it.unive.lisa.util.datastructures.graph.algorithms.FixpointException;
+import it.unive.lisa.util.datastructures.graph.algorithms.ForwardFixpoint;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.PyFrontend;
@@ -45,45 +54,47 @@ import it.unive.pylisa.analysis.dataframes.operations.Transform;
 import it.unive.pylisa.analysis.dataframes.operations.selection.rows.BooleanSelection;
 import it.unive.pylisa.symbolic.operators.Enumerations.BinaryTransformKind;
 import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 public class DataframeStructureConstructor
 		implements
 		SemanticCheck<
 				SimpleAbstractState<
-						PointBasedHeap,
+						HeapEnvironment<AllocationSites>,
 						DataframeGraphDomain,
-						TypeEnvironment<InferredTypes>>> {
+						TypeEnvironment<TypeSet>>,
+				SimpleAbstractDomain<
+						HeapEnvironment<AllocationSites>,
+						DataframeGraphDomain,
+						TypeEnvironment<TypeSet>>> {
 
 	@Override
 	public void beforeExecution(
-			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool) {
+			SemanticTool<
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool) {
 	}
 
 	@Override
 	public void afterExecution(
-			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool) {
+			SemanticTool<
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool) {
 	}
 
 	@Override
 	public boolean visitUnit(
-			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			SemanticTool<
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
 			Unit unit) {
 		return true;
 	}
 
 	@Override
 	public void visitGlobal(
-			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			SemanticTool<
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
 			Unit unit,
 			Global global,
 			boolean instance) {
@@ -91,16 +102,18 @@ public class DataframeStructureConstructor
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			SemanticTool<
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
 			CFG graph) {
 		return true;
 	}
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			SemanticTool<
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Edge edge) {
 		return true;
@@ -108,8 +121,9 @@ public class DataframeStructureConstructor
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain, TypeEnvironment<InferredTypes>>> tool,
+			SemanticTool<
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>,
+					SimpleAbstractDomain<HeapEnvironment<AllocationSites>, DataframeGraphDomain, TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Statement node) {
 		if (!graph.getDescriptor().getName().equals(PyFrontend.INSTRUMENTED_MAIN_FUNCTION_NAME))
@@ -117,50 +131,47 @@ public class DataframeStructureConstructor
 
 		if (node.stopsExecution()) {
 			Collection<AnalyzedCFG<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-							TypeEnvironment<InferredTypes>>>> results = tool.getResultOf(graph);
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>>> results = tool.getResultOf(graph);
 
 			for (AnalyzedCFG<
-					SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-							TypeEnvironment<InferredTypes>>> result : results)
+					SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+							TypeEnvironment<TypeSet>>> result : results) {
+				AnalysisState<
+						SimpleAbstractState<HeapEnvironment<AllocationSites>, DataframeGraphDomain,
+								TypeEnvironment<TypeSet>>> post = result.getAnalysisStateAfter(node);
+
+				DataframeGraphDomain dom = post.getExecutionState().valueState;
+				DataframeForest forest = dom.close();
+				Collection<DataframeOperation> exits = forest.getNodeList().getExits();
+				if (exits.size() != 1)
+					throw new IllegalStateException("Close operation failed");
+				DataframeOperation exit = exits.iterator().next();
+
+				ColumnsDomain columnsDomain;
 				try {
-					AnalysisState<
-							SimpleAbstractState<PointBasedHeap, DataframeGraphDomain,
-									TypeEnvironment<InferredTypes>>> post = result.getAnalysisStateAfter(node);
-
-					DataframeGraphDomain dom = post.getState().getDomainInstance(DataframeGraphDomain.class);
-					DataframeForest forest = dom.close();
-					Collection<DataframeOperation> exits = forest.getNodeList().getExits();
-					if (exits.size() != 1)
-						throw new IllegalStateException("Close operation failed");
-					DataframeOperation exit = exits.iterator().next();
-
-					ColumnsDomain columnsDomain;
-					try {
-						columnsDomain = process(forest, exit);
-					} catch (FixpointException e) {
-						throw new RuntimeException("Processing failed", e);
-					}
-
-					for (Entry<Names, Columns> entry : columnsDomain) {
-						Names sources = entry.getKey();
-						Columns columns = entry.getValue();
-						if (!columns.accessedBeforeAssigned.isEmpty())
-							tool.warn(sources + " columns accessed before being assigned: "
-									+ columns.accessedBeforeAssigned);
-						if (!columns.accessedAfterRemoved.isEmpty())
-							tool.warn(
-									sources + " columns accessed after being removed: " + columns.accessedAfterRemoved);
-						if (!columns.accessed.isEmpty())
-							tool.warn(sources + " columns accessed: " + columns.accessed);
-						if (!columns.assigned.isEmpty())
-							tool.warn(sources + " columns assigned: " + columns.assigned);
-						if (!columns.removed.isEmpty())
-							tool.warn(sources + " columns removed: " + columns.removed);
-					}
-				} catch (SemanticException e) {
-					throw new AnalysisExecutionException(e);
+					columnsDomain = process(forest, exit);
+				} catch (FixpointException e) {
+					throw new RuntimeException("Processing failed", e);
 				}
+
+				for (Entry<Names, Columns> entry : columnsDomain) {
+					Names sources = entry.getKey();
+					Columns columns = entry.getValue();
+					if (!columns.accessedBeforeAssigned.isEmpty())
+						tool.warn(sources + " columns accessed before being assigned: "
+								+ columns.accessedBeforeAssigned);
+					if (!columns.accessedAfterRemoved.isEmpty())
+						tool.warn(
+								sources + " columns accessed after being removed: " + columns.accessedAfterRemoved);
+					if (!columns.accessed.isEmpty())
+						tool.warn(sources + " columns accessed: " + columns.accessed);
+					if (!columns.assigned.isEmpty())
+						tool.warn(sources + " columns assigned: " + columns.assigned);
+					if (!columns.removed.isEmpty())
+						tool.warn(sources + " columns removed: " + columns.removed);
+				}
+			}
 		}
 
 		return true;
@@ -170,16 +181,15 @@ public class DataframeStructureConstructor
 			DataframeForest graph,
 			DataframeOperation exit)
 			throws FixpointException {
-		Fixpoint<DataframeForest, DataframeOperation, DataframeEdge, ColumnsDomain> fix = new Fixpoint<>(graph, false);
 		ColumnsDomain beginning = new ColumnsDomain(Columns.TOP).bottom();
 
 		Map<DataframeOperation, ColumnsDomain> entrypoints = new HashMap<>();
 		for (DataframeOperation entry : graph.getNodeList().getEntries())
 			entrypoints.put(entry, beginning);
 
-		Map<DataframeOperation, ColumnsDomain> fixpoint = fix.fixpoint(entrypoints, FIFOWorkingSet.mk(),
-				new FixpointImplementation<DataframeOperation, DataframeEdge,
-						DataframeStructureConstructor.ColumnsDomain>() {
+		ForwardFixpoint<DataframeForest, DataframeOperation, DataframeEdge, ColumnsDomain> fix = new ForwardFixpoint<
+				DataframeForest, DataframeOperation, DataframeEdge, DataframeStructureConstructor.ColumnsDomain>(graph,
+				false) {
 
 					@Override
 					public ColumnsDomain union(
@@ -187,7 +197,7 @@ public class DataframeStructureConstructor
 							ColumnsDomain left,
 							ColumnsDomain right)
 							throws Exception {
-						return operation(node, left, right);
+						return join(node, left, right);
 					}
 
 					@Override
@@ -199,7 +209,7 @@ public class DataframeStructureConstructor
 					}
 
 					@Override
-					public boolean equality(
+					public boolean leq(
 							DataframeOperation node,
 							ColumnsDomain approx,
 							ColumnsDomain old)
@@ -208,15 +218,16 @@ public class DataframeStructureConstructor
 					}
 
 					@Override
-					public ColumnsDomain semantics(
+					public Pair<ColumnsDomain, DataframeOperation> semantics(
 							DataframeOperation node,
-							ColumnsDomain entrystate)
+							ColumnsDomain entrystate,
+							Map<DataframeOperation, ColumnsDomain> expected)
 							throws Exception {
 						Names sources = extractSources(node, graph);
 
 						if (node instanceof Assign<?, ?>)
-							return entrystate.assign(sources,
-									((Assign<?, ?>) node).getSelection().extractColumnNames());
+							return Pair.of(entrystate.assign(sources,
+									((Assign<?, ?>) node).getSelection().extractColumnNames()), node);
 						else if (node instanceof Project<?, ?>) {
 							boolean allConsume = true;
 							Project<?, ?> proj = (Project<?, ?>) node;
@@ -237,26 +248,29 @@ public class DataframeStructureConstructor
 							if (allConsume)
 								// will be reported separately as selection of
 								// the consumer
-								return entrystate;
-							return entrystate.access(sources, proj.getSelection().extractColumnNames());
+								return Pair.of(entrystate, node);
+							return Pair.of(entrystate.access(sources, proj.getSelection().extractColumnNames()), node);
 						} else if (node instanceof Transform<?, ?>) {
 							Transform<?, ?> transform = (Transform<?, ?>) node;
 							if (transform.getType() == BinaryTransformKind.ASSIGN)
-								return entrystate.assign(sources, transform.getSelection().extractColumnNames());
+								return Pair.of(entrystate.assign(sources, transform.getSelection().extractColumnNames()),
+										node);
 							else if (transform.getType() == UnaryTransformKind.DROP_COLS)
-								return entrystate.remove(sources, transform.getSelection().extractColumnNames());
+								return Pair.of(entrystate.remove(sources, transform.getSelection().extractColumnNames()),
+										node);
 							else
-								return entrystate.access(sources, transform.getSelection().extractColumnNames());
+								return Pair.of(entrystate.access(sources, transform.getSelection().extractColumnNames()),
+										node);
 						} else if (node instanceof Reshape<?, ?>)
-							return entrystate.define(sources);
+							return Pair.of(entrystate.define(sources), node);
 						else if (node instanceof Read || node instanceof Concat)
-							return entrystate.define(sources);
+							return Pair.of(entrystate.define(sources), node);
 						else if (node instanceof Init || node instanceof BottomOperation
 								|| node instanceof CloseOperation || node instanceof Iteration
 								|| node instanceof GetAxis)
-							return entrystate;
+							return Pair.of(entrystate, node);
 						else
-							return entrystate.top();
+							return Pair.of(entrystate.top(), node);
 					}
 
 					private Names extractSources(
@@ -277,14 +291,16 @@ public class DataframeStructureConstructor
 					}
 
 					@Override
-					public ColumnsDomain operation(
+					public ColumnsDomain join(
 							DataframeOperation node,
 							ColumnsDomain approx,
 							ColumnsDomain old)
 							throws Exception {
 						return approx.lub(old);
 					}
-				});
+				};
+
+		Map<DataframeOperation, ColumnsDomain> fixpoint = fix.fixpoint(entrypoints, new FIFOWorkingSet<>());
 
 		return fixpoint.get(exit);
 	}

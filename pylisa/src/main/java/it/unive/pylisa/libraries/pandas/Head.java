@@ -1,6 +1,8 @@
 package it.unive.pylisa.libraries.pandas;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -60,13 +62,10 @@ public class Head extends BinaryExpression implements PluggableStatement {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression left,
-			SymbolicExpression right,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
+			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
@@ -75,17 +74,17 @@ public class Head extends BinaryExpression implements PluggableStatement {
 		Constant start = new Constant(Int32Type.INSTANCE, 0, location);
 
 		// we allocate the copy that will have only the given rows
-		AnalysisState<A> copied = PandasSemantics.copyDataframe(state, derefLeft, st);
+		AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, state, derefLeft, st);
 		AnalysisState<A> result = state.bottom();
-		for (SymbolicExpression id : copied.getComputedExpressions()) {
+		for (SymbolicExpression id : copied.getExecutionExpressions()) {
 			// the new dataframe will have its rows projected
 			TernaryExpression projection = new TernaryExpression(dftype, id, start, right,
 					new RowProjection(0), location);
-			AnalysisState<A> tmp = copied.smallStepSemantics(projection, st);
+			AnalysisState<A> tmp = analysis.smallStepSemantics(copied, projection, st);
 
 			// we leave a reference to the fresh dataframe on the stack
 			HeapReference ref = new HeapReference(dfref, id, location);
-			result = result.lub(tmp.smallStepSemantics(ref, st));
+			result = result.lub(analysis.smallStepSemantics(tmp, ref, st));
 		}
 
 		return result;

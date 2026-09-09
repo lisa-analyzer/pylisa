@@ -1,11 +1,13 @@
 package it.unive.pylisa.libraries.pandas;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -52,24 +54,21 @@ public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression i
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression left,
-			SymbolicExpression right,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
+			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation loc = getLocation();
 		AnalysisState<A> result = state.bottom();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 
-		AnalysisState<A> copy = PandasSemantics.copyDataframe(state, left, st);
-		ExpressionSet recs = copy.getComputedExpressions();
+		AnalysisState<A> copy = PandasSemantics.copyDataframe(analysis,state, left, st);
+		ExpressionSet recs = copy.getExecutionExpressions();
 		for (SymbolicExpression rec : recs) {
 			BinaryExpression cat = new BinaryExpression(dftype, rec, right, new JoinCols(0), loc);
 			HeapReference ref = new HeapReference(dfref, rec, loc);
-			result = result.lub(copy.smallStepSemantics(cat, st).smallStepSemantics(ref, st));
+			result = result.lub(analysis.smallStepSemantics(analysis.smallStepSemantics(copy, cat, st), ref, st));
 		}
 
 		return result;

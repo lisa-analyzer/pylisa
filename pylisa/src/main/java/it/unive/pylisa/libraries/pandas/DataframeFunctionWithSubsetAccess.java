@@ -1,6 +1,7 @@
 package it.unive.pylisa.libraries.pandas;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -76,22 +77,18 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression left,
-			SymbolicExpression right,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
+			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
 		if (right instanceof Constant && right.getStaticType().isNullType())
 			// no subset - we access the whole dataframe
-			return state.smallStepSemantics(left, st);
+			return interprocedural.getAnalysis().smallStepSemantics(state, left, st);
 
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		HeapDereference derefLeft = new HeapDereference(dftype, left, location);
 		BinaryExpression access = new BinaryExpression(dftype, derefLeft, right,
 				new ColumnProjection(0), location);
-		return state.smallStepSemantics(access, st).smallStepSemantics(left, st);
+		return interprocedural.getAnalysis().smallStepSemantics(interprocedural.getAnalysis().smallStepSemantics(state, access, st), left, st);
 	}
 }

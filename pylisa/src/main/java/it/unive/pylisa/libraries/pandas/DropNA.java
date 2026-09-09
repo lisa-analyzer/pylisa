@@ -1,11 +1,13 @@
 package it.unive.pylisa.libraries.pandas;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -92,12 +94,10 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression expr,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr,
+			StatementStore<A> expressions) throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation location = getLocation();
 		AnalysisState<A> base = state;
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
@@ -107,8 +107,8 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		ExpressionSet targets = new ExpressionSet(deref);
 
 		if (!inplace) {
-			base = PandasSemantics.copyDataframe(base, deref, st);
-			targets = base.getComputedExpressions();
+			base = PandasSemantics.copyDataframe(analysis, base, deref, st);
+			targets = base.getExecutionExpressions();
 		}
 
 		AnalysisState<A> filtered = state.bottom();
@@ -118,7 +118,7 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 			SymbolicExpression ref = loc instanceof HeapDereference
 					? ((HeapDereference) loc).getExpression()
 					: new HeapReference(dfref, loc, location);
-			filtered = filtered.lub(base.smallStepSemantics(filter, st).smallStepSemantics(ref, st));
+			filtered = filtered.lub(analysis.smallStepSemantics(analysis.smallStepSemantics(base, filter, st), ref, st));
 		}
 
 		return filtered;

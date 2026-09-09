@@ -1,11 +1,12 @@
 package it.unive.pylisa.libraries.rclpy.timer;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -36,8 +37,8 @@ public class ROSTimerCallback extends NaryExpression {
 		return 0;
 	}
 
-	public <A extends AbstractState<A>> AnalysisState<A> snooping(
-			InterproceduralAnalysis<A> interprocedural,
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>>  AnalysisState<A> snooping(
+			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
@@ -51,7 +52,7 @@ public class ROSTimerCallback extends NaryExpression {
 					HeapDereference containerDeref = (HeapDereference) container;
 					HeapReference heapRef = new HeapReference(containerDeref.getStaticType(), containerDeref,
 							containerDeref.getCodeLocation());
-					ExpressionSet exprSet = state.getState().rewrite(heapRef, this, state.getState());
+					ExpressionSet exprSet = interprocedural.getAnalysis().rewrite(state, heapRef, this);
 					VariableRef selfRef = new VariableRef(this.getCFG(), containerDeref.getCodeLocation(),
 							containerDeref.getExpression().toString());
 					Expression[] unresolvedCallExprs = new Expression[1];
@@ -78,13 +79,11 @@ public class ROSTimerCallback extends NaryExpression {
 		return state;
 	}
 
+
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
+			StatementStore<A> expressions) throws SemanticException {
 		Expression e = getSubExpressions()[0];
 		if (e instanceof AccessInstanceGlobal) {
 			AccessInstanceGlobal aig = (AccessInstanceGlobal) e;

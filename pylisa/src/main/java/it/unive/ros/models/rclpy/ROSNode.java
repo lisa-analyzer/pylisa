@@ -1,14 +1,26 @@
 package it.unive.ros.models.rclpy;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+
 import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SimpleAbstractState;
-import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
-import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
+import it.unive.lisa.analysis.nonrelational.heap.HeapEnvironment;
+import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
+import it.unive.lisa.lattices.SimpleAbstractState;
+import it.unive.lisa.lattices.heap.allocations.AllocationSites;
+import it.unive.lisa.lattices.types.TypeSet;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.ros.lisa.analysis.constants.ConstantPropagation;
@@ -33,16 +45,6 @@ import it.unive.ros.sros2policies.jaxb.Profile;
 import it.unive.ros.sros2policies.jaxb.Profiles;
 import it.unive.ros.sros2policies.jaxb.RuleQualifier;
 import jakarta.xml.bind.JAXBElement;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
 
 public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extends ROSCommunicationChannel>> {
 	private ROSLisaNodeAnalysis lisaNodeAnalysis;
@@ -81,9 +83,9 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 			Boolean enableRosout,
 			Statement node,
 			HeapExpression expr,
-			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<InferredTypes>>> analysisState,
-			InterproceduralAnalysis<?> interproceduralAnalysis) {
+			AnalysisState<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<TypeSet>>> analysisState,
+			InterproceduralAnalysis<?, ?> interproceduralAnalysis) {
 		this(nodeName, namespace, startParamService, node, expr, analysisState, interproceduralAnalysis);
 		this.enableRosout = enableRosout;
 	}
@@ -122,9 +124,9 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 			String namespace,
 			Statement node,
 			HeapExpression expr,
-			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<InferredTypes>>> analysisState,
-			InterproceduralAnalysis<? extends AbstractState<?>> interproceduralAnalysis) {
+			AnalysisState<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<TypeSet>>> analysisState,
+			InterproceduralAnalysis<?, ?> interproceduralAnalysis) {
 		this.name = nodeName;
 		setNamespace(namespace);
 		this.lisaNodeAnalysis = new ROSLisaNodeAnalysis(expr, node, analysisState, interproceduralAnalysis);
@@ -136,9 +138,9 @@ public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extend
 			Boolean enableParameterServices,
 			Statement node,
 			HeapExpression expr,
-			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<ConstantPropagation>,
-					TypeEnvironment<InferredTypes>>> analysisState,
-			InterproceduralAnalysis<? extends AbstractState<?>> interproceduralAnalysis) {
+			AnalysisState<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
+					TypeEnvironment<TypeSet>>> analysisState,
+			InterproceduralAnalysis<?, ?> interproceduralAnalysis) {
 		this.enableParameterServices = enableParameterServices;
 		this.name = nodeName;
 		setNamespace(namespace);

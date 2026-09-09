@@ -1,32 +1,34 @@
 package it.unive.pylisa.checks;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.checks.semantic.SemanticCheck;
+import it.unive.lisa.checks.semantic.SemanticTool;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
 
-public class FastApiHalfwaySemanticChecker<A extends AbstractState<A>> implements SemanticCheck<A> {
+public class FastApiHalfwaySemanticChecker<A extends AbstractLattice<A>, D extends AbstractDomain<A>>
+		implements SemanticCheck<A, D> {
 
 	// private List<Endpoint> endpoints;
 
 	@Override
 	public void beforeExecution(
-			CheckToolWithAnalysisResults<A> tool) {
+			SemanticTool<A, D> tool) {
 		// endpoints = new ArrayList<>();
 	}
 
 	@Override
 	public void afterExecution(
-			CheckToolWithAnalysisResults<A> tooll) {
+			SemanticTool<A, D> tooll) {
 	}
 
 	@Override
 	public boolean visitUnit(
-			CheckToolWithAnalysisResults<A> tool,
+			SemanticTool<A, D> tool,
 			Unit unit) {
 
 		return true;
@@ -34,7 +36,7 @@ public class FastApiHalfwaySemanticChecker<A extends AbstractState<A>> implement
 
 	@Override
 	public void visitGlobal(
-			CheckToolWithAnalysisResults<A> tool,
+			SemanticTool<A, D> tool,
 			Unit unit,
 			Global global,
 			boolean instance) {
@@ -42,7 +44,7 @@ public class FastApiHalfwaySemanticChecker<A extends AbstractState<A>> implement
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<A> tool,
+			SemanticTool<A, D> tool,
 			CFG graph) {
 
 		return true;
@@ -50,7 +52,7 @@ public class FastApiHalfwaySemanticChecker<A extends AbstractState<A>> implement
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<A> tool,
+			SemanticTool<A, D> tool,
 			CFG graph,
 			Statement node) {
 
@@ -59,7 +61,7 @@ public class FastApiHalfwaySemanticChecker<A extends AbstractState<A>> implement
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<A> tool,
+			SemanticTool<A, D> tool,
 			CFG graph,
 			Edge edge) {
 

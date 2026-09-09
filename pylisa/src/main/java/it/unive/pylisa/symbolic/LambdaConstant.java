@@ -1,11 +1,12 @@
 package it.unive.pylisa.symbolic;
 
+import java.util.Arrays;
+import java.util.List;
+
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Type;
-import java.util.Arrays;
-import java.util.List;
 
 public class LambdaConstant extends Constant {
 

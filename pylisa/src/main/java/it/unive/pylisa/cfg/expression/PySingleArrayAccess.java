@@ -1,6 +1,10 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.Set;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -19,7 +23,6 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
-import java.util.Set;
 
 public class PySingleArrayAccess extends BinaryExpression {
 
@@ -39,17 +42,15 @@ public class PySingleArrayAccess extends BinaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression left,
-			SymbolicExpression right,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression left,
+			SymbolicExpression right, StatementStore<A> expressions) throws SemanticException {
 		AnalysisState<A> result = state.bottom();
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		
 		Type dereferencedType = null;
 		Type childType = getStaticType();
-		Set<Type> rts = state.getState().getRuntimeTypesOf(left, this, state.getState());
+		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);
 		for (Type t : rts)
 			if (t.isPointerType()) {
 				Type inner = t.asPointerType().getInnerType();
@@ -69,12 +70,12 @@ public class PySingleArrayAccess extends BinaryExpression {
 			PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 			Type seriesref = seriestype.getReference();
 
-			rts = state.getState().getRuntimeTypesOf(left, this, state.getState());
+			rts = analysis.getRuntimeTypesOf(state, left, this);
 			if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(t -> t.equals(dfref))) {
 				it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
 						seriestype, deref, right, new ColumnProjection(0), getLocation());
-				result = result.smallStepSemantics(col, this);
-				rts = state.getState().getRuntimeTypesOf(right, this, state.getState());
+				result = analysis.smallStepSemantics(result, col, this);
+				rts = analysis.getRuntimeTypesOf(state, right, this);
 				childType = rts.stream().anyMatch(dfref::equals) ? dfref : seriesref;
 			}
 		}
@@ -83,10 +84,10 @@ public class PySingleArrayAccess extends BinaryExpression {
 			Type inner = childType.asPointerType().getInnerType();
 			AccessChild access = new AccessChild(inner, deref, right, getLocation());
 			HeapReference ref = new HeapReference(childType, access, getLocation());
-			return result.smallStepSemantics(ref, this);
+			return analysis.smallStepSemantics(result, ref, this);
 		} else {
 			AccessChild access = new AccessChild(childType, deref, right, getLocation());
-			return state.lub(result.smallStepSemantics(access, this));
+			return state.lub(analysis.smallStepSemantics(result, access, this));
 		}
 	}
 }

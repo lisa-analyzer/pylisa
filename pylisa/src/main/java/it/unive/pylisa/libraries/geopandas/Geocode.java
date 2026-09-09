@@ -1,6 +1,7 @@
 package it.unive.pylisa.libraries.geopandas;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -49,13 +50,11 @@ public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression expr,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr,
+			StatementStore<A> expressions) throws SemanticException {
+
 		UnaryReshape op = new UnaryReshape(0, UnaryReshapeKind.TO_GEOCODE);
-		return PandasSemantics.applyUnary(state, expr, st, op);
+		return PandasSemantics.applyUnary(interprocedural.getAnalysis(), state, expr, st, op);
 	}
 }

@@ -1,6 +1,9 @@
 package it.unive.pylisa.cfg.expression.unary;
 
-import it.unive.lisa.analysis.AbstractState;
+import java.util.Set;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -14,7 +17,6 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.symbolic.operators.value.StringConstructor;
-import java.util.Set;
 
 public class PyStringConstructor extends it.unive.lisa.program.cfg.statement.UnaryExpression {
 
@@ -32,15 +34,12 @@ public class PyStringConstructor extends it.unive.lisa.program.cfg.statement.Una
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			SymbolicExpression expr,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		Set<Type> rt = state.getState().getRuntimeTypesOf(expr, this, state.getState());
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, SymbolicExpression expr,
+			StatementStore<A> expressions) throws SemanticException {
+		Set<Type> rt = interprocedural.getAnalysis().getRuntimeTypesOf(state, expr, this);
 		if (rt.stream().anyMatch(Type::isStringType) || rt.stream().anyMatch(Type::isNumericType)) {
-			return state.smallStepSemantics(
+			return interprocedural.getAnalysis().smallStepSemantics(state,
 					new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
 		}
 		return null;

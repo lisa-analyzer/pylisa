@@ -1,11 +1,12 @@
 package it.unive.ros.models.rclpy;
 
-import it.unive.ros.network.Network;
-import it.unive.ros.network.NetworkEntity;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import it.unive.ros.network.Network;
+import it.unive.ros.network.NetworkEntity;
 
 public class ROSNetwork
 		extends

@@ -1,9 +1,10 @@
 package it.unive.pylisa.analysis.dataframes.operations.selection.columns;
 
+import java.util.Set;
+
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.pylisa.analysis.dataframes.Names;
 import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
-import java.util.Set;
 
 public class ColumnListSelection extends ColumnSelection<ColumnListSelection> {
 

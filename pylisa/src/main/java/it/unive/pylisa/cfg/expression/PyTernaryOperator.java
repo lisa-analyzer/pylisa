@@ -1,11 +1,13 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -40,64 +42,51 @@ public class PyTernaryOperator extends NaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemantics(
-			AnalysisState<A> entryState,
-			InterproceduralAnalysis<A> interprocedural,
-			StatementStore<A> expressions)
-			throws SemanticException {
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural, AnalysisState<A> state, ExpressionSet[] params,
+			StatementStore<A> expressions) throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Expression[] sub = getSubExpressions();
 		Expression condition = sub[0];
 		Expression ifTrue = sub[1];
 		Expression ifFalse = sub[2];
 
-		AnalysisState<A> postCondition = condition.forwardSemantics(entryState, interprocedural, expressions);
-		for (SymbolicExpression cond : entryState.getState().rewrite(
-				postCondition.getComputedExpressions(),
-				this,
-				entryState.getState())) {
+		AnalysisState<A> postCondition = condition.forwardSemantics(state, interprocedural, expressions);
+		for (SymbolicExpression cond : analysis.rewrite(state,
+				postCondition.getExecutionExpressions(),
+				this)) {
 			UnaryExpression negated = new UnaryExpression(
 					cond.getStaticType(),
 					cond,
 					LogicalNegation.INSTANCE,
 					cond.getCodeLocation());
 
-			switch (postCondition.satisfies(cond, this)) {
+			switch (analysis.satisfies(postCondition, cond, this)) {
 			case BOTTOM:
-				return entryState.bottom();
+				return state.bottom();
 			case NOT_SATISFIED:
 				return ifFalse.forwardSemantics(
-						postCondition.assume(cond, condition, ifTrue),
+						analysis.assume(postCondition, cond, condition, ifTrue),
 						interprocedural,
 						expressions);
 			case SATISFIED:
 				return ifTrue.forwardSemantics(
-						postCondition.assume(negated, condition, ifFalse),
+						analysis.assume(postCondition, negated, condition, ifFalse),
 						interprocedural,
 						expressions);
 			case UNKNOWN:
 				return ifTrue
 						.forwardSemantics(
-								postCondition.assume(cond, condition, ifTrue),
+								analysis.assume(postCondition, cond, condition, ifTrue),
 								interprocedural,
 								expressions)
 						.lub(ifFalse.forwardSemantics(
-								postCondition.assume(negated, condition, ifFalse),
+								analysis.assume(postCondition,negated, condition, ifFalse),
 								interprocedural,
 								expressions));
 			}
 		}
 
-		return entryState.top();
-	}
-
-	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		// this should be unreachable
-		throw new SemanticException("Auxiliary semantics should be unreachable");
+		return state.top();
 	}
 }

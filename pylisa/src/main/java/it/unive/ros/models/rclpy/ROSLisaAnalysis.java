@@ -1,11 +1,11 @@
 package it.unive.ros.models.rclpy;
 
-import it.unive.lisa.analysis.AbstractState;
+import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 
-public class ROSLisaAnalysis<A extends AbstractState<A>> {
+public class ROSLisaAnalysis<A extends AbstractLattice<A>> {
 	public SymbolicExpression getSymbolicExpression() {
 		return symbolicExpression;
 	}
