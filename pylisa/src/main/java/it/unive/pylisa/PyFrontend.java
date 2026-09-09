@@ -42,7 +42,6 @@ import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.cfg.statement.logic.Not;
-import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Int32Type;
@@ -157,6 +156,7 @@ import it.unive.pylisa.cfg.expression.LambdaExpression;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
 import it.unive.pylisa.cfg.expression.PyAddition;
+import it.unive.pylisa.cfg.expression.PyDivision;
 import it.unive.pylisa.cfg.expression.PyNegation;
 import it.unive.pylisa.cfg.expression.PySubtraction;
 import it.unive.pylisa.cfg.expression.PyAssign;
@@ -1663,8 +1663,8 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 			return visitFactor(ctx.factor());
 		else
 			return new PyMultiplication(currentCFG, getLocation(ctx),
-					visitFactor(ctx.factor()),
-					visitTerm(ctx.term()));
+					visitTerm(ctx.term()),
+					visitFactor(ctx.factor()));
 	}
 
 	public Expression visitMat_mul(
@@ -1673,8 +1673,8 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 			return visitFactor(ctx.factor());
 		else
 			return new PyMatMul(currentCFG, getLocation(ctx),
-					visitFactor(ctx.factor()),
-					visitTerm(ctx.term()));
+					visitTerm(ctx.term()),
+					visitFactor(ctx.factor()));
 	}
 
 	public Expression visitDiv(
@@ -1682,9 +1682,9 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		if (ctx.term() == null)
 			return visitFactor(ctx.factor());
 		else
-			return new Division(currentCFG, getLocation(ctx),
-					visitFactor(ctx.factor()),
-					visitTerm(ctx.term()));
+			return new PyDivision(currentCFG, getLocation(ctx),
+					visitTerm(ctx.term()),
+					visitFactor(ctx.factor()));
 	}
 
 	public Expression visitMod(
@@ -1693,8 +1693,8 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 			return visitFactor(ctx.factor());
 		else
 			return new PyRemainder(currentCFG, getLocation(ctx),
-					visitFactor(ctx.factor()),
-					visitTerm(ctx.term()));
+					visitTerm(ctx.term()),
+					visitFactor(ctx.factor()));
 	}
 
 	public Expression visitFloorDiv(
@@ -1703,8 +1703,8 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 			return visitFactor(ctx.factor());
 		else
 			return new PyFloorDiv(currentCFG, getLocation(ctx),
-					visitFactor(ctx.factor()),
-					visitTerm(ctx.term()));
+					visitTerm(ctx.term()),
+					visitFactor(ctx.factor()));
 	}
 
 	@Override

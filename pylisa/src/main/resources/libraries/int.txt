@@ -32,3 +32,13 @@ class Integral:
 	method __neg__: it.unive.pylisa.libraries.IntNeg
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+
+	method __truediv__: it.unive.pylisa.libraries.IntTrueDiv
+		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __rtruediv__: it.unive.pylisa.libraries.IntRTrueDiv
+		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
