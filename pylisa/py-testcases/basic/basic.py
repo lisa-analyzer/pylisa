@@ -6,6 +6,7 @@ v = x * y
 u = -x
 g = x / y
 t = x | y
+s = ~x
 
 a = 1.5
 b = 2.5

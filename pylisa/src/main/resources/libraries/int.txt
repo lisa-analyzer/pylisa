@@ -52,3 +52,7 @@ class Integral:
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __invert__: it.unive.pylisa.libraries.IntInvert
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE

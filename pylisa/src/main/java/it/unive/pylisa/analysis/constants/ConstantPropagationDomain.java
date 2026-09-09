@@ -27,6 +27,7 @@ import it.unive.lisa.symbolic.value.operator.RemainderOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.BitwiseNegation;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.NumericType;
@@ -132,6 +133,11 @@ public class ConstantPropagationDomain
 			else if (arg.is(Float.class))
 				return new ConstantPropagation(
 						new Constant(Float32Type.INSTANCE, -1 * arg.as(Float.class), pp.getLocation()));
+
+		if (operator == BitwiseNegation.INSTANCE)
+			if (arg.is(Integer.class))
+				return new ConstantPropagation(
+						new Constant(Int32Type.INSTANCE, ~arg.as(Integer.class), pp.getLocation()));
 
 		// String constructor
 		if (operator == StringConstructor.INSTANCE)
