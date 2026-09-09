@@ -106,3 +106,8 @@ class Integral:
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __eq__: it.unive.pylisa.libraries.Eq
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE

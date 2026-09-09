@@ -20,6 +20,11 @@ class Str:
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.StringType::INSTANCE
 
+	method __eq__: it.unive.pylisa.libraries.Eq
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.StringType::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
 root class Object
 
 class Sequence:

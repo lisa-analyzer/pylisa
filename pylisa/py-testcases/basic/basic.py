@@ -23,3 +23,5 @@ h = a / b
 
 k = "hello"
 n = len(k)
+m = x == y
+l = x == x
