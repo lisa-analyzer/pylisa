@@ -18,3 +18,13 @@ class Real:
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __mul__: it.unive.pylisa.libraries.FloatMul
+		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __rmul__: it.unive.pylisa.libraries.FloatRMul
+		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
