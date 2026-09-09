@@ -7,7 +7,7 @@ method print: it.unive.pylisa.libraries.NoOpFunction
 	type it.unive.lisa.type.VoidType::INSTANCE
 	param arg1 type it.unive.lisa.type.Untyped::INSTANCE
 	
-method str: it.unive.pylisa.libraries.Str
+method str: it.unive.pylisa.libraries.strings.Str
     type it.unive.lisa.program.type.StringType::INSTANCE
     param arg1 type it.unive.lisa.type.Untyped::INSTANCE
     

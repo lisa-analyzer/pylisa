@@ -1,5 +1,5 @@
 class Str:
-	method __len__: it.unive.pylisa.libraries.StringLen
+	method __len__: it.unive.pylisa.libraries.strings.StringLen
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.StringType::INSTANCE
 

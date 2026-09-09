@@ -1,64 +1,64 @@
 class Real:
-	method __add__: it.unive.pylisa.libraries.FloatAdd
+	method __add__: it.unive.pylisa.libraries.floats.FloatAdd
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __radd__: it.unive.pylisa.libraries.FloatRAdd
+	method __radd__: it.unive.pylisa.libraries.floats.FloatRAdd
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __sub__: it.unive.pylisa.libraries.FloatSub
+	method __sub__: it.unive.pylisa.libraries.floats.FloatSub
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rsub__: it.unive.pylisa.libraries.FloatRSub
+	method __rsub__: it.unive.pylisa.libraries.floats.FloatRSub
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __mul__: it.unive.pylisa.libraries.FloatMul
+	method __mul__: it.unive.pylisa.libraries.floats.FloatMul
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rmul__: it.unive.pylisa.libraries.FloatRMul
+	method __rmul__: it.unive.pylisa.libraries.floats.FloatRMul
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __neg__: it.unive.pylisa.libraries.FloatNeg
+	method __neg__: it.unive.pylisa.libraries.floats.FloatNeg
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 
-	method __truediv__: it.unive.pylisa.libraries.FloatTrueDiv
-		type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
-
-	method __rtruediv__: it.unive.pylisa.libraries.FloatRTrueDiv
+	method __truediv__: it.unive.pylisa.libraries.floats.FloatTrueDiv
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __floordiv__: it.unive.pylisa.libraries.FloatFloorDiv
+	method __rtruediv__: it.unive.pylisa.libraries.floats.FloatRTrueDiv
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rfloordiv__: it.unive.pylisa.libraries.FloatRFloorDiv
+	method __floordiv__: it.unive.pylisa.libraries.floats.FloatFloorDiv
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __pow__: it.unive.pylisa.libraries.FloatPow
+	method __rfloordiv__: it.unive.pylisa.libraries.floats.FloatRFloorDiv
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rpow__: it.unive.pylisa.libraries.FloatRPow
+	method __pow__: it.unive.pylisa.libraries.floats.FloatPow
+		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __rpow__: it.unive.pylisa.libraries.floats.FloatRPow
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE

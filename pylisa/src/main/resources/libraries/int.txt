@@ -1,118 +1,118 @@
 class Integral:
-	method __add__: it.unive.pylisa.libraries.IntAdd
+	method __add__: it.unive.pylisa.libraries.ints.IntAdd
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 		
-	method __radd__: it.unive.pylisa.libraries.IntRAdd
+	method __radd__: it.unive.pylisa.libraries.ints.IntRAdd
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __sub__: it.unive.pylisa.libraries.IntSub
+	method __sub__: it.unive.pylisa.libraries.ints.IntSub
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rsub__: it.unive.pylisa.libraries.IntRSub
+	method __rsub__: it.unive.pylisa.libraries.ints.IntRSub
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __mul__: it.unive.pylisa.libraries.IntMul
+	method __mul__: it.unive.pylisa.libraries.ints.IntMul
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rmul__: it.unive.pylisa.libraries.IntRMul
+	method __rmul__: it.unive.pylisa.libraries.ints.IntRMul
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __neg__: it.unive.pylisa.libraries.IntNeg
+	method __neg__: it.unive.pylisa.libraries.ints.IntNeg
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 
-	method __truediv__: it.unive.pylisa.libraries.IntTrueDiv
+	method __truediv__: it.unive.pylisa.libraries.ints.IntTrueDiv
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rtruediv__: it.unive.pylisa.libraries.IntRTrueDiv
+	method __rtruediv__: it.unive.pylisa.libraries.ints.IntRTrueDiv
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __floordiv__: it.unive.pylisa.libraries.IntFloorDiv
+	method __floordiv__: it.unive.pylisa.libraries.ints.IntFloorDiv
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rfloordiv__: it.unive.pylisa.libraries.IntRFloorDiv
+	method __rfloordiv__: it.unive.pylisa.libraries.ints.IntRFloorDiv
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __or__: it.unive.pylisa.libraries.IntOr
+	method __or__: it.unive.pylisa.libraries.ints.IntOr
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __ror__: it.unive.pylisa.libraries.IntROr
+	method __ror__: it.unive.pylisa.libraries.ints.IntROr
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __invert__: it.unive.pylisa.libraries.IntInvert
+	method __invert__: it.unive.pylisa.libraries.ints.IntInvert
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 
-	method __lshift__: it.unive.pylisa.libraries.IntLShift
-		type it.unive.lisa.program.type.Int32Type::INSTANCE
-		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
-
-	method __rlshift__: it.unive.pylisa.libraries.IntRLShift
+	method __lshift__: it.unive.pylisa.libraries.ints.IntLShift
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rshift__: it.unive.pylisa.libraries.IntRShift
+	method __rlshift__: it.unive.pylisa.libraries.ints.IntRLShift
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rrshift__: it.unive.pylisa.libraries.IntRRShift
+	method __rshift__: it.unive.pylisa.libraries.ints.IntRShift
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __and__: it.unive.pylisa.libraries.IntAnd
+	method __rrshift__: it.unive.pylisa.libraries.ints.IntRRShift
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rand__: it.unive.pylisa.libraries.IntRAnd
+	method __and__: it.unive.pylisa.libraries.ints.IntAnd
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __xor__: it.unive.pylisa.libraries.IntXor
+	method __rand__: it.unive.pylisa.libraries.ints.IntRAnd
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rxor__: it.unive.pylisa.libraries.IntRXor
+	method __xor__: it.unive.pylisa.libraries.ints.IntXor
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __pow__: it.unive.pylisa.libraries.IntPow
+	method __rxor__: it.unive.pylisa.libraries.ints.IntRXor
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
-	method __rpow__: it.unive.pylisa.libraries.IntRPow
+	method __pow__: it.unive.pylisa.libraries.ints.IntPow
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __rpow__: it.unive.pylisa.libraries.ints.IntRPow
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
