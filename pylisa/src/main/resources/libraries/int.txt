@@ -96,3 +96,13 @@ class Integral:
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __pow__: it.unive.pylisa.libraries.IntPow
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __rpow__: it.unive.pylisa.libraries.IntRPow
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE

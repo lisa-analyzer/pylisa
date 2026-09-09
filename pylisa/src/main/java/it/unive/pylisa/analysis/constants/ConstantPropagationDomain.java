@@ -192,12 +192,12 @@ public class ConstantPropagationDomain
 				c = mul(left, right, pp);
 			else if (operator instanceof SubtractionOperator)
 				c = sub(left, right, pp);
-			else if (operator instanceof Power)
-				return power(left, right, pp);
 			else
 				return ConstantPropagation.TOP;
 			return new ConstantPropagation(c);
-		} else if (operator instanceof StringAdd)
+		} else if (operator instanceof Power)
+			return power(left, right, pp);
+		else if (operator instanceof StringAdd)
 			return stringConcat(left, right, pp);
 		else if (operator instanceof StringFormat) {
 			return stringFormat(left, right, pp);
