@@ -42,6 +42,7 @@ import it.unive.pylisa.symbolic.ListConstant;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.DictPut;
 import it.unive.pylisa.symbolic.operators.ListAppend;
+import it.unive.pylisa.symbolic.operators.FloorDivision;
 import it.unive.pylisa.symbolic.operators.Power;
 import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
@@ -197,7 +198,15 @@ public class ConstantPropagationDomain
 			return new ConstantPropagation(c);
 		} else if (operator instanceof Power)
 			return power(left, right, pp);
-		else if (operator instanceof StringAdd)
+		else if (operator instanceof FloorDivision) {
+			if (left.isTop() || right.isTop() || !left.constant.getStaticType().isNumericType()
+					|| !right.constant.getStaticType().isNumericType())
+				return ConstantPropagation.TOP;
+			if ((right.is(Integer.class) && right.as(Integer.class) == 0)
+					|| (right.is(Float.class) && right.as(Float.class) == 0f))
+				return ConstantPropagation.BOTTOM;
+			return new ConstantPropagation(floorDiv(left, right, pp));
+		} else if (operator instanceof StringAdd)
 			return stringConcat(left, right, pp);
 		else if (operator instanceof StringFormat) {
 			return stringFormat(left, right, pp);
@@ -293,6 +302,26 @@ public class ConstantPropagationDomain
 		else
 			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) / right.as(Float.class), pp.getLocation());
 		return c;
+	}
+
+	private Constant floorDiv(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+		// Python's // floors towards negative infinity, unlike Java's integer
+		// division (which truncates towards zero)
+		if (left.is(Integer.class) && right.is(Integer.class))
+			return new Constant(Int32Type.INSTANCE,
+					Math.floorDiv(left.as(Integer.class), right.as(Integer.class)), pp.getLocation());
+		else if (left.is(Float.class) && right.is(Integer.class))
+			return new Constant(Float32Type.INSTANCE,
+					(float) Math.floor(left.as(Float.class) / right.as(Integer.class)), pp.getLocation());
+		else if (left.is(Integer.class) && right.is(Float.class))
+			return new Constant(Float32Type.INSTANCE,
+					(float) Math.floor(left.as(Integer.class) / right.as(Float.class)), pp.getLocation());
+		else
+			return new Constant(Float32Type.INSTANCE,
+					(float) Math.floor(left.as(Float.class) / right.as(Float.class)), pp.getLocation());
 	}
 
 	private Constant rem(
