@@ -1,0 +1,34 @@
+class Str:
+	method __len__: it.unive.pylisa.libraries.StringLen
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self type it.unive.lisa.program.type.StringType::INSTANCE
+
+	method __eq__: it.unive.pylisa.libraries.Eq
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.StringType::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __lt__: it.unive.pylisa.libraries.Lt
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.StringType::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __gt__: it.unive.pylisa.libraries.Gt
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.StringType::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __le__: it.unive.pylisa.libraries.Le
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.StringType::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __ge__: it.unive.pylisa.libraries.Ge
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.StringType::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __ne__: it.unive.pylisa.libraries.Ne
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.StringType::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE

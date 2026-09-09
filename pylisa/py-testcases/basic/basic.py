@@ -25,3 +25,8 @@ k = "hello"
 n = len(k)
 m = x == y
 l = x == x
+j1 = x < y
+j2 = x <= y
+j3 = x > y
+j4 = x >= y
+j5 = x != y

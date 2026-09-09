@@ -15,12 +15,12 @@ public class LibraryLoadingTest {
 		String[] allLibs = new File("src/main/resources" + LibrarySpecificationProvider.LIBS_FOLDER).list();
 		Program p = new Program(new PythonFeatures(), new PythonTypeSystem());
 		LibrarySpecificationProvider.load(p);
-		// -3: stdlib.txt, int.txt and float.txt only augment always-available
-		// built-in types (via bare 'class' declarations) and are not
-		// included in the available libraries, unlike e.g. numpy.txt or
-		// pandas.txt which wrap their content in a 'library ...: location
-		// ...' block
+		// -5: stdlib.txt, int.txt, float.txt, string.txt and boolean.txt only
+		// augment always-available built-in types (via bare 'class'
+		// declarations) and are not included in the available libraries,
+		// unlike e.g. numpy.txt or pandas.txt which wrap their content in a
+		// 'library ...: location ...' block
 		// <= since each of the remaining files contains at least one library
-		assertTrue(allLibs.length - 3 <= LibrarySpecificationProvider.getLibraryUnits().size());
+		assertTrue(allLibs.length - 5 <= LibrarySpecificationProvider.getLibraryUnits().size());
 	}
 }
