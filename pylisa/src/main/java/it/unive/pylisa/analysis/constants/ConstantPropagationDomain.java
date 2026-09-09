@@ -45,6 +45,7 @@ import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.Power;
 import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
+import it.unive.pylisa.symbolic.operators.value.StringLength;
 import it.unive.pylisa.symbolic.operators.StringMult;
 import it.unive.pylisa.symbolic.operators.value.StringFormat;
 import java.util.List;
@@ -142,6 +143,11 @@ public class ConstantPropagationDomain
 			if (arg.is(Integer.class))
 				return new ConstantPropagation(
 						new Constant(Int32Type.INSTANCE, ~arg.as(Integer.class), pp.getLocation()));
+
+		if (operator == StringLength.INSTANCE)
+			if (arg.is(String.class))
+				return new ConstantPropagation(
+						new Constant(Int32Type.INSTANCE, arg.as(String.class).length(), pp.getLocation()));
 
 		// String constructor
 		if (operator == StringConstructor.INSTANCE)

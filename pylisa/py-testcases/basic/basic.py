@@ -19,3 +19,6 @@ d = a - b
 e = a * b
 f = -a
 h = a / b
+
+k = "hello"
+n = len(k)

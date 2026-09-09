@@ -15,6 +15,11 @@ method len: it.unive.pylisa.libraries.Len
     type it.unive.lisa.program.type.Int32Type::INSTANCE
     param arg1 type it.unive.lisa.type.Untyped::INSTANCE
 
+class Str:
+	method __len__: it.unive.pylisa.libraries.StringLen
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self type it.unive.lisa.program.type.StringType::INSTANCE
+
 root class Object
 
 class Sequence:

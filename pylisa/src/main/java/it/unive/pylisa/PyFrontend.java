@@ -183,6 +183,7 @@ import it.unive.pylisa.cfg.expression.RangeValue;
 import it.unive.pylisa.cfg.expression.SetCreation;
 import it.unive.pylisa.cfg.expression.StarExpression;
 import it.unive.pylisa.cfg.expression.TupleCreation;
+import it.unive.pylisa.cfg.expression.unary.PyLength;
 import it.unive.pylisa.cfg.expression.comparison.PyAnd;
 import it.unive.pylisa.cfg.expression.comparison.PyEquals;
 import it.unive.pylisa.cfg.expression.comparison.PyGreaterOrEqual;
@@ -1815,6 +1816,8 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 							"__init__",
 							PyClassType.register(cu.getName(), (ClassUnit) cu),
 							pars.toArray(Expression[]::new));
+				} else if (!instance && method_name.equals("len") && pars.size() == 1) {
+					access = new PyLength(currentCFG, getLocation(frame), pars.get(0));
 				} else {
 					access = new UnresolvedCall(
 							currentCFG,
