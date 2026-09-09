@@ -43,7 +43,6 @@ import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.cfg.statement.logic.Not;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
-import it.unive.lisa.program.cfg.statement.numeric.Subtraction;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Int32Type;
@@ -158,6 +157,7 @@ import it.unive.pylisa.cfg.expression.LambdaExpression;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
 import it.unive.pylisa.cfg.expression.PyAddition;
+import it.unive.pylisa.cfg.expression.PySubtraction;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.expression.PyBitwiseAnd;
 import it.unive.pylisa.cfg.expression.PyBitwiseLeftShift;
@@ -1629,7 +1629,7 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		if (ctx.sum() == null)
 			return visitTerm(ctx.term());
 		else
-			return new Subtraction(currentCFG, getLocation(ctx),
+			return new PySubtraction(currentCFG, getLocation(ctx),
 					visitSum(ctx.sum()),
 					visitTerm(ctx.term()));
 	}

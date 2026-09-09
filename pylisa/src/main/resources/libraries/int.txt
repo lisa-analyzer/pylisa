@@ -8,3 +8,13 @@ class Integral:
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __sub__: it.unive.pylisa.libraries.IntSub
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __rsub__: it.unive.pylisa.libraries.IntRSub
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
