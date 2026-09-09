@@ -5,7 +5,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.pylisa.annotationvalues.DecoratedAnnotation;
 import it.unive.pylisa.cfg.expression.PyAssign;
-import it.unive.pylisa.cfg.expression.PyStringLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
 import it.unive.pylisa.libraries.fastapi.helpers.TextHelper;
 import java.util.ArrayList;
 import java.util.Arrays;

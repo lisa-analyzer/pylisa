@@ -17,7 +17,7 @@ import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.pylisa.cfg.expression.PyAssign;
-import it.unive.pylisa.cfg.expression.PyStringLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
 
 public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression implements PluggableStatement {
 	protected Statement st;

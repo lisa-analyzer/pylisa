@@ -10,7 +10,7 @@ import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.pylisa.annotationvalues.DecoratedAnnotation;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.expression.PyIs;
-import it.unive.pylisa.cfg.expression.PyStringLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
 import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
 import it.unive.pylisa.libraries.fastapi.definitions.Method;
 import it.unive.pylisa.libraries.fastapi.definitions.Param;

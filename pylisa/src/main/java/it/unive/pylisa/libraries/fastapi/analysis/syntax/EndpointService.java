@@ -12,7 +12,7 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.pylisa.cfg.PyParameter;
-import it.unive.pylisa.cfg.expression.PyStringLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
 import it.unive.pylisa.libraries.fastapi.definitions.Endpoint;
 import it.unive.pylisa.libraries.fastapi.definitions.GroupBy;
 import it.unive.pylisa.libraries.fastapi.definitions.Method;
