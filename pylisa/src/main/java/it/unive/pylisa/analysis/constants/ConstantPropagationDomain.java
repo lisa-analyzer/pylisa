@@ -19,6 +19,7 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.ArithmeticOperator;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseOr;
 import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.ModuloOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
@@ -184,7 +185,8 @@ public class ConstantPropagationDomain
 			return stringConcat(left, right, pp);
 		else if (operator instanceof StringFormat) {
 			return stringFormat(left, right, pp);
-		}
+		} else if (operator instanceof BitwiseOr)
+			return bitwiseOr(left, right, pp);
 		if (operator instanceof StringMult)
 			return stringRepeat(left, right, pp);
 		if (operator instanceof ListAppend)
@@ -452,6 +454,19 @@ public class ConstantPropagationDomain
 				}
 			}
 		}
+		return ConstantPropagation.TOP;
+	}
+
+	private ConstantPropagation bitwiseOr(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+		if (left.isTop() || right.isTop())
+			return ConstantPropagation.TOP;
+		if (left.is(Integer.class) && right.is(Integer.class))
+			return new ConstantPropagation(
+					new Constant(Int32Type.INSTANCE, left.as(Integer.class) | right.as(Integer.class),
+							pp.getLocation()));
 		return ConstantPropagation.TOP;
 	}
 

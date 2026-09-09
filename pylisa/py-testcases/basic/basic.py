@@ -5,6 +5,7 @@ w = x - y
 v = x * y
 u = -x
 g = x / y
+t = x | y
 
 a = 1.5
 b = 2.5
