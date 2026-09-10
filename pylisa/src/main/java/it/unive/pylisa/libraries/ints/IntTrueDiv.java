@@ -16,10 +16,10 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingDiv;
 
 /**
- * Native implementation of {@code int.__truediv__(self, other)}. Python's
- * true division always yields a {@code float}, even for exactly divisible
- * operands, hence the declared return type in {@code int.txt} is
- * {@code Float32Type} rather than {@code Int32Type}.
+ * Native implementation of {@code int.__truediv__(self, other)}. Python's true
+ * division always yields a {@code float}, even for exactly divisible operands,
+ * hence the declared return type in {@code int.txt} is {@code Float32Type}
+ * rather than {@code Int32Type}.
  */
 public class IntTrueDiv extends BinaryExpression implements PluggableStatement {
 

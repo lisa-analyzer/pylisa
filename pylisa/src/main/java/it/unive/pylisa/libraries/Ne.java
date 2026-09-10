@@ -16,9 +16,9 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonNe;
 
 /**
- * Native implementation of {@code <type>.__ne__(self, other)}, shared by
- * every native type registered against it (int, float, str, ...): they all
- * compare through the same {@link ComparisonNe} value-domain operator that
+ * Native implementation of {@code <type>.__ne__(self, other)}, shared by every
+ * native type registered against it (int, float, str, ...): they all compare
+ * through the same {@link ComparisonNe} value-domain operator that
  * {@code NotEqual} used to emit unconditionally.
  */
 public class Ne extends BinaryExpression implements PluggableStatement {

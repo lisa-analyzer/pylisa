@@ -18,8 +18,7 @@ import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingMul;
 /**
  * Native implementation of {@code float.__rmul__(self, other)}, i.e. the
  * reflected multiplication {@code other * self}. Multiplication being
- * commutative for numbers, this computes the same result as
- * {@link FloatMul}.
+ * commutative for numbers, this computes the same result as {@link FloatMul}.
  */
 public class FloatRMul extends BinaryExpression implements PluggableStatement {
 

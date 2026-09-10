@@ -16,8 +16,8 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonLt;
 
 /**
- * Native implementation of {@code <type>.__lt__(self, other)}, shared by
- * every native type registered against it (int, float, str, ...).
+ * Native implementation of {@code <type>.__lt__(self, other)}, shared by every
+ * native type registered against it (int, float, str, ...).
  */
 public class Lt extends BinaryExpression implements PluggableStatement {
 

@@ -16,8 +16,8 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
 
 /**
- * Native implementation of {@code float.__rfloordiv__(self, other)}, i.e.
- * the reflected floor division {@code other // self}. Floor division is not
+ * Native implementation of {@code float.__rfloordiv__(self, other)}, i.e. the
+ * reflected floor division {@code other // self}. Floor division is not
  * commutative, so this computes {@code right // left} rather than
  * {@code left // right} (the caller binds {@code self} to {@code left} and
  * {@code other} to {@code right}, following the same argument order used for

@@ -24,14 +24,13 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Python's bitwise and ({@code a & b}). It evaluates {@code a} and
- * {@code b}, then dispatches to {@code type(a).__and__(a, b)}, falling back
- * to {@code type(b).__rand__(b, a)} if needed (this codebase has no notion
- * of subclassing between library-defined numeric types, so the "proper
- * subclass with an overriding reflected method" priority rule does not
- * apply here). If neither supports it, that type pair simply does not
- * contribute to the result (there is no explicit modeling of the
- * {@code TypeError} raised in that case).
+ * Python's bitwise and ({@code a & b}). It evaluates {@code a} and {@code b},
+ * then dispatches to {@code type(a).__and__(a, b)}, falling back to
+ * {@code type(b).__rand__(b, a)} if needed (this codebase has no notion of
+ * subclassing between library-defined numeric types, so the "proper subclass
+ * with an overriding reflected method" priority rule does not apply here). If
+ * neither supports it, that type pair simply does not contribute to the result
+ * (there is no explicit modeling of the {@code TypeError} raised in that case).
  */
 public class PyBitwiseAnd extends BinaryExpression {
 

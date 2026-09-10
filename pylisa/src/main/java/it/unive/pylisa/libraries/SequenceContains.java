@@ -17,12 +17,11 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.PushAny;
 
 /**
- * Native implementation of {@code Sequence.__contains__(self, item)}
- * (element membership for {@code list}/{@code set}/{@code dict}/
- * {@code tuple}). There is no element-tracking abstract domain for
- * sequences in this codebase (mirroring {@link SequenceLen}), so this is
- * imprecise: it always yields {@code top} rather than the true membership
- * result.
+ * Native implementation of {@code Sequence.__contains__(self, item)} (element
+ * membership for {@code list}/{@code set}/{@code dict}/ {@code tuple}). There
+ * is no element-tracking abstract domain for sequences in this codebase
+ * (mirroring {@link SequenceLen}), so this is imprecise: it always yields
+ * {@code top} rather than the true membership result.
  */
 public class SequenceContains extends BinaryExpression implements PluggableStatement {
 

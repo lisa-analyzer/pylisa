@@ -16,9 +16,9 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseOr;
 
 /**
- * Native implementation of {@code int.__ror__(self, other)}, i.e. the
- * reflected bitwise or {@code other | self}. Bitwise or being commutative,
- * this computes the same result as {@link IntOr}.
+ * Native implementation of {@code int.__ror__(self, other)}, i.e. the reflected
+ * bitwise or {@code other | self}. Bitwise or being commutative, this computes
+ * the same result as {@link IntOr}.
  */
 public class IntROr extends BinaryExpression implements PluggableStatement {
 

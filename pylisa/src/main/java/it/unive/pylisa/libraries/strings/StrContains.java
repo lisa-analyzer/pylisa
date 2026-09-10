@@ -16,11 +16,10 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.operator.binary.StringContains;
 
 /**
- * Native implementation of {@code str.__contains__(self, item)}, i.e.
- * substring containment ({@code item in self}). {@code self} is the
- * haystack, {@code item} the needle, matching the SDK's
- * {@link StringContains} argument order (first argument contains the
- * second).
+ * Native implementation of {@code str.__contains__(self, item)}, i.e. substring
+ * containment ({@code item in self}). {@code self} is the haystack,
+ * {@code item} the needle, matching the SDK's {@link StringContains} argument
+ * order (first argument contains the second).
  */
 public class StrContains extends BinaryExpression implements PluggableStatement {
 

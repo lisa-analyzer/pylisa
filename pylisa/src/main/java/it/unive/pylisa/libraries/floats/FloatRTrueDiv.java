@@ -19,9 +19,9 @@ import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingDiv;
  * Native implementation of {@code float.__rtruediv__(self, other)}, i.e. the
  * reflected division {@code other / self}. Unlike addition/multiplication,
  * division is not commutative, so this computes {@code right / left} rather
- * than {@code left / right} (the caller binds {@code self} to {@code left}
- * and {@code other} to {@code right}, following the same argument order used
- * for {@link FloatTrueDiv}).
+ * than {@code left / right} (the caller binds {@code self} to {@code left} and
+ * {@code other} to {@code right}, following the same argument order used for
+ * {@link FloatTrueDiv}).
  */
 public class FloatRTrueDiv extends BinaryExpression implements PluggableStatement {
 

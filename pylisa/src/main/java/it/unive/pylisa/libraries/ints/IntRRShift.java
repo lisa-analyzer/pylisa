@@ -19,9 +19,9 @@ import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftRight;
  * Native implementation of {@code int.__rrshift__(self, other)}, i.e. the
  * reflected right shift {@code other >> self}. Unlike addition/multiplication,
  * shifting is not commutative, so this computes {@code right >> left} rather
- * than {@code left >> right} (the caller binds {@code self} to {@code left}
- * and {@code other} to {@code right}, following the same argument order used
- * for {@link IntRShift}).
+ * than {@code left >> right} (the caller binds {@code self} to {@code left} and
+ * {@code other} to {@code right}, following the same argument order used for
+ * {@link IntRShift}).
  */
 public class IntRRShift extends BinaryExpression implements PluggableStatement {
 

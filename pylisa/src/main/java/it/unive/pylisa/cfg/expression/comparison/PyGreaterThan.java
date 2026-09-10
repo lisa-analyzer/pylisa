@@ -33,10 +33,10 @@ import java.util.Set;
  * operand's type, {@code type(b).__lt__(b, a)} ({@code __gt__} and
  * {@code __lt__} are each other's reflection, unlike {@code __eq__} which is
  * its own reflection). If neither type implements the comparison for a given
- * runtime type pair, real Python raises {@code TypeError}; this codebase
- * does not model exceptions, so that pair falls back to the previous,
- * type-agnostic direct comparison instead, preserving behavior for types
- * that have not been hooked into the dunder-dispatch system yet.
+ * runtime type pair, real Python raises {@code TypeError}; this codebase does
+ * not model exceptions, so that pair falls back to the previous, type-agnostic
+ * direct comparison instead, preserving behavior for types that have not been
+ * hooked into the dunder-dispatch system yet.
  */
 public class PyGreaterThan extends GreaterThan {
 
@@ -100,7 +100,8 @@ public class PyGreaterThan extends GreaterThan {
 					continue;
 				}
 
-				// type(a) does not implement it: try the reflection, type(b).__lt__(b, a)
+				// type(a) does not implement it: try the reflection,
+				// type(b).__lt__(b, a)
 				UnresolvedCall lt = new UnresolvedCall(
 						getCFG(),
 						getLocation(),
@@ -122,10 +123,12 @@ public class PyGreaterThan extends GreaterThan {
 				if (ltResolves)
 					result = result.lub(lt.forwardSemantics(state, interprocedural, expressions));
 				else
-					// neither type implements it yet: fall back to the previous,
+					// neither type implements it yet: fall back to the
+					// previous,
 					// type-agnostic direct comparison
 					result = result.lub(analysis.smallStepSemantics(state,
-							new BinaryExpression(BoolType.INSTANCE, left, right, PyComparisonGt.INSTANCE, getLocation()),
+							new BinaryExpression(BoolType.INSTANCE, left, right, PyComparisonGt.INSTANCE,
+									getLocation()),
 							this));
 			}
 		}

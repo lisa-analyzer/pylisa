@@ -3,11 +3,11 @@ package it.unive.pylisa.symbolic.operators;
 import it.unive.lisa.symbolic.value.operator.binary.NumericOperation;
 
 /**
- * Python's {@code %} on numbers, i.e. {@code a - floor(a / b) * b}: the
- * result takes the sign of the divisor. Kept distinct from Java's {@code %}
- * (emitted by the SDK's {@code Remainder}/{@code NumericNonOverflowingRem}),
- * which takes the sign of the dividend instead (e.g. {@code -7 % 3 == 2} in
- * Python, not {@code -1}).
+ * Python's {@code %} on numbers, i.e. {@code a - floor(a / b) * b}: the result
+ * takes the sign of the divisor. Kept distinct from Java's {@code %} (emitted
+ * by the SDK's {@code Remainder}/{@code NumericNonOverflowingRem}), which takes
+ * the sign of the dividend instead (e.g. {@code -7 % 3 == 2} in Python, not
+ * {@code -1}).
  */
 public class Modulo extends NumericOperation {
 

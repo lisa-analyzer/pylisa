@@ -25,8 +25,7 @@ import java.util.Set;
  * Python's unary minus ({@code -x}). It is a separate operation from
  * subtraction: it invokes {@code type(x).__neg__(x)}. There is no reflected
  * method (there is only one operand), so if {@code __neg__} does not resolve
- * for a given runtime type, that type simply does not contribute to the
- * result.
+ * for a given runtime type, that type simply does not contribute to the result.
  */
 public class PyNegation extends Negation {
 
@@ -68,7 +67,8 @@ public class PyNegation extends Negation {
 			try {
 				interprocedural.resolve(neg, new Set[] { Collections.singleton(t) }, aliasing);
 			} catch (CallResolutionException e) {
-				// TODO: unsupported operand type: this type does not contribute, we should throw an exception here
+				// TODO: unsupported operand type: this type does not
+				// contribute, we should throw an exception here
 				continue;
 			}
 			result = result.lub(neg.forwardSemantics(state, interprocedural, expressions));

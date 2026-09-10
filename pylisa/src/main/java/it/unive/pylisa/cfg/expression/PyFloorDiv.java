@@ -26,12 +26,12 @@ import java.util.Set;
 /**
  * Python's floor division ({@code a // b}). It evaluates {@code a} and
  * {@code b}, then dispatches to {@code type(a).__floordiv__(a, b)}, falling
- * back to {@code type(b).__rfloordiv__(b, a)} if needed (this codebase has
- * no notion of subclassing between library-defined numeric types, so the
- * "proper subclass with an overriding reflected method" priority rule does
- * not apply here). If neither supports it, that type pair simply does not
- * contribute to the result (there is no explicit modeling of the
- * {@code TypeError} raised in that case).
+ * back to {@code type(b).__rfloordiv__(b, a)} if needed (this codebase has no
+ * notion of subclassing between library-defined numeric types, so the "proper
+ * subclass with an overriding reflected method" priority rule does not apply
+ * here). If neither supports it, that type pair simply does not contribute to
+ * the result (there is no explicit modeling of the {@code TypeError} raised in
+ * that case).
  */
 public class PyFloorDiv extends BinaryExpression {
 

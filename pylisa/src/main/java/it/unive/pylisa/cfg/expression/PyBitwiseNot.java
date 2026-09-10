@@ -26,8 +26,8 @@ import java.util.Set;
 /**
  * Python's bitwise inversion ({@code ~x}). It invokes
  * {@code type(x).__invert__(x)}. There is no reflected method (there is only
- * one operand), so if {@code __invert__} does not resolve for a given
- * runtime type, that type simply does not contribute to the result.
+ * one operand), so if {@code __invert__} does not resolve for a given runtime
+ * type, that type simply does not contribute to the result.
  */
 public class PyBitwiseNot extends UnaryExpression {
 

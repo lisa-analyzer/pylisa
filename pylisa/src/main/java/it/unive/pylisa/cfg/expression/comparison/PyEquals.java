@@ -28,10 +28,10 @@ import java.util.Set;
 /**
  * Python's {@code ==}. In real Python, {@code a == b} is value equality: it
  * calls {@code type(a).__eq__(a, b)}; if that returns {@code NotImplemented},
- * it tries the same {@code __eq__} method on {@code type(b)} with the
- * operands swapped ({@code type(b).__eq__(b, a)}) rather than a separate
- * reflected method name; if neither type implements the comparison, the
- * result is {@code False} rather than an exception.
+ * it tries the same {@code __eq__} method on {@code type(b)} with the operands
+ * swapped ({@code type(b).__eq__(b, a)}) rather than a separate reflected
+ * method name; if neither type implements the comparison, the result is
+ * {@code False} rather than an exception.
  */
 public class PyEquals extends Equal {
 
@@ -117,7 +117,8 @@ public class PyEquals extends Equal {
 				if (reqResolves)
 					result = result.lub(req.forwardSemantics(state, interprocedural, expressions));
 				else
-					// neither type implements the comparison: False, not an exception
+					// neither type implements the comparison: False, not an
+					// exception
 					// TODO: use Python constant for False
 					result = result.lub(analysis.smallStepSemantics(state,
 							new Constant(getStaticType(), false, getLocation()), this));

@@ -24,14 +24,14 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Python's right shift ({@code a >> b}). It evaluates {@code a} and
- * {@code b}, then dispatches to {@code type(a).__rshift__(a, b)}, falling
- * back to {@code type(b).__rrshift__(b, a)} if needed. If neither supports
- * it, that type pair simply does not contribute to the result (there is no
- * explicit modeling of the {@code TypeError} raised in that case). A
- * negative shift count is handled by the underlying value domain (e.g. it
- * yields bottom for constant propagation), modeling the {@code ValueError}
- * that Python raises for a negative shift count.
+ * Python's right shift ({@code a >> b}). It evaluates {@code a} and {@code b},
+ * then dispatches to {@code type(a).__rshift__(a, b)}, falling back to
+ * {@code type(b).__rrshift__(b, a)} if needed. If neither supports it, that
+ * type pair simply does not contribute to the result (there is no explicit
+ * modeling of the {@code TypeError} raised in that case). A negative shift
+ * count is handled by the underlying value domain (e.g. it yields bottom for
+ * constant propagation), modeling the {@code ValueError} that Python raises for
+ * a negative shift count.
  */
 public class PyBitwiseRIghtShift extends BinaryExpression {
 

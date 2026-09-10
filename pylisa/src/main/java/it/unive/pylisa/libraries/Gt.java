@@ -16,8 +16,8 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonGt;
 
 /**
- * Native implementation of {@code <type>.__gt__(self, other)}, shared by
- * every native type registered against it (int, float, str, ...).
+ * Native implementation of {@code <type>.__gt__(self, other)}, shared by every
+ * native type registered against it (int, float, str, ...).
  */
 public class Gt extends BinaryExpression implements PluggableStatement {
 

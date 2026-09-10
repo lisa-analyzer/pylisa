@@ -25,19 +25,17 @@ import java.util.Set;
 
 /**
  * Python's {@code %}. On numbers it is the remainder operator,
- * {@code a - floor(a / b) * b} (sign of the divisor, unlike Java's
- * {@code %}); on a string left-hand side it is percent-formatting
- * ({@code "%s" % x}) &mdash; both are modeled through the same
- * {@code __mod__} dunder, since real Python dispatches {@code "%s" % x} to
- * {@code str.__mod__("%s", x)} exactly like any other {@code %} call. It
- * evaluates {@code a} and {@code b}, then dispatches to
- * {@code type(a).__mod__(a, b)}, falling back to
+ * {@code a - floor(a / b) * b} (sign of the divisor, unlike Java's {@code %});
+ * on a string left-hand side it is percent-formatting ({@code "%s" % x})
+ * &mdash; both are modeled through the same {@code __mod__} dunder, since real
+ * Python dispatches {@code "%s" % x} to {@code str.__mod__("%s", x)} exactly
+ * like any other {@code %} call. It evaluates {@code a} and {@code b}, then
+ * dispatches to {@code type(a).__mod__(a, b)}, falling back to
  * {@code type(b).__rmod__(b, a)} if needed (this codebase has no notion of
  * subclassing between library-defined types, so the "proper subclass with an
- * overriding reflected method" priority rule does not apply here). If
- * neither supports it, that type pair simply does not contribute to the
- * result (there is no explicit modeling of the {@code TypeError} raised in
- * that case).
+ * overriding reflected method" priority rule does not apply here). If neither
+ * supports it, that type pair simply does not contribute to the result (there
+ * is no explicit modeling of the {@code TypeError} raised in that case).
  */
 public class PyRemainder extends BinaryExpression {
 
@@ -115,7 +113,8 @@ public class PyRemainder extends BinaryExpression {
 							new Set[] { Collections.singleton(tr), Collections.singleton(tl) }, aliasing);
 					result = result.lub(rmod.forwardSemantics(state, interprocedural, expressions));
 				} catch (CallResolutionException e) {
-					// neither type implements %: this pair does not contribute to the result
+					// neither type implements %: this pair does not contribute
+					// to the result
 				}
 			}
 		}

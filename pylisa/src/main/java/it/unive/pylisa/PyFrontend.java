@@ -119,6 +119,8 @@ import it.unive.pylisa.antlr.PythonParser.Raise_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Return_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Shift_exprContext;
 import it.unive.pylisa.antlr.PythonParser.Simple_stmtContext;
+import it.unive.pylisa.antlr.PythonParser.Single_subscript_attribute_targetContext;
+import it.unive.pylisa.antlr.PythonParser.Single_targetContext;
 import it.unive.pylisa.antlr.PythonParser.SliceContext;
 import it.unive.pylisa.antlr.PythonParser.SlicesContext;
 import it.unive.pylisa.antlr.PythonParser.Star_atomContext;
@@ -156,9 +158,6 @@ import it.unive.pylisa.cfg.expression.LambdaExpression;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
 import it.unive.pylisa.cfg.expression.PyAddition;
-import it.unive.pylisa.cfg.expression.PyDivision;
-import it.unive.pylisa.cfg.expression.PyNegation;
-import it.unive.pylisa.cfg.expression.PySubtraction;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.expression.PyBitwiseAnd;
 import it.unive.pylisa.cfg.expression.PyBitwiseLeftShift;
@@ -166,22 +165,24 @@ import it.unive.pylisa.cfg.expression.PyBitwiseNot;
 import it.unive.pylisa.cfg.expression.PyBitwiseOr;
 import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
 import it.unive.pylisa.cfg.expression.PyBitwiseXor;
+import it.unive.pylisa.cfg.expression.PyDivision;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
 import it.unive.pylisa.cfg.expression.PyFloorDiv;
 import it.unive.pylisa.cfg.expression.PyIn;
 import it.unive.pylisa.cfg.expression.PyIs;
 import it.unive.pylisa.cfg.expression.PyMatMul;
 import it.unive.pylisa.cfg.expression.PyMultiplication;
+import it.unive.pylisa.cfg.expression.PyNegation;
 import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.expression.PyPower;
 import it.unive.pylisa.cfg.expression.PyRemainder;
 import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
+import it.unive.pylisa.cfg.expression.PySubtraction;
 import it.unive.pylisa.cfg.expression.PyTernaryOperator;
 import it.unive.pylisa.cfg.expression.RangeValue;
 import it.unive.pylisa.cfg.expression.SetCreation;
 import it.unive.pylisa.cfg.expression.StarExpression;
 import it.unive.pylisa.cfg.expression.TupleCreation;
-import it.unive.pylisa.cfg.expression.unary.PyLength;
 import it.unive.pylisa.cfg.expression.comparison.PyAnd;
 import it.unive.pylisa.cfg.expression.comparison.PyEquals;
 import it.unive.pylisa.cfg.expression.comparison.PyGreaterOrEqual;
@@ -193,6 +194,7 @@ import it.unive.pylisa.cfg.expression.comparison.PyOr;
 import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyTypeLiteral;
+import it.unive.pylisa.cfg.expression.unary.PyLength;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
@@ -800,14 +802,89 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 			AssignmentContext ctx) {
 		if (ctx.COLON() != null)
 			throw new UnsupportedStatementException("annotated assignments are not supported");
-		if (ctx.augassign() != null)
-			throw new UnsupportedStatementException("augmented assignments are not supported");
+		if (ctx.augassign() != null) {
+			// x op= y ~> x = x op y
+			// TODO: for a subscript/attribute target (e.g. container[i] += y),
+			// this evaluates the target's base expression (container, i) twice
+			// instead of once, unlike real Python. Harmless for the currently
+			// imprecise Sequence/attribute domains, but not exact semantics.
+			Expression rhs = visitAnnotated_rhs(ctx.annotated_rhs());
+			Expression writeTarget = visitSingleTarget(ctx.single_target());
+			Expression readTarget = visitSingleTarget(ctx.single_target());
+			Expression op = buildAugmentedOp(ctx.augassign(), getLocation(ctx), readTarget, rhs);
+			return new PyAssign(currentCFG, getLocation(ctx), writeTarget, op);
+		}
 
 		Expression value = visitAnnotated_rhs(ctx.annotated_rhs());
 		List<Star_targetsContext> targets = ctx.star_targets();
 		for (int i = targets.size() - 1; i >= 0; i--)
 			value = new PyAssign(currentCFG, getLocation(ctx), visitStar_targets(targets.get(i)), value);
 		return (Statement) value;
+	}
+
+	private Expression visitSingleTarget(
+			Single_targetContext ctx) {
+		if (ctx.name() != null)
+			return new VariableRef(currentCFG, getLocation(ctx), ctx.name().getText());
+		if (ctx.single_target() != null)
+			return visitSingleTarget(ctx.single_target());
+		return visitSingleSubscriptAttributeTarget(ctx.single_subscript_attribute_target());
+	}
+
+	private Expression visitSingleSubscriptAttributeTarget(
+			Single_subscript_attribute_targetContext ctx) {
+		Expression base = visitTPrimary(ctx.t_primary());
+		if (ctx.DOT() != null)
+			return new UnresolvedCall(
+					currentCFG,
+					getLocation(ctx),
+					CallType.INSTANCE,
+					null,
+					"__getattribute__",
+					base,
+					new PyStringLiteral(currentCFG, getLocation(ctx), ctx.name().getText(), "'"));
+
+		List<Expression> indexes = extractExpressionsFromSlices(ctx.slices());
+		if (indexes.size() == 1)
+			return new PySingleArrayAccess(currentCFG, getLocation(ctx), Untyped.INSTANCE, base, indexes.get(0));
+		else if (indexes.size() == 2)
+			return new PyDoubleArrayAccess(currentCFG, getLocation(ctx), Untyped.INSTANCE, base, indexes.get(0),
+					indexes.get(1));
+		throw new UnsupportedStatementException("Only array accesses with up to 2 indexes are supported");
+	}
+
+	private Expression buildAugmentedOp(
+			AugassignContext ctx,
+			SourceCodeLocation loc,
+			Expression left,
+			Expression right) {
+		if (ctx.PLUSEQUAL() != null)
+			return new PyAddition(currentCFG, loc, left, right);
+		if (ctx.MINEQUAL() != null)
+			return new PySubtraction(currentCFG, loc, left, right);
+		if (ctx.STAREQUAL() != null)
+			return new PyMultiplication(currentCFG, loc, left, right);
+		if (ctx.ATEQUAL() != null)
+			return new PyMatMul(currentCFG, loc, left, right);
+		if (ctx.SLASHEQUAL() != null)
+			return new PyDivision(currentCFG, loc, left, right);
+		if (ctx.PERCENTEQUAL() != null)
+			return new PyRemainder(currentCFG, loc, left, right);
+		if (ctx.AMPEREQUAL() != null)
+			return new PyBitwiseAnd(currentCFG, loc, left, right);
+		if (ctx.VBAREQUAL() != null)
+			return new PyBitwiseOr(currentCFG, loc, left, right);
+		if (ctx.CIRCUMFLEXEQUAL() != null)
+			return new PyBitwiseXor(currentCFG, loc, left, right);
+		if (ctx.LEFTSHIFTEQUAL() != null)
+			return new PyBitwiseLeftShift(currentCFG, loc, left, right);
+		if (ctx.RIGHTSHIFTEQUAL() != null)
+			return new PyBitwiseRIghtShift(currentCFG, loc, left, right);
+		if (ctx.DOUBLESTAREQUAL() != null)
+			return new PyPower(currentCFG, loc, left, right);
+		if (ctx.DOUBLESLASHEQUAL() != null)
+			return new PyFloorDiv(currentCFG, loc, left, right);
+		throw new UnsupportedStatementException("Unknown augmented assignment operator");
 	}
 
 	@Override
@@ -916,12 +993,6 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		} else
 			throw new UnsupportedStatementException(
 					"Call/generator expressions are not supported as assignment targets");
-	}
-
-	@Override
-	public Object visitAugassign(
-			AugassignContext ctx) {
-		throw new UnsupportedStatementException();
 	}
 
 	@Override

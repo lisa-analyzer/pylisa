@@ -16,9 +16,9 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 
 /**
- * Native implementation of {@code <type>.__eq__(self, other)}, shared by
- * every native type registered against it (int, float, str, ...): they all
- * compare through the same {@link ComparisonEq} value-domain operator that
+ * Native implementation of {@code <type>.__eq__(self, other)}, shared by every
+ * native type registered against it (int, float, str, ...): they all compare
+ * through the same {@link ComparisonEq} value-domain operator that
  * {@code Equal} used to emit unconditionally.
  */
 public class Eq extends BinaryExpression implements PluggableStatement {

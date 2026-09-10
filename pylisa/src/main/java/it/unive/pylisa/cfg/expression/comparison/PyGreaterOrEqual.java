@@ -28,15 +28,15 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Python's {@code >=}. It calls {@code type(a).__ge__(a, b)}; if that
- * returns {@code NotImplemented}, it tries the reflected comparison on the
- * other operand's type, {@code type(b).__le__(b, a)} ({@code __ge__} and
+ * Python's {@code >=}. It calls {@code type(a).__ge__(a, b)}; if that returns
+ * {@code NotImplemented}, it tries the reflected comparison on the other
+ * operand's type, {@code type(b).__le__(b, a)} ({@code __ge__} and
  * {@code __le__} are each other's reflection, unlike {@code __eq__} which is
  * its own reflection). If neither type implements the comparison for a given
- * runtime type pair, real Python raises {@code TypeError}; this codebase
- * does not model exceptions, so that pair falls back to the previous,
- * type-agnostic direct comparison instead, preserving behavior for types
- * that have not been hooked into the dunder-dispatch system yet.
+ * runtime type pair, real Python raises {@code TypeError}; this codebase does
+ * not model exceptions, so that pair falls back to the previous, type-agnostic
+ * direct comparison instead, preserving behavior for types that have not been
+ * hooked into the dunder-dispatch system yet.
  */
 public class PyGreaterOrEqual extends GreaterOrEqual {
 
@@ -100,7 +100,8 @@ public class PyGreaterOrEqual extends GreaterOrEqual {
 					continue;
 				}
 
-				// type(a) does not implement it: try the reflection, type(b).__le__(b, a)
+				// type(a) does not implement it: try the reflection,
+				// type(b).__le__(b, a)
 				UnresolvedCall le = new UnresolvedCall(
 						getCFG(),
 						getLocation(),
@@ -122,10 +123,12 @@ public class PyGreaterOrEqual extends GreaterOrEqual {
 				if (leResolves)
 					result = result.lub(le.forwardSemantics(state, interprocedural, expressions));
 				else
-					// neither type implements it yet: fall back to the previous,
+					// neither type implements it yet: fall back to the
+					// previous,
 					// type-agnostic direct comparison
 					result = result.lub(analysis.smallStepSemantics(state,
-							new BinaryExpression(BoolType.INSTANCE, left, right, PyComparisonGe.INSTANCE, getLocation()),
+							new BinaryExpression(BoolType.INSTANCE, left, right, PyComparisonGe.INSTANCE,
+									getLocation()),
 							this));
 			}
 		}

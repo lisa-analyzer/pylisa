@@ -18,8 +18,8 @@ import it.unive.pylisa.symbolic.operators.value.StringFormat;
 /**
  * Native implementation of {@code str.__mod__(self, other)}, i.e.
  * {@code self}-string percent-formatting with {@code other} ({@code "%s" %
- * x}). There is no {@code __rmod__} for strings: percent-formatting is
- * always driven by the left-hand format string.
+ * x}). There is no {@code __rmod__} for strings: percent-formatting is always
+ * driven by the left-hand format string.
  */
 public class StrMod extends BinaryExpression implements PluggableStatement {
 

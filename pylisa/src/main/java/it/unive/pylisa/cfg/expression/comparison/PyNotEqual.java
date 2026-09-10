@@ -26,13 +26,13 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Python's {@code !=}. Like {@code ==}, {@code __ne__} is its own
- * reflection: {@code a != b} calls {@code type(a).__ne__(a, b)}; if that
- * returns {@code NotImplemented}, it tries {@code type(b).__ne__(b, a)}; if
- * neither type implements the comparison, the result is {@code True} rather
- * than an exception (the mirror image of {@code ==} defaulting to
- * {@code False}, since both derive from the default identity-based
- * comparison inherited from {@code object}).
+ * Python's {@code !=}. Like {@code ==}, {@code __ne__} is its own reflection:
+ * {@code a != b} calls {@code type(a).__ne__(a, b)}; if that returns
+ * {@code NotImplemented}, it tries {@code type(b).__ne__(b, a)}; if neither
+ * type implements the comparison, the result is {@code True} rather than an
+ * exception (the mirror image of {@code ==} defaulting to {@code False}, since
+ * both derive from the default identity-based comparison inherited from
+ * {@code object}).
  */
 public class PyNotEqual extends NotEqual {
 
@@ -118,7 +118,8 @@ public class PyNotEqual extends NotEqual {
 				if (rneResolves)
 					result = result.lub(rne.forwardSemantics(state, interprocedural, expressions));
 				else
-					// neither type implements the comparison: True, not an exception
+					// neither type implements the comparison: True, not an
+					// exception
 					result = result.lub(analysis.smallStepSemantics(state,
 							new Constant(getStaticType(), true, getLocation()), this));
 			}

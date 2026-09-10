@@ -23,15 +23,14 @@ import java.util.Set;
 
 /**
  * Python's {@code len(x)} builtin. It invokes {@code type(x).__len__(x)}.
- * {@code __len__} is registered as a static-style method for native types
- * (e.g. {@code str}, mirroring how {@code int}/{@code float} dunders are
- * registered) and as an instance method for {@code Sequence} subtypes
- * ({@code list}, {@code set}, {@code dict}, {@code tuple}, {@code slice}), so
- * both call kinds are attempted per runtime type. There is no reflected
- * method, so if {@code __len__} does not resolve either way for a given
- * runtime type, that type simply does not contribute to the result
- * (mirroring the {@code TypeError} Python would raise, which is not
- * explicitly modeled here).
+ * {@code __len__} is registered as a static-style method for native types (e.g.
+ * {@code str}, mirroring how {@code int}/{@code float} dunders are registered)
+ * and as an instance method for {@code Sequence} subtypes ({@code list},
+ * {@code set}, {@code dict}, {@code tuple}, {@code slice}), so both call kinds
+ * are attempted per runtime type. There is no reflected method, so if
+ * {@code __len__} does not resolve either way for a given runtime type, that
+ * type simply does not contribute to the result (mirroring the
+ * {@code TypeError} Python would raise, which is not explicitly modeled here).
  */
 public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpression {
 
@@ -81,7 +80,8 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 			}
 
 			if (len == null)
-				// this type does not support len(): it does not contribute to the result
+				// this type does not support len(): it does not contribute to
+				// the result
 				continue;
 			result = result.lub(len.forwardSemantics(state, interprocedural, expressions));
 		}

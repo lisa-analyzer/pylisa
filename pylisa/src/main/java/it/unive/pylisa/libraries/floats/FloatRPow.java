@@ -18,9 +18,9 @@ import it.unive.pylisa.symbolic.operators.Power;
 /**
  * Native implementation of {@code float.__rpow__(self, other)}, i.e. the
  * reflected power {@code other ** self}. Power is not commutative, so this
- * computes {@code right ** left} rather than {@code left ** right} (the
- * caller binds {@code self} to {@code left} and {@code other} to
- * {@code right}, following the same argument order used for
+ * computes {@code right ** left} rather than {@code left ** right} (the caller
+ * binds {@code self} to {@code left} and {@code other} to {@code right},
+ * following the same argument order used for
  * {@link FloatSub}/{@link FloatRSub}).
  */
 public class FloatRPow extends BinaryExpression implements PluggableStatement {

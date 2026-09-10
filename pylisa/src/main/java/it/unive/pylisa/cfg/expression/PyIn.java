@@ -27,14 +27,14 @@ import java.util.Set;
 /**
  * Python's {@code in} ({@code needle in container}). Real Python tries, in
  * order: (1) {@code type(container).__contains__(container, needle)}; (2)
- * otherwise, iterate {@code container} and compare each yielded element
- * against {@code needle} with {@code ==}; (3) otherwise, the old sequence
- * protocol, repeatedly indexing {@code container[0]}, {@code container[1]},
- * ... until {@code IndexError}. Only (1) is implemented here: mechanisms (2)
- * and (3) require iterating an abstractly-tracked container, which this
- * codebase does not support, so a runtime type pair without
- * {@code __contains__} throws {@link UnsupportedStatementException} rather
- * than attempting the iteration-based fallbacks.
+ * otherwise, iterate {@code container} and compare each yielded element against
+ * {@code needle} with {@code ==}; (3) otherwise, the old sequence protocol,
+ * repeatedly indexing {@code container[0]}, {@code container[1]}, ... until
+ * {@code IndexError}. Only (1) is implemented here: mechanisms (2) and (3)
+ * require iterating an abstractly-tracked container, which this codebase does
+ * not support, so a runtime type pair without {@code __contains__} throws
+ * {@link UnsupportedStatementException} rather than attempting the
+ * iteration-based fallbacks.
  */
 public class PyIn extends BinaryExpression {
 
@@ -61,7 +61,8 @@ public class PyIn extends BinaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		// getLeft() is the needle, getRight() is the container: container.__contains__(needle)
+		// getLeft() is the needle, getRight() is the container:
+		// container.__contains__(needle)
 		Set<Type> rtsContainer = analysis.getRuntimeTypesOf(state, right, this);
 		Set<Type> rtsNeedle = analysis.getRuntimeTypesOf(state, left, this);
 		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
@@ -92,7 +93,8 @@ public class PyIn extends BinaryExpression {
 				}
 
 				if (contains == null)
-					// no __contains__ for this type: real Python would fall back to
+					// no __contains__ for this type: real Python would fall
+					// back to
 					// iterating the container, which is not modeled here
 					throw new UnsupportedStatementException(this);
 				result = result.lub(contains.forwardSemantics(state, interprocedural, expressions));
