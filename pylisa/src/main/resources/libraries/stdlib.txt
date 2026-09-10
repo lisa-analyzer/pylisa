@@ -16,3 +16,5 @@ method len: it.unive.pylisa.libraries.Len
     param arg1 type it.unive.lisa.type.Untyped::INSTANCE
 
 root class Object
+
+class TypeError

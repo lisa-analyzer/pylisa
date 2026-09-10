@@ -14,11 +14,14 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.symbolic.CFGThrow;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.type.PyClassType;
 import java.util.Set;
 
 /**
@@ -29,6 +32,13 @@ import java.util.Set;
  * {@code ListCreation} writes to when the sequence is built, so
  * {@code lst[i] = v} followed by {@code lst[i]} resolves precisely for a
  * constant index.
+ *
+ * <p>
+ * {@code Tuple} inherits this method from {@code Sequence} (real Python
+ * tuples do not define their own {@code __setitem__}), but tuples are
+ * immutable: assigning to {@code t[i]} raises a {@code TypeError}. For every
+ * runtime pointer type of {@code self} that resolves to (a subtype of)
+ * {@code Tuple}, this raises that error instead of performing the write.
  */
 public class SequenceSetItem extends NaryExpression implements PluggableStatement {
 
@@ -70,29 +80,54 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation loc = getLocation();
+		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
 		AnalysisState<A> result = state.bottom();
 		for (SymbolicExpression self : params[0]) {
-			Type dereferencedType = null;
 			Set<Type> rts = analysis.getRuntimeTypesOf(state, self, this);
-			for (Type t : rts)
-				if (t.isPointerType()) {
-					Type inner = t.asPointerType().getInnerType();
-					dereferencedType = dereferencedType == null ? inner : dereferencedType.commonSupertype(inner);
-				}
-			if (dereferencedType == null)
-				dereferencedType = Untyped.INSTANCE;
+			for (Type t : rts) {
+				if (!t.isPointerType())
+					continue;
+				Type inner = t.asPointerType().getInnerType();
 
-			HeapDereference deref = new HeapDereference(dereferencedType, self, loc);
-			for (SymbolicExpression index : params[1]) {
-				AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, index, loc);
-				AnalysisState<A> slotState = analysis.smallStepSemantics(state, slot, this);
-				for (SymbolicExpression value : params[2])
-					for (SymbolicExpression slotId : slotState.getExecutionExpressions())
-						result = result.lub(analysis.assign(slotState, slotId, value, this));
+				if (inner.canBeAssignedTo(tupleType)) {
+					result = result.lub(raiseTypeError(analysis, state));
+					continue;
+				}
+
+				HeapDereference deref = new HeapDereference(inner, self, loc);
+				for (SymbolicExpression index : params[1]) {
+					AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, index, loc);
+					AnalysisState<A> slotState = analysis.smallStepSemantics(state, slot, this);
+					for (SymbolicExpression value : params[2])
+						for (SymbolicExpression slotId : slotState.getExecutionExpressions())
+							result = result.lub(analysis.assign(slotState, slotId, value, this));
+				}
 			}
 		}
 
 		return result;
+	}
+
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> raiseTypeError(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state)
+			throws SemanticException {
+		CodeLocation loc = getLocation();
+		Type typeErrorType = PyClassType.lookup(LibrarySpecificationProvider.TYPE_ERROR);
+
+		MemoryAllocation alloc = new MemoryAllocation(typeErrorType, loc, false);
+		AnalysisState<A> allocState = analysis.smallStepSemantics(state, alloc, this);
+
+		AnalysisState<A> exceptionState = state.bottomExecution();
+		for (SymbolicExpression th : allocState.getExecutionExpressions()) {
+			CFGThrow throwVar = new CFGThrow(getCFG(), typeErrorType, loc);
+			AnalysisState<A> tmp = analysis.assign(allocState, throwVar, th, this);
+			exceptionState = exceptionState.lub(
+					analysis.moveExecutionToError(tmp.withExecutionExpression(throwVar),
+							new AnalysisState.Error(typeErrorType, this), this));
+		}
+
+		return exceptionState;
 	}
 }
