@@ -1376,14 +1376,14 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		UnresolvedCall condition = new UnresolvedCall(
 				currentCFG,
 				getLocation(ctx),
-				CallType.INSTANCE,
+				CallType.STATIC,
 				null,
 				"__lt__",
 				counter,
 				new UnresolvedCall(
 						currentCFG,
 						getLocation(ctx),
-						CallType.INSTANCE,
+						CallType.STATIC,
 						null,
 						"__len__",
 						LeftToRightEvaluation.INSTANCE,
@@ -1398,7 +1398,7 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 				new UnresolvedCall(
 						currentCFG,
 						getLocation(ctx),
-						CallType.INSTANCE,
+						CallType.STATIC,
 						null,
 						"__getitem__",
 						LeftToRightEvaluation.INSTANCE,

@@ -18,18 +18,18 @@ method len: it.unive.pylisa.libraries.Len
 root class Object
 
 class Sequence:
-	instance method __getitem__: it.unive.pylisa.libraries.SequenceGetItem
+	method __getitem__: it.unive.pylisa.libraries.SequenceGetItem
 		libtype Object*
-		param this libtype Sequence*
+		param self libtype Sequence*
 		param index type it.unive.lisa.program.type.Int32Type::INSTANCE
 		
-	instance method __len__: it.unive.pylisa.libraries.SequenceLen
+	method __len__: it.unive.pylisa.libraries.SequenceLen
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
-		param this libtype Sequence*
+		param self libtype Sequence*
 
-	instance method __contains__: it.unive.pylisa.libraries.SequenceContains
+	method __contains__: it.unive.pylisa.libraries.SequenceContains
 		type it.unive.lisa.program.type.BoolType::INSTANCE
-		param this libtype Sequence*
+		param self libtype Sequence*
 		param item type it.unive.lisa.type.Untyped::INSTANCE
 
 sealed class List extends Sequence 

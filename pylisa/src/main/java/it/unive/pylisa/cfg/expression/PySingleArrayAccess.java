@@ -6,23 +6,36 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.call.Call.CallType;
+import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
+import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.AccessChild;
-import it.unive.lisa.symbolic.heap.HeapDereference;
-import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.Untyped;
-import it.unive.pylisa.cfg.type.PyClassType;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.ColumnProjection;
+import it.unive.pylisa.UnsupportedStatementException;
+import java.util.Collections;
 import java.util.Set;
 
+/**
+ * Python's {@code container[index]} (single-index read; slices go through
+ * {@link PyDoubleArrayAccess}). It calls {@code type(container).__getitem__(
+ * container, index)} &mdash; the real dunder, so any type registering
+ * {@code __getitem__} (the {@code Sequence} hierarchy via
+ * {@code SequenceGetItem}, or a user-defined class) is handled the same way,
+ * general Python semantics rather than a structure baked into this node.
+ * There is no reflected method (indexing is one-directional), so if no
+ * runtime type pair resolves it, real Python raises {@code TypeError}; this
+ * codebase does not model exceptions, so that is surfaced as
+ * {@link UnsupportedStatementException} instead (mirroring {@code in}'s
+ * {@code __contains__} dispatch).
+ */
 public class PySingleArrayAccess extends BinaryExpression {
 
 	public PySingleArrayAccess(
@@ -41,6 +54,11 @@ public class PySingleArrayAccess extends BinaryExpression {
 	}
 
 	@Override
+	public String toString() {
+		return getLeft().toString() + "[" + getRight().toString() + "]";
+	}
+
+	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
@@ -48,49 +66,47 @@ public class PySingleArrayAccess extends BinaryExpression {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		AnalysisState<A> result = state.bottom();
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		Set<Type> rtsContainer = analysis.getRuntimeTypesOf(state, left, this);
+		Set<Type> rtsIndex = analysis.getRuntimeTypesOf(state, right, this);
+		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
 
-		Type dereferencedType = null;
-		Type childType = getStaticType();
-		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);
-		for (Type t : rts)
-			if (t.isPointerType()) {
-				Type inner = t.asPointerType().getInnerType();
-				if (dereferencedType == null)
-					dereferencedType = inner;
-				else
-					dereferencedType = dereferencedType.commonSupertype(inner);
-			}
-		if (dereferencedType == null)
-			dereferencedType = Untyped.INSTANCE;
+		AnalysisState<A> result = state.bottom();
+		for (Type tContainer : rtsContainer) {
+			for (Type tIndex : rtsIndex) {
+				// type(container).__getitem__(container, index): try both a
+				// static-style registration (native types) and an instance-style
+				// one (Sequence), matching len()'s dual dispatch
+				UnresolvedCall getitem = null;
+				for (CallType kind : new CallType[] { CallType.STATIC, CallType.INSTANCE }) {
+					UnresolvedCall candidate = new UnresolvedCall(
+							getCFG(),
+							getLocation(),
+							kind,
+							null,
+							"__getitem__",
+							LeftToRightEvaluation.INSTANCE,
+							getLeft(),
+							getRight());
+					try {
+						interprocedural.resolve(candidate,
+								new Set[] { Collections.singleton(tContainer), Collections.singleton(tIndex) },
+								aliasing);
+						getitem = candidate;
+						break;
+					} catch (CallResolutionException e) {
+						// try the next call kind
+					}
+				}
 
-		HeapDereference deref = new HeapDereference(dereferencedType, left, getLocation());
-
-		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
-			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-			Type dfref = dftype.getReference();
-			PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-			Type seriesref = seriestype.getReference();
-
-			rts = analysis.getRuntimeTypesOf(state, left, this);
-			if (rts != null && !rts.isEmpty() && rts.stream().anyMatch(t -> t.equals(dfref))) {
-				it.unive.lisa.symbolic.value.BinaryExpression col = new it.unive.lisa.symbolic.value.BinaryExpression(
-						seriestype, deref, right, new ColumnProjection(0), getLocation());
-				result = analysis.smallStepSemantics(result, col, this);
-				rts = analysis.getRuntimeTypesOf(state, right, this);
-				childType = rts.stream().anyMatch(dfref::equals) ? dfref : seriesref;
+				if (getitem == null)
+					// no type implements __getitem__ for this pair: real Python
+					// raises TypeError, which is not modeled here
+					throw new UnsupportedStatementException(this);
+				result = result.lub(getitem.forwardSemantics(state, interprocedural, expressions));
 			}
 		}
 
-		if (childType.isPointerType()) {
-			Type inner = childType.asPointerType().getInnerType();
-			AccessChild access = new AccessChild(inner, deref, right, getLocation());
-			HeapReference ref = new HeapReference(childType, access, getLocation());
-			return analysis.smallStepSemantics(result, ref, this);
-		} else {
-			AccessChild access = new AccessChild(childType, deref, right, getLocation());
-			return state.lub(analysis.smallStepSemantics(result, access, this));
-		}
+		return result;
 	}
 }

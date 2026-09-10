@@ -14,13 +14,10 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
-import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import it.unive.pylisa.cfg.type.PyClassType;
-import it.unive.pylisa.symbolic.operators.dataframes.Iterate;
 import java.util.Set;
 
 public class SequenceGetItem extends BinaryExpression implements PluggableStatement {
@@ -55,6 +52,17 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		return 0;
 	}
 
+	/**
+	 * Native implementation of {@code Sequence.__getitem__(self, index)}:
+	 * dereferences {@code self} as a heap pointer and reads the element at
+	 * {@code index} as a heap child ({@link AccessChild}) &mdash; the same
+	 * access path used to write each element when the sequence was built
+	 * (e.g. by {@code ListCreation}), so indexing a list/tuple literal with a
+	 * constant index resolves precisely. Whatever was written to that slot
+	 * (a scalar, or itself a heap reference for a nested sequence) is
+	 * returned as-is; no special-casing per element type is needed since the
+	 * heap domain already tracks what was actually assigned there.
+	 */
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
 			InterproceduralAnalysis<A, D> interprocedural,
@@ -65,19 +73,19 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		try {
-			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-			Type dfref = ((PyClassType) dftype).getReference();
-			PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-			Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);
-			if (rts.stream().anyMatch(dfref::equals)) {
-				HeapDereference deref = new HeapDereference(dftype, left, loc);
-				UnaryExpression iterate = new UnaryExpression(seriestype, deref, new Iterate(0), loc);
-				return analysis.smallStepSemantics(state, iterate, st);
+
+		Type dereferencedType = null;
+		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);
+		for (Type t : rts)
+			if (t.isPointerType()) {
+				Type inner = t.asPointerType().getInnerType();
+				dereferencedType = dereferencedType == null ? inner : dereferencedType.commonSupertype(inner);
 			}
-		} catch (Exception e) {
-			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), st);
-		}
-		return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), st);
+		if (dereferencedType == null)
+			dereferencedType = Untyped.INSTANCE;
+
+		HeapDereference deref = new HeapDereference(dereferencedType, left, loc);
+		AccessChild access = new AccessChild(Untyped.INSTANCE, deref, right, loc);
+		return analysis.smallStepSemantics(state, access, st);
 	}
 }
