@@ -1,0 +1,26 @@
+class Sequence:
+	method __getitem__: it.unive.pylisa.libraries.SequenceGetItem
+		libtype Object*
+		param self libtype Sequence*
+		param index type it.unive.lisa.program.type.Int32Type::INSTANCE
+
+	method __len__: it.unive.pylisa.libraries.SequenceLen
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self libtype Sequence*
+
+	method __contains__: it.unive.pylisa.libraries.SequenceContains
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self libtype Sequence*
+		param item type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __setitem__: it.unive.pylisa.libraries.SequenceSetItem
+		type it.unive.lisa.type.VoidType::INSTANCE
+		param self libtype Sequence*
+		param index type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param value type it.unive.lisa.type.Untyped::INSTANCE
+
+sealed class List extends Sequence
+sealed class Set extends Sequence
+sealed class Dict extends Sequence
+sealed class Tuple extends Sequence
+sealed class Slice extends Sequence
