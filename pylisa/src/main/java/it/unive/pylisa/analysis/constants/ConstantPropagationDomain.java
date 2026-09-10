@@ -84,7 +84,7 @@ public class ConstantPropagationDomain
 				|| t.toString().equals(LibrarySpecificationProvider.SLICE)
 				|| t.isNullType();
 	}
-
+	
 	@Override
 	public boolean canProcess(
 			ValueExpression expression,
@@ -256,6 +256,44 @@ public class ConstantPropagationDomain
 		if (operator instanceof DictPut)
 			return dictPut(left, middle, right, pp);
 		return ConstantPropagation.TOP;
+	}
+
+	@Override
+	public it.unive.lisa.lattices.Satisfiability satisfiesBinaryExpression(
+			BinaryExpression expression,
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
+		BinaryOperator operator = expression.getOperator();
+		if (!(operator instanceof it.unive.lisa.symbolic.value.operator.ComparisonOperator)
+				|| left.isTop() || right.isTop() || left.isBottom() || right.isBottom())
+			return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
+
+		Object l = left.getConstant();
+		Object r = right.getConstant();
+
+		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonEq.INSTANCE)
+			return it.unive.lisa.lattices.Satisfiability.fromBoolean(java.util.Objects.equals(l, r));
+		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonNe.INSTANCE)
+			return it.unive.lisa.lattices.Satisfiability.fromBoolean(!java.util.Objects.equals(l, r));
+
+		if (!(l instanceof Number) || !(r instanceof Number))
+			return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
+		double ld = ((Number) l).doubleValue();
+		double rd = ((Number) r).doubleValue();
+
+		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonLt.INSTANCE)
+			return it.unive.lisa.lattices.Satisfiability.fromBoolean(ld < rd);
+		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonLe.INSTANCE)
+			return it.unive.lisa.lattices.Satisfiability.fromBoolean(ld <= rd);
+		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonGt.INSTANCE)
+			return it.unive.lisa.lattices.Satisfiability.fromBoolean(ld > rd);
+		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonGe.INSTANCE)
+			return it.unive.lisa.lattices.Satisfiability.fromBoolean(ld >= rd);
+
+		return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
 	}
 
 	@SuppressWarnings("unchecked")

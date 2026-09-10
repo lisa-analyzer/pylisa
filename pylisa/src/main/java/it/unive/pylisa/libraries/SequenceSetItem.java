@@ -14,11 +14,9 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.symbolic.CFGThrow;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
-import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -38,7 +36,8 @@ import java.util.Set;
  * tuples do not define their own {@code __setitem__}), but tuples are
  * immutable: assigning to {@code t[i]} raises a {@code TypeError}. For every
  * runtime pointer type of {@code self} that resolves to (a subtype of)
- * {@code Tuple}, this raises that error instead of performing the write.
+ * {@code Tuple}, this raises that error (via {@link PyExceptions}) instead of
+ * performing the write.
  */
 public class SequenceSetItem extends NaryExpression implements PluggableStatement {
 
@@ -91,7 +90,8 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 				Type inner = t.asPointerType().getInnerType();
 
 				if (inner.canBeAssignedTo(tupleType)) {
-					result = result.lub(raiseTypeError(analysis, state));
+					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
+							LibrarySpecificationProvider.TYPE_ERROR));
 					continue;
 				}
 
@@ -107,27 +107,5 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 		}
 
 		return result;
-	}
-
-	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> raiseTypeError(
-			Analysis<A, D> analysis,
-			AnalysisState<A> state)
-			throws SemanticException {
-		CodeLocation loc = getLocation();
-		Type typeErrorType = PyClassType.lookup(LibrarySpecificationProvider.TYPE_ERROR);
-
-		MemoryAllocation alloc = new MemoryAllocation(typeErrorType, loc, false);
-		AnalysisState<A> allocState = analysis.smallStepSemantics(state, alloc, this);
-
-		AnalysisState<A> exceptionState = state.bottomExecution();
-		for (SymbolicExpression th : allocState.getExecutionExpressions()) {
-			CFGThrow throwVar = new CFGThrow(getCFG(), typeErrorType, loc);
-			AnalysisState<A> tmp = analysis.assign(allocState, throwVar, th, this);
-			exceptionState = exceptionState.lub(
-					analysis.moveExecutionToError(tmp.withExecutionExpression(throwVar),
-							new AnalysisState.Error(typeErrorType, this), this));
-		}
-
-		return exceptionState;
 	}
 }

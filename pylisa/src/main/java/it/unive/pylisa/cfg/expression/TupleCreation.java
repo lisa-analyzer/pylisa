@@ -20,6 +20,7 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -87,6 +88,18 @@ public class TupleCreation extends NaryExpression {
 				}
 				assign = assign.lub(fieldResult);
 			}
+
+			// tuples are immutable, so the element count fixed at creation
+			// time never becomes stale; track it as a "length" field so
+			// SequenceGetItem can raise IndexError on out-of-bounds access
+			AnalysisState<A> lenResult = state.bottom();
+			Variable lenKey = new Variable(Int32Type.INSTANCE, "length", getLocation());
+			AccessChild lenAcc = new AccessChild(Untyped.INSTANCE, deref, lenKey, getLocation());
+			Constant lenValue = new Constant(Int32Type.INSTANCE, params.length, getLocation());
+			AnalysisState<A> lenState = analysis.smallStepSemantics(sem, lenAcc, this);
+			for (SymbolicExpression lenId : lenState.getExecutionExpressions())
+				lenResult = lenResult.lub(analysis.assign(lenState, lenId, lenValue, this));
+			assign = assign.lub(lenResult);
 
 			// we leave the reference on the stack
 			result = result.lub(analysis.smallStepSemantics(assign, ref, this));

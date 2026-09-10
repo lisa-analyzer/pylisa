@@ -18,3 +18,5 @@ method len: it.unive.pylisa.libraries.Len
 root class Object
 
 class TypeError
+
+class IndexError
