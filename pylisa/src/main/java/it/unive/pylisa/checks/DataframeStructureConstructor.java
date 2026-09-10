@@ -13,6 +13,7 @@ import it.unive.lisa.lattices.FunctionalLattice;
 import it.unive.lisa.lattices.SimpleAbstractState;
 import it.unive.lisa.lattices.heap.allocations.AllocationSites;
 import it.unive.lisa.lattices.types.TypeSet;
+import it.unive.lisa.util.datastructures.trie.PatriciaTrieMap;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
@@ -321,7 +322,7 @@ public class DataframeStructureConstructor
 
 		public ColumnsDomain(
 				Columns lattice,
-				Map<Names, Columns> function) {
+				PatriciaTrieMap<Names, Columns> function) {
 			super(lattice, function);
 		}
 
@@ -369,7 +370,7 @@ public class DataframeStructureConstructor
 		@Override
 		public ColumnsDomain mk(
 				Columns lattice,
-				Map<Names, Columns> function) {
+				PatriciaTrieMap<Names, Columns> function) {
 			return new ColumnsDomain(lattice, function);
 		}
 

@@ -94,7 +94,7 @@ public class DataframeGraphDomain implements ValueLattice<DataframeGraphDomain> 
 				used.forEach(nodes::remove);
 			pointers.lattice.forEach(nodes::remove);
 			nodes.forEach(map::remove);
-			this.operations = new CollectingMapLattice<>(operations.lattice, map);
+			this.operations = new CollectingMapLattice<>(operations.lattice, CollectingMapLattice.toTrieMap(map));
 		} else
 			this.operations = operations;
 
