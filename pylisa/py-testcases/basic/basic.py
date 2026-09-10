@@ -34,3 +34,5 @@ fd1 = -7 // 2
 fd2 = a // b
 md1 = -7 % 2
 md2 = a % b
+in1 = "ell" in k
+in2 = "z" in k

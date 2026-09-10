@@ -37,3 +37,8 @@ class Str:
 		type it.unive.lisa.program.type.StringType::INSTANCE
 		param self type it.unive.lisa.program.type.StringType::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __contains__: it.unive.pylisa.libraries.strings.StrContains
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.StringType::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE

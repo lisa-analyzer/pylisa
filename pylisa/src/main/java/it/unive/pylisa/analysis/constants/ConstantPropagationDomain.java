@@ -10,6 +10,7 @@ import it.unive.lisa.program.type.Int16Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.Int64Type;
 import it.unive.lisa.program.type.Int8Type;
+import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
@@ -24,6 +25,7 @@ import it.unive.lisa.symbolic.value.operator.binary.BitwiseOr;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseXor;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftLeft;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftRight;
+import it.unive.lisa.symbolic.value.operator.binary.StringContains;
 import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.ModuloOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
@@ -218,7 +220,9 @@ public class ConstantPropagationDomain
 					|| (right.is(Float.class) && right.as(Float.class) == 0f))
 				return ConstantPropagation.BOTTOM;
 			return new ConstantPropagation(pymod(left, right, pp));
-		} else if (operator instanceof StringAdd)
+		} else if (operator instanceof StringContains)
+			return stringContains(left, right, pp);
+		else if (operator instanceof StringAdd)
 			return stringConcat(left, right, pp);
 		else if (operator instanceof StringFormat) {
 			return stringFormat(left, right, pp);
@@ -439,6 +443,19 @@ public class ConstantPropagationDomain
 			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) * right.as(Float.class),
 					pp.getLocation());
 		return c;
+	}
+
+	private ConstantPropagation stringContains(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+		if (left.isTop() || right.isTop())
+			return ConstantPropagation.TOP;
+		if (left.constant.getStaticType().isStringType() && right.constant.getStaticType().isStringType())
+			return new ConstantPropagation(
+					new Constant(BoolType.INSTANCE, left.as(String.class).contains(right.as(String.class)),
+							pp.getLocation()));
+		return ConstantPropagation.TOP;
 	}
 
 	private ConstantPropagation stringConcat(
