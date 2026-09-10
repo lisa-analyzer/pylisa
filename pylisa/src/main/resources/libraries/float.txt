@@ -2,32 +2,32 @@ class Real:
 	method __add__: it.unive.pylisa.libraries.floats.FloatAdd
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __radd__: it.unive.pylisa.libraries.floats.FloatRAdd
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __sub__: it.unive.pylisa.libraries.floats.FloatSub
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __rsub__: it.unive.pylisa.libraries.floats.FloatRSub
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __mul__: it.unive.pylisa.libraries.floats.FloatMul
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __rmul__: it.unive.pylisa.libraries.floats.FloatRMul
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __neg__: it.unive.pylisa.libraries.floats.FloatNeg
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
@@ -36,69 +36,69 @@ class Real:
 	method __truediv__: it.unive.pylisa.libraries.floats.FloatTrueDiv
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __rtruediv__: it.unive.pylisa.libraries.floats.FloatRTrueDiv
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __floordiv__: it.unive.pylisa.libraries.floats.FloatFloorDiv
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __rfloordiv__: it.unive.pylisa.libraries.floats.FloatRFloorDiv
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __mod__: it.unive.pylisa.libraries.floats.FloatMod
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __rmod__: it.unive.pylisa.libraries.floats.FloatRMod
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __pow__: it.unive.pylisa.libraries.floats.FloatPow
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __rpow__: it.unive.pylisa.libraries.floats.FloatRPow
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __eq__: it.unive.pylisa.libraries.Eq
 		type it.unive.lisa.program.type.BoolType::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __lt__: it.unive.pylisa.libraries.Lt
 		type it.unive.lisa.program.type.BoolType::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __gt__: it.unive.pylisa.libraries.Gt
 		type it.unive.lisa.program.type.BoolType::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __le__: it.unive.pylisa.libraries.Le
 		type it.unive.lisa.program.type.BoolType::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __ge__: it.unive.pylisa.libraries.Ge
 		type it.unive.lisa.program.type.BoolType::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE
 
 	method __ne__: it.unive.pylisa.libraries.Ne
 		type it.unive.lisa.program.type.BoolType::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
-		param other type it.unive.lisa.type.Untyped::INSTANCE
+		param other type it.unive.lisa.program.type.Float32Type::INSTANCE

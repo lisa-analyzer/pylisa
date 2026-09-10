@@ -36,3 +36,6 @@ md1 = -7 % 2
 md2 = a % b
 in1 = "ell" in k
 in2 = "z" in k
+srep1 = "ab" * 3
+srep2 = 3 * "ab"
+scat = "foo" + "bar"

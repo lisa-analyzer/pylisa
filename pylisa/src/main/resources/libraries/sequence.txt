@@ -19,7 +19,22 @@ class Sequence:
 		param index type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param value type it.unive.lisa.type.Untyped::INSTANCE
 
-sealed class List extends Sequence
+sealed class List extends Sequence:
+	method __add__: it.unive.pylisa.libraries.lists.ListAdd
+		libtype List*
+		param self libtype List*
+		param other libtype List*
+
+	method __mul__: it.unive.pylisa.libraries.lists.ListMul
+		libtype List*
+		param self libtype List*
+		param other type it.unive.lisa.program.type.Int32Type::INSTANCE
+
+	method __rmul__: it.unive.pylisa.libraries.lists.ListRMul
+		libtype List*
+		param self libtype List*
+		param other type it.unive.lisa.program.type.Int32Type::INSTANCE
+
 sealed class Set extends Sequence
 sealed class Dict extends Sequence
 sealed class Tuple extends Sequence
