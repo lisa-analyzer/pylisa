@@ -79,9 +79,7 @@ public class ConstantPropagationDomain
 			Type t) {
 		return t.isNumericType()
 				|| t.isStringType()
-				|| t.toString().equals(LibrarySpecificationProvider.LIST)
-				|| t.toString().equals(LibrarySpecificationProvider.DICT)
-				|| t.toString().equals(LibrarySpecificationProvider.SLICE)
+				|| t.isBooleanType()
 				|| t.isNullType();
 	}
 	
