@@ -43,6 +43,7 @@ import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.DictPut;
 import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
+import it.unive.pylisa.symbolic.operators.Modulo;
 import it.unive.pylisa.symbolic.operators.Power;
 import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
@@ -206,6 +207,17 @@ public class ConstantPropagationDomain
 					|| (right.is(Float.class) && right.as(Float.class) == 0f))
 				return ConstantPropagation.BOTTOM;
 			return new ConstantPropagation(floorDiv(left, right, pp));
+		} else if (operator instanceof Modulo) {
+			if (left.isTop() || right.isTop())
+				return ConstantPropagation.TOP;
+			if (left.constant.getStaticType().isStringType())
+				return stringFormat(left, right, pp);
+			if (!left.constant.getStaticType().isNumericType() || !right.constant.getStaticType().isNumericType())
+				return ConstantPropagation.TOP;
+			if ((right.is(Integer.class) && right.as(Integer.class) == 0)
+					|| (right.is(Float.class) && right.as(Float.class) == 0f))
+				return ConstantPropagation.BOTTOM;
+			return new ConstantPropagation(pymod(left, right, pp));
 		} else if (operator instanceof StringAdd)
 			return stringConcat(left, right, pp);
 		else if (operator instanceof StringFormat) {
@@ -322,6 +334,31 @@ public class ConstantPropagationDomain
 		else
 			return new Constant(Float32Type.INSTANCE,
 					(float) Math.floor(left.as(Float.class) / right.as(Float.class)), pp.getLocation());
+	}
+
+	private Constant pymod(
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+		// Python's % takes the sign of the divisor, unlike Java's % (which
+		// takes the sign of the dividend): a % b == a - floor(a / b) * b
+		if (left.is(Integer.class) && right.is(Integer.class))
+			return new Constant(Int32Type.INSTANCE,
+					Math.floorMod(left.as(Integer.class), right.as(Integer.class)), pp.getLocation());
+		else if (left.is(Float.class) && right.is(Integer.class))
+			return floatPymod(left.as(Float.class), right.as(Integer.class), pp);
+		else if (left.is(Integer.class) && right.is(Float.class))
+			return floatPymod(left.as(Integer.class), right.as(Float.class), pp);
+		else
+			return floatPymod(left.as(Float.class), right.as(Float.class), pp);
+	}
+
+	private Constant floatPymod(
+			float left,
+			float right,
+			ProgramPoint pp) {
+		float result = left - (float) Math.floor(left / right) * right;
+		return new Constant(Float32Type.INSTANCE, result, pp.getLocation());
 	}
 
 	private Constant rem(

@@ -53,6 +53,16 @@ class Integral:
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
+	method __mod__: it.unive.pylisa.libraries.ints.IntMod
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __rmod__: it.unive.pylisa.libraries.ints.IntRMod
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
 	method __or__: it.unive.pylisa.libraries.ints.IntOr
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE

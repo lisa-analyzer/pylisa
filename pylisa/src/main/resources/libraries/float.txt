@@ -53,6 +53,16 @@ class Real:
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
+	method __mod__: it.unive.pylisa.libraries.floats.FloatMod
+		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __rmod__: it.unive.pylisa.libraries.floats.FloatRMod
+		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
 	method __pow__: it.unive.pylisa.libraries.floats.FloatPow
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
