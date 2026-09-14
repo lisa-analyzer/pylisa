@@ -20,3 +20,5 @@ root class Object
 class TypeError
 
 class IndexError
+
+class ZeroDivisionError

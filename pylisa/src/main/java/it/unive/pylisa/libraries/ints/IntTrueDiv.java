@@ -2,6 +2,7 @@ package it.unive.pylisa.libraries.ints;
 
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -12,14 +13,22 @@ import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingDiv;
+import it.unive.pylisa.libraries.DivisionGuard;
 
 /**
  * Native implementation of {@code int.__truediv__(self, other)}. Python's true
  * division always yields a {@code float}, even for exactly divisible operands,
  * hence the declared return type in {@code int.txt} is {@code Float32Type}
  * rather than {@code Int32Type}.
+ *
+ * <p>
+ * {@code other} (the divisor) is checked against {@code 0} via
+ * {@link DivisionGuard}: a {@code ZeroDivisionError} is raised when it is
+ * (possibly) zero, mirroring real Python.
  */
 public class IntTrueDiv extends BinaryExpression implements PluggableStatement {
 
@@ -61,13 +70,12 @@ public class IntTrueDiv extends BinaryExpression implements PluggableStatement {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		return interprocedural.getAnalysis().smallStepSemantics(state,
-				new it.unive.lisa.symbolic.value.BinaryExpression(
-						getStaticType(),
-						left,
-						right,
-						NumericNonOverflowingDiv.INSTANCE,
-						getLocation()),
-				st);
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		CodeLocation loc = getLocation();
+
+		it.unive.lisa.symbolic.value.BinaryExpression div = new it.unive.lisa.symbolic.value.BinaryExpression(
+				getStaticType(), left, right, NumericNonOverflowingDiv.INSTANCE, loc);
+		Constant zero = new Constant(Int32Type.INSTANCE, 0, loc);
+		return DivisionGuard.guardedCompute(analysis, state, right, zero, div, getCFG(), loc, st, this);
 	}
 }

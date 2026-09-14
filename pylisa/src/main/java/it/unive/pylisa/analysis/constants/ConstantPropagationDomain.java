@@ -272,10 +272,25 @@ public class ConstantPropagationDomain
 		Object l = left.getConstant();
 		Object r = right.getConstant();
 
-		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonEq.INSTANCE)
-			return it.unive.lisa.lattices.Satisfiability.fromBoolean(java.util.Objects.equals(l, r));
-		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonNe.INSTANCE)
-			return it.unive.lisa.lattices.Satisfiability.fromBoolean(!java.util.Objects.equals(l, r));
+		// numeric equality must be checked value-wise (0 == 0.0 is true in
+		// Python) rather than via Objects.equals, which is class-sensitive:
+		// Integer(0).equals(Float(0.0f)) is false even though they denote
+		// the same number, e.g. this matters when the same binary operator
+		// resolves to both int.__truediv__ and float.__truediv__ for a
+		// plain int/int division (Int32Type.canBeAssignedTo(Float32Type) is
+		// true in this codebase's type lattice), so a zero-divisor check
+		// comparing against a Float32 zero constant must still recognize an
+		// Integer(0) divisor as zero
+		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonEq.INSTANCE
+				|| operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonNe.INSTANCE) {
+			boolean eq = (l instanceof Number && r instanceof Number)
+					? ((Number) l).doubleValue() == ((Number) r).doubleValue()
+					: java.util.Objects.equals(l, r);
+			return it.unive.lisa.lattices.Satisfiability
+					.fromBoolean(operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonEq.INSTANCE
+							? eq
+							: !eq);
+		}
 
 		if (!(l instanceof Number) || !(r instanceof Number))
 			return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
