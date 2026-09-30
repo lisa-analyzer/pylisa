@@ -99,6 +99,7 @@ import org.apache.logging.log4j.Logger;
  * instances. The lattice structure itself lives in
  * {@link DataframeGraphDomain}.
  */
+@SuppressWarnings("all")
 public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDomain> {
 
 	private static final Logger LOG = LogManager.getLogger(DataframeGraphValueDomain.class);
@@ -423,7 +424,6 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 				arg.operations.putState(id, new SetLattice<>(access)));
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static DataframeGraphDomain doAxisConcatenation(
 			int index,
 			DataframeGraphDomain arg,
@@ -518,7 +518,7 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 				ops.putState(id, new SetLattice<>(concatNode)));
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "rawtypes" })
 	private static DataframeGraphDomain doUnaryTransformation(
 			int index,
 			DataframeGraphDomain arg,
@@ -570,7 +570,7 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 				ops);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "rawtypes" })
 	private static DataframeGraphDomain doUnaryReshape(
 			int index,
 			DataframeGraphDomain arg,
@@ -666,7 +666,6 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 				arg.operations.putState(id, operations));
 	}
 
-	@SuppressWarnings("unchecked")
 	private static DataframeGraphDomain doCreateDataframe(
 			int index,
 			DataframeGraphDomain arg,
@@ -786,7 +785,8 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 
 		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
 		CollectingMapLattice<NodeId,
-				DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice, CollectingMapLattice.toTrieMap(operations));
+				DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice,
+						CollectingMapLattice.toTrieMap(operations));
 		for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
 			ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
 		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointers.lattice, idsLattice);
@@ -828,7 +828,8 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 
 		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
 		CollectingMapLattice<NodeId,
-				DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice, CollectingMapLattice.toTrieMap(operations));
+				DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice,
+						CollectingMapLattice.toTrieMap(operations));
 		for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
 			ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
 		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointers.lattice, idsLattice);
@@ -839,7 +840,6 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 				ops);
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private static DataframeGraphDomain doWriteSelectionDataframe(
 			int index,
 			DataframeGraphDomain left,
@@ -873,7 +873,8 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 
 		SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
 		CollectingMapLattice<NodeId,
-				DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice, CollectingMapLattice.toTrieMap(operations));
+				DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice,
+						CollectingMapLattice.toTrieMap(operations));
 		for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
 			ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
 		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointers.lattice, idsLattice);
@@ -917,7 +918,8 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 		NodeId id = new NodeId(concatNode);
 		SetLattice<NodeId> ids = new SetLattice<>(id);
 		CollectingMapLattice<NodeId,
-				DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice, CollectingMapLattice.toTrieMap(operations));
+				DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice,
+						CollectingMapLattice.toTrieMap(operations));
 		CollectingMapLattice<Identifier, NodeId> pointers = shift(right.pointers, left.pointers.lattice, ids);
 		return new DataframeGraphDomain(
 				right.constants,
@@ -926,7 +928,6 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 				ops.putState(id, new SetLattice<>(concatNode)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private static DataframeGraphDomain doDropColumns(
 			int index,
 			DataframeGraphDomain left,
@@ -951,7 +952,6 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 		if (colsSelection == null)
 			colsSelection = new ColumnListSelection(accessedCols);
 
-		@SuppressWarnings("rawtypes")
 		Transform<?, ?> drop = new Transform(pp.getLocation(), index, UnaryTransformKind.DROP_COLS, Axis.COLS,
 				new DataframeSelection(colsSelection));
 		DataframeForest forest = new DataframeForest(right.graph);
@@ -1018,7 +1018,6 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 				ops);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static DataframeGraphDomain doColumnAccess(
 			int index,
 			DataframeGraphDomain left,
@@ -1100,7 +1099,6 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 				right.operations.putState(id, new SetLattice<>(access)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private static DataframeGraphDomain doListAppend(
 			DataframeGraphDomain left,
 			DataframeGraphDomain right,
@@ -1213,7 +1211,6 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 				right.operations);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static DataframeGraphDomain doAccessRowsColumns(
 			int index,
 			DataframeGraphDomain left,
@@ -1315,7 +1312,8 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 
 			SetLattice<NodeId> idsLattice = new SetLattice<>(ids.keySet(), false);
 			CollectingMapLattice<NodeId,
-					DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice, CollectingMapLattice.toTrieMap(operations));
+					DataframeOperation> ops = new CollectingMapLattice<>(right.operations.lattice,
+							CollectingMapLattice.toTrieMap(operations));
 			for (Entry<NodeId, DataframeOperation> entry : ids.entrySet())
 				ops = ops.putState(entry.getKey(), new SetLattice<>(entry.getValue()));
 			CollectingMapLattice<Identifier,
@@ -1377,7 +1375,6 @@ public class DataframeGraphValueDomain implements ValueDomain<DataframeGraphDoma
 				right.operations.putState(id, new SetLattice<>(node)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private static DataframeGraphDomain doDictPut(
 			DataframeGraphDomain left,
 			DataframeGraphDomain middle,

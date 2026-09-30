@@ -1,10 +1,10 @@
 plugins {
     id 'java'
     id 'application'
-   	id 'antlr'
-   	id 'eclipse'
-   	id "com.diffplug.spotless" version "7.0.3"
-   	id 'maven-publish'
+    id 'antlr'
+    id 'eclipse'
+    id "com.diffplug.spotless" version "7.0.3"
+    id 'maven-publish'
     id 'signing'
 }
 
@@ -48,6 +48,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.7'
     implementation 'io.github.classgraph:classgraph:4.8.175'
     implementation 'org.graphstream:gs-core:2.0'
+    implementation 'commons-cli:commons-cli:1.4'
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
@@ -139,7 +140,7 @@ spotless {
     lineEndings 'UNIX'
     java {
         // tabs, no spaces
-        indentWithTabs()
+        leadingSpacesToTabs()
     
         // keep imports clean 
         importOrder() 
@@ -238,3 +239,31 @@ signing {
     useInMemoryPgpKeys(signingKey, signingPassword)
     sign publishing.publications.mavenJava
 }
+
+test {
+    testLogging {
+        showStandardStreams = false
+        events "failed"
+        exceptionFormat "full"
+    }
+
+    def outputs = [:]  // map from test ID -> output buffer
+    onOutput { descriptor, event ->
+        def buf = outputs.computeIfAbsent(descriptor.id) { new StringBuilder() }
+        buf.append(event.message)
+    }
+
+    afterTest { desc, result ->
+        if (result.resultType == org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE) {
+            def buf = outputs.remove(desc.id)
+            if (buf) {
+                println "=== Captured output for ${desc.className}.${desc.name} ==="
+                print buf.toString()
+                println "============================================================="
+            }
+        } else {
+            outputs.remove(desc.id)
+        }
+    }
+}
+

@@ -50,19 +50,19 @@ public class PyAssign extends Assignment {
 	 * Overridden (rather than handling {@code x[i] = v} in
 	 * {@link #fwdBinarySemantics}) so that the target {@code x[i]} is never
 	 * evaluated as a whole: the default {@code NaryExpression.forwardSemantics}
-	 * flow evaluates every sub-expression &mdash; including the left-hand
-	 * side &mdash; before {@code fwdBinarySemantics} is even invoked, and
+	 * flow evaluates every sub-expression &mdash; including the left-hand side
+	 * &mdash; before {@code fwdBinarySemantics} is even invoked, and
 	 * {@code x[i]} as a {@link PySingleArrayAccess} would dispatch
 	 * {@code __getitem__} (a real read). For an assignment target that read
-	 * result is discarded anyway (it is not a valid write target), but
-	 * actually performing it is observable: e.g. an out-of-range constant
-	 * index on a {@code Tuple} would incorrectly raise {@code IndexError}
-	 * (from the discarded read) instead of the {@code TypeError} that
-	 * {@code __setitem__} itself raises for any tuple mutation, regardless
-	 * of the index. So for this target shape, only {@code x} and {@code i}
-	 * (the receiver and the index, i.e. {@code access.getLeft()}/
-	 * {@code access.getRight()}) are evaluated individually, never the
-	 * {@code PySingleArrayAccess} node itself.
+	 * result is discarded anyway (it is not a valid write target), but actually
+	 * performing it is observable: e.g. an out-of-range constant index on a
+	 * {@code Tuple} would incorrectly raise {@code IndexError} (from the
+	 * discarded read) instead of the {@code TypeError} that {@code __setitem__}
+	 * itself raises for any tuple mutation, regardless of the index. So for
+	 * this target shape, only {@code x} and {@code i} (the receiver and the
+	 * index, i.e. {@code access.getLeft()}/ {@code access.getRight()}) are
+	 * evaluated individually, never the {@code PySingleArrayAccess} node
+	 * itself.
 	 */
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
@@ -74,7 +74,7 @@ public class PyAssign extends Assignment {
 		if (!(lefthand instanceof PySingleArrayAccess))
 			return super.forwardSemantics(entryState, interprocedural, expressions);
 
-		// x[i] = v  ~>  x.__setitem__(i, v)
+		// x[i] = v ~> x.__setitem__(i, v)
 		PySingleArrayAccess access = (PySingleArrayAccess) lefthand;
 		Expression selfExpr = access.getLeft();
 		Expression indexExpr = access.getRight();
@@ -126,7 +126,8 @@ public class PyAssign extends Assignment {
 					resolved = true;
 					result = result.lub(setitem.forwardSemantics(indexState, interprocedural, expressions));
 				} catch (CallResolutionException e) {
-					// this type does not support item assignment: it does not contribute
+					// this type does not support item assignment: it does not
+					// contribute
 				}
 			}
 		}

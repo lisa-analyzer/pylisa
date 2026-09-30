@@ -117,7 +117,6 @@ public class EndpointGraphBuilder {
 		return cluster;
 	}
 
-	@SuppressWarnings("unchecked")
 	private MutableNode buildConsumerNode(
 			Endpoint endpoint)
 			throws JsonProcessingException {

@@ -16,8 +16,8 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.symbolic.operators.StringMult;
 
 /**
- * Native implementation of {@code str.__mul__(self, other)}: string
- * repetition ({@code "x" * 3}).
+ * Native implementation of {@code str.__mul__(self, other)}: string repetition
+ * ({@code "x" * 3}).
  */
 public class StrMul extends BinaryExpression implements PluggableStatement {
 

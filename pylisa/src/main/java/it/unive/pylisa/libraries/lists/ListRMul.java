@@ -16,9 +16,9 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.UnsupportedStatementException;
 
 /**
- * Native implementation of {@code list.__rmul__(self, other)}: list
- * repetition with the operands swapped ({@code 3 * [1]}). Not implemented;
- * see {@link ListAdd}.
+ * Native implementation of {@code list.__rmul__(self, other)}: list repetition
+ * with the operands swapped ({@code 3 * [1]}). Not implemented; see
+ * {@link ListAdd}.
  */
 public class ListRMul extends BinaryExpression implements PluggableStatement {
 

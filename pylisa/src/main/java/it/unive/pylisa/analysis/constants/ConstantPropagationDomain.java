@@ -38,7 +38,6 @@ import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.DictConstant;
 import it.unive.pylisa.symbolic.ListConstant;
 import it.unive.pylisa.symbolic.PyNoneConstant;
@@ -82,7 +81,7 @@ public class ConstantPropagationDomain
 				|| t.isBooleanType()
 				|| t.isNullType();
 	}
-	
+
 	@Override
 	public boolean canProcess(
 			ValueExpression expression,
@@ -309,7 +308,6 @@ public class ConstantPropagationDomain
 		return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
 	}
 
-	@SuppressWarnings("unchecked")
 	private ConstantPropagation dictPut(
 			ConstantPropagation left,
 			ConstantPropagation middle,
@@ -322,7 +320,6 @@ public class ConstantPropagationDomain
 		return new ConstantPropagation(newdict);
 	}
 
-	@SuppressWarnings("unchecked")
 	private ConstantPropagation listAppend(
 			ConstantPropagation left,
 			ConstantPropagation right,

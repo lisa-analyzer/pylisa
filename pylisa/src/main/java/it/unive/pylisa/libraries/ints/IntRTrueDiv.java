@@ -26,7 +26,6 @@ import it.unive.pylisa.libraries.DivisionGuard;
  * than {@code left / right} (the caller binds {@code self} to {@code left} and
  * {@code other} to {@code right}, following the same argument order used for
  * {@link IntTrueDiv}).
- *
  * <p>
  * The divisor here is {@code self} ({@code left}): checked against {@code 0}
  * via {@link DivisionGuard}, raising {@code ZeroDivisionError} when it is

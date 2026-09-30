@@ -24,14 +24,14 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import java.util.Set;
 
 /**
- * Native implementation of {@code Sequence.__len__(self)}. {@code Tuple}
- * tracks its element count as a "length" heap field at creation time (see
+ * Native implementation of {@code Sequence.__len__(self)}. {@code Tuple} tracks
+ * its element count as a "length" heap field at creation time (see
  * {@code TupleCreation} and {@link SequenceGetItem}), so for every runtime
  * pointer type of {@code self} that resolves to (a subtype of) {@code Tuple},
  * this reads that field directly instead of returning {@code top}. No such
- * field is tracked for {@code List} (its size can change via mutation
- * methods) nor for {@code Set}/{@code Dict}/{@code Slice} (no creation-time
- * tracking implemented), so those fall back to an imprecise result.
+ * field is tracked for {@code List} (its size can change via mutation methods)
+ * nor for {@code Set}/{@code Dict}/{@code Slice} (no creation-time tracking
+ * implemented), so those fall back to an imprecise result.
  */
 public class SequenceLen extends UnaryExpression implements PluggableStatement {
 

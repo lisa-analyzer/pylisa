@@ -22,7 +22,8 @@ public class XMLPermissions {
 			String fileName)
 			throws JAXBException,
 			FileNotFoundException {
-		PermissionsNode permissionsXML = JAXBPermissionsHelpers.load(fileName);
+		// PermissionsNode permissionsXML =
+		// JAXBPermissionsHelpers.load(fileName);
 		return new XMLPermissions();
 	}
 

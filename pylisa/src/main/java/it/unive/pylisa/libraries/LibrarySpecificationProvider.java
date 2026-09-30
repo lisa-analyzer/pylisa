@@ -159,4 +159,11 @@ public class LibrarySpecificationProvider {
 			String name) {
 		return LOADED_LIBS.contains(name);
 	}
+
+	public static void importBuiltins(
+			Program program) {
+		// TODO: add imports
+		// throw new UnsupportedOperationException("Unimplemented method
+		// 'importBuiltins'");
+	}
 }

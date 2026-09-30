@@ -21,7 +21,7 @@ public abstract class ROSNetworkEntity<
 
 	private ROSLisaAnalysis rosLisaAnalysis;
 
-	private ROSNetwork network;
+	// private ROSNetwork network;
 	private ROSNode node;
 
 	private String nodeID;
@@ -32,7 +32,7 @@ public abstract class ROSNetworkEntity<
 			ROSNetwork network,
 			Channel channel,
 			ROSNode node) {
-		this.network = network;
+		// this.network = network;
 		this.channel = channel;
 		this.node = node;
 		this.nodeID = node.getID();
@@ -42,7 +42,7 @@ public abstract class ROSNetworkEntity<
 			ROSNetwork network,
 			Channel channel,
 			String nodeID) {
-		this.network = network;
+		// this.network = network;
 		this.channel = channel;
 		this.nodeID = nodeID;
 	}
@@ -86,7 +86,7 @@ public abstract class ROSNetworkEntity<
 
 	public void setNetwork(
 			ROSNetwork n) {
-		this.network = n;
+		// this.network = n;
 	}
 
 	public Channel getChannel() {

@@ -21,7 +21,6 @@ import it.unive.pylisa.symbolic.operators.FloorDivision;
 
 /**
  * Native implementation of {@code int.__floordiv__(self, other)}.
- *
  * <p>
  * {@code other} (the divisor) is checked against {@code 0} via
  * {@link DivisionGuard}: a {@code ZeroDivisionError} is raised when it is

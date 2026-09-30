@@ -9,13 +9,10 @@ import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.SimpleAbstractState;
 import it.unive.lisa.lattices.heap.allocations.AllocationSites;
 import it.unive.lisa.lattices.types.TypeSet;
-import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.SyntheticLocation;
-import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapExpression;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
@@ -78,14 +75,9 @@ public class ROSTopicSubscription extends ROSTopicBasedNetworkEntity {
 		SymbolicExpression nodeExpr = ((ROSNode) getContainer()).getLisaState().getSymbolicExpression();
 		Statement subscriptionStmt = getRosLisaAnalysis().getStatement();
 		if (nodeExpr instanceof HeapReference) {
-			HeapDereference hderef = new HeapDereference(Untyped.INSTANCE, nodeExpr, nodeExpr.getCodeLocation());
 			// AccessChild aChild = new AccessChild(Untyped.INSTANCE, hderef,
 			// new Variable())
 			if (subscriptionStmt instanceof UnresolvedCall) {
-				Expression callbackFunction = ((UnresolvedCall) subscriptionStmt).getSubExpressions()[4];
-				ROSSubscriptionCallback subCallback = new ROSSubscriptionCallback(subscriptionStmt.getCFG(),
-						(SourceCodeLocation) subscriptionStmt.getLocation(), callbackFunction);
-				ROSNode container = (ROSNode) getContainer();
 				ExpressionSet[] exprSet = new ExpressionSet[2];
 				Constant msg = new Constant(Untyped.INSTANCE, message.getMessage(), SyntheticLocation.INSTANCE);
 				exprSet[0] = new ExpressionSet(nodeExpr);
@@ -94,7 +86,6 @@ public class ROSTopicSubscription extends ROSTopicBasedNetworkEntity {
 				// container.getLisaState().getAnalysisState(), exprSet, new
 				// StatementStore<>(container.getLisaState().getAnalysisState()));
 				// WON'T DO
-				var x = 3;
 			}
 		}
 		// callbackFunction.

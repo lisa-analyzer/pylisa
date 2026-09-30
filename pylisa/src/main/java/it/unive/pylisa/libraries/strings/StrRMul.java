@@ -16,11 +16,11 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.symbolic.operators.StringMult;
 
 /**
- * Native implementation of {@code str.__rmul__(self, other)}: string
- * repetition with the operands swapped ({@code 3 * "x"}). {@code self} is
- * still the string (the caller binds {@code self} to the string operand
- * regardless of which side of {@code *} it appeared on), so this computes
- * the same result as {@link StrMul}.
+ * Native implementation of {@code str.__rmul__(self, other)}: string repetition
+ * with the operands swapped ({@code 3 * "x"}). {@code self} is still the string
+ * (the caller binds {@code self} to the string operand regardless of which side
+ * of {@code *} it appeared on), so this computes the same result as
+ * {@link StrMul}.
  */
 public class StrRMul extends BinaryExpression implements PluggableStatement {
 

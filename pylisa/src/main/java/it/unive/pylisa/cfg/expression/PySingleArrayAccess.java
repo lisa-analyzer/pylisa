@@ -29,10 +29,10 @@ import java.util.Set;
  * container, index)} &mdash; the real dunder, so any type registering
  * {@code __getitem__} (the {@code Sequence} hierarchy via
  * {@code SequenceGetItem}, or a user-defined class) is handled the same way,
- * general Python semantics rather than a structure baked into this node.
- * There is no reflected method (indexing is one-directional), so if no
- * runtime type pair resolves it, real Python raises {@code TypeError}; this
- * codebase does not model exceptions, so that is surfaced as
+ * general Python semantics rather than a structure baked into this node. There
+ * is no reflected method (indexing is one-directional), so if no runtime type
+ * pair resolves it, real Python raises {@code TypeError}; this codebase does
+ * not model exceptions, so that is surfaced as
  * {@link UnsupportedStatementException} instead (mirroring {@code in}'s
  * {@code __contains__} dispatch).
  */
@@ -75,7 +75,8 @@ public class PySingleArrayAccess extends BinaryExpression {
 		for (Type tContainer : rtsContainer) {
 			for (Type tIndex : rtsIndex) {
 				// type(container).__getitem__(container, index): try both a
-				// static-style registration (native types) and an instance-style
+				// static-style registration (native types) and an
+				// instance-style
 				// one (Sequence), matching len()'s dual dispatch
 				UnresolvedCall getitem = null;
 				for (CallType kind : new CallType[] { CallType.STATIC, CallType.INSTANCE }) {

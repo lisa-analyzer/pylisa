@@ -5,7 +5,6 @@ import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 
 public abstract class ColumnSelection<C extends ColumnSelection<C>> extends Selection<C> {
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public final C lubAux(
 			C other)
@@ -15,7 +14,6 @@ public abstract class ColumnSelection<C extends ColumnSelection<C>> extends Sele
 		return lubSameClass(other);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public final C wideningAux(
 			C other)

@@ -8,21 +8,18 @@ import it.unive.pylisa.analysis.dataframes.Names;
 
 public abstract class Selection<S extends Selection<S>> implements BaseLattice<S>, Comparable<Selection<?>> {
 
-	@SuppressWarnings("unchecked")
 	public S lub(
 			Selection<?> other)
 			throws SemanticException {
 		return lub((S) other);
 	}
 
-	@SuppressWarnings("unchecked")
 	public S widening(
 			Selection<?> other)
 			throws SemanticException {
 		return widening((S) other);
 	}
 
-	@SuppressWarnings("unchecked")
 	public boolean lessOrEqual(
 			Selection<?> other)
 			throws SemanticException {

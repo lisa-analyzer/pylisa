@@ -17,13 +17,13 @@ import it.unive.pylisa.cfg.type.PyClassType;
 /**
  * Shared helper to raise a native Python exception from a library
  * implementation, mirroring how JLiSA raises {@code ArrayIndexOutOfBounds
- * Exception} in {@code JavaArrayAccess}: it allocates an instance of the
- * given (built-in, field-less) exception class, wraps it in a
- * {@link CFGThrow}, and moves the resulting state to the error channel via
- * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState.Error,
- * it.unive.lisa.program.cfg.ProgramPoint)}. The returned state's normal
- * execution is empty ({@code bottomExecution()}); callers {@code lub} it
- * together with whatever non-exceptional continuation(s) apply.
+ * Exception} in {@code JavaArrayAccess}: it allocates an instance of the given
+ * (built-in, field-less) exception class, wraps it in a {@link CFGThrow}, and
+ * moves the resulting state to the error channel via
+ * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState.Error, it.unive.lisa.program.cfg.ProgramPoint)}.
+ * The returned state's normal execution is empty ({@code bottomExecution()});
+ * callers {@code lub} it together with whatever non-exceptional continuation(s)
+ * apply.
  */
 public final class PyExceptions {
 

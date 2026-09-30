@@ -99,7 +99,6 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		return Pair.of(prepared, slots);
 	}
 
-	@SuppressWarnings("unchecked")
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> pythonLogic(
 			Parameter[] formals,
 			Expression[] actuals,

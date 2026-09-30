@@ -24,20 +24,18 @@ import java.util.Set;
 
 /**
  * Native implementation of {@code Sequence.__setitem__(self, index, value)}:
- * dereferences {@code self} as a heap pointer and writes {@code value} into
- * the child identified by {@code index} ({@link AccessChild}) &mdash; the
- * same access path {@code SequenceGetItem} reads from and
- * {@code ListCreation} writes to when the sequence is built, so
- * {@code lst[i] = v} followed by {@code lst[i]} resolves precisely for a
- * constant index.
- *
+ * dereferences {@code self} as a heap pointer and writes {@code value} into the
+ * child identified by {@code index} ({@link AccessChild}) &mdash; the same
+ * access path {@code SequenceGetItem} reads from and {@code ListCreation}
+ * writes to when the sequence is built, so {@code lst[i] = v} followed by
+ * {@code lst[i]} resolves precisely for a constant index.
  * <p>
- * {@code Tuple} inherits this method from {@code Sequence} (real Python
- * tuples do not define their own {@code __setitem__}), but tuples are
- * immutable: assigning to {@code t[i]} raises a {@code TypeError}. For every
- * runtime pointer type of {@code self} that resolves to (a subtype of)
- * {@code Tuple}, this raises that error (via {@link PyExceptions}) instead of
- * performing the write.
+ * {@code Tuple} inherits this method from {@code Sequence} (real Python tuples
+ * do not define their own {@code __setitem__}), but tuples are immutable:
+ * assigning to {@code t[i]} raises a {@code TypeError}. For every runtime
+ * pointer type of {@code self} that resolves to (a subtype of) {@code Tuple},
+ * this raises that error (via {@link PyExceptions}) instead of performing the
+ * write.
  */
 public class SequenceSetItem extends NaryExpression implements PluggableStatement {
 

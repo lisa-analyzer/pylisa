@@ -44,6 +44,7 @@ import java.util.Set;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 
+@SuppressWarnings("all")
 public class ROSNode implements NetworkEntityContainer<ROSNetworkEntity<? extends ROSCommunicationChannel>> {
 	private ROSLisaNodeAnalysis lisaNodeAnalysis;
 

@@ -24,7 +24,6 @@ import it.unive.pylisa.libraries.DivisionGuard;
  * division always yields a {@code float}, even for exactly divisible operands,
  * hence the declared return type in {@code int.txt} is {@code Float32Type}
  * rather than {@code Int32Type}.
- *
  * <p>
  * {@code other} (the divisor) is checked against {@code 0} via
  * {@link DivisionGuard}: a {@code ZeroDivisionError} is raised when it is

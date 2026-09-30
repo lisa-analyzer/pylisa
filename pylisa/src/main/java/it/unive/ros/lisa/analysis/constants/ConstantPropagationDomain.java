@@ -1,6 +1,5 @@
 package it.unive.ros.lisa.analysis.constants;
 
-import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
@@ -261,8 +260,6 @@ public class ConstantPropagationDomain
 		if (left.isTop() || right.isTop() || !left.is(List.class)) {
 			return ConstantPropagation.TOP;
 		}
-		Lattice<?> tail;
-
 		ListConstant listconst = new ListConstant(pp.getLocation(), left.as(List.class), right);
 		return new ConstantPropagation(listconst);
 	}

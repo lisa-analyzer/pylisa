@@ -39,7 +39,6 @@ public class ListConstant extends Constant {
 		return result;
 	}
 
-	@SuppressWarnings("unchecked")
 	public List<Lattice<?>> getList() {
 		return (List<Lattice<?>>) getValue();
 	}

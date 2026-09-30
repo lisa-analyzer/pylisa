@@ -16,8 +16,8 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.UnsupportedStatementException;
 
 /**
- * Native implementation of {@code list.__mul__(self, other)}: list
- * repetition ({@code [1] * 3}). Not implemented; see {@link ListAdd}.
+ * Native implementation of {@code list.__mul__(self, other)}: list repetition
+ * ({@code [1] * 3}). Not implemented; see {@link ListAdd}.
  */
 public class ListMul extends BinaryExpression implements PluggableStatement {
 

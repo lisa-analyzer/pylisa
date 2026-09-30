@@ -12,10 +12,8 @@ import it.unive.lisa.lattices.types.TypeSet;
 import it.unive.lisa.program.cfg.fixpoints.optforward.OptimizedForwardAscendingFixpoint;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphValueDomain;
-import it.unive.pylisa.checks.BottomFinder;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
-import it.unive.pylisa.checks.OpenCallsFinder;
 import it.unive.pylisa.helpers.AnalysisTestExecutor;
 import it.unive.pylisa.helpers.CronConfiguration;
 import org.junit.Ignore;
@@ -25,11 +23,6 @@ import org.junit.Test;
 public class PyTransformationsTest extends AnalysisTestExecutor {
 
 	private CronConfiguration buildConfig() {
-		return buildConfig(false);
-	}
-
-	private CronConfiguration buildConfig(
-			boolean findOpenCalls) {
 		CronConfiguration conf = new CronConfiguration();
 		// conf.outputs.add(new HtmlResults<>(true));
 		conf.optimize = true;
@@ -38,12 +31,7 @@ public class PyTransformationsTest extends AnalysisTestExecutor {
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 		conf.semanticChecks.add(new DataframeDumper());
-		if (!conf.optimize)
-			// if optimize is true, we will have bottom almost everywhere
-			conf.semanticChecks.add(new BottomFinder());
 		conf.semanticChecks.add(new DataframeStructureConstructor());
-		if (findOpenCalls)
-			conf.semanticChecks.add(new OpenCallsFinder<>());
 
 		conf.analysis = new SimpleAbstractDomain<HeapEnvWithFields, DataframeGraphDomain, TypeEnvironment<TypeSet>>(
 				new FieldSensitivePointBasedHeap(), new DataframeGraphValueDomain(), new InferredTypes());

@@ -22,17 +22,17 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Python's {@code *}. It calls {@code type(a).__mul__(a, b)}, falling back
- * to {@code type(b).__rmul__(b, a)} if needed. Unlike the other arithmetic
+ * Python's {@code *}. It calls {@code type(a).__mul__(a, b)}, falling back to
+ * {@code type(b).__rmul__(b, a)} if needed. Unlike the other arithmetic
  * operators, {@code *} is genuinely asymmetric between types (e.g.
  * {@code "x" * 3} and {@code [1] * 3}: the left operand's type governs the
  * result, but the right operand need not be assignable to it), so no
  * {@code canBeAssignedTo} gate is applied before dispatch. Note that this
- * codebase's call resolution keeps matching {@code int.__mul__(3, "x")}
- * ahead of the reflected {@code str.__rmul__}, regardless of {@code other}'s
- * declared type, so {@code IntMul}/{@code IntRMul} handle the string-repeat
- * case internally rather than relying on the reflected fallback ever being
- * reached for that pair.
+ * codebase's call resolution keeps matching {@code int.__mul__(3, "x")} ahead
+ * of the reflected {@code str.__rmul__}, regardless of {@code other}'s declared
+ * type, so {@code IntMul}/{@code IntRMul} handle the string-repeat case
+ * internally rather than relying on the reflected fallback ever being reached
+ * for that pair.
  */
 public class PyMultiplication extends Multiplication {
 
@@ -106,7 +106,8 @@ public class PyMultiplication extends Multiplication {
 							new Set[] { Collections.singleton(tr), Collections.singleton(tl) }, aliasing);
 					result = result.lub(rmul.forwardSemantics(state, interprocedural, expressions));
 				} catch (CallResolutionException e) {
-					// neither type implements *: this pair does not contribute to the result
+					// neither type implements *: this pair does not contribute
+					// to the result
 				}
 			}
 		}

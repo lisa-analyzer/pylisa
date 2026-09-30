@@ -15,7 +15,6 @@ import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.checks.semantic.SemanticTool;
-import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.SimpleAbstractState;
 import it.unive.lisa.lattices.heap.allocations.AllocationSites;
@@ -77,8 +76,6 @@ public class ROSComputationGraphDumper
 	private RosComputationalGraph rosGraph;
 
 	private ROSNetwork rosNetwork;
-
-	private ScopeId currentNodeScopeId;
 
 	public ROSComputationGraphDumper(
 			RosComputationalGraph rosGraph,
@@ -344,7 +341,6 @@ public class ROSComputationGraphDumper
 					TypeEnvironment<TypeSet>>> analysisState,
 			Expression node)
 			throws SemanticException {
-		String nodeName = null;
 		AnalysisState<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
 				TypeEnvironment<TypeSet>>> nodeSemantics = analyzedCFG.getAnalysisStateAfter(node);
 		HeapReference nodeHR = new HeapReference(PyClassType.lookup(LibrarySpecificationProvider.RCLPY_NODE),
@@ -812,7 +808,6 @@ public class ROSComputationGraphDumper
 					return;
 				}
 			}
-			var x = 3;
 		} else if (nativeCFG.getDescriptor().getName()
 				.equals("create_subscription")
 				&& nativeCFGDescriptorUnitName
@@ -984,8 +979,6 @@ public class ROSComputationGraphDumper
 						if (targets.isEmpty()) {
 							continue;
 						}
-						CodeMember codeMember = targets.iterator()
-								.next();
 					}
 				}
 			}
@@ -1005,11 +998,6 @@ public class ROSComputationGraphDumper
 							TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Edge edge) {
-		if (graph.getDescriptor().getName().equals("$main")) {
-			var nodeAnalysisState = tool.getResultOf(graph);
-			// get the first result.
-			var analyzedCFG = nodeAnalysisState.stream().iterator().next();
-		}
 		return true;
 	}
 

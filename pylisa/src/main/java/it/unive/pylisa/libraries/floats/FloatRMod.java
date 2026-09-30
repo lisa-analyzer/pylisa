@@ -26,11 +26,10 @@ import it.unive.pylisa.symbolic.operators.Modulo;
  * {@code left % right} (the caller binds {@code self} to {@code left} and
  * {@code other} to {@code right}, following the same argument order used for
  * {@link FloatSub}/{@link FloatRSub}).
- *
  * <p>
- * The divisor here is {@code self} ({@code left}): checked against
- * {@code 0.0} via {@link DivisionGuard}, raising {@code ZeroDivisionError}
- * when it is (possibly) zero.
+ * The divisor here is {@code self} ({@code left}): checked against {@code 0.0}
+ * via {@link DivisionGuard}, raising {@code ZeroDivisionError} when it is
+ * (possibly) zero.
  */
 public class FloatRMod extends BinaryExpression implements PluggableStatement {
 

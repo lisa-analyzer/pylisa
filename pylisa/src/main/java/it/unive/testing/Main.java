@@ -129,7 +129,8 @@ public class Main {
 			try {
 				// PyFrontend pyF = new PyFrontend(fileName, false);
 				// Program program = pyF.toLiSAProgram();
-				new PyFrontend(fileName, false).toLiSAProgram();
+				PyFrontend frontend = new PyFrontend();
+				frontend.parseFromListOfFile(java.util.List.of(fileName));
 				ok++;
 				res = new ParsingRes(fileName, "OK", "", "");
 			} catch (Exception e) {

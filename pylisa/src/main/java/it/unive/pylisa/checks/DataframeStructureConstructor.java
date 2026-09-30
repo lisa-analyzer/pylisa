@@ -13,7 +13,6 @@ import it.unive.lisa.lattices.FunctionalLattice;
 import it.unive.lisa.lattices.SimpleAbstractState;
 import it.unive.lisa.lattices.heap.allocations.AllocationSites;
 import it.unive.lisa.lattices.types.TypeSet;
-import it.unive.lisa.util.datastructures.trie.PatriciaTrieMap;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
@@ -22,9 +21,10 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.util.collections.workset.FIFOWorkingSet;
 import it.unive.lisa.util.datastructures.graph.algorithms.FixpointException;
 import it.unive.lisa.util.datastructures.graph.algorithms.ForwardFixpoint;
+import it.unive.lisa.util.datastructures.trie.PatriciaTrieMap;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
-import it.unive.pylisa.PyFrontend;
+import it.unive.pylisa.PyFileParser;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain.CloseOperation;
@@ -139,7 +139,7 @@ public class DataframeStructureConstructor
 							TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Statement node) {
-		if (!graph.getDescriptor().getName().equals(PyFrontend.INSTRUMENTED_MAIN_FUNCTION_NAME))
+		if (!graph.getDescriptor().getName().equals(PyFileParser.INSTRUMENTED_MAIN_FUNCTION_NAME))
 			return true;
 
 		if (node.stopsExecution()) {

@@ -22,19 +22,16 @@ public class DataframeSelection<R extends RowSelection<R>, C extends ColumnSelec
 		this(rowSelection, columnSelection, false);
 	}
 
-	@SuppressWarnings("unchecked")
 	public DataframeSelection(
 			R rowSelection) {
 		this(rowSelection, (C) AllColumns.INSTANCE, false);
 	}
 
-	@SuppressWarnings("unchecked")
 	public DataframeSelection(
 			C columnSelection) {
 		this((R) AllRows.INSTANCE, columnSelection, false);
 	}
 
-	@SuppressWarnings("unchecked")
 	public DataframeSelection(
 			boolean isTop) {
 		this((R) AllRows.INSTANCE, (C) AllColumns.INSTANCE, isTop);

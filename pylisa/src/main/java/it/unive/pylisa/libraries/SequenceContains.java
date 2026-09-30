@@ -31,10 +31,9 @@ import java.util.Set;
 
 /**
  * Native implementation of {@code Sequence.__contains__(self, item)} (element
- * membership for {@code list}/{@code set}/{@code dict}/{@code tuple}). There
- * is no element-tracking abstract domain for sequences in this codebase, so
- * this is imprecise in general (always {@code top}).
- *
+ * membership for {@code list}/{@code set}/{@code dict}/{@code tuple}). There is
+ * no element-tracking abstract domain for sequences in this codebase, so this
+ * is imprecise in general (always {@code top}).
  * <p>
  * {@code Tuple} is the exception: like {@link SequenceLen} and
  * {@link SequenceGetItem}, it leverages the "length" heap field
@@ -42,9 +41,9 @@ import java.util.Set;
  * {@code 0..length-1} (bounded via {@code Analysis#satisfies}, mirroring
  * {@code SequenceGetItem}'s bounds check) and compares {@code item} against
  * each one with {@code ComparisonEq}, OR-ing the per-slot verdicts together
- * ({@link Satisfiability#or}): {@code SATISFIED} if any slot definitely
- * equals {@code item}, {@code NOT_SATISFIED} if none of them possibly do
- * (including the empty-tuple case), {@code UNKNOWN} otherwise.
+ * ({@link Satisfiability#or}): {@code SATISFIED} if any slot definitely equals
+ * {@code item}, {@code NOT_SATISFIED} if none of them possibly do (including
+ * the empty-tuple case), {@code UNKNOWN} otherwise.
  */
 public class SequenceContains extends BinaryExpression implements PluggableStatement {
 
@@ -100,7 +99,8 @@ public class SequenceContains extends BinaryExpression implements PluggableState
 			Type inner = t.asPointerType().getInnerType();
 
 			if (inner.canBeAssignedTo(tupleType))
-				// since for tuple we track the length and the slots, we can be precise
+				// since for tuple we track the length and the slots, we can be
+				// precise
 				result = result.lub(containsPrecise(analysis, state, inner, left, right, loc));
 			else
 				result = result.lub(analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), st));

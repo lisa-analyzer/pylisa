@@ -21,7 +21,7 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.util.file.FileManager.WriteAction;
-import it.unive.pylisa.PyFrontend;
+import it.unive.pylisa.PyFileParser;
 import it.unive.pylisa.analysis.dataframes.CollectingMapLattice;
 import it.unive.pylisa.analysis.dataframes.DataframeForest;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
@@ -115,7 +115,7 @@ public class DataframeDumper
 							TypeEnvironment<TypeSet>>> tool,
 			CFG graph,
 			Statement node) {
-		if (!graph.getDescriptor().getName().equals(PyFrontend.INSTRUMENTED_MAIN_FUNCTION_NAME))
+		if (!graph.getDescriptor().getName().equals(PyFileParser.INSTRUMENTED_MAIN_FUNCTION_NAME))
 			return true;
 
 		if (node.stopsExecution()) {

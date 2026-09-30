@@ -12,8 +12,6 @@ import it.unive.lisa.LiSA;
 import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.outputs.JSONReportDumper;
 import it.unive.lisa.outputs.compare.ResultComparer;
-import it.unive.lisa.outputs.compare.ResultComparer.REPORTED_COMPONENT;
-import it.unive.lisa.outputs.compare.ResultComparer.REPORT_TYPE;
 import it.unive.lisa.outputs.json.JsonReport;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.fixpoints.optforward.OptimizedForwardAscendingFixpoint;
@@ -29,7 +27,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
-import org.apache.commons.io.FilenameUtils;
 
 public abstract class AnalysisTestExecutor {
 
@@ -232,14 +229,14 @@ public abstract class AnalysisTestExecutor {
 	private Program readProgram(
 			Path target,
 			CronConfiguration conf) {
-		String kind = FilenameUtils.getExtension(target.toString());
-		PyFrontend translator = conf.cellOrder == null
-				? new PyFrontend(target.toString(), kind.equals("ipynb"))
-				: new PyFrontend(target.toString(), kind.equals("ipynb"), conf.cellOrder);
-
+		PyFrontend translator = new PyFrontend();
 		Program program = null;
+
 		try {
-			program = translator.toLiSAProgram();
+			if (conf.cellOrder == null)
+				program = translator.parseFromListOfFile(java.util.List.of(target.toString()));
+			else
+				program = translator.parseFromListOfFile(java.util.List.of(target.toString()), conf.cellOrder);
 		} catch (AnalysisSetupException | IOException e) {
 			e.printStackTrace(System.err);
 			fail("Exception while parsing '" + target + "': " + e.getMessage());
@@ -272,7 +269,9 @@ public abstract class AnalysisTestExecutor {
 		configuration.workdir = workdir.toString();
 	}
 
-	private class Accumulator extends ResultComparer {
+	private class Accumulator
+			extends
+			ResultComparer {
 
 		private final Collection<Path> changedFileName = new HashSet<>();
 		private final Collection<Path> addedFilePaths = new HashSet<>();
@@ -363,7 +362,9 @@ public abstract class AnalysisTestExecutor {
 		}
 	}
 
-	private static class OptimizedRunDiff extends ResultComparer {
+	private static class OptimizedRunDiff
+			extends
+			ResultComparer {
 		@Override
 		public boolean shouldCompareConfigurations() {
 			// optimized runs use the same configuration except for

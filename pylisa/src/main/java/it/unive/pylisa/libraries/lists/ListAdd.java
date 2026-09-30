@@ -17,13 +17,12 @@ import it.unive.pylisa.UnsupportedStatementException;
 
 /**
  * Native implementation of {@code list.__add__(self, other)}: list
- * concatenation ({@code [1] + [2]}). Not implemented: allocating a fresh
- * list and copying elements into it would require a domain that can
- * summarize "all elements of this allocation" independent of a constant
- * index, which this codebase does not have; a naive fresh allocation was
- * tried and produced allocation-site aliasing with sibling list literals
- * instead of a genuinely independent object, which is worse than failing
- * loudly.
+ * concatenation ({@code [1] + [2]}). Not implemented: allocating a fresh list
+ * and copying elements into it would require a domain that can summarize "all
+ * elements of this allocation" independent of a constant index, which this
+ * codebase does not have; a naive fresh allocation was tried and produced
+ * allocation-site aliasing with sibling list literals instead of a genuinely
+ * independent object, which is worse than failing loudly.
  */
 public class ListAdd extends BinaryExpression implements PluggableStatement {
 

@@ -35,13 +35,11 @@ import java.util.Map;
 
 public class RosApplicationBuilder {
 	private String workDir = "ros-app-output";
-	private final ArrayList<Program> programs = new ArrayList<>();
 	ROSNetwork n = new ROSNetwork();
 	private final ROSComputationGraphDumper rosGraphDumper = new ROSComputationGraphDumper(new RosComputationalGraph(),
 			n);
 	private final Map<String, Grant> permissionsGrants = new HashMap<>();
 	private final List<ROSNodeBuilder> nodes = new ArrayList<>();
-	private final List<String> fileNames = new ArrayList<>();
 
 	public RosApplicationBuilder() {
 	}
@@ -91,7 +89,6 @@ public class RosApplicationBuilder {
 						}
 					}
 					fileManagerLiSAField.setAccessible(false);
-					var x = 3;
 				} catch (Exception e) {
 					System.out.println("[ERR] " + e.getMessage());
 					throw new ROSApplicationBuildException(e);

@@ -17,13 +17,13 @@ import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 
 /**
  * Shared helper for {@code __truediv__}/{@code __floordiv__}/{@code __mod__}
- * (and their reflected counterparts): checks whether the divisor is
- * (possibly) zero via {@code Analysis#satisfies} &mdash; mirroring how
+ * (and their reflected counterparts): checks whether the divisor is (possibly)
+ * zero via {@code Analysis#satisfies} &mdash; mirroring how
  * {@code SequenceGetItem} bounds-checks a tuple index &mdash; and either
  * evaluates {@code operation} (when the divisor might be nonzero) or raises
- * {@code ZeroDivisionError} (via {@link PyExceptions}, when it might be
- * zero), {@code lub}-ing both branches together when the divisor's value is
- * not statically known.
+ * {@code ZeroDivisionError} (via {@link PyExceptions}, when it might be zero),
+ * {@code lub}-ing both branches together when the divisor's value is not
+ * statically known.
  */
 public final class DivisionGuard {
 

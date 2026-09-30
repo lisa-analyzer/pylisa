@@ -48,7 +48,6 @@ public class DictConstant extends Constant {
 		return result;
 	}
 
-	@SuppressWarnings("unchecked")
 	public Map<Lattice<?>, Lattice<?>> getList() {
 		return (Map<Lattice<?>, Lattice<?>>) getValue();
 	}

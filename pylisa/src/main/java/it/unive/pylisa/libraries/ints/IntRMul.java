@@ -23,8 +23,8 @@ import java.util.Set;
  * Native implementation of {@code int.__rmul__(self, other)}, i.e. the
  * reflected multiplication {@code other * self}. Multiplication being
  * commutative for numbers, this computes the same result as {@link IntMul}
- * (string-repeat handling included, for the same reason: this codebase's
- * call resolution does not reliably fall back to {@code str.__rmul__} for
+ * (string-repeat handling included, for the same reason: this codebase's call
+ * resolution does not reliably fall back to {@code str.__rmul__} for
  * {@code 3 * "x"}), iterating each of {@code other}'s runtime types
  * individually and joining the results so a merge point (e.g. {@code other}
  * could be either an int or a string) is handled precisely for every

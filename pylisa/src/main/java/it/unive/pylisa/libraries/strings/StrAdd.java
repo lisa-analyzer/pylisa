@@ -18,8 +18,8 @@ import it.unive.pylisa.symbolic.operators.StringAdd;
 /**
  * Native implementation of {@code str.__add__(self, other)}: string
  * concatenation ({@code "a" + "b"}). There is no {@code __radd__} for
- * {@code str} in real Python: {@code str + str} is only ever driven by the
- * left operand.
+ * {@code str} in real Python: {@code str + str} is only ever driven by the left
+ * operand.
  */
 public class StrAdd extends BinaryExpression implements PluggableStatement {
 

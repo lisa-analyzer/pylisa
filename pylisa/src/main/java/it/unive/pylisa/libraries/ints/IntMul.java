@@ -20,22 +20,21 @@ import it.unive.pylisa.symbolic.operators.StringMult;
 import java.util.Set;
 
 /**
- * Native implementation of {@code int.__mul__(self, other)}. {@code other}
- * is declared {@code Untyped} (rather than restricted to {@code Int32Type})
+ * Native implementation of {@code int.__mul__(self, other)}. {@code other} is
+ * declared {@code Untyped} (rather than restricted to {@code Int32Type})
  * because this codebase's call resolution does not reliably fall back to
  * {@code str.__rmul__}/{@code list.__rmul__} for {@code 3 * "x"}/
  * {@code 3 * [1]} otherwise (it never even tries {@code int.__mul__} when
- * {@code other} is declared restrictively, but the reflected fallback then
- * also fails to trigger for reasons not fully understood): so
- * {@code int.__mul__} is always tried first here, and this method itself
- * discriminates on {@code other}'s actual runtime type(s), iterating each
- * one individually and joining the results: only the numeric and
- * string-repeat cases it knows how to handle compute a real value (so a
- * merge point where {@code other} could be either an int or a string is
- * handled precisely for both), and it contributes nothing (not a bogus
- * numeric-multiply result) for anything else (e.g. {@code list}),
- * mirroring {@code TypeError}/{@code NotImplemented} for the cases it does
- * not implement.
+ * {@code other} is declared restrictively, but the reflected fallback then also
+ * fails to trigger for reasons not fully understood): so {@code int.__mul__} is
+ * always tried first here, and this method itself discriminates on
+ * {@code other}'s actual runtime type(s), iterating each one individually and
+ * joining the results: only the numeric and string-repeat cases it knows how to
+ * handle compute a real value (so a merge point where {@code other} could be
+ * either an int or a string is handled precisely for both), and it contributes
+ * nothing (not a bogus numeric-multiply result) for anything else (e.g.
+ * {@code list}), mirroring {@code TypeError}/{@code NotImplemented} for the
+ * cases it does not implement.
  */
 public class IntMul extends BinaryExpression implements PluggableStatement {
 

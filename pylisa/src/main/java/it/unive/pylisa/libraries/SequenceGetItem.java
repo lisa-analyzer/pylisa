@@ -64,23 +64,22 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 	 * Native implementation of {@code Sequence.__getitem__(self, index)}:
 	 * dereferences {@code self} as a heap pointer and reads the element at
 	 * {@code index} as a heap child ({@link AccessChild}) &mdash; the same
-	 * access path used to write each element when the sequence was built
-	 * (e.g. by {@code ListCreation}), so indexing a list/tuple literal with a
-	 * constant index resolves precisely. Whatever was written to that slot
-	 * (a scalar, or itself a heap reference for a nested sequence) is
-	 * returned as-is; no special-casing per element type is needed since the
-	 * heap domain already tracks what was actually assigned there.
-	 *
+	 * access path used to write each element when the sequence was built (e.g.
+	 * by {@code ListCreation}), so indexing a list/tuple literal with a
+	 * constant index resolves precisely. Whatever was written to that slot (a
+	 * scalar, or itself a heap reference for a nested sequence) is returned
+	 * as-is; no special-casing per element type is needed since the heap domain
+	 * already tracks what was actually assigned there.
 	 * <p>
-	 * {@code Tuple} is immutable, so {@code TupleCreation} tracks the
-	 * element count as a "length" heap field once and for all at creation
-	 * time (unlike {@code List}, whose size can change via mutation methods,
-	 * so no such field is tracked for it). For every runtime pointer type of
-	 * {@code self} that resolves to (a subtype of) {@code Tuple}, this
-	 * compares {@code index} against that field via {@code Analysis#satisfies}
-	 * (backed by {@code ConstantPropagationDomain#satisfiesBinaryExpression})
-	 * and raises an {@code IndexError} (via {@link PyExceptions}) when the
-	 * access is (possibly) out of range.
+	 * {@code Tuple} is immutable, so {@code TupleCreation} tracks the element
+	 * count as a "length" heap field once and for all at creation time (unlike
+	 * {@code List}, whose size can change via mutation methods, so no such
+	 * field is tracked for it). For every runtime pointer type of {@code self}
+	 * that resolves to (a subtype of) {@code Tuple}, this compares
+	 * {@code index} against that field via {@code Analysis#satisfies} (backed
+	 * by {@code ConstantPropagationDomain#satisfiesBinaryExpression}) and
+	 * raises an {@code IndexError} (via {@link PyExceptions}) when the access
+	 * is (possibly) out of range.
 	 */
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(

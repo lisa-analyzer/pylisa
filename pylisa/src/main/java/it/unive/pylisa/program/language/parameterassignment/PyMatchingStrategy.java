@@ -37,7 +37,6 @@ public class PyMatchingStrategy implements ParameterMatchingStrategy {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public boolean matches(
 			Call call,
 			Parameter[] formals,
@@ -73,7 +72,6 @@ public class PyMatchingStrategy implements ParameterMatchingStrategy {
 		return delegate.matches(call, formals, slots, slotTypes);
 	}
 
-	@SuppressWarnings("unchecked")
 	public static <T, F> F pythonLogic(
 			Parameter[] formals,
 			Expression[] actuals,
