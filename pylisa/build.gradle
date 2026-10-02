@@ -1,14 +1,15 @@
 plugins {
     id 'java'
-    id 'application'
    	id 'antlr'
    	id 'eclipse'
    	id "com.diffplug.spotless" version "6.18.0"
    	id 'maven-publish'
+   	id 'java-test-fixtures'
     id 'signing'
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven {
         name = 'GitHubPackages'
@@ -22,20 +23,16 @@ repositories {
 
 group = 'it.unive'
 version = '0.1'
-mainClassName = 'it.unive.pylisa.PyLiSA'
+
+def lisaVersion = '1.1-svcomp-2027-SNAPSHOT'
 
 dependencies {
     antlr 'org.antlr:antlr4:4.8-1'
-    
-    compileOnly 'org.projectlombok:lombok:1.18.22'
-    annotationProcessor 'org.projectlombok:lombok:1.18.22'
 
-    testCompileOnly 'org.projectlombok:lombok:1.18.22'
-    testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
-    
-    implementation 'io.github.lisa-analyzer:lisa-sdk:0.1'
-    implementation 'io.github.lisa-analyzer:lisa-program:0.1'
-    implementation 'io.github.lisa-analyzer:lisa-analyses:0.1'
+
+    implementation "io.github.lisa-analyzer:lisa-sdk:${lisaVersion}"
+    implementation "io.github.lisa-analyzer:lisa-analyses:${lisaVersion}"
+    implementation "io.github.lisa-analyzer:lisa-program:${lisaVersion}"
 
     implementation 'guru.nidi:graphviz-java:0.18.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0'
@@ -46,13 +43,23 @@ dependencies {
     implementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
     implementation 'com.google.code.gson:gson:2.8.7'
     implementation 'io.github.classgraph:classgraph:4.8.175'
-    
-    testImplementation 'junit:junit:4.12'
+
+    implementation 'org.graphstream:gs-core:2.0'
+
+    // the state test helper, shared with projects that test library models
+    testFixturesApi "io.github.lisa-analyzer:lisa-sdk:${lisaVersion}"
+    testFixturesApi "io.github.lisa-analyzer:lisa-analyses:${lisaVersion}"
+    testFixturesApi "io.github.lisa-analyzer:lisa-program:${lisaVersion}"
+    testFixturesApi 'org.junit.jupiter:junit-jupiter-api:5.10.3'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
+    testImplementation 'org.assertj:assertj-core:3.26.3'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testRuntimeOnly 'org.apache.logging.log4j:log4j-core:2.23.1'
     testImplementation 'org.thymeleaf:thymeleaf:3.0.15.RELEASE'
 }
 
 generateGrammarSource {
-    dependsOn "sourcesJar"
     maxHeapSize = "64m"
     arguments += ["-visitor", "-no-listener"]
     
@@ -71,10 +78,6 @@ java {
     withSourcesJar()
 }
 
-compileJava   {
-  sourceCompatibility = '17'
-  targetCompatibility = '17'
-}
 
 javadoc {
 	if(JavaVersion.current().isJava9Compatible()) {
@@ -106,6 +109,49 @@ spotless {
     antlr4 {
         target 'src/*/antlr/**/*.g4'
         antlr4Formatter() 
+    }
+}
+
+test {
+    // the tests tagged known-failing are specifications of work not done yet: knownFailingTest
+    useJUnitPlatform { excludeTags 'known-failing' }
+    maxHeapSize = "4g"
+    // every test process writes under a directory of its own (TestDirectories); those of
+    // earlier runs of this task are removed
+    systemProperty 'pylisa.test.task', name
+    doFirst { delete "build/analysis-results/${name}" }
+    // Forward lisa.* system properties (e.g. lisa.cron.update=true) from the
+    // Gradle invocation to the test JVM so tests that read them pick them up.
+    systemProperties System.properties.findAll { k, v -> k.toString().startsWith("lisa.") }
+}
+
+// Runs the tests tagged known-failing, which specify behaviour not implemented yet, and fails
+// as soon as one of them passes, so that its tag is removed.
+tasks.register('knownFailingTest', Test) {
+    group = 'verification'
+    description = 'Runs the known-failing tests and fails if one of them now passes.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'known-failing' }
+    maxHeapSize = "4g"
+    systemProperty 'pylisa.test.task', name
+    ignoreFailures = true
+    doFirst { delete "build/analysis-results/${name}" }
+    doLast {
+        def passing = []
+        def run = 0
+        fileTree(reports.junitXml.outputLocation).matching { include '*.xml' }.each { file ->
+            new groovy.xml.XmlSlurper().parse(file).testcase.each { testcase ->
+                run++
+                if (testcase.failure.size() == 0 && testcase.error.size() == 0 && testcase.skipped.size() == 0)
+                    passing << "${testcase.@classname}#${testcase.@name}"
+            }
+        }
+        if (run == 0)
+            throw new GradleException("No known-failing test was run: is the tag spelt known-failing?")
+        if (!passing.isEmpty())
+            throw new GradleException("Known-failing tests now pass, remove their tag (for a parameterized "
+                    + "test, when every invocation passes; otherwise split it): ${passing}")
     }
 }
 
@@ -185,4 +231,20 @@ signing {
     def signingPassword = System.getenv('SIGN_PW')
     useInMemoryPgpKeys(signingKey, signingPassword)
     sign publishing.publications.mavenJava
+}
+
+tasks.named('check') {
+    dependsOn 'knownFailingTest'
+}
+
+// pylisa's command line on a Python program, from the pylisa directory:
+//   ./gradlew -q pylisa --args='[--config CP|CP_BSS] [--workdir <dir>] <file.py>'
+tasks.register('pylisa', JavaExec) {
+    group = 'application'
+    description = 'Analyses a Python program with pylisa and its generic checks.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'it.unive.pylisa.cli.PyLisaMain'
+    workingDir = projectDir
+    // the exit status reports findings, not a failure of the build
+    ignoreExitValue = true
 }

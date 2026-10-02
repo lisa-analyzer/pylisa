@@ -1,71 +1,160 @@
 package it.unive.pylisa.cfg.statement;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.symbols.QualifiedNameSymbol;
-import it.unive.lisa.analysis.symbols.SymbolAliasing;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.program.Program;
+import it.unive.lisa.program.Global;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
+import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.symbolic.value.Skip;
-import it.unive.lisa.util.collections.CollectionsDiffBuilder;
+import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
+import it.unive.pylisa.analysis.ObjectRegister;
+import it.unive.pylisa.cfg.expression.PyAssign;
+import it.unive.pylisa.cfg.type.PyFunctionType;
+import it.unive.pylisa.cfg.type.PyModuleType;
+import it.unive.pylisa.program.FunctionUnit;
+import it.unive.pylisa.program.ModuleUnit;
+import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
 
-public class FromImport extends Statement {
+public class FromImport extends Expression {
 
-	private final String lib;
-	private final Map<String, String> components;
+	private final String sourceModuleName;
+	private final List<Pair<String, String>> imports; // (localAlias,
+														// originalName)
+	private final ModuleUnit currentModule;
 
-	// from <lib> import <left> as <right>
 	public FromImport(
-			Program program,
-			String lib,
-			Map<String, String> components,
 			CFG cfg,
-			CodeLocation loc) {
+			CodeLocation loc,
+			ModuleUnit currentModule,
+			String sourceModuleName,
+			List<Pair<String, String>> imports) {
 		super(cfg, loc);
-		this.lib = lib;
-		this.components = components;
-		LibrarySpecificationProvider.importLibrary(program, lib);
+		this.currentModule = currentModule;
+		this.sourceModuleName = sourceModuleName;
+		this.imports = imports;
+	}
+
+	@Override
+	public String toString() {
+		String names = imports.stream()
+				.map(Pair::getLeft)
+				.reduce((
+						a,
+						b) -> a + ", " + b)
+				.orElse("");
+		return "from " + sourceModuleName + " import " + names;
+	}
+
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		AnalysisState<A> state = entryState;
+		if (PyModuleType.isRegistered(sourceModuleName))
+			state = ObjectRegister.initialize(state, this,
+					PyModuleType.lookup(sourceModuleName).getUnit(), interprocedural, expressions);
+
+		for (Pair<String, String> entry : imports) {
+			String alias = entry.getLeft();
+			String originalName = entry.getRight();
+			String qualifiedName = sourceModuleName + "." + originalName;
+			Expression target = makeTarget(alias);
+			// Class resolution is base-name-driven: conditionally redefined
+			// classes share a qualified name but live under distinct
+			// allocation-site identities (e.g. `X.Y@24:4` vs. `X.Y@38:4`).
+			// Collect every matching def-site and lattice-join the per-unit
+			// assignments so the target binds a set of ClassLiterals.
+			java.util.Collection<
+					it.unive.pylisa.cfg.type.PyClassType> classMatches = it.unive.pylisa.cfg.type.PyClassType
+							.lookupAllByBaseName(qualifiedName);
+			if (!classMatches.isEmpty()) {
+				AnalysisState<A> joined = state.bottom();
+				for (it.unive.pylisa.cfg.type.PyClassType t : classMatches) {
+					var unit = t.getUnit();
+					AnalysisState<A> branch = ObjectRegister.initialize(state, this, unit, interprocedural,
+							expressions);
+					Expression value = new ClassLiteral(getCFG(), getLocation(), unit);
+					branch = new PyAssign(getCFG(), getLocation(), target, value)
+							.forwardSemantics(branch, interprocedural, expressions);
+					joined = joined.lub(branch);
+				}
+				state = joined;
+				continue;
+			}
+			Expression value;
+			if (PyFunctionType.isRegistered(qualifiedName)) {
+				FunctionUnit unit = (FunctionUnit) PyFunctionType.lookup(qualifiedName).getUnit();
+				state = ObjectRegister.initialize(state, this, unit, interprocedural, expressions);
+				value = new ImportFunction(getCFG(), getLocation(), qualifiedName, unit);
+			} else if (PyModuleType.isRegistered(qualifiedName)) {
+				var unit = PyModuleType.lookup(qualifiedName).getUnit();
+				state = ObjectRegister.initialize(state, this, unit, interprocedural, expressions);
+				value = new ModuleLiteral(getCFG(), getLocation(), unit);
+			} else if (PyModuleType.isRegistered(sourceModuleName)
+					&& !PyModuleType.lookup(sourceModuleName).isUnknown()) {
+				// Source module is a known project/library module — the member
+				// is a
+				// module-level variable. Read it directly from the module's
+				// scope
+				// without overwriting its value with PushAny.
+				var sourceModule = PyModuleType.lookup(sourceModuleName).getUnit();
+				value = new PythonScopedAttributeAccessRef(getCFG(), getLocation(), sourceModule,
+						new it.unive.lisa.program.Global(getLocation(), sourceModule, originalName, false));
+			} else {
+				value = new UnknownAttributeSymbolRef(getCFG(), getLocation(), sourceModuleName, originalName);
+			}
+			state = new PyAssign(getCFG(), getLocation(), target, value)
+					.forwardSemantics(state, interprocedural, expressions);
+		}
+		return state;
+	}
+
+	private Expression makeTarget(
+			String name) {
+		if (currentModule != null)
+			return new PythonScopedAttributeAccessRef(getCFG(), getLocation(),
+					currentModule, new Global(getLocation(), currentModule, name, false));
+		return new VariableRef(getCFG(), getLocation(), name);
+	}
+
+	@Override
+	public boolean equals(
+			Object obj) {
+		return this == obj;
+	}
+
+	@Override
+	public int hashCode() {
+		return System.identityHashCode(this);
 	}
 
 	@Override
 	protected int compareSameClass(
 			Statement o) {
 		FromImport other = (FromImport) o;
-		int cmp;
-		if ((cmp = lib.compareTo(other.lib)) != 0)
+		int cmp = sourceModuleName.compareTo(other.sourceModuleName);
+		if (cmp != 0)
 			return cmp;
-		if ((cmp = Integer.compare(components.keySet().size(), other.components.keySet().size())) != 0)
+		cmp = Integer.compare(imports.size(), other.imports.size());
+		if (cmp != 0)
 			return cmp;
-
-		CollectionsDiffBuilder<String> builder = new CollectionsDiffBuilder<>(
-				String.class,
-				components.keySet(),
-				other.components.keySet());
-		builder.compute(String::compareTo);
-
-		if (!builder.sameContent())
-			// same size means that both have at least one element that is
-			// different
-			return builder.getOnlyFirst().iterator().next().compareTo(builder.getOnlySecond().iterator().next());
-
-		// same keys: just iterate over them and apply comparisons
-		// since fields is sorted, the order of iteration will be consistent
-		for (Entry<String, String> entry : this.components.entrySet())
-			if ((cmp = entry.getValue().compareTo(other.components.get(entry.getKey()))) != 0)
+		for (int i = 0; i < imports.size(); i++) {
+			Pair<String, String> t = imports.get(i);
+			Pair<String, String> u = other.imports.get(i);
+			cmp = t.getLeft().compareTo(u.getLeft());
+			if (cmp != 0)
 				return cmp;
-
-		return 0;
+			cmp = t.getRight().compareTo(u.getRight());
+			if (cmp != 0)
+				return cmp;
+		}
+		return Integer.compare(System.identityHashCode(this), System.identityHashCode(other));
 	}
 
 	@Override
@@ -73,66 +162,5 @@ public class FromImport extends Statement {
 			GraphVisitor<CFG, Statement, Edge, V> visitor,
 			V tool) {
 		return visitor.visit(tool, getCFG(), this);
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder("from ").append(lib).append(" import ");
-		for (Entry<String, String> component : components.entrySet()) {
-			builder.append(component.getKey());
-			if (component.getValue() != null)
-				builder.append(" as ").append(component.getValue());
-			builder.append(", ");
-		}
-		builder.delete(builder.length() - 2, builder.length());
-		return builder.toString();
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + Objects.hash(components, lib);
-		return result;
-	}
-
-	@Override
-	public boolean equals(
-			Object obj) {
-		if (this == obj)
-			return true;
-		if (!super.equals(obj))
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		FromImport other = (FromImport) obj;
-		return Objects.equals(components, other.components) && Objects.equals(lib, other.lib);
-	}
-
-	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemantics(
-			AnalysisState<A> entryState,
-			InterproceduralAnalysis<A> interprocedural,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		AnalysisState<A> result = entryState.smallStepSemantics(new Skip(getLocation()), this);
-
-		if (result.getInfo(SymbolAliasing.INFO_KEY) == null)
-			result = result.storeInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());
-
-		for (Entry<String, String> component : components.entrySet()) {
-			if (component.getValue() != null)
-				result = result.storeInfo(SymbolAliasing.INFO_KEY,
-						result.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).alias(
-								new QualifiedNameSymbol(lib, component.getKey()),
-								new QualifiedNameSymbol(null, component.getValue())));
-			else
-				result = result.storeInfo(SymbolAliasing.INFO_KEY,
-						result.getInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class).alias(
-								new QualifiedNameSymbol(lib, component.getKey()),
-								new QualifiedNameSymbol(null, component.getKey())));
-		}
-
-		return result;
 	}
 }

@@ -1,1 +1,19 @@
 rootProject.name = 'pylisa'
+
+// LiSA is resolved from the published io.github.lisa-analyzer artifacts by default.
+// A local LiSA checkout can be used instead, through a relative path:
+//   ./gradlew build -PlisaLocal=../../lisa-svcomp-2027/lisa
+// The explicit substitution is required: without it Gradle keeps the published
+// coordinates and ignores the included build.
+def lisaLocal = providers.gradleProperty('lisaLocal').orNull
+if (lisaLocal != null) {
+    if (new File(lisaLocal).isAbsolute())
+        throw new GradleException("lisaLocal must be a relative path, got: ${lisaLocal}")
+    includeBuild(lisaLocal) {
+        dependencySubstitution {
+            ['lisa-sdk', 'lisa-analyses', 'lisa-program'].each { name ->
+                substitute module("io.github.lisa-analyzer:${name}") using project(":${name}")
+            }
+        }
+    }
+}

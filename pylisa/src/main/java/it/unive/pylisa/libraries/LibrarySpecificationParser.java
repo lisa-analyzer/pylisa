@@ -3,12 +3,14 @@ package it.unive.pylisa.libraries;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.ClassDefContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.FieldContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.FileContext;
+import it.unive.pylisa.antlr.LibraryDefinitionParser.LibraryImportContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.LibraryContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.LibtypeContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.LisatypeContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.MethodContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.ParamContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParser.TypeContext;
+import it.unive.pylisa.antlr.LibraryDefinitionParser.ValueContext;
 import it.unive.pylisa.antlr.LibraryDefinitionParserBaseVisitor;
 import it.unive.pylisa.libraries.loader.BooleanValue;
 import it.unive.pylisa.libraries.loader.ClassDef;
@@ -31,6 +33,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisitor<Object> {
 
 	private final String file;
+	private Library currentLibrary = null;
 
 	public LibrarySpecificationParser(
 			String file) {
@@ -43,9 +46,11 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		ClassDef cls = new ClassDef(
 				ctx.ROOT() != null,
 				ctx.SEALED() != null,
+				currentLibrary,
 				ctx.type_name == null ? null : ctx.type_name.getText(),
 				ctx.name.getText(),
-				ctx.base == null ? null : ctx.base.getText());
+				ctx.base == null ? null : ctx.base.getText(),
+				ctx.syntheticType == null ? null : visitType(ctx.syntheticType));
 		for (MethodContext mtd : ctx.method())
 			cls.getMethods().add(visitMethod(mtd));
 
@@ -60,13 +65,14 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		return new Field(
 				ctx.INSTANCE() != null,
 				ctx.name.getText(),
-				visitType(ctx.type()));
+				visitType(ctx.paramType),
+				ctx.DEFAULT() == null ? null : value(ctx.val, ctx.name.getText()));
 	}
 
 	@Override
 	public Parameter visitParam(
 			ParamContext ctx) {
-		Type type = visitType(ctx.type());
+		Type type = visitType(ctx.paramType);
 		String name = ctx.name.getText();
 		if (ctx.DEFAULT() == null)
 			return new Parameter(name, type,
@@ -75,23 +81,27 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 									: ctx.AMP() != null ? Parameter.ParameterType.KW_ONLY
 											: Parameter.ParameterType.STANDARD);
 
-		Value def;
-		if (ctx.val.NONE() != null)
-			def = new NoneValue();
-		else if (ctx.val.BOOLEAN() != null)
-			def = new BooleanValue(ctx.val.BOOLEAN().getText().equals("true"));
-		else if (ctx.val.STRING() != null)
-			def = new StringValue(ctx.val.STRING().getText());
-		else if (ctx.val.NUMBER() != null)
-			def = new NumberValue(Integer.parseInt(ctx.val.NUMBER().getText()));
-		else
-			throw new LibraryParsingException(file, "Unsupported default parameter type: " + type);
+		Value def = value(ctx.val, name);
 
 		return new Parameter(name, type, def,
 				ctx.STAR() != null ? Parameter.ParameterType.VAR_ARGS
 						: ctx.POWER() != null ? Parameter.ParameterType.KW_ARGS
 								: ctx.AMP() != null ? Parameter.ParameterType.KW_ONLY
 										: Parameter.ParameterType.STANDARD);
+	}
+
+	private Value value(
+			ValueContext val,
+			String owner) {
+		if (val.NONE() != null)
+			return new NoneValue();
+		if (val.BOOLEAN() != null)
+			return new BooleanValue(val.BOOLEAN().getText().equals("true"));
+		if (val.STRING() != null)
+			return new StringValue(val.STRING().getText());
+		if (val.NUMBER() != null)
+			return new NumberValue(Integer.parseInt(val.NUMBER().getText()));
+		throw new LibraryParsingException(file, "Unsupported default value for " + owner);
 	}
 
 	@Override
@@ -106,7 +116,7 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	@Override
 	public Type visitLibtype(
 			LibtypeContext ctx) {
-		return new LibType(ctx.type_name.getText(), ctx.STAR() != null);
+		return new LibType(ctx.type_name.getText(), ctx.STAR() != null, currentLibrary);
 	}
 
 	@Override
@@ -133,6 +143,9 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 	public Library visitLibrary(
 			LibraryContext ctx) {
 		Library lib = new Library(ctx.name.getText(), ctx.loc.getText());
+		currentLibrary = lib;
+		for (LibraryImportContext imported : ctx.libraryImport())
+			lib.getImports().add(imported.name.getText());
 		for (MethodContext mtd : ctx.method())
 			lib.getMethods().add(visitMethod(mtd));
 

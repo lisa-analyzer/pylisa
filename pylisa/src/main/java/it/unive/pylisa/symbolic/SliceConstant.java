@@ -1,8 +1,8 @@
 package it.unive.pylisa.symbolic;
 
-import it.unive.lisa.analysis.numeric.Interval;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.operations.selection.SliceElement;
@@ -39,11 +39,11 @@ public class SliceConstant extends Constant {
 			this.bound = Optional.of(value);
 		}
 
-		public Interval toInterval() {
+		public IntInterval toInterval() {
 			if (bound.isPresent())
-				return new Interval(bound.get(), bound.get());
+				return new IntInterval(bound.get(), bound.get());
 			else
-				return new Interval(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
+				return new IntInterval(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
 		}
 
 		public ConstantPropagation toConstant() {
@@ -145,6 +145,16 @@ public class SliceConstant extends Constant {
 			} else if (!this.skip.equals(o.skip))
 				return false;
 			return true;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((start == null) ? 0 : start.hashCode());
+			result = prime * result + ((end == null) ? 0 : end.hashCode());
+			result = prime * result + ((skip == null) ? 0 : skip.hashCode());
+			return result;
 		}
 
 		@Override

@@ -13,6 +13,19 @@ public class PyNoneConstant extends Constant {
 		super(NullType.INSTANCE, NULL_CONST, location);
 	}
 
+	/**
+	 * Tells whether a value read from a value domain is the value of
+	 * {@code None}, which this constant carries.
+	 *
+	 * @param value the value
+	 *
+	 * @return whether it is {@code None}
+	 */
+	public static boolean isNoneValue(
+			Object value) {
+		return value == NULL_CONST;
+	}
+
 	@Override
 	public int hashCode() {
 		return super.hashCode() ^ getClass().getName().hashCode();

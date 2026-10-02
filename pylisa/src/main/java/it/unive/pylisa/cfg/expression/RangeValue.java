@@ -1,9 +1,6 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -43,8 +40,8 @@ public class RangeValue extends TernaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdTernarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdTernarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			SymbolicExpression left,
 			SymbolicExpression middle,
@@ -52,6 +49,15 @@ public class RangeValue extends TernaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
+		// TOP fallback (mirrors ListCreation): if the {@code Slice} type was
+		// never registered (no library spec brought it in), return the
+		// incoming state unchanged rather than crashing the analysis with
+		// "The requested type 'Slice' has not been registered before". The
+		// slice expression's value is then unmodelled — fine for projects
+		// that use slices outside of dataframe code, which is everything
+		// pylisa cares about for route discovery.
+		if (!PyClassType.isRegistered(LibrarySpecificationProvider.SLICE))
+			return state;
 		Type type = PyClassType.lookup(LibrarySpecificationProvider.SLICE);
 		if (left instanceof Skip)
 			left = new Constant(Int32Type.INSTANCE, new RangeBound(0), loc);
@@ -59,7 +65,8 @@ public class RangeValue extends TernaryExpression {
 			middle = new Constant(Int32Type.INSTANCE, new RangeBound(), loc);
 		if (right instanceof Skip)
 			right = new Constant(Int32Type.INSTANCE, new RangeBound(1), loc);
-		return state.smallStepSemantics(
+		return interprocedural.getAnalysis().smallStepSemantics(
+				state,
 				new it.unive.lisa.symbolic.value.TernaryExpression(
 						type, left, middle, right, SliceCreation.INSTANCE, loc),
 				this);

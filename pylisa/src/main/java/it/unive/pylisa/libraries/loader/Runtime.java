@@ -7,14 +7,10 @@ import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.NativeCFG;
-import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Runtime {
 
@@ -53,33 +49,22 @@ public class Runtime {
 				&& Objects.equals(methods, other.methods);
 	}
 
-	public void fillProgram(
-			Program program,
-			AtomicReference<CompilationUnit> rootHolder) {
-		CodeLocation location = new SourceCodeLocation("standard_python_library", 0, 0);
-
-		for (ClassDef cls : this.classes) {
-			CompilationUnit c = cls.toLiSAUnit(location, program, rootHolder);
-			program.addUnit(c);
-			// create the corresponding type
-			if (cls.getTypeName() == null)
-				PyClassType.register(c.getName(), c);
-			else
-				try {
-					Class<?> type = Class.forName(cls.getTypeName());
-					Constructor<?> constructor = type.getConstructor(CompilationUnit.class);
-					constructor.newInstance(c);
-				} catch (ClassNotFoundException
-						| SecurityException
-						| IllegalArgumentException
-						| IllegalAccessException
-						| NoSuchMethodException
-						| InstantiationException
-						| InvocationTargetException e) {
-					throw new LibraryCreationException(e);
-				}
-		}
-	}
+	/*
+	 * public void fillProgram( Program program,
+	 * AtomicReference<CompilationUnit> rootHolder) { CodeLocation location =
+	 * new SourceCodeLocation("standard_python_library", 0, 0); PythonModuleUnit
+	 * module = new PythonModuleUnit(location, program, "builtins");
+	 * program.addUnit(module); for (ClassDef cls : this.classes) {
+	 * CompilationUnit c = cls.toLiSAClassUnit(program); program.addUnit(c); //
+	 * create the corresponding type if (cls.getTypeName() == null)
+	 * PyClassType.register(c.getName(), c); else try { Class<?> type =
+	 * Class.forName(cls.getTypeName()); Constructor<?> constructor =
+	 * type.getConstructor(CompilationUnit.class); constructor.newInstance(c); }
+	 * catch (ClassNotFoundException | SecurityException |
+	 * IllegalArgumentException | IllegalAccessException | NoSuchMethodException
+	 * | InstantiationException | InvocationTargetException e) { throw new
+	 * LibraryCreationException(e); } } }
+	 */
 
 	public void populateProgram(
 			Program program,
@@ -88,7 +73,7 @@ public class Runtime {
 		CodeLocation location = new SourceCodeLocation("standard_python_library", 0, 0);
 
 		for (Method mtd : this.methods) {
-			NativeCFG construct = mtd.toLiSACfg(location, init, program);
+			NativeCFG construct = mtd.toLiSACfg(location, init, program, "builtins");
 			if (construct.getDescriptor().isInstance())
 				throw new LibraryCreationException();
 			program.addCodeMember(construct);

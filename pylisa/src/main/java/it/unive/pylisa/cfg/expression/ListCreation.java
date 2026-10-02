@@ -1,11 +1,8 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -38,17 +35,20 @@ public class ListCreation extends NaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+
 		CodeLocation loc = getLocation();
+		if (!PyClassType.isRegistered(LibrarySpecificationProvider.LIST))
+			return state;
 		ListConstant list = new ListConstant(loc);
 
 		if (params.length == 0)
-			return state.smallStepSemantics(list, this);
+			return interprocedural.getAnalysis().smallStepSemantics(state, list, this);
 
 		Type listtype = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		BinaryOperator append = ListAppend.INSTANCE;
@@ -68,7 +68,7 @@ public class ListCreation extends NaryExpression {
 
 		AnalysisState<A> result = state.bottom();
 		for (BinaryExpression completelist : ws)
-			result = result.lub(state.smallStepSemantics(completelist, this));
+			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state, completelist, this));
 
 		return result;
 	}

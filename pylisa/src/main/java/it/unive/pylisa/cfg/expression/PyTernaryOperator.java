@@ -1,16 +1,14 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.lattices.ExpressionSet;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.operator.unary.LogicalNegation;
@@ -40,9 +38,9 @@ public class PyTernaryOperator extends NaryExpression {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemantics(
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
 			AnalysisState<A> entryState,
-			InterproceduralAnalysis<A> interprocedural,
+			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Expression[] sub = getSubExpressions();
@@ -51,48 +49,37 @@ public class PyTernaryOperator extends NaryExpression {
 		Expression ifFalse = sub[2];
 
 		AnalysisState<A> postCondition = condition.forwardSemantics(entryState, interprocedural, expressions);
-		for (SymbolicExpression cond : entryState.getState().rewrite(
-				postCondition.getComputedExpressions(),
-				this,
-				entryState.getState())) {
+		// Python evaluates only the branch the condition selects: each branch
+		// is evaluated where the condition may select it, and the outcomes are
+		// joined
+		AnalysisState<A> result = entryState.bottomExecution();
+		for (SymbolicExpression cond : interprocedural.getAnalysis().rewrite(
+				postCondition,
+				postCondition.getExecution().getComputedExpressions(),
+				this)) {
 			UnaryExpression negated = new UnaryExpression(
 					cond.getStaticType(),
 					cond,
 					LogicalNegation.INSTANCE,
 					cond.getCodeLocation());
-
-			switch (postCondition.satisfies(cond, this)) {
-			case BOTTOM:
-				return entryState.bottom();
-			case NOT_SATISFIED:
-				return ifFalse.forwardSemantics(
-						postCondition.assume(cond, condition, ifTrue),
+			Satisfiability selected = interprocedural.getAnalysis().satisfies(postCondition, cond, this);
+			if (selected != Satisfiability.NOT_SATISFIED && selected != Satisfiability.BOTTOM)
+				result = result.lub(ifTrue.forwardSemantics(
+						interprocedural.getAnalysis().assume(postCondition, cond, condition, ifTrue),
 						interprocedural,
-						expressions);
-			case SATISFIED:
-				return ifTrue.forwardSemantics(
-						postCondition.assume(negated, condition, ifFalse),
+						expressions));
+			if (selected != Satisfiability.SATISFIED && selected != Satisfiability.BOTTOM)
+				result = result.lub(ifFalse.forwardSemantics(
+						interprocedural.getAnalysis().assume(postCondition, negated, condition, ifFalse),
 						interprocedural,
-						expressions);
-			case UNKNOWN:
-				return ifTrue
-						.forwardSemantics(
-								postCondition.assume(cond, condition, ifTrue),
-								interprocedural,
-								expressions)
-						.lub(ifFalse.forwardSemantics(
-								postCondition.assume(negated, condition, ifFalse),
-								interprocedural,
-								expressions));
-			}
+						expressions));
 		}
-
-		return entryState.top();
+		return result;
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A> interprocedural,
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
 			StatementStore<A> expressions)

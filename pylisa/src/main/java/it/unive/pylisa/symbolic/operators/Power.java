@@ -1,6 +1,9 @@
 package it.unive.pylisa.symbolic.operators;
 
 import it.unive.lisa.symbolic.value.operator.binary.NumericOperation;
+import it.unive.lisa.type.Type;
+import it.unive.lisa.type.TypeSystem;
+import java.util.Set;
 
 public class Power extends NumericOperation {
 	/**
@@ -19,5 +22,13 @@ public class Power extends NumericOperation {
 	@Override
 	public String toString() {
 		return "**";
+	}
+
+	@Override
+	public Set<Type> typeInference(
+			TypeSystem types,
+			Set<Type> left,
+			Set<Type> right) {
+		return super.typeInference(types, PythonArithmetic.asNumbers(left), PythonArithmetic.asNumbers(right));
 	}
 }

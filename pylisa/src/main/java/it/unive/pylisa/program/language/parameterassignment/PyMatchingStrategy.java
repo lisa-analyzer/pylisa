@@ -1,6 +1,4 @@
 package it.unive.pylisa.program.language.parameterassignment;
-
-import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -16,6 +14,7 @@ import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.program.PySyntheticLocation;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -122,7 +121,7 @@ public class PyMatchingStrategy implements ParameterMatchingStrategy {
 				vargsList.add(actuals[aPos]);
 			}
 
-			ListCreation listCreation = new ListCreation(callCFG, SyntheticLocation.INSTANCE,
+			ListCreation listCreation = new ListCreation(callCFG, PySyntheticLocation.INSTANCE,
 					vargsList.toArray(Expression[]::new));
 			if (fPos >= slotTypes.length)
 				// no more space!
@@ -152,14 +151,14 @@ public class PyMatchingStrategy implements ParameterMatchingStrategy {
 
 				if (!found) {
 					Expression right = ((NamedParameterExpression) actuals[i]).getSubExpression();
-					Expression left = new StringLiteral(callCFG, SyntheticLocation.INSTANCE,
+					Expression left = new StringLiteral(callCFG, PySyntheticLocation.INSTANCE,
 							((NamedParameterExpression) actuals[i]).getParameterName());
 					pairExprs.add(Pair.of(left, right));
 					namedPars.remove(((NamedParameterExpression) actuals[i]).getParameterName());
 				}
 			}
 
-			DictionaryCreation dictCreation = new DictionaryCreation(callCFG, SyntheticLocation.INSTANCE,
+			DictionaryCreation dictCreation = new DictionaryCreation(callCFG, PySyntheticLocation.INSTANCE,
 					pairExprs.toArray(Pair[]::new));
 			slots[formals.length - 1] = (T) dictCreation;
 			slotTypes[formals.length - 1] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.DICT));

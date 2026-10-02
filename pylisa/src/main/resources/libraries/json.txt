@@ -1,0 +1,15 @@
+library json:
+    location json
+
+    # UNSOUND STUBS. Every method here is backed by NoOpFunction, which
+    # returns the incoming analysis state unchanged (no symbolic value pushed,
+    # no heap effect). A faithful model would produce a string for `dumps`
+    # and a dict / list / primitive for `loads`; we deliberately skip that
+    # to keep the test surface minimal. Real semantics can be added later
+    # without changing the lookup behavior exercised by the import tests.
+    method dumps: it.unive.pylisa.libraries.NoOpFunction
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param obj type it.unive.lisa.type.Untyped::INSTANCE
+    method loads: it.unive.pylisa.libraries.NoOpFunction
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param s type it.unive.lisa.type.Untyped::INSTANCE

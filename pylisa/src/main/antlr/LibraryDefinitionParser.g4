@@ -57,11 +57,17 @@ value
    ;
 
 param
-   : PARAM (STAR? | POWER? | AMP?) name = IDENTIFIER type (DEFAULT val = value)?
+   : PARAM (STAR? | POWER? | AMP?) name = paramName paramType = type (ARROW syntheticType = type)? (DEFAULT val = value)?
+   ;
+
+paramName
+   : IDENTIFIER
+   | TYPE
+   | DEFAULT
    ;
 
 field
-   : INSTANCE? FIELD name = IDENTIFIER type
+   : INSTANCE? FIELD name = IDENTIFIER paramType = type (ARROW syntheticType = type)? (DEFAULT val = value)?
    ;
 
 method
@@ -69,11 +75,15 @@ method
    ;
 
 classDef
-   : ROOT? SEALED? CLASS name = IDENTIFIER (EXTENDS base = IDENTIFIER)? (COLON (type_name = IDENTIFIER)? (method | field)*)?
+   : ROOT? SEALED? CLASS name = IDENTIFIER (ARROW syntheticType = type)? (EXTENDS base = IDENTIFIER)? (COLON (type_name = IDENTIFIER)? (method | field)*)?
+   ;
+
+libraryImport
+   : IMPORTS name = IDENTIFIER
    ;
 
 library
-   : LIBRARY name = IDENTIFIER COLON LOCATION loc = IDENTIFIER (method | field | classDef)*
+   : LIBRARY name = IDENTIFIER COLON LOCATION loc = IDENTIFIER libraryImport* (method | field | classDef)*
    ;
 
 file

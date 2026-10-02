@@ -38,6 +38,21 @@ public abstract class Selection<S extends Selection<S>> implements BaseLattice<S
 		return compareToSameClass(o);
 	}
 
+	@Override
+	public boolean equals(
+			Object obj) {
+		if (this == obj)
+			return true;
+		if (!(obj instanceof Selection))
+			return false;
+		return compareTo((Selection<?>) obj) == 0;
+	}
+
+	@Override
+	public int hashCode() {
+		return getClass().hashCode();
+	}
+
 	protected abstract int compareToSameClass(
 			Selection<?> o);
 

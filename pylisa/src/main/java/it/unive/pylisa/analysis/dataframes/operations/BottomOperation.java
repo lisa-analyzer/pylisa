@@ -2,13 +2,13 @@ package it.unive.pylisa.analysis.dataframes.operations;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.pylisa.program.PySyntheticLocation;
 
 public class BottomOperation extends DataframeOperation {
 
 	public BottomOperation() {
-		super(SyntheticLocation.INSTANCE, -2);
+		super(PySyntheticLocation.INSTANCE, -2);
 	}
 
 	public BottomOperation(

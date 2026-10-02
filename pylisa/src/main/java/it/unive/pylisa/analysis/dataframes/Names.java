@@ -1,6 +1,6 @@
 package it.unive.pylisa.analysis.dataframes;
 
-import it.unive.lisa.analysis.lattices.SetLattice;
+import it.unive.lisa.lattices.SetLattice;
 import it.unive.lisa.util.collections.CollectionsDiffBuilder;
 import java.util.Collections;
 import java.util.Set;

@@ -27,8 +27,11 @@ public class StringMult extends StringOperation {
 			TypeSystem types,
 			Set<Type> left,
 			Set<Type> right) {
-		if ((left.stream().anyMatch(Type::isNumericType) && right.stream().anyMatch(Type::isStringType)) ||
-				(left.stream().anyMatch(Type::isStringType) && right.stream().anyMatch(Type::isNumericType))) {
+		// the count may be a boolean, which Python treats as the integer 0 or 1
+		Set<Type> leftCounts = PythonArithmetic.asNumbers(left);
+		Set<Type> rightCounts = PythonArithmetic.asNumbers(right);
+		if ((leftCounts.stream().anyMatch(Type::isNumericType) && right.stream().anyMatch(Type::isStringType)) ||
+				(left.stream().anyMatch(Type::isStringType) && rightCounts.stream().anyMatch(Type::isNumericType))) {
 			return Collections.singleton(resultType(types));
 		}
 

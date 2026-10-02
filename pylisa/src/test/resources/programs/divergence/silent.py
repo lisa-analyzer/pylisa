@@ -1,0 +1,3 @@
+import testnatives
+
+testnatives.silent()

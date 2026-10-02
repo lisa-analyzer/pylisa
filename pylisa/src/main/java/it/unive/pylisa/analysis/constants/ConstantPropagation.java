@@ -1,11 +1,13 @@
 package it.unive.pylisa.analysis.constants;
 
-import it.unive.lisa.analysis.Lattice;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.SemanticOracle;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
-import it.unive.lisa.program.SyntheticLocation;
+import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
+import it.unive.lisa.analysis.value.ValueLattice;
+import it.unive.lisa.lattices.Satisfiability;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.program.type.Int16Type;
@@ -13,9 +15,7 @@ import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.Int64Type;
 import it.unive.lisa.program.type.Int8Type;
 import it.unive.lisa.program.type.StringType;
-import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.PushInv;
+import it.unive.lisa.symbolic.value.*;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.ArithmeticOperator;
 import it.unive.lisa.symbolic.value.operator.DivisionOperator;
@@ -25,6 +25,7 @@ import it.unive.lisa.symbolic.value.operator.RemainderOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.NumericFloor;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.NumericType;
@@ -32,9 +33,9 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.program.PySyntheticLocation;
 import it.unive.pylisa.symbolic.DictConstant;
 import it.unive.pylisa.symbolic.ListConstant;
-import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.DictPut;
 import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.Power;
@@ -46,12 +47,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class ConstantPropagation
 		implements
 		BaseNonRelationalValueDomain<ConstantPropagation>,
-		Comparable<ConstantPropagation> {
+		Comparable<ConstantPropagation>,
+		BaseLattice<ConstantPropagation>,
+		ValueLattice<ConstantPropagation> {
 
 	private static final ConstantPropagation TOP = new ConstantPropagation(null, true);
 	private static final ConstantPropagation BOTTOM = new ConstantPropagation(null, false);
@@ -66,7 +70,7 @@ public class ConstantPropagation
 
 	public ConstantPropagation(
 			int value) {
-		this(new Constant(Int32Type.INSTANCE, value, SyntheticLocation.INSTANCE));
+		this(new Constant(Int32Type.INSTANCE, value, PySyntheticLocation.INSTANCE));
 	}
 
 	public ConstantPropagation(
@@ -115,7 +119,7 @@ public class ConstantPropagation
 
 	@Override
 	public boolean isTop() {
-		return BaseNonRelationalValueDomain.super.isTop() || (constant == null && isTop);
+		return BaseLattice.super.isTop() || (constant == null && isTop);
 	}
 
 	@Override
@@ -125,7 +129,7 @@ public class ConstantPropagation
 
 	@Override
 	public boolean isBottom() {
-		return BaseNonRelationalValueDomain.super.isBottom() || (constant == null && !isTop);
+		return BaseLattice.super.isBottom() || (constant == null && !isTop);
 	}
 
 	@Override
@@ -181,6 +185,7 @@ public class ConstantPropagation
 	private static boolean isAccepted(
 			Type t) {
 		return t.isNumericType()
+				|| t.isBooleanType()
 				|| t.isStringType()
 				|| t.toString().equals(LibrarySpecificationProvider.LIST)
 				|| t.toString().equals(LibrarySpecificationProvider.DICT)
@@ -190,7 +195,7 @@ public class ConstantPropagation
 
 	@Override
 	public boolean canProcess(
-			SymbolicExpression expression,
+			ValueExpression expression,
 			ProgramPoint pp,
 			SemanticOracle oracle) {
 		if (expression instanceof PushInv)
@@ -200,7 +205,7 @@ public class ConstantPropagation
 
 		Set<Type> rts = null;
 		try {
-			rts = oracle.getRuntimeTypesOf(expression, pp, oracle);
+			rts = oracle.getRuntimeTypesOf(expression, pp);
 		} catch (SemanticException e) {
 			return false;
 		}
@@ -217,15 +222,13 @@ public class ConstantPropagation
 	}
 
 	@Override
-	public ConstantPropagation evalNullConstant(
-			ProgramPoint pp,
-			SemanticOracle oracle)
-			throws SemanticException {
-		return new ConstantPropagation(new PyNoneConstant(pp.getLocation()));
+	public ConstantPropagation unknownValue(
+			Identifier id) {
+		return BaseNonRelationalValueDomain.super.unknownValue(id);
 	}
 
 	@Override
-	public ConstantPropagation evalNonNullConstant(
+	public ConstantPropagation evalConstant(
 			Constant constant,
 			ProgramPoint pp,
 			SemanticOracle oracle)
@@ -237,67 +240,61 @@ public class ConstantPropagation
 
 	@Override
 	public ConstantPropagation evalUnaryExpression(
-			UnaryOperator operator,
+			UnaryExpression expression,
 			ConstantPropagation arg,
 			ProgramPoint pp,
 			SemanticOracle oracle) {
+		if (arg.isBottom())
+			return bottom();
 		if (arg.isTop())
 			return top();
+		UnaryOperator operator = expression.getOperator();
 		if (operator == NumericNegation.INSTANCE)
-			if (arg.is(Integer.class))
-				return new ConstantPropagation(
-						new Constant(Int32Type.INSTANCE, -1 * arg.as(Integer.class), pp.getLocation()));
-			else if (arg.is(Float.class))
-				return new ConstantPropagation(
-						new Constant(Float32Type.INSTANCE, -1 * arg.as(Float.class), pp.getLocation()));
+			return PythonNumbers.negate(arg.constant, expression.getCodeLocation())
+					.map(ConstantPropagation::new)
+					.orElse(TOP);
+		if (operator == NumericFloor.INSTANCE)
+			return PythonNumbers.floor(arg.constant, expression.getCodeLocation())
+					.map(ConstantPropagation::new)
+					.orElse(TOP);
 
 		// String constructor
 		if (operator == StringConstructor.INSTANCE)
 			if (arg.is(String.class))
 				return new ConstantPropagation(
 						new Constant(StringType.INSTANCE, arg.as(String.class), pp.getLocation()));
-			else if (arg.is(Integer.class))
+			else if (arg.is(Integer.class) || arg.is(Long.class))
+				// str() of an integer is its decimal digits; str() of a float
+				// follows Python's repr, which is not computed here
 				return new ConstantPropagation(
-						new Constant(StringType.INSTANCE, arg.as(Integer.class), pp.getLocation()));
+						new Constant(StringType.INSTANCE, String.valueOf(arg.as(Number.class)),
+								expression.getCodeLocation()));
 		return top();
 	}
 
 	@Override
 	public ConstantPropagation evalBinaryExpression(
-			BinaryOperator operator,
+			BinaryExpression expression,
 			ConstantPropagation left,
 			ConstantPropagation right,
 			ProgramPoint pp,
 			SemanticOracle oracle) {
-		if (operator instanceof ArithmeticOperator) {
-			if (left.isTop() || right.isTop() || !left.constant.getStaticType().isNumericType()
-					|| !right.constant.getStaticType().isNumericType())
+		BinaryOperator operator = expression.getOperator();
+		if (ConstantOperations.handles(operator))
+			return evalExactly(expression, left, right);
+		if (operator instanceof ArithmeticOperator || operator instanceof Power) {
+			if (left.isBottom() || right.isBottom())
+				return bottom();
+			if (left.isTop() || right.isTop())
 				return top();
-
-			Constant c;
-			if (operator instanceof AdditionOperator)
-				c = sum(left, right, pp);
-			else if (operator instanceof DivisionOperator)
-				if ((right.is(Integer.class) && right.as(Integer.class) == 0)
-						|| (right.is(Float.class) && right.as(Float.class) == 0f))
-					return bottom();
-				else
-					c = div(left, right, pp);
-			else if (operator instanceof RemainderOperator || operator instanceof ModuloOperator)
-				if ((right.is(Integer.class) && right.as(Integer.class) == 0)
-						|| (right.is(Float.class) && right.as(Float.class) == 0f))
-					return bottom();
-				else
-					c = rem(left, right, pp);
-			else if (operator instanceof MultiplicationOperator)
-				c = mul(left, right, pp);
-			else if (operator instanceof SubtractionOperator)
-				c = sub(left, right, pp);
-			else if (operator instanceof Power)
-				return power(left, right, pp);
-			else
-				return top();
-			return new ConstantPropagation(c);
+			if ((operator instanceof DivisionOperator || operator instanceof RemainderOperator
+					|| operator instanceof ModuloOperator)
+					&& PythonNumbers.isNumber(left.constant) && PythonNumbers.isZero(right.constant))
+				// ZeroDivisionError: no execution continues normally
+				return bottom();
+			return PythonNumbers.arithmetic(operator, left.constant, right.constant, expression.getCodeLocation())
+					.map(ConstantPropagation::new)
+					.orElse(TOP);
 		} else if (operator instanceof StringAdd)
 			return stringConcat(left, right, pp);
 		else if (operator instanceof StringFormat) {
@@ -312,13 +309,14 @@ public class ConstantPropagation
 
 	@Override
 	public ConstantPropagation evalTernaryExpression(
-			TernaryOperator operator,
+			TernaryExpression expression,
 			ConstantPropagation left,
 			ConstantPropagation middle,
 			ConstantPropagation right,
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
+		TernaryOperator operator = (TernaryOperator) expression.getOperator();
 		if (operator instanceof DictPut)
 			return dictPut(left, middle, right, pp);
 		return top();
@@ -366,104 +364,34 @@ public class ConstantPropagation
 		return TOP;
 	}
 
-	private Constant div(
+	/**
+	 * Evaluates an operator handled by {@link ConstantOperations}: the result is
+	 * the concrete one when both operands are constants and it can be
+	 * computed, and top otherwise.
+	 *
+	 * @param expression the expression being evaluated
+	 * @param left       the abstract value of the first operand
+	 * @param right      the abstract value of the second operand
+	 *
+	 * @return the abstract value of the expression
+	 */
+	private ConstantPropagation evalExactly(
+			BinaryExpression expression,
 			ConstantPropagation left,
-			ConstantPropagation right,
-			ProgramPoint pp) {
-		Constant c;
-		if (left.is(Integer.class) && right.is(Integer.class)) {
-			Integer l = left.as(Integer.class);
-			Integer r = right.as(Integer.class);
-			c = l % r == 0
-					? new Constant(Int32Type.INSTANCE, l / r, pp.getLocation())
-					: new Constant(Float32Type.INSTANCE, l / (float) r, pp.getLocation());
-		} else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) / right.as(Integer.class), pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) / right.as(Float.class), pp.getLocation());
-		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) / right.as(Float.class), pp.getLocation());
-		return c;
-	}
-
-	private Constant rem(
-			ConstantPropagation left,
-			ConstantPropagation right,
-			ProgramPoint pp) {
-		Constant c;
-		if (left.is(Integer.class) && right.is(Integer.class)) {
-			Integer l = left.as(Integer.class);
-			Integer r = right.as(Integer.class);
-			c = l % r == 0
-					? new Constant(Int32Type.INSTANCE, l % r, pp.getLocation())
-					: new Constant(Float32Type.INSTANCE, l % (float) r, pp.getLocation());
-		} else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) % right.as(Integer.class), pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) % right.as(Float.class), pp.getLocation());
-		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) % right.as(Float.class), pp.getLocation());
-		return c;
-	}
-
-	private Constant sum(
-			ConstantPropagation left,
-			ConstantPropagation right,
-			ProgramPoint pp) {
-		Constant c;
-		if (left.is(Integer.class) && right.is(Integer.class))
-			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) + right.as(Integer.class),
-					pp.getLocation());
-		else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) + right.as(Integer.class),
-					pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) + right.as(Float.class),
-					pp.getLocation());
-		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) + right.as(Float.class),
-					pp.getLocation());
-		return c;
-	}
-
-	private Constant sub(
-			ConstantPropagation left,
-			ConstantPropagation right,
-			ProgramPoint pp) {
-		Constant c;
-		if (left.is(Integer.class) && right.is(Integer.class))
-			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) - right.as(Integer.class),
-					pp.getLocation());
-		else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) - right.as(Integer.class),
-					pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) - right.as(Float.class),
-					pp.getLocation());
-		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) - right.as(Float.class),
-					pp.getLocation());
-		return c;
-	}
-
-	private Constant mul(
-			ConstantPropagation left,
-			ConstantPropagation right,
-			ProgramPoint pp) {
-		Constant c;
-		if (left.is(Integer.class) && right.is(Integer.class))
-			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) * right.as(Integer.class),
-					pp.getLocation());
-		else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) * right.as(Integer.class),
-					pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) * right.as(Float.class),
-					pp.getLocation());
-		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) * right.as(Float.class),
-					pp.getLocation());
-		return c;
+			ConstantPropagation right) {
+		if (left.isBottom() || right.isBottom())
+			return BOTTOM;
+		if (left.isTop() || right.isTop())
+			return TOP;
+		BinaryOperator operator = expression.getOperator();
+		CodeLocation location = expression.getCodeLocation();
+		if (ConstantOperations.isPredicate(operator))
+			return ConstantOperations.test(operator, left.constant, right.constant)
+					.map(value -> new ConstantPropagation(new Constant(BoolType.INSTANCE, value, location)))
+					.orElse(TOP);
+		return ConstantOperations.compute(operator, left.constant, right.constant)
+				.map(value -> new ConstantPropagation(new Constant(StringType.INSTANCE, value, location)))
+				.orElse(TOP);
 	}
 
 	private ConstantPropagation stringConcat(
@@ -492,89 +420,41 @@ public class ConstantPropagation
 		if (left.constant.getStaticType().isStringType() && right.constant.getStaticType().isNumericType()) {
 			if (right.constant.getStaticType().asNumericType().isIntegral()) {
 				// use long
-				Long longRight = right.as(Integer.class).longValue();
+				Long longRight = right.as(Number.class).longValue();
 				String stringLeft = left.as(String.class);
 
-				return new ConstantPropagation(
-						new Constant(StringType.INSTANCE, stringRepeatAux(stringLeft, longRight), pp.getLocation()));
+				String repeated = stringRepeatAux(stringLeft, longRight);
+				return repeated == null ? TOP
+						: new ConstantPropagation(new Constant(StringType.INSTANCE, repeated, pp.getLocation()));
 			}
 		}
 		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isStringType()) {
 			if (left.constant.getStaticType().asNumericType().isIntegral()) {
 				// use long
-				Long longLeft = left.as(Integer.class).longValue();
+				Long longLeft = left.as(Number.class).longValue();
 				String stringRight = right.as(String.class);
 
-				return new ConstantPropagation(
-						new Constant(StringType.INSTANCE, stringRepeatAux(stringRight, longLeft), pp.getLocation()));
+				String repeated = stringRepeatAux(stringRight, longLeft);
+				return repeated == null ? TOP
+						: new ConstantPropagation(new Constant(StringType.INSTANCE, repeated, pp.getLocation()));
 			}
 		}
 		return TOP;
 	}
 
-	private ConstantPropagation power(
-			ConstantPropagation left,
-			ConstantPropagation right,
-			ProgramPoint pp) {
-		if (left.isTop() || right.isTop()) {
-			return TOP;
-		}
-		// TODO: handle overflow (?)
-		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isNumericType()) {
-			NumericType superType = left.constant.getStaticType().asNumericType()
-					.supertype(right.constant.getStaticType().asNumericType());
-			// Class<? extends Number> type = getJavaClassFor(superType);
-			if (superType.is8Bits()) {
-				return new ConstantPropagation(
-						new Constant(Int8Type.INSTANCE,
-								(byte) (Math.pow((double) left.as(Byte.class), (double) right.as(Byte.class))),
-								pp.getLocation()));
-			}
-			if (superType.is16Bits()) {
-				return new ConstantPropagation(
-						new Constant(Int16Type.INSTANCE,
-								(short) (Math.pow((double) left.as(Short.class), (double) right.as(Short.class))),
-								pp.getLocation()));
-			}
-			if (superType.is32Bits()) {
-				if (!superType.isIntegral()) {
-					return new ConstantPropagation(
-							new Constant(Float32Type.INSTANCE,
-									(float) (Math.pow((double) left.as(Float.class), (double) right.as(Float.class))),
-									pp.getLocation()));
-				} else {
-					if (right.as(Integer.class) < 0) {
-						return new ConstantPropagation(
-								new Constant(Float32Type.INSTANCE, (float) (Math.pow((double) left.as(Integer.class),
-										(double) right.as(Integer.class))), pp.getLocation()));
-
-					} else {
-						return new ConstantPropagation(
-								new Constant(Int32Type.INSTANCE, (int) (Math.pow((double) left.as(Integer.class),
-										(double) right.as(Integer.class))), pp.getLocation()));
-
-					}
-				}
-			}
-			if (superType.is64Bits()) {
-				if (!superType.isIntegral()) {
-					return new ConstantPropagation(
-							new Constant(Float64Type.INSTANCE, Math.pow(left.as(Double.class), right.as(Double.class)),
-									pp.getLocation()));
-				} else {
-					return new ConstantPropagation(
-							new Constant(Int64Type.INSTANCE,
-									(long) (Math.pow((double) left.as(Long.class), (double) right.as(Long.class))),
-									pp.getLocation()));
-				}
-			}
-		}
-		return TOP;
-	}
+	/**
+	 * The longest string a repetition may produce as a constant: longer
+	 * results are unknown, so that the analysis does not build huge strings.
+	 */
+	private static final long MAX_REPEATED_LENGTH = 1 << 16;
 
 	private String stringRepeatAux(
 			String s,
 			Long times) {
+		if (s.isEmpty() || times <= 0)
+			return "";
+		if (s.length() > MAX_REPEATED_LENGTH / times)
+			return null;
 		StringBuilder sb = new StringBuilder();
 		for (long i = 0; i < times; i++) {
 			sb.append(s);
@@ -601,5 +481,171 @@ public class ConstantPropagation
 
 		// not much we can do here..
 		return Integer.compare(constant.hashCode(), other.constant.hashCode());
+	}
+
+	@Override
+	public boolean knowsIdentifier(
+			Identifier id) {
+		return false;
+	}
+
+	@Override
+	public ConstantPropagation forgetIdentifier(
+			Identifier id,
+			ProgramPoint pp)
+			throws SemanticException {
+		return null;
+	}
+
+	@Override
+	public ConstantPropagation forgetIdentifiersIf(
+			Predicate<Identifier> test,
+			ProgramPoint pp)
+			throws SemanticException {
+		return null;
+	}
+
+	@Override
+	public ConstantPropagation forgetIdentifiers(
+			Iterable<Identifier> ids,
+			ProgramPoint pp)
+			throws SemanticException {
+		return null;
+	}
+
+	@Override
+	public ConstantPropagation pushScope(
+			ScopeToken token,
+			ProgramPoint pp)
+			throws SemanticException {
+		return null;
+	}
+
+	@Override
+	public ConstantPropagation popScope(
+			ScopeToken token,
+			ProgramPoint pp)
+			throws SemanticException {
+		return null;
+	}
+
+	@Override
+	public ConstantPropagation store(
+			Identifier target,
+			Identifier source)
+			throws SemanticException {
+		return null;
+	}
+
+	@Override
+	public Satisfiability satisfiesAbstractValue(
+			ConstantPropagation value,
+			ProgramPoint pp,
+			SemanticOracle oracle) {
+		if (value.isTop() || value.isBottom())
+			return Satisfiability.UNKNOWN;
+		return ConstantOperations.truthiness(value.constant)
+				.map(ConstantPropagation::satisfiability)
+				.orElse(Satisfiability.UNKNOWN);
+	}
+
+	@Override
+	public Satisfiability satisfiesConstant(
+			Constant constant,
+			ProgramPoint pp,
+			SemanticOracle oracle) {
+		return ConstantOperations.truthiness(constant)
+				.map(ConstantPropagation::satisfiability)
+				.orElse(Satisfiability.UNKNOWN);
+	}
+
+	@Override
+	public Satisfiability satisfiesBinaryExpression(
+			BinaryExpression expression,
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp,
+			SemanticOracle oracle) {
+		BinaryOperator operator = expression.getOperator();
+		if (!ConstantOperations.isPredicate(operator) || left.isTop() || right.isTop())
+			return Satisfiability.UNKNOWN;
+		return ConstantOperations.test(operator, left.constant, right.constant)
+				.map(ConstantPropagation::satisfiability)
+				.orElse(Satisfiability.UNKNOWN);
+	}
+
+	@Override
+	public ValueEnvironment<ConstantPropagation> assumeBinaryExpression(
+			ValueEnvironment<ConstantPropagation> environment,
+			BinaryExpression expression,
+			ProgramPoint src,
+			ProgramPoint dest,
+			SemanticOracle oracle)
+			throws SemanticException {
+		return discardIfFalse(environment, expression, src, oracle);
+	}
+
+	@Override
+	public ValueEnvironment<ConstantPropagation> assumeUnaryExpression(
+			ValueEnvironment<ConstantPropagation> environment,
+			UnaryExpression expression,
+			ProgramPoint src,
+			ProgramPoint dest,
+			SemanticOracle oracle)
+			throws SemanticException {
+		return discardIfFalse(environment, expression, src, oracle);
+	}
+
+	@Override
+	public ValueEnvironment<ConstantPropagation> assumeConstant(
+			ValueEnvironment<ConstantPropagation> environment,
+			Constant expression,
+			ProgramPoint src,
+			ProgramPoint dest,
+			SemanticOracle oracle)
+			throws SemanticException {
+		return discardIfFalse(environment, expression, src, oracle);
+	}
+
+	@Override
+	public ValueEnvironment<ConstantPropagation> assumeIdentifier(
+			ValueEnvironment<ConstantPropagation> environment,
+			Identifier expression,
+			ProgramPoint src,
+			ProgramPoint dest,
+			SemanticOracle oracle)
+			throws SemanticException {
+		return discardIfFalse(environment, expression, src, oracle);
+	}
+
+	/**
+	 * Refines an environment with a condition that is assumed to hold: if the
+	 * condition is certainly false, no execution can take the guarded path and
+	 * the environment becomes bottom; otherwise it is left unchanged, which is
+	 * always a sound over-approximation.
+	 *
+	 * @param environment the environment before the condition
+	 * @param condition   the condition assumed to hold
+	 * @param pp          the program point where the condition is evaluated
+	 * @param oracle      the oracle for inter-domain queries
+	 *
+	 * @return the refined environment
+	 *
+	 * @throws SemanticException if the condition cannot be evaluated
+	 */
+	private ValueEnvironment<ConstantPropagation> discardIfFalse(
+			ValueEnvironment<ConstantPropagation> environment,
+			ValueExpression condition,
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
+		if (satisfies(environment, condition, pp, oracle) == Satisfiability.NOT_SATISFIED)
+			return environment.bottom();
+		return environment;
+	}
+
+	private static Satisfiability satisfiability(
+			boolean value) {
+		return value ? Satisfiability.SATISFIED : Satisfiability.NOT_SATISFIED;
 	}
 }

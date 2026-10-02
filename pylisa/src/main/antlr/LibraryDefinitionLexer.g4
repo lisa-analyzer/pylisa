@@ -56,6 +56,10 @@ LOCATION
    : 'location'
    ;
 
+IMPORTS
+   : 'imports'
+   ;
+
 TYPE
    : 'type'
    ;
@@ -94,6 +98,10 @@ POWER
 
 AMP
    : '&'
+   ;
+
+ARROW
+   : '->'
    ;
 
 WHITESPACE

@@ -303,6 +303,10 @@ ASSIGN
    : '='
    ;
 
+COLONEQ
+   : ':='
+   ;
+
 OPEN_BRACK
    : '['
    {this.openBrace();}

@@ -6,7 +6,7 @@ import java.util.Set;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.collections4.SetUtils.SetView;
 
-public class SetLattice<E> extends it.unive.lisa.analysis.lattices.SetLattice<SetLattice<E>, E> {
+public class SetLattice<E> extends it.unive.lisa.lattices.SetLattice<SetLattice<E>, E> {
 
 	public SetLattice() {
 		super(Collections.emptySet(), true);

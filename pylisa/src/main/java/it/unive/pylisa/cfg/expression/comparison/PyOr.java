@@ -1,9 +1,6 @@
 package it.unive.pylisa.cfg.expression.comparison;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -25,14 +22,24 @@ public class PyOr extends And {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		return ShortCircuit.semantics(this, getLeft(), getRight(), false, entryState, interprocedural, expressions);
+	}
+
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			SymbolicExpression left,
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		return state.smallStepSemantics(
+		return interprocedural.getAnalysis().smallStepSemantics(
+				state,
 				new BinaryExpression(
 						BoolType.INSTANCE,
 						left,

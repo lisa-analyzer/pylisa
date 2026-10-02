@@ -245,11 +245,11 @@ async_stmt
    ;
 
 if_stmt
-   : 'if' test ':' suite ('elif' test ':' suite)* ('else' ':' suite)?
+   : 'if' namedexpr_test ':' suite ('elif' namedexpr_test ':' suite)* ('else' ':' suite)?
    ;
 
 while_stmt
-   : 'while' test ':' suite ('else' ':' suite)?
+   : 'while' namedexpr_test ':' suite ('else' ':' suite)?
    ;
 
 for_stmt
@@ -281,6 +281,10 @@ suite
 test
    : or_test ('if' or_test 'else' test)?
    | lambdef
+   ;
+
+namedexpr_test
+   : test (':=' test)?
    ;
 
 test_nocond
@@ -415,7 +419,7 @@ atom
    ;
 
 testlist_comp
-   : (testOrStar) (comp_for | (',' (testOrStar))* (',')?)
+   : (namedexpr_test | star_expr) (comp_for | (',' (testOrStar))* (',')?)
    ;
 
 testOrStar
@@ -488,7 +492,7 @@ arglist
    // that precede iterable unpackings are blocked; etc.
    
 argument
-   : (test (comp_for)? | test '=' test | '**' test | '*' test)
+   : (namedexpr_test (comp_for)? | test '=' test | '**' test | '*' test)
    ;
 
 comp_iter
@@ -501,7 +505,7 @@ comp_for
    ;
 
 comp_if
-   : 'if' test_nocond (comp_iter)?
+   : 'if' namedexpr_test (comp_iter)?
    ;
    // not used in grammar, but may appear in "node" passed from Parser to Compiler
    

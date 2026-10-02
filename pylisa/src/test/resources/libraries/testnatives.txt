@@ -1,0 +1,71 @@
+# Generic natives for the frontend's own tests: no real library is modelled.
+# Module-level methods come before the classes: a method after a class belongs
+# to that class.
+
+library testnatives:
+    location testnatives
+    method fail: it.unive.pylisa.testnatives.RaisingNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method silent: it.unive.pylisa.testnatives.SilentNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method stuck: it.unive.pylisa.testnatives.StuckNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method raise_or_block: it.unive.pylisa.testnatives.RaiseOrBlockNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method empty: it.unive.pylisa.testnatives.EmptyValuesNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method echo: it.unive.pylisa.testnatives.EchoNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param value type it.unive.lisa.type.Untyped::INSTANCE
+    method tick: it.unive.pylisa.testnatives.TickNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param value type it.unive.lisa.type.Untyped::INSTANCE
+    method marked_and_plain: it.unive.pylisa.testnatives.MarkedAndPlainNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method joined_marked_first: it.unive.pylisa.testnatives.JoinedMarkedFirstNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method joined_plain_first: it.unive.pylisa.testnatives.JoinedPlainFirstNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method marked_with_unreachable: it.unive.pylisa.testnatives.MarkedWithUnreachableNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method marked_only: it.unive.pylisa.testnatives.MarkedOnlyNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method carry: it.unive.pylisa.testnatives.CarryNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method may_fail: it.unive.pylisa.testnatives.MayFailNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method nothing: it.unive.pylisa.testnatives.NoneNative
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param cls type it.unive.lisa.type.Untyped::INSTANCE
+    class Widget extends builtins.object:
+        instance method __init__: it.unive.pylisa.testnatives.RaisingNative
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype Widget*
+            param name type it.unive.lisa.type.Untyped::INSTANCE
+    class Plain extends builtins.object:
+        instance method __init__: it.unive.pylisa.testnatives.NoneNative
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype Plain*
+        instance method echo: it.unive.pylisa.testnatives.EchoNative
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype Plain*
+            param value type it.unive.lisa.type.Untyped::INSTANCE
+    class Raw extends builtins.object:
+        instance method __new__: it.unive.pylisa.testnatives.RaisingNative
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param cls type it.unive.lisa.type.Untyped::INSTANCE
+    class Void extends builtins.object:
+        instance method __new__: it.unive.pylisa.testnatives.NoValueNative
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param cls type it.unive.lisa.type.Untyped::INSTANCE
+        instance method __init__: it.unive.pylisa.testnatives.NoneNative
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype Void*
+    class Bag extends builtins.object:
+        instance method __init__: it.unive.pylisa.testnatives.NoneNative
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype Bag*
+        instance method __contains__: it.unive.pylisa.testnatives.RaisingNative
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype Bag*
+            param item type it.unive.lisa.type.Untyped::INSTANCE

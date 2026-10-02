@@ -10,14 +10,45 @@ public class Field {
 	private final boolean instance;
 	private final String name;
 	private final Type type;
+	private final Value initialValue;
 
 	public Field(
 			boolean instance,
 			String name,
 			Type type) {
+		this(instance, name, type, null);
+	}
+
+	/**
+	 * Builds a field that the initialization of its library module sets to
+	 * the given value.
+	 *
+	 * @param instance     whether the field belongs to instances
+	 * @param name         the name of the field
+	 * @param type         the type of the field
+	 * @param initialValue the value of the field after the initialization of
+	 *                         the module, or {@code null} if the module does
+	 *                         not set it
+	 */
+	public Field(
+			boolean instance,
+			String name,
+			Type type,
+			Value initialValue) {
 		this.instance = instance;
 		this.name = name;
 		this.type = type;
+		this.initialValue = initialValue;
+	}
+
+	/**
+	 * Yields the value of the field after the initialization of its library
+	 * module.
+	 *
+	 * @return the value, or {@code null} if the module does not set it
+	 */
+	public Value getInitialValue() {
+		return initialValue;
 	}
 
 	public boolean isInstance() {

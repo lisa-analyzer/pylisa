@@ -2,13 +2,13 @@ package it.unive.pylisa.analysis.dataframes.operations.selection.rows;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.dataframes.Names;
 import it.unive.pylisa.analysis.dataframes.operations.selection.Selection;
 import it.unive.pylisa.analysis.dataframes.operations.selection.columns.ColumnListSelection;
+import it.unive.pylisa.program.PySyntheticLocation;
 import it.unive.pylisa.symbolic.operators.dataframes.aux.ComparisonOperator;
 
 public class ConditionalSelection extends BooleanSelection<ConditionalSelection> {
@@ -30,7 +30,7 @@ public class ConditionalSelection extends BooleanSelection<ConditionalSelection>
 			Object val) {
 		this.cols = new ColumnListSelection(new Names(colName));
 		this.op = op;
-		this.val = new ConstantPropagation(new Constant(Untyped.INSTANCE, val, SyntheticLocation.INSTANCE));
+		this.val = new ConstantPropagation(new Constant(Untyped.INSTANCE, val, PySyntheticLocation.INSTANCE));
 	}
 
 	public ConditionalSelection(

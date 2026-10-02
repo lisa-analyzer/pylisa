@@ -1,0 +1,80 @@
+library argparse:
+    location argparse
+    class Namespace extends builtins.object
+    class ArgumentParser extends builtins.object:
+        instance method __init__: it.unive.pylisa.libraries.argparse.ParserInit
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype ArgumentParser*
+            param prog type it.unive.lisa.type.Untyped::INSTANCE default none
+            param usage type it.unive.lisa.type.Untyped::INSTANCE default none
+            param description type it.unive.lisa.type.Untyped::INSTANCE default none
+            param epilog type it.unive.lisa.type.Untyped::INSTANCE default none
+            param parents type it.unive.lisa.type.Untyped::INSTANCE default none
+            param formatter_class type it.unive.lisa.type.Untyped::INSTANCE default none
+            param prefix_chars type it.unive.lisa.type.Untyped::INSTANCE default "-"
+            param fromfile_prefix_chars type it.unive.lisa.type.Untyped::INSTANCE default none
+            param argument_default type it.unive.lisa.type.Untyped::INSTANCE default none
+            param conflict_handler type it.unive.lisa.type.Untyped::INSTANCE default "error"
+            param add_help type it.unive.lisa.type.Untyped::INSTANCE default true
+            param allow_abbrev type it.unive.lisa.type.Untyped::INSTANCE default true
+            param exit_on_error type it.unive.lisa.type.Untyped::INSTANCE default true
+        instance method add_argument: it.unive.pylisa.libraries.argparse.AddArgument
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype ArgumentParser*
+            param first type it.unive.lisa.type.Untyped::INSTANCE default none
+            param second type it.unive.lisa.type.Untyped::INSTANCE default none
+            param third type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &action type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &nargs type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &const type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &default type it.unive.lisa.type.Untyped::INSTANCE default "$argparse.default-not-given"
+            param &type type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &choices type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &required type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &help type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &metavar type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &dest type it.unive.lisa.type.Untyped::INSTANCE default none
+            param &version type it.unive.lisa.type.Untyped::INSTANCE default none
+        instance method add_mutually_exclusive_group: it.unive.pylisa.libraries.argparse.SameParser
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype ArgumentParser*
+            param &required type it.unive.lisa.type.Untyped::INSTANCE default false
+        instance method add_argument_group: it.unive.pylisa.libraries.argparse.SameParser
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype ArgumentParser*
+            param title type it.unive.lisa.type.Untyped::INSTANCE default none
+            param description type it.unive.lisa.type.Untyped::INSTANCE default none
+        instance method set_defaults: it.unive.pylisa.libraries.argparse.ForgetArguments
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype ArgumentParser*
+            param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+        instance method add_subparsers: it.unive.pylisa.libraries.argparse.ForgetArguments
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype ArgumentParser*
+            param *args type it.unive.lisa.type.Untyped::INSTANCE
+            param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+        instance method parse_known_args: it.unive.pylisa.libraries.argparse.ForgetArguments
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype ArgumentParser*
+            param *args type it.unive.lisa.type.Untyped::INSTANCE
+            param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+        instance method parse_intermixed_args: it.unive.pylisa.libraries.argparse.ForgetArguments
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype ArgumentParser*
+            param *args type it.unive.lisa.type.Untyped::INSTANCE
+            param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+        instance method parse_known_intermixed_args: it.unive.pylisa.libraries.argparse.ForgetArguments
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype ArgumentParser*
+            param *args type it.unive.lisa.type.Untyped::INSTANCE
+            param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+        instance method register: it.unive.pylisa.libraries.argparse.ForgetArguments
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype ArgumentParser*
+            param *args type it.unive.lisa.type.Untyped::INSTANCE
+            param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+        instance method parse_args: it.unive.pylisa.libraries.argparse.ParseArgs
+            type it.unive.lisa.type.Untyped::INSTANCE
+            param self libtype ArgumentParser*
+            param args type it.unive.lisa.type.Untyped::INSTANCE default none
+            param namespace type it.unive.lisa.type.Untyped::INSTANCE default none

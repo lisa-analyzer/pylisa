@@ -1,9 +1,6 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
@@ -32,8 +29,8 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdUnarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
@@ -41,7 +38,7 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 			Type dfreftype = dftype.getReference();
-			Set<Type> rts = state.getState().getRuntimeTypesOf(expr, this, state.getState());
+			Set<Type> rts = interprocedural.getAnalysis().getRuntimeTypesOf(state, expr, this);
 			if (rts.stream().anyMatch(t -> (t.equals(dfreftype))))
 				switch (getTarget()) {
 				case "loc":
@@ -49,23 +46,23 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 				case "style":
 					// for pandas dataframes we treat some properties as the
 					// dataframe itself
-					return state.smallStepSemantics(expr, this);
+					return interprocedural.getAnalysis().smallStepSemantics(state, expr, this);
 				case "columns":
 					// we treat this as a call to keys()
 					Keys keys = new Keys(getCFG(), getLocation(), getSubExpression());
 					keys.setOriginatingStatement(this);
+					// errors raised by keys() belong to this attribute access
+					keys.setParentStatement(this);
 					return keys.fwdUnarySemantics(interprocedural, state, expr, expressions);
 				}
 		}
-
-		// FIXME
-		AnalysisState<A> sup = super.fwdUnarySemantics(interprocedural, state, expr, expressions);
-		if (!sup.isBottom())
-			return sup;
-
+		// Always write/read through the heap (instance attribute slot).
+		// LiSA's AccessInstanceGlobal.fwdUnarySemantics creates a
+		// GlobalVariable
+		// (e.g. $class1::Y) instead of a heap field, which is wrong for Python.
 		Variable var = new Variable(Untyped.INSTANCE, getTarget(), new Annotations(), getLocation());
 		HeapDereference container = new HeapDereference(Untyped.INSTANCE, expr, getLocation());
 		AccessChild access = new AccessChild(Untyped.INSTANCE, container, var, getLocation());
-		return state.smallStepSemantics(access, this);
+		return interprocedural.getAnalysis().smallStepSemantics(state, access, this);
 	}
 }

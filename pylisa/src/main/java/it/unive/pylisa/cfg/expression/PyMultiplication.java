@@ -1,15 +1,13 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.AbstractState;
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.*;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.numeric.Multiplication;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.pylisa.symbolic.operators.PythonArithmetic;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -28,15 +26,15 @@ public class PyMultiplication extends Multiplication {
 	}
 
 	@Override
-	public <A extends AbstractState<A>> AnalysisState<A> fwdBinarySemantics(
-			InterproceduralAnalysis<A> interprocedural,
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			SymbolicExpression left,
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		Set<Type> rtsl = state.getState().getRuntimeTypesOf(left, this, state.getState());
-		Set<Type> rtsr = state.getState().getRuntimeTypesOf(right, this, state.getState());
+		Set<Type> rtsl = interprocedural.getAnalysis().getRuntimeTypesOf(state, left, this);
+		Set<Type> rtsr = interprocedural.getAnalysis().getRuntimeTypesOf(state, right, this);
 
 		if (rtsl.stream().anyMatch(t -> PyLibraryUnitType.is(t, LibrarySpecificationProvider.PANDAS, true))
 				|| rtsr.stream().anyMatch(t -> PyLibraryUnitType.is(t, LibrarySpecificationProvider.PANDAS, true)))
@@ -45,9 +43,10 @@ public class PyMultiplication extends Multiplication {
 			return state;
 
 		// string repeat: STRING * Integer || Integer * String
-		if ((rtsl.stream().anyMatch(Type::isStringType) && rtsr.stream().anyMatch(Type::isNumericType)) ||
-				(rtsr.stream().anyMatch(Type::isStringType) && rtsl.stream().anyMatch(Type::isNumericType))) {
-			return state.smallStepSemantics(
+		if ((rtsl.stream().anyMatch(Type::isStringType) && rtsr.stream().anyMatch(NumericOperands::isNumber)) ||
+				(rtsr.stream().anyMatch(Type::isStringType) && rtsl.stream().anyMatch(NumericOperands::isNumber))) {
+			return interprocedural.getAnalysis().smallStepSemantics(
+					state,
 					new BinaryExpression(
 							getStaticType(),
 							left,
@@ -56,6 +55,7 @@ public class PyMultiplication extends Multiplication {
 							getLocation()),
 					this);
 		}
-		return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
+		return NumericOperands.apply(interprocedural, state, left, right, PythonArithmetic.Mul.INSTANCE, this);
+
 	}
 }

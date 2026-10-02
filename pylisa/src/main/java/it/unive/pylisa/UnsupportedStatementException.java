@@ -1,5 +1,6 @@
 package it.unive.pylisa;
 
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Statement;
 
 public class UnsupportedStatementException extends RuntimeException {
@@ -13,6 +14,12 @@ public class UnsupportedStatementException extends RuntimeException {
 	public UnsupportedStatementException(
 			String message) {
 		super(message);
+	}
+
+	public UnsupportedStatementException(
+			String message,
+			CodeLocation location) {
+		super(message + " at " + location);
 	}
 
 	public UnsupportedStatementException(
