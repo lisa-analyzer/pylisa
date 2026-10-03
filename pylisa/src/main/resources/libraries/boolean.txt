@@ -1,0 +1,2 @@
+# operator (dunder) registrations for Python's bool type go here
+class Bool
