@@ -15,23 +15,17 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.ReadDataframe;
+import it.unive.pylisa.symbolic.operators.dataframes.CreateDataframe;
 
-public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
+public class DataFrame extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	private Statement st;
 
-	public ReadCsv(
+	public DataFrame(
 			CFG cfg,
 			CodeLocation location,
 			Expression arg) {
-		super(cfg, location, "read_csv", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
+		super(cfg, location, "DataFrame", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
 				arg);
-	}
-
-	@Override
-	protected int compareSameClassAndParams(
-			Statement o) {
-		return 0;
 	}
 
 	@Override
@@ -40,11 +34,17 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 		this.st = st;
 	}
 
-	public static ReadCsv build(
+	public static DataFrame build(
 			CFG cfg,
 			CodeLocation location,
 			Expression[] exprs) {
-		return new ReadCsv(cfg, location, exprs[0]);
+		return new DataFrame(cfg, location, exprs[0]);
+	}
+
+	@Override
+	protected int compareSameClassAndParams(
+			Statement o) {
+		return 0;
 	}
 
 	@Override
@@ -56,7 +56,7 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 			throws SemanticException {
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		UnaryExpression read = new UnaryExpression(dftype, expr, new ReadDataframe(0), location);
+		UnaryExpression read = new UnaryExpression(dftype, expr, new CreateDataframe(0), location);
 		return PandasSemantics.createAndInitDataframe(interprocedural.getAnalysis(), state, read, st);
 	}
 }

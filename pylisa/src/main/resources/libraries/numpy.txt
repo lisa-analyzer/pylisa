@@ -1,0 +1,18 @@
+library numpy:
+	location numpy
+	method array: it.unive.pylisa.libraries.numpy.Array
+		libtype numpy.NDArray*
+		param array_like libtype Object*
+	method array: it.unive.pylisa.libraries.numpy.Array
+		libtype numpy.NDArray*
+		param array_like libtype Object
+	sealed class numpy.NDArray:
+		instance method reshape: it.unive.pylisa.libraries.numpy.Reshape
+			libtype numpy.NDArray*
+			param a libtype numpy.NDArray*
+			param shape libtype Tuple*
+		instance method reshape: it.unive.pylisa.libraries.numpy.Reshape
+			libtype numpy.NDArray*
+			param a libtype numpy.NDArray*
+			param x type it.unive.lisa.program.type.Int32Type::INSTANCE
+			param y type it.unive.lisa.program.type.Int32Type::INSTANCE

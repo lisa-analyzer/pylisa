@@ -1,4 +1,4 @@
-package it.unive.pylisa.libraries.numpy;
+package it.unive.pylisa.libraries.pandas;
 
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
@@ -6,26 +6,26 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.pylisa.cfg.type.PyClassType;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
+import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 
-public class Reshape extends NaryExpression implements PluggableStatement {
+public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 
-	protected Statement st;
+	private Statement st;
 
-	public Reshape(
+	public ToDatetime(
 			CFG cfg,
 			CodeLocation location,
-			Expression[] params) {
-		super(cfg, location, "reshape", params);
+			String constructName,
+			Expression series) {
+		super(cfg, location, constructName, series);
 	}
 
 	@Override
@@ -34,11 +34,11 @@ public class Reshape extends NaryExpression implements PluggableStatement {
 		return 0;
 	}
 
-	public static Reshape build(
+	public static ToDatetime build(
 			CFG cfg,
 			CodeLocation location,
 			Expression[] exprs) {
-		return new Reshape(cfg, location, exprs);
+		return new ToDatetime(cfg, location, "to_datetime", exprs[0]);
 	}
 
 	@Override
@@ -48,14 +48,13 @@ public class Reshape extends NaryExpression implements PluggableStatement {
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
-			ExpressionSet[] params,
+			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		PushAny push = new PushAny(PyClassType.lookup(LibrarySpecificationProvider.NUMPY_ARRAY).getReference(),
-				getLocation());
-		return interprocedural.getAnalysis().smallStepSemantics(state, push, st);
+		UnaryTransform op = new UnaryTransform(0, UnaryTransformKind.TO_DATETIME, Axis.ROWS, false);
+		return PandasSemantics.applyUnary(interprocedural.getAnalysis(), state, expr, st, op);
 	}
 }

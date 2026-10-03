@@ -7,37 +7,38 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
-import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.operators.dataframes.AccessKeys;
+import it.unive.pylisa.symbolic.operators.dataframes.JoinCols;
 
-public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
+public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression implements PluggableStatement {
 
 	private Statement st;
 
-	public Keys(
+	public Join(
 			CFG cfg,
 			CodeLocation location,
-			Expression dataframe) {
-		super(cfg, location, "keys", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
-				dataframe);
+			Expression receiver,
+			Expression other) {
+		super(cfg, location, "join", PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF).getReference(),
+				receiver, other);
 	}
 
-	public static Keys build(
+	public static Join build(
 			CFG cfg,
 			CodeLocation location,
 			Expression[] exprs) {
-		return new Keys(cfg, location, exprs[0]);
+		return new Join(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
@@ -53,29 +54,27 @@ public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression im
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
-			SymbolicExpression expr,
+			SymbolicExpression left,
+			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation loc = getLocation();
-		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
-		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
-		Type seriesref = ((PyClassType) seriestype).getReference();
-
-		HeapDereference deref = new HeapDereference(dftype, expr, loc);
-		AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, state, deref, st);
-
 		AnalysisState<A> result = state.bottom();
-		for (SymbolicExpression id : copied.getExecutionExpressions()) {
-			UnaryExpression transform = new UnaryExpression(seriestype, id, new AccessKeys(0), loc);
-			AnalysisState<A> tmp = analysis.smallStepSemantics(copied, transform, st);
+		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
+		Type dfref = ((PyClassType) dftype).getReference();
 
-			HeapReference ref = new HeapReference(seriesref, id, loc);
-			result = result.lub(analysis.smallStepSemantics(tmp, ref, st));
+		AnalysisState<A> copy = PandasSemantics.copyDataframe(analysis, state, left, st);
+		ExpressionSet recs = copy.getExecutionExpressions();
+		for (SymbolicExpression rec : recs) {
+			BinaryExpression cat = new BinaryExpression(dftype, rec, right, new JoinCols(0), loc);
+			HeapReference ref = new HeapReference(dfref, rec, loc);
+			result = result.lub(analysis.smallStepSemantics(analysis.smallStepSemantics(copy, cat, st), ref, st));
 		}
+
 		return result;
 	}
 }

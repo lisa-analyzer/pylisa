@@ -8,34 +8,38 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.pylisa.symbolic.operators.Enumerations.Axis;
+import it.unive.pylisa.symbolic.operators.Enumerations.UnaryTransformKind;
+import it.unive.pylisa.symbolic.operators.dataframes.UnaryTransform;
 
-public class UninterestingDataframeFunction extends UnaryExpression implements PluggableStatement {
+public class Apply extends BinaryExpression implements PluggableStatement {
 
-	protected Statement st;
+	private Statement st;
 
-	public UninterestingDataframeFunction(
+	public Apply(
 			CFG cfg,
 			CodeLocation location,
-			Expression dataframe) {
-		super(cfg, location, "uninteresting-func", dataframe);
+			Expression dataframe,
+			Expression lambda) {
+		super(cfg, location, "apply", dataframe.getStaticType(), dataframe, lambda);
+	}
+
+	public static Apply build(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] exprs) {
+		return new Apply(cfg, location, exprs[0], exprs[1]);
 	}
 
 	@Override
 	protected int compareSameClassAndParams(
 			Statement o) {
 		return 0;
-	}
-
-	public static UninterestingDataframeFunction build(
-			CFG cfg,
-			CodeLocation location,
-			Expression[] exprs) {
-		return new UninterestingDataframeFunction(cfg, location, exprs[0]);
 	}
 
 	@Override
@@ -45,13 +49,14 @@ public class UninterestingDataframeFunction extends UnaryExpression implements P
 	}
 
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdUnarySemantics(
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
-			SymbolicExpression expr,
+			SymbolicExpression left,
+			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		// we just return the same dataframe
-		return interprocedural.getAnalysis().smallStepSemantics(state, expr, st);
+		UnaryTransform op = new UnaryTransform(0, UnaryTransformKind.LAMBDA, Axis.ROWS, right);
+		return PandasSemantics.applyUnary(interprocedural.getAnalysis(), state, left, st, op);
 	}
 }
