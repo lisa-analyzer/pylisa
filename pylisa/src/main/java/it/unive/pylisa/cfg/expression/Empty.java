@@ -1,6 +1,10 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.*;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -43,5 +47,6 @@ public class Empty extends Expression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		return interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()), this);
+
 	}
 }
