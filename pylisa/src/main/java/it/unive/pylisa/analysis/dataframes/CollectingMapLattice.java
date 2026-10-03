@@ -48,9 +48,9 @@ public class CollectingMapLattice<K, V>
 	}
 
 	/**
-	 * Converts a plain {@link Map} into a {@link PatriciaTrieMap}, for
-	 * callers that build/mutate a regular map (e.g. via {@link #getMap()}
-	 * plus in-place {@code put}/{@code remove}) and then need to construct a
+	 * Converts a plain {@link Map} into a {@link PatriciaTrieMap}, for callers
+	 * that build/mutate a regular map (e.g. via {@link #getMap()} plus in-place
+	 * {@code put}/{@code remove}) and then need to construct a
 	 * {@link CollectingMapLattice} from the result.
 	 */
 	public static <K, V> PatriciaTrieMap<K, V> toTrieMap(

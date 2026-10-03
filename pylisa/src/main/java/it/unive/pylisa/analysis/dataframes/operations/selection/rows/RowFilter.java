@@ -21,13 +21,11 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public RowFilter<B> top() {
 		return (RowFilter<B>) TOP;
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public RowFilter<B> bottom() {
 		return (RowFilter<B>) BOTTOM;
 	}
@@ -51,7 +49,6 @@ public class RowFilter<B extends BooleanSelection<B>> extends RowSelection<RowFi
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public RowFilter<B> lubSameClass(
 			RowFilter<B> other)
 			throws SemanticException {
