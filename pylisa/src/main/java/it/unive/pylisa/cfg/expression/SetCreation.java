@@ -1,6 +1,10 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.*;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
@@ -41,7 +45,6 @@ public class SetCreation extends NaryExpression {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-
 		CodeLocation loc = getLocation();
 		SetConstant set = new SetConstant(loc);
 		if (params.length == 0)

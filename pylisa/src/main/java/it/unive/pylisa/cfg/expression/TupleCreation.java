@@ -1,6 +1,11 @@
 package it.unive.pylisa.cfg.expression;
 
-import it.unive.lisa.analysis.*;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
+import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
@@ -15,6 +20,7 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -51,26 +57,23 @@ public class TupleCreation extends NaryExpression {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		// a tuple creation is also created when parsing expressions between
 		// parentheses
 		// if we only have one sub-expression, we assume to be in that case
 		if (params.length == 1)
 			return state;
-		// unsound: fix me (handle empty tuple case).
-		if (params.length == 0) {
-			return state;
-		}
+
 		AnalysisState<A> result = state.bottom();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
 		// allocate the heap region
 		MemoryAllocation alloc = new MemoryAllocation(tupleType, getLocation());
-		AnalysisState<A> sem = interprocedural.getAnalysis().smallStepSemantics(state, alloc, this);
+		AnalysisState<A> sem = analysis.smallStepSemantics(state, alloc, this);
 
 		// assign the pairs
 		AnalysisState<A> assign = state.bottom();
-		for (SymbolicExpression loc : sem.getExecution().getComputedExpressions()) {
+		for (SymbolicExpression loc : sem.getExecutionExpressions()) {
 			HeapReference ref = new HeapReference(tupleType, loc, getLocation());
 			HeapDereference deref = new HeapDereference(tupleType, ref, getLocation());
 
@@ -79,16 +82,27 @@ public class TupleCreation extends NaryExpression {
 				Constant idx = new Constant(Int32Type.INSTANCE, i, getLocation());
 				AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref, idx, getLocation());
 				for (SymbolicExpression init : params[i]) {
-					AnalysisState<A> fieldState = interprocedural.getAnalysis().smallStepSemantics(sem, fieldAcc, this);
-					for (SymbolicExpression lenId : fieldState.getExecution().getComputedExpressions())
-						fieldResult = fieldResult
-								.lub(interprocedural.getAnalysis().assign(fieldState, lenId, init, this));
+					AnalysisState<A> fieldState = analysis.smallStepSemantics(sem, fieldAcc, this);
+					for (SymbolicExpression lenId : fieldState.getExecutionExpressions())
+						fieldResult = fieldResult.lub(analysis.assign(fieldState, lenId, init, this));
 				}
 				assign = assign.lub(fieldResult);
 			}
 
+			// tuples are immutable, so the element count fixed at creation
+			// time never becomes stale; track it as a "length" field so
+			// SequenceGetItem can raise IndexError on out-of-bounds access
+			AnalysisState<A> lenResult = state.bottom();
+			Variable lenKey = new Variable(Int32Type.INSTANCE, "length", getLocation());
+			AccessChild lenAcc = new AccessChild(Untyped.INSTANCE, deref, lenKey, getLocation());
+			Constant lenValue = new Constant(Int32Type.INSTANCE, params.length, getLocation());
+			AnalysisState<A> lenState = analysis.smallStepSemantics(sem, lenAcc, this);
+			for (SymbolicExpression lenId : lenState.getExecutionExpressions())
+				lenResult = lenResult.lub(analysis.assign(lenState, lenId, lenValue, this));
+			assign = assign.lub(lenResult);
+
 			// we leave the reference on the stack
-			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(assign, ref, this));
+			result = result.lub(analysis.smallStepSemantics(assign, ref, this));
 		}
 
 		return result;
