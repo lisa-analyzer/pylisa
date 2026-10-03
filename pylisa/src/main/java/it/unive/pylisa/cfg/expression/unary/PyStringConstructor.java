@@ -1,6 +1,10 @@
 package it.unive.pylisa.cfg.expression.unary;
 
-import it.unive.lisa.analysis.*;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
@@ -35,7 +39,6 @@ public class PyStringConstructor extends it.unive.lisa.program.cfg.statement.Una
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-
 		Set<Type> rt = interprocedural.getAnalysis().getRuntimeTypesOf(state, expr, this);
 		if (rt.stream().anyMatch(Type::isStringType) || rt.stream().anyMatch(Type::isNumericType)) {
 			return interprocedural.getAnalysis().smallStepSemantics(state,

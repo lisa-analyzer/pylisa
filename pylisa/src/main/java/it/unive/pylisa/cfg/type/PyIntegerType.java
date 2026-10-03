@@ -11,7 +11,8 @@ public class PyIntegerType implements NumericType {
 
 	@Override
 	public int getNBits() {
-		return 0;
+		// arbitrary precision integer, unbounded
+		return -1;
 	}
 
 	@Override

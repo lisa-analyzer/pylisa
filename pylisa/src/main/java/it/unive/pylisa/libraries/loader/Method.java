@@ -84,7 +84,6 @@ public class Method {
 				+ implementation + ", type=" + type + ", params=" + params + "]";
 	}
 
-	@SuppressWarnings("unchecked")
 	public NativeCFG toLiSACfg(
 			CodeLocation location,
 			CFG init,

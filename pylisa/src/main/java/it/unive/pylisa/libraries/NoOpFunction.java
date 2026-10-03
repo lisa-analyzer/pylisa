@@ -1,6 +1,10 @@
 package it.unive.pylisa.libraries;
 
-import it.unive.lisa.analysis.*;
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
@@ -29,16 +33,6 @@ public class NoOpFunction extends NaryExpression implements PluggableStatement {
 		return 0;
 	}
 
-	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
-			InterproceduralAnalysis<A, D> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		return new NoOp(getCFG(), getLocation()).forwardSemantics(state, interprocedural, expressions);
-	}
-
 	public static NoOpFunction build(
 			CFG cfg,
 			CodeLocation location,
@@ -52,4 +46,13 @@ public class NoOpFunction extends NaryExpression implements PluggableStatement {
 		this.st = st;
 	}
 
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		return new NoOp(getCFG(), getLocation()).forwardSemantics(state, interprocedural, expressions);
+	}
 }
