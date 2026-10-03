@@ -1,0 +1,42 @@
+{
+  "warnings" : [ ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_division-by-zero_division-by-zero.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "154ms",
+    "end" : "2026-09-14T14:21:56.322+02:00",
+    "expressions" : "74",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "78",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-09-14T14:21:56.168+02:00",
+    "statements" : "28",
+    "units" : "15",
+    "version" : "1.0",
+    "warnings" : "0"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/division-by-zero"
+  }
+}
