@@ -10,9 +10,11 @@ public class KeywordOnlyParameter extends PyParameter {
 
 	public KeywordOnlyParameter(
 			Parameter parameter) {
-		super(parameter.getLocation(), parameter.getName(), parameter.getStaticType(), parameter.getDefaultValue(),
+		super(parameter.getLocation(), 
+				parameter.getName(), 
+				parameter.getStaticType(), 
 				parameter.getAnnotations());
-
+		setDefaultValue(parameter.getDefaultValue());
 	}
 
 	public KeywordOnlyParameter(
@@ -31,16 +33,10 @@ public class KeywordOnlyParameter extends PyParameter {
 	public KeywordOnlyParameter(
 			CodeLocation location,
 			String name,
-			Expression defaultValue) {
-		super(location, name, defaultValue);
-	}
-
-	public KeywordOnlyParameter(
-			CodeLocation location,
-			String name,
 			Type staticType,
 			Expression defaultValue,
 			Annotations annotations) {
-		super(location, name, staticType, defaultValue, annotations);
+		super(location, name, staticType, annotations);
+		setDefaultValue(defaultValue);
 	}
 }

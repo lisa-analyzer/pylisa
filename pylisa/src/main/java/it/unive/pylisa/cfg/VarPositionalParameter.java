@@ -23,16 +23,10 @@ public class VarPositionalParameter extends PyParameter {
 	public VarPositionalParameter(
 			CodeLocation location,
 			String name,
-			Expression defaultValue) {
-		super(location, name, defaultValue);
-	}
-
-	public VarPositionalParameter(
-			CodeLocation location,
-			String name,
 			Type staticType,
 			Expression defaultValue,
 			Annotations annotations) {
-		super(location, name, staticType, defaultValue, annotations);
+		super(location, name, staticType, annotations);
+		setDefaultValue(defaultValue);
 	}
 }

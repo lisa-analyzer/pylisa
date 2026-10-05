@@ -27,7 +27,6 @@ import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.VariableTableEntry;
-import it.unive.lisa.program.cfg.controlFlow.ControlFlowStructure;
 import it.unive.lisa.program.cfg.controlFlow.IfThenElse;
 import it.unive.lisa.program.cfg.controlFlow.Loop;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -55,6 +54,7 @@ import it.unive.lisa.program.cfg.statement.logic.Not;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
+import it.unive.lisa.util.frontend.ControlFlowTracker;
 import it.unive.lisa.util.frontend.ParsedBlock;
 import it.unive.pylisa.annotationvalues.DecoratedAnnotation;
 import it.unive.pylisa.antlr.PythonParser.Annotated_rhsContext;
@@ -220,28 +220,29 @@ public class PyStatementParser
 	 */
 	private final PyCFG currentCFG;
 
-	private Collection<ControlFlowStructure> cfs;
+	private final ControlFlowTracker control;
 
 	/**
 	 * Builds the parser for a Python program at {@code filePath}.
 	 *
-	 * @param program   the LiSA program to which the parsed CFGs will be added
-	 * @param filePath  file path to a Python program
-	 * @param notebook  whether or not {@code filePath} points to a Jupyter
-	 *                      notebook file
-	 * @param cellOrder list of the indexes of cells of a Jupyter notebook in
-	 *                      the order they are to be executed. Only valid if
-	 *                      {@code notebook} is {@code true}.
+	 * @param program     the LiSA program to which the parsed CFGs will be
+	 *                        added
+	 * @param filePath    file path to a Python program
+	 * @param currentUnit the unit currently under parsing
+	 * @param currentCFG  the CFG currently under parsing
+	 * @param control     the control flow tracker to use for parsing
 	 */
 	public PyStatementParser(
 			Program program,
 			String filePath,
 			Unit currentUnit,
-			PyCFG currentCFG) {
+			PyCFG currentCFG,
+			ControlFlowTracker control) {
 		this.program = program;
 		this.filePath = filePath;
 		this.currentUnit = currentUnit;
 		this.currentCFG = currentCFG;
+		this.control = control;
 	}
 
 	@Override
@@ -616,13 +617,17 @@ public class PyStatementParser
 	@Override
 	public Statement visitBreak_stmt(
 			Break_stmtContext ctx) {
-		return new Break(currentCFG, getLocation(filePath, ctx));
+		Break br = new Break(currentCFG, getLocation(filePath, ctx));
+		control.addModifier(br);
+		return br;
 	}
 
 	@Override
 	public Statement visitContinue_stmt(
 			Continue_stmtContext ctx) {
-		return new Continue(currentCFG, getLocation(filePath, ctx));
+		Continue cont = new Continue(currentCFG, getLocation(filePath, ctx));
+		control.addModifier(cont);
+		return cont;
 	}
 
 	@Override
@@ -849,11 +854,17 @@ public class PyStatementParser
 
 		for (int k = branches.size() - 1; k >= 0; k--) {
 			Pair<Statement, Collection<Statement>> branch = branches.get(k);
-			cfs.add(new IfThenElse(currentCFG.getNodeList(), branch.getLeft(), ifExitNode,
+			currentCFG.getDescriptor().addControlFlowStructure(new IfThenElse(
+					currentCFG.getNodeList(),
+					branch.getLeft(),
+					ifExitNode,
 					branch.getRight(),
 					new HashSet<>(falseStatements)));
 		}
-		cfs.add(new IfThenElse(currentCFG.getNodeList(), booleanGuard, ifExitNode,
+		currentCFG.getDescriptor().addControlFlowStructure(new IfThenElse(
+				currentCFG.getNodeList(),
+				booleanGuard,
+				ifExitNode,
 				trueBlock.getBody().getNodes(),
 				falseStatements));
 		return new ParsedBlock(booleanGuard, block, ifExitNode);
@@ -872,18 +883,7 @@ public class PyStatementParser
 
 		ParsedBlock trueBlock = visitBlock(ctx.block());
 
-		// Fix Break and Continue stmt
 		block.mergeWith(trueBlock.getBody());
-		for (Statement s : trueBlock.getBody())
-			if (s instanceof Continue) {
-				for (Edge e : block.getOutgoingEdges(s))
-					block.removeEdge(e);
-				block.addEdge(new SequentialEdge(s, condition));
-			} else if (s instanceof Break) {
-				for (Edge e : block.getOutgoingEdges(s))
-					block.removeEdge(e);
-				block.addEdge(new SequentialEdge(s, whileExitNode));
-			}
 		block.addEdge(new TrueEdge(condition, trueBlock.getBegin()));
 		block.addEdge(new SequentialEdge(trueBlock.getEnd(), condition));
 
@@ -901,13 +901,20 @@ public class PyStatementParser
 			firstFollower = whileExitNode;
 		}
 
-		cfs.add(new Loop(currentCFG.getNodeList(), condition, firstFollower, trueBlock.getBody().getNodes()));
+		control.endControlFlowOf(block, condition, whileExitNode, condition, null);
+
+		currentCFG.getDescriptor().addControlFlowStructure(new Loop(
+				currentCFG.getNodeList(),
+				condition,
+				firstFollower,
+				trueBlock.getBody().getNodes()));
 		return new ParsedBlock(condition, block, whileExitNode);
 	}
 
 	@Override
 	public ParsedBlock visitFor_stmt(
 			For_stmtContext ctx) {
+		// FIXME: this assumes a range-based for loop which is not always the case
 		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 		// create and add exit point of for
 		NoOp exit = new NoOp(currentCFG, getLocation(filePath, ctx));
@@ -984,18 +991,6 @@ public class PyStatementParser
 
 		ParsedBlock body = visitBlock(ctx.block());
 		block.mergeWith(body.getBody());
-
-		for (Statement s : body.getBody())
-			if (s instanceof Continue) {
-				for (Edge e : block.getOutgoingEdges(s))
-					block.removeEdge(e);
-				block.addEdge(new SequentialEdge(s, condition));
-			} else if (s instanceof Break) {
-				for (Edge e : block.getOutgoingEdges(s))
-					block.removeEdge(e);
-				block.addEdge(new SequentialEdge(s, exit));
-			}
-
 		block.addEdge(new SequentialEdge(counter_init, condition));
 		block.addEdge(new TrueEdge(condition, element_assignment));
 		block.addEdge(new SequentialEdge(element_assignment, body.getBegin()));
@@ -1006,7 +1001,13 @@ public class PyStatementParser
 		Collection<Statement> nodes = new HashSet<>(body.getBody().getNodes());
 		nodes.add(element_assignment);
 		nodes.add(counter_increment);
-		cfs.add(new Loop(currentCFG.getNodeList(), condition, exit, nodes));
+
+		control.endControlFlowOf(block, condition, exit, counter_increment, null);
+		currentCFG.getDescriptor().addControlFlowStructure(new Loop(
+				currentCFG.getNodeList(),
+				condition,
+				exit,
+				nodes));
 		return new ParsedBlock(counter_init, block, exit);
 	}
 

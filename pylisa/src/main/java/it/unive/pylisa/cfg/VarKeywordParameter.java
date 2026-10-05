@@ -23,16 +23,10 @@ public class VarKeywordParameter extends PyParameter {
 	public VarKeywordParameter(
 			CodeLocation location,
 			String name,
-			Expression defaultValue) {
-		super(location, name, defaultValue);
-	}
-
-	public VarKeywordParameter(
-			CodeLocation location,
-			String name,
 			Type staticType,
 			Expression defaultValue,
 			Annotations annotations) {
-		super(location, name, staticType, defaultValue, annotations);
+		super(location, name, staticType, annotations);
+		setDefaultValue(defaultValue);
 	}
 }
