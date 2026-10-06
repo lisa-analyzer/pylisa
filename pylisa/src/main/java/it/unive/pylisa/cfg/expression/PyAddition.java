@@ -2,7 +2,6 @@ package it.unive.pylisa.cfg.expression;
 
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
-import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -12,18 +11,19 @@ import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.program.cfg.statement.numeric.Addition;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Collections;
 import java.util.Set;
 
+/**
+ * Python's {@code a + b}: it calls {@code type(a).__add__(a, b)}, falling back
+ * to {@code type(b).__radd__(b, a)}; if neither applies, a {@code TypeError} is
+ * raised. See {@link PyBinaryDispatch} for the details.
+ */
 public class PyAddition extends Addition {
 
 	/**
@@ -50,52 +50,8 @@ public class PyAddition extends Addition {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		Set<Type> rtsl = analysis.getRuntimeTypesOf(state, left, this);
-		Set<Type> rtsr = analysis.getRuntimeTypesOf(state, right, this);
-		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
-
-		AnalysisState<A> result = state.bottom();
-		for (Type tl : rtsl) {
-			for (Type tr : rtsr) {
-				// type(a).__add__(a, b)
-				UnresolvedCall add = new UnresolvedCall(
-						getCFG(),
-						getLocation(),
-						CallType.STATIC,
-						null,
-						"__add__",
-						LeftToRightEvaluation.INSTANCE,
-						getLeft(),
-						getRight());
-				if (resolves(interprocedural, add, tl, tr, aliasing)) {
-					result = result.lub(add.forwardSemantics(state, interprocedural, expressions));
-					continue;
-				}
-
-				// type(a) does not implement it: try type(b).__radd__(b, a)
-				UnresolvedCall radd = new UnresolvedCall(
-						getCFG(),
-						getLocation(),
-						CallType.STATIC,
-						null,
-						"__radd__",
-						LeftToRightEvaluation.INSTANCE,
-						getRight(),
-						getLeft());
-				if (resolves(interprocedural, radd, tr, tl, aliasing)) {
-					result = result.lub(radd.forwardSemantics(state, interprocedural, expressions));
-					continue;
-				}
-
-				// neither type implements + for this pair (e.g. "a" + 1):
-				// real Python raises TypeError
-				result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
-						LibrarySpecificationProvider.TYPE_ERROR));
-			}
-		}
-
-		return result;
+		return PyBinaryDispatch.dispatch(interprocedural, state, expressions, this, left, right,
+				"__add__", "__radd__", false, PyBinaryDispatch.Fallback.TYPE_ERROR);
 	}
 
 	@SuppressWarnings("unchecked")
