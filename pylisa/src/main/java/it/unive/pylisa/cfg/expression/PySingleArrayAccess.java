@@ -9,17 +9,21 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.UnsupportedStatementException;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Collections;
 import java.util.Set;
 
@@ -74,6 +78,26 @@ public class PySingleArrayAccess extends BinaryExpression {
 		AnalysisState<A> result = state.bottom();
 		for (Type tContainer : rtsContainer) {
 			for (Type tIndex : rtsIndex) {
+				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {
+					// str, int, ...: __getitem__ is looked up in their class
+					@SuppressWarnings("unchecked")
+					Set<Type>[] types = new Set[] { Collections.singleton(tContainer), Collections.singleton(tIndex) };
+					Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, state, this,
+							PyBinaryDispatch.classOf(tContainer), "__getitem__",
+							new Expression[] { getLeft(), getRight() }, types);
+					if (resolved == null)
+						// e.g. 5[0]: the object is not subscriptable
+						result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
+								LibrarySpecificationProvider.TYPE_ERROR));
+					else {
+						result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
+								new ExpressionSet[] { new ExpressionSet(left), new ExpressionSet(right) },
+								expressions));
+						getMetaVariables().addAll(resolved.getMetaVariables());
+					}
+					continue;
+				}
+
 				// type(container).__getitem__(container, index): try both a
 				// static-style registration (native types) and an
 				// instance-style

@@ -14,9 +14,7 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
-import it.unive.lisa.type.Type;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
-import java.util.Set;
 
 public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	protected Statement st;
@@ -60,12 +58,9 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		Set<Type> rts = interprocedural.getAnalysis().getRuntimeTypesOf(state, expr, this);
-		if (rts.stream().anyMatch(Type::isStringType) || rts.stream().anyMatch(Type::isNumericType)) {
-			return interprocedural.getAnalysis().smallStepSemantics(state,
-					new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
-		}
-		// TODO Handle other cases
-		return state;
+		// str() of any value is a string, computed precisely by the domains
+		// for the values they track
+		return interprocedural.getAnalysis().smallStepSemantics(state,
+				new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
 	}
 }

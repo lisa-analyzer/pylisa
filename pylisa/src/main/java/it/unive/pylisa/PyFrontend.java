@@ -16,6 +16,7 @@ import it.unive.pylisa.antlr.PythonLexer;
 import it.unive.pylisa.antlr.PythonParser;
 import it.unive.pylisa.antlr.PythonParser.File_inputContext;
 import it.unive.pylisa.antlr.PythonParserBaseVisitor;
+import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -71,6 +72,7 @@ public class PyFrontend
 		types.registerType(PyLambdaType.INSTANCE);
 		types.registerType(BoolType.INSTANCE);
 		types.registerType(StringType.INSTANCE);
+		types.registerType(PyBytesType.INSTANCE);
 		types.registerType(Int32Type.INSTANCE);
 		types.registerType(Float32Type.INSTANCE);
 		types.registerType(NullType.INSTANCE);

@@ -9,11 +9,13 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
@@ -21,6 +23,8 @@ import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.UnsupportedStatementException;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Collections;
 import java.util.Set;
 
@@ -70,6 +74,28 @@ public class PyIn extends BinaryExpression {
 		AnalysisState<A> result = state.bottom();
 		for (Type tContainer : rtsContainer) {
 			for (Type tNeedle : rtsNeedle) {
+				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {
+					// str, bytes, int, ...: __contains__ is looked up in their
+					// class
+					@SuppressWarnings("unchecked")
+					Set<Type>[] types = new Set[] { Collections.singleton(tContainer),
+							Collections.singleton(tNeedle) };
+					Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, state, this,
+							PyBinaryDispatch.classOf(tContainer), "__contains__",
+							new Expression[] { getRight(), getLeft() }, types);
+					if (resolved == null)
+						// e.g. 1 in 5: the container is not iterable
+						result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
+								LibrarySpecificationProvider.TYPE_ERROR));
+					else {
+						result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
+								new ExpressionSet[] { new ExpressionSet(right), new ExpressionSet(left) },
+								expressions));
+						getMetaVariables().addAll(resolved.getMetaVariables());
+					}
+					continue;
+				}
+
 				UnresolvedCall contains = null;
 				for (CallType kind : new CallType[] { CallType.STATIC, CallType.INSTANCE }) {
 					UnresolvedCall candidate = new UnresolvedCall(

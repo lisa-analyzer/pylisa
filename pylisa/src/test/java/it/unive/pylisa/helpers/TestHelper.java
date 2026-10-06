@@ -11,6 +11,7 @@ import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.lattices.heap.allocations.HeapEnvWithFields;
 import it.unive.lisa.lattices.types.TypeSet;
 import it.unive.lisa.outputs.HtmlInputs;
+import it.unive.lisa.outputs.HtmlResults;
 import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.program.cfg.fixpoints.optforward.OptimizedForwardAscendingFixpoint;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;

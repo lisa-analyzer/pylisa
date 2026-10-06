@@ -13,7 +13,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.symbolic.operators.Power;
+import it.unive.pylisa.libraries.PowerSemantics;
 
 /**
  * Native implementation of {@code float.__pow__(self, other)}.
@@ -58,13 +58,8 @@ public class FloatPow extends BinaryExpression implements PluggableStatement {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		return interprocedural.getAnalysis().smallStepSemantics(state,
-				new it.unive.lisa.symbolic.value.BinaryExpression(
-						getStaticType(),
-						left,
-						right,
-						Power.INSTANCE,
-						getLocation()),
-				st);
+		// self ** other
+		return PowerSemantics.compute(interprocedural.getAnalysis(), state, left, right, false, getCFG(),
+				getLocation(), st, this);
 	}
 }

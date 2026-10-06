@@ -10,7 +10,6 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.CFG;
-import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.VariableTableEntry;
 import it.unive.lisa.program.cfg.controlFlow.IfThenElse;
 import it.unive.lisa.program.cfg.controlFlow.Loop;
@@ -33,7 +32,6 @@ import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
 import it.unive.lisa.program.cfg.statement.literal.Float32Literal;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
-import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.cfg.statement.logic.Not;
 import it.unive.lisa.program.type.Int32Type;
@@ -112,6 +110,7 @@ import it.unive.pylisa.antlr.PythonParser.Star_targetsContext;
 import it.unive.pylisa.antlr.PythonParser.Starred_expressionContext;
 import it.unive.pylisa.antlr.PythonParser.StatementContext;
 import it.unive.pylisa.antlr.PythonParser.StatementsContext;
+import it.unive.pylisa.antlr.PythonParser.StringContext;
 import it.unive.pylisa.antlr.PythonParser.SumContext;
 import it.unive.pylisa.antlr.PythonParser.T_primaryContext;
 import it.unive.pylisa.antlr.PythonParser.Target_with_star_atomContext;
@@ -146,6 +145,7 @@ import it.unive.pylisa.cfg.expression.PyFloorDiv;
 import it.unive.pylisa.cfg.expression.PyIn;
 import it.unive.pylisa.cfg.expression.PyIs;
 import it.unive.pylisa.cfg.expression.PyMatMul;
+import it.unive.pylisa.cfg.expression.PyMethodCall;
 import it.unive.pylisa.cfg.expression.PyMultiplication;
 import it.unive.pylisa.cfg.expression.PyNegation;
 import it.unive.pylisa.cfg.expression.PyNewObj;
@@ -167,14 +167,18 @@ import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
 import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyBytesLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyStringLiterals;
 import it.unive.pylisa.cfg.expression.literal.PyTypeLiteral;
 import it.unive.pylisa.cfg.expression.unary.PyLength;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.NoOpFunction;
+import it.unive.pylisa.symbolic.PyBytes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -183,6 +187,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -198,6 +203,28 @@ public class PyStatementParser
 	private static final Logger log = LogManager.getLogger(PyStatementParser.class);
 
 	private Map<String, String> imports = new HashMap<>();
+
+	/**
+	 * The names bound to modules or other namespaces by import statements (e.g.
+	 * {@code np} for {@code import numpy as np}, {@code os} for
+	 * {@code import os.path}, {@code y} for {@code from x import y}): calls on
+	 * their attributes ({@code np.array(...)}) are function calls, not method
+	 * calls on a receiver.
+	 */
+	private final Set<String> namespaces = new HashSet<>();
+
+	/**
+	 * The builtin classes that are modeled as values, by their names in Python:
+	 * their methods can be called on the class itself (e.g.
+	 * {@code bytes.fromhex(s)} or {@code str.upper(s)}), and are looked up in
+	 * the library class modeling them.
+	 */
+	private static final Map<String, String> BUILTIN_CLASSES = Map.of(
+			"str", LibrarySpecificationProvider.STR,
+			"bytes", LibrarySpecificationProvider.BYTES,
+			"int", LibrarySpecificationProvider.INT,
+			"float", LibrarySpecificationProvider.FLOAT);
+
 	/**
 	 * Python program file path.
 	 */
@@ -686,6 +713,7 @@ public class PyStatementParser
 			String as = single.name().size() == 2 ? single.name(1).getText() : null;
 			components.put(importedComponent, as);
 			imports.put(importedComponent, name + "." + importedComponent);
+			namespaces.add(as != null ? as : importedComponent);
 		}
 		return new FromImport(program, name, components, currentCFG, getLocation(filePath, ctx));
 	}
@@ -698,6 +726,8 @@ public class PyStatementParser
 			String importedLibrary = dottedNameToString(single.dotted_name());
 			String as = single.name() != null ? single.name().getText() : null;
 			libs.put(importedLibrary, as);
+			// "import a.b.c" binds "a", "import a.b.c as d" binds "d"
+			namespaces.add(as != null ? as : importedLibrary.split("\\.")[0]);
 		}
 		return new Import(program, libs, currentCFG, getLocation(filePath, ctx));
 	}
@@ -764,12 +794,15 @@ public class PyStatementParser
 				((ClassUnit) currentUnit).addInstanceCodeMember(fun);
 			else
 				currentUnit.addCodeMember(fun);
-			// TODO add statement for function definition
+			// the definition itself has no runtime effect in the enclosing
+			// CFG: the function is registered as a code member, not inlined
+			return noOpBlock(ctx);
 		} else if (ctx.class_def() != null) {
 			ClassUnit cu = visitClass_def(ctx.class_def());
 			PyClassType.register(cu.getName(), cu);
 			program.addUnit(cu);
-			// TODO add statement for class definition
+			// same as above: the class is registered as a unit, not inlined
+			return noOpBlock(ctx);
 		} else if (ctx.if_stmt() != null)
 			return this.visitIf_stmt(ctx.if_stmt());
 		else if (ctx.while_stmt() != null)
@@ -783,6 +816,19 @@ public class PyStatementParser
 		else if (ctx.match_stmt() != null)
 			throw new UnsupportedStatementException("match statements are not supported");
 		throw new UnsupportedStatementException("Statement " + ctx + " not yet supported");
+	}
+
+	/**
+	 * Builds a {@link ParsedBlock} made of a single {@link NoOp}, for compound
+	 * statements (function and class definitions) that only have side effects
+	 * on the enclosing unit/CFG and do not themselves execute anything.
+	 */
+	private ParsedBlock noOpBlock(
+			Compound_stmtContext ctx) {
+		NoOp noop = new NoOp(currentCFG, getLocation(filePath, ctx));
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+		block.addNode(noop);
+		return new ParsedBlock(noop, block, noop);
 	}
 
 	@Override
@@ -1410,11 +1456,14 @@ public class PyStatementParser
 		Expression access = visitAtom(base.atom());
 		String last_name = access instanceof VariableRef ? ((VariableRef) access).getName() : null;
 		Expression previous_access = null;
+		// whether the last frame was an attribute access (x.name)
+		boolean attribute = false;
 
 		for (PrimaryContext frame : chain) {
 			if (frame.DOT() != null) {
 				last_name = frame.name().getText();
 				previous_access = access;
+				attribute = true;
 				access = new UnresolvedCall(
 						currentCFG,
 						getLocation(filePath, frame),
@@ -1429,7 +1478,11 @@ public class PyStatementParser
 
 				List<Expression> pars = extractArguments(frame.arguments());
 				String method_name = last_name;
-				boolean instance = access instanceof PyAccessInstanceGlobal;
+				// x.name(...) is a method call on x, and x is passed as the
+				// receiver, unless x is a namespace (x.name is then just a
+				// function or a class)
+				boolean instance = access instanceof PyAccessInstanceGlobal
+						|| (attribute && isMethodReceiver(previous_access));
 				if (instance)
 					pars.add(0, previous_access);
 
@@ -1449,6 +1502,9 @@ public class PyStatementParser
 					}
 				}
 				if (cu != null && cu instanceof ClassUnit) {
+					if (instance)
+						// x.Cls(...) builds a Cls, with no receiver
+						pars.remove(0);
 					access = new PyNewObj(
 							currentCFG,
 							getLocation(filePath, frame),
@@ -1458,14 +1514,25 @@ public class PyStatementParser
 				} else if (!instance && method_name.equals("len") && pars.size() == 1) {
 					access = new PyLength(currentCFG, getLocation(filePath, frame), pars.get(0));
 				} else {
-					access = new UnresolvedCall(
-							currentCFG,
-							getLocation(filePath, frame),
-							instance ? CallType.UNKNOWN : CallType.STATIC,
-							null,
-							method_name,
-							LeftToRightEvaluation.INSTANCE,
-							pars.toArray(Expression[]::new));
+					access = instance
+							? new PyMethodCall(
+									currentCFG,
+									getLocation(filePath, frame),
+									method_name,
+									LeftToRightEvaluation.INSTANCE,
+									pars.toArray(Expression[]::new))
+							: new UnresolvedCall(
+									currentCFG,
+									getLocation(filePath, frame),
+									CallType.STATIC,
+									// e.g. bytes.fromhex(s) is looked up in
+									// Bytes
+									attribute && previous_access instanceof VariableRef
+											? BUILTIN_CLASSES.get(((VariableRef) previous_access).getName())
+											: null,
+									method_name,
+									LeftToRightEvaluation.INSTANCE,
+									pars.toArray(Expression[]::new));
 					if (method_name.equals("super") && pars.isEmpty()) {
 						// if super() is inside an instance method
 						if (this.currentCFG.getDescriptor().isInstance()) {
@@ -1488,9 +1555,11 @@ public class PyStatementParser
 				}
 				last_name = null;
 				previous_access = null;
+				attribute = false;
 			} else if (frame.LSQB() != null) {
 				previous_access = access;
 				last_name = null;
+				attribute = false;
 				List<Expression> indexes = extractExpressionsFromSlices(frame.slices());
 				if (indexes.size() == 1)
 					access = new PySingleArrayAccess(
@@ -1515,6 +1584,39 @@ public class PyStatementParser
 				throw new UnsupportedStatementException();
 		}
 		return access;
+	}
+
+	/**
+	 * Whether {@code receiver.name(...)} is a method call on {@code receiver},
+	 * that has to be passed as first argument: this is the case unless
+	 * {@code receiver} is a namespace (see {@link #isNamespace(Expression)}) or
+	 * a call to {@code super()}, that is handled separately.
+	 */
+	private boolean isMethodReceiver(
+			Expression receiver) {
+		if (receiver instanceof SimpleSuperUnresolvedCall
+				|| (receiver instanceof UnresolvedCall && ((UnresolvedCall) receiver).getTargetName().equals("super")))
+			return false;
+		return !isNamespace(receiver);
+	}
+
+	/**
+	 * Whether {@code expr} denotes a namespace rather than a value: a name
+	 * bound by an import, the name of a class or of a library, or an attribute
+	 * of one of those (e.g. {@code os.path}).
+	 */
+	private boolean isNamespace(
+			Expression expr) {
+		if (expr instanceof VariableRef) {
+			String name = ((VariableRef) expr).getName();
+			return namespaces.contains(name) || program.getUnit(name) != null || BUILTIN_CLASSES.containsKey(name);
+		}
+		if (expr instanceof UnresolvedCall) {
+			UnresolvedCall call = (UnresolvedCall) expr;
+			if (call.getTargetName().equals("__getattribute__") && call.getParameters().length == 2)
+				return isNamespace(call.getParameters()[0]);
+		}
+		return false;
 	}
 
 	private List<Expression> convertAssignmentsToByNameParameters(
@@ -1693,9 +1795,27 @@ public class PyStatementParser
 		else if (ctx.NONE() != null)
 			return new PyNoneLiteral(currentCFG, getLocation(filePath, ctx));
 		else if (ctx.strings() != null) {
-			if (!ctx.strings().string().isEmpty())
-				return strip(getLocation(filePath, ctx), ctx.strings().string(0).getText());
-			throw new UnsupportedStatementException("formatted strings are not supported");
+			if (!ctx.strings().fstring().isEmpty() || !ctx.strings().tstring().isEmpty()
+					|| ctx.strings().string().isEmpty())
+				throw new UnsupportedStatementException("formatted strings are not supported");
+			// adjacent literals are concatenated ("ab" "cd" == "abcd")
+			StringBuilder value = new StringBuilder();
+			int bytes = 0;
+			for (StringContext literal : ctx.strings().string()) {
+				value.append(PyStringLiterals.decode(literal.getText()));
+				if (PyStringLiterals.isBytes(literal.getText()))
+					bytes++;
+			}
+			if (bytes == 0)
+				return new PyStringLiteral(currentCFG, getLocation(filePath, ctx), value.toString(),
+						PyStringLiterals.quotes(ctx.strings().string(0).getText()));
+			if (bytes != ctx.strings().string().size())
+				throw new UnsupportedStatementException(
+						"cannot mix bytes and nonbytes literals (at " + getLocation(filePath, ctx) + ")");
+			if (value.chars().anyMatch(c -> c > 0xff))
+				throw new UnsupportedStatementException(
+						"bytes can only contain ASCII literal characters (at " + getLocation(filePath, ctx) + ")");
+			return new PyBytesLiteral(currentCFG, getLocation(filePath, ctx), PyBytes.fromLatin1(value.toString()));
 		} else if (ctx.tuple() != null) {
 			TupleContext tuple = ctx.tuple();
 			List<Expression> elements = new ArrayList<>();
@@ -1731,21 +1851,6 @@ public class PyStatementParser
 		else if (ctx.ELLIPSIS() != null)
 			throw new UnsupportedStatementException();
 		throw new UnsupportedStatementException();
-	}
-
-	private StringLiteral strip(
-			CodeLocation location,
-			String string) {
-		// ', ''', ", """
-		if (string.startsWith("'''") && string.endsWith("'''"))
-			return new PyStringLiteral(currentCFG, location, string.substring(3, string.length() - 3), "'''");
-		if (string.startsWith("\"\"\"") && string.endsWith("\"\"\""))
-			return new PyStringLiteral(currentCFG, location, string.substring(3, string.length() - 3), "\"\"\"");
-		if (string.startsWith("'") && string.endsWith("'"))
-			return new PyStringLiteral(currentCFG, location, string.substring(1, string.length() - 1), "'");
-		if (string.startsWith("\"") && string.endsWith("\""))
-			return new PyStringLiteral(currentCFG, location, string.substring(1, string.length() - 1), "\"");
-		return new PyStringLiteral(currentCFG, location, string, "\"");
 	}
 
 	private List<Expression> extractYieldArguments(
