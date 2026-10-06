@@ -219,6 +219,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import org.antlr.v4.runtime.CharStreams;
@@ -241,6 +242,15 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 	private static final Logger log = LogManager.getLogger(PyFrontend.class);
 
 	private Map<String, String> imports = new HashMap<>();
+
+	/**
+	 * The names bound to modules or other namespaces by import statements (e.g.
+	 * {@code np} for {@code import numpy as np}, {@code os} for
+	 * {@code import os.path}, {@code y} for {@code from x import y}): calls on
+	 * their attributes ({@code np.array(...)}) are function calls, not method
+	 * calls on a receiver.
+	 */
+	private final Set<String> namespaces = new HashSet<>();
 	/**
 	 * Python program file path.
 	 */
@@ -1122,6 +1132,7 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 			String as = single.name().size() == 2 ? single.name(1).getText() : null;
 			components.put(importedComponent, as);
 			imports.put(importedComponent, name + "." + importedComponent);
+			namespaces.add(as != null ? as : importedComponent);
 		}
 		return new FromImport(program, name, components, currentCFG, getLocation(ctx));
 	}
@@ -1134,6 +1145,8 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 			String importedLibrary = dottedNameToString(single.dotted_name());
 			String as = single.name() != null ? single.name().getText() : null;
 			libs.put(importedLibrary, as);
+			// "import a.b.c" binds "a", "import a.b.c as d" binds "d"
+			namespaces.add(as != null ? as : importedLibrary.split("\\.")[0]);
 		}
 		return new Import(program, libs, currentCFG, getLocation(ctx));
 	}
@@ -1842,11 +1855,14 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		Expression access = visitAtom(base.atom());
 		String last_name = access instanceof VariableRef ? ((VariableRef) access).getName() : null;
 		Expression previous_access = null;
+		// whether the last frame was an attribute access (x.name)
+		boolean attribute = false;
 
 		for (PrimaryContext frame : chain) {
 			if (frame.DOT() != null) {
 				last_name = frame.name().getText();
 				previous_access = access;
+				attribute = true;
 				access = new UnresolvedCall(
 						currentCFG,
 						getLocation(frame),
@@ -1861,7 +1877,11 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 
 				List<Expression> pars = extractArguments(frame.arguments());
 				String method_name = last_name;
-				boolean instance = access instanceof PyAccessInstanceGlobal;
+				// x.name(...) is a method call on x, and x is passed as the
+				// receiver, unless x is a namespace (x.name is then just a
+				// function or a class)
+				boolean instance = access instanceof PyAccessInstanceGlobal
+						|| (attribute && isMethodReceiver(previous_access));
 				if (instance)
 					pars.add(0, previous_access);
 
@@ -1881,6 +1901,9 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 					}
 				}
 				if (cu != null && cu instanceof ClassUnit) {
+					if (instance)
+						// x.Cls(...) builds a Cls, with no receiver
+						pars.remove(0);
 					access = new PyNewObj(
 							currentCFG,
 							getLocation(frame),
@@ -1919,9 +1942,11 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 				}
 				last_name = null;
 				previous_access = null;
+				attribute = false;
 			} else if (frame.LSQB() != null) {
 				previous_access = access;
 				last_name = null;
+				attribute = false;
 				List<Expression> indexes = extractExpressionsFromSlices(frame.slices());
 				if (indexes.size() == 1)
 					access = new PySingleArrayAccess(
@@ -1946,6 +1971,39 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 				throw new UnsupportedStatementException();
 		}
 		return access;
+	}
+
+	/**
+	 * Whether {@code receiver.name(...)} is a method call on {@code receiver},
+	 * that has to be passed as first argument: this is the case unless
+	 * {@code receiver} is a namespace (see {@link #isNamespace(Expression)}) or
+	 * a call to {@code super()}, that is handled separately.
+	 */
+	private boolean isMethodReceiver(
+			Expression receiver) {
+		if (receiver instanceof SimpleSuperUnresolvedCall
+				|| (receiver instanceof UnresolvedCall && ((UnresolvedCall) receiver).getTargetName().equals("super")))
+			return false;
+		return !isNamespace(receiver);
+	}
+
+	/**
+	 * Whether {@code expr} denotes a namespace rather than a value: a name
+	 * bound by an import, the name of a class or of a library, or an attribute
+	 * of one of those (e.g. {@code os.path}).
+	 */
+	private boolean isNamespace(
+			Expression expr) {
+		if (expr instanceof VariableRef) {
+			String name = ((VariableRef) expr).getName();
+			return namespaces.contains(name) || program.getUnit(name) != null;
+		}
+		if (expr instanceof UnresolvedCall) {
+			UnresolvedCall call = (UnresolvedCall) expr;
+			if (call.getTargetName().equals("__getattribute__") && call.getParameters().length == 2)
+				return isNamespace(call.getParameters()[0]);
+		}
+		return false;
 	}
 
 	private List<Expression> convertAssignmentsToByNameParameters(

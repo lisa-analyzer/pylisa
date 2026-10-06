@@ -1,0 +1,42 @@
+{
+  "warnings" : [ ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_Calc.add(Calc__self,_untyped_a,_untyped_b)_1854751408.graph.json", "untyped_Calc.add(Calc__self,_untyped_a,_untyped_b)_1854756275.graph.json", "untyped_Calc.add(Calc__self,_untyped_a,_untyped_b)_1854756306.graph.json", "untyped_Calc.double(Calc__self,_untyped_k)_1854751377.graph.json", "untyped_Calc.double(Calc__self,_untyped_k)_1854756244.graph.json", "untyped_Calc.me(Calc__self)_1854746665.graph.json", "untyped_py-testcases_method-call_method-call.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "5",
+    "duration" : "124ms",
+    "end" : "2026-10-06T11:58:48.547+02:00",
+    "expressions" : "42",
+    "files" : "7",
+    "globals" : "0",
+    "members" : "81",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-06T11:58:48.423+02:00",
+    "statements" : "15",
+    "units" : "17",
+    "version" : "1.0",
+    "warnings" : "0"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/method-call"
+  }
+}

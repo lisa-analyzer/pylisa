@@ -143,7 +143,7 @@ public final class PyBinaryDispatch {
 					res = tryCall(interprocedural, state, expressions, operator, cr, rop,
 							operator.getRight(), operator.getLeft(), rightSet, leftSet, tr, tl);
 				if (res == null)
-					res = FULLY_MODELED.contains(cl) && FULLY_MODELED.contains(cr)
+					res = cl != null && cr != null && FULLY_MODELED.contains(cl) && FULLY_MODELED.contains(cr)
 							? fallback(analysis, state, operator, fallback)
 							: analysis.smallStepSemantics(state,
 									new PushAny(Untyped.INSTANCE, operator.getLocation()), operator);
