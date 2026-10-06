@@ -1,0 +1,42 @@
+{
+  "warnings" : [ ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_V.__add__(V__self,_untyped_o)_1934472894.graph.json", "untyped_py-testcases_object-ops_object-ops.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "5",
+    "duration" : "7ms",
+    "end" : "2026-10-06T15:11:25.640+02:00",
+    "expressions" : "71",
+    "files" : "2",
+    "globals" : "0",
+    "members" : "132",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-06T15:11:25.633+02:00",
+    "statements" : "35",
+    "units" : "24",
+    "version" : "1.0",
+    "warnings" : "0"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/object-ops"
+  }
+}

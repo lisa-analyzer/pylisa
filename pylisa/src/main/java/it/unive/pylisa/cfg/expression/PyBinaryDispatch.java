@@ -10,6 +10,7 @@ import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.Parameter;
@@ -57,9 +58,10 @@ import java.util.Set;
  * method of a proper subclass of {@code A} is not implemented, since no modeled
  * builtin class subclasses another one.
  * <p>
- * The fallback is applied only if both operands are instances of builtin
- * classes whose operators are fully modeled ({@code int}, {@code float},
- * {@code str}, {@code bytes}): for any other class, a missing method could just
+ * The fallback is applied only if all the methods of both operands' classes are
+ * known (see {@link #fullyKnown(Type)}): the builtin classes whose operators
+ * are fully modeled ({@code int}, {@code float}, {@code str}, {@code bytes}),
+ * and the program's classes. For any other class, a missing method could just
  * be missing from the library models, and the result is an unknown value.
  */
 public final class PyBinaryDispatch {
@@ -75,12 +77,14 @@ public final class PyBinaryDispatch {
 		TYPE_ERROR,
 
 		/**
-		 * The result is {@code False} ({@code ==}, falling back to identity).
+		 * The result is {@code False} ({@code ==}, falling back to identity:
+		 * unknown if both operands are objects).
 		 */
 		FALSE,
 
 		/**
-		 * The result is {@code True} ({@code !=}, falling back to identity).
+		 * The result is {@code True} ({@code !=}, falling back to identity:
+		 * unknown if both operands are objects).
 		 */
 		TRUE
 	}
@@ -195,14 +199,57 @@ public final class PyBinaryDispatch {
 					res = tryCall(interprocedural, state, expressions, operator, cr, rop,
 							operator.getRight(), operator.getLeft(), rightSet, leftSet, tr, tl);
 				if (res == null)
-					res = cl != null && cr != null && FULLY_MODELED.contains(cl) && FULLY_MODELED.contains(cr)
-							? fallback(analysis, state, operator, fallback)
+					res = fullyKnown(tl) && fullyKnown(tr)
+							? fallback(analysis, state, operator, fallback, tl, tr)
 							: analysis.smallStepSemantics(state,
 									new PushAny(Untyped.INSTANCE, operator.getLocation()), operator);
 				result = result.lub(res);
 			}
 
 		return result;
+	}
+
+	/**
+	 * The annotation of the program's classes whose bases are all known (see
+	 * {@link #fullyKnown(Type)}).
+	 */
+	public static final String FULLY_DEFINED = "pylisa.fully_defined_class";
+
+	/**
+	 * Whether all the methods of the class of the given runtime type are known,
+	 * so that a missing operator method means that python raises
+	 * {@code TypeError}: this holds for the fully modeled builtin classes, and
+	 * for the program's classes whose bases (except {@code object}, that
+	 * defines no operators) are all program's classes with the same property.
+	 * Operator methods are looked up on the class, so {@code __getattr__}
+	 * cannot provide them.
+	 *
+	 * @param type the runtime type
+	 *
+	 * @return whether all the methods of its class are known
+	 */
+	public static boolean fullyKnown(
+			Type type) {
+		if (type.isPointerType() && type.asPointerType().getInnerType().isUnitType())
+			return fullyDefined(type.asPointerType().getInnerType().asUnitType().getUnit());
+		if (type.isUnitType())
+			return fullyDefined(type.asUnitType().getUnit());
+		String cls = classOf(type);
+		return cls != null && FULLY_MODELED.contains(cls);
+	}
+
+	private static boolean isObject(
+			Type type) {
+		return type.isPointerType() || type.isUnitType();
+	}
+
+	private static boolean fullyDefined(
+			CompilationUnit unit) {
+		if (unit == LibrarySpecificationProvider.hierarchyRoot)
+			return true;
+		if (unit.getAnnotationList().stream().noneMatch(a -> a.getAnnotationName().equals(FULLY_DEFINED)))
+			return false;
+		return unit.getImmediateAncestors().stream().allMatch(PyBinaryDispatch::fullyDefined);
 	}
 
 	/**
@@ -369,9 +416,15 @@ public final class PyBinaryDispatch {
 			Analysis<A, D> analysis,
 			AnalysisState<A> state,
 			Expression operator,
-			Fallback fallback)
+			Fallback fallback,
+			Type left,
+			Type right)
 			throws SemanticException {
 		CodeLocation loc = operator.getLocation();
+		if (fallback != Fallback.TYPE_ERROR && isObject(left) && isObject(right))
+			// == and != compare by identity, and two objects might be the same
+			// one (allocation sites cannot tell)
+			return analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), operator);
 		switch (fallback) {
 		case FALSE:
 			return analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, false, loc), operator);
