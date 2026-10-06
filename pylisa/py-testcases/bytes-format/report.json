@@ -1,19 +1,19 @@
 {
   "warnings" : [ ],
   "notices" : [ ],
-  "files" : [ "report.json", "untyped_py-testcases_true-division_true-division.$main().graph.json" ],
+  "files" : [ "report.json", "untyped_py-testcases_bytes-format_bytes-format.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "2ms",
-    "end" : "2026-10-06T15:29:12.968+02:00",
-    "expressions" : "29",
+    "duration" : "12ms",
+    "end" : "2026-10-06T15:29:08.198+02:00",
+    "expressions" : "84",
     "files" : "1",
     "globals" : "0",
     "members" : "136",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-06T15:29:12.966+02:00",
-    "statements" : "9",
+    "start" : "2026-10-06T15:29:08.186+02:00",
+    "statements" : "30",
     "units" : "21",
     "version" : "1.0",
     "warnings" : "0"
@@ -37,6 +37,6 @@
     "syntacticChecks" : "",
     "useWideningPoints" : "true",
     "wideningThreshold" : "5",
-    "workdir" : "py-outputs/true-division"
+    "workdir" : "py-outputs/bytes-format"
   }
 }

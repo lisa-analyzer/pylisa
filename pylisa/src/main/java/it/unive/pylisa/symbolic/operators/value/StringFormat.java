@@ -4,11 +4,13 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
+import it.unive.pylisa.cfg.type.PyBytesType;
 import java.util.Collections;
 import java.util.Set;
 
 /**
- * Python's printf-style string formatting ({@code format % args}).
+ * Python's printf-style formatting ({@code format % args}), of a {@code str} or
+ * of {@code bytes} (PEP 461).
  */
 public class StringFormat implements BinaryOperator {
 
@@ -35,6 +37,9 @@ public class StringFormat implements BinaryOperator {
 			TypeSystem types,
 			Set<Type> left,
 			Set<Type> right) {
+		// bytes formats produce bytes
+		if (left.stream().anyMatch(t -> t instanceof PyBytesType))
+			return Collections.singleton(PyBytesType.INSTANCE);
 		if (left.stream().noneMatch(Type::isStringType) && right.stream().noneMatch(Type::isStringType))
 			return Collections.emptySet();
 		return Collections.singleton(StringType.INSTANCE);

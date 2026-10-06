@@ -80,6 +80,31 @@ public final class PyPercentFormat {
 	public static Result format(
 			String format,
 			Object arg) {
+		return format(format, arg, false);
+	}
+
+	/**
+	 * Computes {@code format % arg} for a {@code bytes} format (PEP 461):
+	 * {@code %s} and {@code %b} require {@code bytes}, {@code %r} and
+	 * {@code %a} are {@code ascii(arg)}, and {@code %c} requires an integer
+	 * between 0 and 255 or a single byte. The value of the result, if any, is
+	 * the Latin-1 view of the resulting bytes.
+	 *
+	 * @param format the format
+	 * @param arg    the argument
+	 *
+	 * @return the outcome of the formatting
+	 */
+	public static Result formatBytes(
+			PyBytes format,
+			Object arg) {
+		return format(format.toLatin1(), arg, true);
+	}
+
+	private static Result format(
+			String format,
+			Object arg,
+			boolean bytes) {
 		if (!(arg instanceof Integer || arg instanceof Long || arg instanceof Float || arg instanceof Double
 				|| arg instanceof String || arg instanceof Boolean || arg instanceof PyBytes))
 			return Result.UNDECIDED;
@@ -168,9 +193,20 @@ public final class PyPercentFormat {
 			String text;
 			switch (conv) {
 			case 's':
+			case 'b':
 			case 'r':
 			case 'a':
-				text = conv == 's' ? str(a) : repr(a, conv == 'a');
+				if (conv == 'b' && !bytes)
+					// %b is only for bytes
+					return Result.raise(LibrarySpecificationProvider.VALUE_ERROR);
+				if (bytes && (conv == 's' || conv == 'b')) {
+					// the argument must be bytes-like
+					if (!(a instanceof PyBytes))
+						return Result.raise(LibrarySpecificationProvider.TYPE_ERROR);
+					text = ((PyBytes) a).toLatin1();
+				} else
+					// for bytes, %r is the same as %a
+					text = conv == 's' ? str(a) : repr(a, conv == 'a' || bytes);
 				if (text != null && spec.precision >= 0 && spec.precision < text.length())
 					text = text.substring(0, spec.precision);
 				text = text == null ? null : pad(spec, "", text, false);
@@ -215,20 +251,33 @@ public final class PyPercentFormat {
 				text = formatFloat(spec, asDouble(a), conv);
 				break;
 			case 'c':
+				if (bytes) {
+					// an integer between 0 and 255, or a single byte
+					if (a instanceof PyBytes) {
+						if (((PyBytes) a).length() != 1)
+							return Result.raise(LibrarySpecificationProvider.TYPE_ERROR);
+						text = pad(spec, "", ((PyBytes) a).toLatin1(), false);
+						break;
+					}
+					BigInteger bv = asInt(a);
+					if (bv == null)
+						return Result.raise(LibrarySpecificationProvider.TYPE_ERROR);
+					if (bv.signum() < 0 || bv.compareTo(BigInteger.valueOf(256)) >= 0)
+						// OverflowError, which is not modeled
+						return Result.UNDECIDED;
+					text = pad(spec, "", String.valueOf((char) bv.intValue()), false);
+					break;
+				}
 				if (a instanceof String) {
+					// a single character
 					if (((String) a).codePointCount(0, ((String) a).length()) != 1)
-						return Result.raise(LibrarySpecificationProvider.TYPE_ERROR); // requires
-																						// int
-																						// or
-																						// char
+						return Result.raise(LibrarySpecificationProvider.TYPE_ERROR);
 					text = pad(spec, "", (String) a, false);
 				} else {
+					// an integer that is a valid code point
 					BigInteger cv = asInt(a);
 					if (cv == null)
-						return Result.raise(LibrarySpecificationProvider.TYPE_ERROR); // requires
-																						// int
-																						// or
-																						// char
+						return Result.raise(LibrarySpecificationProvider.TYPE_ERROR);
 					if (cv.signum() < 0 || cv.compareTo(BigInteger.valueOf(0x110000)) >= 0)
 						// OverflowError, which is not modeled
 						return Result.UNDECIDED;
@@ -247,7 +296,10 @@ public final class PyPercentFormat {
 				out.append(text);
 		}
 
-		if (next < args.length)
+		// with a str format, bytes are mapping-like, so unused arguments are
+		// not an error
+		boolean mapping = !bytes && arg instanceof PyBytes;
+		if (next < args.length && !mapping)
 			return Result.raise(LibrarySpecificationProvider.TYPE_ERROR); // not
 																			// all
 																			// arguments
@@ -515,15 +567,15 @@ public final class PyPercentFormat {
 			Object a,
 			boolean ascii) {
 		if (!(a instanceof String))
-			// for numbers and bytes, repr is the same as str
+			// for numbers and bytes, repr (and ascii) is the same as str
 			return str(a);
 		String s = (String) a;
 		char quote = s.indexOf('\'') >= 0 && s.indexOf('"') < 0 ? '"' : '\'';
 		StringBuilder sb = new StringBuilder().append(quote);
-		for (int k = 0; k < s.length(); k++) {
-			char c = s.charAt(k);
+		int[] cps = s.codePoints().toArray();
+		for (int c : cps) {
 			if (c == quote || c == '\\')
-				sb.append('\\').append(c);
+				sb.append('\\').append((char) c);
 			else if (c == '\n')
 				sb.append("\\n");
 			else if (c == '\r')
@@ -531,11 +583,13 @@ public final class PyPercentFormat {
 			else if (c == '\t')
 				sb.append("\\t");
 			else if (c < 0x20 || c == 0x7f)
-				sb.append(String.format("\\x%02x", (int) c));
+				sb.append(String.format("\\x%02x", c));
 			else if (c < 0x7f)
-				sb.append(c);
-			else if (ascii && c < 0x100)
-				sb.append(String.format("\\x%02x", (int) c));
+				sb.appendCodePoint(c);
+			else if (ascii)
+				// ascii() escapes all the non-ascii characters
+				sb.append(c < 0x100 ? String.format("\\x%02x", c)
+						: c < 0x10000 ? String.format("\\u%04x", c) : String.format("\\U%08x", c));
 			else
 				// printability of non-ascii characters is not modeled
 				return null;

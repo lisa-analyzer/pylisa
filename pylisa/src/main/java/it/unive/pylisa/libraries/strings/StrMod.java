@@ -17,19 +17,21 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.symbolic.operators.value.StringFormat;
 import it.unive.pylisa.symbolic.operators.value.StringFormatRaises;
 
 /**
- * Native implementation of {@code str.__mod__(self, other)}, i.e.
- * {@code self}-string percent-formatting with {@code other} ({@code "%s" %
- * x}). There is no {@code __rmod__} for strings: percent-formatting is always
- * driven by the left-hand format string. It raises {@code TypeError} or
- * {@code ValueError} when Python does (e.g. {@code "ab" % 7}, or
- * {@code "%q" % 7}), as decided by the domains through
- * {@link StringFormatRaises}.
+ * Native implementation of {@code str.__mod__(self, other)} and
+ * {@code bytes.__mod__(self, other)}: printf-style formatting of {@code self}
+ * with {@code other} ({@code "%s" % x}, {@code b"%d" % 5}). It raises
+ * {@code TypeError} or {@code ValueError} when Python does (e.g.
+ * {@code "ab" % 7}, {@code "%q" % 7}, or {@code b"%s" % "x"}), as decided by
+ * the domains through {@link StringFormatRaises}. There is no {@code __rmod__}:
+ * formatting is always driven by the left-hand format.
  */
 public class StrMod extends BinaryExpression implements PluggableStatement {
 
@@ -83,11 +85,13 @@ public class StrMod extends BinaryExpression implements PluggableStatement {
 		Satisfiability raisesTypeError = analysis.satisfies(state, typeError, this);
 		Satisfiability raisesValueError = analysis.satisfies(state, valueError, this);
 
+		// bytes formats produce bytes
+		Type type = analysis.getRuntimeTypesOf(state, left, this).stream()
+				.anyMatch(t -> t instanceof PyBytesType) ? PyBytesType.INSTANCE : StringType.INSTANCE;
 		AnalysisState<A> result = state.bottom();
 		if (raisesTypeError != Satisfiability.SATISFIED && raisesValueError != Satisfiability.SATISFIED)
 			result = result.lub(analysis.smallStepSemantics(state,
-					new it.unive.lisa.symbolic.value.BinaryExpression(
-							StringType.INSTANCE, left, right, StringFormat.INSTANCE, loc),
+					new it.unive.lisa.symbolic.value.BinaryExpression(type, left, right, StringFormat.INSTANCE, loc),
 					st));
 		if (raisesTypeError != Satisfiability.NOT_SATISFIED)
 			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,

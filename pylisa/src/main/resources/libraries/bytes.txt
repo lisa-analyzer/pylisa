@@ -151,3 +151,8 @@ class Bytes:
 	method fromhex: it.unive.pylisa.libraries.bytes.BytesFromHex
 		type it.unive.pylisa.cfg.type.PyBytesType::INSTANCE
 		param string type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __mod__: it.unive.pylisa.libraries.strings.StrMod
+		type it.unive.pylisa.cfg.type.PyBytesType::INSTANCE
+		param self type it.unive.pylisa.cfg.type.PyBytesType::INSTANCE
+		param other type it.unive.lisa.type.Untyped::INSTANCE

@@ -727,10 +727,8 @@ public class ConstantPropagationDomain
 					: it.unive.lisa.lattices.Satisfiability.fromBoolean(raises);
 		}
 		if (operator instanceof StringFormatRaises) {
-			if (left.isTop() || right.isTop() || left.isBottom() || right.isBottom() || !left.is(String.class))
-				return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
-			PyPercentFormat.Result res = PyPercentFormat.format(left.as(String.class), right.getConstant());
-			if (!res.decided)
+			PyPercentFormat.Result res = percentFormat(left, right);
+			if (res == null || !res.decided)
 				return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
 			return it.unive.lisa.lattices.Satisfiability
 					.fromBoolean(((StringFormatRaises) operator).getException().equals(res.exception));
@@ -809,15 +807,28 @@ public class ConstantPropagationDomain
 			ConstantPropagation left,
 			ConstantPropagation right,
 			ProgramPoint pp) {
-		if (left.isTop() || right.isTop() || !left.is(String.class))
+		PyPercentFormat.Result res = percentFormat(left, right);
+		if (res == null)
 			return ConstantPropagation.TOP;
-		PyPercentFormat.Result res = PyPercentFormat.format(left.as(String.class), right.getConstant());
 		if (res.decided && res.exception != null)
 			// the exception is raised by the caller
 			return ConstantPropagation.BOTTOM;
 		if (res.value == null)
 			return ConstantPropagation.TOP;
-		return new ConstantPropagation(new Constant(StringType.INSTANCE, res.value, pp.getLocation()));
+		return text(res.value, left.is(PyBytes.class), pp);
+	}
+
+	// format % arg, for str and bytes formats, or null if they are not known
+	private static PyPercentFormat.Result percentFormat(
+			ConstantPropagation format,
+			ConstantPropagation arg) {
+		if (format.isTop() || arg.isTop() || format.isBottom() || arg.isBottom())
+			return null;
+		if (format.is(String.class))
+			return PyPercentFormat.format(format.as(String.class), arg.getConstant());
+		if (format.is(PyBytes.class))
+			return PyPercentFormat.formatBytes(format.as(PyBytes.class), arg.getConstant());
+		return null;
 	}
 
 	private Constant div(
