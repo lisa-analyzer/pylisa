@@ -4,6 +4,7 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
+import it.unive.pylisa.cfg.type.PyBytesType;
 import java.util.Collections;
 import java.util.Set;
 
@@ -29,7 +30,9 @@ public class StrReplaceCount implements TernaryOperator {
 			Set<Type> left,
 			Set<Type> middle,
 			Set<Type> right) {
-		return Collections.singleton(StringType.INSTANCE);
+		// bytes in, bytes out
+		return left.stream().anyMatch(t -> t instanceof PyBytesType) ? Collections.singleton(PyBytesType.INSTANCE)
+				: Collections.singleton(StringType.INSTANCE);
 	}
 
 	@Override

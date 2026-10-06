@@ -1,6 +1,7 @@
 package it.unive.pylisa.analysis.constants;
 
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.symbolic.PyBytes;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -80,7 +81,7 @@ public final class PyPercentFormat {
 			String format,
 			Object arg) {
 		if (!(arg instanceof Integer || arg instanceof Long || arg instanceof Float || arg instanceof Double
-				|| arg instanceof String || arg instanceof Boolean))
+				|| arg instanceof String || arg instanceof Boolean || arg instanceof PyBytes))
 			return Result.UNDECIDED;
 
 		Object[] args = { arg };
@@ -473,6 +474,9 @@ public final class PyPercentFormat {
 			Object a) {
 		if (a instanceof String)
 			return (String) a;
+		if (a instanceof PyBytes)
+			// the str of bytes is their repr
+			return a.toString();
 		if (a instanceof Boolean)
 			return ((Boolean) a) ? "True" : "False";
 		if (a instanceof Integer || a instanceof Long)
@@ -511,6 +515,7 @@ public final class PyPercentFormat {
 			Object a,
 			boolean ascii) {
 		if (!(a instanceof String))
+			// for numbers and bytes, repr is the same as str
 			return str(a);
 		String s = (String) a;
 		char quote = s.indexOf('\'') >= 0 && s.indexOf('"') < 0 ? '"' : '\'';

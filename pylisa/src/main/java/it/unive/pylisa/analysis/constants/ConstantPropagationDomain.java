@@ -41,10 +41,12 @@ import it.unive.lisa.symbolic.value.operator.unary.StringToUpperCase;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.DictConstant;
 import it.unive.pylisa.symbolic.ListConstant;
+import it.unive.pylisa.symbolic.PyBytes;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
 import it.unive.pylisa.symbolic.operators.DictPut;
@@ -57,6 +59,12 @@ import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
+import it.unive.pylisa.symbolic.operators.bytes.BytesLength;
+import it.unive.pylisa.symbolic.operators.bytes.BytesOperation;
+import it.unive.pylisa.symbolic.operators.bytes.BytesUnary;
+import it.unive.pylisa.symbolic.operators.bytes.Codec;
+import it.unive.pylisa.symbolic.operators.bytes.CodecRaises;
+import it.unive.pylisa.symbolic.operators.bytes.FromHexRaises;
 import it.unive.pylisa.symbolic.operators.conversions.ConversionRaises;
 import it.unive.pylisa.symbolic.operators.conversions.ToFloat;
 import it.unive.pylisa.symbolic.operators.conversions.ToInt;
@@ -97,6 +105,7 @@ public class ConstantPropagationDomain
 			Type t) {
 		return t.isNumericType()
 				|| t.isStringType()
+				|| t instanceof PyBytesType
 				|| t.isBooleanType()
 				|| t.isNullType();
 	}
@@ -169,6 +178,27 @@ public class ConstantPropagationDomain
 				// python counts code points, not UTF-16 units
 				return new ConstantPropagation(
 						new Constant(Int32Type.INSTANCE, PyStrings.length(arg.as(String.class)), pp.getLocation()));
+
+		if (operator == BytesUnary.HEX && arg.is(PyBytes.class))
+			return string(PyCodecs.hex(arg.as(PyBytes.class)), pp);
+		if ((operator == BytesUnary.UPPER || operator == BytesUnary.LOWER) && arg.is(PyBytes.class))
+			return bytes(PyCodecs.asciiCase(arg.as(PyBytes.class), operator == BytesUnary.UPPER), pp);
+		if (operator == BytesUnary.FROMHEX && arg.is(String.class)) {
+			PyBytes res = PyCodecs.fromHex(arg.as(String.class));
+			// ValueError, raised by the caller
+			return res == null ? ConstantPropagation.BOTTOM : bytes(res, pp);
+		}
+		if (operator == BytesUnary.ZEROS) {
+			Long n = index(arg);
+			if (n == null || n > 1_000_000)
+				return ConstantPropagation.TOP;
+			// ValueError for negative sizes, raised by the caller
+			return n < 0 ? ConstantPropagation.BOTTOM : bytes(new PyBytes(new byte[n.intValue()]), pp);
+		}
+
+		if (operator == BytesLength.INSTANCE && arg.is(PyBytes.class))
+			return new ConstantPropagation(
+					new Constant(Int32Type.INSTANCE, arg.as(PyBytes.class).length(), pp.getLocation()));
 
 		if (operator instanceof StringToUpperCase && arg.is(String.class))
 			return string(PyStrings.upper(arg.as(String.class)), pp);
@@ -268,6 +298,8 @@ public class ConstantPropagationDomain
 			return bitwiseLeftShift(left, right, pp);
 		else if (operator instanceof BitwiseShiftRight)
 			return bitwiseRightShift(left, right, pp);
+		if (operator instanceof BytesOperation)
+			return bytesBinary((BytesOperation) operator, left, right, pp);
 		if (operator == ToInt.INSTANCE)
 			return toInt(left, right, pp);
 		if (operator == ArgPair.INSTANCE) {
@@ -323,10 +355,12 @@ public class ConstantPropagationDomain
 		}
 
 		if (operator instanceof StrSearch) {
-			if (!left.is(String.class) || !middle.is(String.class) || !right.is(PyStrings.Slice.class))
+			boolean isBytes = left.is(PyBytes.class);
+			String haystack = text(left), needle = needle(middle, isBytes);
+			if (haystack == null || needle == null || !right.is(PyStrings.Slice.class))
 				return ConstantPropagation.TOP;
 			Object res = PyStrings.search(((StrSearch) operator).getKind().name().toLowerCase(),
-					left.as(String.class), middle.as(String.class), right.as(PyStrings.Slice.class));
+					haystack, needle, right.as(PyStrings.Slice.class));
 			return new ConstantPropagation(new Constant(
 					res instanceof Boolean ? BoolType.INSTANCE : Int32Type.INSTANCE, res, pp.getLocation()));
 		}
@@ -340,16 +374,146 @@ public class ConstantPropagationDomain
 		}
 
 		if (operator == StrReplaceCount.INSTANCE) {
-			if (!left.is(String.class) || !middle.is(PyStrings.Pair.class) || !(right.getConstant() instanceof Integer))
+			boolean isBytes = left.is(PyBytes.class);
+			String t = text(left);
+			if (t == null || !middle.is(PyStrings.Pair.class) || !(right.getConstant() instanceof Integer))
 				return ConstantPropagation.TOP;
 			PyStrings.Pair p = middle.as(PyStrings.Pair.class);
-			if (!(p.first instanceof String) || !(p.second instanceof String))
+			Class<?> expected = isBytes ? PyBytes.class : String.class;
+			if (!expected.isInstance(p.first) || !expected.isInstance(p.second))
 				return ConstantPropagation.TOP;
-			return string(PyStrings.replace(left.as(String.class), (String) p.first, (String) p.second,
-					(Integer) right.getConstant()), pp);
+			String old = isBytes ? ((PyBytes) p.first).toLatin1() : (String) p.first;
+			String repl = isBytes ? ((PyBytes) p.second).toLatin1() : (String) p.second;
+			return text(PyStrings.replace(t, old, repl, (Integer) right.getConstant()), isBytes, pp);
+		}
+
+		if (operator instanceof Codec) {
+			PyCodecs.Result res = codec((Codec) operator, left, middle, right);
+			if (res == null || !res.decided)
+				return ConstantPropagation.TOP;
+			if (res.exception != null)
+				// raised by the caller
+				return ConstantPropagation.BOTTOM;
+			return res.value instanceof PyBytes ? bytes((PyBytes) res.value, pp) : string((String) res.value, pp);
 		}
 
 		return ConstantPropagation.TOP;
+	}
+
+	private static ConstantPropagation bytes(
+			PyBytes value,
+			ProgramPoint pp) {
+		return new ConstantPropagation(new Constant(PyBytesType.INSTANCE, value, pp.getLocation()));
+	}
+
+	private ConstantPropagation bytesBinary(
+			BytesOperation operator,
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+		if (left.isTop() || right.isTop())
+			return ConstantPropagation.TOP;
+		if (!left.is(PyBytes.class))
+			return ConstantPropagation.TOP;
+		PyBytes b = left.as(PyBytes.class);
+
+		if (operator == BytesOperation.CONCAT) {
+			if (!right.is(PyBytes.class))
+				return ConstantPropagation.TOP;
+			return bytes(PyBytes.fromLatin1(b.toLatin1() + right.as(PyBytes.class).toLatin1()), pp);
+		}
+
+		if (operator == BytesOperation.REPEAT) {
+			Long n = index(right);
+			if (n == null || n * b.length() > 1_000_000)
+				return ConstantPropagation.TOP;
+			return bytes(PyBytes.fromLatin1(n <= 0 ? "" : b.toLatin1().repeat(n.intValue())), pp);
+		}
+
+		if (operator == BytesOperation.GETITEM) {
+			Long i = index(right);
+			if (i == null)
+				return ConstantPropagation.TOP;
+			if (i < 0)
+				i += b.length();
+			if (i < 0 || i >= b.length())
+				// IndexError, raised by the caller
+				return ConstantPropagation.BOTTOM;
+			return new ConstantPropagation(new Constant(Int32Type.INSTANCE, b.get(i.intValue()), pp.getLocation()));
+		}
+
+		if (operator == BytesOperation.GETSLICE) {
+			if (!right.is(PyStrings.Slice.class))
+				return ConstantPropagation.TOP;
+			String res = PyStrings.getSlice(b.toLatin1(), right.as(PyStrings.Slice.class));
+			// ValueError, raised by the caller
+			return res == null ? ConstantPropagation.BOTTOM : bytes(PyBytes.fromLatin1(res), pp);
+		}
+
+		// contains
+		boolean res;
+		if (right.is(PyBytes.class))
+			res = b.toLatin1().contains(right.as(PyBytes.class).toLatin1());
+		else {
+			Long n = index(right);
+			if (n == null)
+				return ConstantPropagation.TOP;
+			if (n < 0 || n > 255)
+				// ValueError, raised by the caller
+				return ConstantPropagation.BOTTOM;
+			res = b.toLatin1().indexOf((char) n.intValue()) >= 0;
+		}
+		return new ConstantPropagation(new Constant(BoolType.INSTANCE, res, pp.getLocation()));
+	}
+
+	// the outcome of a codec, or null if the operands are not known
+	private static PyCodecs.Result codec(
+			Codec codec,
+			ConstantPropagation value,
+			ConstantPropagation encoding,
+			ConstantPropagation errors) {
+		if (value.isTop() || encoding.isTop() || errors.isTop())
+			return null;
+		String enc = encoding.constant.getStaticType().isNullType() ? "utf-8"
+				: encoding.is(String.class) ? encoding.as(String.class) : null;
+		String err = errors.constant.getStaticType().isNullType() ? "strict"
+				: errors.is(String.class) ? errors.as(String.class) : null;
+		if (enc == null || err == null)
+			return null;
+		if (codec.isEncode())
+			return value.is(String.class) ? PyCodecs.encode(value.as(String.class), enc, err) : null;
+		return value.is(PyBytes.class) ? PyCodecs.decode(value.as(PyBytes.class), enc, err) : null;
+	}
+
+	@Override
+	public it.unive.lisa.lattices.Satisfiability satisfiesTernaryExpression(
+			TernaryExpression expression,
+			ConstantPropagation left,
+			ConstantPropagation middle,
+			ConstantPropagation right,
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
+		if (expression.getOperator() instanceof CodecRaises) {
+			CodecRaises raises = (CodecRaises) expression.getOperator();
+			PyCodecs.Result res = codec(raises.getCodec(), left, middle, right);
+			if (res == null || !res.decided)
+				return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
+			return it.unive.lisa.lattices.Satisfiability.fromBoolean(raises.getException().equals(res.exception));
+		}
+		return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
+	}
+
+	@Override
+	public it.unive.lisa.lattices.Satisfiability satisfiesUnaryExpression(
+			UnaryExpression expression,
+			ConstantPropagation arg,
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
+		if (expression.getOperator() == FromHexRaises.INSTANCE && !arg.isTop() && arg.is(String.class))
+			return it.unive.lisa.lattices.Satisfiability.fromBoolean(PyCodecs.fromHex(arg.as(String.class)) == null);
+		return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
 	}
 
 	// the base of int(x, base), or null if it is not a valid one
@@ -416,6 +580,39 @@ public class ConstantPropagationDomain
 		return null;
 	}
 
+	// the text of a str or bytes constant (bytes as their latin-1 view), or
+	// null
+	private static String text(
+			ConstantPropagation c) {
+		if (c.is(String.class))
+			return c.as(String.class);
+		if (c.is(PyBytes.class))
+			return c.as(PyBytes.class).toLatin1();
+		return null;
+	}
+
+	// a str, or bytes if the receiver is bytes
+	private static ConstantPropagation text(
+			String value,
+			boolean bytes,
+			ProgramPoint pp) {
+		return bytes ? bytes(PyBytes.fromLatin1(value), pp) : string(value, pp);
+	}
+
+	// the substring searched in a str or bytes: bytes also accept a single
+	// byte (an int between 0 and 255)
+	private static String needle(
+			ConstantPropagation c,
+			boolean bytes) {
+		if (bytes && !c.is(String.class)) {
+			Long n = c.is(PyBytes.class) ? null : index(c);
+			if (n != null)
+				return n >= 0 && n <= 255 ? String.valueOf((char) n.intValue()) : null;
+			return c.is(PyBytes.class) ? c.as(PyBytes.class).toLatin1() : null;
+		}
+		return !bytes && c.is(String.class) ? c.as(String.class) : null;
+	}
+
 	private static ConstantPropagation string(
 			String value,
 			ProgramPoint pp) {
@@ -437,7 +634,22 @@ public class ConstantPropagationDomain
 			ConstantPropagation left,
 			ConstantPropagation right,
 			ProgramPoint pp) {
-		if (left.isTop() || right.isTop() || !left.is(String.class))
+		if (left.isTop() || right.isTop())
+			return ConstantPropagation.TOP;
+		if (operator instanceof StrStrip && left.is(PyBytes.class)) {
+			// bytes strip ascii whitespace, or the given bytes
+			StrStrip strip = (StrStrip) operator;
+			String chars;
+			if (right.constant.getStaticType().isNullType())
+				chars = PyCodecs.ASCII_WHITESPACE;
+			else if (right.is(PyBytes.class))
+				chars = right.as(PyBytes.class).toLatin1();
+			else
+				return ConstantPropagation.TOP;
+			return bytes(PyBytes.fromLatin1(PyStrings.strip(left.as(PyBytes.class).toLatin1(), chars,
+					strip.stripsLeft(), strip.stripsRight())), pp);
+		}
+		if (!left.is(String.class))
 			return ConstantPropagation.TOP;
 		String s = left.as(String.class);
 

@@ -4,8 +4,8 @@ package it.unive.pylisa.cfg.expression.literal;
  * Decoding of Python string literals, as they appear in the source code, into
  * their values: the prefix ({@code r}, {@code u}, {@code b} and their
  * combinations, in any case) and the quotes are removed, and the escape
- * sequences are decoded unless the literal is raw. Bytes literals are decoded
- * as strings, since {@code bytes} is not modeled.
+ * sequences are decoded unless the literal is raw. The value of a bytes literal
+ * is the Latin-1 string with one character per byte.
  */
 public final class PyStringLiterals {
 
@@ -25,6 +25,18 @@ public final class PyStringLiterals {
 		if (body.startsWith("'''") || body.startsWith("\"\"\""))
 			return body.substring(0, 3);
 		return body.substring(0, 1);
+	}
+
+	/**
+	 * Whether a literal is a bytes literal ({@code b"..."}).
+	 *
+	 * @param literal the literal, as it appears in the source code
+	 *
+	 * @return whether it is a bytes literal
+	 */
+	public static boolean isBytes(
+			String literal) {
+		return literal.substring(0, prefixLength(literal)).toLowerCase().contains("b");
 	}
 
 	/**

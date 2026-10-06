@@ -4,6 +4,7 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
+import it.unive.pylisa.cfg.type.PyBytesType;
 import java.util.Collections;
 import java.util.Set;
 
@@ -53,7 +54,9 @@ public class StrStrip implements BinaryOperator {
 			TypeSystem types,
 			Set<Type> left,
 			Set<Type> right) {
-		return Collections.singleton(StringType.INSTANCE);
+		// bytes in, bytes out
+		return left.stream().anyMatch(t -> t instanceof PyBytesType) ? Collections.singleton(PyBytesType.INSTANCE)
+				: Collections.singleton(StringType.INSTANCE);
 	}
 
 	@Override

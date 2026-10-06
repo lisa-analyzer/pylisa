@@ -17,11 +17,13 @@ import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonGe;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.symbolic.value.operator.binary.LogicalOr;
 import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingSub;
+import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.ExceptionGuard;
@@ -37,15 +39,57 @@ import java.util.function.Predicate;
  * Native implementation of {@code str.__getitem__(self, index)}: {@code s[i]}
  * (raising {@code IndexError} if {@code i} is out of range) and
  * {@code s[start:stop:step]} (raising {@code ValueError} if {@code step} is
- * zero). Any other index raises {@code TypeError}.
+ * zero). Any other index raises {@code TypeError}. Subclasses provide the same
+ * semantics for other sequences modeled as values (e.g. {@code bytes}), with
+ * their own operators.
  */
 public class StrGetItemNative extends PyNative {
+
+	private final UnaryOperator lengthOp;
+
+	private final BinaryOperator itemOp;
+
+	private final BinaryOperator sliceOp;
+
+	private final Type itemType;
+
+	private final Type sliceResult;
 
 	protected StrGetItemNative(
 			CFG cfg,
 			CodeLocation location,
 			Expression[] params) {
+		this(cfg, location, params, StringLength.INSTANCE, StrGetItem.INSTANCE, StrGetSlice.INSTANCE,
+				StringType.INSTANCE, StringType.INSTANCE);
+	}
+
+	/**
+	 * Builds the native for a sequence with the given operators.
+	 *
+	 * @param cfg         the cfg
+	 * @param location    the location
+	 * @param params      the parameters
+	 * @param length      the operator computing the length of the sequence
+	 * @param item        the operator computing {@code seq[i]}
+	 * @param slice       the operator computing {@code seq[slice]}
+	 * @param itemType    the type of {@code seq[i]}
+	 * @param sliceResult the type of {@code seq[slice]}
+	 */
+	protected StrGetItemNative(
+			CFG cfg,
+			CodeLocation location,
+			Expression[] params,
+			UnaryOperator length,
+			BinaryOperator item,
+			BinaryOperator slice,
+			Type itemType,
+			Type sliceResult) {
 		super(cfg, location, "__getitem__", params);
+		this.lengthOp = length;
+		this.itemOp = item;
+		this.sliceOp = slice;
+		this.itemType = itemType;
+		this.sliceResult = sliceResult;
 	}
 
 	public static StrGetItemNative build(
@@ -75,7 +119,7 @@ public class StrGetItemNative extends PyNative {
 		AnalysisState<A> result = state.bottom();
 		if (integer != Satisfiability.NOT_SATISFIED) {
 			// IndexError if index >= len(s) or index < -len(s)
-			UnaryExpression len = new UnaryExpression(Int32Type.INSTANCE, s, StringLength.INSTANCE, loc);
+			UnaryExpression len = new UnaryExpression(Int32Type.INSTANCE, s, lengthOp, loc);
 			BinaryExpression minusLen = new BinaryExpression(Int32Type.INSTANCE,
 					new Constant(Int32Type.INSTANCE, 0, loc), len, NumericNonOverflowingSub.INSTANCE, loc);
 			BinaryExpression outOfRange = new BinaryExpression(BoolType.INSTANCE,
@@ -84,12 +128,12 @@ public class StrGetItemNative extends PyNative {
 					LogicalOr.INSTANCE, loc);
 			result = result.lub(ExceptionGuard.guardedCompute(analysis, state, outOfRange,
 					LibrarySpecificationProvider.INDEX_ERROR,
-					new BinaryExpression(StringType.INSTANCE, s, index, StrGetItem.INSTANCE, loc),
+					new BinaryExpression(itemType, s, index, itemOp, loc),
 					getCFG(), loc, st, this));
 		}
 
 		if (slice != Satisfiability.NOT_SATISFIED) {
-			BinaryExpression value = new BinaryExpression(StringType.INSTANCE, s, index, StrGetSlice.INSTANCE, loc);
+			BinaryExpression value = new BinaryExpression(sliceResult, s, index, sliceOp, loc);
 			if (literalSlice) {
 				// bounds and step must be integers or None
 				TernaryExpression sl = (TernaryExpression) index;

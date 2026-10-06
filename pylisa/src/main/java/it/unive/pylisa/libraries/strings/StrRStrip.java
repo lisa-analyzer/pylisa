@@ -12,12 +12,15 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.operators.strings.StrStrip;
 
 /**
- * Native implementation of {@code str.rstrip(self, chars=None)}: {@code chars}
- * must be a {@code str} or {@code None}, otherwise {@code TypeError} is raised.
+ * Native implementation of {@code str.rstrip(self, chars=None)} and
+ * {@code bytes.rstrip(self, chars=None)}: {@code chars} must have the type of
+ * the receiver or be {@code None} (for whitespace, ASCII only for
+ * {@code bytes}), otherwise {@code TypeError} is raised.
  */
 public class StrRStrip extends PyNative {
 
@@ -41,8 +44,14 @@ public class StrRStrip extends PyNative {
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		Satisfiability typed = hasType(analysis, state, args[1], STR.or(NONE));
-		return typeChecked(analysis, state, typed, compute(analysis, state,
-				new BinaryExpression(StringType.INSTANCE, args[0], args[1], StrStrip.RSTRIP, getLocation())));
+		AnalysisState<A> result = state.bottom();
+		for (boolean bytes : textModes(analysis, state, args[0])) {
+			// the characters to remove have the type of the receiver (or None)
+			Satisfiability typed = hasType(analysis, state, args[1], (bytes ? BYTES : STR).or(NONE));
+			result = result.lub(typeChecked(analysis, state, typed, compute(analysis, state,
+					new BinaryExpression(bytes ? PyBytesType.INSTANCE : StringType.INSTANCE, args[0], args[1],
+							StrStrip.RSTRIP, getLocation()))));
+		}
+		return result;
 	}
 }

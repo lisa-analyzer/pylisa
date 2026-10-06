@@ -9,15 +9,20 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Collections;
 import java.util.Set;
 
@@ -60,6 +65,24 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 
 		AnalysisState<A> result = state.bottom();
 		for (Type t : rts) {
+			if (PyBinaryDispatch.isBuiltinValueType(t)) {
+				// str, bytes, int, ...: __len__ is looked up in their class
+				@SuppressWarnings("unchecked")
+				Set<Type>[] types = new Set[] { Collections.singleton(t) };
+				Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, state, this,
+						PyBinaryDispatch.classOf(t), "__len__", new Expression[] { getSubExpression() }, types);
+				if (resolved == null)
+					// e.g. len(5)
+					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
+							LibrarySpecificationProvider.TYPE_ERROR));
+				else {
+					result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
+							new ExpressionSet[] { new ExpressionSet(expr) }, expressions));
+					getMetaVariables().addAll(resolved.getMetaVariables());
+				}
+				continue;
+			}
+
 			UnresolvedCall len = null;
 			for (CallType kind : new CallType[] { CallType.STATIC, CallType.INSTANCE }) {
 				UnresolvedCall candidate = new UnresolvedCall(

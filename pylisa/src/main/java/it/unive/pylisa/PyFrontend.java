@@ -192,6 +192,7 @@ import it.unive.pylisa.cfg.expression.comparison.PyLessOrEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
+import it.unive.pylisa.cfg.expression.literal.PyBytesLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiterals;
@@ -200,10 +201,12 @@ import it.unive.pylisa.cfg.expression.unary.PyLength;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
+import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.NoOpFunction;
+import it.unive.pylisa.symbolic.PyBytes;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -253,6 +256,18 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 	 * calls on a receiver.
 	 */
 	private final Set<String> namespaces = new HashSet<>();
+
+	/**
+	 * The builtin classes that are modeled as values, by their names in Python:
+	 * their methods can be called on the class itself (e.g.
+	 * {@code bytes.fromhex(s)} or {@code str.upper(s)}), and are looked up in
+	 * the library class modeling them.
+	 */
+	private static final Map<String, String> BUILTIN_CLASSES = Map.of(
+			"str", LibrarySpecificationProvider.STR,
+			"bytes", LibrarySpecificationProvider.BYTES,
+			"int", LibrarySpecificationProvider.INT,
+			"float", LibrarySpecificationProvider.FLOAT);
 	/**
 	 * Python program file path.
 	 */
@@ -381,6 +396,7 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		types.registerType(PyLambdaType.INSTANCE);
 		types.registerType(BoolType.INSTANCE);
 		types.registerType(StringType.INSTANCE);
+		types.registerType(PyBytesType.INSTANCE);
 		types.registerType(Int32Type.INSTANCE);
 		types.registerType(Float32Type.INSTANCE);
 		types.registerType(NullType.INSTANCE);
@@ -1926,7 +1942,11 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 									currentCFG,
 									getLocation(frame),
 									CallType.STATIC,
-									null,
+									// e.g. bytes.fromhex(s) is looked up in
+									// Bytes
+									attribute && previous_access instanceof VariableRef
+											? BUILTIN_CLASSES.get(((VariableRef) previous_access).getName())
+											: null,
 									method_name,
 									LeftToRightEvaluation.INSTANCE,
 									pars.toArray(Expression[]::new));
@@ -2005,7 +2025,7 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 			Expression expr) {
 		if (expr instanceof VariableRef) {
 			String name = ((VariableRef) expr).getName();
-			return namespaces.contains(name) || program.getUnit(name) != null;
+			return namespaces.contains(name) || program.getUnit(name) != null || BUILTIN_CLASSES.containsKey(name);
 		}
 		if (expr instanceof UnresolvedCall) {
 			UnresolvedCall call = (UnresolvedCall) expr;
@@ -2195,10 +2215,22 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 				throw new UnsupportedStatementException("formatted strings are not supported");
 			// adjacent literals are concatenated ("ab" "cd" == "abcd")
 			StringBuilder value = new StringBuilder();
-			for (StringContext literal : ctx.strings().string())
+			int bytes = 0;
+			for (StringContext literal : ctx.strings().string()) {
 				value.append(PyStringLiterals.decode(literal.getText()));
-			return new PyStringLiteral(currentCFG, getLocation(ctx), value.toString(),
-					PyStringLiterals.quotes(ctx.strings().string(0).getText()));
+				if (PyStringLiterals.isBytes(literal.getText()))
+					bytes++;
+			}
+			if (bytes == 0)
+				return new PyStringLiteral(currentCFG, getLocation(ctx), value.toString(),
+						PyStringLiterals.quotes(ctx.strings().string(0).getText()));
+			if (bytes != ctx.strings().string().size())
+				throw new UnsupportedStatementException(
+						"cannot mix bytes and nonbytes literals (at " + getLocation(ctx) + ")");
+			if (value.chars().anyMatch(c -> c > 0xff))
+				throw new UnsupportedStatementException(
+						"bytes can only contain ASCII literal characters (at " + getLocation(ctx) + ")");
+			return new PyBytesLiteral(currentCFG, getLocation(ctx), PyBytes.fromLatin1(value.toString()));
 		} else if (ctx.tuple() != null) {
 			TupleContext tuple = ctx.tuple();
 			List<Expression> elements = new ArrayList<>();

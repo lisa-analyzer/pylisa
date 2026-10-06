@@ -19,6 +19,9 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.type.PyBytesType;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -127,6 +130,38 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 */
 	public static final Predicate<Type> INT = t -> (t.isNumericType() && t.asNumericType().isIntegral())
 			|| t.isBooleanType();
+
+	/**
+	 * A {@code bytes}.
+	 */
+	public static final Predicate<Type> BYTES = t -> t instanceof PyBytesType;
+
+	/**
+	 * Whether a receiver can be a {@code str} and/or {@code bytes}, for natives
+	 * shared between the two classes: the result contains {@code false} if it
+	 * can be a {@code str}, and {@code true} if it can be {@code bytes}.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param self     the receiver
+	 *
+	 * @return the possible kinds of receiver
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> List<Boolean> textModes(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression self)
+			throws SemanticException {
+		Satisfiability bytes = hasType(analysis, state, self, BYTES);
+		List<Boolean> modes = new ArrayList<>(2);
+		if (bytes != Satisfiability.SATISFIED)
+			modes.add(false);
+		if (bytes != Satisfiability.NOT_SATISFIED)
+			modes.add(true);
+		return modes;
+	}
 
 	/**
 	 * {@code None}.

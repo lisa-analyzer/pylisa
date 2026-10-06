@@ -12,7 +12,8 @@ import java.util.Set;
  * Python's searches of a substring within the {@code start}/{@code end} bounds
  * of a string: {@code s.find(sub, start, end)} and its variants. The operands
  * are the string, the substring and a slice holding the bounds (whose step is
- * ignored).
+ * ignored). The string can also be {@code bytes}, whose substring can then be
+ * {@code bytes} or a single byte (an {@code int}).
  */
 public class StrSearch implements TernaryOperator {
 

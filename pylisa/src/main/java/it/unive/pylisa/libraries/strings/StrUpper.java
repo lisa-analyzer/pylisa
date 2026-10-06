@@ -12,10 +12,13 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.operator.unary.StringToUpperCase;
+import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.PyNative;
+import it.unive.pylisa.symbolic.operators.bytes.BytesUnary;
 
 /**
- * Native implementation of {@code str.upper(self)}.
+ * Native implementation of {@code str.upper(self)} and
+ * {@code bytes.upper(self)} (that only changes ASCII letters).
  */
 public class StrUpper extends PyNative {
 
@@ -39,7 +42,12 @@ public class StrUpper extends PyNative {
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		return compute(analysis, state,
-				new UnaryExpression(StringType.INSTANCE, args[0], StringToUpperCase.INSTANCE, getLocation()));
+		AnalysisState<A> result = state.bottom();
+		for (boolean bytes : textModes(analysis, state, args[0]))
+			// bytes only change ascii letters
+			result = result.lub(compute(analysis, state, bytes
+					? new UnaryExpression(PyBytesType.INSTANCE, args[0], BytesUnary.UPPER, getLocation())
+					: new UnaryExpression(StringType.INSTANCE, args[0], StringToUpperCase.INSTANCE, getLocation())));
+		return result;
 	}
 }

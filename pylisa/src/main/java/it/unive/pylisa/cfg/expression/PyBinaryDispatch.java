@@ -26,6 +26,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Collections;
@@ -56,8 +57,8 @@ import java.util.Set;
  * <p>
  * The fallback is applied only if both operands are instances of builtin
  * classes whose operators are fully modeled ({@code int}, {@code float},
- * {@code str}): for any other class, a missing method could just be missing
- * from the library models, and the result is an unknown value.
+ * {@code str}, {@code bytes}): for any other class, a missing method could just
+ * be missing from the library models, and the result is an unknown value.
  */
 public final class PyBinaryDispatch {
 
@@ -85,7 +86,8 @@ public final class PyBinaryDispatch {
 	private static final Set<String> FULLY_MODELED = Set.of(
 			LibrarySpecificationProvider.INT,
 			LibrarySpecificationProvider.FLOAT,
-			LibrarySpecificationProvider.STR);
+			LibrarySpecificationProvider.STR,
+			LibrarySpecificationProvider.BYTES);
 
 	private PyBinaryDispatch() {
 	}
@@ -171,6 +173,8 @@ public final class PyBinaryDispatch {
 			return LibrarySpecificationProvider.BOOL;
 		if (type.isStringType())
 			return LibrarySpecificationProvider.STR;
+		if (type instanceof PyBytesType)
+			return LibrarySpecificationProvider.BYTES;
 		if (type.isNumericType())
 			return type.asNumericType().isIntegral()
 					? LibrarySpecificationProvider.INT
@@ -260,7 +264,7 @@ public final class PyBinaryDispatch {
 	 */
 	public static boolean isBuiltinValueType(
 			Type type) {
-		return type.isStringType() || type.isNumericType() || type.isBooleanType();
+		return type.isStringType() || type.isNumericType() || type.isBooleanType() || type instanceof PyBytesType;
 	}
 
 	/**
