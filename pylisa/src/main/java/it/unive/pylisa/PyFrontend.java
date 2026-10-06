@@ -14,7 +14,6 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.CFG;
-import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.VariableTableEntry;
 import it.unive.lisa.program.cfg.controlFlow.ControlFlowStructure;
@@ -133,6 +132,7 @@ import it.unive.pylisa.antlr.PythonParser.Star_targetContext;
 import it.unive.pylisa.antlr.PythonParser.Star_targetsContext;
 import it.unive.pylisa.antlr.PythonParser.Starred_expressionContext;
 import it.unive.pylisa.antlr.PythonParser.StatementContext;
+import it.unive.pylisa.antlr.PythonParser.StringContext;
 import it.unive.pylisa.antlr.PythonParser.SumContext;
 import it.unive.pylisa.antlr.PythonParser.T_primaryContext;
 import it.unive.pylisa.antlr.PythonParser.Target_with_star_atomContext;
@@ -171,6 +171,7 @@ import it.unive.pylisa.cfg.expression.PyFloorDiv;
 import it.unive.pylisa.cfg.expression.PyIn;
 import it.unive.pylisa.cfg.expression.PyIs;
 import it.unive.pylisa.cfg.expression.PyMatMul;
+import it.unive.pylisa.cfg.expression.PyMethodCall;
 import it.unive.pylisa.cfg.expression.PyMultiplication;
 import it.unive.pylisa.cfg.expression.PyNegation;
 import it.unive.pylisa.cfg.expression.PyNewObj;
@@ -193,6 +194,7 @@ import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
 import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyStringLiterals;
 import it.unive.pylisa.cfg.expression.literal.PyTypeLiteral;
 import it.unive.pylisa.cfg.expression.unary.PyLength;
 import it.unive.pylisa.cfg.statement.FromImport;
@@ -1913,14 +1915,21 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 				} else if (!instance && method_name.equals("len") && pars.size() == 1) {
 					access = new PyLength(currentCFG, getLocation(frame), pars.get(0));
 				} else {
-					access = new UnresolvedCall(
-							currentCFG,
-							getLocation(frame),
-							instance ? CallType.UNKNOWN : CallType.STATIC,
-							null,
-							method_name,
-							LeftToRightEvaluation.INSTANCE,
-							pars.toArray(Expression[]::new));
+					access = instance
+							? new PyMethodCall(
+									currentCFG,
+									getLocation(frame),
+									method_name,
+									LeftToRightEvaluation.INSTANCE,
+									pars.toArray(Expression[]::new))
+							: new UnresolvedCall(
+									currentCFG,
+									getLocation(frame),
+									CallType.STATIC,
+									null,
+									method_name,
+									LeftToRightEvaluation.INSTANCE,
+									pars.toArray(Expression[]::new));
 					if (method_name.equals("super") && pars.isEmpty()) {
 						// if super() is inside an instance method
 						if (this.currentCFG.getDescriptor().isInstance()) {
@@ -2181,9 +2190,15 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		else if (ctx.NONE() != null)
 			return new PyNoneLiteral(currentCFG, getLocation(ctx));
 		else if (ctx.strings() != null) {
-			if (!ctx.strings().string().isEmpty())
-				return strip(getLocation(ctx), ctx.strings().string(0).getText());
-			throw new UnsupportedStatementException("formatted strings are not supported");
+			if (!ctx.strings().fstring().isEmpty() || !ctx.strings().tstring().isEmpty()
+					|| ctx.strings().string().isEmpty())
+				throw new UnsupportedStatementException("formatted strings are not supported");
+			// adjacent literals are concatenated ("ab" "cd" == "abcd")
+			StringBuilder value = new StringBuilder();
+			for (StringContext literal : ctx.strings().string())
+				value.append(PyStringLiterals.decode(literal.getText()));
+			return new PyStringLiteral(currentCFG, getLocation(ctx), value.toString(),
+					PyStringLiterals.quotes(ctx.strings().string(0).getText()));
 		} else if (ctx.tuple() != null) {
 			TupleContext tuple = ctx.tuple();
 			List<Expression> elements = new ArrayList<>();
@@ -2220,21 +2235,6 @@ public class PyFrontend extends PythonParserBaseVisitor<Object> {
 		else if (ctx.ELLIPSIS() != null)
 			throw new UnsupportedStatementException();
 		throw new UnsupportedStatementException();
-	}
-
-	private StringLiteral strip(
-			CodeLocation location,
-			String string) {
-		// ', ''', ", """
-		if (string.startsWith("'''") && string.endsWith("'''"))
-			return new PyStringLiteral(currentCFG, location, string.substring(3, string.length() - 3), "'''");
-		if (string.startsWith("\"\"\"") && string.endsWith("\"\"\""))
-			return new PyStringLiteral(currentCFG, location, string.substring(3, string.length() - 3), "\"\"\"");
-		if (string.startsWith("'") && string.endsWith("'"))
-			return new PyStringLiteral(currentCFG, location, string.substring(1, string.length() - 1), "'");
-		if (string.startsWith("\"") && string.endsWith("\""))
-			return new PyStringLiteral(currentCFG, location, string.substring(1, string.length() - 1), "\"");
-		return new PyStringLiteral(currentCFG, location, string, "\"");
 	}
 
 	private List<Expression> extractYieldArguments(

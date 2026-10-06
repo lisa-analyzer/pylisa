@@ -507,7 +507,7 @@ public final class PyPercentFormat {
 	 * Python's {@code repr(a)} (or {@code ascii(a)}), or {@code null} if it
 	 * cannot be computed.
 	 */
-	private static String repr(
+	static String repr(
 			Object a,
 			boolean ascii) {
 		if (!(a instanceof String))

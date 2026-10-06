@@ -28,23 +28,45 @@ import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftLeft;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftRight;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseXor;
 import it.unive.lisa.symbolic.value.operator.binary.StringContains;
+import it.unive.lisa.symbolic.value.operator.binary.StringEndsWith;
+import it.unive.lisa.symbolic.value.operator.binary.StringIndexOf;
+import it.unive.lisa.symbolic.value.operator.binary.StringLastIndexOf;
+import it.unive.lisa.symbolic.value.operator.binary.StringStartsWith;
+import it.unive.lisa.symbolic.value.operator.ternary.StringReplace;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.BitwiseNegation;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
+import it.unive.lisa.symbolic.value.operator.unary.StringToLowerCase;
+import it.unive.lisa.symbolic.value.operator.unary.StringToUpperCase;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.DictConstant;
 import it.unive.pylisa.symbolic.ListConstant;
 import it.unive.pylisa.symbolic.PyNoneConstant;
+import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
 import it.unive.pylisa.symbolic.operators.DictPut;
 import it.unive.pylisa.symbolic.operators.FloatPower;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
 import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.Modulo;
 import it.unive.pylisa.symbolic.operators.Power;
+import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
+import it.unive.pylisa.symbolic.operators.conversions.ConversionRaises;
+import it.unive.pylisa.symbolic.operators.conversions.ToFloat;
+import it.unive.pylisa.symbolic.operators.conversions.ToInt;
+import it.unive.pylisa.symbolic.operators.conversions.ToRepr;
+import it.unive.pylisa.symbolic.operators.strings.ArgPair;
+import it.unive.pylisa.symbolic.operators.strings.StrGetItem;
+import it.unive.pylisa.symbolic.operators.strings.StrGetSlice;
+import it.unive.pylisa.symbolic.operators.strings.StrReplaceCount;
+import it.unive.pylisa.symbolic.operators.strings.StrSearch;
+import it.unive.pylisa.symbolic.operators.strings.StrStrip;
 import it.unive.pylisa.symbolic.operators.value.StringFormat;
 import it.unive.pylisa.symbolic.operators.value.StringFormatRaises;
 import it.unive.pylisa.symbolic.operators.value.StringLength;
@@ -144,17 +166,33 @@ public class ConstantPropagationDomain
 
 		if (operator == StringLength.INSTANCE)
 			if (arg.is(String.class))
+				// python counts code points, not UTF-16 units
 				return new ConstantPropagation(
-						new Constant(Int32Type.INSTANCE, arg.as(String.class).length(), pp.getLocation()));
+						new Constant(Int32Type.INSTANCE, PyStrings.length(arg.as(String.class)), pp.getLocation()));
 
-		// String constructor
-		if (operator == StringConstructor.INSTANCE)
-			if (arg.is(String.class))
-				return new ConstantPropagation(
-						new Constant(StringType.INSTANCE, arg.as(String.class), pp.getLocation()));
-			else if (arg.is(Integer.class))
-				return new ConstantPropagation(
-						new Constant(StringType.INSTANCE, arg.as(Integer.class), pp.getLocation()));
+		if (operator instanceof StringToUpperCase && arg.is(String.class))
+			return string(PyStrings.upper(arg.as(String.class)), pp);
+		if (operator instanceof StringToLowerCase && arg.is(String.class))
+			return string(PyStrings.lower(arg.as(String.class)), pp);
+
+		// str(x) and repr(x)
+		if (operator == StringConstructor.INSTANCE || operator == ToRepr.INSTANCE) {
+			String res = arg.constant.getStaticType().isNullType() ? "None"
+					: operator == StringConstructor.INSTANCE ? PyPercentFormat.str(arg.getConstant())
+							: PyPercentFormat.repr(arg.getConstant(), false);
+			return res == null ? ConstantPropagation.TOP : string(res, pp);
+		}
+
+		// float(x), whose ValueError is raised by the caller
+		if (operator == ToFloat.INSTANCE) {
+			Object v = arg.getConstant();
+			Double d = v instanceof String ? PyNumbers.parseFloat((String) v)
+					: v instanceof Boolean ? ((Boolean) v ? 1.0 : 0.0)
+							: v instanceof Number ? ((Number) v).doubleValue() : null;
+			if (d == null)
+				return v instanceof String ? ConstantPropagation.BOTTOM : ConstantPropagation.TOP;
+			return new ConstantPropagation(new Constant(Float32Type.INSTANCE, d.floatValue(), pp.getLocation()));
+		}
 		return ConstantPropagation.TOP;
 	}
 
@@ -230,6 +268,18 @@ public class ConstantPropagationDomain
 			return bitwiseLeftShift(left, right, pp);
 		else if (operator instanceof BitwiseShiftRight)
 			return bitwiseRightShift(left, right, pp);
+		if (operator == ToInt.INSTANCE)
+			return toInt(left, right, pp);
+		if (operator == ArgPair.INSTANCE) {
+			if (left.isTop() || right.isTop())
+				return ConstantPropagation.TOP;
+			return new ConstantPropagation(new Constant(Untyped.INSTANCE,
+					new PyStrings.Pair(left.getConstant(), right.getConstant()), pp.getLocation()));
+		}
+		if (operator == StrGetItem.INSTANCE || operator == StrGetSlice.INSTANCE || operator instanceof StrStrip
+				|| operator instanceof StringIndexOf || operator instanceof StringLastIndexOf
+				|| operator instanceof StringStartsWith || operator instanceof StringEndsWith)
+			return stringBinary(operator, left, right, pp);
 		if (operator instanceof StringMult)
 			return stringRepeat(left, right, pp);
 		if (operator instanceof ListAppend)
@@ -249,7 +299,188 @@ public class ConstantPropagationDomain
 		TernaryOperator operator = expression.getOperator();
 		if (operator instanceof DictPut)
 			return dictPut(left, middle, right, pp);
+		if (left.isTop() || middle.isTop() || right.isTop())
+			return ConstantPropagation.TOP;
+
+		if (operator == SliceCreation.INSTANCE) {
+			Long[] bounds = new Long[3];
+			ConstantPropagation[] parts = { left, middle, right };
+			for (int i = 0; i < 3; i++) {
+				Object v = parts[i].getConstant();
+				if (v instanceof RangeBound || parts[i].constant.getStaticType().isNullType())
+					// an omitted bound
+					bounds[i] = null;
+				else if (v instanceof Integer || v instanceof Long)
+					bounds[i] = ((Number) v).longValue();
+				else if (v instanceof Boolean)
+					bounds[i] = (Boolean) v ? 1L : 0L;
+				else
+					// a TypeError, raised by whoever uses the slice
+					return ConstantPropagation.TOP;
+			}
+			return new ConstantPropagation(new Constant(PyClassType.lookup(LibrarySpecificationProvider.SLICE),
+					new PyStrings.Slice(bounds[0], bounds[1], bounds[2]), pp.getLocation()));
+		}
+
+		if (operator instanceof StrSearch) {
+			if (!left.is(String.class) || !middle.is(String.class) || !right.is(PyStrings.Slice.class))
+				return ConstantPropagation.TOP;
+			Object res = PyStrings.search(((StrSearch) operator).getKind().name().toLowerCase(),
+					left.as(String.class), middle.as(String.class), right.as(PyStrings.Slice.class));
+			return new ConstantPropagation(new Constant(
+					res instanceof Boolean ? BoolType.INSTANCE : Int32Type.INSTANCE, res, pp.getLocation()));
+		}
+
+		if (operator instanceof StringReplace) {
+			// python's replace replaces all the occurrences
+			if (!left.is(String.class) || !middle.is(String.class) || !right.is(String.class))
+				return ConstantPropagation.TOP;
+			return string(PyStrings.replace(left.as(String.class), middle.as(String.class),
+					right.as(String.class), -1), pp);
+		}
+
+		if (operator == StrReplaceCount.INSTANCE) {
+			if (!left.is(String.class) || !middle.is(PyStrings.Pair.class) || !(right.getConstant() instanceof Integer))
+				return ConstantPropagation.TOP;
+			PyStrings.Pair p = middle.as(PyStrings.Pair.class);
+			if (!(p.first instanceof String) || !(p.second instanceof String))
+				return ConstantPropagation.TOP;
+			return string(PyStrings.replace(left.as(String.class), (String) p.first, (String) p.second,
+					(Integer) right.getConstant()), pp);
+		}
+
 		return ConstantPropagation.TOP;
+	}
+
+	// the base of int(x, base), or null if it is not a valid one
+	private static Integer base(
+			ConstantPropagation base) {
+		if (base.constant.getStaticType().isNullType())
+			return 10;
+		Long b = index(base);
+		return b == null ? null : b.intValue();
+	}
+
+	private static ConstantPropagation toInt(
+			ConstantPropagation x,
+			ConstantPropagation base,
+			ProgramPoint pp) {
+		if (x.isTop() || base.isTop())
+			return ConstantPropagation.TOP;
+		Object v = x.getConstant();
+		java.math.BigInteger res;
+		if (v instanceof String) {
+			Integer b = base(base);
+			if (b == null)
+				return ConstantPropagation.TOP;
+			res = PyNumbers.parseInt((String) v, b);
+			if (res == null)
+				// ValueError, raised by the caller
+				return ConstantPropagation.BOTTOM;
+		} else if (v instanceof Boolean)
+			res = (Boolean) v ? java.math.BigInteger.ONE : java.math.BigInteger.ZERO;
+		else if (v instanceof Integer || v instanceof Long)
+			res = java.math.BigInteger.valueOf(((Number) v).longValue());
+		else if (v instanceof Float || v instanceof Double) {
+			double d = ((Number) v).doubleValue();
+			if (!Double.isFinite(d))
+				return ConstantPropagation.TOP;
+			// truncation towards zero
+			res = new java.math.BigDecimal(d).toBigInteger();
+		} else
+			return ConstantPropagation.TOP;
+		if (res.bitLength() > 31)
+			// ints are tracked as 32-bit integers
+			return ConstantPropagation.TOP;
+		return new ConstantPropagation(new Constant(Int32Type.INSTANCE, res.intValue(), pp.getLocation()));
+	}
+
+	// whether int(x, base) (or float(x)) raises ValueError, or null if unknown
+	private static Boolean conversionRaises(
+			boolean toInt,
+			ConstantPropagation x,
+			ConstantPropagation base) {
+		Object v = x.getConstant();
+		if (v instanceof String) {
+			if (!toInt)
+				return PyNumbers.parseFloat((String) v) == null;
+			Integer b = base(base);
+			return b == null ? null : PyNumbers.parseInt((String) v, b) == null;
+		}
+		if (toInt && (v instanceof Float || v instanceof Double))
+			// int(nan) raises ValueError, int(inf) OverflowError (not modeled)
+			return Double.isNaN(((Number) v).doubleValue()) ? Boolean.TRUE
+					: Double.isInfinite(((Number) v).doubleValue()) ? null : Boolean.FALSE;
+		if (v instanceof Number || v instanceof Boolean)
+			return false;
+		return null;
+	}
+
+	private static ConstantPropagation string(
+			String value,
+			ProgramPoint pp) {
+		return new ConstantPropagation(new Constant(StringType.INSTANCE, value, pp.getLocation()));
+	}
+
+	private static Long index(
+			ConstantPropagation c) {
+		Object v = c.getConstant();
+		if (v instanceof Integer || v instanceof Long)
+			return ((Number) v).longValue();
+		if (v instanceof Boolean)
+			return (Boolean) v ? 1L : 0L;
+		return null;
+	}
+
+	private ConstantPropagation stringBinary(
+			BinaryOperator operator,
+			ConstantPropagation left,
+			ConstantPropagation right,
+			ProgramPoint pp) {
+		if (left.isTop() || right.isTop() || !left.is(String.class))
+			return ConstantPropagation.TOP;
+		String s = left.as(String.class);
+
+		if (operator == StrGetItem.INSTANCE) {
+			Long i = index(right);
+			if (i == null)
+				return ConstantPropagation.TOP;
+			String res = PyStrings.getItem(s, i);
+			// IndexError, raised by the caller
+			return res == null ? ConstantPropagation.BOTTOM : string(res, pp);
+		}
+
+		if (operator == StrGetSlice.INSTANCE) {
+			if (!right.is(PyStrings.Slice.class))
+				return ConstantPropagation.TOP;
+			String res = PyStrings.getSlice(s, right.as(PyStrings.Slice.class));
+			// ValueError, raised by the caller
+			return res == null ? ConstantPropagation.BOTTOM : string(res, pp);
+		}
+
+		if (operator instanceof StrStrip) {
+			StrStrip strip = (StrStrip) operator;
+			String chars;
+			if (right.constant.getStaticType().isNullType())
+				chars = null;
+			else if (right.is(String.class))
+				chars = right.as(String.class);
+			else
+				return ConstantPropagation.TOP;
+			return string(PyStrings.strip(s, chars, strip.stripsLeft(), strip.stripsRight()), pp);
+		}
+
+		// searches without bounds
+		if (!right.is(String.class))
+			return ConstantPropagation.TOP;
+		String sub = right.as(String.class);
+		PyStrings.Slice all = new PyStrings.Slice(null, null, null);
+		String kind = operator instanceof StringIndexOf ? "find"
+				: operator instanceof StringLastIndexOf ? "rfind"
+						: operator instanceof StringStartsWith ? "startswith" : "endswith";
+		Object res = PyStrings.search(kind, s, sub, all);
+		return new ConstantPropagation(new Constant(
+				res instanceof Boolean ? BoolType.INSTANCE : Int32Type.INSTANCE, res, pp.getLocation()));
 	}
 
 	@Override
@@ -261,6 +492,13 @@ public class ConstantPropagationDomain
 			SemanticOracle oracle)
 			throws SemanticException {
 		BinaryOperator operator = expression.getOperator();
+		if (operator instanceof ConversionRaises) {
+			if (left.isTop() || right.isTop() || left.isBottom() || right.isBottom())
+				return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
+			Boolean raises = conversionRaises(((ConversionRaises) operator).isInt(), left, right);
+			return raises == null ? it.unive.lisa.lattices.Satisfiability.UNKNOWN
+					: it.unive.lisa.lattices.Satisfiability.fromBoolean(raises);
+		}
 		if (operator instanceof StringFormatRaises) {
 			if (left.isTop() || right.isTop() || left.isBottom() || right.isBottom() || !left.is(String.class))
 				return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
@@ -274,8 +512,10 @@ public class ConstantPropagationDomain
 				|| left.isTop() || right.isTop() || left.isBottom() || right.isBottom())
 			return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
 
-		Object l = left.getConstant();
-		Object r = right.getConstant();
+		// bool is a subclass of int in python: True == 1
+		Object l = left.getConstant() instanceof Boolean ? ((Boolean) left.getConstant() ? 1 : 0) : left.getConstant();
+		Object r = right.getConstant() instanceof Boolean ? ((Boolean) right.getConstant() ? 1 : 0)
+				: right.getConstant();
 
 		// numeric equality must be checked value-wise (0 == 0.0 is true in
 		// Python) rather than via Objects.equals, which is class-sensitive:

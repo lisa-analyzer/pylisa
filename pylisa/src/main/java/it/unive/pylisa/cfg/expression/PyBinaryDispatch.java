@@ -199,6 +199,71 @@ public final class PyBinaryDispatch {
 	}
 
 	/**
+	 * Resolves {@code cls.name(args)}, looking for {@code name} only in the
+	 * class {@code cls} (and in its superclasses).
+	 *
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the arguments have been evaluated
+	 * @param caller          the expression performing the call
+	 * @param cls             the name of the class, or {@code null}
+	 * @param name            the name of the method
+	 * @param args            the arguments, receiver included
+	 * @param types           the runtime types of the arguments
+	 *
+	 * @return the resolved call, or {@code null} if {@code cls} does not define
+	 *             a suitable {@code name}
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Call resolveInClass(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			Expression caller,
+			String cls,
+			String name,
+			Expression[] args,
+			Set<Type>[] types) {
+		if (cls == null)
+			return null;
+
+		UnresolvedCall call = new UnresolvedCall(
+				caller.getCFG(),
+				caller.getLocation(),
+				CallType.STATIC,
+				cls,
+				name,
+				LeftToRightEvaluation.INSTANCE,
+				args);
+
+		Call resolved;
+		try {
+			resolved = interprocedural.resolve(call, types,
+					state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
+		} catch (CallResolutionException e) {
+			return null;
+		}
+
+		// the call graph does not throw when no target is found, it yields an
+		// open call instead
+		if (resolved instanceof OpenCall || !(resolved instanceof ResolvedCall))
+			return null;
+		return resolved;
+	}
+
+	/**
+	 * Whether values of the given runtime type are instances of a builtin class
+	 * modeled as a value (e.g. {@code str} or {@code int}) rather than as an
+	 * object in memory: their methods are found through {@link #classOf(Type)},
+	 * since call resolution only handles classes of objects.
+	 *
+	 * @param type the runtime type
+	 *
+	 * @return whether the type is a builtin value type
+	 */
+	public static boolean isBuiltinValueType(
+			Type type) {
+		return type.isStringType() || type.isNumericType() || type.isBooleanType();
+	}
+
+	/**
 	 * Calls {@code cls.name(self, other)}, returning {@code null} if
 	 * {@code cls} does not define it, if it does not accept {@code other}, or
 	 * if it returns bottom (i.e., {@code NotImplemented}).
@@ -217,32 +282,11 @@ public final class PyBinaryDispatch {
 			Type selfType,
 			Type otherType)
 			throws SemanticException {
-		if (cls == null)
-			return null;
-
-		UnresolvedCall call = new UnresolvedCall(
-				operator.getCFG(),
-				operator.getLocation(),
-				CallType.STATIC,
-				cls,
-				name,
-				LeftToRightEvaluation.INSTANCE,
-				self,
-				other);
-
-		Call resolved;
-		try {
-			@SuppressWarnings("unchecked")
-			Set<Type>[] types = new Set[] { Collections.singleton(selfType), Collections.singleton(otherType) };
-			resolved = interprocedural.resolve(call, types,
-					state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
-		} catch (CallResolutionException e) {
-			return null;
-		}
-
-		// the call graph does not throw when no target is found, it yields an
-		// open call instead
-		if (resolved instanceof OpenCall || !(resolved instanceof ResolvedCall))
+		@SuppressWarnings("unchecked")
+		Set<Type>[] types = new Set[] { Collections.singleton(selfType), Collections.singleton(otherType) };
+		Call resolved = resolveInClass(interprocedural, state, operator, cls, name, new Expression[] { self, other },
+				types);
+		if (resolved == null)
 			return null;
 		for (CodeMember target : ((ResolvedCall) resolved).getTargets()) {
 			Parameter[] formals = target.getDescriptor().getFormals();

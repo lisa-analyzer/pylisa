@@ -14,9 +14,7 @@ public class StringConstructor implements StringOperator, UnaryOperator {
 	public Set<Type> typeInference(
 			TypeSystem types,
 			Set<Type> argument) {
-		if (argument.stream().noneMatch(Type::isStringType) && argument.stream().noneMatch(Type::isNumericType)) {
-			return Collections.emptySet();
-		}
+		// str() of any value is a string
 		return Collections.singleton(types.getStringType());
 	}
 
