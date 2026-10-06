@@ -3,21 +3,6 @@ package it.unive.pylisa;
 import static it.unive.pylisa.PyParsingUtils.getLine;
 import static it.unive.pylisa.PyParsingUtils.getLocation;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
@@ -70,6 +55,7 @@ import it.unive.pylisa.antlr.PythonParser.Bitwise_orContext;
 import it.unive.pylisa.antlr.PythonParser.Bitwise_xorContext;
 import it.unive.pylisa.antlr.PythonParser.BlockContext;
 import it.unive.pylisa.antlr.PythonParser.Break_stmtContext;
+import it.unive.pylisa.antlr.PythonParser.Class_defContext;
 import it.unive.pylisa.antlr.PythonParser.Compare_op_bitwise_or_pairContext;
 import it.unive.pylisa.antlr.PythonParser.ComparisonContext;
 import it.unive.pylisa.antlr.PythonParser.Compound_stmtContext;
@@ -90,6 +76,7 @@ import it.unive.pylisa.antlr.PythonParser.Else_blockContext;
 import it.unive.pylisa.antlr.PythonParser.ExpressionContext;
 import it.unive.pylisa.antlr.PythonParser.FactorContext;
 import it.unive.pylisa.antlr.PythonParser.For_stmtContext;
+import it.unive.pylisa.antlr.PythonParser.Function_defContext;
 import it.unive.pylisa.antlr.PythonParser.Global_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.If_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Import_fromContext;
@@ -188,12 +175,23 @@ import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.NoOpFunction;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class PyStatementParser
 		extends
 		PythonParserBaseVisitor<Object> {
-
-	public static final String INSTRUMENTED_MAIN_FUNCTION_NAME = "$main";
 
 	private static final SequentialEdge SEQUENTIAL_SINGLETON = new SequentialEdge();
 
@@ -760,10 +758,19 @@ public class PyStatementParser
 	@Override
 	public ParsedBlock visitCompound_stmt(
 			Compound_stmtContext ctx) {
-		if (ctx.function_def() != null)
-			// return this.visitFuncdef(ctx.function_def());
-			throw new UnsupportedStatementException("function definitions are not supported");
-		else if (ctx.if_stmt() != null)
+		if (ctx.function_def() != null) {
+			PyCFG fun = visitFunction_def(ctx.function_def());
+			if (currentUnit instanceof ClassUnit)
+				((ClassUnit) currentUnit).addInstanceCodeMember(fun);
+			else
+				currentUnit.addCodeMember(fun);
+			// TODO add statement for function definition
+		} else if (ctx.class_def() != null) {
+			ClassUnit cu = visitClass_def(ctx.class_def());
+			PyClassType.register(cu.getName(), cu);
+			program.addUnit(cu);
+			// TODO add statement for class definition
+		} else if (ctx.if_stmt() != null)
 			return this.visitIf_stmt(ctx.if_stmt());
 		else if (ctx.while_stmt() != null)
 			return this.visitWhile_stmt(ctx.while_stmt());
@@ -773,9 +780,6 @@ public class PyStatementParser
 			return this.visitTry_stmt(ctx.try_stmt());
 		else if (ctx.with_stmt() != null)
 			return this.visitWith_stmt(ctx.with_stmt());
-		else if (ctx.class_def() != null)
-			// return this.visitClassdef(ctx.class_def());
-			throw new UnsupportedStatementException("class definitions are not supported");
 		else if (ctx.match_stmt() != null)
 			throw new UnsupportedStatementException("match statements are not supported");
 		throw new UnsupportedStatementException("Statement " + ctx + " not yet supported");
@@ -914,7 +918,8 @@ public class PyStatementParser
 	@Override
 	public ParsedBlock visitFor_stmt(
 			For_stmtContext ctx) {
-		// FIXME: this assumes a range-based for loop which is not always the case
+		// FIXME: this assumes a range-based for loop which is not always the
+		// case
 		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 		// create and add exit point of for
 		NoOp exit = new NoOp(currentCFG, getLocation(filePath, ctx));
@@ -1782,4 +1787,21 @@ public class PyStatementParser
 		return annotation;
 	}
 
+	@Override
+	public ClassUnit visitClass_def(
+			Class_defContext ctx) {
+		if (ctx.decorators() != null)
+			throw new UnsupportedStatementException("decorators are not supported");
+		PyClassParser parser = new PyClassParser(program, filePath);
+		return parser.visitClass_def_raw(ctx.class_def_raw());
+	}
+
+	@Override
+	public PyCFG visitFunction_def(
+			Function_defContext ctx) {
+		if (ctx.decorators() != null)
+			throw new UnsupportedStatementException("decorators are not supported");
+		PyCodeMemberParser parser = new PyCodeMemberParser(filePath, program, currentUnit);
+		return parser.visitFunction_def_raw(ctx.function_def_raw());
+	}
 }

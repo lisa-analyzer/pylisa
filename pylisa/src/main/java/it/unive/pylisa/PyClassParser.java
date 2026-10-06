@@ -2,9 +2,7 @@ package it.unive.pylisa;
 
 import static it.unive.pylisa.PyParsingUtils.getLocation;
 
-import it.unive.lisa.AnalysisSetupException;
-import it.unive.lisa.logging.TimerLogger;
-import it.unive.lisa.program.CodeUnit;
+import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
@@ -16,26 +14,19 @@ import it.unive.lisa.util.datastructures.graph.code.NodeList;
 import it.unive.lisa.util.frontend.CFGTweaker;
 import it.unive.lisa.util.frontend.ControlFlowTracker;
 import it.unive.lisa.util.frontend.ParsedBlock;
-import it.unive.pylisa.antlr.PythonParser.File_inputContext;
+import it.unive.pylisa.antlr.PythonParser.Class_def_rawContext;
 import it.unive.pylisa.antlr.PythonParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.PyParameter;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.function.Function;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-public class PyFileParser
+public class PyClassParser
 		extends
 		PythonParserBaseVisitor<Object> {
 
-	public static final String INSTRUMENTED_MAIN_FUNCTION_NAME = "$main";
-
-	private static final Logger log = LogManager.getLogger(PyFileParser.class);
+	private static final String INSTRUMENTED_CLASS_INIT_NAME = "$class_init";
 
 	/**
 	 * Python program file path.
@@ -48,66 +39,41 @@ public class PyFileParser
 	private final Program program;
 
 	/**
-	 * The unit currently under parsing
-	 */
-	private final CodeUnit rootUnit;
-
-	/**
 	 * Builds the parser for a Python program at {@code filePath}.
 	 *
 	 * @param program  the LiSA program to which the parsed CFGs will be added
 	 * @param filePath file path to a Python program
 	 */
-	public PyFileParser(
+	public PyClassParser(
 			Program program,
 			String filePath) {
 		this.program = program;
 		this.filePath = filePath;
-		this.rootUnit = new CodeUnit(
-				new SourceCodeLocation(filePath, 0, 0),
-				program,
-				FilenameUtils.removeExtension(filePath));
-	}
-
-	/**
-	 * Returns the parsed unit. Note that the unit will be empty unless
-	 * {@link #parse(ParseTree)} is called first.
-	 *
-	 * @return the parsed unit
-	 */
-	public CodeUnit getParsedUnit() {
-		return rootUnit;
-	}
-
-	public CodeUnit parse(
-			ParseTree tree)
-			throws IOException,
-			AnalysisSetupException {
-		visit(tree);
-		return rootUnit;
 	}
 
 	@Override
-	public Object visit(
-			ParseTree tree) {
-		if (tree instanceof File_inputContext)
-			return visitFile_input((File_inputContext) tree);
+	public ClassUnit visitClass_def_raw(
+			Class_def_rawContext ctx) {
+		if (ctx.type_params() != null)
+			throw new UnsupportedStatementException("generic classes are not supported");
 
-		throw new UnsupportedOperationException("Unsupported parse tree: " + tree.getClass().getSimpleName());
-	}
+		String name = ctx.name().getText();
+		// we do not track inheritance here since it needs runtime symbol
+		// resolution we will do that during the analysis. this should not cause
+		// problems since we will do that where the signature is defined, and
+		// not where it is used.
+		ClassUnit signature = new ClassUnit(getLocation(filePath, ctx), program, name, false);
 
-	@Override
-	public PyCFG visitFile_input(
-			File_inputContext ctx) {
-		CodeMemberDescriptor descriptor = buildMainCFGDescriptor(getLocation(filePath, ctx));
+		// we parse the body of the class in a synthetic method that will be
+		// invoked by the class definition instruction
+		CodeMemberDescriptor descriptor = buildMainCFGDescriptor(getLocation(filePath, ctx), signature);
 		NodeList<CFG, Statement, Edge> list = new NodeList<>(new SequentialEdge());
 		Collection<Statement> entrypoints = new HashSet<>();
 		// side effects on entrypoints and matrix will affect the cfg
 		PyCFG cfg = new PyCFG(descriptor, entrypoints, list);
 		ControlFlowTracker control = new ControlFlowTracker();
-		PyStatementParser parser = new PyStatementParser(program, filePath, rootUnit, cfg, control);
-		ParsedBlock r = TimerLogger.execSupplier(log, "Parsing statement list of " + filePath,
-				() -> parser.visitStatements(ctx.statements()));
+		PyStatementParser parser = new PyStatementParser(program, filePath, signature, cfg, control);
+		ParsedBlock r = parser.visitBlock(ctx.block());
 		list.mergeWith(r.getBody());
 		entrypoints.add(r.getBegin());
 		Function<String, ParsingException> factory = (
@@ -116,18 +82,19 @@ public class PyFileParser
 						ParsingException.Type.PARSING_ERROR,
 						msg,
 						getLocation(filePath, ctx));
-		CFGTweaker.splitProtectedYields(cfg, factory);
-		CFGTweaker.addFinallyEdges(cfg, factory);
+		// CFGTweaker.splitProtectedYields(cfg, factory);
+		// CFGTweaker.addFinallyEdges(cfg, factory);
 		CFGTweaker.addReturns(cfg, factory);
 		cfg.simplify();
-		rootUnit.addCodeMember(cfg);
-		return cfg;
+		signature.addCodeMember(cfg);
+		return signature;
 	}
 
 	private CodeMemberDescriptor buildMainCFGDescriptor(
-			SourceCodeLocation loc) {
+			SourceCodeLocation loc,
+			ClassUnit signature) {
 		PyParameter[] cfgArgs = new PyParameter[] {};
-		return new CodeMemberDescriptor(loc, rootUnit, false, INSTRUMENTED_MAIN_FUNCTION_NAME, cfgArgs);
+		return new CodeMemberDescriptor(loc, signature, false, INSTRUMENTED_CLASS_INIT_NAME, cfgArgs);
 	}
 
 }

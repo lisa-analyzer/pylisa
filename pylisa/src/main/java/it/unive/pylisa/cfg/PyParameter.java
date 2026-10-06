@@ -38,11 +38,13 @@ public class PyParameter extends Parameter {
 		return typeHint;
 	}
 
-	public void setTypeHint(String typeHint) {
+	public void setTypeHint(
+			String typeHint) {
 		this.typeHint = typeHint;
 	}
 
-	public void setDefaultValue(Expression defaultValue) {
+	public void setDefaultValue(
+			Expression defaultValue) {
 		this.dval = defaultValue;
 	}
 

@@ -3,16 +3,6 @@ package it.unive.pylisa;
 import static it.unive.pylisa.PyParsingUtils.getLine;
 import static it.unive.pylisa.PyParsingUtils.getLocation;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.function.Function;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.Unit;
@@ -43,6 +33,14 @@ import it.unive.pylisa.cfg.PyParameter;
 import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
 import it.unive.pylisa.cfg.type.PyClassType;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class PyCodeMemberParser
 		extends

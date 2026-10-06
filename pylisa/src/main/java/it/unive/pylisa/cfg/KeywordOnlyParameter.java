@@ -10,9 +10,9 @@ public class KeywordOnlyParameter extends PyParameter {
 
 	public KeywordOnlyParameter(
 			Parameter parameter) {
-		super(parameter.getLocation(), 
-				parameter.getName(), 
-				parameter.getStaticType(), 
+		super(parameter.getLocation(),
+				parameter.getName(),
+				parameter.getStaticType(),
 				parameter.getAnnotations());
 		setDefaultValue(parameter.getDefaultValue());
 	}

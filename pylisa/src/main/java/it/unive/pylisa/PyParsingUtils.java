@@ -1,8 +1,7 @@
 package it.unive.pylisa;
 
-import org.antlr.v4.runtime.ParserRuleContext;
-
 import it.unive.lisa.program.SourceCodeLocation;
+import org.antlr.v4.runtime.ParserRuleContext;
 
 /**
  * PyParsingUtils
