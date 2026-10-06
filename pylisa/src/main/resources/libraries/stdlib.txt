@@ -22,3 +22,5 @@ class TypeError
 class IndexError
 
 class ZeroDivisionError
+
+class ValueError

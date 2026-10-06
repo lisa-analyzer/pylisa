@@ -6,11 +6,7 @@ import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Float32Type;
-import it.unive.lisa.program.type.Float64Type;
-import it.unive.lisa.program.type.Int16Type;
 import it.unive.lisa.program.type.Int32Type;
-import it.unive.lisa.program.type.Int64Type;
-import it.unive.lisa.program.type.Int8Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
@@ -36,13 +32,12 @@ import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.BitwiseNegation;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
-import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.DictConstant;
 import it.unive.pylisa.symbolic.ListConstant;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.DictPut;
+import it.unive.pylisa.symbolic.operators.FloatPower;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
 import it.unive.pylisa.symbolic.operators.ListAppend;
 import it.unive.pylisa.symbolic.operators.Modulo;
@@ -51,6 +46,7 @@ import it.unive.pylisa.symbolic.operators.StringAdd;
 import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
 import it.unive.pylisa.symbolic.operators.value.StringFormat;
+import it.unive.pylisa.symbolic.operators.value.StringFormatRaises;
 import it.unive.pylisa.symbolic.operators.value.StringLength;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +78,7 @@ public class ConstantPropagationDomain
 				|| t.isBooleanType()
 				|| t.isNullType();
 	}
-	
+
 	@Override
 	public boolean canProcess(
 			ValueExpression expression,
@@ -198,7 +194,7 @@ public class ConstantPropagationDomain
 				return ConstantPropagation.TOP;
 			return new ConstantPropagation(c);
 		} else if (operator instanceof Power)
-			return power(left, right, pp);
+			return power(left, right, operator instanceof FloatPower, pp);
 		else if (operator instanceof FloorDivision) {
 			if (left.isTop() || right.isTop() || !left.constant.getStaticType().isNumericType()
 					|| !right.constant.getStaticType().isNumericType())
@@ -265,6 +261,15 @@ public class ConstantPropagationDomain
 			SemanticOracle oracle)
 			throws SemanticException {
 		BinaryOperator operator = expression.getOperator();
+		if (operator instanceof StringFormatRaises) {
+			if (left.isTop() || right.isTop() || left.isBottom() || right.isBottom() || !left.is(String.class))
+				return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
+			PyPercentFormat.Result res = PyPercentFormat.format(left.as(String.class), right.getConstant());
+			if (!res.decided)
+				return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
+			return it.unive.lisa.lattices.Satisfiability
+					.fromBoolean(((StringFormatRaises) operator).getException().equals(res.exception));
+		}
 		if (!(operator instanceof it.unive.lisa.symbolic.value.operator.ComparisonOperator)
 				|| left.isTop() || right.isTop() || left.isBottom() || right.isBottom())
 			return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
@@ -339,36 +344,26 @@ public class ConstantPropagationDomain
 			ConstantPropagation left,
 			ConstantPropagation right,
 			ProgramPoint pp) {
-
-		if (left.isTop() || right.isTop()) {
+		if (left.isTop() || right.isTop() || !left.is(String.class))
 			return ConstantPropagation.TOP;
-		}
-		if (left.constant.getStaticType().isStringType() && right.constant.getStaticType().isStringType()) {
-			return new ConstantPropagation(
-					new Constant(StringType.INSTANCE, left.as(String.class) + right.as(String.class),
-							pp.getLocation()));
-		}
-		return ConstantPropagation.TOP;
+		PyPercentFormat.Result res = PyPercentFormat.format(left.as(String.class), right.getConstant());
+		if (res.decided && res.exception != null)
+			// the exception is raised by the caller
+			return ConstantPropagation.BOTTOM;
+		if (res.value == null)
+			return ConstantPropagation.TOP;
+		return new ConstantPropagation(new Constant(StringType.INSTANCE, res.value, pp.getLocation()));
 	}
 
 	private Constant div(
 			ConstantPropagation left,
 			ConstantPropagation right,
 			ProgramPoint pp) {
-		Constant c;
-		if (left.is(Integer.class) && right.is(Integer.class)) {
-			Integer l = left.as(Integer.class);
-			Integer r = right.as(Integer.class);
-			c = l % r == 0
-					? new Constant(Int32Type.INSTANCE, l / r, pp.getLocation())
-					: new Constant(Float32Type.INSTANCE, l / (float) r, pp.getLocation());
-		} else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) / right.as(Integer.class), pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) / right.as(Float.class), pp.getLocation());
-		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) / right.as(Float.class), pp.getLocation());
-		return c;
+		// python's true division always yields a float, even between ints
+		// that divide exactly (6 / 3 == 2.0)
+		float l = ((Number) left.getConstant()).floatValue();
+		float r = ((Number) right.getConstant()).floatValue();
+		return new Constant(Float32Type.INSTANCE, l / r, pp.getLocation());
 	}
 
 	private Constant floorDiv(
@@ -558,61 +553,37 @@ public class ConstantPropagationDomain
 	private ConstantPropagation power(
 			ConstantPropagation left,
 			ConstantPropagation right,
+			boolean floatResult,
 			ProgramPoint pp) {
-		if (left.isTop() || right.isTop()) {
+		if (left.isTop() || right.isTop() || !(left.getConstant() instanceof Number)
+				|| !(right.getConstant() instanceof Number))
 			return ConstantPropagation.TOP;
-		}
-		// TODO: handle overflow (?)
-		if (left.constant.getStaticType().isNumericType() && right.constant.getStaticType().isNumericType()) {
-			NumericType superType = left.constant.getStaticType().asNumericType()
-					.supertype(right.constant.getStaticType().asNumericType());
-			// Class<? extends Number> type = getJavaClassFor(superType);
-			if (superType.is8Bits()) {
-				return new ConstantPropagation(
-						new Constant(Int8Type.INSTANCE,
-								(byte) (Math.pow((double) left.as(Byte.class), (double) right.as(Byte.class))),
-								pp.getLocation()));
-			}
-			if (superType.is16Bits()) {
-				return new ConstantPropagation(
-						new Constant(Int16Type.INSTANCE,
-								(short) (Math.pow((double) left.as(Short.class), (double) right.as(Short.class))),
-								pp.getLocation()));
-			}
-			if (superType.is32Bits()) {
-				if (!superType.isIntegral()) {
-					return new ConstantPropagation(
-							new Constant(Float32Type.INSTANCE,
-									(float) (Math.pow((double) left.as(Float.class), (double) right.as(Float.class))),
-									pp.getLocation()));
-				} else {
-					if (right.as(Integer.class) < 0) {
-						return new ConstantPropagation(
-								new Constant(Float32Type.INSTANCE, (float) (Math.pow((double) left.as(Integer.class),
-										(double) right.as(Integer.class))), pp.getLocation()));
 
-					} else {
-						return new ConstantPropagation(
-								new Constant(Int32Type.INSTANCE, (int) (Math.pow((double) left.as(Integer.class),
-										(double) right.as(Integer.class))), pp.getLocation()));
-
-					}
-				}
-			}
-			if (superType.is64Bits()) {
-				if (!superType.isIntegral()) {
-					return new ConstantPropagation(
-							new Constant(Float64Type.INSTANCE, Math.pow(left.as(Double.class), right.as(Double.class)),
-									pp.getLocation()));
-				} else {
-					return new ConstantPropagation(
-							new Constant(Int64Type.INSTANCE,
-									(long) (Math.pow((double) left.as(Long.class), (double) right.as(Long.class))),
-									pp.getLocation()));
-				}
-			}
+		Number base = (Number) left.getConstant();
+		Number exp = (Number) right.getConstant();
+		boolean intOperands = isIntegral(base) && isIntegral(exp);
+		if (intOperands && exp.longValue() >= 0 && !floatResult) {
+			// int ** non-negative int is an int (overflows are not modeled)
+			double res = Math.pow(base.doubleValue(), exp.doubleValue());
+			if (Math.abs(res) > Integer.MAX_VALUE)
+				return ConstantPropagation.TOP;
+			return new ConstantPropagation(new Constant(Int32Type.INSTANCE, (int) res, pp.getLocation()));
 		}
-		return ConstantPropagation.TOP;
+
+		double b = base.doubleValue();
+		double e = exp.doubleValue();
+		if (b == 0 && e < 0)
+			// ZeroDivisionError, raised by the caller
+			return ConstantPropagation.BOTTOM;
+		if (b < 0 && e != Math.rint(e))
+			// a negative number raised to a fractional power is complex
+			return ConstantPropagation.TOP;
+		return new ConstantPropagation(new Constant(Float32Type.INSTANCE, (float) Math.pow(b, e), pp.getLocation()));
+	}
+
+	private static boolean isIntegral(
+			Number n) {
+		return n instanceof Integer || n instanceof Long || n instanceof Short || n instanceof Byte;
 	}
 
 	private ConstantPropagation bitwiseOr(

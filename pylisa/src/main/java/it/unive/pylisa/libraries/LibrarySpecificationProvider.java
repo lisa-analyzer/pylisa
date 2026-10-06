@@ -48,6 +48,7 @@ public class LibrarySpecificationProvider {
 	public static final String TYPE_ERROR = "TypeError";
 	public static final String INDEX_ERROR = "IndexError";
 	public static final String ZERO_DIVISION_ERROR = "ZeroDivisionError";
+	public static final String VALUE_ERROR = "ValueError";
 
 	public static final String WARNINGS = "warnings";
 

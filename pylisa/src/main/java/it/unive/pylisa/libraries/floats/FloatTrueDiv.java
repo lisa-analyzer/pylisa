@@ -16,12 +16,11 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingDiv;
 import it.unive.pylisa.libraries.DivisionGuard;
+import it.unive.pylisa.symbolic.operators.TrueDivision;
 
 /**
  * Native implementation of {@code float.__truediv__(self, other)}.
- *
  * <p>
  * {@code other} (the divisor) is checked against {@code 0.0} via
  * {@link DivisionGuard}: a {@code ZeroDivisionError} is raised when it is
@@ -71,7 +70,7 @@ public class FloatTrueDiv extends BinaryExpression implements PluggableStatement
 		CodeLocation loc = getLocation();
 
 		it.unive.lisa.symbolic.value.BinaryExpression div = new it.unive.lisa.symbolic.value.BinaryExpression(
-				getStaticType(), left, right, NumericNonOverflowingDiv.INSTANCE, loc);
+				Float32Type.INSTANCE, left, right, TrueDivision.INSTANCE, loc);
 		Constant zero = new Constant(Float32Type.INSTANCE, 0f, loc);
 		return DivisionGuard.guardedCompute(analysis, state, right, zero, div, getCFG(), loc, st, this);
 	}
