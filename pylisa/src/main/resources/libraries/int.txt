@@ -156,3 +156,13 @@ class Integral:
 		type it.unive.lisa.program.type.BoolType::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.program.type.Int32Type::INSTANCE
+
+	method __divmod__: it.unive.pylisa.libraries.DivMod
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param other type it.unive.lisa.program.type.Int32Type::INSTANCE
+
+	method __rdivmod__: it.unive.pylisa.libraries.RDivMod
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param other type it.unive.lisa.program.type.Int32Type::INSTANCE

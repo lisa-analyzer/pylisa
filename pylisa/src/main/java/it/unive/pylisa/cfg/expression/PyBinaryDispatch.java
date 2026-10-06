@@ -47,7 +47,9 @@ import java.util.Set;
  * {@code TypeError} is raised).</li>
  * </ol>
  * Methods are looked up in the class of the corresponding operand only (and in
- * its superclasses). A method "accepts" an argument if the declared type of its
+ * its superclasses): as instance members for objects (e.g. instances of the
+ * program's classes), and as static members of the library classes modeling
+ * builtin types. A method "accepts" an argument if the declared type of its
  * {@code other} parameter is {@code Untyped}, or is a supertype of the
  * argument's type, where {@code float} is considered a supertype of {@code int}
  * as float methods accept ints. A method returning bottom is treated as
@@ -127,6 +129,48 @@ public final class PyBinaryDispatch {
 			boolean comparison,
 			Fallback fallback)
 			throws SemanticException {
+		return dispatch(interprocedural, state, expressions, operator, left, right, null, op, rop, comparison,
+				fallback);
+	}
+
+	/**
+	 * Computes the semantics of {@code left op= right}: like
+	 * {@link #dispatch(InterproceduralAnalysis, AnalysisState, StatementStore, it.unive.lisa.program.cfg.statement.BinaryExpression, SymbolicExpression, SymbolicExpression, String, String, boolean, Fallback)},
+	 * but {@code type(left).iop(left, right)} (e.g. {@code __iadd__}) is tried
+	 * first.
+	 *
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where both operands have been evaluated
+	 * @param expressions     the states of the operator's sub-expressions
+	 * @param operator        the operator being evaluated
+	 * @param left            the symbolic value of the left operand
+	 * @param right           the symbolic value of the right operand
+	 * @param iop             the name of the in-place dunder method (e.g.
+	 *                            {@code __iadd__})
+	 * @param op              the name of the dunder method (e.g.
+	 *                            {@code __add__})
+	 * @param rop             the name of the reflected dunder method (e.g.
+	 *                            {@code __radd__})
+	 * @param comparison      whether this is a rich comparison
+	 * @param fallback        what happens when no method applies
+	 *
+	 * @return the state after the operator
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> dispatch(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			StatementStore<A> expressions,
+			it.unive.lisa.program.cfg.statement.BinaryExpression operator,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			String iop,
+			String op,
+			String rop,
+			boolean comparison,
+			Fallback fallback)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Set<Type> rtsl = analysis.getRuntimeTypesOf(state, left, operator);
 		Set<Type> rtsr = analysis.getRuntimeTypesOf(state, right, operator);
@@ -139,8 +183,14 @@ public final class PyBinaryDispatch {
 				String cl = classOf(tl);
 				String cr = classOf(tr);
 
-				AnalysisState<A> res = tryCall(interprocedural, state, expressions, operator, cl, op,
-						operator.getLeft(), operator.getRight(), leftSet, rightSet, tl, tr);
+				AnalysisState<A> res = null;
+				if (iop != null)
+					// x op= y tries the in-place method first
+					res = tryCall(interprocedural, state, expressions, operator, cl, iop, operator.getLeft(),
+							operator.getRight(), leftSet, rightSet, tl, tr);
+				if (res == null)
+					res = tryCall(interprocedural, state, expressions, operator, cl, op,
+							operator.getLeft(), operator.getRight(), leftSet, rightSet, tl, tr);
 				if (res == null && (comparison || !Objects.equals(cl, cr)))
 					res = tryCall(interprocedural, state, expressions, operator, cr, rop,
 							operator.getRight(), operator.getLeft(), rightSet, leftSet, tr, tl);
@@ -228,15 +278,26 @@ public final class PyBinaryDispatch {
 		if (cls == null)
 			return null;
 
-		UnresolvedCall call = new UnresolvedCall(
-				caller.getCFG(),
-				caller.getLocation(),
-				CallType.STATIC,
-				cls,
-				name,
-				LeftToRightEvaluation.INSTANCE,
-				args);
+		// methods of objects (e.g. defined in the program's classes) are
+		// instance members of their class: they are found through the
+		// receiver, following inheritance
+		if (types[0].stream().anyMatch(t -> t.isPointerType() || t.isUnitType())) {
+			Call resolved = resolve(interprocedural, state, new UnresolvedCall(caller.getCFG(), caller.getLocation(),
+					CallType.INSTANCE, null, name, LeftToRightEvaluation.INSTANCE, args), types);
+			if (resolved != null)
+				return resolved;
+		}
 
+		// library classes define them as static members
+		return resolve(interprocedural, state, new UnresolvedCall(caller.getCFG(), caller.getLocation(),
+				CallType.STATIC, cls, name, LeftToRightEvaluation.INSTANCE, args), types);
+	}
+
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Call resolve(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			UnresolvedCall call,
+			Set<Type>[] types) {
 		Call resolved;
 		try {
 			resolved = interprocedural.resolve(call, types,

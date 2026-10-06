@@ -64,27 +64,51 @@ public class TupleCreation extends NaryExpression {
 		if (params.length == 1)
 			return state;
 
+		return create(analysis, state, this, getLocation(), params);
+	}
+
+	/**
+	 * Allocates a tuple holding the given elements, leaving the reference to it
+	 * on the stack.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param pp       the statement creating the tuple
+	 * @param location the location where the tuple is created
+	 * @param params   the possible values of each element
+	 *
+	 * @return the state after the creation
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> create(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			Statement pp,
+			CodeLocation location,
+			ExpressionSet[] params)
+			throws SemanticException {
 		AnalysisState<A> result = state.bottom();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
 		// allocate the heap region
-		MemoryAllocation alloc = new MemoryAllocation(tupleType, getLocation());
-		AnalysisState<A> sem = analysis.smallStepSemantics(state, alloc, this);
+		MemoryAllocation alloc = new MemoryAllocation(tupleType, location);
+		AnalysisState<A> sem = analysis.smallStepSemantics(state, alloc, pp);
 
 		// assign the pairs
 		AnalysisState<A> assign = state.bottom();
 		for (SymbolicExpression loc : sem.getExecutionExpressions()) {
-			HeapReference ref = new HeapReference(tupleType, loc, getLocation());
-			HeapDereference deref = new HeapDereference(tupleType, ref, getLocation());
+			HeapReference ref = new HeapReference(tupleType, loc, location);
+			HeapDereference deref = new HeapDereference(tupleType, ref, location);
 
 			for (int i = 0; i < params.length; i++) {
 				AnalysisState<A> fieldResult = state.bottom();
-				Constant idx = new Constant(Int32Type.INSTANCE, i, getLocation());
-				AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref, idx, getLocation());
+				Constant idx = new Constant(Int32Type.INSTANCE, i, location);
+				AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref, idx, location);
 				for (SymbolicExpression init : params[i]) {
-					AnalysisState<A> fieldState = analysis.smallStepSemantics(sem, fieldAcc, this);
+					AnalysisState<A> fieldState = analysis.smallStepSemantics(sem, fieldAcc, pp);
 					for (SymbolicExpression lenId : fieldState.getExecutionExpressions())
-						fieldResult = fieldResult.lub(analysis.assign(fieldState, lenId, init, this));
+						fieldResult = fieldResult.lub(analysis.assign(fieldState, lenId, init, pp));
 				}
 				assign = assign.lub(fieldResult);
 			}
@@ -93,16 +117,16 @@ public class TupleCreation extends NaryExpression {
 			// time never becomes stale; track it as a "length" field so
 			// SequenceGetItem can raise IndexError on out-of-bounds access
 			AnalysisState<A> lenResult = state.bottom();
-			Variable lenKey = new Variable(Int32Type.INSTANCE, "length", getLocation());
-			AccessChild lenAcc = new AccessChild(Untyped.INSTANCE, deref, lenKey, getLocation());
-			Constant lenValue = new Constant(Int32Type.INSTANCE, params.length, getLocation());
-			AnalysisState<A> lenState = analysis.smallStepSemantics(sem, lenAcc, this);
+			Variable lenKey = new Variable(Int32Type.INSTANCE, "length", location);
+			AccessChild lenAcc = new AccessChild(Untyped.INSTANCE, deref, lenKey, location);
+			Constant lenValue = new Constant(Int32Type.INSTANCE, params.length, location);
+			AnalysisState<A> lenState = analysis.smallStepSemantics(sem, lenAcc, pp);
 			for (SymbolicExpression lenId : lenState.getExecutionExpressions())
-				lenResult = lenResult.lub(analysis.assign(lenState, lenId, lenValue, this));
+				lenResult = lenResult.lub(analysis.assign(lenState, lenId, lenValue, pp));
 			assign = assign.lub(lenResult);
 
 			// we leave the reference on the stack
-			result = result.lub(analysis.smallStepSemantics(assign, ref, this));
+			result = result.lub(analysis.smallStepSemantics(assign, ref, pp));
 		}
 
 		return result;

@@ -1,20 +1,20 @@
 {
   "warnings" : [ ],
   "notices" : [ ],
-  "files" : [ "report.json", "untyped_py-testcases_list_list.$main().graph.json" ],
+  "files" : [ "report.json", "untyped_D.__divmod__(D__self,_untyped_o)_-2023941255.graph.json", "untyped_D.__rdivmod__(D__self,_untyped_o)_-2023941224.graph.json", "untyped_py-testcases_divmod_divmod.$main().graph.json" ],
   "info" : {
-    "cfgs" : "2",
-    "duration" : "3ms",
-    "end" : "2026-10-06T13:56:47.844+02:00",
-    "expressions" : "21",
-    "files" : "1",
+    "cfgs" : "4",
+    "duration" : "28ms",
+    "end" : "2026-10-06T13:56:46.978+02:00",
+    "expressions" : "127",
+    "files" : "3",
     "globals" : "0",
-    "members" : "129",
+    "members" : "131",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-06T13:56:47.841+02:00",
-    "statements" : "7",
-    "units" : "21",
+    "start" : "2026-10-06T13:56:46.950+02:00",
+    "statements" : "41",
+    "units" : "22",
     "version" : "1.0",
     "warnings" : "0"
   },
@@ -37,6 +37,6 @@
     "syntacticChecks" : "",
     "useWideningPoints" : "true",
     "wideningThreshold" : "5",
-    "workdir" : "py-outputs/list"
+    "workdir" : "py-outputs/divmod"
   }
 }
