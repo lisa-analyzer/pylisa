@@ -17,8 +17,10 @@ import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.collections.CollectionsDiffBuilder;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 public class Import extends Statement {
 
@@ -58,7 +60,9 @@ public class Import extends Statement {
 		// same keys: just iterate over them and apply comparisons
 		// since fields is sorted, the order of iteration will be consistent
 		for (Entry<String, String> entry : this.libs.entrySet())
-			if ((cmp = entry.getValue().compareTo(other.libs.get(entry.getKey()))) != 0)
+			// the alias is null for imports without "as"
+			if ((cmp = Objects.compare(entry.getValue(), other.libs.get(entry.getKey()),
+					Comparator.nullsFirst(Comparator.naturalOrder()))) != 0)
 				return cmp;
 
 		return 0;

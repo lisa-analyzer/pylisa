@@ -41,9 +41,18 @@ public class LibrarySpecificationProvider {
 	public static final String TUPLE = "Tuple";
 	public static final String SLICE = "Slice";
 	public static final String OBJECT = "Object";
+	public static final String INT = "Integral";
+	public static final String FLOAT = "Real";
+	public static final String STR = "Str";
+	public static final String BYTES = "Bytes";
+	public static final String BOOL = "Bool";
 	public static final String TYPE_ERROR = "TypeError";
 	public static final String INDEX_ERROR = "IndexError";
 	public static final String ZERO_DIVISION_ERROR = "ZeroDivisionError";
+	public static final String VALUE_ERROR = "ValueError";
+	public static final String LOOKUP_ERROR = "LookupError";
+	public static final String UNICODE_DECODE_ERROR = "UnicodeDecodeError";
+	public static final String UNICODE_ENCODE_ERROR = "UnicodeEncodeError";
 
 	public static final String WARNINGS = "warnings";
 
