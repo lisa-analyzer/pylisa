@@ -1,19 +1,19 @@
 {
   "warnings" : [ ],
   "notices" : [ ],
-  "files" : [ "report.json", "untyped_py-testcases_list_list.$main().graph.json" ],
+  "files" : [ "report.json", "untyped_py-testcases_bool-ops_bool-ops.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "3ms",
-    "end" : "2026-10-06T15:24:47.837+02:00",
-    "expressions" : "21",
+    "duration" : "22ms",
+    "end" : "2026-10-06T15:24:45.512+02:00",
+    "expressions" : "118",
     "files" : "1",
     "globals" : "0",
     "members" : "135",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-06T15:24:47.834+02:00",
-    "statements" : "7",
+    "start" : "2026-10-06T15:24:45.490+02:00",
+    "statements" : "39",
     "units" : "21",
     "version" : "1.0",
     "warnings" : "0"
@@ -37,6 +37,6 @@
     "syntacticChecks" : "",
     "useWideningPoints" : "true",
     "wideningThreshold" : "5",
-    "workdir" : "py-outputs/list"
+    "workdir" : "py-outputs/bool-ops"
   }
 }

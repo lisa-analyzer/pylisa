@@ -22,15 +22,19 @@ import it.unive.lisa.program.cfg.statement.call.ResolvedCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.program.type.BoolType;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.PushAny;
+import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.symbolic.operators.conversions.BoolToInt;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -93,7 +97,8 @@ public final class PyBinaryDispatch {
 			LibrarySpecificationProvider.INT,
 			LibrarySpecificationProvider.FLOAT,
 			LibrarySpecificationProvider.STR,
-			LibrarySpecificationProvider.BYTES);
+			LibrarySpecificationProvider.BYTES,
+			LibrarySpecificationProvider.BOOL);
 
 	private PyBinaryDispatch() {
 	}
@@ -253,6 +258,63 @@ public final class PyBinaryDispatch {
 	}
 
 	/**
+	 * Computes the semantics of a unary operator (e.g. {@code -x}), that calls
+	 * {@code type(x).name(x)} (e.g. {@code __neg__}): a {@code bool} uses the
+	 * method of {@code int}, and if no method applies, a {@code TypeError} is
+	 * raised for classes whose methods are all known (see
+	 * {@link #fullyKnown(Type)}), while the result is unknown otherwise.
+	 *
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the operand has been evaluated
+	 * @param expressions     the states of the operator's sub-expressions
+	 * @param operator        the operator being evaluated
+	 * @param arg             the symbolic value of the operand
+	 * @param name            the name of the dunder method
+	 *
+	 * @return the state after the operator
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	@SuppressWarnings("unchecked")
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> dispatchUnary(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			StatementStore<A> expressions,
+			it.unive.lisa.program.cfg.statement.UnaryExpression operator,
+			SymbolicExpression arg,
+			String name)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		Expression[] params = { operator.getSubExpression() };
+		AnalysisState<A> result = state.bottom();
+		for (Type t : analysis.getRuntimeTypesOf(state, arg, operator)) {
+			Type type = t;
+			ExpressionSet value = new ExpressionSet(arg);
+			Call resolved = resolveInClass(interprocedural, state, operator, classOf(type), name, params,
+					new Set[] { Collections.singleton(type) });
+			if (resolved == null && t.isBooleanType()) {
+				// bool inherits the methods of int
+				type = Int32Type.INSTANCE;
+				value = asInt(value, t, operator);
+				resolved = resolveInClass(interprocedural, state, operator, classOf(type), name, params,
+						new Set[] { Collections.singleton(type) });
+			}
+
+			if (resolved != null) {
+				result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
+						new ExpressionSet[] { value }, expressions));
+				operator.getMetaVariables().addAll(resolved.getMetaVariables());
+			} else if (fullyKnown(t))
+				result = result.lub(PyExceptions.raise(analysis, state, operator.getCFG(), operator.getLocation(),
+						operator, LibrarySpecificationProvider.TYPE_ERROR));
+			else
+				result = result.lub(analysis.smallStepSemantics(state,
+						new PushAny(Untyped.INSTANCE, operator.getLocation()), operator));
+		}
+		return result;
+	}
+
+	/**
 	 * Yields the name of the library class modeling the Python class of the
 	 * given runtime type, or {@code null} if there is none.
 	 *
@@ -378,9 +440,61 @@ public final class PyBinaryDispatch {
 	/**
 	 * Calls {@code cls.name(self, other)}, returning {@code null} if
 	 * {@code cls} does not define it, if it does not accept {@code other}, or
-	 * if it returns bottom (i.e., {@code NotImplemented}).
+	 * if it returns bottom (i.e., {@code NotImplemented}). Since {@code bool}
+	 * is a subclass of {@code int}, if a {@code bool} operand finds no method,
+	 * the call is retried with it converted to {@code int}, as the method
+	 * inherited from {@code int} applies (e.g. {@code True + 1} is
+	 * {@code int.__add__}).
 	 */
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> tryCall(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			StatementStore<A> expressions,
+			Expression operator,
+			String cls,
+			String name,
+			Expression self,
+			Expression other,
+			ExpressionSet selfValue,
+			ExpressionSet otherValue,
+			Type selfType,
+			Type otherType)
+			throws SemanticException {
+		AnalysisState<A> res = tryExactCall(interprocedural, state, expressions, operator, cls, name, self, other,
+				selfValue, otherValue, selfType, otherType);
+		if (res != null || (!selfType.isBooleanType() && !otherType.isBooleanType()))
+			return res;
+		Type selfInt = asInt(selfType), otherInt = asInt(otherType);
+		return tryExactCall(interprocedural, state, expressions, operator, classOf(selfInt), name, self, other,
+				asInt(selfValue, selfType, operator), asInt(otherValue, otherType, operator), selfInt, otherInt);
+	}
+
+	// the int type for bools, any other type unchanged
+	private static Type asInt(
+			Type type) {
+		return type.isBooleanType() ? Int32Type.INSTANCE : type;
+	}
+
+	// the int values of bools, any other value unchanged
+	private static ExpressionSet asInt(
+			ExpressionSet values,
+			Type type,
+			Expression operator) {
+		if (!type.isBooleanType())
+			return values;
+		Set<SymbolicExpression> converted = new HashSet<>();
+		for (SymbolicExpression v : values)
+			converted.add(new UnaryExpression(Int32Type.INSTANCE, v, BoolToInt.INSTANCE, operator.getLocation()));
+		return new ExpressionSet(converted);
+	}
+
+	/**
+	 * Calls {@code cls.name(self, other)} with the given types (bools are not
+	 * retried as ints), returning {@code null} if {@code cls} does not define
+	 * it, if it does not accept {@code other}, or if it returns bottom (i.e.,
+	 * {@code NotImplemented}).
+	 */
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> tryExactCall(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			StatementStore<A> expressions,

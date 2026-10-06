@@ -1,2 +1,32 @@
-# operator (dunder) registrations for Python's bool type go here
-class Bool
+# Python's bool: a subclass of int, whose methods are inherited through the
+# dispatch of the operators (see PyBinaryDispatch)
+class Bool:
+	method __and__: it.unive.pylisa.libraries.BoolAnd
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.BoolType::INSTANCE
+		param other type it.unive.lisa.program.type.BoolType::INSTANCE
+
+	method __rand__: it.unive.pylisa.libraries.BoolAnd
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.BoolType::INSTANCE
+		param other type it.unive.lisa.program.type.BoolType::INSTANCE
+
+	method __or__: it.unive.pylisa.libraries.BoolOr
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.BoolType::INSTANCE
+		param other type it.unive.lisa.program.type.BoolType::INSTANCE
+
+	method __ror__: it.unive.pylisa.libraries.BoolOr
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.BoolType::INSTANCE
+		param other type it.unive.lisa.program.type.BoolType::INSTANCE
+
+	method __xor__: it.unive.pylisa.libraries.BoolXor
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.BoolType::INSTANCE
+		param other type it.unive.lisa.program.type.BoolType::INSTANCE
+
+	method __rxor__: it.unive.pylisa.libraries.BoolXor
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self type it.unive.lisa.program.type.BoolType::INSTANCE
+		param other type it.unive.lisa.program.type.BoolType::INSTANCE

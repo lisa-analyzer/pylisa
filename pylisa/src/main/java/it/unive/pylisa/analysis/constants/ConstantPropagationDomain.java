@@ -49,6 +49,7 @@ import it.unive.pylisa.symbolic.ListConstant;
 import it.unive.pylisa.symbolic.PyBytes;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
+import it.unive.pylisa.symbolic.operators.BoolBitwise;
 import it.unive.pylisa.symbolic.operators.DictPut;
 import it.unive.pylisa.symbolic.operators.FloatPower;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
@@ -65,6 +66,7 @@ import it.unive.pylisa.symbolic.operators.bytes.BytesUnary;
 import it.unive.pylisa.symbolic.operators.bytes.Codec;
 import it.unive.pylisa.symbolic.operators.bytes.CodecRaises;
 import it.unive.pylisa.symbolic.operators.bytes.FromHexRaises;
+import it.unive.pylisa.symbolic.operators.conversions.BoolToInt;
 import it.unive.pylisa.symbolic.operators.conversions.ConversionRaises;
 import it.unive.pylisa.symbolic.operators.conversions.ToFloat;
 import it.unive.pylisa.symbolic.operators.conversions.ToInt;
@@ -178,6 +180,12 @@ public class ConstantPropagationDomain
 				// python counts code points, not UTF-16 units
 				return new ConstantPropagation(
 						new Constant(Int32Type.INSTANCE, PyStrings.length(arg.as(String.class)), pp.getLocation()));
+
+		if (operator == BoolToInt.INSTANCE) {
+			Long n = index(arg);
+			return n == null ? ConstantPropagation.TOP
+					: new ConstantPropagation(new Constant(Int32Type.INSTANCE, n.intValue(), pp.getLocation()));
+		}
 
 		if (operator == BytesUnary.HEX && arg.is(PyBytes.class))
 			return string(PyCodecs.hex(arg.as(PyBytes.class)), pp);
@@ -298,6 +306,13 @@ public class ConstantPropagationDomain
 			return bitwiseLeftShift(left, right, pp);
 		else if (operator instanceof BitwiseShiftRight)
 			return bitwiseRightShift(left, right, pp);
+		if (operator instanceof BoolBitwise) {
+			if (left.isTop() || right.isTop() || !left.is(Boolean.class) || !right.is(Boolean.class))
+				return ConstantPropagation.TOP;
+			return new ConstantPropagation(new Constant(BoolType.INSTANCE,
+					((BoolBitwise) operator).apply(left.as(Boolean.class), right.as(Boolean.class)),
+					pp.getLocation()));
+		}
 		if (operator instanceof BytesOperation)
 			return bytesBinary((BytesOperation) operator, left, right, pp);
 		if (operator == ToInt.INSTANCE)
