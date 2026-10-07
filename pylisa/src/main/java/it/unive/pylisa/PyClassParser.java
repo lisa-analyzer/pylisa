@@ -5,6 +5,7 @@ import static it.unive.pylisa.PyParsingUtils.getLocation;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -18,6 +19,7 @@ import it.unive.pylisa.antlr.PythonParser.Class_def_rawContext;
 import it.unive.pylisa.antlr.PythonParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.PyParameter;
+import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.function.Function;
@@ -63,6 +65,10 @@ public class PyClassParser
 		// problems since we will do that where the signature is defined, and
 		// not where it is used.
 		ClassUnit signature = new ClassUnit(getLocation(filePath, ctx), program, name, false);
+		if (ctx.arguments() == null || ctx.arguments().getChildCount() == 0)
+			// without bases, all the methods of the class are known: they are
+			// those defined in its body
+			signature.addAnnotation(new Annotation(PyBinaryDispatch.FULLY_DEFINED));
 
 		// we parse the body of the class in a synthetic method that will be
 		// invoked by the class definition instruction

@@ -139,10 +139,12 @@ import it.unive.pylisa.cfg.expression.PyBitwiseNot;
 import it.unive.pylisa.cfg.expression.PyBitwiseOr;
 import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
 import it.unive.pylisa.cfg.expression.PyBitwiseXor;
+import it.unive.pylisa.cfg.expression.PyDivMod;
 import it.unive.pylisa.cfg.expression.PyDivision;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
 import it.unive.pylisa.cfg.expression.PyFloorDiv;
 import it.unive.pylisa.cfg.expression.PyIn;
+import it.unive.pylisa.cfg.expression.PyInPlaceOperation;
 import it.unive.pylisa.cfg.expression.PyIs;
 import it.unive.pylisa.cfg.expression.PyMatMul;
 import it.unive.pylisa.cfg.expression.PyMethodCall;
@@ -441,33 +443,51 @@ public class PyStatementParser
 			SourceCodeLocation loc,
 			Expression left,
 			Expression right) {
-		if (ctx.PLUSEQUAL() != null)
-			return new PyAddition(currentCFG, loc, left, right);
-		if (ctx.MINEQUAL() != null)
-			return new PySubtraction(currentCFG, loc, left, right);
-		if (ctx.STAREQUAL() != null)
-			return new PyMultiplication(currentCFG, loc, left, right);
 		if (ctx.ATEQUAL() != null)
 			return new PyMatMul(currentCFG, loc, left, right);
-		if (ctx.SLASHEQUAL() != null)
-			return new PyDivision(currentCFG, loc, left, right);
-		if (ctx.PERCENTEQUAL() != null)
-			return new PyRemainder(currentCFG, loc, left, right);
-		if (ctx.AMPEREQUAL() != null)
-			return new PyBitwiseAnd(currentCFG, loc, left, right);
-		if (ctx.VBAREQUAL() != null)
-			return new PyBitwiseOr(currentCFG, loc, left, right);
-		if (ctx.CIRCUMFLEXEQUAL() != null)
-			return new PyBitwiseXor(currentCFG, loc, left, right);
-		if (ctx.LEFTSHIFTEQUAL() != null)
-			return new PyBitwiseLeftShift(currentCFG, loc, left, right);
-		if (ctx.RIGHTSHIFTEQUAL() != null)
-			return new PyBitwiseRIghtShift(currentCFG, loc, left, right);
-		if (ctx.DOUBLESTAREQUAL() != null)
-			return new PyPower(currentCFG, loc, left, right);
-		if (ctx.DOUBLESLASHEQUAL() != null)
-			return new PyFloorDiv(currentCFG, loc, left, right);
-		throw new UnsupportedStatementException("Unknown augmented assignment operator");
+
+		// x op= y calls __iop__, falling back to __op__ and __rop__
+		String symbol, name;
+		if (ctx.PLUSEQUAL() != null) {
+			symbol = "+=";
+			name = "add";
+		} else if (ctx.MINEQUAL() != null) {
+			symbol = "-=";
+			name = "sub";
+		} else if (ctx.STAREQUAL() != null) {
+			symbol = "*=";
+			name = "mul";
+		} else if (ctx.SLASHEQUAL() != null) {
+			symbol = "/=";
+			name = "truediv";
+		} else if (ctx.PERCENTEQUAL() != null) {
+			symbol = "%=";
+			name = "mod";
+		} else if (ctx.AMPEREQUAL() != null) {
+			symbol = "&=";
+			name = "and";
+		} else if (ctx.VBAREQUAL() != null) {
+			symbol = "|=";
+			name = "or";
+		} else if (ctx.CIRCUMFLEXEQUAL() != null) {
+			symbol = "^=";
+			name = "xor";
+		} else if (ctx.LEFTSHIFTEQUAL() != null) {
+			symbol = "<<=";
+			name = "lshift";
+		} else if (ctx.RIGHTSHIFTEQUAL() != null) {
+			symbol = ">>=";
+			name = "rshift";
+		} else if (ctx.DOUBLESTAREQUAL() != null) {
+			symbol = "**=";
+			name = "pow";
+		} else if (ctx.DOUBLESLASHEQUAL() != null) {
+			symbol = "//=";
+			name = "floordiv";
+		} else
+			throw new UnsupportedStatementException("Unknown augmented assignment operator");
+		return new PyInPlaceOperation(currentCFG, loc, symbol, "__i" + name + "__", "__" + name + "__",
+				"__r" + name + "__", left, right);
 	}
 
 	@Override
@@ -1513,6 +1533,9 @@ public class PyStatementParser
 							pars.toArray(Expression[]::new));
 				} else if (!instance && method_name.equals("len") && pars.size() == 1) {
 					access = new PyLength(currentCFG, getLocation(filePath, frame), pars.get(0));
+				} else if (!instance && method_name.equals("divmod") && pars.size() == 2
+						&& pars.stream().noneMatch(NamedParameterExpression.class::isInstance)) {
+					access = new PyDivMod(currentCFG, getLocation(filePath, frame), pars.get(0), pars.get(1));
 				} else {
 					access = instance
 							? new PyMethodCall(
