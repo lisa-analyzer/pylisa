@@ -75,6 +75,7 @@ public class ExceptionsCheck<V extends ValueLattice<V>>
 			Statement node) {
 
 		if (node instanceof UnresolvedCall unresolvedCall
+				&& unresolvedCall.getQualifier() != null
 				&& unresolvedCall.getQualifier().equals("org.sosy_lab.sv_benchmarks.Verifier")) {
 			if (unresolvedCall.getParentStatement() instanceof Assignment assignment
 					&& unresolvedCall.getTargetName().startsWith("nondet")) {
