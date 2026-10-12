@@ -185,7 +185,6 @@ import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.libraries.NoOpFunction;
 import it.unive.pylisa.symbolic.PyBytes;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1700,7 +1699,7 @@ public class PyStatementParser
 							indexes.get(0),
 							indexes.get(1));
 				else
-					return NoOpFunction.build(currentCFG, getLocation(filePath, ctx), null);
+					throw new UnsupportedStatementException("subscripts with more than two indexes are not supported");
 			} else if (frame.genexp() != null)
 				throw new UnsupportedStatementException("generator expression calls are not supported");
 			else
