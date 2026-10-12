@@ -1,0 +1,5 @@
+library math:
+    location math
+    method floor: it.unive.pylisa.libraries.math.MathFloor
+        type it.unive.lisa.program.type.Int32Type::INSTANCE
+        param x type it.unive.lisa.type.Untyped::INSTANCE

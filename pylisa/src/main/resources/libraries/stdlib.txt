@@ -49,6 +49,8 @@ class IndexError
 
 class ZeroDivisionError
 
+class OverflowError
+
 class ValueError
 
 class LookupError

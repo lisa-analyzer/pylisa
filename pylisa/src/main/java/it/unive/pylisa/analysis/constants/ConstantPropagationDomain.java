@@ -72,6 +72,7 @@ import it.unive.pylisa.symbolic.operators.compare.PyComparisonLe;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonLt;
 import it.unive.pylisa.symbolic.operators.conversions.BoolToInt;
 import it.unive.pylisa.symbolic.operators.conversions.ConversionRaises;
+import it.unive.pylisa.symbolic.operators.conversions.Floor;
 import it.unive.pylisa.symbolic.operators.conversions.ToFloat;
 import it.unive.pylisa.symbolic.operators.conversions.ToInt;
 import it.unive.pylisa.symbolic.operators.conversions.ToRepr;
@@ -184,6 +185,28 @@ public class ConstantPropagationDomain
 				// python counts code points, not UTF-16 units
 				return new ConstantPropagation(
 						new Constant(Int32Type.INSTANCE, PyStrings.length(arg.as(String.class)), pp.getLocation()));
+
+		// math.floor(x), whose ValueError (nan) and OverflowError (infinities)
+		// are raised by the caller
+		if (operator == Floor.INSTANCE) {
+			Object v = arg.getConstant();
+			java.math.BigInteger res;
+			if (v instanceof Boolean)
+				res = (Boolean) v ? java.math.BigInteger.ONE : java.math.BigInteger.ZERO;
+			else if (v instanceof Integer || v instanceof Long)
+				res = java.math.BigInteger.valueOf(((Number) v).longValue());
+			else if (v instanceof Float || v instanceof Double) {
+				double d = ((Number) v).doubleValue();
+				if (!Double.isFinite(d))
+					return ConstantPropagation.BOTTOM;
+				res = new java.math.BigDecimal(Math.floor(d)).toBigInteger();
+			} else
+				return ConstantPropagation.TOP;
+			if (res.bitLength() > 31)
+				// ints are tracked as 32-bit integers
+				return ConstantPropagation.TOP;
+			return new ConstantPropagation(new Constant(Int32Type.INSTANCE, res.intValue(), pp.getLocation()));
+		}
 
 		if (operator == BoolToInt.INSTANCE) {
 			Long n = index(arg);
