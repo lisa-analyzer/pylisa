@@ -66,6 +66,10 @@ import it.unive.pylisa.symbolic.operators.bytes.BytesUnary;
 import it.unive.pylisa.symbolic.operators.bytes.Codec;
 import it.unive.pylisa.symbolic.operators.bytes.CodecRaises;
 import it.unive.pylisa.symbolic.operators.bytes.FromHexRaises;
+import it.unive.pylisa.symbolic.operators.compare.PyComparisonGe;
+import it.unive.pylisa.symbolic.operators.compare.PyComparisonGt;
+import it.unive.pylisa.symbolic.operators.compare.PyComparisonLe;
+import it.unive.pylisa.symbolic.operators.compare.PyComparisonLt;
 import it.unive.pylisa.symbolic.operators.conversions.BoolToInt;
 import it.unive.pylisa.symbolic.operators.conversions.ConversionRaises;
 import it.unive.pylisa.symbolic.operators.conversions.ToFloat;
@@ -332,6 +336,11 @@ public class ConstantPropagationDomain
 			return stringRepeat(left, right, pp);
 		if (operator instanceof ListAppend)
 			return listAppend(left, right, pp);
+		if (operator instanceof it.unive.lisa.symbolic.value.operator.ComparisonOperator) {
+			Boolean res = compare(operator, left, right);
+			return res == null ? ConstantPropagation.TOP
+					: new ConstantPropagation(new Constant(BoolType.INSTANCE, res, pp.getLocation()));
+		}
 		return ConstantPropagation.TOP;
 	}
 
@@ -734,50 +743,110 @@ public class ConstantPropagationDomain
 			return it.unive.lisa.lattices.Satisfiability
 					.fromBoolean(((StringFormatRaises) operator).getException().equals(res.exception));
 		}
-		if (!(operator instanceof it.unive.lisa.symbolic.value.operator.ComparisonOperator)
-				|| left.isTop() || right.isTop() || left.isBottom() || right.isBottom())
+		if (!(operator instanceof it.unive.lisa.symbolic.value.operator.ComparisonOperator))
 			return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
+		Boolean res = compare(operator, left, right);
+		return res == null ? it.unive.lisa.lattices.Satisfiability.UNKNOWN
+				: it.unive.lisa.lattices.Satisfiability.fromBoolean(res);
+	}
 
-		// bool is a subclass of int in python: True == 1
+	/**
+	 * Python's comparison {@code left op right} between constants, or
+	 * {@code null} if it cannot be decided. Numbers (where {@code bool} is a
+	 * subclass of {@code int}: {@code True == 1}) are compared exactly, as
+	 * python does (e.g. {@code 2**53 + 1 == 2.0**53} is false), with
+	 * {@code nan} different from (and unordered with) everything; strings are
+	 * ordered by code point and bytes by unsigned byte value. Values of other
+	 * types are equal only if they are the same constant.
+	 */
+	private static Boolean compare(
+			BinaryOperator operator,
+			ConstantPropagation left,
+			ConstantPropagation right) {
+		if (left.isTop() || right.isTop() || left.isBottom() || right.isBottom())
+			return null;
 		Object l = left.getConstant() instanceof Boolean ? ((Boolean) left.getConstant() ? 1 : 0) : left.getConstant();
 		Object r = right.getConstant() instanceof Boolean ? ((Boolean) right.getConstant() ? 1 : 0)
 				: right.getConstant();
+		boolean eq = operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonEq.INSTANCE;
+		boolean ne = operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonNe.INSTANCE;
 
-		// numeric equality must be checked value-wise (0 == 0.0 is true in
-		// Python) rather than via Objects.equals, which is class-sensitive:
-		// Integer(0).equals(Float(0.0f)) is false even though they denote
-		// the same number, e.g. this matters when the same binary operator
-		// resolves to both int.__truediv__ and float.__truediv__ for a
-		// plain int/int division (Int32Type.canBeAssignedTo(Float32Type) is
-		// true in this codebase's type lattice), so a zero-divisor check
-		// comparing against a Float32 zero constant must still recognize an
-		// Integer(0) divisor as zero
-		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonEq.INSTANCE
-				|| operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonNe.INSTANCE) {
-			boolean eq = (l instanceof Number && r instanceof Number)
-					? ((Number) l).doubleValue() == ((Number) r).doubleValue()
-					: java.util.Objects.equals(l, r);
-			return it.unive.lisa.lattices.Satisfiability
-					.fromBoolean(operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonEq.INSTANCE
-							? eq
-							: !eq);
-		}
+		Integer cmp;
+		if (isNumber(l) && isNumber(r)) {
+			cmp = compareNumbers(l, r);
+			if (cmp == null)
+				// nan: only != holds
+				return ne;
+		} else if (l instanceof String && r instanceof String)
+			cmp = compareCodePoints((String) l, (String) r);
+		else if (l instanceof PyBytes && r instanceof PyBytes)
+			// latin-1 maps each byte to the char with the same value
+			cmp = ((PyBytes) l).toLatin1().compareTo(((PyBytes) r).toLatin1());
+		else if (eq || ne)
+			// e.g. a string and a number are never equal
+			return java.util.Objects.equals(l, r) == eq;
+		else
+			return null;
 
-		if (!(l instanceof Number) || !(r instanceof Number))
-			return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
-		double ld = ((Number) l).doubleValue();
-		double rd = ((Number) r).doubleValue();
+		if (eq)
+			return cmp == 0;
+		if (ne)
+			return cmp != 0;
+		// python's ordering operators (see Lt) and lisa's ones
+		if (operator == PyComparisonLt.INSTANCE
+				|| operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonLt.INSTANCE)
+			return cmp < 0;
+		if (operator == PyComparisonLe.INSTANCE
+				|| operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonLe.INSTANCE)
+			return cmp <= 0;
+		if (operator == PyComparisonGt.INSTANCE
+				|| operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonGt.INSTANCE)
+			return cmp > 0;
+		if (operator == PyComparisonGe.INSTANCE
+				|| operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonGe.INSTANCE)
+			return cmp >= 0;
+		return null;
+	}
 
-		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonLt.INSTANCE)
-			return it.unive.lisa.lattices.Satisfiability.fromBoolean(ld < rd);
-		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonLe.INSTANCE)
-			return it.unive.lisa.lattices.Satisfiability.fromBoolean(ld <= rd);
-		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonGt.INSTANCE)
-			return it.unive.lisa.lattices.Satisfiability.fromBoolean(ld > rd);
-		if (operator == it.unive.lisa.symbolic.value.operator.binary.ComparisonGe.INSTANCE)
-			return it.unive.lisa.lattices.Satisfiability.fromBoolean(ld >= rd);
+	private static boolean isNumber(
+			Object v) {
+		return v instanceof Integer || v instanceof Long || v instanceof java.math.BigInteger || v instanceof Float
+				|| v instanceof Double;
+	}
 
-		return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
+	// the exact comparison of two numbers, or null if one of them is nan
+	private static Integer compareNumbers(
+			Object l,
+			Object r) {
+		boolean lf = l instanceof Float || l instanceof Double, rf = r instanceof Float || r instanceof Double;
+		if (!lf && !rf)
+			return toBigInteger(l).compareTo(toBigInteger(r));
+		double ld = ((Number) l).doubleValue(), rd = ((Number) r).doubleValue();
+		if (Double.isNaN(ld) || Double.isNaN(rd))
+			return null;
+		if (lf && rf || Double.isInfinite(ld) || Double.isInfinite(rd))
+			// -0.0 == 0.0
+			return ld == rd ? 0 : ld < rd ? -1 : 1;
+		return toBigDecimal(l).compareTo(toBigDecimal(r));
+	}
+
+	private static java.math.BigInteger toBigInteger(
+			Object v) {
+		return v instanceof java.math.BigInteger ? (java.math.BigInteger) v
+				: java.math.BigInteger.valueOf(((Number) v).longValue());
+	}
+
+	private static java.math.BigDecimal toBigDecimal(
+			Object v) {
+		return v instanceof Float || v instanceof Double ? new java.math.BigDecimal(((Number) v).doubleValue())
+				: new java.math.BigDecimal(toBigInteger(v));
+	}
+
+	private static int compareCodePoints(
+			String l,
+			String r) {
+		int[] a = l.codePoints().toArray(), b = r.codePoints().toArray();
+		return java.util.Arrays.compare(a, b);
 	}
 
 	private ConstantPropagation dictPut(
