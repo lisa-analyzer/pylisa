@@ -65,9 +65,9 @@ import java.util.Set;
  * The fallback is applied only if all the methods of both operands' classes are
  * known (see {@link #fullyKnown(Type)}): the builtin classes whose operators
  * are fully modeled ({@code int}, {@code float}, {@code str}, {@code bytes},
- * {@code bool}, {@code NoneType}), and the program's classes. For any other
- * class, a missing method could just be missing from the library models, and
- * the result is an unknown value.
+ * {@code bool}, {@code NoneType}), functions, and the program's classes. For
+ * any other class, a missing method could just be missing from the library
+ * models, and the result is an unknown value.
  */
 public final class PyBinaryDispatch {
 
@@ -230,7 +230,9 @@ public final class PyBinaryDispatch {
 	 * {@code TypeError}: this holds for the fully modeled builtin classes, and
 	 * for the program's classes marked as fully defined (those without bases,
 	 * see {@code PyClassParser}). Operator methods are looked up on the class,
-	 * so {@code __getattr__} cannot provide them.
+	 * so {@code __getattr__} cannot provide them. Functions are fully known
+	 * too: they only have the identity comparisons inherited from
+	 * {@code object}.
 	 *
 	 * @param type the runtime type
 	 *
@@ -238,6 +240,9 @@ public final class PyBinaryDispatch {
 	 */
 	public static boolean fullyKnown(
 			Type type) {
+		if (type.isCodeMemberType())
+			// a function (see PyFunctionLiteral)
+			return true;
 		if (type.isPointerType() && type.asPointerType().getInnerType().isUnitType())
 			return fullyDefined(type.asPointerType().getInnerType().asUnitType().getUnit());
 		if (type.isUnitType())
@@ -246,9 +251,20 @@ public final class PyBinaryDispatch {
 		return cls != null && FULLY_MODELED.contains(cls);
 	}
 
+	// whether values of the given type are compared by identity (functions
+	// are objects too)
 	private static boolean isObject(
 			Type type) {
-		return type.isPointerType() || type.isUnitType();
+		return type.isPointerType() || type.isUnitType() || type.isCodeMemberType();
+	}
+
+	// whether two values of the given types are surely different objects:
+	// this holds for functions defined by different def statements
+	private static boolean distinctFunctions(
+			Type left,
+			Type right) {
+		return left.isCodeMemberType() && right.isCodeMemberType()
+				&& Collections.disjoint(left.asCodeMemberType().getMembers(), right.asCodeMemberType().getMembers());
 	}
 
 	private static boolean fullyDefined(
@@ -529,7 +545,9 @@ public final class PyBinaryDispatch {
 		AnalysisState<A> result = resolved.forwardSemanticsAux(interprocedural, state,
 				new ExpressionSet[] { selfValue, otherValue }, expressions);
 		operator.getMetaVariables().addAll(resolved.getMetaVariables());
-		return result.isBottom() ? null : result;
+		// the call carries the errors raised before it: the method returned
+		// bottom only if it added nothing to them
+		return result.lessOrEqual(state.bottomExecution()) ? null : result;
 	}
 
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fallback(
@@ -545,7 +563,7 @@ public final class PyBinaryDispatch {
 			// None is a singleton, so None == None and not None != None
 			return analysis.smallStepSemantics(state,
 					new Constant(BoolType.INSTANCE, fallback == Fallback.FALSE, loc), operator);
-		if (fallback != Fallback.TYPE_ERROR && isObject(left) && isObject(right))
+		if (fallback != Fallback.TYPE_ERROR && isObject(left) && isObject(right) && !distinctFunctions(left, right))
 			// == and != compare by identity, and two objects might be the same
 			// one (allocation sites cannot tell)
 			return analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), operator);
