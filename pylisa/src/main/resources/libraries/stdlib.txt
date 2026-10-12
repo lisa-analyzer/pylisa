@@ -61,6 +61,8 @@ class OverflowError extends ArithmeticError
 
 class ValueError extends Exception
 
+class AttributeError extends Exception
+
 class UnicodeError extends ValueError
 
 class UnicodeDecodeError extends UnicodeError

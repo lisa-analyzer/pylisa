@@ -28,7 +28,10 @@ public class PyClassParser
 		extends
 		PythonParserBaseVisitor<Object> {
 
-	private static final String INSTRUMENTED_CLASS_INIT_NAME = "$class_init";
+	/**
+	 * The name of the code member holding the body of a class.
+	 */
+	public static final String INSTRUMENTED_CLASS_INIT_NAME = "$class_init";
 
 	/**
 	 * Python program file path.
