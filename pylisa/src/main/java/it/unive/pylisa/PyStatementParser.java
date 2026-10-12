@@ -10,6 +10,7 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.VariableTableEntry;
 import it.unive.lisa.program.cfg.controlFlow.IfThenElse;
 import it.unive.lisa.program.cfg.controlFlow.Loop;
@@ -137,6 +138,7 @@ import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
 import it.unive.pylisa.cfg.expression.PyAddition;
 import it.unive.pylisa.cfg.expression.PyAssign;
+import it.unive.pylisa.cfg.expression.PyAttributeAccess;
 import it.unive.pylisa.cfg.expression.PyBitwiseAnd;
 import it.unive.pylisa.cfg.expression.PyBitwiseLeftShift;
 import it.unive.pylisa.cfg.expression.PyBitwiseNot;
@@ -425,14 +427,7 @@ public class PyStatementParser
 			Single_subscript_attribute_targetContext ctx) {
 		Expression base = visitTPrimary(ctx.t_primary());
 		if (ctx.DOT() != null)
-			return new UnresolvedCall(
-					currentCFG,
-					getLocation(filePath, ctx),
-					CallType.INSTANCE,
-					null,
-					"__getattribute__",
-					base,
-					new PyStringLiteral(currentCFG, getLocation(filePath, ctx), ctx.name().getText(), "'"));
+			return attribute(base, ctx.name().getText(), getLocation(filePath, ctx));
 
 		List<Expression> indexes = extractExpressionsFromSlices(ctx.slices());
 		if (indexes.size() == 1)
@@ -549,14 +544,7 @@ public class PyStatementParser
 
 		Expression base = visitTPrimary(ctx.t_primary());
 		if (ctx.DOT() != null)
-			return new UnresolvedCall(
-					currentCFG,
-					getLocation(filePath, ctx),
-					CallType.INSTANCE,
-					null,
-					"__getattribute__",
-					base,
-					new PyStringLiteral(currentCFG, getLocation(filePath, ctx), ctx.name().getText(), "'"));
+			return attribute(base, ctx.name().getText(), getLocation(filePath, ctx));
 
 		List<Expression> indexes = extractExpressionsFromSlices(ctx.slices());
 		if (indexes.size() == 1)
@@ -585,14 +573,7 @@ public class PyStatementParser
 
 		Expression base = visitTPrimary(ctx.t_primary());
 		if (ctx.DOT() != null)
-			return new UnresolvedCall(
-					currentCFG,
-					getLocation(filePath, ctx),
-					CallType.INSTANCE,
-					null,
-					"__getattribute__",
-					base,
-					new PyStringLiteral(currentCFG, getLocation(filePath, ctx), ctx.name().getText(), "'"));
+			return attribute(base, ctx.name().getText(), getLocation(filePath, ctx));
 		else if (ctx.LSQB() != null) {
 			List<Expression> indexes = extractExpressionsFromSlices(ctx.slices());
 			if (indexes.size() == 1)
@@ -631,14 +612,7 @@ public class PyStatementParser
 
 		Expression base = visitTPrimary(ctx.t_primary());
 		if (ctx.DOT() != null)
-			return new UnresolvedCall(
-					currentCFG,
-					getLocation(filePath, ctx),
-					CallType.INSTANCE,
-					null,
-					"__getattribute__",
-					base,
-					new PyStringLiteral(currentCFG, getLocation(filePath, ctx), ctx.name().getText(), "'"));
+			return attribute(base, ctx.name().getText(), getLocation(filePath, ctx));
 
 		List<Expression> indexes = extractExpressionsFromSlices(ctx.slices());
 		if (indexes.size() == 1)
@@ -1573,14 +1547,7 @@ public class PyStatementParser
 				last_name = frame.name().getText();
 				previous_access = access;
 				attribute = true;
-				access = new UnresolvedCall(
-						currentCFG,
-						getLocation(filePath, frame),
-						CallType.INSTANCE,
-						null,
-						"__getattribute__",
-						access,
-						new PyStringLiteral(currentCFG, getLocation(filePath, frame), last_name, "'"));
+				access = attribute(access, last_name, getLocation(filePath, frame));
 			} else if (frame.LPAR() != null) {
 				if (last_name == null)
 					return new Empty(currentCFG, getLocation(filePath, frame));
@@ -1720,6 +1687,28 @@ public class PyStatementParser
 				|| (receiver instanceof UnresolvedCall && ((UnresolvedCall) receiver).getTargetName().equals("super")))
 			return false;
 		return !isNamespace(receiver);
+	}
+
+	/**
+	 * Builds the access to the attribute {@code name} of {@code receiver}: a
+	 * {@link PyAttributeAccess} for values, or a call to
+	 * {@code __getattribute__} for namespaces (e.g. {@code math.floor}, whose
+	 * calls are resolved by name, see {@link #isNamespace(Expression)}).
+	 */
+	private Expression attribute(
+			Expression receiver,
+			String name,
+			CodeLocation location) {
+		if (isNamespace(receiver))
+			return new UnresolvedCall(
+					currentCFG,
+					location,
+					CallType.INSTANCE,
+					null,
+					"__getattribute__",
+					receiver,
+					new PyStringLiteral(currentCFG, location, name, "'"));
+		return new PyAttributeAccess(currentCFG, location, receiver, name);
 	}
 
 	/**

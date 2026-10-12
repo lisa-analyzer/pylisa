@@ -6,22 +6,31 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.lattices.Satisfiability;
+import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
+import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class PyNewObj extends NaryExpression {
@@ -62,7 +71,7 @@ public class PyNewObj extends NaryExpression {
 		HeapReference ref = new HeapReference(reftype, created, getLocation());
 
 		// we need to add the receiver to the parameters
-		VariableRef paramThis = new VariableRef(getCFG(), getLocation(), "$self", reftype);
+		VariableRef paramThis = new VariableRef(getCFG(), getLocation(), "$self@" + getLocation(), reftype);
 		Expression[] fullExpressions = ArrayUtils.insert(0, getSubExpressions(), paramThis);
 
 		// we also have to add the receiver inside the state
@@ -75,26 +84,84 @@ public class PyNewObj extends NaryExpression {
 
 		UnresolvedCall call = new UnresolvedCall(getCFG(), getLocation(), CallType.INSTANCE, type.toString(),
 				getConstructName(), fullExpressions);
-		AnalysisState<A> sem = call.forwardSemanticsAux(interprocedural, tmp, fullParams, expressions);
+		Call resolved;
+		try {
+			resolved = interprocedural.resolve(call, call.parameterTypes(expressions, analysis),
+					tmp.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
+		} catch (CallResolutionException e) {
+			throw new SemanticException("Unable to resolve call " + call, e);
+		}
+
+		if (resolved instanceof OpenCall && PyBinaryDispatch.fullyKnown(type)) {
+			// all the methods of the class are known (see
+			// PyBinaryDispatch.fullyKnown), and none can be called
+			CompilationUnit unit = type.asUnitType().getUnit();
+			boolean init = !unit.getInstanceCodeMembersByName(getConstructName(), true).isEmpty();
+			boolean newObj = !unit.getInstanceCodeMembersByName("__new__", true).isEmpty();
+			if (init || (getSubExpressions().length > 0 && !newObj)) {
+				// either the arguments do not match the ones of __init__, or
+				// there is no __init__ and object.__init__ takes no
+				// arguments (unless they are consumed by __new__)
+				expressions.forget(paramThis);
+				return PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
+						LibrarySpecificationProvider.TYPE_ERROR);
+			}
+		}
+
+		AnalysisState<A> sem = resolved.forwardSemanticsAux(interprocedural, tmp, fullParams, expressions);
+		call.getMetaVariables().addAll(resolved.getMetaVariables());
+
+		// __init__ must return None
+		Satisfiability none = returnsNone(analysis, sem, resolved);
 
 		if (!call.getMetaVariables().isEmpty())
 			sem = sem.forgetIdentifiers(call.getMetaVariables(), this);
 
-		// now remove the instrumented receiver
+		AnalysisState<A> badReturn = none == Satisfiability.SATISFIED ? sem.bottom()
+				: PyExceptions.raise(analysis, sem, getCFG(), getLocation(), this,
+						LibrarySpecificationProvider.TYPE_ERROR);
+
+		// the result is the instrumented receiver, pointing to the object
+		// allocated above: the allocation is not evaluated again, as it would
+		// replace the object initialized by __init__ with a fresh one. The
+		// receiver is the only reference to the object until the result is
+		// used (e.g., assigned), so it is not forgotten here (that would also
+		// discard the object): it is forgotten as a meta variable by the
+		// statement using the result
 		expressions.forget(paramThis);
-		for (SymbolicExpression v : callstate.getExecutionExpressions())
-			if (v instanceof Identifier)
-				sem = sem.forgetIdentifier((Identifier) v, this);
-
-		sem = analysis.smallStepSemantics(sem, created, this);
-
 		AnalysisState<A> result = state.bottom();
-		for (SymbolicExpression loc : sem.getExecutionExpressions()) {
-			ReferenceType staticType = new ReferenceType(loc.getStaticType());
-			HeapReference locref = new HeapReference(staticType, loc, getLocation());
-			result = result.lub(analysis.smallStepSemantics(sem, locref, call));
-		}
+		if (none != Satisfiability.NOT_SATISFIED)
+			for (SymbolicExpression v : callstate.getExecutionExpressions())
+				if (v instanceof Identifier) {
+					getMetaVariables().add((Identifier) v);
+					result = result.lub(analysis.smallStepSemantics(sem, v, call));
+				}
 
-		return result;
+		return result.lub(badReturn);
+	}
+
+	// whether the value returned by the resolved __init__ is None; the result
+	// of an open call is not known, but it is not checked
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability returnsNone(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			Call resolved)
+			throws SemanticException {
+		if (resolved instanceof OpenCall || state.getExecution().isBottom())
+			return Satisfiability.SATISFIED;
+		boolean none = false, other = false;
+		for (SymbolicExpression e : state.getExecutionExpressions())
+			if (e instanceof Skip)
+				// no return statement
+				none = true;
+			else
+				for (Type t : analysis.getRuntimeTypesOf(state, e, resolved))
+					if (t.isNullType())
+						none = true;
+					else
+						other = true;
+		if (!other)
+			return Satisfiability.SATISFIED;
+		return none ? Satisfiability.UNKNOWN : Satisfiability.NOT_SATISFIED;
 	}
 }
