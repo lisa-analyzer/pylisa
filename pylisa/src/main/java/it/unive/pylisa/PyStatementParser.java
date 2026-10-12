@@ -660,7 +660,9 @@ public class PyStatementParser
 	public Statement visitReturn_stmt(
 			Return_stmtContext ctx) {
 		if (ctx.star_expressions() == null)
-			return new Ret(currentCFG, getLocation(filePath, ctx));
+			// a bare return returns None
+			return new Return(currentCFG, getLocation(filePath, ctx),
+					new PyNoneLiteral(currentCFG, getLocation(filePath, ctx)));
 		return new Return(currentCFG, getLocation(filePath, ctx), visitStar_expressions(ctx.star_expressions()));
 	}
 

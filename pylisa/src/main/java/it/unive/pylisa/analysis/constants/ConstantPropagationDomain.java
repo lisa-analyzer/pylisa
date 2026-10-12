@@ -3,6 +3,7 @@ package it.unive.pylisa.analysis.constants;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
+import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Float32Type;
@@ -531,6 +532,77 @@ public class ConstantPropagationDomain
 		if (codec.isEncode())
 			return value.is(String.class) ? PyCodecs.encode(value.as(String.class), enc, err) : null;
 		return value.is(PyBytes.class) ? PyCodecs.decode(value.as(PyBytes.class), enc, err) : null;
+	}
+
+	/**
+	 * Prunes the paths where {@code expression} cannot hold: a branch whose
+	 * condition is known to be false yields bottom, so that it does not
+	 * contribute to the state after the branch.
+	 */
+	@Override
+	public ValueEnvironment<ConstantPropagation> assume(
+			ValueEnvironment<ConstantPropagation> environment,
+			ValueExpression expression,
+			ProgramPoint src,
+			ProgramPoint dest,
+			SemanticOracle oracle)
+			throws SemanticException {
+		it.unive.lisa.lattices.Satisfiability sat = satisfies(environment, expression, src, oracle);
+		if (sat == it.unive.lisa.lattices.Satisfiability.NOT_SATISFIED)
+			return environment.bottom();
+		return BaseNonRelationalValueDomain.super.assume(environment, expression, src, dest, oracle);
+	}
+
+	@Override
+	public it.unive.lisa.lattices.Satisfiability satisfiesAbstractValue(
+			ConstantPropagation value,
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
+		return truthiness(value);
+	}
+
+	@Override
+	public it.unive.lisa.lattices.Satisfiability satisfiesConstant(
+			Constant constant,
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
+		return truthiness(evalConstant(constant, pp, oracle));
+	}
+
+	/**
+	 * Python's truth value of a constant (e.g. in {@code if x:}): {@code None},
+	 * {@code False}, zero, the empty string and the empty bytes are false,
+	 * every other value of these types is true. Values of other types are
+	 * unknown.
+	 */
+	private static it.unive.lisa.lattices.Satisfiability truthiness(
+			ConstantPropagation value) {
+		if (value.isBottom())
+			return it.unive.lisa.lattices.Satisfiability.BOTTOM;
+		if (value.isTop())
+			return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
+		if (value.constant instanceof PyNoneConstant)
+			return it.unive.lisa.lattices.Satisfiability.NOT_SATISFIED;
+		Object v = value.getConstant();
+		Boolean res;
+		if (v instanceof Boolean)
+			res = (Boolean) v;
+		else if (v instanceof java.math.BigInteger)
+			res = ((java.math.BigInteger) v).signum() != 0;
+		else if (v instanceof Float || v instanceof Double)
+			// nan is true, -0.0 is false
+			res = ((Number) v).doubleValue() != 0;
+		else if (isNumber(v))
+			res = ((Number) v).longValue() != 0;
+		else if (v instanceof String)
+			res = !((String) v).isEmpty();
+		else if (v instanceof PyBytes)
+			res = ((PyBytes) v).length() != 0;
+		else
+			return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
+		return it.unive.lisa.lattices.Satisfiability.fromBoolean(res);
 	}
 
 	@Override

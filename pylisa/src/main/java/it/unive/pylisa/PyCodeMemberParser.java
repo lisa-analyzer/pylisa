@@ -7,11 +7,14 @@ import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.program.cfg.VariableTableEntry;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
@@ -32,6 +35,7 @@ import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.PyParameter;
 import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
+import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.type.PyClassType;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -98,9 +102,43 @@ public class PyCodeMemberParser
 						getLocation(filePath, ctx));
 		CFGTweaker.splitProtectedYields(cfg, factory);
 		CFGTweaker.addFinallyEdges(cfg, factory);
-		CFGTweaker.addReturns(cfg, factory);
+		addNoneReturns(cfg);
 		cfg.simplify();
 		return cfg;
+	}
+
+	/**
+	 * Python functions return {@code None} when their execution reaches the end
+	 * of their body: every statement ending the function (i.e., that does not
+	 * stop the execution and has no follower) is connected to a
+	 * {@code return None} added at the end. This replaces
+	 * {@link CFGTweaker#addReturns}, that requires a return value on every path
+	 * as soon as one returns a value (e.g., in {@code if x: return 1}).
+	 *
+	 * @param cfg the cfg of the function
+	 */
+	private static void addNoneReturns(
+			PyCFG cfg) {
+		CodeLocation loc = cfg.getDescriptor().getLocation();
+		Return ret = new Return(cfg, loc, new PyNoneLiteral(cfg, loc));
+		if (cfg.getNodesCount() == 0) {
+			cfg.addNode(ret, true);
+			return;
+		}
+
+		Collection<Statement> exits = new LinkedList<>();
+		for (Statement st : cfg.getNodes())
+			if (!st.stopsExecution() && cfg.followersOf(st).isEmpty())
+				exits.add(st);
+		if (exits.isEmpty())
+			return;
+
+		cfg.addNode(ret);
+		for (Statement st : exits)
+			cfg.addEdge(new SequentialEdge(st, ret));
+		for (VariableTableEntry entry : cfg.getDescriptor().getVariables())
+			if (exits.contains(entry.getScopeEnd()))
+				entry.setScopeEnd(ret);
 	}
 
 	private CodeMemberDescriptor buildCFGDescriptor(
