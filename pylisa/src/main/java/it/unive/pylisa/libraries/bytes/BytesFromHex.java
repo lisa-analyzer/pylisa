@@ -21,9 +21,10 @@ import it.unive.pylisa.symbolic.operators.bytes.FromHexRaises;
 
 /**
  * Native implementation of the class method {@code bytes.fromhex(string)}:
- * {@code string} must be a {@code str} (otherwise {@code TypeError} is raised)
- * made of pairs of hexadecimal digits, optionally separated by ASCII whitespace
- * (otherwise {@code ValueError} is raised).
+ * {@code string} must be a {@code str} or, since python 3.14, {@code bytes}
+ * (otherwise {@code TypeError} is raised), made of pairs of hexadecimal digits
+ * optionally separated by ASCII whitespace (otherwise {@code ValueError} is
+ * raised).
  */
 public class BytesFromHex extends PyNative {
 
@@ -48,7 +49,8 @@ public class BytesFromHex extends PyNative {
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
-		Satisfiability typed = hasType(analysis, state, args[0], STR);
+		// a str or, since python 3.14, bytes
+		Satisfiability typed = hasType(analysis, state, args[0], STR.or(BYTES));
 		return typeChecked(analysis, state, typed, ExceptionGuard.guardedCompute(analysis, state,
 				new UnaryExpression(BoolType.INSTANCE, args[0], FromHexRaises.INSTANCE, loc),
 				LibrarySpecificationProvider.VALUE_ERROR,

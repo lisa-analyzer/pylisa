@@ -29,6 +29,7 @@ bb = bytes()
 cc = str.upper("abc")
 dd = s.encode("UTF-8").decode("utf8")
 ee = b.upper().decode()
+ff = bytes.fromhex(b"de ad")
 c1 = input()
 if c1:
     e1 = b"\xff".decode()
@@ -54,4 +55,8 @@ if c1:
     e11 = b.strip("x")
 if c1:
     e12 = "a".encode("bogus-codec")
+if c1:
+    e13 = bytes.fromhex(b"0")
+if c1:
+    e14 = bytes.fromhex(5)
 after = 1

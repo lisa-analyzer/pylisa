@@ -191,8 +191,9 @@ public class ConstantPropagationDomain
 			return string(PyCodecs.hex(arg.as(PyBytes.class)), pp);
 		if ((operator == BytesUnary.UPPER || operator == BytesUnary.LOWER) && arg.is(PyBytes.class))
 			return bytes(PyCodecs.asciiCase(arg.as(PyBytes.class), operator == BytesUnary.UPPER), pp);
-		if (operator == BytesUnary.FROMHEX && arg.is(String.class)) {
-			PyBytes res = PyCodecs.fromHex(arg.as(String.class));
+		if (operator == BytesUnary.FROMHEX && text(arg) != null) {
+			// a str or, since python 3.14, bytes (as their latin-1 view)
+			PyBytes res = PyCodecs.fromHex(text(arg));
 			// ValueError, raised by the caller
 			return res == null ? ConstantPropagation.BOTTOM : bytes(res, pp);
 		}
@@ -526,8 +527,8 @@ public class ConstantPropagationDomain
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
-		if (expression.getOperator() == FromHexRaises.INSTANCE && !arg.isTop() && arg.is(String.class))
-			return it.unive.lisa.lattices.Satisfiability.fromBoolean(PyCodecs.fromHex(arg.as(String.class)) == null);
+		if (expression.getOperator() == FromHexRaises.INSTANCE && !arg.isTop() && text(arg) != null)
+			return it.unive.lisa.lattices.Satisfiability.fromBoolean(PyCodecs.fromHex(text(arg)) == null);
 		return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
 	}
 
@@ -824,10 +825,11 @@ public class ConstantPropagationDomain
 			ConstantPropagation arg) {
 		if (format.isTop() || arg.isTop() || format.isBottom() || arg.isBottom())
 			return null;
+		Object value = arg.constant.getStaticType().isNullType() ? PyPercentFormat.NONE : arg.getConstant();
 		if (format.is(String.class))
-			return PyPercentFormat.format(format.as(String.class), arg.getConstant());
+			return PyPercentFormat.format(format.as(String.class), value);
 		if (format.is(PyBytes.class))
-			return PyPercentFormat.formatBytes(format.as(PyBytes.class), arg.getConstant());
+			return PyPercentFormat.formatBytes(format.as(PyBytes.class), value);
 		return null;
 	}
 

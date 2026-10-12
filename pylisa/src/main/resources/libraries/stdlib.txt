@@ -36,6 +36,9 @@ method bytes: it.unive.pylisa.libraries.conversions.BytesBuiltin
 
 root class Object
 
+# the class of None, that defines no operators
+class NoneType
+
 class TypeError
 
 class IndexError

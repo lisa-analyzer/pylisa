@@ -10,7 +10,8 @@ import java.math.RoundingMode;
 /**
  * Python's printf-style string formatting ({@code format % arg}) between
  * constants, following CPython's {@code PyUnicode_Format}. Only a single scalar
- * argument ({@code int}, {@code float}, {@code str} or {@code bool}) is
+ * argument ({@code int}, {@code float}, {@code str}, {@code bytes},
+ * {@code bool} or {@code None}, the latter standing as {@link #NONE}) is
  * supported: a tuple or a mapping as argument would need heap information, so
  * the outcome is undecided for any other kind of argument.
  * <p>
@@ -64,6 +65,16 @@ public final class PyPercentFormat {
 		}
 	}
 
+	/**
+	 * The argument standing for {@code None}.
+	 */
+	public static final Object NONE = new Object() {
+		@Override
+		public String toString() {
+			return "None";
+		}
+	};
+
 	private PyPercentFormat() {
 	}
 
@@ -106,7 +117,7 @@ public final class PyPercentFormat {
 			Object arg,
 			boolean bytes) {
 		if (!(arg instanceof Integer || arg instanceof Long || arg instanceof Float || arg instanceof Double
-				|| arg instanceof String || arg instanceof Boolean || arg instanceof PyBytes))
+				|| arg instanceof String || arg instanceof Boolean || arg instanceof PyBytes || arg == NONE))
 			return Result.UNDECIDED;
 
 		Object[] args = { arg };
@@ -526,6 +537,8 @@ public final class PyPercentFormat {
 			Object a) {
 		if (a instanceof String)
 			return (String) a;
+		if (a == NONE)
+			return "None";
 		if (a instanceof PyBytes)
 			// the str of bytes is their repr
 			return a.toString();

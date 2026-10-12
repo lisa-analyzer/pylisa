@@ -30,7 +30,8 @@ public class BytesUnary implements UnaryOperator {
 	public static final BytesUnary LOWER = new BytesUnary("lower", PyBytesType.INSTANCE);
 
 	/**
-	 * {@code bytes.fromhex(s)}, for a {@code str} {@code s}.
+	 * {@code bytes.fromhex(s)}, for a {@code str} or (since python 3.14)
+	 * {@code bytes} {@code s}.
 	 */
 	public static final BytesUnary FROMHEX = new BytesUnary("fromhex", PyBytesType.INSTANCE);
 

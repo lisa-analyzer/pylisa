@@ -64,9 +64,10 @@ import java.util.Set;
  * <p>
  * The fallback is applied only if all the methods of both operands' classes are
  * known (see {@link #fullyKnown(Type)}): the builtin classes whose operators
- * are fully modeled ({@code int}, {@code float}, {@code str}, {@code bytes}),
- * and the program's classes. For any other class, a missing method could just
- * be missing from the library models, and the result is an unknown value.
+ * are fully modeled ({@code int}, {@code float}, {@code str}, {@code bytes},
+ * {@code bool}, {@code NoneType}), and the program's classes. For any other
+ * class, a missing method could just be missing from the library models, and
+ * the result is an unknown value.
  */
 public final class PyBinaryDispatch {
 
@@ -82,13 +83,15 @@ public final class PyBinaryDispatch {
 
 		/**
 		 * The result is {@code False} ({@code ==}, falling back to identity:
-		 * unknown if both operands are objects).
+		 * {@code True} if both operands are {@code None}, unknown if both are
+		 * objects).
 		 */
 		FALSE,
 
 		/**
 		 * The result is {@code True} ({@code !=}, falling back to identity:
-		 * unknown if both operands are objects).
+		 * {@code False} if both operands are {@code None}, unknown if both are
+		 * objects).
 		 */
 		TRUE
 	}
@@ -98,7 +101,8 @@ public final class PyBinaryDispatch {
 			LibrarySpecificationProvider.FLOAT,
 			LibrarySpecificationProvider.STR,
 			LibrarySpecificationProvider.BYTES,
-			LibrarySpecificationProvider.BOOL);
+			LibrarySpecificationProvider.BOOL,
+			LibrarySpecificationProvider.NONE_TYPE);
 
 	private PyBinaryDispatch() {
 	}
@@ -224,10 +228,9 @@ public final class PyBinaryDispatch {
 	 * Whether all the methods of the class of the given runtime type are known,
 	 * so that a missing operator method means that python raises
 	 * {@code TypeError}: this holds for the fully modeled builtin classes, and
-	 * for the program's classes whose bases (except {@code object}, that
-	 * defines no operators) are all program's classes with the same property.
-	 * Operator methods are looked up on the class, so {@code __getattr__}
-	 * cannot provide them.
+	 * for the program's classes marked as fully defined (those without bases,
+	 * see {@code PyClassParser}). Operator methods are looked up on the class,
+	 * so {@code __getattr__} cannot provide them.
 	 *
 	 * @param type the runtime type
 	 *
@@ -330,6 +333,8 @@ public final class PyBinaryDispatch {
 			return type.asUnitType().getUnit().getName();
 		if (type.isBooleanType())
 			return LibrarySpecificationProvider.BOOL;
+		if (type.isNullType())
+			return LibrarySpecificationProvider.NONE_TYPE;
 		if (type.isStringType())
 			return LibrarySpecificationProvider.STR;
 		if (type instanceof PyBytesType)
@@ -434,7 +439,8 @@ public final class PyBinaryDispatch {
 	 */
 	public static boolean isBuiltinValueType(
 			Type type) {
-		return type.isStringType() || type.isNumericType() || type.isBooleanType() || type instanceof PyBytesType;
+		return type.isStringType() || type.isNumericType() || type.isBooleanType() || type.isNullType()
+				|| type instanceof PyBytesType;
 	}
 
 	/**
@@ -535,6 +541,10 @@ public final class PyBinaryDispatch {
 			Type right)
 			throws SemanticException {
 		CodeLocation loc = operator.getLocation();
+		if (fallback != Fallback.TYPE_ERROR && left.isNullType() && right.isNullType())
+			// None is a singleton, so None == None and not None != None
+			return analysis.smallStepSemantics(state,
+					new Constant(BoolType.INSTANCE, fallback == Fallback.FALSE, loc), operator);
 		if (fallback != Fallback.TYPE_ERROR && isObject(left) && isObject(right))
 			// == and != compare by identity, and two objects might be the same
 			// one (allocation sites cannot tell)
