@@ -14,6 +14,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
@@ -105,7 +106,10 @@ public class PyAssign extends Assignment {
 
 		AnalysisState<A> result = indexState.bottom();
 		boolean resolved = false;
-		List<UnresolvedCall> setitems = new ArrayList<>();
+		List<Call> setitems = new ArrayList<>();
+		// the arguments have already been evaluated: the call must not
+		// evaluate them again (e.g., calling f twice in x[i] = f())
+		ExpressionSet[] args = { selfIds, indexIds, valueIds };
 		for (SymbolicExpression selfSym : selfIds) {
 			Set<Type> rtsSelf = analysis.getRuntimeTypesOf(indexState, selfSym, this);
 			Set<Type> rtsIndex = indexIds.isEmpty() ? Set.of(Untyped.INSTANCE) : null;
@@ -126,11 +130,11 @@ public class PyAssign extends Assignment {
 						indexExpr,
 						valueExpr);
 				try {
-					interprocedural.resolve(setitem,
+					Call call = interprocedural.resolve(setitem,
 							new Set[] { Collections.singleton(tSelf), rtsIndex, rtsValue }, aliasing);
 					resolved = true;
-					result = result.lub(setitem.forwardSemantics(indexState, interprocedural, expressions));
-					setitems.add(setitem);
+					result = result.lub(call.forwardSemanticsAux(interprocedural, indexState, args, expressions));
+					setitems.add(call);
 				} catch (CallResolutionException e) {
 					// this type does not support item assignment: it does not
 					// contribute
@@ -151,7 +155,7 @@ public class PyAssign extends Assignment {
 			metas.addAll(sub.getMetaVariables());
 			sub.getMetaVariables().clear();
 		}
-		for (UnresolvedCall setitem : setitems)
+		for (Call setitem : setitems)
 			metas.addAll(setitem.getMetaVariables());
 
 		if (getRootStatement() == this)
