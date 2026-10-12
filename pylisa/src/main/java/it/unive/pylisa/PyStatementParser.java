@@ -21,7 +21,6 @@ import it.unive.lisa.program.cfg.edge.TrueEdge;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NoOp;
-import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
@@ -184,6 +183,7 @@ import it.unive.pylisa.cfg.expression.literal.PyTypeLiteral;
 import it.unive.pylisa.cfg.expression.unary.PyLength;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
+import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -683,9 +683,21 @@ public class PyStatementParser
 	@Override
 	public Statement visitRaise_stmt(
 			Raise_stmtContext ctx) {
-		log.warn("Exceptions are not yet supported. The raise statement at line " + getLine(ctx) + " of file "
-				+ filePath + " is unsoundly translated into a return; statement");
-		return new Ret(currentCFG, getLocation(filePath, ctx));
+		if (ctx.expression().isEmpty())
+			// the exception being handled is not tracked, as except blocks
+			// are not
+			throw new UnsupportedStatementException("re-raising (raise without an exception) is not supported");
+		SourceCodeLocation loc = getLocation(filePath, ctx);
+		Expression exception = visitExpression(ctx.expression(0));
+		if (exception instanceof VariableRef) {
+			// raise C, with C a class, raises C()
+			Unit unit = program.getUnit(((VariableRef) exception).getName());
+			if (unit instanceof ClassUnit)
+				exception = new PyNewObj(currentCFG, loc, "__init__",
+						PyClassType.register(unit.getName(), (ClassUnit) unit));
+		}
+		Expression cause = ctx.expression().size() > 1 ? visitExpression(ctx.expression(1)) : null;
+		return new PyRaise(currentCFG, loc, exception, cause);
 	}
 
 	@Override

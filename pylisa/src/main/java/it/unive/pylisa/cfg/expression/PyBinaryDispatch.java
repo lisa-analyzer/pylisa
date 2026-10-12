@@ -225,6 +225,12 @@ public final class PyBinaryDispatch {
 	public static final String FULLY_DEFINED = "pylisa.fully_defined_class";
 
 	/**
+	 * The annotation of the program's classes that have bases: since bases are
+	 * not tracked, their ancestors are unknown.
+	 */
+	public static final String UNTRACKED_BASES = "pylisa.untracked_bases_class";
+
+	/**
 	 * Whether all the methods of the class of the given runtime type are known,
 	 * so that a missing operator method means that python raises
 	 * {@code TypeError}: this holds for the fully modeled builtin classes, and

@@ -69,6 +69,8 @@ public class PyClassParser
 			// without bases, all the methods of the class are known: they are
 			// those defined in its body
 			signature.addAnnotation(new Annotation(PyBinaryDispatch.FULLY_DEFINED));
+		else
+			signature.addAnnotation(new Annotation(PyBinaryDispatch.UNTRACKED_BASES));
 
 		// we parse the body of the class in a synthetic method that will be
 		// invoked by the class definition instruction

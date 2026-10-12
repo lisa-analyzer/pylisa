@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -41,11 +42,17 @@ public class PyTernaryOperator extends NaryExpression {
 		return 0;
 	}
 
+	/**
+	 * Overridden (rather than relying on {@link #forwardSemanticsAux}) since
+	 * the default {@code NaryExpression.forwardSemantics} evaluates all the
+	 * sub-expressions before {@code forwardSemanticsAux} is invoked: here, only
+	 * the condition is always evaluated, and then only the branches that the
+	 * condition can select, each assuming the condition (or its negation).
+	 */
 	@Override
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState,
 			InterproceduralAnalysis<A, D> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
@@ -54,42 +61,69 @@ public class PyTernaryOperator extends NaryExpression {
 		Expression ifTrue = sub[1];
 		Expression ifFalse = sub[2];
 
-		AnalysisState<A> postCondition = condition.forwardSemantics(state, interprocedural, expressions);
-		for (SymbolicExpression cond : analysis.rewrite(state,
-				postCondition.getExecutionExpressions(),
-				this)) {
-			UnaryExpression negated = new UnaryExpression(
-					cond.getStaticType(),
-					cond,
-					LogicalNegation.INSTANCE,
-					cond.getCodeLocation());
+		AnalysisState<A> postCondition = condition.forwardSemantics(entryState, interprocedural, expressions);
+		expressions.put(condition, postCondition);
 
-			switch (analysis.satisfies(postCondition, cond, this)) {
-			case BOTTOM:
-				return state.bottom();
-			case NOT_SATISFIED:
-				return ifFalse.forwardSemantics(
-						analysis.assume(postCondition, cond, condition, ifTrue),
-						interprocedural,
-						expressions);
-			case SATISFIED:
-				return ifTrue.forwardSemantics(
-						analysis.assume(postCondition, negated, condition, ifFalse),
-						interprocedural,
-						expressions);
-			case UNKNOWN:
-				return ifTrue
-						.forwardSemantics(
-								analysis.assume(postCondition, cond, condition, ifTrue),
-								interprocedural,
-								expressions)
-						.lub(ifFalse.forwardSemantics(
-								analysis.assume(postCondition, negated, condition, ifFalse),
-								interprocedural,
-								expressions));
+		AnalysisState<A> trueState = postCondition.bottomExecution();
+		AnalysisState<A> falseState = postCondition.bottomExecution();
+		boolean canBeTrue = false, canBeFalse = false;
+		for (SymbolicExpression cond : analysis.rewrite(postCondition, postCondition.getExecutionExpressions(),
+				this)) {
+			Satisfiability sat = analysis.satisfies(postCondition, cond, this);
+			if (sat == Satisfiability.BOTTOM)
+				continue;
+			if (sat != Satisfiability.NOT_SATISFIED) {
+				canBeTrue = true;
+				trueState = trueState.lub(analysis.assume(postCondition, cond, condition, ifTrue));
+			}
+			if (sat != Satisfiability.SATISFIED) {
+				canBeFalse = true;
+				UnaryExpression negated = new UnaryExpression(cond.getStaticType(), cond, LogicalNegation.INSTANCE,
+						cond.getCodeLocation());
+				falseState = falseState.lub(analysis.assume(postCondition, negated, condition, ifFalse));
 			}
 		}
 
-		return state.top();
+		// the value of the condition is consumed here; the errors raised by
+		// the condition are kept
+		AnalysisState<A> result = postCondition.bottomExecution()
+				.forgetIdentifiers(condition.getMetaVariables(), this);
+		if (canBeTrue)
+			result = result.lub(branch(ifTrue, trueState.forgetIdentifiers(condition.getMetaVariables(), this),
+					interprocedural, expressions));
+		if (canBeFalse)
+			result = result.lub(branch(ifFalse, falseState.forgetIdentifiers(condition.getMetaVariables(), this),
+					interprocedural, expressions));
+		return result;
+	}
+
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> branch(
+			Expression branch,
+			AnalysisState<A> state,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		AnalysisState<A> result = branch.forwardSemantics(state, interprocedural, expressions);
+		expressions.put(branch, result);
+		if (result.getExecutionState().isBottom())
+			// the branch never completes normally (e.g., it raises): only its
+			// errors contribute, and not the expressions left on its stack
+			return result.withExecution(result.getExecution().bottom());
+		// the value of the branch is the value of this expression: its meta
+		// variables (e.g., the return value of a call) are forgotten by the
+		// statement that consumes it
+		getMetaVariables().addAll(branch.getMetaVariables());
+		return result;
+	}
+
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		// never invoked: forwardSemantics evaluates the sub-expressions
+		throw new SemanticException("Conditional expressions are evaluated by forwardSemantics");
 	}
 }

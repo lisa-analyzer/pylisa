@@ -1,0 +1,42 @@
+{
+  "warnings" : [ ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_raise_raise.$main().graph.json", "untyped_py-testcases_raise_raise.by_class()_-560574982.graph.json", "untyped_py-testcases_raise_raise.chained()_-560575633.graph.json", "untyped_py-testcases_raise_raise.check(untyped_x)_-560579849.graph.json", "untyped_py-testcases_raise_raise.check(untyped_x)_-560580841.graph.json", "untyped_py-testcases_raise_raise.mine()_-560578764.graph.json", "untyped_py-testcases_raise_raise.mine_class()_-560572936.graph.json", "untyped_py-testcases_raise_raise.not_exception()_-560569991.graph.json", "untyped_py-testcases_raise_raise.plain()_-560577617.graph.json", "untyped_py-testcases_raise_raise.stored()_-560576532.graph.json" ],
+  "info" : {
+    "cfgs" : "12",
+    "duration" : "154ms",
+    "end" : "2026-10-12T19:21:59.402+02:00",
+    "expressions" : "84",
+    "files" : "10",
+    "globals" : "0",
+    "members" : "147",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-12T19:21:59.248+02:00",
+    "statements" : "43",
+    "units" : "28",
+    "version" : "1.0",
+    "warnings" : "0"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/raise"
+  }
+}

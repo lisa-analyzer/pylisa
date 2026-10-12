@@ -47,6 +47,7 @@ public class LibrarySpecificationProvider {
 	public static final String BYTES = "Bytes";
 	public static final String BOOL = "Bool";
 	public static final String NONE_TYPE = "NoneType";
+	public static final String BASE_EXCEPTION = "BaseException";
 	public static final String TYPE_ERROR = "TypeError";
 	public static final String INDEX_ERROR = "IndexError";
 	public static final String ZERO_DIVISION_ERROR = "ZeroDivisionError";

@@ -43,17 +43,23 @@ root class Object
 # the class of None, that defines no operators
 class NoneType
 
-class TypeError
+class BaseException
 
-class IndexError
+class Exception extends BaseException
 
-class ZeroDivisionError
+class TypeError extends Exception
 
-class OverflowError
+class LookupError extends Exception
 
-class ValueError
+class IndexError extends LookupError
 
-class LookupError
+class ArithmeticError extends Exception
+
+class ZeroDivisionError extends ArithmeticError
+
+class OverflowError extends ArithmeticError
+
+class ValueError extends Exception
 
 class UnicodeError extends ValueError
 
