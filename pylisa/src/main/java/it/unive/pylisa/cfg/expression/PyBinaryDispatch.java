@@ -15,6 +15,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.OpenCall;
@@ -447,6 +448,22 @@ public final class PyBinaryDispatch {
 		if (resolved instanceof OpenCall || !(resolved instanceof ResolvedCall))
 			return null;
 		return resolved;
+	}
+
+	/**
+	 * Whether the given runtime types of an expression are unknown, that is,
+	 * they are all the types of the program (as yielded by the type analysis
+	 * when it knows nothing about the expression).
+	 *
+	 * @param types the runtime types
+	 * @param st    the statement where the types are computed
+	 *
+	 * @return whether the types are unknown
+	 */
+	public static boolean unknownTypes(
+			Set<Type> types,
+			Statement st) {
+		return types.containsAll(st.getCFG().getProgram().getTypes().getTypes());
 	}
 
 	/**

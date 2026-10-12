@@ -88,6 +88,31 @@ public class PyAttributeAccess extends UnaryExpression {
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		return read(interprocedural, state, expr, this);
+	}
+
+	/**
+	 * Reads the attribute from the receiver {@code expr}, raising
+	 * {@code AttributeError} from {@code thrower} if it has never been
+	 * assigned.
+	 *
+	 * @param <A>             the kind of the analysis state
+	 * @param <D>             the kind of the abstract domain
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the attribute is read
+	 * @param expr            the receiver
+	 * @param thrower         the statement raising the errors of the read
+	 *
+	 * @return the state after the read
+	 *
+	 * @throws SemanticException if something goes wrong during the computation
+	 */
+	<A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> read(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			Statement thrower)
+			throws SemanticException {
 		if (state.getExecutionState().isBottom())
 			// unreachable: nothing is computed, and nothing is left on the
 			// stack
@@ -119,7 +144,7 @@ public class PyAttributeAccess extends UnaryExpression {
 						new AccessChild(Untyped.INSTANCE, container, field, loc), this));
 			}
 			if (assigned != Assigned.SURELY)
-				result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
+				result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, thrower,
 						LibrarySpecificationProvider.ATTRIBUTE_ERROR));
 		}
 		if (others)
@@ -170,7 +195,7 @@ public class PyAttributeAccess extends UnaryExpression {
 			// all objects
 			return Assigned.SURELY;
 		for (Type t : objects)
-			if (!PyBinaryDispatch.fullyKnown(t) || definedByClass((ClassUnit) t.asUnitType().getUnit()))
+			if (!PyBinaryDispatch.fullyKnown(t) || definedByClass((ClassUnit) t.asUnitType().getUnit(), name))
 				return Assigned.SURELY;
 
 		HeapEnvWithFields heap = state.getExecutionState().getLatticeInstance(HeapEnvWithFields.class);
@@ -206,10 +231,18 @@ public class PyAttributeAccess extends UnaryExpression {
 		return !missing ? Assigned.SURELY : assigned ? Assigned.SOMETIMES : Assigned.NEVER;
 	}
 
-	// whether the attribute is a method or a class attribute of the given
-	// class
-	private boolean definedByClass(
-			ClassUnit unit) {
+	/**
+	 * Whether the attribute {@code name} is a method or a class attribute of
+	 * the given class (rather than an attribute of its instances).
+	 *
+	 * @param unit the class
+	 * @param name the name of the attribute
+	 *
+	 * @return whether the class defines the attribute
+	 */
+	static boolean definedByClass(
+			ClassUnit unit,
+			String name) {
 		if (!unit.getInstanceCodeMembersByName(name, true).isEmpty() || !unit.getCodeMembersByName(name).isEmpty())
 			return true;
 		for (CodeMember body : unit.getCodeMembersByName(PyClassParser.INSTRUMENTED_CLASS_INIT_NAME))

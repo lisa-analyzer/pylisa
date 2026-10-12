@@ -69,7 +69,11 @@ public class PyNameCall extends UnresolvedCall {
 		Set<CFG> cfgs = new HashSet<>();
 		Set<NativeCFG> natives = new HashSet<>();
 		boolean others = false, notCallable = false;
-		for (Type t : analysis.getRuntimeTypesOf(state, callee, this))
+		Set<Type> types = analysis.getRuntimeTypesOf(state, callee, this);
+		if (PyBinaryDispatch.unknownTypes(types, this))
+			// e.g. a library function (as in f = len), whose type is unknown
+			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
+		for (Type t : types)
 			if (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
 				// e.g. an int, that cannot be called
 				notCallable = true;
