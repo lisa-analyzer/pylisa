@@ -1,0 +1,42 @@
+{
+  "warnings" : [ ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_function-values_function-values.$main().graph.json", "untyped_py-testcases_function-values_function-values.greet(untyped_name)_-1431006968.graph.json", "untyped_py-testcases_function-values_function-values.greet(untyped_name)_-1431008859.graph.json", "untyped_py-testcases_function-values_function-values.greet(untyped_name)_-1431012672.graph.json" ],
+  "info" : {
+    "cfgs" : "3",
+    "duration" : "8ms",
+    "end" : "2026-10-12T13:22:09.789+02:00",
+    "expressions" : "18",
+    "files" : "4",
+    "globals" : "0",
+    "members" : "137",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-12T13:22:09.781+02:00",
+    "statements" : "8",
+    "units" : "22",
+    "version" : "1.0",
+    "warnings" : "0"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/function-values"
+  }
+}

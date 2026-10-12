@@ -24,12 +24,16 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.UnsupportedStatementException;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -101,6 +105,7 @@ public class PyAssign extends Assignment {
 
 		AnalysisState<A> result = indexState.bottom();
 		boolean resolved = false;
+		List<UnresolvedCall> setitems = new ArrayList<>();
 		for (SymbolicExpression selfSym : selfIds) {
 			Set<Type> rtsSelf = analysis.getRuntimeTypesOf(indexState, selfSym, this);
 			Set<Type> rtsIndex = indexIds.isEmpty() ? Set.of(Untyped.INSTANCE) : null;
@@ -125,6 +130,7 @@ public class PyAssign extends Assignment {
 							new Set[] { Collections.singleton(tSelf), rtsIndex, rtsValue }, aliasing);
 					resolved = true;
 					result = result.lub(setitem.forwardSemantics(indexState, interprocedural, expressions));
+					setitems.add(setitem);
 				} catch (CallResolutionException e) {
 					// this type does not support item assignment: it does not
 					// contribute
@@ -137,11 +143,29 @@ public class PyAssign extends Assignment {
 			// which is not modeled here
 			throw new UnsupportedStatementException(this);
 
+		// as sub-expressions are evaluated here, their meta variables (e.g.,
+		// the return value of a call) are propagated to this assignment, as
+		// done by NaryExpression
+		Collection<Identifier> metas = getMetaVariables();
+		for (Expression sub : List.of(valueExpr, selfExpr, indexExpr)) {
+			metas.addAll(sub.getMetaVariables());
+			sub.getMetaVariables().clear();
+		}
+		for (UnresolvedCall setitem : setitems)
+			metas.addAll(setitem.getMetaVariables());
+
+		if (getRootStatement() == this)
+			// the value of the statement is not used: the meta variables are
+			// not needed anymore, and nothing is left on the stack
+			return analysis.smallStepSemantics(result, new Skip(loc), this).forgetIdentifiers(metas, this);
+
 		// __setitem__ has no useful return value in Python (None); leave the
-		// assigned value on the stack, matching plain scalar assignment
+		// assigned value on the stack, matching plain scalar assignment, as it
+		// is used by the enclosing assignment (e.g., a = x[i] = f()), that
+		// will forget the meta variables
 		AnalysisState<A> finalResult = result.bottom();
 		for (SymbolicExpression valueSym : valueIds)
-			finalResult = finalResult.lub(interprocedural.getAnalysis().smallStepSemantics(result, valueSym, this));
+			finalResult = finalResult.lub(analysis.smallStepSemantics(result, valueSym, this));
 		return finalResult;
 	}
 
@@ -158,6 +182,25 @@ public class PyAssign extends Assignment {
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fwdBinarySemantics(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression left,
+			SymbolicExpression right,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		AnalysisState<A> result = assign(interprocedural, state, left, right, expressions);
+		if (getLeft() instanceof TupleCreation && getRootStatement() != this)
+			// the reference to the right-hand side is left on the stack, and
+			// it is used by the enclosing assignment (e.g., x = a, b = f()),
+			// that will forget the meta variables
+			return result;
+		// the value of the right-hand side is consumed by the assignment: its
+		// meta variables (e.g., the return value of a call) are not needed
+		// anymore
+		return result.forgetIdentifiers(getRight().getMetaVariables(), this);
+	}
+
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> assign(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			SymbolicExpression left,

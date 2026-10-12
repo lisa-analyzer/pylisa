@@ -74,6 +74,9 @@ import it.unive.pylisa.antlr.PythonParser.Else_blockContext;
 import it.unive.pylisa.antlr.PythonParser.ExpressionContext;
 import it.unive.pylisa.antlr.PythonParser.FactorContext;
 import it.unive.pylisa.antlr.PythonParser.For_stmtContext;
+import it.unive.pylisa.antlr.PythonParser.FstringContext;
+import it.unive.pylisa.antlr.PythonParser.Fstring_middleContext;
+import it.unive.pylisa.antlr.PythonParser.Fstring_replacement_fieldContext;
 import it.unive.pylisa.antlr.PythonParser.Function_defContext;
 import it.unive.pylisa.antlr.PythonParser.Global_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.If_stmtContext;
@@ -111,6 +114,7 @@ import it.unive.pylisa.antlr.PythonParser.Starred_expressionContext;
 import it.unive.pylisa.antlr.PythonParser.StatementContext;
 import it.unive.pylisa.antlr.PythonParser.StatementsContext;
 import it.unive.pylisa.antlr.PythonParser.StringContext;
+import it.unive.pylisa.antlr.PythonParser.StringsContext;
 import it.unive.pylisa.antlr.PythonParser.SumContext;
 import it.unive.pylisa.antlr.PythonParser.T_primaryContext;
 import it.unive.pylisa.antlr.PythonParser.Target_with_star_atomContext;
@@ -149,6 +153,7 @@ import it.unive.pylisa.cfg.expression.PyIs;
 import it.unive.pylisa.cfg.expression.PyMatMul;
 import it.unive.pylisa.cfg.expression.PyMethodCall;
 import it.unive.pylisa.cfg.expression.PyMultiplication;
+import it.unive.pylisa.cfg.expression.PyNameCall;
 import it.unive.pylisa.cfg.expression.PyNegation;
 import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.expression.PyPower;
@@ -169,6 +174,7 @@ import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
 import it.unive.pylisa.cfg.expression.literal.PyBytesLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyFunctionLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiterals;
@@ -190,6 +196,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -805,18 +813,100 @@ public class PyStatementParser
 				args.toArray(Expression[]::new));
 	}
 
+	/**
+	 * Translates adjacent string literals, some of which are f-strings, into
+	 * the concatenation of their parts: {@code f"Hello, {name}!"} is
+	 * {@code "Hello, " + str(name) + "!"}. A replacement field {@code {x!r}} is
+	 * {@code repr(x)}, and {@code {x=}} is {@code "x=" + repr(x)}; format
+	 * specifications ({@code {x:>5}}) and the {@code !a} conversion are not
+	 * supported.
+	 */
+	private Expression visitFormattedStrings(
+			StringsContext ctx) {
+		SourceCodeLocation loc = getLocation(filePath, ctx);
+		List<Expression> parts = new ArrayList<>();
+		StringBuilder text = new StringBuilder();
+		for (int i = 0; i < ctx.getChildCount(); i++) {
+			ParseTree child = ctx.getChild(i);
+			if (child instanceof StringContext) {
+				String literal = child.getText();
+				if (PyStringLiterals.isBytes(literal))
+					throw new UnsupportedStatementException(
+							"cannot mix bytes and nonbytes literals (at " + loc + ")");
+				text.append(PyStringLiterals.decode(literal));
+				continue;
+			}
+
+			FstringContext fstring = (FstringContext) child;
+			boolean raw = fstring.FSTRING_START().getText().toLowerCase().contains("r");
+			for (Fstring_middleContext middle : fstring.fstring_middle()) {
+				if (middle.FSTRING_MIDDLE() != null) {
+					text.append(PyStringLiterals.decodeFStringText(middle.FSTRING_MIDDLE().getText(), raw));
+					continue;
+				}
+
+				Fstring_replacement_fieldContext field = middle.fstring_replacement_field();
+				if (field.fstring_full_format_spec() != null
+						&& !field.fstring_full_format_spec().fstring_format_spec().isEmpty())
+					throw new UnsupportedStatementException("format specifications in f-strings are not supported");
+				String conversion = field.fstring_conversion() == null ? null
+						: field.fstring_conversion().name().getText();
+				int equal = -1;
+				for (int k = 0; k < field.getChildCount(); k++)
+					if (field.getChild(k) instanceof TerminalNode && field.getChild(k).getText().equals("="))
+						equal = k;
+				if (equal >= 0) {
+					// {x=} is the text of the expression up to what follows the
+					// = (whitespace included), followed by repr(x) (unless
+					// another conversion is given)
+					ParseTree next = field.getChild(equal + 1);
+					int end = (next instanceof TerminalNode ? ((TerminalNode) next).getSymbol()
+							: ((ParserRuleContext) next).start).getStartIndex() - 1;
+					text.append(field.start.getInputStream()
+							.getText(Interval.of(field.start.getStopIndex() + 1, end)));
+					if (conversion == null)
+						conversion = "r";
+				}
+				if (conversion != null && !conversion.equals("r") && !conversion.equals("s"))
+					throw new UnsupportedStatementException("the !" + conversion + " conversion is not supported");
+
+				if (text.length() > 0)
+					parts.add(new PyStringLiteral(currentCFG, loc, text.toString(), "\""));
+				text.setLength(0);
+				Expression value = visitAnnotated_rhs(field.annotated_rhs());
+				parts.add(new UnresolvedCall(currentCFG, loc, CallType.STATIC, null,
+						"r".equals(conversion) ? "repr" : "str", LeftToRightEvaluation.INSTANCE, value));
+			}
+		}
+		if (text.length() > 0 || parts.isEmpty())
+			parts.add(new PyStringLiteral(currentCFG, loc, text.toString(), "\""));
+
+		Expression result = parts.get(0);
+		for (int i = 1; i < parts.size(); i++)
+			result = new PyAddition(currentCFG, loc, result, parts.get(i));
+		return result;
+	}
+
 	@Override
 	public ParsedBlock visitCompound_stmt(
 			Compound_stmtContext ctx) {
 		if (ctx.function_def() != null) {
 			PyCFG fun = visitFunction_def(ctx.function_def());
-			if (currentUnit instanceof ClassUnit)
+			if (currentUnit instanceof ClassUnit) {
 				((ClassUnit) currentUnit).addInstanceCodeMember(fun);
-			else
-				currentUnit.addCodeMember(fun);
-			// the definition itself has no runtime effect in the enclosing
-			// CFG: the function is registered as a code member, not inlined
-			return noOpBlock(ctx);
+				// methods are registered as code members of the class
+				return noOpBlock(ctx);
+			}
+			currentUnit.addCodeMember(fun);
+			// def f(...) binds f to the function, that can then be assigned to
+			// other variables and called through them
+			SourceCodeLocation loc = getLocation(filePath, ctx);
+			PyAssign bind = new PyAssign(currentCFG, loc,
+					new VariableRef(currentCFG, loc, fun.getDescriptor().getName()),
+					new PyFunctionLiteral(currentCFG, loc, fun));
+			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+			block.addNode(bind);
+			return new ParsedBlock(bind, block, bind);
 		} else if (ctx.class_def() != null) {
 			ClassUnit cu = visitClass_def(ctx.class_def());
 			PyClassType.register(cu.getName(), cu);
@@ -1544,18 +1634,28 @@ public class PyStatementParser
 									method_name,
 									LeftToRightEvaluation.INSTANCE,
 									pars.toArray(Expression[]::new))
-							: new UnresolvedCall(
-									currentCFG,
-									getLocation(filePath, frame),
-									CallType.STATIC,
-									// e.g. bytes.fromhex(s) is looked up in
-									// Bytes
-									attribute && previous_access instanceof VariableRef
-											? BUILTIN_CLASSES.get(((VariableRef) previous_access).getName())
-											: null,
-									method_name,
-									LeftToRightEvaluation.INSTANCE,
-									pars.toArray(Expression[]::new));
+							: !attribute && previous_access == null
+									// f(...): f might be a variable holding
+									// functions
+									? new PyNameCall(
+											currentCFG,
+											getLocation(filePath, frame),
+											method_name,
+											LeftToRightEvaluation.INSTANCE,
+											pars.toArray(Expression[]::new))
+									: new UnresolvedCall(
+											currentCFG,
+											getLocation(filePath, frame),
+											CallType.STATIC,
+											// e.g. bytes.fromhex(s) is looked
+											// up in Bytes
+											attribute && previous_access instanceof VariableRef
+													? BUILTIN_CLASSES
+															.get(((VariableRef) previous_access).getName())
+													: null,
+											method_name,
+											LeftToRightEvaluation.INSTANCE,
+											pars.toArray(Expression[]::new));
 					if (method_name.equals("super") && pars.isEmpty()) {
 						// if super() is inside an instance method
 						if (this.currentCFG.getDescriptor().isInstance()) {
@@ -1818,9 +1918,10 @@ public class PyStatementParser
 		else if (ctx.NONE() != null)
 			return new PyNoneLiteral(currentCFG, getLocation(filePath, ctx));
 		else if (ctx.strings() != null) {
-			if (!ctx.strings().fstring().isEmpty() || !ctx.strings().tstring().isEmpty()
-					|| ctx.strings().string().isEmpty())
-				throw new UnsupportedStatementException("formatted strings are not supported");
+			if (!ctx.strings().tstring().isEmpty())
+				throw new UnsupportedStatementException("template strings are not supported");
+			if (!ctx.strings().fstring().isEmpty())
+				return visitFormattedStrings(ctx.strings());
 			// adjacent literals are concatenated ("ab" "cd" == "abcd")
 			StringBuilder value = new StringBuilder();
 			int bytes = 0;

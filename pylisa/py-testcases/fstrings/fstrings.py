@@ -1,0 +1,23 @@
+name = "Ada"
+n = 42
+x = 2.5
+a = f"Hello, {name}!"
+b = f"{n} items"
+c = f"{x}"
+d = f"{name!r}"
+e = f"{n=}"
+f2 = f"{name = }"
+g = f"{{literal}} {n}"
+h = f"tab\t{n}"
+i = rf"raw\t{n}"
+j = f"{n}" "!" f"{x}"
+k = "pre " f"{n}"
+l = f""
+m = f"{'nested'}"
+o = f"{n + 1}"
+p = f'''{name}'''
+q = f"{True}"
+r = f"{None}"
+s = f"{b'x'}"
+t = f"{name!s}"
+u = f"{n=!s}"

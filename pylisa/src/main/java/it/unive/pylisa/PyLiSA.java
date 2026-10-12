@@ -1,12 +1,5 @@
 package it.unive.pylisa;
 
-import java.io.IOException;
-import java.util.Arrays;
-
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
-import org.graphstream.util.parser.ParseException;
-
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAReport;
 import it.unive.lisa.analysis.ConstantValuePropagation;
@@ -41,12 +34,17 @@ import it.unive.ros.application.RosApplicationBuilder;
 import it.unive.ros.application.exceptions.ROSApplicationBuildException;
 import it.unive.ros.application.exceptions.ROSNodeBuildException;
 import it.unive.ros.models.rclpy.ROSNetwork;
+import java.io.IOException;
+import java.util.Arrays;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.graphstream.util.parser.ParseException;
 
 public class PyLiSA {
 

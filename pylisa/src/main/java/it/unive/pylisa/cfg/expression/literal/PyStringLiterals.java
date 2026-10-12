@@ -55,6 +55,22 @@ public final class PyStringLiterals {
 		return prefixes.contains("r") ? body : unescape(body, prefixes.contains("b"));
 	}
 
+	/**
+	 * The value of the text between the replacement fields of an f-string.
+	 *
+	 * @param text the text, as it appears in the source code (where the lexer
+	 *                 already replaced {@code {{} and {@code }}} with single
+	 *                 braces)
+	 * @param raw  whether the f-string is raw ({@code rf"..."})
+	 *
+	 * @return its value
+	 */
+	public static String decodeFStringText(
+			String text,
+			boolean raw) {
+		return raw ? text : unescape(text, false);
+	}
+
 	private static int prefixLength(
 			String literal) {
 		int i = 0;
