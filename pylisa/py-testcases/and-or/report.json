@@ -1,0 +1,42 @@
+{
+  "warnings" : [ ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_P.__init__(P__self)_1800472241.graph.json", "untyped_py-testcases_and-or_and-or.$main().graph.json", "untyped_py-testcases_and-or_and-or.boom()_1800480394.graph.json", "untyped_py-testcases_and-or_and-or.five()_1800476767.graph.json" ],
+  "info" : {
+    "cfgs" : "6",
+    "duration" : "135ms",
+    "end" : "2026-10-13T12:50:44.899+02:00",
+    "expressions" : "118",
+    "files" : "4",
+    "globals" : "0",
+    "members" : "141",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-13T12:50:44.764+02:00",
+    "statements" : "38",
+    "units" : "28",
+    "version" : "1.0",
+    "warnings" : "0"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/and-or"
+  }
+}

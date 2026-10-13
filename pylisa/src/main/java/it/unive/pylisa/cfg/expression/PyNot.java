@@ -67,7 +67,7 @@ public class PyNot extends UnaryExpression {
 			for (Type t : types)
 				if (t.isBooleanType())
 					bools = true;
-				else if (t.isCodeMemberType() || alwaysTrue(t))
+				else if (alwaysTrue(t))
 					truthy = true;
 				else if (t.isPointerType())
 					// e.g. an object whose class defines __bool__
@@ -93,11 +93,19 @@ public class PyNot extends UnaryExpression {
 		return result;
 	}
 
-	// whether the objects of type t are always true: this holds for objects of
-	// classes whose methods are all known, and that define neither __bool__
-	// nor __len__
-	private static boolean alwaysTrue(
+	/**
+	 * Whether the values of type {@code t} are always true: this holds for
+	 * functions, and for objects of classes whose methods are all known, and
+	 * that define neither {@code __bool__} nor {@code __len__}.
+	 *
+	 * @param t the type
+	 *
+	 * @return whether the values of the type are always true
+	 */
+	public static boolean alwaysTrue(
 			Type t) {
+		if (t.isCodeMemberType())
+			return true;
 		if (!t.isPointerType() || !t.asPointerType().getInnerType().isUnitType() || !PyBinaryDispatch.fullyKnown(t))
 			return false;
 		CompilationUnit unit = t.asPointerType().getInnerType().asUnitType().getUnit();
