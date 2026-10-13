@@ -2,6 +2,7 @@ package it.unive.pylisa.cfg.expression;
 
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -13,8 +14,16 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.UnsupportedStatementException;
+import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.PushAny;
+import it.unive.lisa.type.Type;
+import java.util.Set;
 
+/**
+ * The identity test {@code left is right} (see
+ * {@link PyBinaryDispatch#identical(Type, Type)}): the result is unknown when
+ * identity cannot be decided for some pair of runtime types of the operands.
+ */
 public class PyIs extends BinaryExpression {
 
 	public PyIs(
@@ -39,6 +48,24 @@ public class PyIs extends BinaryExpression {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		throw new UnsupportedStatementException(this);
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		Set<Type> ltypes = analysis.getRuntimeTypesOf(state, left, this);
+		Set<Type> rtypes = analysis.getRuntimeTypesOf(state, right, this);
+		boolean maybeTrue = false, maybeFalse = false;
+		if (ltypes.isEmpty() || rtypes.isEmpty() || PyBinaryDispatch.unknownTypes(ltypes, this)
+				|| PyBinaryDispatch.unknownTypes(rtypes, this))
+			maybeTrue = maybeFalse = true;
+		else
+			for (Type l : ltypes)
+				for (Type r : rtypes) {
+					Boolean identical = PyBinaryDispatch.identical(l, r);
+					maybeTrue |= identical == null || identical;
+					maybeFalse |= identical == null || !identical;
+				}
+
+		CodeLocation loc = getLocation();
+		if (maybeTrue && maybeFalse)
+			return analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), this);
+		return analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, maybeTrue, loc), this);
 	}
 }

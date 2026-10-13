@@ -138,6 +138,7 @@ import it.unive.pylisa.cfg.expression.PyAccessInstanceGlobal;
 import it.unive.pylisa.cfg.expression.PyAddition;
 import it.unive.pylisa.cfg.expression.PyAssign;
 import it.unive.pylisa.cfg.expression.PyAttributeAccess;
+import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.expression.PyBitwiseAnd;
 import it.unive.pylisa.cfg.expression.PyBitwiseLeftShift;
 import it.unive.pylisa.cfg.expression.PyBitwiseNot;
@@ -259,6 +260,9 @@ public class PyStatementParser
 	private final PyCFG currentCFG;
 
 	private final ControlFlowTracker control;
+
+	// the number of loops enclosing the statement being parsed
+	private int loops = 0;
 
 	/**
 	 * Builds the parser for a Python program at {@code filePath}.
@@ -902,6 +906,10 @@ public class PyStatementParser
 				return noOpBlock(ctx);
 			}
 			currentUnit.addCodeMember(fun);
+			if (loops == 0 && currentCFG.getDescriptor().getName().equals(PyFileParser.INSTRUMENTED_MAIN_FUNCTION_NAME))
+				// the def is executed once: there is a single function object
+				// for it
+				fun.getDescriptor().addAnnotation(new Annotation(PyBinaryDispatch.DEFINED_ONCE));
 			// def f(...) binds f to the function, that can then be assigned to
 			// other variables and called through them
 			SourceCodeLocation loc = getLocation(filePath, ctx);
@@ -1034,6 +1042,17 @@ public class PyStatementParser
 		return new ParsedBlock(booleanGuard, block, ifExitNode);
 	}
 
+	// parses the body of a loop
+	private ParsedBlock visitLoopBody(
+			BlockContext block) {
+		loops++;
+		try {
+			return visitBlock(block);
+		} finally {
+			loops--;
+		}
+	}
+
 	@Override
 	public ParsedBlock visitWhile_stmt(
 			While_stmtContext ctx) {
@@ -1045,7 +1064,7 @@ public class PyStatementParser
 		Statement condition = visitNamed_expression(ctx.named_expression());
 		block.addNode(condition);
 
-		ParsedBlock trueBlock = visitBlock(ctx.block());
+		ParsedBlock trueBlock = visitLoopBody(ctx.block());
 
 		block.mergeWith(trueBlock.getBody());
 		block.addEdge(new TrueEdge(condition, trueBlock.getBegin()));
@@ -1154,7 +1173,7 @@ public class PyStatementParser
 								1)));
 		block.addNode(counter_increment);
 
-		ParsedBlock body = visitBlock(ctx.block());
+		ParsedBlock body = visitLoopBody(ctx.block());
 		block.mergeWith(body.getBody());
 		block.addEdge(new SequentialEdge(counter_init, condition));
 		block.addEdge(new TrueEdge(condition, element_assignment));

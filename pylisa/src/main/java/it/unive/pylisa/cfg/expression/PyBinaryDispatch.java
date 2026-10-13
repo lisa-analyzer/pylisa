@@ -13,6 +13,7 @@ import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
+import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
@@ -232,6 +233,13 @@ public final class PyBinaryDispatch {
 	public static final String UNTRACKED_BASES = "pylisa.untracked_bases_class";
 
 	/**
+	 * The annotation of the functions whose {@code def} is executed once (i.e.,
+	 * it is at the top level of a module, outside of loops), so that there is a
+	 * single function object for them.
+	 */
+	public static final String DEFINED_ONCE = "pylisa.defined_once_function";
+
+	/**
 	 * Whether all the methods of the class of the given runtime type are known,
 	 * so that a missing operator method means that python raises
 	 * {@code TypeError}: this holds for the fully modeled builtin classes, and
@@ -272,6 +280,60 @@ public final class PyBinaryDispatch {
 			Type right) {
 		return left.isCodeMemberType() && right.isCodeMemberType()
 				&& Collections.disjoint(left.asCodeMemberType().getMembers(), right.asCodeMemberType().getMembers());
+	}
+
+	/**
+	 * Whether two values of the given types are surely the same function
+	 * object: this holds when both are the same function, that is either a
+	 * builtin or a function whose {@code def} is executed once (see
+	 * {@link #DEFINED_ONCE}).
+	 *
+	 * @param left  the type of the first value
+	 * @param right the type of the second value
+	 *
+	 * @return whether the values are the same function
+	 */
+	public static boolean sameFunction(
+			Type left,
+			Type right) {
+		if (!left.isCodeMemberType() || !right.isCodeMemberType())
+			return false;
+		Set<CodeMember> members = left.asCodeMemberType().getMembers();
+		if (members.size() != 1 || !members.equals(right.asCodeMemberType().getMembers()))
+			return false;
+		CodeMember function = members.iterator().next();
+		return function instanceof NativeCFG || function.getDescriptor().getAnnotationList().stream()
+				.anyMatch(a -> a.getAnnotationName().equals(DEFINED_ONCE));
+	}
+
+	/**
+	 * Whether two values of the given types are the same object ({@code is}):
+	 * {@code None} is a singleton, a function is the same object only as itself
+	 * (see {@link #sameFunction(Type, Type)}), and values of different classes
+	 * are different objects. This is otherwise unknown (e.g. two objects of the
+	 * same class, or two {@code int}s, whose identity is not specified by
+	 * python).
+	 *
+	 * @param left  the type of the first value
+	 * @param right the type of the second value
+	 *
+	 * @return whether the values are the same object, or {@code null} if this
+	 *             is unknown
+	 */
+	public static Boolean identical(
+			Type left,
+			Type right) {
+		if (left.isNullType() && right.isNullType())
+			return true;
+		if (sameFunction(left, right))
+			return true;
+		if (distinctFunctions(left, right))
+			return false;
+		String lcls = left.isCodeMemberType() ? "function" : classOf(left);
+		String rcls = right.isCodeMemberType() ? "function" : classOf(right);
+		if (lcls != null && rcls != null && !lcls.equals(rcls))
+			return false;
+		return null;
 	}
 
 	private static boolean fullyDefined(
@@ -584,6 +646,10 @@ public final class PyBinaryDispatch {
 		CodeLocation loc = operator.getLocation();
 		if (fallback != Fallback.TYPE_ERROR && left.isNullType() && right.isNullType())
 			// None is a singleton, so None == None and not None != None
+			return analysis.smallStepSemantics(state,
+					new Constant(BoolType.INSTANCE, fallback == Fallback.FALSE, loc), operator);
+		if (fallback != Fallback.TYPE_ERROR && sameFunction(left, right))
+			// == and != compare functions by identity
 			return analysis.smallStepSemantics(state,
 					new Constant(BoolType.INSTANCE, fallback == Fallback.FALSE, loc), operator);
 		if (fallback != Fallback.TYPE_ERROR && isObject(left) && isObject(right) && !distinctFunctions(left, right))
