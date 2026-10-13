@@ -1,0 +1,42 @@
+{
+  "warnings" : [ ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_C.__init__(C__self)_2106799888.graph.json", "untyped_C.__init__(C__self)_2106799981.graph.json", "untyped_C.__init__(C__self)_2106800074.graph.json", "untyped_L.__len__(L__self)_2106805065.graph.json", "untyped_py-testcases_len_len.$main().graph.json", "untyped_py-testcases_len_len.bump(untyped_c)_2106805902.graph.json", "untyped_py-testcases_len_len.bump(untyped_c)_2106807607.graph.json", "untyped_py-testcases_len_len.sbump(untyped_c)_2106808661.graph.json" ],
+  "info" : {
+    "cfgs" : "8",
+    "duration" : "6ms",
+    "end" : "2026-10-13T12:46:53.745+02:00",
+    "expressions" : "72",
+    "files" : "8",
+    "globals" : "0",
+    "members" : "143",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-13T12:46:53.739+02:00",
+    "statements" : "29",
+    "units" : "29",
+    "version" : "1.0",
+    "warnings" : "0"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/len"
+  }
+}

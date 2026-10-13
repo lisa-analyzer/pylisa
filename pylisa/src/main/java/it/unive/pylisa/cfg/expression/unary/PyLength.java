@@ -16,6 +16,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
+import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -110,7 +111,7 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 				continue;
 			}
 
-			UnresolvedCall len = null;
+			Call len = null, open = null;
 			for (CallType kind : new CallType[] { CallType.STATIC, CallType.INSTANCE }) {
 				UnresolvedCall candidate = new UnresolvedCall(
 						getCFG(),
@@ -121,19 +122,33 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 						LeftToRightEvaluation.INSTANCE,
 						getSubExpression());
 				try {
-					interprocedural.resolve(candidate, new Set[] { Collections.singleton(t) }, aliasing);
-					len = candidate;
-					break;
+					Call resolved = interprocedural.resolve(candidate, new Set[] { Collections.singleton(t) },
+							aliasing);
+					if (resolved instanceof OpenCall)
+						// no method found with this call kind (e.g. a
+						// __len__ of a class of the program is found as an
+						// instance method)
+						open = resolved;
+					else {
+						len = resolved;
+						break;
+					}
 				} catch (CallResolutionException e) {
 					// try the next call kind
 				}
 			}
 
 			if (len == null)
+				len = open;
+			if (len == null)
 				// this type does not support len(): it does not contribute to
 				// the result
 				continue;
-			result = result.lub(len.forwardSemantics(state, interprocedural, expressions));
+			// the argument has already been evaluated: the call must not
+			// evaluate it again (e.g. calling f twice in len(f()))
+			result = result.lub(len.forwardSemanticsAux(interprocedural, state,
+					new ExpressionSet[] { new ExpressionSet(expr) }, expressions));
+			getMetaVariables().addAll(len.getMetaVariables());
 		}
 
 		return result;
