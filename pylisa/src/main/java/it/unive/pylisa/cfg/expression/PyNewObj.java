@@ -23,12 +23,16 @@ import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.AccessChild;
+import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.Skip;
+import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import org.apache.commons.lang3.ArrayUtils;
@@ -77,8 +81,22 @@ public class PyNewObj extends NaryExpression {
 		// we also have to add the receiver inside the state
 		AnalysisState<A> callstate = paramThis.forwardSemantics(state, interprocedural, expressions);
 		AnalysisState<A> tmp = state.bottom();
-		for (SymbolicExpression v : callstate.getExecutionExpressions())
-			tmp = tmp.lub(analysis.assign(callstate, v, ref, paramThis));
+		for (SymbolicExpression v : callstate.getExecutionExpressions()) {
+			AnalysisState<A> assigned = analysis.assign(callstate, v, ref, paramThis);
+			if (assigned.getExecutionState().isBottom()) {
+				tmp = tmp.lub(assigned);
+				continue;
+			}
+			// the heap tracks the fields accessed on each object (see
+			// PyAttributeAccess), but until the first access to any field
+			// in the program, the fields are unknown for all objects:
+			// accessing __class__, that all objects have, makes the fields
+			// of the new object known
+			AccessChild cls = new AccessChild(Untyped.INSTANCE, new HeapDereference(type, v, getLocation()),
+					new Variable(Untyped.INSTANCE, "__class__", getLocation()), getLocation());
+			tmp = tmp.lub(analysis.smallStepSemantics(assigned, cls, paramThis)
+					.withExecutionExpressions(assigned.getExecutionExpressions()));
+		}
 		ExpressionSet[] fullParams = ArrayUtils.insert(0, params, callstate.getExecutionExpressions());
 		expressions.put(paramThis, tmp);
 

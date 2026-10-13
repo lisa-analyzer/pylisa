@@ -120,15 +120,15 @@ public class PyMethodCall extends UnresolvedCall {
 		return result;
 	}
 
-	// whether name is an attribute of the objects of type t, rather than a
-	// method of their class
+	// whether name is an attribute of the objects of type t (or a class
+	// attribute), rather than a method of their class
 	private boolean isAttribute(
 			Type t) {
 		if (!t.isPointerType() || !t.asPointerType().getInnerType().isUnitType()
 				|| !PyBinaryDispatch.fullyKnown(t))
 			return false;
 		CompilationUnit unit = t.asPointerType().getInnerType().asUnitType().getUnit();
-		return unit instanceof ClassUnit && !PyAttributeAccess.definedByClass((ClassUnit) unit, getTargetName());
+		return unit instanceof ClassUnit && !PyClassAttributes.isMethod((ClassUnit) unit, getTargetName());
 	}
 
 	// whether the objects of type t, whose class is fully known, can be
@@ -172,6 +172,7 @@ public class PyMethodCall extends UnresolvedCall {
 
 			// also raises AttributeError if the attribute is not assigned
 			AnalysisState<A> attr = read.read(interprocedural, state, receiver, this);
+			getMetaVariables().addAll(read.getMetaVariables());
 			if (attr.getExecutionState().isBottom()) {
 				result = result.lub(attr);
 				continue;
