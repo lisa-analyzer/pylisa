@@ -44,7 +44,7 @@ if c == "i":
 # objects with __call__ can be called (the result is unknown)
 p.k = Callable()
 k = p.k(2)
-# library functions stored in attributes and variables (the result is unknown)
+# library functions stored in attributes and variables are called
 p.l = len
 l = p.l("abc")
 q = len

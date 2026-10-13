@@ -11,6 +11,7 @@ import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.VariableTableEntry;
 import it.unive.lisa.program.cfg.controlFlow.IfThenElse;
 import it.unive.lisa.program.cfg.controlFlow.Loop;
@@ -144,6 +145,7 @@ import it.unive.pylisa.cfg.expression.PyBitwiseNot;
 import it.unive.pylisa.cfg.expression.PyBitwiseOr;
 import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
 import it.unive.pylisa.cfg.expression.PyBitwiseXor;
+import it.unive.pylisa.cfg.expression.PyBuiltinRef;
 import it.unive.pylisa.cfg.expression.PyDivMod;
 import it.unive.pylisa.cfg.expression.PyDivision;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
@@ -416,8 +418,13 @@ public class PyStatementParser
 
 	private Expression visitSingleTarget(
 			Single_targetContext ctx) {
-		if (ctx.name() != null)
+		if (ctx.name() != null) {
+			NativeCFG builtin = PyBuiltinRef.builtin(program, ctx.name().getText());
+			if (builtin != null)
+				// e.g. q = len
+				return new PyBuiltinRef(currentCFG, getLocation(filePath, ctx), builtin);
 			return new VariableRef(currentCFG, getLocation(filePath, ctx), ctx.name().getText());
+		}
 		if (ctx.single_target() != null)
 			return visitSingleTarget(ctx.single_target());
 		return visitSingleSubscriptAttributeTarget(ctx.single_subscript_attribute_target());
@@ -559,8 +566,13 @@ public class PyStatementParser
 
 	private Expression visitStarAtom(
 			Star_atomContext ctx) {
-		if (ctx.name() != null)
+		if (ctx.name() != null) {
+			NativeCFG builtin = PyBuiltinRef.builtin(program, ctx.name().getText());
+			if (builtin != null)
+				// e.g. q = len
+				return new PyBuiltinRef(currentCFG, getLocation(filePath, ctx), builtin);
 			return new VariableRef(currentCFG, getLocation(filePath, ctx), ctx.name().getText());
+		}
 		if (ctx.target_with_star_atom() != null)
 			return visitTargetWithStarAtom(ctx.target_with_star_atom());
 		throw new UnsupportedStatementException("Tuple/list unpacking targets are not supported");
@@ -627,8 +639,13 @@ public class PyStatementParser
 
 	private Expression visitDelTAtom(
 			Del_t_atomContext ctx) {
-		if (ctx.name() != null)
+		if (ctx.name() != null) {
+			NativeCFG builtin = PyBuiltinRef.builtin(program, ctx.name().getText());
+			if (builtin != null)
+				// e.g. q = len
+				return new PyBuiltinRef(currentCFG, getLocation(filePath, ctx), builtin);
 			return new VariableRef(currentCFG, getLocation(filePath, ctx), ctx.name().getText());
+		}
 		if (ctx.del_target() != null)
 			return visitDelTarget(ctx.del_target());
 		throw new UnsupportedStatementException("Tuple/list del targets are not supported");
@@ -1891,9 +1908,13 @@ public class PyStatementParser
 	@Override
 	public Expression visitAtom(
 			AtomContext ctx) {
-		if (ctx.name() != null)
+		if (ctx.name() != null) {
+			NativeCFG builtin = PyBuiltinRef.builtin(program, ctx.name().getText());
+			if (builtin != null)
+				// e.g. q = len
+				return new PyBuiltinRef(currentCFG, getLocation(filePath, ctx), builtin);
 			return new VariableRef(currentCFG, getLocation(filePath, ctx), ctx.name().getText());
-		else if (ctx.NUMBER() != null) {
+		} else if (ctx.NUMBER() != null) {
 			String text = ctx.NUMBER().getText().toLowerCase().replaceAll("_", "");
 			if (text.endsWith("j"))
 				// complex number

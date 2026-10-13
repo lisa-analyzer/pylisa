@@ -2,23 +2,17 @@ package it.unive.pylisa.libraries;
 
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
-import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.UnaryExpression;
-import it.unive.lisa.symbolic.value.operator.unary.StringLength;
-import it.unive.lisa.type.Type;
-import java.util.Set;
+import it.unive.pylisa.cfg.expression.unary.PyLength;
 
 public class Len extends it.unive.lisa.program.cfg.statement.UnaryExpression implements PluggableStatement {
 	protected Statement st;
@@ -62,22 +56,10 @@ public class Len extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		AnalysisState<A> result = state.bottom();
-		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		ExpressionSet exprSet = analysis.rewrite(state, expr, st);
-
-		for (SymbolicExpression e : exprSet) {
-			Set<Type> rts = analysis.getRuntimeTypesOf(state, e, this);
-			if (rts.stream().anyMatch(Type::isStringType)) {
-				return state.lub(analysis.smallStepSemantics(result,
-						new UnaryExpression(Int32Type.INSTANCE, e, StringLength.INSTANCE, getLocation()), this));
-			}
-
-			// String len
-			return analysis.smallStepSemantics(state,
-					new UnaryExpression(Int32Type.INSTANCE, expr, StringLength.INSTANCE, getLocation()), this);
-		}
-		// TODO handle other cases
-		return state;
+		// the same semantics of len(x) when called directly (see PyLength)
+		PyLength length = new PyLength(getCFG(), getLocation(), getSubExpression());
+		AnalysisState<A> result = length.length(interprocedural, state, expr, expressions, st == null ? this : st);
+		getMetaVariables().addAll(length.getMetaVariables());
+		return result;
 	}
 }

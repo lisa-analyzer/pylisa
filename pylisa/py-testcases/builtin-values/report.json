@@ -1,0 +1,42 @@
+{
+  "warnings" : [ ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_builtin-values_builtin-values.$main().graph.json", "untyped_py-testcases_builtin-values_builtin-values.call(untyped_f,_untyped_x)_1529331816.graph.json", "untyped_py-testcases_builtin-values_builtin-values.get()_1529319695.graph.json" ],
+  "info" : {
+    "cfgs" : "5",
+    "duration" : "133ms",
+    "end" : "2026-10-13T12:09:00.029+02:00",
+    "expressions" : "58",
+    "files" : "3",
+    "globals" : "0",
+    "members" : "140",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-13T12:08:59.896+02:00",
+    "statements" : "26",
+    "units" : "28",
+    "version" : "1.0",
+    "warnings" : "0"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/builtin-values"
+  }
+}

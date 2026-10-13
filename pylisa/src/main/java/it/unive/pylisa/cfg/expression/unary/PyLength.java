@@ -10,8 +10,8 @@ import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
-import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.Call;
@@ -41,7 +41,7 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 
 	public PyLength(
 			CFG cfg,
-			SourceCodeLocation location,
+			CodeLocation location,
 			Expression exp) {
 		super(cfg, location, "len", exp);
 	}
@@ -59,6 +59,33 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		return length(interprocedural, state, expr, expressions, this);
+	}
+
+	/**
+	 * Computes {@code len(expr)}, raising errors from {@code thrower} (e.g.
+	 * when {@code len} is called through a variable holding it, see
+	 * {@link it.unive.pylisa.libraries.Len}).
+	 *
+	 * @param <A>             the kind of the analysis state
+	 * @param <D>             the kind of the abstract domain
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the length is computed
+	 * @param expr            the argument
+	 * @param expressions     the states of the sub-expressions
+	 * @param thrower         the statement raising the errors
+	 *
+	 * @return the state after the computation
+	 *
+	 * @throws SemanticException if something goes wrong during the computation
+	 */
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> length(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			StatementStore<A> expressions,
+			Statement thrower)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Set<Type> rts = analysis.getRuntimeTypesOf(state, expr, this);
 		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
@@ -73,7 +100,7 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 						PyBinaryDispatch.classOf(t), "__len__", new Expression[] { getSubExpression() }, types);
 				if (resolved == null)
 					// e.g. len(5)
-					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
+					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), thrower,
 							LibrarySpecificationProvider.TYPE_ERROR));
 				else {
 					result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
