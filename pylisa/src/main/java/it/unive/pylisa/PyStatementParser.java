@@ -34,7 +34,6 @@ import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
 import it.unive.lisa.program.cfg.statement.literal.Float32Literal;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
-import it.unive.lisa.program.cfg.statement.logic.Not;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
@@ -159,6 +158,7 @@ import it.unive.pylisa.cfg.expression.PyMultiplication;
 import it.unive.pylisa.cfg.expression.PyNameCall;
 import it.unive.pylisa.cfg.expression.PyNegation;
 import it.unive.pylisa.cfg.expression.PyNewObj;
+import it.unive.pylisa.cfg.expression.PyNot;
 import it.unive.pylisa.cfg.expression.PyPower;
 import it.unive.pylisa.cfg.expression.PyRemainder;
 import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
@@ -1308,7 +1308,7 @@ public class PyStatementParser
 	public Expression visitInversion(
 			InversionContext ctx) {
 		if (ctx.NOT() != null)
-			return new Not(currentCFG, getLocation(filePath, ctx), visitInversion(ctx.inversion()));
+			return new PyNot(currentCFG, getLocation(filePath, ctx), visitInversion(ctx.inversion()));
 		else
 			return visitComparison(ctx.comparison());
 	}
@@ -1344,14 +1344,14 @@ public class PyStatementParser
 			return new PyGreaterThan(currentCFG, getLocation(filePath, ctx), left,
 					visitBitwise_or(ctx.gt_bitwise_or().bitwise_or()));
 		else if (ctx.notin_bitwise_or() != null)
-			return new Not(currentCFG, getLocation(filePath, ctx),
+			return new PyNot(currentCFG, getLocation(filePath, ctx),
 					new PyIn(currentCFG, getLocation(filePath, ctx), left,
 							visitBitwise_or(ctx.notin_bitwise_or().bitwise_or())));
 		else if (ctx.in_bitwise_or() != null)
 			return new PyIn(currentCFG, getLocation(filePath, ctx), left,
 					visitBitwise_or(ctx.in_bitwise_or().bitwise_or()));
 		else if (ctx.isnot_bitwise_or() != null)
-			return new Not(currentCFG, getLocation(filePath, ctx),
+			return new PyNot(currentCFG, getLocation(filePath, ctx),
 					new PyIs(currentCFG, getLocation(filePath, ctx), left,
 							visitBitwise_or(ctx.isnot_bitwise_or().bitwise_or())));
 		else if (ctx.is_bitwise_or() != null)

@@ -36,6 +36,7 @@ import it.unive.lisa.symbolic.value.operator.binary.StringStartsWith;
 import it.unive.lisa.symbolic.value.operator.ternary.StringReplace;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.BitwiseNegation;
+import it.unive.lisa.symbolic.value.operator.unary.LogicalNegation;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.StringToLowerCase;
 import it.unive.lisa.symbolic.value.operator.unary.StringToUpperCase;
@@ -55,6 +56,7 @@ import it.unive.pylisa.symbolic.operators.DictPut;
 import it.unive.pylisa.symbolic.operators.FloatPower;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
 import it.unive.pylisa.symbolic.operators.ListAppend;
+import it.unive.pylisa.symbolic.operators.LogicalNot;
 import it.unive.pylisa.symbolic.operators.Modulo;
 import it.unive.pylisa.symbolic.operators.Power;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
@@ -175,6 +177,16 @@ public class ConstantPropagationDomain
 			else if (arg.is(Float.class))
 				return new ConstantPropagation(
 						new Constant(Float32Type.INSTANCE, -1 * arg.as(Float.class), pp.getLocation()));
+
+		if (operator == LogicalNegation.INSTANCE || operator == LogicalNot.INSTANCE) {
+			// not x, on the truthiness of x
+			it.unive.lisa.lattices.Satisfiability truth = truthiness(arg);
+			if (truth == it.unive.lisa.lattices.Satisfiability.SATISFIED
+					|| truth == it.unive.lisa.lattices.Satisfiability.NOT_SATISFIED)
+				return new ConstantPropagation(new Constant(BoolType.INSTANCE,
+						truth == it.unive.lisa.lattices.Satisfiability.NOT_SATISFIED, pp.getLocation()));
+			return ConstantPropagation.TOP;
+		}
 
 		if (operator == BitwiseNegation.INSTANCE)
 			if (arg.is(Integer.class))
@@ -633,6 +645,9 @@ public class ConstantPropagationDomain
 			throws SemanticException {
 		if (expression.getOperator() == FromHexRaises.INSTANCE && !arg.isTop() && text(arg) != null)
 			return it.unive.lisa.lattices.Satisfiability.fromBoolean(PyCodecs.fromHex(text(arg)) == null);
+		if (expression.getOperator() == LogicalNot.INSTANCE)
+			// not x holds when x is false
+			return truthiness(arg).negate();
 		return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
 	}
 
