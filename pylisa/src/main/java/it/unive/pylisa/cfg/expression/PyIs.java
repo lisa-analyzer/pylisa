@@ -15,14 +15,16 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.symbolic.operators.compare.Is;
 import java.util.Set;
 
 /**
  * The identity test {@code left is right} (see
- * {@link PyBinaryDispatch#identical(Type, Type)}): the result is unknown when
- * identity cannot be decided for some pair of runtime types of the operands.
+ * {@link PyBinaryDispatch#identical(Type, Type)}). When identity cannot be
+ * decided for some pair of runtime types of the operands, the result is the
+ * {@link Is} test, whose branches refine the operands (e.g., {@code x} is
+ * {@code None} in the true branch of {@code x is None}).
  */
 public class PyIs extends BinaryExpression {
 
@@ -65,7 +67,11 @@ public class PyIs extends BinaryExpression {
 
 		CodeLocation loc = getLocation();
 		if (maybeTrue && maybeFalse)
-			return analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), this);
+			// the branches of a condition refine the operands (e.g., x is None
+			// in the true branch of x is None)
+			return analysis.smallStepSemantics(state,
+					new it.unive.lisa.symbolic.value.BinaryExpression(BoolType.INSTANCE, left, right, Is.INSTANCE, loc),
+					this);
 		return analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, maybeTrue, loc), this);
 	}
 }

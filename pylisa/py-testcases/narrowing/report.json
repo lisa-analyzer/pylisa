@@ -1,0 +1,42 @@
+{
+  "warnings" : [ ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_P.__init__(P__self)_1568510685.graph.json", "untyped_P.__init__(P__self)_1568529998.graph.json", "untyped_py-testcases_narrowing_narrowing.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "4",
+    "duration" : "13ms",
+    "end" : "2026-10-13T14:01:23.554+02:00",
+    "expressions" : "98",
+    "files" : "3",
+    "globals" : "0",
+    "members" : "139",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-13T14:01:23.541+02:00",
+    "statements" : "34",
+    "units" : "28",
+    "version" : "1.0",
+    "warnings" : "0"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/narrowing"
+  }
+}

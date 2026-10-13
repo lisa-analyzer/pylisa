@@ -9,8 +9,10 @@ import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
+import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.PushInv;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
@@ -69,6 +71,8 @@ import it.unive.pylisa.symbolic.operators.bytes.BytesUnary;
 import it.unive.pylisa.symbolic.operators.bytes.Codec;
 import it.unive.pylisa.symbolic.operators.bytes.CodecRaises;
 import it.unive.pylisa.symbolic.operators.bytes.FromHexRaises;
+import it.unive.pylisa.symbolic.operators.compare.Is;
+import it.unive.pylisa.symbolic.operators.compare.IsNot;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonGe;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonGt;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonLe;
@@ -562,7 +566,86 @@ public class ConstantPropagationDomain
 		it.unive.lisa.lattices.Satisfiability sat = satisfies(environment, expression, src, oracle);
 		if (sat == it.unive.lisa.lattices.Satisfiability.NOT_SATISFIED)
 			return environment.bottom();
+		if (!environment.isBottom() && expression instanceof BinaryExpression) {
+			BinaryExpression binary = (BinaryExpression) expression;
+			BinaryOperator operator = binary.getOperator();
+			Identifier none = operator == Is.INSTANCE || operator == IsNot.INSTANCE
+					? noneTest(environment, binary, src, oracle)
+					: null;
+			if (none != null && operator == Is.INSTANCE)
+				// x is None
+				return environment.putState(none, new ConstantPropagation(new PyNoneConstant(src.getLocation())));
+			if (none != null && environment.getState(none).constant instanceof PyNoneConstant)
+				// x is not None: the None it holds comes from other paths,
+				// where x has another type (e.g. an object, that is not
+				// tracked here)
+				return environment.putState(none, ConstantPropagation.TOP);
+		}
 		return BaseNonRelationalValueDomain.super.assume(environment, expression, src, dest, oracle);
+	}
+
+	/**
+	 * Whether {@code expression} holds. The values tracked here are the ones of
+	 * the types accepted by this domain: if a variable in {@code expression}
+	 * might also hold values of other types (e.g. an object, after
+	 * {@code x = None if c else P()}), its value here describes only some of
+	 * its runtime values, and nothing can be said.
+	 */
+	@Override
+	public it.unive.lisa.lattices.Satisfiability satisfies(
+			ValueEnvironment<ConstantPropagation> environment,
+			ValueExpression expression,
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
+		if (!environment.isBottom() && !onlyAccepted(expression, pp, oracle))
+			return it.unive.lisa.lattices.Satisfiability.UNKNOWN;
+		return BaseNonRelationalValueDomain.super.satisfies(environment, expression, pp, oracle);
+	}
+
+	// whether the identifiers in expression only hold values of the types
+	// accepted by this domain
+	private static boolean onlyAccepted(
+			SymbolicExpression expression,
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
+		if (expression instanceof Identifier) {
+			Set<Type> rts = oracle.getRuntimeTypesOf(expression, pp);
+			return rts == null || rts.stream().allMatch(ConstantPropagationDomain::isAccepted);
+		}
+		if (expression instanceof UnaryExpression)
+			return onlyAccepted(((UnaryExpression) expression).getExpression(), pp, oracle);
+		if (expression instanceof BinaryExpression)
+			return onlyAccepted(((BinaryExpression) expression).getLeft(), pp, oracle)
+					&& onlyAccepted(((BinaryExpression) expression).getRight(), pp, oracle);
+		if (expression instanceof TernaryExpression)
+			return onlyAccepted(((TernaryExpression) expression).getLeft(), pp, oracle)
+					&& onlyAccepted(((TernaryExpression) expression).getMiddle(), pp, oracle)
+					&& onlyAccepted(((TernaryExpression) expression).getRight(), pp, oracle);
+		return true;
+	}
+
+	// the identifier x, if binary is x is None, or x is not None (also with
+	// the operands swapped)
+	private Identifier noneTest(
+			ValueEnvironment<ConstantPropagation> environment,
+			BinaryExpression binary,
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
+		ValueExpression left = (ValueExpression) binary.getLeft();
+		ValueExpression right = (ValueExpression) binary.getRight();
+		if (left instanceof Identifier && isNone(eval(environment, right, pp, oracle)))
+			return (Identifier) left;
+		if (right instanceof Identifier && isNone(eval(environment, left, pp, oracle)))
+			return (Identifier) right;
+		return null;
+	}
+
+	private static boolean isNone(
+			ConstantPropagation value) {
+		return !value.isTop() && !value.isBottom() && value.constant instanceof PyNoneConstant;
 	}
 
 	@Override
