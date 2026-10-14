@@ -1,0 +1,14 @@
+library _sv_verifier:
+    location _sv_verifier
+    method nondet_bool: it.unive.pylisa.libraries.svverifier.NondetBool
+        type it.unive.lisa.program.type.BoolType::INSTANCE
+    method nondet_int: it.unive.pylisa.libraries.svverifier.NondetInt
+        type it.unive.lisa.program.type.Int32Type::INSTANCE
+    method nondet_float: it.unive.pylisa.libraries.svverifier.NondetFloat
+        type it.unive.lisa.program.type.Float32Type::INSTANCE
+    method nondet_str: it.unive.pylisa.libraries.svverifier.NondetStr
+        type it.unive.lisa.program.type.StringType::INSTANCE
+    method check_type: it.unive.pylisa.libraries.svverifier.CheckType
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param value type it.unive.lisa.type.Untyped::INSTANCE
+        param hint type it.unive.lisa.type.Untyped::INSTANCE
