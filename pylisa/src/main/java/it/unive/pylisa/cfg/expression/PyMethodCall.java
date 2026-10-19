@@ -164,9 +164,11 @@ public class PyMethodCall extends UnresolvedCall {
 				// the receiver might also be an object whose class defines the
 				// method (handled by the regular call resolution): the
 				// attribute cannot be read only from the other objects, and
-				// its value is unknown
+				// its value is unknown, but reading it from them raises
+				// AttributeError if they cannot have it
 				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()),
 						this));
+				result = result.lub(read.missingErrors(interprocedural, state, receiver, this));
 				continue;
 			}
 

@@ -131,7 +131,7 @@ public class PyAttributeAccess extends UnaryExpression {
 
 		AnalysisState<A> result = state.bottom();
 		if (!objects.isEmpty()) {
-			Missing missing = isWriteTarget() ? null : missing(analysis, state, expr, objects);
+			Missing missing = isWriteTarget() ? null : missing(analysis, state, expr, objects, false);
 			if (missing == null || missing.assigned()) {
 				// python objects have no declared fields: the attribute is a
 				// field created by its first assignment
@@ -149,6 +149,46 @@ public class PyAttributeAccess extends UnaryExpression {
 		}
 		if (others)
 			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this));
+		return result;
+	}
+
+	/**
+	 * The errors raised by reading this attribute from the objects that
+	 * {@code expr} points to whose class does not define it as a method, when
+	 * other objects it points to have it as a method (e.g. {@code c.func()},
+	 * where {@code c} is an object of a class defining {@code func}, or of one
+	 * that does not): that is, the {@code AttributeError} raised for the
+	 * objects on which the attribute has never been assigned, and whose class
+	 * does not define it as a class attribute.
+	 *
+	 * @param <A>             the kind of the analysis state
+	 * @param <D>             the kind of the abstract domain
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the attribute is read
+	 * @param expr            the receiver
+	 * @param thrower         the statement raising the errors of the read
+	 *
+	 * @return the state with the raised errors, and no normal execution
+	 *
+	 * @throws SemanticException if something goes wrong during the computation
+	 */
+	<A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> missingErrors(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			Statement thrower)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		Set<Type> objects = new HashSet<>();
+		for (Type t : analysis.getRuntimeTypesOf(state, expr, this))
+			if (t.isPointerType() && t.asPointerType().getInnerType().isUnitType())
+				objects.add(t.asPointerType().getInnerType());
+		Missing missing = objects.isEmpty() ? null : missing(analysis, state, expr, objects, true);
+		AnalysisState<A> result = state.bottom();
+		if (missing != null)
+			for (ClassUnit cls : missing.classes())
+				// only the errors: the value of the attribute is not known
+				result = result.lub(classAttribute(interprocedural, state, cls, thrower).bottomExecution());
 		return result;
 	}
 
@@ -190,7 +230,8 @@ public class PyAttributeAccess extends UnaryExpression {
 			Analysis<A, D> analysis,
 			AnalysisState<A> state,
 			SymbolicExpression expr,
-			Set<Type> objects)
+			Set<Type> objects,
+			boolean skipMethods)
 			throws SemanticException {
 		if (name.startsWith("__") && name.endsWith("__"))
 			// special attributes (e.g. __class__, __dict__) are defined for
@@ -202,9 +243,15 @@ public class PyAttributeAccess extends UnaryExpression {
 				return null;
 			ClassUnit unit = (ClassUnit) t.asUnitType().getUnit();
 			if (PyClassAttributes.isMethod(unit, name))
-				return null;
+				if (skipMethods)
+					// the objects of this class have the attribute
+					continue;
+				else
+					return null;
 			units.add(unit);
 		}
+		if (units.isEmpty())
+			return null;
 
 		HeapEnvWithFields heap = state.getExecutionState().getLatticeInstance(HeapEnvWithFields.class);
 		if (heap == null || heap.isTop() || heap.fields.isTop())
@@ -223,6 +270,19 @@ public class PyAttributeAccess extends UnaryExpression {
 				if (pointed.isTop() || pointed.isBottom())
 					return null;
 				sites = pointed.elements();
+			} else if (skipMethods) {
+				// the objects are not known (e.g. the receiver is a field
+				// whose objects the heap does not track): the receiver might
+				// be any object of the classes without the method, that are
+				// the ones the heap tracks (if any)
+				sites = new HashSet<>();
+				if (heap.fields.function != null)
+					for (AllocationSite site : heap.fields.getKeys())
+						if (site.getStaticType().isUnitType()
+								&& units.contains(site.getStaticType().asUnitType().getUnit()))
+							sites.add(site);
+				if (sites.isEmpty())
+					missing.addAll(units);
 			} else
 				return null;
 
@@ -238,8 +298,9 @@ public class PyAttributeAccess extends UnaryExpression {
 					Type type = site.getStaticType();
 					if (type.isUnitType() && units.contains(type.asUnitType().getUnit()))
 						missing.add((ClassUnit) type.asUnitType().getUnit());
-					else
+					else if (!skipMethods || !type.isUnitType())
 						missing.addAll(units);
+					// otherwise, an object of a class defining the method
 				}
 			}
 		}
