@@ -1,0 +1,42 @@
+{
+  "warnings" : [ ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_svcomp_function-pointer_function-pointer.$main().graph.json", "untyped_py-testcases_svcomp_function-pointer_function-pointer.func(untyped_a)_691289527.graph.json", "untyped_py-testcases_svcomp_function-pointer_function-pointer.other_func()_691292193.graph.json", "untyped_py-testcases_svcomp_function-pointer_function-pointer.param_func()_691292193.graph.json" ],
+  "info" : {
+    "cfgs" : "5",
+    "duration" : "123ms",
+    "end" : "2026-10-19T10:36:36.724+02:00",
+    "expressions" : "28",
+    "files" : "4",
+    "globals" : "0",
+    "members" : "145",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-19T10:36:36.601+02:00",
+    "statements" : "18",
+    "units" : "28",
+    "version" : "1.0",
+    "warnings" : "0"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/svcomp/function-pointer"
+  }
+}
