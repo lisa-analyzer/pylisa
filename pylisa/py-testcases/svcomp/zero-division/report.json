@@ -1,22 +1,24 @@
 {
-  "warnings" : [ ],
+  "warnings" : [ {
+    "message" : "['py-testcases/svcomp/zero-division/zero-division.py':1:0] on 'untyped py-testcases/svcomp/zero-division/zero-division::$main()': [CFG] POSSIBLE: uncaught ZeroDivisionError"
+  } ],
   "notices" : [ ],
-  "files" : [ "report.json", "untyped_py-testcases_sv-verifier_sv-verifier.$main().graph.json", "untyped_py-testcases_sv-verifier_sv-verifier.func(untyped_a)_-2142533828.graph.json", "untyped_py-testcases_sv-verifier_sv-verifier.other_func()_-2142531162.graph.json", "untyped_py-testcases_sv-verifier_sv-verifier.param_func()_-2142531162.graph.json" ],
+  "files" : [ "report.json", "untyped_py-testcases_svcomp_zero-division_zero-division.$main().graph.json" ],
   "info" : {
-    "cfgs" : "5",
-    "duration" : "136ms",
-    "end" : "2026-10-14T19:05:36.388+02:00",
-    "expressions" : "74",
-    "files" : "4",
+    "cfgs" : "2",
+    "duration" : "3ms",
+    "end" : "2026-10-19T10:51:04.123+02:00",
+    "expressions" : "6",
+    "files" : "1",
     "globals" : "0",
-    "members" : "145",
+    "members" : "142",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-14T19:05:36.252+02:00",
-    "statements" : "33",
-    "units" : "28",
+    "start" : "2026-10-19T10:51:04.120+02:00",
+    "statements" : "5",
+    "units" : "31",
     "version" : "1.0",
-    "warnings" : "0"
+    "warnings" : "1"
   },
   "configuration" : {
     "asynchronousListeners" : "",
@@ -31,12 +33,12 @@
     "openCallPolicy" : "ReturnTopPolicy",
     "outputs" : "JSONReportDumper, JSONResults",
     "recursionWideningThreshold" : "5",
-    "semanticChecks" : "",
+    "semanticChecks" : "AssertChecker",
     "shouldSmashError" : "unset",
     "synchronousListeners" : "",
     "syntacticChecks" : "",
     "useWideningPoints" : "true",
     "wideningThreshold" : "5",
-    "workdir" : "py-outputs/sv-verifier"
+    "workdir" : "py-outputs/svcomp/zero-division"
   }
 }

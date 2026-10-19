@@ -55,6 +55,9 @@ public class LibrarySpecificationProvider {
 	public static final String VALUE_ERROR = "ValueError";
 	public static final String ATTRIBUTE_ERROR = "AttributeError";
 	public static final String LOOKUP_ERROR = "LookupError";
+	public static final String KEY_ERROR = "KeyError";
+	public static final String ASSERTION_ERROR = "AssertionError";
+	public static final String FLOATING_POINT_ERROR = "FloatingPointError";
 	public static final String UNICODE_DECODE_ERROR = "UnicodeDecodeError";
 	public static final String UNICODE_ENCODE_ERROR = "UnicodeEncodeError";
 

@@ -1,0 +1,44 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/svcomp/type-error/type-error.py':1:0] on 'untyped py-testcases/svcomp/type-error/type-error::$main()': [CFG] POSSIBLE: uncaught TypeError"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_svcomp_type-error_type-error.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "2ms",
+    "end" : "2026-10-19T10:51:05.351+02:00",
+    "expressions" : "8",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "142",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-19T10:51:05.349+02:00",
+    "statements" : "7",
+    "units" : "31",
+    "version" : "1.0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "AssertChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/svcomp/type-error"
+  }
+}

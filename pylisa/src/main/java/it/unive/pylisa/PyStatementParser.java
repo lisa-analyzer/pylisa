@@ -186,6 +186,7 @@ import it.unive.pylisa.cfg.expression.literal.PyTypeLiteral;
 import it.unive.pylisa.cfg.expression.unary.PyLength;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
+import it.unive.pylisa.cfg.statement.PyAssert;
 import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -806,19 +807,14 @@ public class PyStatementParser
 	}
 
 	@Override
-	public Expression visitAssert_stmt(
+	public Statement visitAssert_stmt(
 			Assert_stmtContext ctx) {
-		List<Expression> args = new ArrayList<>();
-		for (ExpressionContext e : ctx.expression())
-			args.add(visitExpression(e));
-		return new UnresolvedCall(
+		List<ExpressionContext> exprs = ctx.expression();
+		return new PyAssert(
 				currentCFG,
 				getLocation(filePath, ctx),
-				CallType.STATIC,
-				"assert",
-				Program.PROGRAM_NAME,
-				LeftToRightEvaluation.INSTANCE,
-				args.toArray(Expression[]::new));
+				visitExpression(exprs.get(0)),
+				exprs.size() > 1 ? visitExpression(exprs.get(1)) : null);
 	}
 
 	/**

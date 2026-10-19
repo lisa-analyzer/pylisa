@@ -14,7 +14,7 @@ public class SVCompTest extends AnalysisTestExecutor {
 
 	private void svcomp(
 			String benchmark) {
-		CronConfiguration conf = TestHelper.constantPropagationConfig();
+		CronConfiguration conf = TestHelper.svcompConfig();
 		conf.testDir = "svcomp/" + benchmark;
 		conf.programFile = benchmark + ".py";
 		perform(conf);

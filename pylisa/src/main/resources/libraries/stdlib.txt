@@ -53,15 +53,21 @@ class LookupError extends Exception
 
 class IndexError extends LookupError
 
+class KeyError extends LookupError
+
 class ArithmeticError extends Exception
 
 class ZeroDivisionError extends ArithmeticError
 
 class OverflowError extends ArithmeticError
 
+class FloatingPointError extends ArithmeticError
+
 class ValueError extends Exception
 
 class AttributeError extends Exception
+
+class AssertionError extends Exception
 
 class UnicodeError extends ValueError
 
