@@ -16,12 +16,12 @@ public class SVCompTest extends AnalysisTestExecutor {
 			String benchmark) {
 		CronConfiguration conf = TestHelper.svcompConfig();
 		conf.testDir = "svcomp/" + benchmark;
-		conf.programFile = benchmark + ".py";
+		conf.programFile = "main.py";
 		perform(conf);
 	}
 
 	@Test
-	public void testFunctionPointer() {
-		svcomp("function-pointer");
+	public void testArgs_assigned_call() {
+		svcomp("args_assigned_call");
 	}
 }
