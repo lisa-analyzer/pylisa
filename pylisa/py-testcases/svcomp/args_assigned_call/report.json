@@ -1,26 +1,30 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/svcomp/args_assigned_call/main.py':1:0] on 'untyped py-testcases/svcomp/args_assigned_call/main::$main()': [CFG] POSSIBLE: uncaught AssertionError"
+    "message" : "['py-testcases/svcomp/args_assigned_call/main.py':23:34] on 'untyped py-testcases/svcomp/args_assigned_call/main::$main()': [EXPRESSION] POSSIBLE: uncaught TypeError"
   }, {
-    "message" : "['py-testcases/svcomp/args_assigned_call/main.py':1:0] on 'untyped py-testcases/svcomp/args_assigned_call/main::$main()': [CFG] POSSIBLE: uncaught TypeError"
+    "message" : "['py-testcases/svcomp/args_assigned_call/main.py':24:16] on 'untyped py-testcases/svcomp/args_assigned_call/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+  }, {
+    "message" : "['py-testcases/svcomp/args_assigned_call/main.py':26:34] on 'untyped py-testcases/svcomp/args_assigned_call/main::$main()': [EXPRESSION] POSSIBLE: uncaught TypeError"
+  }, {
+    "message" : "['py-testcases/svcomp/args_assigned_call/main.py':27:16] on 'untyped py-testcases/svcomp/args_assigned_call/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_svcomp_args_assigned_call_main.$main().graph.json", "untyped_py-testcases_svcomp_args_assigned_call_main.func(untyped_a)_-1293707541.graph.json", "untyped_py-testcases_svcomp_args_assigned_call_main.other_func()_-1293704875.graph.json", "untyped_py-testcases_svcomp_args_assigned_call_main.param_func()_-1293704875.graph.json" ],
   "info" : {
     "cfgs" : "5",
-    "duration" : "129ms",
-    "end" : "2026-10-19T11:03:59.824+02:00",
+    "duration" : "119ms",
+    "end" : "2026-10-19T11:05:49.514+02:00",
     "expressions" : "28",
     "files" : "4",
     "globals" : "0",
     "members" : "145",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-19T11:03:59.695+02:00",
+    "start" : "2026-10-19T11:05:49.395+02:00",
     "statements" : "18",
     "units" : "31",
     "version" : "1.0",
-    "warnings" : "2"
+    "warnings" : "4"
   },
   "configuration" : {
     "asynchronousListeners" : "",
