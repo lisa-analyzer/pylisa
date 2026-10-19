@@ -166,6 +166,7 @@ import it.unive.pylisa.cfg.expression.PyRemainder;
 import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
 import it.unive.pylisa.cfg.expression.PySubtraction;
 import it.unive.pylisa.cfg.expression.PyTernaryOperator;
+import it.unive.pylisa.cfg.expression.PyValueCall;
 import it.unive.pylisa.cfg.expression.RangeValue;
 import it.unive.pylisa.cfg.expression.SetCreation;
 import it.unive.pylisa.cfg.expression.StarExpression;
@@ -1596,8 +1597,16 @@ public class PyStatementParser
 				attribute = true;
 				access = attribute(access, last_name, getLocation(filePath, frame));
 			} else if (frame.LPAR() != null) {
-				if (last_name == null)
-					return new Empty(currentCFG, getLocation(filePath, frame));
+				if (last_name == null) {
+					// the callee is not a name, e.g. d[key]() or f()()
+					List<Expression> args = convertAssignmentsToByNameParameters(
+							extractArguments(frame.arguments()));
+					access = new PyValueCall(currentCFG, getLocation(filePath, frame), access,
+							args.toArray(Expression[]::new));
+					previous_access = null;
+					attribute = false;
+					continue;
+				}
 
 				List<Expression> pars = extractArguments(frame.arguments());
 				String method_name = last_name;

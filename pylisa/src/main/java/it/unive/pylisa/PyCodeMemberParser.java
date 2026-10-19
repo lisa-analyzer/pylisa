@@ -204,6 +204,10 @@ public class PyCodeMemberParser
 			fillDefaultAndHint(p.param(), null, cfg, descriptor);
 		for (Param_with_defaultContext p : ctx.param_with_default())
 			fillDefaultAndHint(p.param(), p.default_assignment(), cfg, descriptor);
+		if (ctx.star_etc() != null)
+			// keyword-only parameters (e.g. c in def f(a, *, c=3))
+			for (Param_maybe_defaultContext p : ctx.star_etc().param_maybe_default())
+				fillDefaultAndHint(p.param(), p.default_assignment(), cfg, descriptor);
 	}
 
 	private void fillDefaultAndHint(

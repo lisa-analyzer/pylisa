@@ -25,6 +25,7 @@ import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -69,7 +70,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			}
 		}
 
-		AnalysisState<A> logic = pythonLogic(
+		boolean matches = pythonLogic(
 				formals,
 				actuals,
 				parameters,
@@ -81,8 +82,11 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 				interprocedural,
 				call.getCFG(),
 				callState.bottom());
-		if (logic != null)
-			return Pair.of(logic, parameters);
+		if (!matches)
+			// the arguments do not match the parameters of the callee: python
+			// raises TypeError
+			return Pair.of(PyExceptions.raise(interprocedural.getAnalysis(), callState, call.getCFG(),
+					call.getLocation(), call, LibrarySpecificationProvider.TYPE_ERROR), parameters);
 
 		// prepare the state for the call: assign the value to each parameter
 		AnalysisState<A> prepared = callState;
@@ -99,7 +103,9 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		return Pair.of(prepared, slots);
 	}
 
-	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> pythonLogic(
+	// fills the slots of the formal parameters with the actual ones, returning
+	// whether the actual parameters match the formal ones
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean pythonLogic(
 			Parameter[] formals,
 			Expression[] actuals,
 			ExpressionSet[] given,
@@ -110,7 +116,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			Set<Type>[] slotTypes,
 			InterproceduralAnalysis<A, D> interprocedural,
 			CFG callCFG,
-			AnalysisState<A> failure)
+			AnalysisState<A> bottom)
 			throws SemanticException {
 		Set<String> namedPars = new HashSet<>();
 		int namedParOffset = getNamedParIndex(actuals);
@@ -127,7 +133,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		for (; aPos < namedParOffset && fPos < formals.length; aPos++, fPos++) {
 			if (formals[fPos] instanceof VarKeywordParameter)
 				// problem: varKeywordParameter in positional parameter
-				return failure;
+				return false;
 			else if (formals[fPos] instanceof VarPositionalParameter)
 				// all the next positional parameter must be inserted inside a
 				// list
@@ -150,7 +156,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 
 			if (fPos >= slotTypes.length) {
 				// no more space!
-				return failure;
+				return false;
 			}
 
 			int offset = aPos - vargsList.size();
@@ -162,11 +168,15 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			ListCreation listCreation = new ListCreation(callCFG, SyntheticLocation.INSTANCE,
 					vargsList.toArray(Expression[]::new));
 			AnalysisState<A> listSemantics = listCreation.forwardSemanticsAux(interprocedural,
-					failure.bottom(), symbolicExprs, null);
+					bottom, symbolicExprs, null);
 			slots[fPos] = listSemantics.getExecutionExpressions();
 			slotTypes[fPos] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
 			fPos++;
 		}
+
+		if (aPos < namedParOffset)
+			// more positional arguments than positional parameters
+			return false;
 
 		// third phase: kwargs
 		// kwargs must be the last parameter.
@@ -203,40 +213,53 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			DictionaryCreation dictCreation = new DictionaryCreation(callCFG, SyntheticLocation.INSTANCE,
 					pairExprs.toArray(Pair[]::new));
 			AnalysisState<A> dictSemantics = dictCreation.forwardSemanticsAux(interprocedural,
-					failure.bottom(), symbExprs.toArray(ExpressionSet[]::new), null);
+					bottom, symbExprs.toArray(ExpressionSet[]::new), null);
 			slots[formals.length - 1] = dictSemantics.getExecutionExpressions();
 			slotTypes[formals.length - 1] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.DICT));
 		}
 
 		// fourth phase: keyword arguments
+		boolean kwargs = formals.length > 0 && formals[formals.length - 1] instanceof VarKeywordParameter;
 		for (; aPos < actuals.length; aPos++) {
 			String name = ((NamedParameterExpression) actuals[aPos]).getParameterName();
-			for (int i = fPos; i < formals.length; i++)
-				if (formals[i].getName().equals(name)) {
+			boolean found = false;
+			for (int i = 0; i < formals.length; i++)
+				if (!(formals[i] instanceof VarPositionalParameter) && !(formals[i] instanceof VarKeywordParameter)
+						&& formals[i].getName().equals(name)) {
+					found = true;
 					if (slots[i] != null)
 						// already filled -> TypeError
-						return failure;
+						return false;
 					else {
 						slots[i] = given[aPos];
 						slotTypes[i] = givenTypes[aPos];
 					}
 					break;
 				}
+			if (!found && !kwargs)
+				// no parameter with that name -> TypeError
+				return false;
 		}
 
 		// fifth phase: default values
 		for (int pos = 0; pos < slots.length; pos++)
 			if (slots[pos] == null) {
-				if (defaults[pos] == null)
+				if (formals[pos] instanceof VarPositionalParameter) {
+					// no positional argument is left for *args: it is empty
+					AnalysisState<A> empty = new ListCreation(callCFG, SyntheticLocation.INSTANCE)
+							.forwardSemanticsAux(interprocedural, bottom, new ExpressionSet[0], null);
+					slots[pos] = empty.getExecutionExpressions();
+					slotTypes[pos] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
+				} else if (defaults[pos] == null)
 					// unfilled and no default value -> TypeError
-					return failure;
+					return false;
 				else {
 					slots[pos] = defaults[pos];
 					slotTypes[pos] = defaultTypes[pos];
 				}
 			}
 
-		return null;
+		return true;
 	}
 
 	static int getNamedParIndex(
