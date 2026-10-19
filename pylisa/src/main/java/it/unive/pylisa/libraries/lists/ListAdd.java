@@ -13,16 +13,17 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.UnsupportedStatementException;
 
 /**
  * Native implementation of {@code list.__add__(self, other)}: list
- * concatenation ({@code [1] + [2]}). Not implemented: allocating a fresh list
- * and copying elements into it would require a domain that can summarize "all
- * elements of this allocation" independent of a constant index, which this
- * codebase does not have; a naive fresh allocation was tried and produced
- * allocation-site aliasing with sibling list literals instead of a genuinely
- * independent object, which is worse than failing loudly.
+ * concatenation ({@code [1] + [2]}). The resulting list is not tracked:
+ * allocating a fresh list and copying elements into it would require a domain
+ * that can summarize "all elements of this allocation" independent of a
+ * constant index, which this codebase does not have (a naive fresh allocation
+ * produced allocation-site aliasing with sibling list literals). The result is
+ * thus an unknown value, and {@code TypeError} is raised if {@code other} might
+ * not be a list (see {@link ListOperations}). This also handles the operands
+ * whose type is unknown, that might be lists.
  */
 public class ListAdd extends BinaryExpression implements PluggableStatement {
 
@@ -64,6 +65,7 @@ public class ListAdd extends BinaryExpression implements PluggableStatement {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		throw new UnsupportedStatementException(this);
+		// the other operand is the right one (the receiver is the list)
+		return ListOperations.unknownResult(interprocedural, state, right, ListOperations.LIST, this);
 	}
 }

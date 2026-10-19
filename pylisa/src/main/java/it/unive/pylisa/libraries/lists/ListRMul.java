@@ -13,12 +13,12 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.UnsupportedStatementException;
 
 /**
  * Native implementation of {@code list.__rmul__(self, other)}: list repetition
- * with the operands swapped ({@code 3 * [1]}). Not implemented; see
- * {@link ListAdd}.
+ * with the operands swapped ({@code 3 * [1]}). The result is not tracked, and
+ * {@code TypeError} is raised if the number of repetitions might not be an
+ * {@code int}; see {@link ListAdd}.
  */
 public class ListRMul extends BinaryExpression implements PluggableStatement {
 
@@ -60,6 +60,7 @@ public class ListRMul extends BinaryExpression implements PluggableStatement {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		throw new UnsupportedStatementException(this);
+		// the other operand is the right one (the receiver is the list)
+		return ListOperations.unknownResult(interprocedural, state, right, ListOperations.INT, this);
 	}
 }

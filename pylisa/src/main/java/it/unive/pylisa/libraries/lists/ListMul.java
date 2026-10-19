@@ -13,11 +13,12 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.UnsupportedStatementException;
 
 /**
  * Native implementation of {@code list.__mul__(self, other)}: list repetition
- * ({@code [1] * 3}). Not implemented; see {@link ListAdd}.
+ * ({@code [1] * 3}). The result is not tracked, and {@code TypeError} is raised
+ * if the number of repetitions might not be an {@code int}; see
+ * {@link ListAdd}.
  */
 public class ListMul extends BinaryExpression implements PluggableStatement {
 
@@ -59,6 +60,7 @@ public class ListMul extends BinaryExpression implements PluggableStatement {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		throw new UnsupportedStatementException(this);
+		// the other operand is the right one (the receiver is the list)
+		return ListOperations.unknownResult(interprocedural, state, right, ListOperations.INT, this);
 	}
 }
