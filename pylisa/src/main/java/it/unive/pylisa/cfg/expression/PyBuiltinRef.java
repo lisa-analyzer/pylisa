@@ -79,14 +79,28 @@ public class PyBuiltinRef extends VariableRef {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		if (entryState.getExecutionState().isBottom() || entryState.knowsIdentifier(getVariable())
-				|| ASSIGNED.computeIfAbsent(getCFG().getProgram(), PyBuiltinRef::assigned).contains(getName()))
+				|| isAssigned(getCFG().getProgram(), getName()))
 			return super.forwardSemantics(entryState, interprocedural, expressions);
 		return new PyFunctionLiteral(getCFG(), getLocation(), function)
 				.forwardSemantics(entryState, interprocedural, expressions);
 	}
 
-	// the names assigned somewhere in the program (also inside tuples, as in
-	// a, b = ...)
+	/**
+	 * Whether {@code name} is assigned somewhere in the program (also inside
+	 * tuples, as in {@code a, b = ...}).
+	 *
+	 * @param program the program
+	 * @param name    the name
+	 *
+	 * @return whether the name is assigned
+	 */
+	public static boolean isAssigned(
+			Program program,
+			String name) {
+		return ASSIGNED.computeIfAbsent(program, PyBuiltinRef::assigned).contains(name);
+	}
+
+	// the names assigned somewhere in the program
 	private static Set<String> assigned(
 			Program program) {
 		Set<String> assigned = new HashSet<>();

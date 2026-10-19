@@ -146,6 +146,7 @@ import it.unive.pylisa.cfg.expression.PyBitwiseOr;
 import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
 import it.unive.pylisa.cfg.expression.PyBitwiseXor;
 import it.unive.pylisa.cfg.expression.PyBuiltinRef;
+import it.unive.pylisa.cfg.expression.PyClassRef;
 import it.unive.pylisa.cfg.expression.PyDivMod;
 import it.unive.pylisa.cfg.expression.PyDivision;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
@@ -1928,6 +1929,11 @@ public class PyStatementParser
 			if (builtin != null)
 				// e.g. q = len
 				return new PyBuiltinRef(currentCFG, getLocation(filePath, ctx), builtin);
+			Unit unit = program.getUnit(ctx.name().getText());
+			if (unit instanceof ClassUnit && ((ClassUnit) unit).getLocation() instanceof SourceCodeLocation)
+				// a class defined in the program (e.g. MyClass in
+				// check_type(a, MyClass))
+				return new PyClassRef(currentCFG, getLocation(filePath, ctx), (ClassUnit) unit);
 			return new VariableRef(currentCFG, getLocation(filePath, ctx), ctx.name().getText());
 		} else if (ctx.NUMBER() != null) {
 			String text = ctx.NUMBER().getText().toLowerCase().replaceAll("_", "");

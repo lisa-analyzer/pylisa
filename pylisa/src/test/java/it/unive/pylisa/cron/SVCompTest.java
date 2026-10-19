@@ -24,4 +24,9 @@ public class SVCompTest extends AnalysisTestExecutor {
 	public void testArgs_assigned_call() {
 		svcomp("args_assigned_call");
 	}
+
+	@Test
+	public void testClasses_call() {
+		svcomp("classes_call");
+	}
 }

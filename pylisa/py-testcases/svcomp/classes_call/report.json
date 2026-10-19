@@ -1,0 +1,50 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/svcomp/classes_call/main.py':27:4] on 'untyped py-testcases/svcomp/classes_call/main::$main()': [EXPRESSION] POSSIBLE: uncaught TypeError"
+  }, {
+    "message" : "['py-testcases/svcomp/classes_call/main.py':28:4] on 'untyped py-testcases/svcomp/classes_call/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+  }, {
+    "message" : "['py-testcases/svcomp/classes_call/main.py':30:4] on 'untyped py-testcases/svcomp/classes_call/main::$main()': [EXPRESSION] POSSIBLE: uncaught TypeError"
+  }, {
+    "message" : "['py-testcases/svcomp/classes_call/main.py':31:4] on 'untyped py-testcases/svcomp/classes_call/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_MyClass.func(MyClass__self,_untyped_flag)_1788856235.graph.json", "untyped_py-testcases_svcomp_classes_call_main.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "4",
+    "duration" : "119ms",
+    "end" : "2026-10-19T11:40:03.641+02:00",
+    "expressions" : "22",
+    "files" : "2",
+    "globals" : "0",
+    "members" : "144",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-19T11:40:03.522+02:00",
+    "statements" : "16",
+    "units" : "32",
+    "version" : "1.0",
+    "warnings" : "4"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "AssertChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/svcomp/classes_call"
+  }
+}
