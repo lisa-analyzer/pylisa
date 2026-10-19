@@ -15,7 +15,7 @@ public class PyParsingUtils {
 
 	public static int getCol(
 			ParserRuleContext ctx) {
-		return ctx.getStop().getCharPositionInLine();
+		return ctx.getStart().getCharPositionInLine();
 	}
 
 	public static SourceCodeLocation getLocation(
