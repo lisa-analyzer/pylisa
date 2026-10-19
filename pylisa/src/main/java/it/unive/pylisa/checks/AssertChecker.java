@@ -37,7 +37,10 @@ import java.util.Set;
  * the {@code assert} raising {@code AssertionError}, also inside a function
  * called by the main module): the violation is {@code DEFINITE} if every
  * execution raises that exception at that statement, {@code POSSIBLE}
- * otherwise.
+ * otherwise. An exception of an ancestor of the classes above (e.g.
+ * {@code Exception}, raised by code that is not known, such as the one run by
+ * {@code exec}) might be any of their subclasses: it is a {@code POSSIBLE}
+ * violation of every property.
  */
 public class AssertChecker<A extends AbstractLattice<A>, D extends AbstractDomain<A>>
 		implements
@@ -91,14 +94,28 @@ public class AssertChecker<A extends AbstractLattice<A>, D extends AbstractDomai
 			Set<Statement> throwers = new HashSet<>();
 			raised.values().forEach(throwers::addAll);
 			for (String exception : PROPERTY_EXCEPTIONS) {
+				PyClassType cls = PyClassType.lookup(exception);
+				if (cls == null)
+					continue;
 				Set<Statement> matching = new HashSet<>();
+				Set<Statement> maybe = new HashSet<>();
 				boolean only = true;
-				for (Map.Entry<Type, Set<Statement>> error : raised.entrySet())
-					if (isInstanceOf(error.getKey(), exception))
+				for (Map.Entry<Type, Set<Statement>> error : raised.entrySet()) {
+					CompilationUnit raisedCls = classOf(error.getKey());
+					if (raisedCls != null && raisedCls.isInstanceOf(cls.getUnit()))
 						matching.addAll(error.getValue());
-					else
+					else {
 						only = false;
-				for (Statement thrower : matching) {
+						if (raisedCls != null && cls.getUnit().isInstanceOf(raisedCls))
+							// an ancestor of the exception (e.g. Exception,
+							// raised by unknown code), that might be any of its
+							// subclasses
+							maybe.addAll(error.getValue());
+					}
+				}
+				Set<Statement> all = new HashSet<>(matching);
+				all.addAll(maybe);
+				for (Statement thrower : all) {
 					// the violation is definite if no execution terminates
 					// normally, nor raising other exceptions or at other
 					// statements
@@ -114,16 +131,14 @@ public class AssertChecker<A extends AbstractLattice<A>, D extends AbstractDomai
 		return true;
 	}
 
-	// whether the exceptions of the given type are instances of the given
-	// exception class
-	private static boolean isInstanceOf(
-			Type type,
-			String exception) {
+	// the class of the exceptions of the given type, or null if they are not
+	// objects of a class
+	private static CompilationUnit classOf(
+			Type type) {
 		if (type.isPointerType())
 			type = type.asPointerType().getInnerType();
 		if (!type.isUnitType() || !(type.asUnitType().getUnit() instanceof CompilationUnit))
-			return false;
-		PyClassType cls = PyClassType.lookup(exception);
-		return cls != null && ((CompilationUnit) type.asUnitType().getUnit()).isInstanceOf(cls.getUnit());
+			return null;
+		return (CompilationUnit) type.asUnitType().getUnit();
 	}
 }
