@@ -28,5 +28,15 @@ public class SVCompTest extends AnalysisTestExecutor {
 	@Test
 	public void testClasses_call() {
 		svcomp("classes_call");
+	}	
+	
+	@Test
+	public void testAssignments_augmented() {
+		svcomp("assignments_augmented");
+	}
+	
+	@Test
+	public void testAssignments_chained() {
+		svcomp("assignments_chained");
 	}
 }

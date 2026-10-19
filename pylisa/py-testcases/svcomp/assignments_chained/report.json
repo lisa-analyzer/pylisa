@@ -1,0 +1,50 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/svcomp/assignments_chained/main.py':32:0] on 'untyped py-testcases/svcomp/assignments_chained/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+  }, {
+    "message" : "['py-testcases/svcomp/assignments_chained/main.py':34:0] on 'untyped py-testcases/svcomp/assignments_chained/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+  }, {
+    "message" : "['py-testcases/svcomp/assignments_chained/main.py':36:4] on 'untyped py-testcases/svcomp/assignments_chained/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+  }, {
+    "message" : "['py-testcases/svcomp/assignments_chained/main.py':38:4] on 'untyped py-testcases/svcomp/assignments_chained/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_svcomp_assignments_chained_main.$main().graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func1()_-386955613.graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func1()_-386963332.graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func1()_-386963580.graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func2()_-386955613.graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func2()_-386963332.graph.json" ],
+  "info" : {
+    "cfgs" : "4",
+    "duration" : "144ms",
+    "end" : "2026-10-19T13:23:59.847+02:00",
+    "expressions" : "38",
+    "files" : "6",
+    "globals" : "0",
+    "members" : "144",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-19T13:23:59.703+02:00",
+    "statements" : "19",
+    "units" : "31",
+    "version" : "1.0",
+    "warnings" : "4"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "AssertChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/svcomp/assignments_chained"
+  }
+}
