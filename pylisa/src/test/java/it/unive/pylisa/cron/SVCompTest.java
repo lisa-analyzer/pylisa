@@ -39,4 +39,14 @@ public class SVCompTest extends AnalysisTestExecutor {
 	public void testAssignments_chained() {
 		svcomp("assignments_chained");
 	}
+
+	@Test
+	public void testArgs_default() {
+		svcomp("args_default");
+	}
+
+	@Test
+	public void testDirect_calls_return_call_unsafe() {
+		svcomp("direct_calls_return_call_unsafe");
+	}
 }

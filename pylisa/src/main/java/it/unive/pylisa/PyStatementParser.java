@@ -149,11 +149,13 @@ import it.unive.pylisa.cfg.expression.PyBitwiseOr;
 import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
 import it.unive.pylisa.cfg.expression.PyBitwiseXor;
 import it.unive.pylisa.cfg.expression.PyBuiltinRef;
+import it.unive.pylisa.cfg.expression.PyClassFunctionCall;
 import it.unive.pylisa.cfg.expression.PyClassRef;
 import it.unive.pylisa.cfg.expression.PyDivMod;
 import it.unive.pylisa.cfg.expression.PyDivision;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
 import it.unive.pylisa.cfg.expression.PyFloorDiv;
+import it.unive.pylisa.cfg.expression.PyFunctionRef;
 import it.unive.pylisa.cfg.expression.PyIn;
 import it.unive.pylisa.cfg.expression.PyInPlaceOperation;
 import it.unive.pylisa.cfg.expression.PyIs;
@@ -936,6 +938,10 @@ public class PyStatementParser
 			block.addNode(bind);
 			return new ParsedBlock(bind, block, bind);
 		} else if (ctx.class_def() != null) {
+			if (currentUnit instanceof ClassUnit)
+				// the nested class would not be an attribute of the outer one
+				// (e.g. self.Nested(...) would raise AttributeError)
+				throw new UnsupportedStatementException("nested classes are not supported");
 			ClassUnit cu = visitClass_def(ctx.class_def());
 			PyClassType.register(cu.getName(), cu);
 			program.addUnit(cu);
@@ -1664,6 +1670,15 @@ public class PyStatementParser
 							"__init__",
 							PyClassType.register(cu.getName(), (ClassUnit) cu),
 							pars.toArray(Expression[]::new));
+				} else if (attribute && classNames(previous_access) != null) {
+					// C.m(...): the function m of the class, with no receiver
+					access = new PyClassFunctionCall(
+							currentCFG,
+							getLocation(filePath, frame),
+							classNames(previous_access),
+							method_name,
+							LeftToRightEvaluation.INSTANCE,
+							pars.toArray(Expression[]::new));
 				} else if (!instance && method_name.equals("len") && pars.size() == 1) {
 					access = new PyLength(currentCFG, getLocation(filePath, frame), pars.get(0));
 				} else if (!instance && method_name.equals("divmod") && pars.size() == 2
@@ -1791,6 +1806,20 @@ public class PyStatementParser
 	 * bound by an import, the name of a class or of a library, or an attribute
 	 * of one of those (e.g. {@code os.path}).
 	 */
+	// the names of the class of the program that the expression might refer
+	// to, either defined in this module (see PyClassRef) or imported (from m
+	// import C), if any: imported classes are looked up during the analysis
+	// (see PyClassFunctionCall)
+	private List<String> classNames(
+			Expression expr) {
+		if (expr instanceof PyClassRef)
+			return List.of(((PyClassRef) expr).getClassUnit().getName());
+		if (!(expr instanceof VariableRef) || !imports.containsKey(((VariableRef) expr).getName()))
+			return null;
+		String name = ((VariableRef) expr).getName();
+		return List.of(imports.get(name), name);
+	}
+
 	private boolean isNamespace(
 			Expression expr) {
 		if (expr instanceof VariableRef) {
@@ -2051,6 +2080,9 @@ public class PyStatementParser
 				// a class defined in the program (e.g. MyClass in
 				// check_type(a, MyClass))
 				return new PyClassRef(currentCFG, getLocation(filePath, ctx), (ClassUnit) unit);
+			if (!currentCFG.getDescriptor().getName().equals(PyFileParser.INSTRUMENTED_MAIN_FUNCTION_NAME))
+				// inside a function, it might be a function of the module
+				return new PyFunctionRef(currentCFG, getLocation(filePath, ctx), ctx.name().getText());
 			return new VariableRef(currentCFG, getLocation(filePath, ctx), ctx.name().getText());
 		} else if (ctx.NUMBER() != null) {
 			String text = ctx.NUMBER().getText().toLowerCase().replaceAll("_", "");

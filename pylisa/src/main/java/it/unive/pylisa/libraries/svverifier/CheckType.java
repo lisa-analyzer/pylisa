@@ -23,6 +23,7 @@ import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.libraries.lists.ListModel;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -68,7 +69,10 @@ public class CheckType extends PyNative {
 			CompilationUnit cls = classOf(hint);
 			Predicate<Type> accepted = cls == null ? accepted(hint) : null;
 			Satisfiability sat = cls != null ? instanceOf(analysis, state, value, cls)
-					: accepted == null ? Satisfiability.UNKNOWN : hasType(analysis, state, value, accepted);
+					: hint instanceof PyTypeTokenType
+							? union(analysis, state, value, hint.asTypeTokenType().getTypes())
+							: accepted == null ? Satisfiability.UNKNOWN
+									: hasType(analysis, state, value, accepted);
 			matches |= sat != Satisfiability.NOT_SATISFIED;
 			fails |= sat != Satisfiability.SATISFIED;
 		}
@@ -138,23 +142,62 @@ public class CheckType extends PyNative {
 			SymbolicExpression value,
 			CompilationUnit cls)
 			throws SemanticException {
+		return satisfies(analysis, state, value, t -> instanceOf(t, cls));
+	}
+
+	// whether the values of type t are objects of cls (see above)
+	private static Satisfiability instanceOf(
+			Type t,
+			CompilationUnit cls) {
+		Type inner = t.isPointerType() ? t.asPointerType().getInnerType() : null;
+		CompilationUnit unit = inner != null && inner.isUnitType()
+				&& inner.asUnitType().getUnit() instanceof CompilationUnit
+						? (CompilationUnit) inner.asUnitType().getUnit()
+						: null;
+		if (unit != null && unit.isInstanceOf(cls))
+			return Satisfiability.SATISFIED;
+		if (unit != null && unit.getAnnotationList().stream()
+				.anyMatch(a -> a.getAnnotationName().equals(PyBinaryDispatch.UNTRACKED_BASES)))
+			return Satisfiability.UNKNOWN;
+		return Satisfiability.NOT_SATISFIED;
+	}
+
+	// whether value satisfies the union of the given hints (e.g. int | str |
+	// None, see PyBitwiseOr): a value satisfies it if it satisfies one of them
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability union(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression value,
+			Set<Type> members)
+			throws SemanticException {
+		return satisfies(analysis, state, value, t -> {
+			Satisfiability sat = Satisfiability.NOT_SATISFIED;
+			for (Type member : members) {
+				Predicate<Type> accepted = member instanceof PyClassType ? null : accepted(member);
+				sat = sat.or(member instanceof PyClassType ? instanceOf(t, ((PyClassType) member).getUnit())
+						: accepted == null ? Satisfiability.UNKNOWN
+								: accepted.test(t) ? Satisfiability.SATISFIED : Satisfiability.NOT_SATISFIED);
+			}
+			return sat;
+		});
+	}
+
+	// whether all the values of value satisfy the condition, given for their
+	// runtime types
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability satisfies(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression value,
+			Function<Type, Satisfiability> condition)
+			throws SemanticException {
 		Set<Type> types = analysis.getRuntimeTypesOf(state, value, this);
 		if (types.isEmpty() || types.stream().anyMatch(Type::isUntyped))
 			return Satisfiability.UNKNOWN;
 		boolean maybe = false, maybeNot = false;
 		for (Type t : types) {
-			Type inner = t.isPointerType() ? t.asPointerType().getInnerType() : null;
-			CompilationUnit unit = inner != null && inner.isUnitType()
-					&& inner.asUnitType().getUnit() instanceof CompilationUnit
-							? (CompilationUnit) inner.asUnitType().getUnit()
-							: null;
-			if (unit != null && unit.isInstanceOf(cls))
-				maybe = true;
-			else if (unit != null && unit.getAnnotationList().stream()
-					.anyMatch(a -> a.getAnnotationName().equals(PyBinaryDispatch.UNTRACKED_BASES)))
-				maybe = maybeNot = true;
-			else
-				maybeNot = true;
+			Satisfiability sat = condition.apply(t);
+			maybe |= sat != Satisfiability.NOT_SATISFIED;
+			maybeNot |= sat != Satisfiability.SATISFIED;
 		}
 		if (!maybeNot)
 			return Satisfiability.SATISFIED;

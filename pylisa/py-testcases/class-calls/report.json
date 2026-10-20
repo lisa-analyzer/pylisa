@@ -1,0 +1,44 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/class-calls/class-calls.py':16:4] on 'untyped py-testcases/class-calls/class-calls::$main()': [EXPRESSION] TYPING: a value of the wrong type is used (uncaught TypeError) at 'py-testcases/class-calls/class-calls.py':16:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_C.m(C__self,_untyped_x)_-936543457.graph.json", "untyped_C.n(C__self)_-936543302.graph.json", "untyped_C.n(C__self)_-936543395.graph.json", "untyped_py-testcases_class-calls_class-calls.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "5",
+    "duration" : "124ms",
+    "end" : "2026-10-20T16:59:27.042+02:00",
+    "expressions" : "21",
+    "files" : "4",
+    "globals" : "0",
+    "members" : "148",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-20T16:59:26.918+02:00",
+    "statements" : "11",
+    "units" : "31",
+    "version" : "1.0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/class-calls"
+  }
+}

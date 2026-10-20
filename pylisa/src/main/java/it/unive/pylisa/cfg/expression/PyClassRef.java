@@ -38,6 +38,15 @@ public class PyClassRef extends VariableRef {
 		this.unit = unit;
 	}
 
+	/**
+	 * Yields the class with the same name.
+	 *
+	 * @return the class
+	 */
+	public ClassUnit getClassUnit() {
+		return unit;
+	}
+
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
 			AnalysisState<A> entryState,
