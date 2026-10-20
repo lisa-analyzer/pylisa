@@ -38,6 +38,10 @@ method bytes: it.unive.pylisa.libraries.conversions.BytesBuiltin
     param encoding type it.unive.lisa.type.Untyped::INSTANCE default none
     param errors type it.unive.lisa.type.Untyped::INSTANCE default none
 
+method list: it.unive.pylisa.libraries.lists.ListBuiltin
+    type it.unive.lisa.type.Untyped::INSTANCE
+    param iterable type it.unive.lisa.type.Untyped::INSTANCE default none
+
 method exec: it.unive.pylisa.libraries.dynamic.Exec
     type it.unive.lisa.type.Untyped::INSTANCE
     param source type it.unive.lisa.type.Untyped::INSTANCE

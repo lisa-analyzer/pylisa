@@ -20,6 +20,7 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyTypeTokenType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyNative;
+import it.unive.pylisa.libraries.lists.ListModel;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -28,13 +29,13 @@ import java.util.function.Predicate;
  * Native implementation of {@code _sv_verifier.check_type(value, hint)}, that
  * returns {@code None} if {@code value} has the type described by {@code hint},
  * and raises {@code TypeError} otherwise. The supported hints are {@code int}
- * (also satisfied by a {@code bool}), {@code float}, {@code str}, {@code bytes}
- * and {@code None}, and the classes of the program (also satisfied by the
- * objects of their subclasses; since the bases of the classes are not tracked,
- * both outcomes are possible for an object of a class with bases); a function
- * that is not a type (e.g. {@code len}) is never satisfied, as
- * {@code isinstance} raises {@code TypeError} on it. For any other hint (e.g.
- * {@code list[int]}), both outcomes are possible.
+ * (also satisfied by a {@code bool}), {@code float}, {@code str},
+ * {@code bytes}, {@code list} and {@code None}, and the classes of the program
+ * (also satisfied by the objects of their subclasses; since the bases of the
+ * classes are not tracked, both outcomes are possible for an object of a class
+ * with bases); a function that is not a type (e.g. {@code len}) is never
+ * satisfied, as {@code isinstance} raises {@code TypeError} on it. For any
+ * other hint (e.g. {@code list[int]}), both outcomes are possible.
  */
 public class CheckType extends PyNative {
 
@@ -104,6 +105,8 @@ public class CheckType extends PyNative {
 				return STR;
 			case "bytes":
 				return BYTES;
+			case "list":
+				return ListModel::isList;
 			case "super":
 				return null;
 			default:
