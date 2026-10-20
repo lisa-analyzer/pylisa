@@ -113,14 +113,17 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 					// the index of a tuple must be an int
 					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
 							LibrarySpecificationProvider.TYPE_ERROR));
-			} else if (ListModel.isList(t))
-				if (analysis.getRuntimeTypesOf(state, right, this).stream().anyMatch(ListModel::isSlice))
+			} else if (ListModel.isList(t)) {
+				// the index might be both a slice and something else (e.g. if
+				// it is unknown)
+				Set<Type> indexTypes = analysis.getRuntimeTypesOf(state, right, this);
+				if (indexTypes.stream().anyMatch(ListModel::isSlice))
 					// lst[start:stop:step]
 					result = result.lub(ListModel.slice(interprocedural, state, left, right, this));
-				else
+				if (indexTypes.isEmpty() || !indexTypes.stream().allMatch(ListModel::isSlice))
 					// bounds and index checked on the elements of the list
 					result = result.lub(ListModel.read(analysis, state, left, right, this));
-			else if (DictModel.isDict(t))
+			} else if (DictModel.isDict(t))
 				// the entries of the dictionary
 				result = result.lub(DictModel.read(analysis, state, left, right, this));
 			else {

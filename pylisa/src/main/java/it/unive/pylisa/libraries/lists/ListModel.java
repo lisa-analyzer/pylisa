@@ -309,7 +309,9 @@ public final class ListModel {
 		if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t)))
 			// e.g. a str, or an unknown value
 			typeError = true;
-		if (types.isEmpty() || types.stream().anyMatch(ListOperations.INT)) {
+		// an unknown value (e.g. returned by an unknown function) might be an
+		// int
+		if (types.isEmpty() || types.stream().anyMatch(t -> ListOperations.INT.test(t) || t.isUntyped())) {
 			// the indices the index might be equal to (also when it is not a
 			// constant, e.g. -1 or a variable): the ones of the elements
 			// that the list surely has
@@ -492,7 +494,9 @@ public final class ListModel {
 		Set<Type> types = analysis.getRuntimeTypesOf(state, index, thrower);
 		if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t)))
 			typeError = true;
-		if (types.isEmpty() || types.stream().anyMatch(ListOperations.INT)) {
+		// an unknown value (e.g. returned by an unknown function) might be an
+		// int
+		if (types.isEmpty() || types.stream().anyMatch(t -> ListOperations.INT.test(t) || t.isUntyped())) {
 			int from = shape.length() == null ? 0 : -shape.length();
 			int to = shape.length() == null ? shape.prefix() : shape.length();
 			Integer exact = null;
