@@ -2160,8 +2160,11 @@ public class PyStatementParser
 			return result;
 		for (Double_starred_kvpairContext e : ctx.double_starred_kvpair()) {
 			if (e.kvpair() == null)
-				throw new UnsupportedStatementException("** dict unpacking is not supported");
-			result.add(Pair.of(visitExpression(e.kvpair().expression(0)), visitExpression(e.kvpair().expression(1))));
+				// **m: no key (see DictionaryCreation)
+				result.add(Pair.of(null, visitBitwise_or(e.bitwise_or())));
+			else
+				result.add(Pair.of(visitExpression(e.kvpair().expression(0)),
+						visitExpression(e.kvpair().expression(1))));
 		}
 		return result;
 	}

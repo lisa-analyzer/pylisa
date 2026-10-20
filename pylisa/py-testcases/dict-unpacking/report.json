@@ -1,0 +1,44 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/dict-unpacking/dict-unpacking.py':16:6] on 'untyped py-testcases/dict-unpacking/dict-unpacking::$main()': [EXPRESSION] TYPING: a value of the wrong type is used (uncaught TypeError) at 'py-testcases/dict-unpacking/dict-unpacking.py':16:6"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_dict-unpacking_dict-unpacking.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "133ms",
+    "end" : "2026-10-20T19:41:14.058+02:00",
+    "expressions" : "67",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "147",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-20T19:41:13.925+02:00",
+    "statements" : "16",
+    "units" : "30",
+    "version" : "1.0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/dict-unpacking"
+  }
+}

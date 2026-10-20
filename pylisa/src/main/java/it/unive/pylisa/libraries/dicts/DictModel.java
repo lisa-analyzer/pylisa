@@ -30,6 +30,7 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
@@ -42,15 +43,14 @@ import java.util.Set;
 /**
  * The model of dictionaries (see
  * {@link it.unive.pylisa.cfg.expression.DictionaryCreation}): a dictionary is
- * an object whose children are its entries. The keys of the entries created
- * by the dictionary literal are tracked when they are {@code str} or
- * {@code int} constants: the value of the key {@code k} is the child
- * {@code k} of the object. Since the entries of a dictionary change when it is
- * modified, no other child is created afterwards: the values of the other keys
- * (added later, or that are not constants) are the child
- * {@value #UNKNOWN_KEY}, and when it is set any key might be missing (as the
- * entries might also have been removed, by the operations that are not
- * modeled).
+ * an object whose children are its entries. The keys of the entries created by
+ * the dictionary literal are tracked when they are {@code str} or {@code int}
+ * constants: the value of the key {@code k} is the child {@code k} of the
+ * object. Since the entries of a dictionary change when it is modified, no
+ * other child is created afterwards: the values of the other keys (added later,
+ * or that are not constants) are the child {@value #UNKNOWN_KEY}, and when it
+ * is set any key might be missing (as the entries might also have been removed,
+ * by the operations that are not modeled).
  */
 public final class DictModel {
 
@@ -359,8 +359,8 @@ public final class DictModel {
 	}
 
 	/**
-	 * The length of the dictionary, that is known if the dictionary is a
-	 * single object (and not the summary of many) whose keys are all tracked.
+	 * The length of the dictionary, that is known if the dictionary is a single
+	 * object (and not the summary of many) whose keys are all tracked.
 	 *
 	 * @param analysis the analysis
 	 * @param state    the current state
@@ -390,9 +390,9 @@ public final class DictModel {
 	}
 
 	/**
-	 * Invalidates what is known about the entries of the dictionary, as done
-	 * by the operations on dictionaries that are not modeled (e.g.
-	 * {@code pop}): the values become unknown, and any key might be missing.
+	 * Invalidates what is known about the entries of the dictionary, as done by
+	 * the operations on dictionaries that are not modeled (e.g. {@code pop}):
+	 * the values become unknown, and any key might be missing.
 	 *
 	 * @param analysis the analysis
 	 * @param state    the current state
@@ -421,6 +421,111 @@ public final class DictModel {
 		return analysis.assign(result,
 				new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc),
 				new PushAny(Untyped.INSTANCE, loc), pp);
+	}
+
+	/**
+	 * Adds the entries of {@code source} to the dictionary being created
+	 * ({@code {..., **source, ...}}), overriding the ones it already has. The
+	 * keys that {@code source} surely has become tracked keys of the dictionary
+	 * (it is being created, see {@link DictModel}); the values of the keys
+	 * {@code source} might have are weakly updated, as the ones of its
+	 * untracked keys, that might be equal to any key. A {@code source} that is
+	 * not a mapping raises {@code TypeError}: surely if it is a value of a
+	 * builtin class that is not a mapping (e.g. an {@code int} or a
+	 * {@code list}), possibly if it is an object, whose entries are then
+	 * unknown.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the state where the dictionary and the source have been
+	 *                     evaluated
+	 * @param dict     the dictionary being created
+	 * @param source   the unpacked value
+	 * @param thrower  the statement creating the dictionary
+	 *
+	 * @return the state after the entries have been added
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unpackInto(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression dict,
+			SymbolicExpression source,
+			Statement thrower)
+			throws SemanticException {
+		CodeLocation loc = thrower.getLocation();
+		Type dictType = PyClassType.lookup(LibrarySpecificationProvider.DICT);
+		HeapDereference target = new HeapDereference(dictType, dict, loc);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, source, thrower);
+		AnalysisState<A> result = state.bottomExecution();
+
+		if (types.isEmpty() || types.stream().anyMatch(t -> !isDict(t))) {
+			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.TYPE_ERROR));
+			boolean notMappings = !types.isEmpty() && types.stream().filter(t -> !isDict(t))
+					.allMatch(t -> (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
+							|| ListModel.isList(t) || t.isCodeMemberType());
+			if (!notMappings)
+				// e.g. an object whose class defines keys and __getitem__
+				result = result.lub(anyEntry(analysis, state, dict, new PushAny(Untyped.INSTANCE, loc), thrower));
+		}
+		if (types.stream().noneMatch(DictModel::isDict))
+			return result;
+
+		Entries entries = entries(analysis, state, source, thrower);
+		if (entries == null)
+			return result.lub(anyEntry(analysis, state, dict, new PushAny(Untyped.INSTANCE, loc), thrower));
+
+		HeapDereference from = new HeapDereference(dictType, source, loc);
+		Set<Object> all = new HashSet<>(), sure = null;
+		for (Set<Object> keys : entries.keys().values()) {
+			all.addAll(keys);
+			if (sure == null)
+				sure = new HashSet<>(keys);
+			else
+				sure.retainAll(keys);
+		}
+		if (sure == null || entries.weak())
+			// a summary of many dictionaries
+			sure = Set.of();
+
+		AnalysisState<A> current = state;
+		for (Object k : all) {
+			AnalysisState<A> values = analysis.smallStepSemantics(current,
+					new AccessChild(Untyped.INSTANCE, from, child(k, loc), loc), thrower);
+			AnalysisState<A> next = current.bottomExecution();
+			for (SymbolicExpression value : values.getExecutionExpressions())
+				if (sure.contains(k))
+					next = next.lub(analysis.assign(values,
+							new AccessChild(Untyped.INSTANCE, target, child(k, loc), loc), value, thrower));
+				else
+					// the key might be missing: the value is weakly updated
+					next = next.lub(write(analysis, values, dict, child(k, loc), value, thrower).lub(current));
+			current = next;
+		}
+		if (!entries.unknown().isEmpty()) {
+			AnalysisState<A> values = analysis.smallStepSemantics(current,
+					new AccessChild(Untyped.INSTANCE, from, new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc),
+					thrower);
+			AnalysisState<A> next = current.bottomExecution();
+			for (SymbolicExpression value : values.getExecutionExpressions())
+				next = next.lub(anyEntry(analysis, values, dict, value, thrower));
+			current = next;
+		}
+		return result.lub(current);
+	}
+
+	// adds an entry whose key is unknown, and that might be equal to any of
+	// the keys of the dictionary
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> anyEntry(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression dict,
+			SymbolicExpression value,
+			Statement thrower)
+			throws SemanticException {
+		return write(analysis, state, dict, new PushAny(Untyped.INSTANCE, thrower.getLocation()), value, thrower)
+				.lub(state);
 	}
 
 	/**

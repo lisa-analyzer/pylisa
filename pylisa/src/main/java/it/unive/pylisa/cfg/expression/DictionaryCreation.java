@@ -19,6 +19,7 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.InstrumentedReceiver;
+import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
@@ -30,7 +31,10 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.symbolic.DictConstant;
 import it.unive.pylisa.symbolic.operators.DictPut;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -38,34 +42,49 @@ import org.apache.commons.lang3.tuple.Pair;
  * A dictionary literal {@code {k0: v0, ..., kn: vn}}: a new object is
  * allocated, and the receiver pointing to it (an {@link InstrumentedReceiver})
  * is the value of the literal. The entries are its children (see
- * {@link DictModel}). When pandas is used, the dictionary is instead a symbolic
- * value, as expected by the dataframe analyses.
+ * {@link DictModel}). An entry {@code **m} adds the entries of {@code m} (see
+ * {@link DictModel#unpackInto}). When pandas is used, the dictionary is instead
+ * a symbolic value, as expected by the dataframe analyses.
  */
 public class DictionaryCreation extends NaryExpression {
 
+	// for each entry, whether it is **m (with no key)
+	private final boolean[] unpacked;
+
+	/**
+	 * Builds the literal.
+	 *
+	 * @param cfg    the cfg where the literal is
+	 * @param loc    the location of the literal
+	 * @param values the entries: the key and the value, or {@code null} and the
+	 *                   unpacked mapping for {@code **m}
+	 */
 	@SafeVarargs
 	public DictionaryCreation(
 			CFG cfg,
 			CodeLocation loc,
 			Pair<Expression, Expression>... values) {
 		super(cfg, loc, "dict", toFlatArray(values));
+		this.unpacked = new boolean[values.length];
+		for (int i = 0; i < values.length; i++)
+			unpacked[i] = values[i].getLeft() == null;
 	}
 
 	@Override
 	protected int compareSameClassAndParams(
 			Statement o) {
-		return 0;
+		return Arrays.compare(unpacked, ((DictionaryCreation) o).unpacked);
 	}
 
 	private static Expression[] toFlatArray(
 			Pair<Expression, Expression>[] values) {
-		Expression[] result = new Expression[values.length * 2];
-		for (int i = 0; i < values.length; i++) {
-			int idx = 2 * i;
-			result[idx] = values[i].getLeft();
-			result[idx + 1] = values[i].getRight();
+		List<Expression> result = new ArrayList<>();
+		for (Pair<Expression, Expression> value : values) {
+			if (value.getLeft() != null)
+				result.add(value.getLeft());
+			result.add(value.getRight());
 		}
-		return result;
+		return result.toArray(Expression[]::new);
 	}
 
 	@Override
@@ -96,8 +115,16 @@ public class DictionaryCreation extends NaryExpression {
 		current = analysis.smallStepSemantics(current, cls, this)
 				.withExecutionExpressions(current.getExecutionExpressions());
 
-		for (int i = 0; i + 1 < params.length; i += 2) {
+		for (int e = 0, i = 0; e < unpacked.length; e++) {
 			AnalysisState<A> next = state.bottomExecution();
+			if (unpacked[e]) {
+				// **m
+				for (SymbolicExpression source : params[i])
+					next = next.lub(DictModel.unpackInto(analysis, current, dict, source, this));
+				current = next;
+				i++;
+				continue;
+			}
 			for (SymbolicExpression key : params[i])
 				for (SymbolicExpression value : params[i + 1])
 					if (params[i].size() == 1 && DictModel.trackedKey(key) != null)
@@ -107,6 +134,7 @@ public class DictionaryCreation extends NaryExpression {
 					else
 						next = next.lub(DictModel.write(analysis, current, dict, key, value, this));
 			current = next;
+			i += 2;
 		}
 
 		// the keys and the values are consumed here
@@ -125,6 +153,11 @@ public class DictionaryCreation extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
+		for (boolean u : unpacked)
+			if (u)
+				// the entries of the unpacked mappings are not known
+				return interprocedural.getAnalysis().smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc),
+						this);
 		DictConstant dict = new DictConstant(loc);
 
 		if (params.length == 0)
