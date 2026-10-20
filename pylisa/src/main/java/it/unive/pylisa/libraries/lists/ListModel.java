@@ -453,4 +453,88 @@ public final class ListModel {
 					LibrarySpecificationProvider.TYPE_ERROR));
 		return result;
 	}
+
+	/**
+	 * Writes the element at the given index of the list
+	 * ({@code list[index] = value}), raising {@code IndexError} if the index
+	 * might be out of range, and {@code TypeError} if it might not be an
+	 * {@code int}. The element is written exactly if the index is surely equal
+	 * to the index of an element that the list surely has; otherwise, any of
+	 * the elements might be written.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the state where the list, the index and the value have
+	 *                     been evaluated
+	 * @param list     the list
+	 * @param index    the index
+	 * @param value    the value
+	 * @param thrower  the statement writing the element
+	 *
+	 * @return the state after the write
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> write(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			SymbolicExpression index,
+			SymbolicExpression value,
+			Statement thrower)
+			throws SemanticException {
+		CodeLocation loc = thrower.getLocation();
+		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+		HeapDereference deref = new HeapDereference(listType, list, loc);
+		Shape shape = shape(analysis, state, list, thrower);
+
+		AnalysisState<A> result = state.bottom();
+		boolean typeError = false, indexError = false, any = false;
+		Set<Type> types = analysis.getRuntimeTypesOf(state, index, thrower);
+		if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t)))
+			typeError = true;
+		if (types.isEmpty() || types.stream().anyMatch(ListOperations.INT)) {
+			int from = shape.length() == null ? 0 : -shape.length();
+			int to = shape.length() == null ? shape.prefix() : shape.length();
+			Integer exact = null;
+			for (int c = from; c < to && exact == null; c++)
+				if (analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, index,
+						new Constant(Int32Type.INSTANCE, c, loc), ComparisonEq.INSTANCE, loc),
+						thrower) == Satisfiability.SATISFIED)
+					exact = c;
+			if (exact != null) {
+				int pos = exact < 0 ? shape.length() + exact : exact;
+				result = result.lub(analysis.assign(state, new AccessChild(Untyped.INSTANCE, deref,
+						new Constant(Int32Type.INSTANCE, pos, loc), loc), value, thrower));
+			} else {
+				Satisfiability in = Satisfiability.UNKNOWN;
+				if (shape.length() != null) {
+					Constant low = new Constant(Int32Type.INSTANCE, -shape.length(), loc);
+					Constant high = new Constant(Int32Type.INSTANCE, shape.length(), loc);
+					in = analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE,
+							new BinaryExpression(BoolType.INSTANCE, index, low, ComparisonGe.INSTANCE, loc),
+							new BinaryExpression(BoolType.INSTANCE, index, high, ComparisonLt.INSTANCE, loc),
+							LogicalAnd.INSTANCE, loc), thrower);
+				}
+				any = in != Satisfiability.NOT_SATISFIED;
+				indexError = in != Satisfiability.SATISFIED;
+			}
+		}
+
+		if (any) {
+			// any of the elements might be written
+			AnalysisState<A> written = state;
+			if (shape.elements() != null)
+				for (SymbolicExpression field : shape.elements())
+					written = analysis.assign(written, new AccessChild(Untyped.INSTANCE, deref, field, loc), value,
+							thrower).lub(written);
+			result = result.lub(written);
+		}
+		if (indexError)
+			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.INDEX_ERROR));
+		if (typeError)
+			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.TYPE_ERROR));
+		return result;
+	}
 }

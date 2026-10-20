@@ -22,6 +22,7 @@ import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Set;
 
@@ -86,9 +87,10 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 			anyPointer = true;
 			Type inner = t.asPointerType().getInnerType();
 
-			if (ListModel.isList(t)) {
-				// the length is computed from the elements
-				Integer length = ListModel.length(analysis, state, expr, this);
+			if (ListModel.isList(t) || DictModel.isDict(t)) {
+				// the length is computed from the elements (or entries)
+				Integer length = ListModel.isList(t) ? ListModel.length(analysis, state, expr, this)
+						: DictModel.length(analysis, state, expr, this);
 				result = result.lub(analysis.smallStepSemantics(state, length == null
 						? new PushAny(Int32Type.INSTANCE, loc)
 						: new Constant(Int32Type.INSTANCE, length, loc), st));

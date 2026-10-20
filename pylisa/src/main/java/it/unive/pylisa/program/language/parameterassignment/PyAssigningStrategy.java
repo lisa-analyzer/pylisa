@@ -20,6 +20,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
 import it.unive.pylisa.cfg.expression.DictionaryCreation;
@@ -57,6 +58,21 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			ExpressionSet[] values) {
 	}
 
+	/**
+	 * The keyword arguments of a call collected by the {@code **kwargs}
+	 * parameter of the callee, that are stored in a dictionary built before the
+	 * call.
+	 *
+	 * @param pos     the position of the parameter
+	 * @param entries the names and values of the arguments
+	 * @param values  the values of the names and of the arguments
+	 */
+	private record KwArgs(
+			int pos,
+			Pair<Expression, Expression>[] entries,
+			ExpressionSet[] values) {
+	}
+
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Pair<AnalysisState<A>, ExpressionSet[]> prepare(
 			Call call,
@@ -86,6 +102,8 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		}
 
 		VarArgs[] varargs = new VarArgs[1];
+		@SuppressWarnings("unchecked")
+		KwArgs[] kwargs = new KwArgs[1];
 		boolean matches = pythonLogic(
 				formals,
 				actuals,
@@ -96,6 +114,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 				slots,
 				slotsTypes,
 				varargs,
+				kwargs,
 				interprocedural,
 				call.getCFG(),
 				callState.bottom());
@@ -112,6 +131,15 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			callState = list.forwardSemanticsAux(interprocedural, callState, varargs[0].values(), expressions);
 			slots[varargs[0].pos()] = callState.getExecutionExpressions();
 			metas.addAll(list.getMetaVariables());
+		}
+
+		if (kwargs[0] != null) {
+			// the dictionary holding the arguments collected by **kwargs
+			DictionaryCreation dict = new DictionaryCreation(call.getCFG(),
+					new DerivedLocation(call.getLocation(), "kwargs"), kwargs[0].entries());
+			callState = dict.forwardSemanticsAux(interprocedural, callState, kwargs[0].values(), expressions);
+			slots[kwargs[0].pos()] = callState.getExecutionExpressions();
+			metas.addAll(dict.getMetaVariables());
 		}
 
 		// prepare the state for the call: assign the value to each parameter
@@ -141,6 +169,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			ExpressionSet[] slots,
 			Set<Type>[] slotTypes,
 			VarArgs[] varargs,
+			KwArgs[] kwargs,
 			InterproceduralAnalysis<A, D> interprocedural,
 			CFG callCFG,
 			AnalysisState<A> bottom)
@@ -235,16 +264,15 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 				}
 			}
 
-			DictionaryCreation dictCreation = new DictionaryCreation(callCFG, SyntheticLocation.INSTANCE,
-					pairExprs.toArray(Pair[]::new));
-			AnalysisState<A> dictSemantics = dictCreation.forwardSemanticsAux(interprocedural,
-					bottom, symbExprs.toArray(ExpressionSet[]::new), null);
-			slots[formals.length - 1] = dictSemantics.getExecutionExpressions();
+			// the dictionary is built before the call (see prepare)
+			kwargs[0] = new KwArgs(formals.length - 1, pairExprs.toArray(Pair[]::new),
+					symbExprs.toArray(ExpressionSet[]::new));
+			slots[formals.length - 1] = new ExpressionSet();
 			slotTypes[formals.length - 1] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.DICT));
 		}
 
 		// fourth phase: keyword arguments
-		boolean kwargs = formals.length > 0 && formals[formals.length - 1] instanceof VarKeywordParameter;
+		boolean varKeyword = formals.length > 0 && formals[formals.length - 1] instanceof VarKeywordParameter;
 		for (; aPos < actuals.length; aPos++) {
 			String name = ((NamedParameterExpression) actuals[aPos]).getParameterName();
 			boolean found = false;
@@ -261,7 +289,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 					}
 					break;
 				}
-			if (!found && !kwargs)
+			if (!found && !varKeyword)
 				// no parameter with that name -> TypeError
 				return false;
 		}

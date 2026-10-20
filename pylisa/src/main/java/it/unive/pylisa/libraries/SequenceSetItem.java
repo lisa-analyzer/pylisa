@@ -20,6 +20,8 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.dicts.DictModel;
+import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Set;
 
 /**
@@ -90,6 +92,22 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 				if (inner.canBeAssignedTo(tupleType)) {
 					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
 							LibrarySpecificationProvider.TYPE_ERROR));
+					continue;
+				}
+
+				if (ListModel.isList(t)) {
+					// the elements of the list
+					for (SymbolicExpression index : params[1])
+						for (SymbolicExpression value : params[2])
+							result = result.lub(ListModel.write(analysis, state, self, index, value, this));
+					continue;
+				}
+
+				if (DictModel.isDict(t)) {
+					// the entries of the dictionary
+					for (SymbolicExpression key : params[1])
+						for (SymbolicExpression value : params[2])
+							result = result.lub(DictModel.write(analysis, state, self, key, value, this));
 					continue;
 				}
 

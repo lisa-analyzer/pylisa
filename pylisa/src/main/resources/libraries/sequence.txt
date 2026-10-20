@@ -16,7 +16,7 @@ class Sequence:
 	method __setitem__: it.unive.pylisa.libraries.SequenceSetItem
 		type it.unive.lisa.type.VoidType::INSTANCE
 		param self libtype Sequence*
-		param index type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param index type it.unive.lisa.type.Untyped::INSTANCE
 		param value type it.unive.lisa.type.Untyped::INSTANCE
 
 sealed class List extends Sequence:

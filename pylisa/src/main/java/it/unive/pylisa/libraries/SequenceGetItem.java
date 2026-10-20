@@ -26,6 +26,7 @@ import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Set;
 
@@ -119,15 +120,12 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 				else
 					// bounds and index checked on the elements of the list
 					result = result.lub(ListModel.read(analysis, state, left, right, this));
+			else if (DictModel.isDict(t))
+				// the entries of the dictionary
+				result = result.lub(DictModel.read(analysis, state, left, right, this));
 			else {
 				AccessChild access = new AccessChild(Untyped.INSTANCE, deref, right, loc);
 				result = result.lub(analysis.smallStepSemantics(state, access, st));
-				if (inner.isUnitType() && inner.asUnitType().getUnit().getName()
-						.equals(LibrarySpecificationProvider.DICT))
-					// the keys of dicts are not tracked: the key might be
-					// missing
-					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
-							LibrarySpecificationProvider.KEY_ERROR));
 			}
 		}
 		if (!anyPointer) {
