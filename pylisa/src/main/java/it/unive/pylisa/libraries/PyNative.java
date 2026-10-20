@@ -95,7 +95,7 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 			throws SemanticException {
 		if (pos == params.length)
 			return semantics(analysis, state, args.clone());
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression e : params[pos]) {
 			args[pos] = e;
 			result = result.lub(combinations(analysis, state, params, args, pos + 1));
@@ -217,7 +217,7 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 			Satisfiability typed,
 			AnalysisState<A> ifTyped)
 			throws SemanticException {
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED)
 			result = result.lub(ifTyped);
 		if (typed != Satisfiability.SATISFIED)

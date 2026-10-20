@@ -57,7 +57,7 @@ public class BytesContains extends PyNative {
 		Satisfiability isBytes = hasType(analysis, state, item, t -> t instanceof PyBytesType);
 		BinaryExpression contains = new BinaryExpression(BoolType.INSTANCE, self, item, BytesOperation.CONTAINS, loc);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (isInt != Satisfiability.NOT_SATISFIED) {
 			BinaryExpression outOfRange = new BinaryExpression(BoolType.INSTANCE,
 					new BinaryExpression(BoolType.INSTANCE, item, new Constant(Int32Type.INSTANCE, 0, loc),

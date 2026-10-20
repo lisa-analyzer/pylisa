@@ -91,7 +91,7 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 		Set<Type> rts = analysis.getRuntimeTypesOf(state, expr, this);
 		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (Type t : rts) {
 			if (PyBinaryDispatch.isBuiltinValueType(t)) {
 				// str, bytes, int, ...: __len__ is looked up in their class

@@ -53,7 +53,7 @@ public class CreateChannel extends NaryExpression implements PluggableStatement 
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 
 		PyClassType channelClassType = PyClassType.lookup("pika.Channel");
 

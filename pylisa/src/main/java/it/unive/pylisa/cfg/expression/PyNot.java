@@ -75,7 +75,7 @@ public class PyNot extends UnaryExpression {
 				else
 					values = true;
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (bools)
 			result = result.lub(analysis.smallStepSemantics(state,
 					new it.unive.lisa.symbolic.value.UnaryExpression(BoolType.INSTANCE, expr,

@@ -61,7 +61,7 @@ final class StrSearchSemantics {
 			BinaryOperator unbounded,
 			boolean raiseIfMissing)
 			throws SemanticException {
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (boolean bytes : n.textModes(analysis, state, args[0]))
 			result = result.lub(semantics(n, analysis, state, args, search, unbounded, raiseIfMissing, bytes));
 		return result;
@@ -102,7 +102,7 @@ final class StrSearchSemantics {
 			value = new TernaryExpression(type, s, sub, slice, search, loc);
 		}
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (isText != Satisfiability.NOT_SATISFIED)
 			result = result.lub(n.typeChecked(analysis, state, bounds,
 					computed(n, analysis, state, value, raiseIfMissing)));
@@ -116,7 +116,7 @@ final class StrSearchSemantics {
 							ComparisonGt.INSTANCE, loc),
 					LogicalOr.INSTANCE, loc);
 			Satisfiability out = analysis.satisfies(state, outOfRange, n);
-			AnalysisState<A> byteResult = state.bottom();
+			AnalysisState<A> byteResult = state.bottomExecution();
 			if (out != Satisfiability.SATISFIED)
 				byteResult = byteResult.lub(computed(n, analysis, state, value, raiseIfMissing));
 			if (out != Satisfiability.NOT_SATISFIED)

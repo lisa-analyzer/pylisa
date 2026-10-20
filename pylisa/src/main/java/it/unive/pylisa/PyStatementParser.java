@@ -73,6 +73,7 @@ import it.unive.pylisa.antlr.PythonParser.Elif_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Else_blockContext;
 import it.unive.pylisa.antlr.PythonParser.ExpressionContext;
 import it.unive.pylisa.antlr.PythonParser.FactorContext;
+import it.unive.pylisa.antlr.PythonParser.For_if_clauseContext;
 import it.unive.pylisa.antlr.PythonParser.For_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.FstringContext;
 import it.unive.pylisa.antlr.PythonParser.Fstring_middleContext;
@@ -89,6 +90,7 @@ import it.unive.pylisa.antlr.PythonParser.InversionContext;
 import it.unive.pylisa.antlr.PythonParser.Kwarg_or_starredContext;
 import it.unive.pylisa.antlr.PythonParser.KwargsContext;
 import it.unive.pylisa.antlr.PythonParser.LambdefContext;
+import it.unive.pylisa.antlr.PythonParser.ListcompContext;
 import it.unive.pylisa.antlr.PythonParser.Named_expressionContext;
 import it.unive.pylisa.antlr.PythonParser.Nonlocal_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Pass_stmtContext;
@@ -154,6 +156,7 @@ import it.unive.pylisa.cfg.expression.PyFloorDiv;
 import it.unive.pylisa.cfg.expression.PyIn;
 import it.unive.pylisa.cfg.expression.PyInPlaceOperation;
 import it.unive.pylisa.cfg.expression.PyIs;
+import it.unive.pylisa.cfg.expression.PyListComprehension;
 import it.unive.pylisa.cfg.expression.PyMatMul;
 import it.unive.pylisa.cfg.expression.PyMethodCall;
 import it.unive.pylisa.cfg.expression.PyMultiplication;
@@ -194,9 +197,11 @@ import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.PyBytes;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -229,6 +234,13 @@ public class PyStatementParser
 	 * calls on a receiver.
 	 */
 	private final Set<String> namespaces = new HashSet<>();
+
+	/**
+	 * The variables of the comprehensions being parsed (innermost first),
+	 * mapped to their names local to the comprehension (see
+	 * {@link PyListComprehension}).
+	 */
+	private final Deque<Map<String, String>> comprehensions = new ArrayDeque<>();
 
 	/**
 	 * The builtin classes that are modeled as values, by their names in Python:
@@ -1929,10 +1941,50 @@ public class PyStatementParser
 		return result;
 	}
 
+	/**
+	 * Translates {@code [element for x in iterable if c ...]}: the variables of
+	 * the comprehension are local to it, so they are renamed (e.g.
+	 * {@code x$comp@3:4}) in its clauses and element. The first iterable is
+	 * evaluated outside of the comprehension.
+	 */
+	private Expression visitListComprehension(
+			ListcompContext ctx) {
+		SourceCodeLocation loc = getLocation(filePath, ctx);
+		Map<String, String> scope = new HashMap<>();
+		List<PyListComprehension.Clause> clauses = new ArrayList<>();
+		comprehensions.push(scope);
+		try {
+			for (For_if_clauseContext clause : ctx.for_if_clauses().for_if_clause()) {
+				if (clause.ASYNC() != null)
+					throw new UnsupportedStatementException("async comprehensions are not supported");
+				// the iterable sees the variables of the previous clauses
+				Expression iterable = visitDisjunction(clause.disjunction(0));
+				String name = clause.star_targets().getText();
+				if (!name.matches("[A-Za-z_][A-Za-z_0-9]*"))
+					throw new UnsupportedStatementException("Tuple/list unpacking targets are not supported");
+				String local = name + "$comp@" + loc.getLine() + ":" + loc.getCol();
+				scope.put(name, local);
+				VariableRef target = new VariableRef(currentCFG, getLocation(filePath, clause.star_targets()), local);
+				List<Expression> conditions = new ArrayList<>();
+				for (int i = 1; i < clause.disjunction().size(); i++)
+					conditions.add(visitDisjunction(clause.disjunction(i)));
+				clauses.add(new PyListComprehension.Clause(target, iterable, conditions));
+			}
+			Expression element = visitNamed_expression(ctx.named_expression());
+			return new PyListComprehension(currentCFG, loc, element, clauses);
+		} finally {
+			comprehensions.pop();
+		}
+	}
+
 	@Override
 	public Expression visitAtom(
 			AtomContext ctx) {
 		if (ctx.name() != null) {
+			for (Map<String, String> scope : comprehensions)
+				if (scope.containsKey(ctx.name().getText()))
+					// a variable of a comprehension
+					return new VariableRef(currentCFG, getLocation(filePath, ctx), scope.get(ctx.name().getText()));
 			NativeCFG builtin = PyBuiltinRef.builtin(program, ctx.name().getText());
 			if (builtin != null)
 				// e.g. q = len
@@ -2013,7 +2065,7 @@ public class PyStatementParser
 			List<Expression> sts = extractExpressionsFromStar_named_expressions(ctx.list().star_named_expressions());
 			return new ListCreation(currentCFG, getLocation(filePath, ctx), sts.toArray(Expression[]::new));
 		} else if (ctx.listcomp() != null)
-			throw new UnsupportedStatementException("list comprehensions are not supported");
+			return visitListComprehension(ctx.listcomp());
 		else if (ctx.dict() != null) {
 			List<Pair<Expression, Expression>> values = extractPairsFromDict(ctx.dict().double_starred_kvpairs());
 			DictionaryCreation r = new DictionaryCreation(currentCFG, getLocation(filePath, ctx),

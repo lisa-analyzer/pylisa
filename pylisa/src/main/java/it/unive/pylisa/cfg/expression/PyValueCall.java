@@ -141,7 +141,7 @@ public class PyValueCall extends NaryExpression {
 					unknown = true;
 		}
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (notCallable)
 			result = result.lub(PyExceptions.raise(analysis, consumed, getCFG(), getLocation(), this,
 					LibrarySpecificationProvider.TYPE_ERROR));

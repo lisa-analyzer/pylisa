@@ -92,7 +92,7 @@ public class PyNameCall extends UnresolvedCall {
 			// not a variable holding functions
 			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (notCallable)
 			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
 					LibrarySpecificationProvider.TYPE_ERROR));

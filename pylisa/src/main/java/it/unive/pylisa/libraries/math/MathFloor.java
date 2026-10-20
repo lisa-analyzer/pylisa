@@ -71,7 +71,7 @@ public class MathFloor extends PyNative {
 		boolean notNumber = unknown || types.stream().anyMatch(t -> !t.isNumericType() && !t.isBooleanType()
 				&& PyBinaryDispatch.isBuiltinValueType(t));
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		UnaryExpression value = new UnaryExpression(Int32Type.INSTANCE, x, Floor.INSTANCE, loc);
 		if (!real) {
 			if (integral)

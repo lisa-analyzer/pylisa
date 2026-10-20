@@ -81,7 +81,7 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 		CodeLocation loc = getLocation();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression self : params[0]) {
 			Set<Type> rts = analysis.getRuntimeTypesOf(state, self, this);
 			for (Type t : rts) {

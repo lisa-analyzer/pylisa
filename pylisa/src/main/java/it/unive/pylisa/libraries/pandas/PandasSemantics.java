@@ -36,7 +36,7 @@ public class PandasSemantics {
 			ProgramPoint pp)
 			throws SemanticException {
 		CodeLocation location = pp.getLocation();
-		AnalysisState<A> assigned = state.bottom();
+		AnalysisState<A> assigned = state.bottomExecution();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 
@@ -69,7 +69,7 @@ public class PandasSemantics {
 		MemoryAllocation allocation = new MemoryAllocation(dftype, location);
 		AnalysisState<A> allocated = analysis.smallStepSemantics(state, allocation, pp);
 
-		AnalysisState<A> copy = state.bottom();
+		AnalysisState<A> copy = state.bottomExecution();
 		UnaryExpression cp = new UnaryExpression(dftype, dataframe, new CopyDataframe(0), location);
 		for (SymbolicExpression loc : allocated.getExecutionExpressions())
 			// copy the dataframe
@@ -86,7 +86,7 @@ public class PandasSemantics {
 			UnaryOperator op)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
@@ -179,7 +179,7 @@ public class PandasSemantics {
 			// we allocate the copy that will contain the converted portion
 			AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, state, left, pp);
 
-			AnalysisState<A> result = state.bottom();
+			AnalysisState<A> result = state.bottomExecution();
 			CodeLocation loc = pp.getLocation();
 			for (SymbolicExpression id : copied.getExecutionExpressions()) {
 				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, right,
@@ -200,7 +200,7 @@ public class PandasSemantics {
 			// we allocate the copy that will contain the converted portion
 			AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, state, right, pp);
 
-			AnalysisState<A> result = state.bottom();
+			AnalysisState<A> result = state.bottomExecution();
 			CodeLocation loc = pp.getLocation();
 			for (SymbolicExpression id : copied.getExecutionExpressions()) {
 				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, left,

@@ -67,7 +67,7 @@ public final class CodecSemantics {
 		Satisfiability failsLookup = analysis.satisfies(state, new TernaryExpression(BoolType.INSTANCE, value,
 				encoding, errors, new CodecRaises(codec, LibrarySpecificationProvider.LOOKUP_ERROR), loc), n);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (failsUnicode != Satisfiability.SATISFIED && failsLookup != Satisfiability.SATISFIED)
 			result = result.lub(n.compute(analysis, state,
 					new TernaryExpression(codec.isEncode() ? PyBytesType.INSTANCE : StringType.INSTANCE, value,

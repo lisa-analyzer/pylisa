@@ -192,7 +192,7 @@ public final class PyBinaryDispatch {
 		ExpressionSet leftSet = new ExpressionSet(left);
 		ExpressionSet rightSet = new ExpressionSet(right);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (Type tl : rtsl)
 			for (Type tr : rtsr) {
 				String cl = classOf(tl);
@@ -374,7 +374,7 @@ public final class PyBinaryDispatch {
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Expression[] params = { operator.getSubExpression() };
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (Type t : analysis.getRuntimeTypesOf(state, arg, operator)) {
 			Type type = t;
 			ExpressionSet value = new ExpressionSet(arg);

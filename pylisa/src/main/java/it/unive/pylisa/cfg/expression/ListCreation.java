@@ -85,7 +85,7 @@ public class ListCreation extends NaryExpression {
 
 		for (int i = 0; i < params.length; i++) {
 			AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, i, loc), loc);
-			AnalysisState<A> next = state.bottom();
+			AnalysisState<A> next = state.bottomExecution();
 			for (SymbolicExpression element : params[i])
 				next = next.lub(analysis.assign(current, slot, element, this));
 			current = next;

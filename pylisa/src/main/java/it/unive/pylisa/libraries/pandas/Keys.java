@@ -68,7 +68,7 @@ public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression im
 		HeapDereference deref = new HeapDereference(dftype, expr, loc);
 		AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, state, deref, st);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression id : copied.getExecutionExpressions()) {
 			UnaryExpression transform = new UnaryExpression(seriestype, id, new AccessKeys(0), loc);
 			AnalysisState<A> tmp = analysis.smallStepSemantics(copied, transform, st);

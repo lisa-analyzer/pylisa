@@ -71,7 +71,7 @@ public class PyIn extends BinaryExpression {
 		Set<Type> rtsNeedle = analysis.getRuntimeTypesOf(state, left, this);
 		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (Type tContainer : rtsContainer) {
 			for (Type tNeedle : rtsNeedle) {
 				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {

@@ -62,7 +62,7 @@ public class FastAPI extends NaryExpression implements PluggableStatement {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		CodeLocation location = getLocation();
 		CFG cfg = st.getCFG();
 		AccessInstanceGlobal aig;

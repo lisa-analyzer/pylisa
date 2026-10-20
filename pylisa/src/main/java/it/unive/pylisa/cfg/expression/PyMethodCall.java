@@ -94,7 +94,7 @@ public class PyMethodCall extends UnresolvedCall {
 			else
 				others = true;
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (others) {
 			AnalysisState<A> resolving = state;
 			if (receiverTypes.stream().anyMatch(ListModel::isList) && ListModel.unmodeled(getTargetName()))
@@ -168,7 +168,7 @@ public class PyMethodCall extends UnresolvedCall {
 				getOrder(), Arrays.copyOfRange(parameters, 1, parameters.length));
 		ExpressionSet[] args = Arrays.copyOfRange(params, 1, params.length);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression receiver : params[0]) {
 			Set<Type> receiverTypes = analysis.getRuntimeTypesOf(state, receiver, this);
 			if (receiverTypes.stream().noneMatch(this::isAttribute))

@@ -63,7 +63,7 @@ public class ListCopy extends PyNative {
 		// the copy is allocated at a location different from the one of the
 		// call (see DerivedLocation)
 		ListCreation creation = new ListCreation(getCFG(), new DerivedLocation(loc, "copy"));
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression self : params[0]) {
 			HeapDereference source = new HeapDereference(listType, self, loc);
 			ListModel.Shape shape = ListModel.shape(analysis, state, self, this);

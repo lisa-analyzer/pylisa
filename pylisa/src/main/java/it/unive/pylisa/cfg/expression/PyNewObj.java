@@ -80,7 +80,7 @@ public class PyNewObj extends NaryExpression {
 
 		// we also have to add the receiver inside the state
 		AnalysisState<A> callstate = paramThis.forwardSemantics(state, interprocedural, expressions);
-		AnalysisState<A> tmp = state.bottom();
+		AnalysisState<A> tmp = state.bottomExecution();
 		for (SymbolicExpression v : callstate.getExecutionExpressions()) {
 			AnalysisState<A> assigned = analysis.assign(callstate, v, ref, paramThis);
 			if (assigned.getExecutionState().isBottom()) {
@@ -147,7 +147,7 @@ public class PyNewObj extends NaryExpression {
 		// discard the object): it is forgotten as a meta variable by the
 		// statement using the result
 		expressions.forget(paramThis);
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (none != Satisfiability.NOT_SATISFIED)
 			for (SymbolicExpression v : callstate.getExecutionExpressions())
 				if (v instanceof Identifier) {

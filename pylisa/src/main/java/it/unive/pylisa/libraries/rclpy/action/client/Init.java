@@ -74,7 +74,7 @@ public class Init extends NaryExpression implements PluggableStatement {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Expression node = getSubExpressions()[1] instanceof NamedParameterExpression
 				? SemanticsHelpers.getNamedParameterExpr(getSubExpressions(),
@@ -103,14 +103,14 @@ public class Init extends NaryExpression implements PluggableStatement {
 					Global global = new Global(getLocation(), unit, "action_type", false, StringType.INSTANCE);
 					GlobalVariable var = global.toSymbolicVariable(getLocation());
 					AccessChild access = new AccessChild(var.getStaticType(), container, var, getLocation());
-					AnalysisState<A> tmp = state.bottom();
+					AnalysisState<A> tmp = state.bottomExecution();
 					for (SymbolicExpression t : params[2])
 						tmp = tmp.lub(analysis.assign(partial, access, t, this));
 					partial = tmp;
 					global = new Global(getLocation(), unit, "action_name", false, StringType.INSTANCE);
 					var = global.toSymbolicVariable(getLocation());
 					access = new AccessChild(var.getStaticType(), container, var, getLocation());
-					tmp = state.bottom();
+					tmp = state.bottomExecution();
 					for (SymbolicExpression t : nameExpansion)
 						tmp = tmp.lub(analysis.assign(partial, access, t, this));
 					partial = tmp;

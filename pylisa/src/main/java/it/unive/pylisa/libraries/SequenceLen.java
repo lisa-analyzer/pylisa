@@ -78,7 +78,7 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		boolean anyPointer = false;
 		Set<Type> rts = analysis.getRuntimeTypesOf(state, expr, this);
 		for (Type t : rts) {

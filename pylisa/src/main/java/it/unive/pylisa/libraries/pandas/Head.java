@@ -79,7 +79,7 @@ public class Head extends BinaryExpression implements PluggableStatement {
 
 		// we allocate the copy that will have only the given rows
 		AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, state, derefLeft, st);
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression id : copied.getExecutionExpressions()) {
 			// the new dataframe will have its rows projected
 			TernaryExpression projection = new TernaryExpression(dftype, id, start, right,

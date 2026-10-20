@@ -44,7 +44,7 @@ public class StrLStrip extends PyNative {
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (boolean bytes : textModes(analysis, state, args[0])) {
 			// the characters to remove have the type of the receiver (or None)
 			Satisfiability typed = hasType(analysis, state, args[1], (bytes ? BYTES : STR).or(NONE));

@@ -55,7 +55,7 @@ public class StrReplaceNative extends PyNative {
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (boolean bytes : textModes(analysis, state, args[0])) {
 			Predicate<Type> text = bytes ? BYTES : STR;
 			Type type = bytes ? PyBytesType.INSTANCE : StringType.INSTANCE;

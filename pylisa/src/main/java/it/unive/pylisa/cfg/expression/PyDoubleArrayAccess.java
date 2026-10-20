@@ -77,7 +77,7 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 		HeapDereference deref = new HeapDereference(dereferencedType, left, getLocation());
 		AccessChild firstAccess = new AccessChild(firstAccessedType, deref, middle, getLocation());
 		AnalysisState<A> tmp = analysis.smallStepSemantics(state, firstAccess, this);
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression accessed : tmp.getExecutionExpressions()) {
 			SymbolicExpression cont;
 			if (accessed instanceof HeapReference)

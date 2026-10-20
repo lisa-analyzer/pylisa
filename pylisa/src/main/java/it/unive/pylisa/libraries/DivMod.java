@@ -63,7 +63,7 @@ public class DivMod extends PyNative {
 				new Constant(Int32Type.INSTANCE, 0, loc), ComparisonEq.INSTANCE, loc);
 		Satisfiability byZero = analysis.satisfies(state, zero, this);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (byZero != Satisfiability.SATISFIED) {
 			// the same quotient and remainder of // and %
 			BinaryExpression quotient = new BinaryExpression(Untyped.INSTANCE, dividend, divisor,

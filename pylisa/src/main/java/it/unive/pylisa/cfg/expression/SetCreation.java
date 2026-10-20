@@ -64,7 +64,7 @@ public class SetCreation extends NaryExpression {
 			tmp.clear();
 		}
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (BinaryExpression completeSet : ws)
 			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state, completeSet, this));
 

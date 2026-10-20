@@ -79,7 +79,7 @@ public class IntMul extends BinaryExpression implements PluggableStatement {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Set<Type> rtsOther = analysis.getRuntimeTypesOf(state, right, this);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (Type t : rtsOther) {
 			if (t.isStringType())
 				// 3 * "x": string repeat, string first

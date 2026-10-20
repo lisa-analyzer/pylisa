@@ -82,7 +82,7 @@ public final class PowerSemantics {
 					LibrarySpecificationProvider.ZERO_DIVISION_ERROR, floatPower, cfg, loc, dispatchTarget, thrower);
 
 		Satisfiability negative = analysis.satisfies(state, negativeExponent, thrower);
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (negative != Satisfiability.SATISFIED)
 			result = result.lub(analysis.smallStepSemantics(state,
 					new BinaryExpression(Int32Type.INSTANCE, base, exponent, Power.INSTANCE, loc), dispatchTarget));

@@ -63,7 +63,7 @@ public class ListBuiltin extends PyNative {
 		ListCreation creation = new ListCreation(getCFG(), loc);
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		boolean empty = false, copy = false;
 		Satisfiability iterable = Satisfiability.BOTTOM;
 		for (SymbolicExpression arg : params[0])

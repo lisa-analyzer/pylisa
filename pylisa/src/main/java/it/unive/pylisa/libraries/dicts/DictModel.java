@@ -242,7 +242,7 @@ public final class DictModel {
 			throws SemanticException {
 		CodeLocation loc = thrower.getLocation();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.DICT), dict, loc);
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (unhashable(analysis, state, key, thrower))
 			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
 					LibrarySpecificationProvider.TYPE_ERROR));
@@ -322,7 +322,7 @@ public final class DictModel {
 			throws SemanticException {
 		CodeLocation loc = thrower.getLocation();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.DICT), dict, loc);
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (unhashable(analysis, state, key, thrower))
 			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
 					LibrarySpecificationProvider.TYPE_ERROR));
@@ -421,5 +421,37 @@ public final class DictModel {
 		return analysis.assign(result,
 				new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc),
 				new PushAny(Untyped.INSTANCE, loc), pp);
+	}
+
+	/**
+	 * Yields any of the keys of the dictionary (e.g. the one bound to the
+	 * variable of a comprehension iterating over the dictionary): the tracked
+	 * keys, and an unknown value if the dictionary might have other keys.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param dict     the dictionary
+	 * @param pp       the program point reading the keys
+	 *
+	 * @return the state whose computed expressions are the keys
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> keys(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression dict,
+			ProgramPoint pp)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		Entries entries = entries(analysis, state, dict, pp);
+		AnalysisState<A> result = state.bottomExecution();
+		if (entries == null || entries.weak() || !entries.unknown().isEmpty())
+			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp));
+		if (entries != null)
+			for (Set<Object> keys : entries.keys().values())
+				for (Object k : keys)
+					result = result.lub(analysis.smallStepSemantics(state, child(k, loc), pp));
+		return result;
 	}
 }

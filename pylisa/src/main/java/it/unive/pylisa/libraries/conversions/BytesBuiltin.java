@@ -81,7 +81,7 @@ public class BytesBuiltin extends PyNative {
 		Satisfiability isObject = hasType(analysis, state, source, t -> !PyBinaryDispatch.isBuiltinValueType(t)
 				&& !t.isNullType());
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (isStr != Satisfiability.NOT_SATISFIED)
 			result = result.lub(encoding instanceof PyNoneConstant
 					// a string argument without an encoding

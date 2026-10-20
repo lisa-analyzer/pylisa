@@ -38,7 +38,7 @@ public final class ExceptionGuard {
 			throws SemanticException {
 		Satisfiability sat = analysis.satisfies(state, raiseCondition, thrower);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (sat != Satisfiability.SATISFIED)
 			result = result.lub(analysis.smallStepSemantics(state, operation, dispatchTarget));
 		if (sat != Satisfiability.NOT_SATISFIED)

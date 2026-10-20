@@ -42,7 +42,7 @@ public class StrLower extends PyNative {
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (boolean bytes : textModes(analysis, state, args[0]))
 			// bytes only change ascii letters
 			result = result.lub(compute(analysis, state, bytes

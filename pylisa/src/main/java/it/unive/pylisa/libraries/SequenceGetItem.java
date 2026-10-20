@@ -95,7 +95,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		boolean anyPointer = false;
 		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);
 		for (Type t : rts) {
@@ -151,7 +151,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		// symbolic expression evaluated by satisfies(...)
 		AnalysisState<A> lenState = analysis.smallStepSemantics(state, lenAccess, this);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression lenId : lenState.getExecutionExpressions()) {
 			it.unive.lisa.symbolic.value.BinaryExpression tooLow = new it.unive.lisa.symbolic.value.BinaryExpression(
 					BoolType.INSTANCE, index, new Constant(Int32Type.INSTANCE, 0, loc), ComparisonLt.INSTANCE, loc);

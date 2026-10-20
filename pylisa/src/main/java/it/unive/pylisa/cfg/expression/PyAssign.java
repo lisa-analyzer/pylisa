@@ -240,7 +240,7 @@ public class PyAssign extends Assignment {
 					loc);
 			AnalysisState<A> fieldState = analysis.smallStepSemantics(assign, fieldAcc, this);
 
-			AnalysisState<A> fieldResult = state.bottom();
+			AnalysisState<A> fieldResult = state.bottomExecution();
 			for (SymbolicExpression single : id)
 				for (SymbolicExpression lenId : fieldState.getExecutionExpressions())
 					fieldResult = fieldResult.lub(analysis.assign(fieldState, single, lenId, this));

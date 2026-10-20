@@ -97,7 +97,7 @@ public class DictionaryCreation extends NaryExpression {
 				.withExecutionExpressions(current.getExecutionExpressions());
 
 		for (int i = 0; i + 1 < params.length; i += 2) {
-			AnalysisState<A> next = state.bottom();
+			AnalysisState<A> next = state.bottomExecution();
 			for (SymbolicExpression key : params[i])
 				for (SymbolicExpression value : params[i + 1])
 					if (params[i].size() == 1 && DictModel.trackedKey(key) != null)
@@ -151,7 +151,7 @@ public class DictionaryCreation extends NaryExpression {
 			tmp.clear();
 		}
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (TernaryExpression completedict : ws)
 			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state, completedict, this));
 

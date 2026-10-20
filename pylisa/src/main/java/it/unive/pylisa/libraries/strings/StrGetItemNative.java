@@ -116,7 +116,7 @@ public class StrGetItemNative extends PyNative {
 		Satisfiability integer = literalSlice ? Satisfiability.NOT_SATISFIED : hasType(analysis, state, index, INT);
 		Satisfiability slice = literalSlice ? Satisfiability.SATISFIED : hasType(analysis, state, index, isSlice);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (integer != Satisfiability.NOT_SATISFIED) {
 			// IndexError if index >= len(s) or index < -len(s)
 			UnaryExpression len = new UnaryExpression(Int32Type.INSTANCE, s, lengthOp, loc);

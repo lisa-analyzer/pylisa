@@ -73,7 +73,7 @@ public class CheckType extends PyNative {
 			fails |= sat != Satisfiability.SATISFIED;
 		}
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (matches)
 			result = result.lub(compute(analysis, state, new PyNoneConstant(getLocation())));
 		if (fails)

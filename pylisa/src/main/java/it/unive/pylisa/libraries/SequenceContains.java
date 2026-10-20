@@ -89,7 +89,7 @@ public class SequenceContains extends BinaryExpression implements PluggableState
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		boolean anyPointer = false;
 		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);
 		for (Type t : rts) {
@@ -125,7 +125,7 @@ public class SequenceContains extends BinaryExpression implements PluggableState
 		AccessChild lenAccess = new AccessChild(Int32Type.INSTANCE, deref, lenKey, loc);
 		AnalysisState<A> lenState = analysis.smallStepSemantics(state, lenAccess, this);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression lenId : lenState.getExecutionExpressions()) {
 			Satisfiability overall = Satisfiability.NOT_SATISFIED;
 			AnalysisState<A> loopState = lenState;

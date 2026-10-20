@@ -89,7 +89,7 @@ public class NondetList extends PyNative {
 		CodeLocation loc = getLocation();
 
 		// the elements of the list
-		AnalysisState<A> elements = state.bottom();
+		AnalysisState<A> elements = state.bottomExecution();
 		Set<Identifier> metas = new HashSet<>();
 		Type nondet = nondetType(getSubExpressions()[0]);
 		if (nondet != null)

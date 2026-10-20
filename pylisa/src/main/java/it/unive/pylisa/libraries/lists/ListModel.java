@@ -303,7 +303,7 @@ public final class ListModel {
 		HeapDereference deref = new HeapDereference(listType, list, loc);
 		Shape shape = shape(analysis, state, list, thrower);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		boolean typeError = false, indexError = false, any = false;
 		Set<Type> types = analysis.getRuntimeTypesOf(state, index, thrower);
 		if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t)))
@@ -487,7 +487,7 @@ public final class ListModel {
 		HeapDereference deref = new HeapDereference(listType, list, loc);
 		Shape shape = shape(analysis, state, list, thrower);
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		boolean typeError = false, indexError = false, any = false;
 		Set<Type> types = analysis.getRuntimeTypesOf(state, index, thrower);
 		if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t)))
@@ -535,6 +535,38 @@ public final class ListModel {
 		if (typeError)
 			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
 					LibrarySpecificationProvider.TYPE_ERROR));
+		return result;
+	}
+
+	/**
+	 * Yields any of the elements of the list (e.g. the one bound to the
+	 * variable of a comprehension iterating over the list).
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param list     the list
+	 * @param pp       the program point reading the elements
+	 *
+	 * @return the state whose computed expressions are the elements
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			ProgramPoint pp)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		Shape shape = shape(analysis, state, list, pp);
+		if (shape.elements() == null)
+			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp);
+		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.LIST), list,
+				loc);
+		AnalysisState<A> result = state.bottomExecution();
+		for (SymbolicExpression field : shape.elements())
+			result = result.lub(
+					analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref, field, loc), pp));
 		return result;
 	}
 }

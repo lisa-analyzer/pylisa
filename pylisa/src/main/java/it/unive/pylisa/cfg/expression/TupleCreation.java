@@ -88,7 +88,7 @@ public class TupleCreation extends NaryExpression {
 			CodeLocation location,
 			ExpressionSet[] params)
 			throws SemanticException {
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
 		// allocate the heap region
@@ -96,13 +96,13 @@ public class TupleCreation extends NaryExpression {
 		AnalysisState<A> sem = analysis.smallStepSemantics(state, alloc, pp);
 
 		// assign the pairs
-		AnalysisState<A> assign = state.bottom();
+		AnalysisState<A> assign = state.bottomExecution();
 		for (SymbolicExpression loc : sem.getExecutionExpressions()) {
 			HeapReference ref = new HeapReference(tupleType, loc, location);
 			HeapDereference deref = new HeapDereference(tupleType, ref, location);
 
 			for (int i = 0; i < params.length; i++) {
-				AnalysisState<A> fieldResult = state.bottom();
+				AnalysisState<A> fieldResult = state.bottomExecution();
 				Constant idx = new Constant(Int32Type.INSTANCE, i, location);
 				AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref, idx, location);
 				for (SymbolicExpression init : params[i]) {
@@ -116,7 +116,7 @@ public class TupleCreation extends NaryExpression {
 			// tuples are immutable, so the element count fixed at creation
 			// time never becomes stale; track it as a "length" field so
 			// SequenceGetItem can raise IndexError on out-of-bounds access
-			AnalysisState<A> lenResult = state.bottom();
+			AnalysisState<A> lenResult = state.bottomExecution();
 			Variable lenKey = new Variable(Int32Type.INSTANCE, "length", location);
 			AccessChild lenAcc = new AccessChild(Untyped.INSTANCE, deref, lenKey, location);
 			Constant lenValue = new Constant(Int32Type.INSTANCE, params.length, location);

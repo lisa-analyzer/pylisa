@@ -129,7 +129,7 @@ public class PyAttributeAccess extends UnaryExpression {
 			else
 				others = true;
 
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (!objects.isEmpty()) {
 			Missing missing = isWriteTarget() ? null : missing(analysis, state, expr, objects, false);
 			if (missing == null || missing.assigned()) {
@@ -184,7 +184,7 @@ public class PyAttributeAccess extends UnaryExpression {
 			if (t.isPointerType() && t.asPointerType().getInnerType().isUnitType())
 				objects.add(t.asPointerType().getInnerType());
 		Missing missing = objects.isEmpty() ? null : missing(analysis, state, expr, objects, true);
-		AnalysisState<A> result = state.bottom();
+		AnalysisState<A> result = state.bottomExecution();
 		if (missing != null)
 			for (ClassUnit cls : missing.classes())
 				// only the errors: the value of the attribute is not known
