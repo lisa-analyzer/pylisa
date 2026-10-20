@@ -55,6 +55,16 @@ sealed class List extends Sequence:
 		param x type it.unive.lisa.type.Untyped::INSTANCE
 
 sealed class Set extends Sequence
-sealed class Dict extends Sequence
+sealed class Dict extends Sequence:
+	method __or__: it.unive.pylisa.libraries.dicts.DictOr
+		libtype Dict*
+		param self libtype Dict*
+		param other libtype Dict*
+
+	method __ior__: it.unive.pylisa.libraries.dicts.DictIOr
+		libtype Dict*
+		param self libtype Dict*
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
 sealed class Tuple extends Sequence
 sealed class Slice extends Sequence

@@ -11,6 +11,7 @@ import it.unive.lisa.lattices.GenericSetLattice;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -119,9 +120,13 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 				all.addAll(maybe);
 				for (Statement thrower : all) {
 					// the violation is definite if no execution terminates
-					// normally, nor raising other exceptions or at other
-					// statements
-					boolean definite = !terminates && only && throwers.size() == 1;
+					// normally, nor raising other exceptions, and the
+					// exception is raised either only at this statement, or
+					// by every execution reaching it (e.g. the second
+					// statement of x = f() raising TypeError on some paths;
+					// 1 + "a", raising it on all the other ones)
+					boolean definite = !terminates && only
+							&& (throwers.size() == 1 || alwaysRaises(result, thrower));
 					String message = message(exception, definite, !matching.contains(thrower),
 							thrower == null ? graph.getDescriptor().getLocation() : thrower.getLocation());
 					if (thrower == null)
@@ -132,6 +137,21 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 			}
 		}
 		return true;
+	}
+
+	// whether every execution reaching the statement raises an exception
+	// there, that is, the statement of the cfg containing it never completes
+	// normally
+	private static <A extends AbstractLattice<A>> boolean alwaysRaises(
+			AnalyzedCFG<A> result,
+			Statement thrower) {
+		if (thrower == null)
+			return false;
+		Statement root = thrower instanceof Expression ? ((Expression) thrower).getRootStatement() : thrower;
+		if (root == null || !result.getNodes().contains(root))
+			return false;
+		AnalysisState<A> after = result.getAnalysisStateAfter(root);
+		return after.getExecutionState().isBottom() && after.getHalt().isBottom();
 	}
 
 	/**

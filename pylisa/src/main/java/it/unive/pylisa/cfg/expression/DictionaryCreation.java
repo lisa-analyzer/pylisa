@@ -120,7 +120,7 @@ public class DictionaryCreation extends NaryExpression {
 			if (unpacked[e]) {
 				// **m
 				for (SymbolicExpression source : params[i])
-					next = next.lub(DictModel.unpackInto(analysis, current, dict, source, this));
+					next = next.lub(DictModel.unpackInto(analysis, current, dict, source, this, true));
 				current = next;
 				i++;
 				continue;

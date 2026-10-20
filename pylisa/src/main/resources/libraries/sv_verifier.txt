@@ -11,6 +11,10 @@ library _sv_verifier:
     method nondet_list: it.unive.pylisa.libraries.svverifier.NondetList
         type it.unive.lisa.type.Untyped::INSTANCE
         param nondet_elem type it.unive.lisa.type.Untyped::INSTANCE
+    method nondet_dict: it.unive.pylisa.libraries.svverifier.NondetDict
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param nondet_key type it.unive.lisa.type.Untyped::INSTANCE
+        param nondet_value type it.unive.lisa.type.Untyped::INSTANCE
     method check_type: it.unive.pylisa.libraries.svverifier.CheckType
         type it.unive.lisa.type.Untyped::INSTANCE
         param value type it.unive.lisa.type.Untyped::INSTANCE

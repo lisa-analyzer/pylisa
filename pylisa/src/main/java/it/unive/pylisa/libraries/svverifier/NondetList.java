@@ -71,6 +71,14 @@ public class NondetList extends PyNative {
 		super(cfg, location, "nondet_list", params);
 	}
 
+	protected NondetList(
+			CFG cfg,
+			CodeLocation location,
+			String name,
+			Expression[] params) {
+		super(cfg, location, name, params);
+	}
+
 	public static NondetList build(
 			CFG cfg,
 			CodeLocation location,
@@ -89,42 +97,9 @@ public class NondetList extends PyNative {
 		CodeLocation loc = getLocation();
 
 		// the elements of the list
-		AnalysisState<A> elements = state.bottomExecution();
 		Set<Identifier> metas = new HashSet<>();
-		Type nondet = nondetType(getSubExpressions()[0]);
-		if (nondet != null)
-			elements = analysis.smallStepSemantics(state, new PushAny(nondet, loc), st);
-		else
-			for (SymbolicExpression gen : params[0]) {
-				Set<CFG> cfgs = new HashSet<>();
-				Set<NativeCFG> natives = new HashSet<>();
-				boolean unknown = false;
-				Set<Type> types = analysis.getRuntimeTypesOf(state, gen, this);
-				if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this))
-					unknown = true;
-				else
-					for (Type t : types)
-						if (t.isCodeMemberType())
-							for (CodeMember member : t.asCodeMemberType().getMembers())
-								if (member instanceof CFG)
-									cfgs.add((CFG) member);
-								else if (member instanceof NativeCFG)
-									natives.add((NativeCFG) member);
-								else
-									unknown = true;
-						else
-							unknown = true;
-				// nondet_elem is called without arguments
-				UnresolvedCall call = new UnresolvedCall(getCFG(), loc, CallType.STATIC, null, "nondet_elem",
-						LeftToRightEvaluation.INSTANCE);
-				if (!cfgs.isEmpty())
-					elements = elements.lub(call(new CFGCall(call, cfgs), interprocedural, state, expressions, metas));
-				if (!natives.isEmpty())
-					elements = elements
-							.lub(call(new NativeCall(call, natives), interprocedural, state, expressions, metas));
-				if (unknown)
-					elements = elements.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), st));
-			}
+		AnalysisState<A> elements = generated(interprocedural, state, getSubExpressions()[0], params[0], expressions,
+				metas);
 		// the list is either empty (nondet_elem is never called), or its
 		// elements are the values computed above, all at unknown indices
 		ListCreation creation = new ListCreation(getCFG(), loc);
@@ -145,6 +120,73 @@ public class NondetList extends PyNative {
 			result = result.lub(elements);
 		getMetaVariables().addAll(creation.getMetaVariables());
 		return result.forgetIdentifiers(metas, this);
+	}
+
+	/**
+	 * The values produced by calling the generator {@code gen} (e.g.
+	 * {@code nondet_elem}), whose values are {@code gens}, without arguments:
+	 * values of the corresponding type for the {@code nondet_*} functions of
+	 * {@code _sv_verifier}, the results of the call for functions of the
+	 * program and builtins, and unknown values otherwise.
+	 *
+	 * @param <A>             the kind of the analysis state
+	 * @param <D>             the kind of the abstract domain
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the generator has been evaluated
+	 * @param gen             the expression of the generator
+	 * @param gens            the values of the generator
+	 * @param expressions     the states of the sub-expressions
+	 * @param metas           where the meta variables of the calls are added
+	 *
+	 * @return the state whose computed expressions are the values
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> generated(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			Expression gen,
+			ExpressionSet gens,
+			StatementStore<A> expressions,
+			Set<Identifier> metas)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		CodeLocation loc = getLocation();
+		AnalysisState<A> elements = state.bottomExecution();
+		Type nondet = nondetType(gen);
+		if (nondet != null)
+			return analysis.smallStepSemantics(state, new PushAny(nondet, loc), st);
+		for (SymbolicExpression g : gens) {
+			Set<CFG> cfgs = new HashSet<>();
+			Set<NativeCFG> natives = new HashSet<>();
+			boolean unknown = false;
+			Set<Type> types = analysis.getRuntimeTypesOf(state, g, this);
+			if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this))
+				unknown = true;
+			else
+				for (Type t : types)
+					if (t.isCodeMemberType())
+						for (CodeMember member : t.asCodeMemberType().getMembers())
+							if (member instanceof CFG)
+								cfgs.add((CFG) member);
+							else if (member instanceof NativeCFG)
+								natives.add((NativeCFG) member);
+							else
+								unknown = true;
+					else
+						unknown = true;
+			// the generator is called without arguments
+			UnresolvedCall call = new UnresolvedCall(getCFG(), loc, CallType.STATIC, null, "nondet_elem",
+					LeftToRightEvaluation.INSTANCE);
+			if (!cfgs.isEmpty())
+				elements = elements.lub(call(new CFGCall(call, cfgs), interprocedural, state, expressions, metas));
+			if (!natives.isEmpty())
+				elements = elements
+						.lub(call(new NativeCall(call, natives), interprocedural, state, expressions, metas));
+			if (unknown)
+				elements = elements.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), st));
+		}
+		return elements;
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> call(

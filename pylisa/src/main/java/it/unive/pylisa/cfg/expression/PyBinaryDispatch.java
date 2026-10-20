@@ -33,6 +33,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.symbolic.operators.conversions.BoolToInt;
 import java.util.Collections;
 import java.util.HashSet;
@@ -209,7 +210,7 @@ public final class PyBinaryDispatch {
 					res = tryCall(interprocedural, state, expressions, operator, cr, rop,
 							operator.getRight(), operator.getLeft(), rightSet, leftSet, tr, tl);
 				if (res == null)
-					res = fullyKnown(tl) && fullyKnown(tr)
+					res = operatorsKnown(tl) && operatorsKnown(tr)
 							? fallback(analysis, state, operator, fallback, tl, tr)
 							: analysis.smallStepSemantics(state,
 									new PushAny(Untyped.INSTANCE, operator.getLocation()), operator);
@@ -263,6 +264,24 @@ public final class PyBinaryDispatch {
 			return fullyDefined(type.asUnitType().getUnit());
 		String cls = classOf(type);
 		return cls != null && FULLY_MODELED.contains(cls);
+	}
+
+	/**
+	 * Whether all the operator methods of the class of the given runtime type
+	 * are known, so that a missing one means that python raises
+	 * {@code TypeError}: this holds for the classes whose methods are all known
+	 * (see {@link #fullyKnown(Type)}), and for dictionaries, whose operators
+	 * are modeled ({@code |} and {@code |=}, while {@code ==} and {@code !=}
+	 * compare them as objects), although their other methods are not (e.g.
+	 * {@code items}).
+	 *
+	 * @param type the runtime type
+	 *
+	 * @return whether all the operator methods of its class are known
+	 */
+	public static boolean operatorsKnown(
+			Type type) {
+		return fullyKnown(type) || DictModel.isDict(type);
 	}
 
 	// whether values of the given type are compared by identity (functions
@@ -391,7 +410,7 @@ public final class PyBinaryDispatch {
 				result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
 						new ExpressionSet[] { value }, expressions));
 				operator.getMetaVariables().addAll(resolved.getMetaVariables());
-			} else if (fullyKnown(t))
+			} else if (operatorsKnown(t))
 				result = result.lub(PyExceptions.raise(analysis, state, operator.getCFG(), operator.getLocation(),
 						operator, LibrarySpecificationProvider.TYPE_ERROR));
 			else

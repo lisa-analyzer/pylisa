@@ -424,23 +424,25 @@ public final class DictModel {
 	}
 
 	/**
-	 * Adds the entries of {@code source} to the dictionary being created
-	 * ({@code {..., **source, ...}}), overriding the ones it already has. The
-	 * keys that {@code source} surely has become tracked keys of the dictionary
-	 * (it is being created, see {@link DictModel}); the values of the keys
-	 * {@code source} might have are weakly updated, as the ones of its
-	 * untracked keys, that might be equal to any key. A {@code source} that is
-	 * not a mapping raises {@code TypeError}: surely if it is a value of a
-	 * builtin class that is not a mapping (e.g. an {@code int} or a
-	 * {@code list}), possibly if it is an object, whose entries are then
-	 * unknown.
+	 * Adds the entries of {@code source} to the dictionary ({@code {...,
+	 * **source, ...}}, or {@code dict |= source}), overriding the ones it
+	 * already has. If the dictionary is being created, the keys that
+	 * {@code source} surely has become tracked keys of the dictionary (see
+	 * {@link DictModel}), otherwise they are written as any other key (see
+	 * {@link #write}); the values of the keys {@code source} might have are
+	 * weakly updated, as the ones of its untracked keys, that might be equal to
+	 * any key. A {@code source} that is not a mapping raises {@code TypeError}:
+	 * surely if it is a value of a builtin class that is not a mapping (e.g. an
+	 * {@code int} or a {@code list}), possibly if it is an object, whose
+	 * entries are then unknown.
 	 *
 	 * @param analysis the analysis
 	 * @param state    the state where the dictionary and the source have been
 	 *                     evaluated
-	 * @param dict     the dictionary being created
+	 * @param dict     the dictionary
 	 * @param source   the unpacked value
-	 * @param thrower  the statement creating the dictionary
+	 * @param thrower  the statement adding the entries
+	 * @param creating whether the dictionary is being created
 	 *
 	 * @return the state after the entries have been added
 	 *
@@ -451,7 +453,8 @@ public final class DictModel {
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			SymbolicExpression source,
-			Statement thrower)
+			Statement thrower,
+			boolean creating)
 			throws SemanticException {
 		CodeLocation loc = thrower.getLocation();
 		Type dictType = PyClassType.lookup(LibrarySpecificationProvider.DICT);
@@ -495,9 +498,11 @@ public final class DictModel {
 					new AccessChild(Untyped.INSTANCE, from, child(k, loc), loc), thrower);
 			AnalysisState<A> next = current.bottomExecution();
 			for (SymbolicExpression value : values.getExecutionExpressions())
-				if (sure.contains(k))
+				if (sure.contains(k) && creating)
 					next = next.lub(analysis.assign(values,
 							new AccessChild(Untyped.INSTANCE, target, child(k, loc), loc), value, thrower));
+				else if (sure.contains(k))
+					next = next.lub(write(analysis, values, dict, child(k, loc), value, thrower));
 				else
 					// the key might be missing: the value is weakly updated
 					next = next.lub(write(analysis, values, dict, child(k, loc), value, thrower).lub(current));
@@ -515,9 +520,21 @@ public final class DictModel {
 		return result.lub(current);
 	}
 
-	// adds an entry whose key is unknown, and that might be equal to any of
-	// the keys of the dictionary
-	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> anyEntry(
+	/**
+	 * Adds an entry whose key is unknown, and that might be equal to any of the
+	 * keys of the dictionary: the values of all the keys are weakly updated.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param dict     the dictionary
+	 * @param value    the value of the entry
+	 * @param thrower  the statement adding the entry
+	 *
+	 * @return the state after the entry has been added
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> anyEntry(
 			Analysis<A, D> analysis,
 			AnalysisState<A> state,
 			SymbolicExpression dict,

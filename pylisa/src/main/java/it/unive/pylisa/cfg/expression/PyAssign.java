@@ -197,9 +197,11 @@ public class PyAssign extends Assignment {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		CodeLocation loc = getLocation();
-
-		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		if (left instanceof Identifier && left.equals(right))
+			// x = x (e.g. x |= y, where __ior__ returns x itself) does not
+			// change anything, while assigning would lose what is known about
+			// the object x points to, as the heap drops it when x is unbound
+			return interprocedural.getAnalysis().smallStepSemantics(state, left, this);
 
 		// tuple targets are unpacked by unpackAssignment
 		return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
