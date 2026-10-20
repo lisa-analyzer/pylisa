@@ -47,11 +47,36 @@ public class PyFunctionRef extends VariableRef {
 	 * @param location the location of the reference
 	 * @param name     the name
 	 */
+	// the unit of the module defining the function (null for the module of
+	// the reference), and the name of the function there
+	private final String module, member;
+
 	public PyFunctionRef(
 			CFG cfg,
 			CodeLocation location,
 			String name) {
+		this(cfg, location, name, null, name);
+	}
+
+	/**
+	 * Builds a reference to a function of another module (e.g. {@code f} after
+	 * {@code from m import f}, or {@code m.f}).
+	 *
+	 * @param cfg      the cfg where the reference is
+	 * @param location the location of the reference
+	 * @param name     the name of the reference
+	 * @param module   the name of the unit of the module
+	 * @param member   the name of the function in the module
+	 */
+	public PyFunctionRef(
+			CFG cfg,
+			CodeLocation location,
+			String name,
+			String module,
+			String member) {
 		super(cfg, location, name);
+		this.module = module;
+		this.member = member;
 	}
 
 	@Override
@@ -72,11 +97,14 @@ public class PyFunctionRef extends VariableRef {
 	// the function of the module this reference denotes, if any
 	private CodeMember function() {
 		Program program = getCFG().getProgram();
-		if (ASSIGNED.computeIfAbsent(program, PyFunctionRef::assigned).contains(getName()))
+		Set<String> assigned = ASSIGNED.computeIfAbsent(program, PyFunctionRef::assigned);
+		if (assigned.contains(getName()) || assigned.contains(member))
 			return null;
-		Unit module = getCFG().getUnit();
+		Unit unit = module == null ? getCFG().getUnit() : program.getUnit(module);
+		if (unit == null)
+			return null;
 		CodeMember found = null;
-		for (CodeMember member : module.getCodeMembersByName(getName()))
+		for (CodeMember member : unit.getCodeMembersByName(this.member))
 			if (member instanceof CFG && member.getDescriptor().getAnnotationList().stream()
 					.anyMatch(a -> a.getAnnotationName().equals(PyBinaryDispatch.DEFINED_ONCE))) {
 				if (found != null)

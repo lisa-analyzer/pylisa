@@ -65,13 +65,18 @@ public class PyCodeMemberParser
 	 * @param program  the program to which the cfg belongs
 	 * @param unit     the unit to which the cfg belongs
 	 */
+	// the names the imports of the file bind to local modules
+	private final LocalImports imports;
+
 	public PyCodeMemberParser(
 			String filePath,
 			Program program,
-			Unit unit) {
+			Unit unit,
+			LocalImports imports) {
 		this.filePath = filePath;
 		this.program = program;
 		this.unit = unit;
+		this.imports = imports;
 	}
 
 	@Override
@@ -90,7 +95,7 @@ public class PyCodeMemberParser
 		PyCFG cfg = new PyCFG(descriptor, entrypoints, list);
 		fillDefaultsAndHints(ctx, cfg, descriptor);
 		ControlFlowTracker control = new ControlFlowTracker();
-		PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, control);
+		PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, control, imports);
 		ParsedBlock r = parser.visitBlock(ctx.block());
 		list.mergeWith(r.getBody());
 		entrypoints.add(r.getBegin());
@@ -223,14 +228,14 @@ public class PyCodeMemberParser
 				if (param.annotation() != null) {
 					// passing null for tracker and control since no new locals
 					// and no control flow should be created here
-					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null);
+					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null, imports);
 					String typeHint = parser.visitExpression(param.annotation().expression()).toString();
 					((PyParameter) p).setTypeHint(typeHint);
 				}
 				if (def != null) {
 					// passing null for tracker and control since no new locals
 					// and no control flow should be created here
-					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null);
+					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null, imports);
 					Expression defaultValue = parser.visitExpression(def.expression());
 					((PyParameter) p).setDefaultValue(defaultValue);
 				}

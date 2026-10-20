@@ -2,7 +2,6 @@ package it.unive.pylisa.libraries.ints;
 
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
-import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -15,9 +14,6 @@ import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingMul;
-import it.unive.lisa.type.Type;
-import it.unive.pylisa.symbolic.operators.StringMult;
-import java.util.Set;
 
 /**
  * Native implementation of {@code int.__mul__(self, other)}. {@code other} is
@@ -76,35 +72,15 @@ public class IntMul extends BinaryExpression implements PluggableStatement {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		Set<Type> rtsOther = analysis.getRuntimeTypesOf(state, right, this);
-
-		AnalysisState<A> result = state.bottomExecution();
-		for (Type t : rtsOther) {
-			if (t.isStringType())
-				// 3 * "x": string repeat, string first
-				result = result.lub(analysis.smallStepSemantics(state,
-						new it.unive.lisa.symbolic.value.BinaryExpression(
-								right.getStaticType(),
-								right,
-								left,
-								StringMult.INSTANCE,
-								getLocation()),
-						st));
-			else if (t.isNumericType())
-				result = result.lub(analysis.smallStepSemantics(state,
-						new it.unive.lisa.symbolic.value.BinaryExpression(
-								getStaticType(),
-								left,
-								right,
-								NumericNonOverflowingMul.INSTANCE,
-								getLocation()),
-						st));
-			// else: this type (e.g. list) does not contribute -- int does not
-			// implement this, and unlike the numeric/string cases there is no
-			// fallback to compute here
-		}
-
-		return result;
+		// the other operand is an int (e.g. 3 * "x" is computed by
+		// str.__rmul__, 3 * [1] by list.__rmul__)
+		return interprocedural.getAnalysis().smallStepSemantics(state,
+				new it.unive.lisa.symbolic.value.BinaryExpression(
+						getStaticType(),
+						left,
+						right,
+						NumericNonOverflowingMul.INSTANCE,
+						getLocation()),
+				st);
 	}
 }

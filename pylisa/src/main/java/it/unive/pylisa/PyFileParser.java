@@ -11,6 +11,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
+import it.unive.lisa.program.cfg.statement.NoOp;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
 import it.unive.lisa.util.frontend.CFGTweaker;
@@ -52,6 +53,8 @@ public class PyFileParser
 	 */
 	private final CodeUnit rootUnit;
 
+	private final LocalImports imports;
+
 	/**
 	 * Builds the parser for a Python program at {@code filePath}.
 	 *
@@ -61,8 +64,23 @@ public class PyFileParser
 	public PyFileParser(
 			Program program,
 			String filePath) {
+		this(program, filePath, LocalImports.NONE);
+	}
+
+	/**
+	 * Builds the parser for a Python program at {@code filePath}.
+	 *
+	 * @param program  the LiSA program to which the parsed CFGs will be added
+	 * @param filePath file path to a Python program
+	 * @param imports  the names the imports of the file bind to local modules
+	 */
+	public PyFileParser(
+			Program program,
+			String filePath,
+			LocalImports imports) {
 		this.program = program;
 		this.filePath = filePath;
+		this.imports = imports;
 		this.rootUnit = new CodeUnit(
 				new SourceCodeLocation(filePath, 0, 0),
 				program,
@@ -105,9 +123,17 @@ public class PyFileParser
 		// side effects on entrypoints and matrix will affect the cfg
 		PyCFG cfg = new PyCFG(descriptor, entrypoints, list);
 		ControlFlowTracker control = new ControlFlowTracker();
-		PyStatementParser parser = new PyStatementParser(program, filePath, rootUnit, cfg, control);
-		ParsedBlock r = TimerLogger.execSupplier(log, "Parsing statement list of " + filePath,
-				() -> parser.visitStatements(ctx.statements()));
+		PyStatementParser parser = new PyStatementParser(program, filePath, rootUnit, cfg, control, imports);
+		ParsedBlock r;
+		if (ctx.statements() == null) {
+			// an empty file (e.g. the __init__.py of a package)
+			NoOp noop = new NoOp(cfg, getLocation(filePath, ctx));
+			NodeList<CFG, Statement, Edge> block = new NodeList<>(new SequentialEdge());
+			block.addNode(noop);
+			r = new ParsedBlock(noop, block, noop);
+		} else
+			r = TimerLogger.execSupplier(log, "Parsing statement list of " + filePath,
+					() -> parser.visitStatements(ctx.statements()));
 		list.mergeWith(r.getBody());
 		entrypoints.add(r.getBegin());
 		Function<String, ParsingException> factory = (

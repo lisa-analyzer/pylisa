@@ -49,11 +49,16 @@ public class PyClassParser
 	 * @param program  the LiSA program to which the parsed CFGs will be added
 	 * @param filePath file path to a Python program
 	 */
+	// the names the imports of the file bind to local modules
+	private final LocalImports imports;
+
 	public PyClassParser(
 			Program program,
-			String filePath) {
+			String filePath,
+			LocalImports imports) {
 		this.program = program;
 		this.filePath = filePath;
+		this.imports = imports;
 	}
 
 	@Override
@@ -83,7 +88,7 @@ public class PyClassParser
 		// side effects on entrypoints and matrix will affect the cfg
 		PyCFG cfg = new PyCFG(descriptor, entrypoints, list);
 		ControlFlowTracker control = new ControlFlowTracker();
-		PyStatementParser parser = new PyStatementParser(program, filePath, signature, cfg, control);
+		PyStatementParser parser = new PyStatementParser(program, filePath, signature, cfg, control, imports);
 		ParsedBlock r = parser.visitBlock(ctx.block());
 		list.mergeWith(r.getBody());
 		entrypoints.add(r.getBegin());

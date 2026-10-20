@@ -40,6 +40,8 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -103,27 +105,11 @@ public class PyFrontend
 		LibrarySpecificationProvider.load(program);
 		LibrarySpecificationProvider.importBuiltins(program);
 		List<String> expandedPaths = expandFilePaths(filePaths);
-		int n = expandedPaths.size();
-
-		// Parse all files once upfront
-		for (int i = 0; i < n; i++) {
-			Path path = Paths.get(expandedPaths.get(i));
-			String source = path.toString();
-			log.info("Reading file... " + source);
-
-			PythonLexer lexer = null;
-			try (InputStream stream = mkStream(source, cellOrder);) {
-				lexer = new PythonLexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
-			} catch (IOException e) {
-				throw new IOException("Unable to parse '" + source + "'", e);
-			}
-
-			PythonParser parser = new PythonParser(new CommonTokenStream(lexer));
-			File_inputContext tree = parser.file_input();
-
-			PyFileParser pyFileParser = new PyFileParser(program, source);
-			program.addUnit(pyFileParser.parse(tree));
-		}
+		// the local modules are looked up in the directory of the program
+		Path root = expandedPaths.isEmpty() ? Paths.get("") : directory(Paths.get(expandedPaths.get(0)));
+		Set<Path> parsed = new HashSet<>();
+		for (String path : expandedPaths)
+			parse(Paths.get(path), root, cellOrder, parsed);
 
 		registerTypes();
 
@@ -207,6 +193,46 @@ public class PyFrontend
 			}
 		}
 		return expandedPaths;
+	}
+
+	// parses the file, after the local modules it imports (each file is
+	// parsed once)
+	private void parse(
+			Path path,
+			Path root,
+			List<Integer> cellOrder,
+			Set<Path> parsed)
+			throws IOException {
+		if (!parsed.add(path.normalize()))
+			return;
+		String source = path.toString();
+		log.info("Reading file... " + source);
+
+		PythonLexer lexer = null;
+		try (InputStream stream = mkStream(source, cellOrder);) {
+			lexer = new PythonLexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			throw new IOException("Unable to parse '" + source + "'", e);
+		}
+
+		PythonParser parser = new PythonParser(new CommonTokenStream(lexer));
+		File_inputContext tree = parser.file_input();
+
+		// the modules are parsed first, so that their functions and classes
+		// are known when parsing this file
+		LocalModules.Imports imports = LocalModules.of(tree, path, root);
+		for (Path module : imports.dependencies())
+			parse(module, root, Collections.emptyList(), parsed);
+
+		PyFileParser pyFileParser = new PyFileParser(program, source, imports.bindings());
+		program.addUnit(pyFileParser.parse(tree));
+	}
+
+	// the directory containing the file (the current one if it has no parent)
+	private static Path directory(
+			Path file) {
+		Path parent = file.getParent();
+		return parent == null ? Paths.get("") : parent;
 	}
 
 	/**

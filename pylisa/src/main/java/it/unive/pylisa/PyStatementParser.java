@@ -171,6 +171,7 @@ import it.unive.pylisa.cfg.expression.PyListComprehension;
 import it.unive.pylisa.cfg.expression.PyMatMul;
 import it.unive.pylisa.cfg.expression.PyMethodCall;
 import it.unive.pylisa.cfg.expression.PyMinMax;
+import it.unive.pylisa.cfg.expression.PyModuleCall;
 import it.unive.pylisa.cfg.expression.PyMultiplication;
 import it.unive.pylisa.cfg.expression.PyNameCall;
 import it.unive.pylisa.cfg.expression.PyNegation;
@@ -227,6 +228,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -291,6 +293,9 @@ public class PyStatementParser
 
 	private final ControlFlowTracker control;
 
+	// the names the imports of the file bind to local modules
+	private final LocalImports localImports;
+
 	// the number of loops enclosing the statement being parsed
 	private int loops = 0;
 
@@ -309,12 +314,14 @@ public class PyStatementParser
 			String filePath,
 			Unit currentUnit,
 			PyCFG currentCFG,
-			ControlFlowTracker control) {
+			ControlFlowTracker control,
+			LocalImports localImports) {
 		this.program = program;
 		this.filePath = filePath;
 		this.currentUnit = currentUnit;
 		this.currentCFG = currentCFG;
 		this.control = control;
+		this.localImports = localImports;
 	}
 
 	@Override
@@ -1859,7 +1866,8 @@ public class PyStatementParser
 				last_name = frame.name().getText();
 				previous_access = access;
 				attribute = true;
-				access = attribute(access, last_name, getLocation(filePath, frame));
+				Expression member = moduleMember(access, last_name, getLocation(filePath, frame));
+				access = member != null ? member : attribute(access, last_name, getLocation(filePath, frame));
 			} else if (frame.LPAR() != null || frame.genexp() != null) {
 				List<Expression> arguments;
 				if (frame.genexp() == null)
@@ -1915,6 +1923,15 @@ public class PyStatementParser
 							getLocation(filePath, frame),
 							"__init__",
 							PyClassType.register(cu.getName(), (ClassUnit) cu),
+							pars.toArray(Expression[]::new));
+				} else if (attribute && localImports.module(dotted(previous_access)) != null) {
+					// m.f(...): the function f of the local module m
+					access = new PyModuleCall(currentCFG, getLocation(filePath, frame),
+							localImports.module(dotted(previous_access)), method_name, pars.toArray(Expression[]::new));
+				} else if (!attribute && previous_access == null && localImports.member(method_name) != null) {
+					// f(...), with f imported from a local module
+					LocalImports.Member member = localImports.member(method_name);
+					access = new PyModuleCall(currentCFG, getLocation(filePath, frame), member.unit(), member.name(),
 							pars.toArray(Expression[]::new));
 				} else if (attribute && classNames(previous_access) != null) {
 					// C.m(...): the function m of the class, with no receiver
@@ -2078,11 +2095,52 @@ public class PyStatementParser
 		return List.of(imports.get(name), name);
 	}
 
+	/**
+	 * Yields the dotted name of an expression made of names and of attributes
+	 * of namespaces (e.g. {@code a.b}), or {@code null}.
+	 */
+	private static String dotted(
+			Expression expr) {
+		if (expr instanceof VariableRef)
+			return ((VariableRef) expr).getName();
+		if (expr instanceof UnresolvedCall && ((UnresolvedCall) expr).getTargetName().equals("__getattribute__")) {
+			Expression[] params = ((UnresolvedCall) expr).getParameters();
+			String receiver = params.length == 2 && params[1] instanceof PyStringLiteral ? dotted(params[0]) : null;
+			return receiver == null ? null : receiver + "." + ((PyStringLiteral) params[1]).getValue();
+		}
+		return null;
+	}
+
+	/**
+	 * Yields the value of {@code receiver.name} if the receiver is a local
+	 * module and {@code name} is not one of its submodules: a class of the
+	 * module, or a function of the module (see {@link PyFunctionRef}).
+	 * Otherwise, it yields {@code null}.
+	 */
+	private Expression moduleMember(
+			Expression receiver,
+			String name,
+			CodeLocation location) {
+		String path = dotted(receiver);
+		String module = localImports.module(path);
+		if (module == null || localImports.module(path + "." + name) != null)
+			return null;
+		Unit unit = program.getUnit(name);
+		if (unit instanceof ClassUnit && ((ClassUnit) unit).getLocation() instanceof SourceCodeLocation
+				&& FilenameUtils
+						.removeExtension(((SourceCodeLocation) ((ClassUnit) unit).getLocation()).getSourceFile())
+						.equals(module))
+			// a class of the module
+			return new PyClassRef(currentCFG, location, (ClassUnit) unit);
+		return new PyFunctionRef(currentCFG, location, path + "." + name, module, name);
+	}
+
 	private boolean isNamespace(
 			Expression expr) {
 		if (expr instanceof VariableRef) {
 			String name = ((VariableRef) expr).getName();
-			return namespaces.contains(name) || program.getUnit(name) != null || BUILTIN_CLASSES.containsKey(name);
+			return namespaces.contains(name) || program.getUnit(name) != null || BUILTIN_CLASSES.containsKey(name)
+					|| localImports.module(name) != null;
 		}
 		if (expr instanceof UnresolvedCall) {
 			UnresolvedCall call = (UnresolvedCall) expr;
@@ -2370,6 +2428,10 @@ public class PyStatementParser
 			// a class defined in the program (e.g. MyClass in
 			// check_type(a, MyClass))
 			return new PyClassRef(currentCFG, getLocation(filePath, ctx), (ClassUnit) unit);
+		LocalImports.Member member = localImports.member(name);
+		if (member != null)
+			// a function imported from a local module (from m import f)
+			return new PyFunctionRef(currentCFG, getLocation(filePath, ctx), name, member.unit(), member.name());
 		if (!currentCFG.getDescriptor().getName().equals(PyFileParser.INSTRUMENTED_MAIN_FUNCTION_NAME))
 			// inside a function, it might be a function of the module
 			return new PyFunctionRef(currentCFG, getLocation(filePath, ctx), name);
@@ -2515,7 +2577,7 @@ public class PyStatementParser
 			Class_defContext ctx) {
 		if (ctx.decorators() != null)
 			throw new UnsupportedStatementException("decorators are not supported");
-		PyClassParser parser = new PyClassParser(program, filePath);
+		PyClassParser parser = new PyClassParser(program, filePath, localImports);
 		return parser.visitClass_def_raw(ctx.class_def_raw());
 	}
 
@@ -2524,7 +2586,7 @@ public class PyStatementParser
 			Function_defContext ctx) {
 		if (ctx.decorators() != null)
 			throw new UnsupportedStatementException("decorators are not supported");
-		PyCodeMemberParser parser = new PyCodeMemberParser(filePath, program, currentUnit);
+		PyCodeMemberParser parser = new PyCodeMemberParser(filePath, program, currentUnit, localImports);
 		return parser.visitFunction_def_raw(ctx.function_def_raw());
 	}
 }
