@@ -27,7 +27,7 @@ import it.unive.pylisa.analysis.dataframes.DataframeGraphValueDomain;
 import it.unive.pylisa.analysis.types.PyInferredTypes;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
-import it.unive.pylisa.checks.ExceptionsCheck;
+import it.unive.pylisa.checks.ExceptionChecker;
 import it.unive.ros.application.PythonROSNodeBuilder;
 import it.unive.ros.application.ROSApplication;
 import it.unive.ros.application.RosApplicationBuilder;
@@ -81,7 +81,7 @@ public class PyLiSA {
 		Option checker = Option.builder("c")
 				.longOpt("checker")
 				.hasArg()
-				.desc("Checker: (Exceptions)")
+				.desc("Checker: (Assert [DEFAULT], checking the properties of the SV-COMP benchmarks)")
 				.required(false)
 				.build();
 
@@ -373,7 +373,8 @@ public class PyLiSA {
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 		switch (checkerName) {
 		case "Assert":
-			conf.semanticChecks.add(new ExceptionsCheck<>());
+			// the properties of the SV-COMP benchmarks
+			conf.semanticChecks.add(new ExceptionChecker<>());
 			break;
 		case "":
 			break;
