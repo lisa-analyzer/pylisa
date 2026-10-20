@@ -74,11 +74,13 @@ import it.unive.pylisa.antlr.PythonParser.Else_blockContext;
 import it.unive.pylisa.antlr.PythonParser.ExpressionContext;
 import it.unive.pylisa.antlr.PythonParser.FactorContext;
 import it.unive.pylisa.antlr.PythonParser.For_if_clauseContext;
+import it.unive.pylisa.antlr.PythonParser.For_if_clausesContext;
 import it.unive.pylisa.antlr.PythonParser.For_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.FstringContext;
 import it.unive.pylisa.antlr.PythonParser.Fstring_middleContext;
 import it.unive.pylisa.antlr.PythonParser.Fstring_replacement_fieldContext;
 import it.unive.pylisa.antlr.PythonParser.Function_defContext;
+import it.unive.pylisa.antlr.PythonParser.GenexpContext;
 import it.unive.pylisa.antlr.PythonParser.Global_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.If_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Import_fromContext;
@@ -126,7 +128,6 @@ import it.unive.pylisa.antlr.PythonParser.TupleContext;
 import it.unive.pylisa.antlr.PythonParser.While_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.With_itemContext;
 import it.unive.pylisa.antlr.PythonParser.With_stmtContext;
-import it.unive.pylisa.antlr.PythonParser.Yield_exprContext;
 import it.unive.pylisa.antlr.PythonParser.Yield_stmtContext;
 import it.unive.pylisa.antlr.PythonParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
@@ -209,6 +210,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -714,15 +716,10 @@ public class PyStatementParser
 	@Override
 	public Statement visitYield_stmt(
 			Yield_stmtContext ctx) {
-		List<Expression> l = extractYieldArguments(ctx.yield_expr());
-		return new UnresolvedCall(
-				currentCFG,
-				getLocation(filePath, ctx),
-				CallType.STATIC,
-				Program.PROGRAM_NAME,
-				"yield from",
-				LeftToRightEvaluation.INSTANCE,
-				l.toArray(new Expression[0]));
+		// calling a function containing yield returns a generator, without
+		// executing its body: analyzing it as a plain function is unsound
+		// (e.g. a generator looping forever would never return)
+		throw new UnsupportedStatementException("generator functions (yield) are not supported");
 	}
 
 	@Override
@@ -1611,11 +1608,20 @@ public class PyStatementParser
 				previous_access = access;
 				attribute = true;
 				access = attribute(access, last_name, getLocation(filePath, frame));
-			} else if (frame.LPAR() != null) {
+			} else if (frame.LPAR() != null || frame.genexp() != null) {
+				List<Expression> arguments;
+				if (frame.genexp() == null)
+					arguments = extractArguments(frame.arguments());
+				else if (consumesGenerator(last_name, access instanceof PyAccessInstanceGlobal
+						|| (attribute && isMethodReceiver(previous_access))))
+					// e.g. sum(x for x in xs)
+					arguments = new ArrayList<>(List.of(visitGenexpArgument(frame.genexp())));
+				else
+					throw new UnsupportedStatementException("generator expression calls are not supported");
+
 				if (last_name == null) {
 					// the callee is not a name, e.g. d[key]() or f()()
-					List<Expression> args = convertAssignmentsToByNameParameters(
-							extractArguments(frame.arguments()));
+					List<Expression> args = convertAssignmentsToByNameParameters(arguments);
 					access = new PyValueCall(currentCFG, getLocation(filePath, frame), access,
 							args.toArray(Expression[]::new));
 					previous_access = null;
@@ -1623,7 +1629,7 @@ public class PyStatementParser
 					continue;
 				}
 
-				List<Expression> pars = extractArguments(frame.arguments());
+				List<Expression> pars = arguments;
 				String method_name = last_name;
 				// x.name(...) is a method call on x, and x is passed as the
 				// receiver, unless x is a namespace (x.name is then just a
@@ -1738,9 +1744,7 @@ public class PyStatementParser
 							indexes.get(1));
 				else
 					throw new UnsupportedStatementException("subscripts with more than two indexes are not supported");
-			} else if (frame.genexp() != null)
-				throw new UnsupportedStatementException("generator expression calls are not supported");
-			else
+			} else
 				throw new UnsupportedStatementException();
 		}
 		return access;
@@ -1953,12 +1957,61 @@ public class PyStatementParser
 	 */
 	private Expression visitListComprehension(
 			ListcompContext ctx) {
+		return comprehension(ctx, ctx.for_if_clauses(), () -> visitNamed_expression(ctx.named_expression()));
+	}
+
+	/**
+	 * Translates the generator expression {@code (element for x in iterable if
+	 * c ...)} passed to a function that consumes it right away (see
+	 * {@link #consumesGenerator(String, boolean)}): as the generator is fully
+	 * iterated during the call, it is translated as the list comprehension
+	 * {@code [element for x in iterable if c ...]}. The only difference is that
+	 * functions like {@code any} might stop the iteration early: the elements
+	 * after that point are not computed by python, so the errors raised by the
+	 * comprehension are an over-approximation.
+	 */
+	private Expression visitGenexpArgument(
+			GenexpContext ctx) {
+		return comprehension(ctx, ctx.for_if_clauses(),
+				() -> ctx.assignment_expression() != null ? visitAssignment_expression(ctx.assignment_expression())
+						: visitExpression(ctx.expression()));
+	}
+
+	// the builtins that consume a generator passed to them by iterating it,
+	// and that behave in the same way when given a list instead
+	private static final Set<String> GENERATOR_CONSUMERS = Set.of("sum", "all", "any", "min", "max", "list", "tuple",
+			"set", "frozenset", "sorted", "dict");
+
+	/**
+	 * Whether a generator expression passed to {@code name} can be translated
+	 * as a list comprehension (see
+	 * {@link #visitGenexpArgument(GenexpContext)}): this holds for the builtins
+	 * consuming iterables (e.g. {@code sum}), and for {@code str.join}, unless
+	 * the program defines a function with the same name. Other functions might
+	 * use the generator as such (e.g. {@code next}, or {@code len}, that raises
+	 * {@code TypeError} on generators).
+	 */
+	private boolean consumesGenerator(
+			String name,
+			boolean method) {
+		if (name == null)
+			return false;
+		if (method)
+			return name.equals("join");
+		return GENERATOR_CONSUMERS.contains(name) && program.getCodeMembersByName(name).stream()
+				.allMatch(NativeCFG.class::isInstance);
+	}
+
+	private Expression comprehension(
+			ParserRuleContext ctx,
+			For_if_clausesContext forIfClauses,
+			Supplier<Expression> elementVisitor) {
 		SourceCodeLocation loc = getLocation(filePath, ctx);
 		Map<String, String> scope = new HashMap<>();
 		List<PyListComprehension.Clause> clauses = new ArrayList<>();
 		comprehensions.push(scope);
 		try {
-			for (For_if_clauseContext clause : ctx.for_if_clauses().for_if_clause()) {
+			for (For_if_clauseContext clause : forIfClauses.for_if_clause()) {
 				if (clause.ASYNC() != null)
 					throw new UnsupportedStatementException("async comprehensions are not supported");
 				// the iterable sees the variables of the previous clauses
@@ -1974,7 +2027,7 @@ public class PyStatementParser
 					conditions.add(visitDisjunction(clause.disjunction(i)));
 				clauses.add(new PyListComprehension.Clause(target, iterable, conditions));
 			}
-			Expression element = visitNamed_expression(ctx.named_expression());
+			Expression element = elementVisitor.get();
 			return new PyListComprehension(currentCFG, loc, element, clauses);
 		} finally {
 			comprehensions.pop();
@@ -2083,16 +2136,6 @@ public class PyStatementParser
 		else if (ctx.ELLIPSIS() != null)
 			throw new UnsupportedStatementException();
 		throw new UnsupportedStatementException();
-	}
-
-	private List<Expression> extractYieldArguments(
-			Yield_exprContext ctx) {
-		List<Expression> r = new ArrayList<>(1);
-		if (ctx.FROM() != null)
-			r.add(visitExpression(ctx.expression()));
-		else if (ctx.star_expressions() != null)
-			r.add(visitStar_expressions(ctx.star_expressions()));
-		return r;
 	}
 
 	public AnnotationMember visitDecorator(
