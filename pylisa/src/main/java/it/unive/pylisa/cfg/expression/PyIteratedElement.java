@@ -27,11 +27,26 @@ public class PyIteratedElement extends UnaryExpression {
 	 * @param location the location of the expression
 	 * @param iterable the iterable
 	 */
+	// the expression computing the iterable, used to recognize iterables
+	// like range(n) (see Iteration)
+	private final Expression source;
+
+	/**
+	 * Builds the element.
+	 *
+	 * @param cfg      the cfg where the element is
+	 * @param location the location of the element
+	 * @param iterable the iterable (its value, computed before the loop)
+	 * @param source   the expression computing the iterable, that is not
+	 *                     evaluated here
+	 */
 	public PyIteratedElement(
 			CFG cfg,
 			CodeLocation location,
-			Expression iterable) {
+			Expression iterable,
+			Expression source) {
 		super(cfg, location, "element", iterable);
+		this.source = source;
 	}
 
 	@Override
@@ -52,6 +67,6 @@ public class PyIteratedElement extends UnaryExpression {
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		return Iteration.elements(interprocedural.getAnalysis(), state, getSubExpression(), expr, this);
+		return Iteration.elements(interprocedural.getAnalysis(), state, source, expr, this);
 	}
 }

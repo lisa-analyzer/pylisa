@@ -1,0 +1,46 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/star-args/star-args.py':12:0] on 'untyped py-testcases/star-args/star-args::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/star-args/star-args.py':12:0"
+  }, {
+    "message" : "['py-testcases/star-args/star-args.py':16:4] on 'untyped py-testcases/star-args/star-args::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/star-args/star-args.py':16:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_star-args_star-args.$main().graph.json", "untyped_py-testcases_star-args_star-args.add(untyped_a,_untyped_b,_untyped_c)_-1262558697.graph.json", "untyped_py-testcases_star-args_star-args.add(untyped_a,_untyped_b,_untyped_c)_-1262558759.graph.json", "untyped_py-testcases_star-args_star-args.add(untyped_a,_untyped_b,_untyped_c)_-1262561270.graph.json", "untyped_py-testcases_star-args_star-args.total(untyped_a,_untyped_rest)_-1262558480.graph.json", "untyped_py-testcases_star-args_star-args.total(untyped_a,_untyped_rest)_-1262558511.graph.json" ],
+  "info" : {
+    "cfgs" : "4",
+    "duration" : "7ms",
+    "end" : "2026-10-20T21:03:42.627+02:00",
+    "expressions" : "72",
+    "files" : "6",
+    "globals" : "0",
+    "members" : "151",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-20T21:03:42.620+02:00",
+    "statements" : "20",
+    "units" : "30",
+    "version" : "1.0",
+    "warnings" : "2"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/star-args"
+  }
+}

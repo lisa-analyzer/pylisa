@@ -136,6 +136,7 @@ import it.unive.pylisa.antlr.PythonParser.With_itemContext;
 import it.unive.pylisa.antlr.PythonParser.With_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Yield_stmtContext;
 import it.unive.pylisa.antlr.PythonParserBaseVisitor;
+import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.expression.Break;
 import it.unive.pylisa.cfg.expression.Continue;
@@ -183,6 +184,7 @@ import it.unive.pylisa.cfg.expression.PyTernaryOperator;
 import it.unive.pylisa.cfg.expression.PyValueCall;
 import it.unive.pylisa.cfg.expression.RangeValue;
 import it.unive.pylisa.cfg.expression.SetCreation;
+import it.unive.pylisa.cfg.expression.StarArgument;
 import it.unive.pylisa.cfg.expression.StarExpression;
 import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.expression.comparison.PyAnd;
@@ -387,7 +389,9 @@ public class PyStatementParser
 	public ParsedBlock visitSimple_stmt(
 			Simple_stmtContext ctx) {
 		Statement result;
-		if (ctx.assignment() != null)
+		if (ctx.assignment() != null && ctx.assignment().augassign() != null)
+			return augmentedAssignment(ctx.assignment());
+		else if (ctx.assignment() != null)
 			result = visitAssignment(ctx.assignment());
 		else if (ctx.star_expressions() != null)
 			result = visitStar_expressions(ctx.star_expressions());
@@ -428,18 +432,9 @@ public class PyStatementParser
 			AssignmentContext ctx) {
 		if (ctx.COLON() != null)
 			throw new UnsupportedStatementException("annotated assignments are not supported");
-		if (ctx.augassign() != null) {
-			// x op= y ~> x = x op y
-			// TODO: for a subscript/attribute target (e.g. container[i] += y),
-			// this evaluates the target's base expression (container, i) twice
-			// instead of once, unlike real Python. Harmless for the currently
-			// imprecise Sequence/attribute domains, but not exact semantics.
-			Expression rhs = visitAnnotated_rhs(ctx.annotated_rhs());
-			Expression writeTarget = visitSingleTarget(ctx.single_target());
-			Expression readTarget = visitSingleTarget(ctx.single_target());
-			Expression op = buildAugmentedOp(ctx.augassign(), getLocation(filePath, ctx), readTarget, rhs);
-			return new PyAssign(currentCFG, getLocation(filePath, ctx), writeTarget, op);
-		}
+		if (ctx.augassign() != null)
+			// see augmentedAssignment
+			throw new IllegalStateException("augmented assignments are translated by augmentedAssignment");
 
 		Expression value = visitAnnotated_rhs(ctx.annotated_rhs());
 		List<Star_targetsContext> targets = ctx.star_targets();
@@ -477,6 +472,74 @@ public class PyStatementParser
 					indexes.get(0),
 					indexes.get(1));
 		throw new UnsupportedStatementException("Only array accesses with up to 2 indexes are supported");
+	}
+
+	/**
+	 * Translates {@code target op= value}: the base and the index of the target
+	 * (e.g. {@code a} and {@code i} in {@code a[i] += v}) are evaluated once,
+	 * into fresh variables, then the target is read, the value is evaluated,
+	 * and the result of {@code op} is written to the target (see
+	 * {@link #buildAugmentedOp}). The target is read and written through
+	 * distinct expressions, with distinct locations, as each node of the cfg
+	 * must be distinct from the others.
+	 */
+	private ParsedBlock augmentedAssignment(
+			AssignmentContext ctx) {
+		SourceCodeLocation loc = getLocation(filePath, ctx);
+		String tag = loc.getLine() + ":" + loc.getCol();
+		Single_targetContext target = ctx.single_target();
+		while (target.single_target() != null)
+			// (x) += 1
+			target = target.single_target();
+
+		List<Statement> prelude = new ArrayList<>();
+		Expression write, read;
+		if (target.name() != null) {
+			String name = target.name().getText();
+			write = new VariableRef(currentCFG, getLocation(filePath, target), name);
+			read = new VariableRef(currentCFG, new DerivedLocation(getLocation(filePath, target), "read"), name);
+		} else {
+			Single_subscript_attribute_targetContext access = target.single_subscript_attribute_target();
+			String base = "$aug@" + tag;
+			prelude.add(new PyAssign(currentCFG, new DerivedLocation(loc, "base"),
+					new VariableRef(currentCFG, new DerivedLocation(loc, "base-target"), base),
+					visitTPrimary(access.t_primary())));
+			Expression writeBase = new VariableRef(currentCFG, new DerivedLocation(loc, "base-write"), base);
+			Expression readBase = new VariableRef(currentCFG, new DerivedLocation(loc, "base-read"), base);
+			if (access.DOT() != null) {
+				String name = access.name().getText();
+				write = attribute(writeBase, name, new DerivedLocation(loc, "write"));
+				read = attribute(readBase, name, new DerivedLocation(loc, "read"));
+			} else {
+				List<Expression> indexes = extractExpressionsFromSlices(access.slices());
+				if (indexes.size() != 1)
+					throw new UnsupportedStatementException(
+							"augmented assignments to subscripts with many indexes are not supported");
+				String index = "$augindex@" + tag;
+				prelude.add(new PyAssign(currentCFG, new DerivedLocation(loc, "index"),
+						new VariableRef(currentCFG, new DerivedLocation(loc, "index-target"), index),
+						indexes.get(0)));
+				write = new PySingleArrayAccess(currentCFG, new DerivedLocation(loc, "write"), Untyped.INSTANCE,
+						writeBase, new VariableRef(currentCFG, new DerivedLocation(loc, "index-write"), index));
+				read = new PySingleArrayAccess(currentCFG, new DerivedLocation(loc, "read"), Untyped.INSTANCE,
+						readBase, new VariableRef(currentCFG, new DerivedLocation(loc, "index-read"), index));
+			}
+		}
+
+		Expression rhs = visitAnnotated_rhs(ctx.annotated_rhs());
+		Statement assignment = new PyAssign(currentCFG, loc, write, buildAugmentedOp(ctx.augassign(), loc, read, rhs));
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+		Statement previous = null;
+		for (Statement st : prelude) {
+			block.addNode(st);
+			if (previous != null)
+				block.addEdge(new SequentialEdge(previous, st));
+			previous = st;
+		}
+		block.addNode(assignment);
+		if (previous != null)
+			block.addEdge(new SequentialEdge(previous, assignment));
+		return new ParsedBlock(prelude.isEmpty() ? assignment : prelude.get(0), block, assignment);
 	}
 
 	private Expression buildAugmentedOp(
@@ -1308,65 +1371,72 @@ public class PyStatementParser
 
 		Expression variable = visitStar_targets(ctx.star_targets());
 		Expression collection = visitStar_expressions(ctx.star_expressions());
+		SourceCodeLocation loc = getLocation(filePath, ctx);
 
-		VariableRef counter = new VariableRef(
-				currentCFG,
-				getLocation(filePath, ctx),
-				"__counter_location" + getLocation(filePath, ctx).getLine(), Int32Type.INSTANCE);
-		Expression[] counter_pars = { collection, counter };
+		// the iterable is evaluated once, before the loop; each use of it (and
+		// of the counter) is a distinct expression, as each node of the cfg
+		// has a single parent, with a distinct location, as the results of
+		// the analysis are stored for equal nodes together
+		String iterable = "$iter@" + loc.getLine() + ":" + loc.getCol();
+		Assignment iterable_init = new Assignment(currentCFG, loc,
+				new VariableRef(currentCFG, new DerivedLocation(loc, "iter"), iterable),
+				collection);
+		block.addNode(iterable_init);
+		String counter = "__counter_location" + loc.getLine();
 
 		// counter = 0;
 		Assignment counter_init = new Assignment(
 				currentCFG,
-				getLocation(filePath, ctx),
-				counter,
-				new Int32Literal(currentCFG, getLocation(filePath, ctx), 0));
+				loc,
+				new VariableRef(currentCFG, new DerivedLocation(loc, "counter-init"), counter, Int32Type.INSTANCE),
+				new Int32Literal(currentCFG, loc, 0));
 		block.addNode(counter_init);
 
-		// counter < collection.size()
+		// counter < len(iterable)
 		UnresolvedCall condition = new UnresolvedCall(
 				currentCFG,
-				getLocation(filePath, ctx),
+				loc,
 				CallType.STATIC,
 				null,
 				"__lt__",
-				counter,
+				new VariableRef(currentCFG, new DerivedLocation(loc, "counter-test"), counter, Int32Type.INSTANCE),
 				new UnresolvedCall(
 						currentCFG,
-						getLocation(filePath, ctx),
+						loc,
 						CallType.STATIC,
 						null,
 						"__len__",
 						LeftToRightEvaluation.INSTANCE,
-						collection));
+						new VariableRef(currentCFG, new DerivedLocation(loc, "iter-len"), iterable)));
 		block.addNode(condition);
 
-		// element = any element of the collection (iterating never raises
+		// element = any element of the iterable (iterating never raises
 		// IndexError), unpacked for targets like for k, v in ... (see
 		// PyAssign)
-		Expression element = new PyIteratedElement(currentCFG, getLocation(filePath, ctx), collection);
+		Expression element = new PyIteratedElement(currentCFG, loc,
+				new VariableRef(currentCFG, new DerivedLocation(loc, "iter-element"), iterable),
+				collection);
 		Assignment element_assignment = variable instanceof TupleCreation
-				? new PyAssign(currentCFG, getLocation(filePath, ctx), variable, element)
-				: new Assignment(currentCFG, getLocation(filePath, ctx), variable, element);
+				? new PyAssign(currentCFG, loc, variable, element)
+				: new Assignment(currentCFG, loc, variable, element);
 		block.addNode(element_assignment);
 
 		// counter = counter + 1;
 		Assignment counter_increment = new Assignment(
 				currentCFG,
-				getLocation(filePath, ctx),
-				counter,
+				loc,
+				new VariableRef(currentCFG, new DerivedLocation(loc, "counter-next"), counter, Int32Type.INSTANCE),
 				new PyAddition(
 						currentCFG,
-						getLocation(filePath, ctx),
-						counter,
-						new Int32Literal(
-								currentCFG,
-								getLocation(filePath, ctx),
-								1)));
+						loc,
+						new VariableRef(currentCFG, new DerivedLocation(loc, "counter-old"), counter,
+								Int32Type.INSTANCE),
+						new Int32Literal(currentCFG, loc, 1)));
 		block.addNode(counter_increment);
 
 		ParsedBlock body = visitLoopBody(ctx.block());
 		block.mergeWith(body.getBody());
+		block.addEdge(new SequentialEdge(iterable_init, counter_init));
 		block.addEdge(new SequentialEdge(counter_init, condition));
 		block.addEdge(new TrueEdge(condition, element_assignment));
 		block.addEdge(new SequentialEdge(element_assignment, body.getBegin()));
@@ -1384,7 +1454,7 @@ public class PyStatementParser
 				condition,
 				exit,
 				nodes));
-		return new ParsedBlock(counter_init, block, exit);
+		return new ParsedBlock(iterable_init, block, exit);
 	}
 
 	@Override
@@ -2046,7 +2116,7 @@ public class PyStatementParser
 			else if (child instanceof Assignment_expressionContext)
 				result.add(visitAssignment_expression((Assignment_expressionContext) child));
 			else if (child instanceof Starred_expressionContext)
-				result.add(visitStarred_expression((Starred_expressionContext) child));
+				result.add(starArgument((Starred_expressionContext) child));
 			else if (child instanceof KwargsContext)
 				extractKwargs((KwargsContext) child, result);
 		}
@@ -2069,7 +2139,13 @@ public class PyStatementParser
 			return new PyAssign(currentCFG, getLocation(filePath, ctx),
 					new VariableRef(currentCFG, getLocation(filePath, ctx.name()), ctx.name().getText()),
 					visitExpression(ctx.expression()));
-		return visitStarred_expression(ctx.starred_expression());
+		return starArgument(ctx.starred_expression());
+	}
+
+	// *xs as an argument of a call
+	private Expression starArgument(
+			Starred_expressionContext ctx) {
+		return new StarArgument(currentCFG, getLocation(filePath, ctx), visitExpression(ctx.expression()));
 	}
 
 	@Override
@@ -2114,9 +2190,11 @@ public class PyStatementParser
 			return visitNamed_expression(ctx.named_expression());
 
 		SourceCodeLocation loc = getLocation(filePath, ctx);
-		Expression start = new Empty(currentCFG, loc);
-		Expression stop = new Empty(currentCFG, loc);
-		Expression step = new Empty(currentCFG, loc);
+		// the missing parts have distinct locations, as each node of the cfg
+		// must be distinct from the others
+		Expression start = new Empty(currentCFG, new DerivedLocation(loc, "start"));
+		Expression stop = new Empty(currentCFG, new DerivedLocation(loc, "stop"));
+		Expression step = new Empty(currentCFG, new DerivedLocation(loc, "step"));
 		int colonsSeen = 0;
 		for (int i = 0; i < ctx.getChildCount(); i++) {
 			ParseTree child = ctx.getChild(i);

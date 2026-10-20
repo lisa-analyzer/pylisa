@@ -14,6 +14,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.HashMap;
@@ -128,7 +129,8 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 					boolean definite = !terminates && only
 							&& (throwers.size() == 1 || alwaysRaises(result, thrower));
 					String message = message(exception, definite, !matching.contains(thrower),
-							thrower == null ? graph.getDescriptor().getLocation() : thrower.getLocation());
+							thrower == null ? graph.getDescriptor().getLocation()
+									: DerivedLocation.source(thrower.getLocation()));
 					if (thrower == null)
 						tool.warnOn(graph, message);
 					else

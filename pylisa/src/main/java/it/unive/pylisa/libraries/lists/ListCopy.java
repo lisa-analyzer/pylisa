@@ -83,7 +83,7 @@ public class ListCopy extends PyNative {
 			for (SymbolicExpression copy : created.getExecutionExpressions()) {
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, copy, loc),
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
-				AnalysisState<A> copied = created.bottom();
+				AnalysisState<A> copied = created.bottomExecution();
 				if (shape.elements() == null)
 					copied = analysis.assign(created, unknown, new PushAny(Untyped.INSTANCE, loc), this);
 				else

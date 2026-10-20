@@ -4,6 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.NaryExpression;
+import it.unive.lisa.program.cfg.statement.NaryStatement;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Int32Type;
@@ -30,8 +34,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -120,6 +128,9 @@ public class PyFrontend
 		registerTypes();
 
 		for (CFG cm : program.getAllCFGs())
+			checkDistinctNodes(cm);
+
+		for (CFG cm : program.getAllCFGs())
 			if (cm.getDescriptor().getName().equals(PyFileParser.INSTRUMENTED_MAIN_FUNCTION_NAME))
 				program.addEntryPoint(cm);
 
@@ -198,4 +209,35 @@ public class PyFrontend
 		return expandedPaths;
 	}
 
+	/**
+	 * Checks that the nodes of the cfg (statements and expressions) are
+	 * distinct: each one has a single parent, and no two of them are equal. The
+	 * results of the analysis are stored for each node, and equal nodes would
+	 * share them: which one is kept would depend on the order of the
+	 * computation, making the results not deterministic.
+	 *
+	 * @param cfg the cfg
+	 *
+	 * @throws IllegalStateException if two nodes are not distinct
+	 */
+	private static void checkDistinctNodes(
+			CFG cfg) {
+		Map<Statement, Boolean> seen = new IdentityHashMap<>();
+		Map<Statement, Statement> equal = new HashMap<>();
+		Deque<Statement> todo = new ArrayDeque<>(cfg.getNodes());
+		while (!todo.isEmpty()) {
+			Statement st = todo.pop();
+			if (seen.put(st, true) != null)
+				throw new IllegalStateException("The node " + st + " at " + st.getLocation() + " of "
+						+ cfg.getDescriptor().getName() + " has more than one parent");
+			Statement other = equal.putIfAbsent(st, st);
+			if (other != null)
+				throw new IllegalStateException("The nodes " + st + " and " + other + " at " + st.getLocation()
+						+ " of " + cfg.getDescriptor().getName() + " are equal");
+			Expression[] subs = st instanceof NaryExpression ? ((NaryExpression) st).getSubExpressions()
+					: st instanceof NaryStatement ? ((NaryStatement) st).getSubExpressions() : new Expression[0];
+			for (Expression sub : subs)
+				todo.push(sub);
+		}
+	}
 }

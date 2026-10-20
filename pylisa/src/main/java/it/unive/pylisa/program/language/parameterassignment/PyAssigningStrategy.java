@@ -2,6 +2,7 @@ package it.unive.pylisa.program.language.parameterassignment;
 
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -9,26 +10,38 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.language.parameterassignment.ParameterAssigningStrategy;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.heap.AccessChild;
+import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.UnsupportedStatementException;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
 import it.unive.pylisa.cfg.expression.DictionaryCreation;
+import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.ListCreation;
+import it.unive.pylisa.cfg.expression.StarExpression;
+import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -101,6 +114,16 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			}
 		}
 
+		// the starred arguments (*xs): their elements are passed as positional
+		// arguments
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		Set<Type>[] actualTypes = call.parameterTypes(expressions, analysis);
+		Starred starred = starred(analysis, callState, call, formals, actuals, parameters, actualTypes);
+		actuals = starred.actuals();
+		parameters = starred.given();
+		actualTypes = starred.types();
+		callState = callState.lub(starred.errors());
+
 		VarArgs[] varargs = new VarArgs[1];
 		@SuppressWarnings("unchecked")
 		KwArgs[] kwargs = new KwArgs[1];
@@ -108,7 +131,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 				formals,
 				actuals,
 				parameters,
-				call.parameterTypes(expressions, interprocedural.getAnalysis()),
+				actualTypes,
 				defaults,
 				defaultTypes,
 				slots,
@@ -129,6 +152,21 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			// the list holding the arguments collected by *args
 			ListCreation list = new ListCreation(call.getCFG(), call.getLocation(), varargs[0].elements());
 			callState = list.forwardSemanticsAux(interprocedural, callState, varargs[0].values(), expressions);
+			if (starred.unknown() != null) {
+				// the other elements of a starred argument of unknown length,
+				// at unknown indices (there might be none)
+				AnalysisState<A> filled = callState;
+				Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+				for (SymbolicExpression created : callState.getExecutionExpressions()) {
+					AccessChild unknown = new AccessChild(Untyped.INSTANCE,
+							new HeapDereference(listType, created, call.getLocation()),
+							new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, call.getLocation()),
+							call.getLocation());
+					for (SymbolicExpression element : starred.unknown())
+						filled = filled.lub(analysis.assign(callState, unknown, element, call));
+				}
+				callState = filled.withExecutionExpressions(callState.getExecutionExpressions());
+			}
 			slots[varargs[0].pos()] = callState.getExecutionExpressions();
 			metas.addAll(list.getMetaVariables());
 		}
@@ -145,7 +183,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		// prepare the state for the call: assign the value to each parameter
 		AnalysisState<A> prepared = callState;
 		for (int i = 0; i < formals.length; i++) {
-			AnalysisState<A> temp = prepared.bottom();
+			AnalysisState<A> temp = prepared.bottomExecution();
 			for (SymbolicExpression exp : slots[i])
 				temp = temp.lub(
 						interprocedural.getAnalysis().assign(prepared, formals[i].toSymbolicVariable(), exp, call));
@@ -155,6 +193,155 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		// we remove expressions from the stack
 		prepared = prepared.forgetIdentifiers(metas, call).withExecutionExpressions(new ExpressionSet());
 		return Pair.of(prepared, slots);
+	}
+
+	/**
+	 * The arguments of a call, where the starred ones ({@code *xs}) are
+	 * replaced by their elements.
+	 *
+	 * @param actuals the arguments
+	 * @param given   their values
+	 * @param types   their runtime types
+	 * @param unknown the elements of the starred argument of unknown length,
+	 *                    that are passed to {@code *args} (if any), or
+	 *                    {@code null}
+	 * @param errors  the errors raised by passing the starred arguments (e.g.
+	 *                    {@code TypeError} if they are not iterable, or if
+	 *                    their length might not match the parameters)
+	 */
+	private record Starred<A extends AbstractLattice<A>>(
+			Expression[] actuals,
+			ExpressionSet[] given,
+			Set<Type>[] types,
+			ExpressionSet unknown,
+			AnalysisState<A> errors) {
+	}
+
+	/**
+	 * Replaces the starred arguments with their elements: a list or tuple whose
+	 * length is known is replaced by its elements. A starred argument of
+	 * unknown length is supported as the last positional argument: any of its
+	 * elements is passed to each of the positional parameters that are left,
+	 * and the others are collected by {@code *args}; {@code TypeError} might be
+	 * raised, as its length might not match them.
+	 */
+	@SuppressWarnings("unchecked")
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Starred<A> starred(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			Call call,
+			Parameter[] formals,
+			Expression[] actuals,
+			ExpressionSet[] given,
+			Set<Type>[] types)
+			throws SemanticException {
+		AnalysisState<A> errors = state.bottomExecution();
+		if (Arrays.stream(actuals).noneMatch(StarExpression.class::isInstance))
+			return new Starred<>(actuals, given, types, null, errors);
+
+		List<Expression> acts = new ArrayList<>();
+		List<ExpressionSet> values = new ArrayList<>();
+		List<Set<Type>> valueTypes = new ArrayList<>();
+		ExpressionSet unknown = null;
+		Expression unknownIterable = null;
+		int unknownPos = -1;
+		for (int i = 0; i < actuals.length; i++) {
+			if (!(actuals[i] instanceof StarExpression)) {
+				acts.add(actuals[i]);
+				values.add(given[i]);
+				valueTypes.add(types[i]);
+				continue;
+			}
+			Expression iterable = ((StarExpression) actuals[i]).getSubExpression();
+			List<ExpressionSet> elements = exactElements(analysis, state, given[i], call);
+			if (elements != null) {
+				for (ExpressionSet element : elements) {
+					acts.add(iterable);
+					values.add(element);
+					valueTypes.add(typesOf(analysis, state, element, call));
+				}
+				continue;
+			}
+			for (int j = i + 1; j < actuals.length; j++)
+				if (!(actuals[j] instanceof NamedParameterExpression))
+					throw new UnsupportedStatementException(
+							"starred arguments of unknown length are supported only as the last positional ones");
+			AnalysisState<A> iterated = state.bottomExecution();
+			for (SymbolicExpression value : given[i])
+				iterated = iterated.lub(Iteration.elements(analysis, state, iterable, value, call));
+			errors = errors.lub(iterated.bottomExecution());
+			unknown = iterated.getExecutionExpressions();
+			unknownIterable = iterable;
+			unknownPos = acts.size();
+		}
+
+		if (unknown != null) {
+			// any element is passed to each positional parameter that is left
+			// (not passed by name), the other ones are collected by *args
+			Set<String> named = new HashSet<>();
+			for (Expression actual : actuals)
+				if (actual instanceof NamedParameterExpression)
+					named.add(((NamedParameterExpression) actual).getParameterName());
+			boolean varargs = Arrays.stream(formals).anyMatch(VarPositionalParameter.class::isInstance);
+			int filled = 0;
+			Set<Type> unknownTypes = typesOf(analysis, state, unknown, call);
+			for (int f = unknownPos; f < formals.length && !(formals[f] instanceof VarPositionalParameter)
+					&& !(formals[f] instanceof VarKeywordParameter) && !named.contains(formals[f].getName()); f++) {
+				acts.add(unknownPos + filled, unknownIterable);
+				values.add(unknownPos + filled, unknown);
+				valueTypes.add(unknownPos + filled, unknownTypes);
+				filled++;
+			}
+			if (filled > 0 || !varargs)
+				// the length might not match the parameters
+				errors = errors.lub(PyExceptions.raise(analysis, state, call.getCFG(), call.getLocation(), call,
+						LibrarySpecificationProvider.TYPE_ERROR));
+			if (!varargs)
+				unknown = null;
+		}
+		return new Starred<>(acts.toArray(Expression[]::new), values.toArray(ExpressionSet[]::new),
+				valueTypes.toArray(Set[]::new), unknown, errors);
+	}
+
+	// the elements of the list or tuple, if its length is known
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> List<ExpressionSet> exactElements(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			ExpressionSet values,
+			Call call)
+			throws SemanticException {
+		if (values.size() != 1)
+			return null;
+		SymbolicExpression value = values.iterator().next();
+		Set<Type> types = analysis.getRuntimeTypesOf(state, value, call);
+		if (types.size() != 1)
+			return null;
+		Type type = types.iterator().next();
+		if (!ListModel.isList(type) && !Unpacking.isTuple(type))
+			return null;
+		Integer length = ListModel.shape(analysis, state, value, call).length();
+		if (length == null)
+			return null;
+		CodeLocation loc = call.getLocation();
+		HeapDereference deref = new HeapDereference(type.asPointerType().getInnerType(), value, loc);
+		List<ExpressionSet> elements = new ArrayList<>();
+		for (int i = 0; i < length; i++)
+			elements.add(analysis.smallStepSemantics(state,
+					new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, i, loc), loc), call)
+					.getExecutionExpressions());
+		return elements;
+	}
+
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Set<Type> typesOf(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			ExpressionSet values,
+			Call call)
+			throws SemanticException {
+		Set<Type> types = new HashSet<>();
+		for (SymbolicExpression value : values)
+			types.addAll(analysis.getRuntimeTypesOf(state, value, call));
+		return types;
 	}
 
 	// fills the slots of the formal parameters with the actual ones, returning

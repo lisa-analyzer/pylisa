@@ -432,11 +432,11 @@ public final class ListModel {
 		ListCreation creation = new ListCreation(thrower.getCFG(), new DerivedLocation(loc, "slice"));
 		AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, state, new ExpressionSet[0],
 				new StatementStore<>(state));
-		AnalysisState<A> result = created.bottom();
+		AnalysisState<A> result = created.bottomExecution();
 		for (SymbolicExpression copy : created.getExecutionExpressions()) {
 			AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, copy, loc),
 					new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
-			AnalysisState<A> filled = created.bottom();
+			AnalysisState<A> filled = created.bottomExecution();
 			if (shape.elements() == null)
 				filled = analysis.assign(created, unknown, new PushAny(Untyped.INSTANCE, loc), thrower);
 			else

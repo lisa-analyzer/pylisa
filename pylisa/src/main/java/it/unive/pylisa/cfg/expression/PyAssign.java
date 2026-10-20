@@ -98,7 +98,7 @@ public class PyAssign extends Assignment {
 		for (SymbolicExpression valueSym : valueIds)
 			rtsValue.addAll(analysis.getRuntimeTypesOf(indexState, valueSym, this));
 
-		AnalysisState<A> result = indexState.bottom();
+		AnalysisState<A> result = indexState.bottomExecution();
 		boolean resolved = false;
 		List<Call> setitems = new ArrayList<>();
 		// the arguments have already been evaluated: the call must not

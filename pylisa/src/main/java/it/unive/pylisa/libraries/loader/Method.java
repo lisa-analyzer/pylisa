@@ -6,6 +6,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
+import it.unive.pylisa.cfg.PyNativeCFG;
 import it.unive.pylisa.libraries.LibrarySpecificationParser.LibraryCreationException;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -103,7 +104,7 @@ public class Method {
 		desc.setOverridable(this.sealed);
 
 		try {
-			return new NativeCFG(desc,
+			return new PyNativeCFG(desc,
 					(Class<? extends NaryExpression>) Class.forName(this.implementation));
 		} catch (ClassNotFoundException e) {
 			throw new LibraryCreationException(e);

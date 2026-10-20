@@ -28,6 +28,30 @@ public class DerivedLocation implements CodeLocation {
 		this.tag = tag;
 	}
 
+	/**
+	 * Yields the location this one is derived from.
+	 *
+	 * @return the base location
+	 */
+	public CodeLocation getBase() {
+		return base;
+	}
+
+	/**
+	 * Yields the location of the source code the given location is (possibly
+	 * transitively) derived from.
+	 *
+	 * @param location the location
+	 *
+	 * @return the source location
+	 */
+	public static CodeLocation source(
+			CodeLocation location) {
+		while (location instanceof DerivedLocation)
+			location = ((DerivedLocation) location).base;
+		return location;
+	}
+
 	@Override
 	public String getCodeLocation() {
 		return base.getCodeLocation() + "#" + tag;

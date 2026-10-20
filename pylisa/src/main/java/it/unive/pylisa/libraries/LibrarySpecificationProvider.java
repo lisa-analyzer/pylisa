@@ -12,6 +12,7 @@ import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.pylisa.antlr.LibraryDefinitionLexer;
 import it.unive.pylisa.antlr.LibraryDefinitionParser;
+import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.libraries.loader.Library;
 import it.unive.pylisa.libraries.loader.Runtime;
 import java.io.IOException;
@@ -140,7 +141,7 @@ public class LibrarySpecificationProvider {
 
 	private static CFG makeInit(
 			Program program) {
-		init = new CFG(new CodeMemberDescriptor(SyntheticLocation.INSTANCE, program, false, "LiSA$init"));
+		init = new PyCFG(new CodeMemberDescriptor(SyntheticLocation.INSTANCE, program, false, "LiSA$init"));
 		init.addNode(new Ret(init, SyntheticLocation.INSTANCE), true);
 		program.addCodeMember(init);
 		return init;
