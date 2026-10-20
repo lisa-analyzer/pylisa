@@ -1,26 +1,26 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/svcomp/assignments_chained/main.py':32:0] on 'untyped py-testcases/svcomp/assignments_chained/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+    "message" : "['py-testcases/svcomp/assignments_chained/main.py':32:0] on 'untyped py-testcases/svcomp/assignments_chained/main::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_chained/main.py':32:0"
   }, {
-    "message" : "['py-testcases/svcomp/assignments_chained/main.py':34:0] on 'untyped py-testcases/svcomp/assignments_chained/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+    "message" : "['py-testcases/svcomp/assignments_chained/main.py':34:0] on 'untyped py-testcases/svcomp/assignments_chained/main::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_chained/main.py':34:0"
   }, {
-    "message" : "['py-testcases/svcomp/assignments_chained/main.py':36:4] on 'untyped py-testcases/svcomp/assignments_chained/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+    "message" : "['py-testcases/svcomp/assignments_chained/main.py':36:4] on 'untyped py-testcases/svcomp/assignments_chained/main::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_chained/main.py':36:4"
   }, {
-    "message" : "['py-testcases/svcomp/assignments_chained/main.py':38:4] on 'untyped py-testcases/svcomp/assignments_chained/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+    "message" : "['py-testcases/svcomp/assignments_chained/main.py':38:4] on 'untyped py-testcases/svcomp/assignments_chained/main::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_chained/main.py':38:4"
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_svcomp_assignments_chained_main.$main().graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func1()_-386955613.graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func1()_-386963332.graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func1()_-386963580.graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func2()_-386955613.graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func2()_-386963332.graph.json" ],
   "info" : {
     "cfgs" : "4",
-    "duration" : "4ms",
-    "end" : "2026-10-20T11:32:59.682+02:00",
+    "duration" : "11ms",
+    "end" : "2026-10-20T11:56:11.308+02:00",
     "expressions" : "38",
     "files" : "6",
     "globals" : "0",
     "members" : "150",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-20T11:32:59.678+02:00",
+    "start" : "2026-10-20T11:56:11.297+02:00",
     "statements" : "19",
     "units" : "31",
     "version" : "1.0",

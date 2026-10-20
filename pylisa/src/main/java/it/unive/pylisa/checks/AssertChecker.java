@@ -10,6 +10,7 @@ import it.unive.lisa.checks.semantic.SemanticTool;
 import it.unive.lisa.lattices.GenericSetLattice;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -35,12 +36,13 @@ import java.util.Set;
  * points of the program (i.e., the main module). As in JLiSA, a warning is
  * raised on each statement that might raise one of the exceptions above (e.g.
  * the {@code assert} raising {@code AssertionError}, also inside a function
- * called by the main module): the violation is {@code DEFINITE} if every
- * execution raises that exception at that statement, {@code POSSIBLE}
- * otherwise. An exception of an ancestor of the classes above (e.g.
- * {@code Exception}, raised by code that is not known, such as the one run by
- * {@code exec}) might be any of their subclasses: it is a {@code POSSIBLE}
- * violation of every property.
+ * called by the main module): the violation is definite if every execution
+ * raises that exception at that statement, possible otherwise. An exception of
+ * an ancestor of the classes above (e.g. {@code Exception}, raised by code that
+ * is not known, such as the one run by {@code exec}) might be any of their
+ * subclasses: it is a possible violation of every property. The warnings start
+ * with the category of the violated property, and the possible ones contain
+ * {@code might} or {@code possible} (see {@link #message}).
  */
 public class AssertChecker<A extends AbstractLattice<A>, D extends AbstractDomain<A>>
 		implements
@@ -120,7 +122,8 @@ public class AssertChecker<A extends AbstractLattice<A>, D extends AbstractDomai
 					// normally, nor raising other exceptions or at other
 					// statements
 					boolean definite = !terminates && only && throwers.size() == 1;
-					String message = (definite ? "DEFINITE" : "POSSIBLE") + ": uncaught " + exception;
+					String message = message(exception, definite, !matching.contains(thrower),
+							thrower == null ? graph.getDescriptor().getLocation() : thrower.getLocation());
 					if (thrower == null)
 						tool.warnOn(graph, message);
 					else
@@ -129,6 +132,64 @@ public class AssertChecker<A extends AbstractLattice<A>, D extends AbstractDomai
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * The warning raised for an exception of a property. It starts with the
+	 * category of the property ({@code ASSERTIONS}, {@code TYPING},
+	 * {@code ARITHMETIC} or {@code LOOKUP}), and a possible violation contains
+	 * {@code might} or {@code possible}, while a definite one contains neither.
+	 *
+	 * @param exception the exception
+	 * @param definite  whether the violation is definite
+	 * @param unknown   whether the exception is raised by code that is not
+	 *                      known (that is, an ancestor of the exception is
+	 *                      raised)
+	 * @param location  the location where the exception is raised
+	 *
+	 * @return the message
+	 */
+	public static String message(
+			String exception,
+			boolean definite,
+			boolean unknown,
+			CodeLocation location) {
+		String category, text;
+		switch (exception) {
+		case LibrarySpecificationProvider.ASSERTION_ERROR:
+			category = "ASSERTIONS";
+			text = definite ? "the assertion fails" : "the assertion might fail";
+			break;
+		case LibrarySpecificationProvider.TYPE_ERROR:
+			category = "TYPING";
+			text = definite ? "a value of the wrong type is used" : "a value of the wrong type might be used";
+			break;
+		case LibrarySpecificationProvider.ATTRIBUTE_ERROR:
+			category = "TYPING";
+			text = definite ? "an attribute that is not defined is accessed"
+					: "an attribute that might not be defined is accessed";
+			break;
+		case LibrarySpecificationProvider.ZERO_DIVISION_ERROR:
+			category = "ARITHMETIC";
+			text = definite ? "division by zero" : "possible division by zero";
+			break;
+		case LibrarySpecificationProvider.FLOATING_POINT_ERROR:
+			category = "ARITHMETIC";
+			text = definite ? "floating-point error" : "possible floating-point error";
+			break;
+		case LibrarySpecificationProvider.KEY_ERROR:
+			category = "LOOKUP";
+			text = definite ? "the key is not in the mapping" : "the key might not be in the mapping";
+			break;
+		default:
+			category = "LOOKUP";
+			text = definite ? "the index is out of range" : "the index might be out of range";
+			break;
+		}
+		if (unknown)
+			// never definite
+			text = "code that is not known might raise " + exception;
+		return category + ": " + text + " (uncaught " + exception + ") at " + location;
 	}
 
 	// the class of the exceptions of the given type, or null if they are not

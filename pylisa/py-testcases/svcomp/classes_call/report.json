@@ -1,26 +1,26 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/svcomp/classes_call/main.py':27:4] on 'untyped py-testcases/svcomp/classes_call/main::$main()': [EXPRESSION] POSSIBLE: uncaught TypeError"
+    "message" : "['py-testcases/svcomp/classes_call/main.py':27:4] on 'untyped py-testcases/svcomp/classes_call/main::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/svcomp/classes_call/main.py':27:4"
   }, {
-    "message" : "['py-testcases/svcomp/classes_call/main.py':28:4] on 'untyped py-testcases/svcomp/classes_call/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+    "message" : "['py-testcases/svcomp/classes_call/main.py':28:4] on 'untyped py-testcases/svcomp/classes_call/main::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/classes_call/main.py':28:4"
   }, {
-    "message" : "['py-testcases/svcomp/classes_call/main.py':30:4] on 'untyped py-testcases/svcomp/classes_call/main::$main()': [EXPRESSION] POSSIBLE: uncaught TypeError"
+    "message" : "['py-testcases/svcomp/classes_call/main.py':30:4] on 'untyped py-testcases/svcomp/classes_call/main::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/svcomp/classes_call/main.py':30:4"
   }, {
-    "message" : "['py-testcases/svcomp/classes_call/main.py':31:4] on 'untyped py-testcases/svcomp/classes_call/main::$main()': [STATEMENT] POSSIBLE: uncaught AssertionError"
+    "message" : "['py-testcases/svcomp/classes_call/main.py':31:4] on 'untyped py-testcases/svcomp/classes_call/main::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/classes_call/main.py':31:4"
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_MyClass.func(MyClass__self,_untyped_flag)_1788856235.graph.json", "untyped_py-testcases_svcomp_classes_call_main.$main().graph.json" ],
   "info" : {
     "cfgs" : "4",
-    "duration" : "5ms",
-    "end" : "2026-10-20T11:32:58.989+02:00",
+    "duration" : "125ms",
+    "end" : "2026-10-20T11:56:10.091+02:00",
     "expressions" : "22",
     "files" : "2",
     "globals" : "0",
     "members" : "150",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-20T11:32:58.984+02:00",
+    "start" : "2026-10-20T11:56:09.966+02:00",
     "statements" : "16",
     "units" : "32",
     "version" : "1.0",
