@@ -71,7 +71,8 @@ public class DivMod extends PyNative {
 			BinaryExpression remainder = new BinaryExpression(Untyped.INSTANCE, dividend, divisor,
 					Modulo.INSTANCE, loc);
 			result = result.lub(TupleCreation.create(analysis, state, getOriginatingStatement(), loc,
-					new ExpressionSet[] { new ExpressionSet(quotient), new ExpressionSet(remainder) }));
+					new ExpressionSet[] { new ExpressionSet(quotient), new ExpressionSet(remainder) },
+					getMetaVariables()));
 		}
 		if (byZero != Satisfiability.NOT_SATISFIED)
 			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.ZERO_DIVISION_ERROR));

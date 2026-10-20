@@ -18,7 +18,6 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.UnsupportedStatementException;
@@ -104,15 +103,8 @@ public class PySingleArrayAccess extends BinaryExpression {
 				// one (Sequence), matching len()'s dual dispatch
 				UnresolvedCall getitem = null;
 				for (CallType kind : new CallType[] { CallType.STATIC, CallType.INSTANCE }) {
-					UnresolvedCall candidate = new UnresolvedCall(
-							getCFG(),
-							getLocation(),
-							kind,
-							null,
-							"__getitem__",
-							LeftToRightEvaluation.INSTANCE,
-							getLeft(),
-							getRight());
+					UnresolvedCall candidate = CallSites.get(interprocedural, this, kind, null, "__getitem__",
+							getLeft(), getRight());
 					try {
 						interprocedural.resolve(candidate,
 								new Set[] { Collections.singleton(tContainer), Collections.singleton(tIndex) },

@@ -20,11 +20,16 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.InstrumentedReceiver;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import java.util.Collection;
 import org.apache.commons.lang3.StringUtils;
 
 public class TupleCreation extends NaryExpression {
@@ -34,6 +39,23 @@ public class TupleCreation extends NaryExpression {
 			CodeLocation loc,
 			Expression... values) {
 		super(cfg, loc, "tuple", values);
+	}
+
+	/**
+	 * The location where the tuple is allocated. It differs from the location
+	 * of the tuple, that is also the one of its first element when there are no
+	 * parentheses (e.g. {@code [1]} or {@code P()} in {@code [1], 2}), as
+	 * memory allocations are identified by their location (see
+	 * {@link DerivedLocation}).
+	 *
+	 * @return the location
+	 */
+	public CodeLocation allocation() {
+		Expression[] subs = getSubExpressions();
+		if (subs.length > 0 && subs[0] instanceof TupleCreation && subs[0].getLocation().equals(getLocation()))
+			// e.g. (1, 2), 3
+			return new DerivedLocation(((TupleCreation) subs[0]).allocation(), "tuple");
+		return new DerivedLocation(getLocation(), "tuple");
 	}
 
 	@Override
@@ -64,20 +86,27 @@ public class TupleCreation extends NaryExpression {
 		if (params.length == 1)
 			return state;
 
-		return create(analysis, state, this, getLocation(), params);
+		return create(analysis, state, this, allocation(), params, getMetaVariables());
 	}
 
 	/**
-	 * Allocates a tuple holding the given elements, leaving the reference to it
-	 * on the stack.
+	 * Creates a tuple with the given elements: a new object is allocated, and
+	 * the receiver pointing to it (an {@link InstrumentedReceiver}) is the
+	 * value of the tuple. The elements are the children {@code 0, 1, ...} of
+	 * the object, and since tuples are immutable their number is also stored,
+	 * in the {@code length} child.
 	 *
+	 * @param <A>      the kind of the analysis state
+	 * @param <D>      the kind of the abstract domain
 	 * @param analysis the analysis
-	 * @param state    the current state
+	 * @param state    the state where the elements have been computed
 	 * @param pp       the statement creating the tuple
-	 * @param location the location where the tuple is created
-	 * @param params   the possible values of each element
+	 * @param location the location of the tuple
+	 * @param params   the elements
+	 * @param metas    where the receiver is added, as it is a meta variable
+	 *                     that the statement using the tuple must forget
 	 *
-	 * @return the state after the creation
+	 * @return the state where the tuple has been created
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */
@@ -86,49 +115,34 @@ public class TupleCreation extends NaryExpression {
 			AnalysisState<A> state,
 			Statement pp,
 			CodeLocation location,
-			ExpressionSet[] params)
+			ExpressionSet[] params,
+			Collection<Identifier> metas)
 			throws SemanticException {
-		AnalysisState<A> result = state.bottomExecution();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
+		ReferenceType reftype = new ReferenceType(tupleType);
+		HeapReference ref = new HeapReference(reftype, new MemoryAllocation(tupleType, location), location);
+		InstrumentedReceiver tuple = new InstrumentedReceiver(reftype, false, location);
+		AnalysisState<A> current = analysis.assign(state, tuple, ref, pp);
+		HeapDereference deref = new HeapDereference(tupleType, tuple, location);
 
-		// allocate the heap region
-		MemoryAllocation alloc = new MemoryAllocation(tupleType, location);
-		AnalysisState<A> sem = analysis.smallStepSemantics(state, alloc, pp);
-
-		// assign the pairs
-		AnalysisState<A> assign = state.bottomExecution();
-		for (SymbolicExpression loc : sem.getExecutionExpressions()) {
-			HeapReference ref = new HeapReference(tupleType, loc, location);
-			HeapDereference deref = new HeapDereference(tupleType, ref, location);
-
-			for (int i = 0; i < params.length; i++) {
-				AnalysisState<A> fieldResult = state.bottomExecution();
-				Constant idx = new Constant(Int32Type.INSTANCE, i, location);
-				AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref, idx, location);
-				for (SymbolicExpression init : params[i]) {
-					AnalysisState<A> fieldState = analysis.smallStepSemantics(sem, fieldAcc, pp);
-					for (SymbolicExpression lenId : fieldState.getExecutionExpressions())
-						fieldResult = fieldResult.lub(analysis.assign(fieldState, lenId, init, pp));
-				}
-				assign = assign.lub(fieldResult);
-			}
-
-			// tuples are immutable, so the element count fixed at creation
-			// time never becomes stale; track it as a "length" field so
-			// SequenceGetItem can raise IndexError on out-of-bounds access
-			AnalysisState<A> lenResult = state.bottomExecution();
-			Variable lenKey = new Variable(Int32Type.INSTANCE, "length", location);
-			AccessChild lenAcc = new AccessChild(Untyped.INSTANCE, deref, lenKey, location);
-			Constant lenValue = new Constant(Int32Type.INSTANCE, params.length, location);
-			AnalysisState<A> lenState = analysis.smallStepSemantics(sem, lenAcc, pp);
-			for (SymbolicExpression lenId : lenState.getExecutionExpressions())
-				lenResult = lenResult.lub(analysis.assign(lenState, lenId, lenValue, pp));
-			assign = assign.lub(lenResult);
-
-			// we leave the reference on the stack
-			result = result.lub(analysis.smallStepSemantics(assign, ref, pp));
+		for (int i = 0; i < params.length; i++) {
+			AccessChild element = new AccessChild(Untyped.INSTANCE, deref,
+					new Constant(Int32Type.INSTANCE, i, location),
+					location);
+			AnalysisState<A> next = state.bottomExecution();
+			for (SymbolicExpression init : params[i])
+				next = next.lub(analysis.assign(current, element, init, pp));
+			current = next;
 		}
 
-		return result;
+		// tuples are immutable, so the element count fixed at creation time
+		// never becomes stale: it is tracked as a "length" field so that
+		// SequenceGetItem can raise IndexError on out-of-bounds accesses
+		AccessChild length = new AccessChild(Untyped.INSTANCE, deref,
+				new Variable(Int32Type.INSTANCE, "length", location), location);
+		current = analysis.assign(current, length, new Constant(Int32Type.INSTANCE, params.length, location), pp);
+
+		metas.add(tuple);
+		return analysis.smallStepSemantics(current, tuple, pp);
 	}
 }

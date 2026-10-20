@@ -22,7 +22,6 @@ import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.program.cfg.statement.call.ResolvedCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -481,15 +480,15 @@ public final class PyBinaryDispatch {
 		// instance members of their class: they are found through the
 		// receiver, following inheritance
 		if (types[0].stream().anyMatch(t -> t.isPointerType() || t.isUnitType())) {
-			Call resolved = resolve(interprocedural, state, new UnresolvedCall(caller.getCFG(), caller.getLocation(),
-					CallType.INSTANCE, null, name, LeftToRightEvaluation.INSTANCE, args), types);
+			Call resolved = resolve(interprocedural, state,
+					CallSites.get(interprocedural, caller, CallType.INSTANCE, null, name, args), types);
 			if (resolved != null)
 				return resolved;
 		}
 
 		// library classes define them as static members
-		return resolve(interprocedural, state, new UnresolvedCall(caller.getCFG(), caller.getLocation(),
-				CallType.STATIC, cls, name, LeftToRightEvaluation.INSTANCE, args), types);
+		return resolve(interprocedural, state, CallSites.get(interprocedural, caller, CallType.STATIC, cls, name, args),
+				types);
 	}
 
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Call resolve(

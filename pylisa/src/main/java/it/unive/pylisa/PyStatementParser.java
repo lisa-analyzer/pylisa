@@ -156,6 +156,7 @@ import it.unive.pylisa.cfg.expression.PyFloorDiv;
 import it.unive.pylisa.cfg.expression.PyIn;
 import it.unive.pylisa.cfg.expression.PyInPlaceOperation;
 import it.unive.pylisa.cfg.expression.PyIs;
+import it.unive.pylisa.cfg.expression.PyIteratedElement;
 import it.unive.pylisa.cfg.expression.PyListComprehension;
 import it.unive.pylisa.cfg.expression.PyMatMul;
 import it.unive.pylisa.cfg.expression.PyMethodCall;
@@ -594,7 +595,16 @@ public class PyStatementParser
 		}
 		if (ctx.target_with_star_atom() != null)
 			return visitTargetWithStarAtom(ctx.target_with_star_atom());
-		throw new UnsupportedStatementException("Tuple/list unpacking targets are not supported");
+		// a nested target, e.g. (b, c) in a, (b, c) = ...
+		List<Star_targetContext> targets = ctx.star_targets_tuple_seq() != null
+				? ctx.star_targets_tuple_seq().star_target()
+				: ctx.star_targets_list_seq() != null ? ctx.star_targets_list_seq().star_target() : List.of();
+		if (targets.isEmpty())
+			throw new UnsupportedStatementException("Empty unpacking targets are not supported");
+		List<Expression> elements = new ArrayList<>();
+		for (Star_targetContext t : targets)
+			elements.add(visitTarget(t));
+		return new TupleCreation(currentCFG, getLocation(filePath, ctx), elements.toArray(Expression[]::new));
 	}
 
 	private Expression visitTPrimary(
@@ -1152,19 +1162,13 @@ public class PyStatementParser
 						collection));
 		block.addNode(condition);
 
-		// element = collection.at(counter)
-		Assignment element_assignment = new Assignment(
-				currentCFG,
-				getLocation(filePath, ctx),
-				variable,
-				new UnresolvedCall(
-						currentCFG,
-						getLocation(filePath, ctx),
-						CallType.STATIC,
-						null,
-						"__getitem__",
-						LeftToRightEvaluation.INSTANCE,
-						counter_pars));
+		// element = any element of the collection (iterating never raises
+		// IndexError), unpacked for targets like for k, v in ... (see
+		// PyAssign)
+		Expression element = new PyIteratedElement(currentCFG, getLocation(filePath, ctx), collection);
+		Assignment element_assignment = variable instanceof TupleCreation
+				? new PyAssign(currentCFG, getLocation(filePath, ctx), variable, element)
+				: new Assignment(currentCFG, getLocation(filePath, ctx), variable, element);
 		block.addNode(element_assignment);
 
 		// counter = counter + 1;

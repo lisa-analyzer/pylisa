@@ -14,32 +14,23 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.program.cfg.statement.evaluation.RightToLeftEvaluation;
-import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.AccessChild;
-import it.unive.lisa.symbolic.heap.HeapDereference;
-import it.unive.lisa.symbolic.heap.HeapReference;
-import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.UnsupportedStatementException;
-import it.unive.pylisa.cfg.type.PyClassType;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class PyAssign extends Assignment {
 
@@ -76,6 +67,9 @@ public class PyAssign extends Assignment {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Expression lefthand = getLeft();
+		if (lefthand instanceof TupleCreation)
+			// a, b = ... (the targets are not evaluated)
+			return unpackAssignment(entryState, interprocedural, expressions);
 		if (!(lefthand instanceof PySingleArrayAccess))
 			return super.forwardSemantics(entryState, interprocedural, expressions);
 
@@ -119,16 +113,8 @@ public class PyAssign extends Assignment {
 						: rtsIndex;
 
 			for (Type tSelf : rtsSelf) {
-				UnresolvedCall setitem = new UnresolvedCall(
-						getCFG(),
-						loc,
-						CallType.STATIC,
-						null,
-						"__setitem__",
-						LeftToRightEvaluation.INSTANCE,
-						selfExpr,
-						indexExpr,
-						valueExpr);
+				UnresolvedCall setitem = CallSites.get(interprocedural, this, CallType.STATIC, null, "__setitem__",
+						selfExpr, indexExpr, valueExpr);
 				try {
 					Call call = interprocedural.resolve(setitem,
 							new Set[] { Collections.singleton(tSelf), rtsIndex, rtsValue }, aliasing);
@@ -215,39 +201,75 @@ public class PyAssign extends Assignment {
 
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 
-		Expression lefthand = getLeft();
+		// tuple targets are unpacked by unpackAssignment
+		return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
+	}
 
-		if (!(lefthand instanceof TupleCreation))
-			return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
+	// a, b = value: the value is evaluated, and unpacked into the targets
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unpackAssignment(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		CodeLocation loc = getLocation();
+		Expression valueExpr = getRight();
+		AnalysisState<A> valueState = evalSub(valueExpr, entryState, interprocedural, expressions);
 
-		// get the variables being assigned
-		Expression[] vars = ((TupleCreation) lefthand).getSubExpressions();
-		List<ExpressionSet> ids = Arrays.stream(vars)
-				.map(v -> expressions.getState(v).getExecutionExpressions()).collect(Collectors.toList());
+		AnalysisState<A> result = valueState.bottomExecution();
+		for (SymbolicExpression value : valueState.getExecutionExpressions())
+			result = result.lub(unpack(interprocedural, valueState, getLeft(), value, expressions));
+		expressions.put(getLeft(), result);
 
-		// assign the pairs
-		AnalysisState<A> assign = state;
+		Collection<Identifier> metas = getMetaVariables();
+		metas.addAll(valueExpr.getMetaVariables());
+		valueExpr.getMetaVariables().clear();
+		if (getRootStatement() == this)
+			// nothing is left on the stack
+			return analysis.smallStepSemantics(result, new Skip(loc), this).forgetIdentifiers(metas, this);
+		// the value is used by the enclosing assignment (e.g., x = a, b = f()),
+		// that will forget the meta variables
+		AnalysisState<A> finalResult = result.bottomExecution();
+		for (SymbolicExpression value : valueState.getExecutionExpressions())
+			finalResult = finalResult.lub(analysis.smallStepSemantics(result, value, this));
+		return finalResult;
+	}
 
-		Type type = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
-		HeapReference ref = new HeapReference(type, right, loc);
-		HeapDereference deref = new HeapDereference(type, ref, loc);
-
-		for (int i = 0; i < ids.size(); i++) {
-			ExpressionSet id = ids.get(i);
-
-			AccessChild fieldAcc = new AccessChild(Untyped.INSTANCE, deref,
-					new Constant(Int32Type.INSTANCE, i, loc),
-					loc);
-			AnalysisState<A> fieldState = analysis.smallStepSemantics(assign, fieldAcc, this);
-
-			AnalysisState<A> fieldResult = state.bottomExecution();
-			for (SymbolicExpression single : id)
-				for (SymbolicExpression lenId : fieldState.getExecutionExpressions())
-					fieldResult = fieldResult.lub(analysis.assign(fieldState, single, lenId, this));
-			assign = assign.lub(fieldResult);
+	// assigns value to target, unpacking it if target is a tuple of targets
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unpack(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			Expression target,
+			SymbolicExpression value,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		if (target instanceof VariableRef)
+			return analysis.assign(state, ((VariableRef) target).getVariable(), value, this);
+		if (target instanceof PyAttributeAccess) {
+			// o.x is evaluated as the target of the assignment
+			AnalysisState<A> evaluated = target.forwardSemantics(state, interprocedural, expressions);
+			expressions.put(target, evaluated);
+			AnalysisState<A> result = evaluated.bottomExecution();
+			for (SymbolicExpression id : evaluated.getExecutionExpressions())
+				result = result.lub(analysis.assign(evaluated, id, value, this));
+			return result.forgetIdentifiers(target.getMetaVariables(), this);
 		}
+		if (!(target instanceof TupleCreation))
+			throw new UnsupportedStatementException("Unpacking into " + target + " is not supported");
 
-		// we leave the reference on the stack
-		return interprocedural.getAnalysis().smallStepSemantics(assign, ref, this);
+		Expression[] targets = ((TupleCreation) target).getSubExpressions();
+		int star = -1;
+		for (int i = 0; i < targets.length; i++)
+			if (targets[i] instanceof StarExpression)
+				if (star >= 0)
+					throw new UnsupportedStatementException("Multiple starred targets: " + target);
+				else
+					star = i;
+		return Unpacking.unpack(interprocedural, state, value, targets, star, this,
+				(
+						s,
+						t,
+						v) -> unpack(interprocedural, s, t, v, expressions));
 	}
 }

@@ -18,9 +18,9 @@ import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.expression.CallSites;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
@@ -113,13 +113,7 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 
 			Call len = null, open = null;
 			for (CallType kind : new CallType[] { CallType.STATIC, CallType.INSTANCE }) {
-				UnresolvedCall candidate = new UnresolvedCall(
-						getCFG(),
-						getLocation(),
-						kind,
-						null,
-						"__len__",
-						LeftToRightEvaluation.INSTANCE,
+				UnresolvedCall candidate = CallSites.get(interprocedural, this, kind, null, "__len__",
 						getSubExpression());
 				try {
 					Call resolved = interprocedural.resolve(candidate, new Set[] { Collections.singleton(t) },

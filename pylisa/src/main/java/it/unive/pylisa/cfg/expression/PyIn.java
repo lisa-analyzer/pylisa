@@ -18,7 +18,6 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
@@ -98,15 +97,8 @@ public class PyIn extends BinaryExpression {
 
 				UnresolvedCall contains = null;
 				for (CallType kind : new CallType[] { CallType.STATIC, CallType.INSTANCE }) {
-					UnresolvedCall candidate = new UnresolvedCall(
-							getCFG(),
-							getLocation(),
-							kind,
-							null,
-							"__contains__",
-							LeftToRightEvaluation.INSTANCE,
-							getRight(),
-							getLeft());
+					UnresolvedCall candidate = CallSites.get(interprocedural, this, kind, null, "__contains__",
+							getRight(), getLeft());
 					try {
 						interprocedural.resolve(candidate,
 								new Set[] { Collections.singleton(tContainer), Collections.singleton(tNeedle) },

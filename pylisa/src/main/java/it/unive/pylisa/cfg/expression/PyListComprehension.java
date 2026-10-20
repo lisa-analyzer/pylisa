@@ -14,24 +14,16 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
-import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
-import it.unive.lisa.program.type.Int32Type;
-import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Identifier;
-import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
-import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.libraries.PyExceptions;
-import it.unive.pylisa.libraries.dicts.DictModel;
-import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -203,7 +195,7 @@ public class PyListComprehension extends NaryExpression {
 		// the target is bound to any of the elements of the iterable
 		AnalysisState<A> bound = state.bottomExecution();
 		for (SymbolicExpression iterable : state.getExecutionExpressions()) {
-			AnalysisState<A> elements = elements(analysis, state, clause.iterable(), iterable);
+			AnalysisState<A> elements = Iteration.elements(analysis, state, clause.iterable(), iterable, this);
 			for (SymbolicExpression elem : elements.getExecutionExpressions())
 				bound = bound.lub(analysis.assign(elements, clause.target().getVariable(), elem, this));
 			// e.g. the TypeError raised by iterating an int
@@ -234,53 +226,5 @@ public class PyListComprehension extends NaryExpression {
 		AnalysisState<A> computed = element.forwardSemantics(bound, interprocedural, expressions);
 		expressions.put(element, computed);
 		return computed;
-	}
-
-	// any of the elements of the iterable
-	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
-			Analysis<A, D> analysis,
-			AnalysisState<A> state,
-			Expression expression,
-			SymbolicExpression iterable)
-			throws SemanticException {
-		CodeLocation loc = getLocation();
-		if (isRange(expression))
-			// range(...), whose elements are ints
-			return analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), this);
-
-		Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, this);
-		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this))
-			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this);
-		AnalysisState<A> result = state.bottomExecution();
-		boolean notIterable = false, unknown = false;
-		for (Type t : types)
-			if (ListModel.isList(t))
-				result = result.lub(ListModel.elements(analysis, state, iterable, this));
-			else if (DictModel.isDict(t))
-				result = result.lub(DictModel.keys(analysis, state, iterable, this));
-			else if (t.isStringType())
-				result = result.lub(analysis.smallStepSemantics(state, new PushAny(StringType.INSTANCE, loc), this));
-			else if (t instanceof PyBytesType)
-				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), this));
-			else if (t.isCodeMemberType() || (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t)))
-				// e.g. an int, or a function
-				notIterable = true;
-			else
-				// e.g. an object whose class defines __iter__
-				unknown = true;
-		if (unknown)
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this));
-		if (notIterable)
-			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
-					LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
-	}
-
-	// whether the expression is a call to the range builtin
-	private static boolean isRange(
-			Expression expression) {
-		return expression instanceof UnresolvedCall && ((UnresolvedCall) expression).getTargetName().equals("range")
-				&& ((UnresolvedCall) expression).getQualifier() == null
-				&& !PyBuiltinRef.isAssigned(expression.getCFG().getProgram(), "range");
 	}
 }
