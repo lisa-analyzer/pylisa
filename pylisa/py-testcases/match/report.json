@@ -1,0 +1,44 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/match/match.py':30:19] on 'untyped py-testcases/match/match::h(untyped v)': [EXPRESSION] ARITHMETIC: division by zero (uncaught ZeroDivisionError) at 'py-testcases/match/match.py':30:19"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_match_match.$main().graph.json", "untyped_py-testcases_match_match.f(untyped_v)_1660144656.graph.json", "untyped_py-testcases_match_match.f(untyped_v)_1660144687.graph.json", "untyped_py-testcases_match_match.f(untyped_v)_1660144718.graph.json", "untyped_py-testcases_match_match.f(untyped_v)_1660144749.graph.json", "untyped_py-testcases_match_match.f(untyped_v)_1660144780.graph.json", "untyped_py-testcases_match_match.h(untyped_v)_1660142269.graph.json" ],
+  "info" : {
+    "cfgs" : "5",
+    "duration" : "150ms",
+    "end" : "2026-10-20T18:56:47.521+02:00",
+    "expressions" : "67",
+    "files" : "7",
+    "globals" : "0",
+    "members" : "150",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-20T18:56:47.371+02:00",
+    "statements" : "31",
+    "units" : "31",
+    "version" : "1.0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/match"
+  }
+}

@@ -53,7 +53,9 @@ import it.unive.pylisa.antlr.PythonParser.Bitwise_orContext;
 import it.unive.pylisa.antlr.PythonParser.Bitwise_xorContext;
 import it.unive.pylisa.antlr.PythonParser.BlockContext;
 import it.unive.pylisa.antlr.PythonParser.Break_stmtContext;
+import it.unive.pylisa.antlr.PythonParser.Case_blockContext;
 import it.unive.pylisa.antlr.PythonParser.Class_defContext;
+import it.unive.pylisa.antlr.PythonParser.Closed_patternContext;
 import it.unive.pylisa.antlr.PythonParser.Compare_op_bitwise_or_pairContext;
 import it.unive.pylisa.antlr.PythonParser.ComparisonContext;
 import it.unive.pylisa.antlr.PythonParser.Compound_stmtContext;
@@ -93,9 +95,13 @@ import it.unive.pylisa.antlr.PythonParser.Kwarg_or_starredContext;
 import it.unive.pylisa.antlr.PythonParser.KwargsContext;
 import it.unive.pylisa.antlr.PythonParser.LambdefContext;
 import it.unive.pylisa.antlr.PythonParser.ListcompContext;
+import it.unive.pylisa.antlr.PythonParser.Literal_patternContext;
+import it.unive.pylisa.antlr.PythonParser.Match_stmtContext;
+import it.unive.pylisa.antlr.PythonParser.NameContext;
 import it.unive.pylisa.antlr.PythonParser.Named_expressionContext;
 import it.unive.pylisa.antlr.PythonParser.Nonlocal_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Pass_stmtContext;
+import it.unive.pylisa.antlr.PythonParser.PatternContext;
 import it.unive.pylisa.antlr.PythonParser.PowerContext;
 import it.unive.pylisa.antlr.PythonParser.PrimaryContext;
 import it.unive.pylisa.antlr.PythonParser.Raise_stmtContext;
@@ -151,8 +157,6 @@ import it.unive.pylisa.cfg.expression.PyBitwiseXor;
 import it.unive.pylisa.cfg.expression.PyBuiltinRef;
 import it.unive.pylisa.cfg.expression.PyClassFunctionCall;
 import it.unive.pylisa.cfg.expression.PyClassRef;
-import it.unive.pylisa.cfg.expression.unary.PyAbs;
-import it.unive.pylisa.cfg.expression.PyMinMax;
 import it.unive.pylisa.cfg.expression.PyDivMod;
 import it.unive.pylisa.cfg.expression.PyDivision;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
@@ -165,6 +169,7 @@ import it.unive.pylisa.cfg.expression.PyIteratedElement;
 import it.unive.pylisa.cfg.expression.PyListComprehension;
 import it.unive.pylisa.cfg.expression.PyMatMul;
 import it.unive.pylisa.cfg.expression.PyMethodCall;
+import it.unive.pylisa.cfg.expression.PyMinMax;
 import it.unive.pylisa.cfg.expression.PyMultiplication;
 import it.unive.pylisa.cfg.expression.PyNameCall;
 import it.unive.pylisa.cfg.expression.PyNegation;
@@ -194,6 +199,7 @@ import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiterals;
 import it.unive.pylisa.cfg.expression.literal.PyTypeLiteral;
+import it.unive.pylisa.cfg.expression.unary.PyAbs;
 import it.unive.pylisa.cfg.expression.unary.PyLength;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
@@ -960,7 +966,7 @@ public class PyStatementParser
 		else if (ctx.with_stmt() != null)
 			return this.visitWith_stmt(ctx.with_stmt());
 		else if (ctx.match_stmt() != null)
-			throw new UnsupportedStatementException("match statements are not supported");
+			return this.visitMatch_stmt(ctx.match_stmt());
 		throw new UnsupportedStatementException("Statement " + ctx + " not yet supported");
 	}
 
@@ -1064,6 +1070,174 @@ public class PyStatementParser
 				trueBlock.getBody().getNodes(),
 				falseStatements));
 		return new ParsedBlock(booleanGuard, block, ifExitNode);
+	}
+
+	/**
+	 * Translates {@code match subject: case p1: ... case p2 if g: ...}: the
+	 * subject is evaluated once into a fresh variable, and the cases are tested
+	 * in order, as in an {@code if}/{@code elif} chain. The supported patterns
+	 * are literals ({@code 1}, {@code "s"}, {@code -2}, compared with
+	 * {@code ==}, and {@code None}, {@code True}, {@code False}, compared with
+	 * {@code is}), dotted names ({@code Color.RED}, compared with {@code ==}),
+	 * their alternatives ({@code 1 | 2}), captures ({@code case x}, binding
+	 * {@code x} to the subject) and the wildcard {@code _}, that always match,
+	 * and guards ({@code case p if g}, evaluated after the captures).
+	 */
+	@Override
+	public ParsedBlock visitMatch_stmt(
+			Match_stmtContext ctx) {
+		if (ctx.subject_expr().named_expression() == null)
+			throw new UnsupportedStatementException("match statements on tuples are not supported");
+		SourceCodeLocation loc = getLocation(filePath, ctx);
+		String subject = "$match@" + loc.getLine() + ":" + loc.getCol();
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+		PyAssign evaluation = new PyAssign(currentCFG, loc, new VariableRef(currentCFG, loc, subject),
+				visitNamed_expression(ctx.subject_expr().named_expression()));
+		block.addNode(evaluation);
+		NoOp exit = new NoOp(currentCFG, loc);
+		block.addNode(exit);
+
+		// the statement leading to the next case: the test of the previous
+		// case when it fails (a condition), or the evaluation of the subject
+		Statement previous = evaluation;
+		boolean previousIsCondition = false;
+		List<Pair<Statement, Collection<Statement>>> conditions = new ArrayList<>();
+		List<Collection<Statement>> cases = new ArrayList<>();
+		List<Case_blockContext> blocks = ctx.case_block();
+		for (int i = 0; i < blocks.size(); i++) {
+			Case_blockContext c = blocks.get(i);
+			SourceCodeLocation cloc = getLocation(filePath, c);
+			if (c.patterns().pattern() == null)
+				throw new UnsupportedStatementException("sequence patterns are not supported");
+			Collection<Statement> nodes = new HashSet<>();
+
+			// a capture binds the subject before the guard is evaluated
+			String capture = capture(c.patterns().pattern());
+			Statement bind = null;
+			if (capture != null && !capture.equals("_")) {
+				bind = new PyAssign(currentCFG, cloc, new VariableRef(currentCFG, cloc, capture),
+						new VariableRef(currentCFG, cloc, subject));
+				block.addNode(bind);
+				nodes.add(bind);
+			}
+			Expression test = capture != null ? null : test(c.patterns().pattern(), subject);
+			if (c.guard() != null) {
+				Expression guard = visitNamed_expression(c.guard().named_expression());
+				test = test == null ? guard : new PyAnd(currentCFG, cloc, test, guard);
+			}
+			if (test != null) {
+				block.addNode(test);
+				nodes.add(test);
+			}
+
+			ParsedBlock body = visitBlock(c.block());
+			block.mergeWith(body.getBody());
+			nodes.addAll(body.getBody().getNodes());
+			cases.add(nodes);
+			Statement entry = bind != null ? bind : test != null ? test : body.getBegin();
+			block.addEdge(previousIsCondition ? new FalseEdge(previous, entry) : new SequentialEdge(previous, entry));
+			if (bind != null)
+				block.addEdge(new SequentialEdge(bind, test != null ? test : body.getBegin()));
+			if (test != null) {
+				block.addEdge(new TrueEdge(test, body.getBegin()));
+				conditions.add(Pair.of(test, body.getBody().getNodes()));
+			}
+			Statement end = body.getEnd();
+			if (!end.stopsExecution() && !(end instanceof Continue) && !(end instanceof Break))
+				block.addEdge(new SequentialEdge(end, exit));
+
+			if (test == null) {
+				// an irrefutable pattern: python rejects the cases after it
+				if (i != blocks.size() - 1)
+					throw new UnsupportedStatementException("irrefutable patterns must be the last ones");
+				previous = null;
+			} else {
+				previous = test;
+				previousIsCondition = true;
+			}
+		}
+		if (previous != null)
+			// no case matches
+			block.addEdge(new FalseEdge(previous, exit));
+
+		for (int k = conditions.size() - 1; k >= 0; k--) {
+			// the cases after this one are executed when its test fails
+			Collection<Statement> otherwise = new HashSet<>();
+			for (int j = k + 1; j < cases.size(); j++)
+				otherwise.addAll(cases.get(j));
+			currentCFG.getDescriptor().addControlFlowStructure(new IfThenElse(currentCFG.getNodeList(),
+					conditions.get(k).getLeft(), exit, conditions.get(k).getRight(), otherwise));
+		}
+		return new ParsedBlock(evaluation, block, exit);
+	}
+
+	// the name bound by the pattern if it is a capture (or "_" if it is the
+	// wildcard), that always matches, or null
+	private String capture(
+			PatternContext pattern) {
+		if (pattern.as_pattern() != null || pattern.or_pattern().closed_pattern().size() != 1)
+			return null;
+		Closed_patternContext closed = pattern.or_pattern().closed_pattern(0);
+		if (closed.capture_pattern() != null)
+			return closed.capture_pattern().getText();
+		if (closed.wildcard_pattern() != null)
+			return "_";
+		if (closed.group_pattern() != null)
+			return capture(closed.group_pattern().pattern());
+		return null;
+	}
+
+	// the condition under which the subject matches the pattern
+	private Expression test(
+			PatternContext pattern,
+			String subject) {
+		if (pattern.as_pattern() != null)
+			throw new UnsupportedStatementException("as patterns are not supported");
+		Expression result = null;
+		for (Closed_patternContext closed : pattern.or_pattern().closed_pattern()) {
+			Expression test = test(closed, subject);
+			result = result == null ? test : new PyOr(currentCFG, getLocation(filePath, closed), result, test);
+		}
+		return result;
+	}
+
+	private Expression test(
+			Closed_patternContext pattern,
+			String subject) {
+		SourceCodeLocation loc = getLocation(filePath, pattern);
+		VariableRef value = new VariableRef(currentCFG, loc, subject);
+		if (pattern.literal_pattern() != null) {
+			Literal_patternContext literal = pattern.literal_pattern();
+			if (literal.NONE() != null)
+				return new PyIs(currentCFG, loc, value, new PyNoneLiteral(currentCFG, loc));
+			if (literal.TRUE() != null)
+				return new PyIs(currentCFG, loc, value, new TrueLiteral(currentCFG, loc));
+			if (literal.FALSE() != null)
+				return new PyIs(currentCFG, loc, value, new FalseLiteral(currentCFG, loc));
+			if (literal.complex_number() != null)
+				throw new UnsupportedStatementException("complex numbers are not supported");
+			Expression constant;
+			if (literal.strings() != null)
+				constant = strings(literal.strings(), literal);
+			else {
+				constant = number(literal.signed_number().NUMBER().getText(), literal);
+				if (literal.signed_number().MINUS() != null)
+					constant = new PyNegation(currentCFG, loc, constant);
+			}
+			return new PyEquals(currentCFG, loc, value, constant);
+		}
+		if (pattern.value_pattern() != null) {
+			List<NameContext> names = pattern.value_pattern().attr().name();
+			Expression constant = name(names.get(0).getText(), names.get(0));
+			for (int i = 1; i < names.size(); i++)
+				constant = attribute(constant, names.get(i).getText(), getLocation(filePath, names.get(i)));
+			return new PyEquals(currentCFG, loc, value, constant);
+		}
+		if (pattern.group_pattern() != null)
+			return test(pattern.group_pattern().pattern(), subject);
+		if (pattern.capture_pattern() != null || pattern.wildcard_pattern() != null)
+			throw new UnsupportedStatementException("captures inside alternative patterns are not supported");
+		throw new UnsupportedStatementException("sequence, mapping and class patterns are not supported");
 	}
 
 	// parses the body of a loop
@@ -2096,77 +2270,100 @@ public class PyStatementParser
 		}
 	}
 
+	// the reference to name, at the location of ctx: a variable of a
+	// comprehension, a builtin function, a class of the program, a function
+	// of the module (inside functions), or a plain variable
+	private Expression name(
+			String name,
+			ParserRuleContext ctx) {
+		for (Map<String, String> scope : comprehensions)
+			if (scope.containsKey(name))
+				// a variable of a comprehension
+				return new VariableRef(currentCFG, getLocation(filePath, ctx), scope.get(name));
+		NativeCFG builtin = PyBuiltinRef.builtin(program, name);
+		if (builtin != null)
+			// e.g. q = len
+			return new PyBuiltinRef(currentCFG, getLocation(filePath, ctx), builtin);
+		Unit unit = program.getUnit(name);
+		if (unit instanceof ClassUnit && ((ClassUnit) unit).getLocation() instanceof SourceCodeLocation)
+			// a class defined in the program (e.g. MyClass in
+			// check_type(a, MyClass))
+			return new PyClassRef(currentCFG, getLocation(filePath, ctx), (ClassUnit) unit);
+		if (!currentCFG.getDescriptor().getName().equals(PyFileParser.INSTRUMENTED_MAIN_FUNCTION_NAME))
+			// inside a function, it might be a function of the module
+			return new PyFunctionRef(currentCFG, getLocation(filePath, ctx), name);
+		return new VariableRef(currentCFG, getLocation(filePath, ctx), name);
+	}
+
+	// the literal of the number with the given text, at the location of ctx
+	private Expression number(
+			String literal,
+			ParserRuleContext ctx) {
+		String text = literal.toLowerCase().replaceAll("_", "");
+		if (text.endsWith("j"))
+			// complex number
+			throw new UnsupportedStatementException(
+					"complex numbers are not supported (at " + getLocation(filePath, ctx) + ")");
+
+		if (text.contains("e") || text.contains("."))
+			// floating point
+			return new Float32Literal(currentCFG, getLocation(filePath, ctx), Float.parseFloat(text));
+
+		// integer
+		if (text.startsWith("0x"))
+			return new Int32Literal(currentCFG, getLocation(filePath, ctx),
+					Integer.parseInt(text.substring(2), 16));
+		if (text.startsWith("0o"))
+			return new Int32Literal(currentCFG, getLocation(filePath, ctx), Integer.parseInt(text.substring(2), 8));
+		if (text.startsWith("0b"))
+			return new Int32Literal(currentCFG, getLocation(filePath, ctx), Integer.parseInt(text.substring(2), 2));
+		return new Int32Literal(currentCFG, getLocation(filePath, ctx), Integer.parseInt(text));
+	}
+
+	// the literal of the (adjacent) strings, at the location of ctx
+	private Expression strings(
+			StringsContext strings,
+			ParserRuleContext ctx) {
+		if (!strings.tstring().isEmpty())
+			throw new UnsupportedStatementException("template strings are not supported");
+		if (!strings.fstring().isEmpty())
+			return visitFormattedStrings(strings);
+		// adjacent literals are concatenated ("ab" "cd" == "abcd")
+		StringBuilder value = new StringBuilder();
+		int bytes = 0;
+		for (StringContext literal : strings.string()) {
+			value.append(PyStringLiterals.decode(literal.getText()));
+			if (PyStringLiterals.isBytes(literal.getText()))
+				bytes++;
+		}
+		if (bytes == 0)
+			return new PyStringLiteral(currentCFG, getLocation(filePath, ctx), value.toString(),
+					PyStringLiterals.quotes(strings.string(0).getText()));
+		if (bytes != strings.string().size())
+			throw new UnsupportedStatementException(
+					"cannot mix bytes and nonbytes literals (at " + getLocation(filePath, ctx) + ")");
+		if (value.chars().anyMatch(c -> c > 0xff))
+			throw new UnsupportedStatementException(
+					"bytes can only contain ASCII literal characters (at " + getLocation(filePath, ctx) + ")");
+		return new PyBytesLiteral(currentCFG, getLocation(filePath, ctx), PyBytes.fromLatin1(value.toString()));
+	}
+
 	@Override
 	public Expression visitAtom(
 			AtomContext ctx) {
-		if (ctx.name() != null) {
-			for (Map<String, String> scope : comprehensions)
-				if (scope.containsKey(ctx.name().getText()))
-					// a variable of a comprehension
-					return new VariableRef(currentCFG, getLocation(filePath, ctx), scope.get(ctx.name().getText()));
-			NativeCFG builtin = PyBuiltinRef.builtin(program, ctx.name().getText());
-			if (builtin != null)
-				// e.g. q = len
-				return new PyBuiltinRef(currentCFG, getLocation(filePath, ctx), builtin);
-			Unit unit = program.getUnit(ctx.name().getText());
-			if (unit instanceof ClassUnit && ((ClassUnit) unit).getLocation() instanceof SourceCodeLocation)
-				// a class defined in the program (e.g. MyClass in
-				// check_type(a, MyClass))
-				return new PyClassRef(currentCFG, getLocation(filePath, ctx), (ClassUnit) unit);
-			if (!currentCFG.getDescriptor().getName().equals(PyFileParser.INSTRUMENTED_MAIN_FUNCTION_NAME))
-				// inside a function, it might be a function of the module
-				return new PyFunctionRef(currentCFG, getLocation(filePath, ctx), ctx.name().getText());
-			return new VariableRef(currentCFG, getLocation(filePath, ctx), ctx.name().getText());
-		} else if (ctx.NUMBER() != null) {
-			String text = ctx.NUMBER().getText().toLowerCase().replaceAll("_", "");
-			if (text.endsWith("j"))
-				// complex number
-				throw new UnsupportedStatementException(
-						"complex numbers are not supported (at " + getLocation(filePath, ctx) + ")");
-
-			if (text.contains("e") || text.contains("."))
-				// floating point
-				return new Float32Literal(currentCFG, getLocation(filePath, ctx), Float.parseFloat(text));
-
-			// integer
-			if (text.startsWith("0x"))
-				return new Int32Literal(currentCFG, getLocation(filePath, ctx),
-						Integer.parseInt(text.substring(2), 16));
-			if (text.startsWith("0o"))
-				return new Int32Literal(currentCFG, getLocation(filePath, ctx), Integer.parseInt(text.substring(2), 8));
-			if (text.startsWith("0b"))
-				return new Int32Literal(currentCFG, getLocation(filePath, ctx), Integer.parseInt(text.substring(2), 2));
-			return new Int32Literal(currentCFG, getLocation(filePath, ctx), Integer.parseInt(text));
-		} else if (ctx.FALSE() != null)
+		if (ctx.name() != null)
+			return name(ctx.name().getText(), ctx);
+		else if (ctx.NUMBER() != null)
+			return number(ctx.NUMBER().getText(), ctx);
+		else if (ctx.FALSE() != null)
 			return new FalseLiteral(currentCFG, getLocation(filePath, ctx));
 		else if (ctx.TRUE() != null)
 			return new TrueLiteral(currentCFG, getLocation(filePath, ctx));
 		else if (ctx.NONE() != null)
 			return new PyNoneLiteral(currentCFG, getLocation(filePath, ctx));
-		else if (ctx.strings() != null) {
-			if (!ctx.strings().tstring().isEmpty())
-				throw new UnsupportedStatementException("template strings are not supported");
-			if (!ctx.strings().fstring().isEmpty())
-				return visitFormattedStrings(ctx.strings());
-			// adjacent literals are concatenated ("ab" "cd" == "abcd")
-			StringBuilder value = new StringBuilder();
-			int bytes = 0;
-			for (StringContext literal : ctx.strings().string()) {
-				value.append(PyStringLiterals.decode(literal.getText()));
-				if (PyStringLiterals.isBytes(literal.getText()))
-					bytes++;
-			}
-			if (bytes == 0)
-				return new PyStringLiteral(currentCFG, getLocation(filePath, ctx), value.toString(),
-						PyStringLiterals.quotes(ctx.strings().string(0).getText()));
-			if (bytes != ctx.strings().string().size())
-				throw new UnsupportedStatementException(
-						"cannot mix bytes and nonbytes literals (at " + getLocation(filePath, ctx) + ")");
-			if (value.chars().anyMatch(c -> c > 0xff))
-				throw new UnsupportedStatementException(
-						"bytes can only contain ASCII literal characters (at " + getLocation(filePath, ctx) + ")");
-			return new PyBytesLiteral(currentCFG, getLocation(filePath, ctx), PyBytes.fromLatin1(value.toString()));
-		} else if (ctx.tuple() != null) {
+		else if (ctx.strings() != null)
+			return strings(ctx.strings(), ctx);
+		else if (ctx.tuple() != null) {
 			TupleContext tuple = ctx.tuple();
 			List<Expression> elements = new ArrayList<>();
 			if (tuple.star_named_expression() != null)

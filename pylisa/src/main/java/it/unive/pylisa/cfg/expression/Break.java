@@ -69,6 +69,11 @@ public class Break extends Statement {
 	}
 
 	@Override
+	public boolean breaksControlFlow() {
+		return true;
+	}
+
+	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
 			AnalysisState<A> entryState,
 			InterproceduralAnalysis<A, D> interprocedural,
