@@ -151,6 +151,8 @@ import it.unive.pylisa.cfg.expression.PyBitwiseXor;
 import it.unive.pylisa.cfg.expression.PyBuiltinRef;
 import it.unive.pylisa.cfg.expression.PyClassFunctionCall;
 import it.unive.pylisa.cfg.expression.PyClassRef;
+import it.unive.pylisa.cfg.expression.unary.PyAbs;
+import it.unive.pylisa.cfg.expression.PyMinMax;
 import it.unive.pylisa.cfg.expression.PyDivMod;
 import it.unive.pylisa.cfg.expression.PyDivision;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
@@ -1679,6 +1681,18 @@ public class PyStatementParser
 							method_name,
 							LeftToRightEvaluation.INSTANCE,
 							pars.toArray(Expression[]::new));
+				} else if (!instance && !attribute && method_name.equals("abs") && pars.size() == 1
+						&& !(pars.get(0) instanceof NamedParameterExpression) && isBuiltin("abs")) {
+					access = new PyAbs(currentCFG, getLocation(filePath, frame), pars.get(0));
+				} else if (!instance && !attribute && (method_name.equals("min") || method_name.equals("max"))
+						&& minMaxArguments(pars) && isBuiltin(method_name)) {
+					// min(a, b, ...), min(iterable), min(iterable, default=d)
+					Expression dflt = pars.stream().filter(NamedParameterExpression.class::isInstance).findFirst()
+							.map(p -> ((NamedParameterExpression) p).getSubExpression()).orElse(null);
+					access = new PyMinMax(currentCFG, getLocation(filePath, frame), method_name.equals("max"),
+							pars.stream().filter(p -> !(p instanceof NamedParameterExpression))
+									.toArray(Expression[]::new),
+							dflt);
 				} else if (!instance && method_name.equals("len") && pars.size() == 1) {
 					access = new PyLength(currentCFG, getLocation(filePath, frame), pars.get(0));
 				} else if (!instance && method_name.equals("divmod") && pars.size() == 2
@@ -2020,6 +2034,25 @@ public class PyStatementParser
 	 * use the generator as such (e.g. {@code next}, or {@code len}, that raises
 	 * {@code TypeError} on generators).
 	 */
+	// whether name is the builtin function, that is, the program does not
+	// define a function with that name
+	private boolean isBuiltin(
+			String name) {
+		return program.getCodeMembersByName(name).stream().allMatch(NativeCFG.class::isInstance);
+	}
+
+	// whether min/max are called with arguments that are modeled: positional
+	// ones and default= (key= is not modeled), with no starred argument
+	private static boolean minMaxArguments(
+			List<Expression> pars) {
+		for (Expression p : pars)
+			if (p instanceof StarExpression
+					|| (p instanceof NamedParameterExpression
+							&& !((NamedParameterExpression) p).getParameterName().equals("default")))
+				return false;
+		return true;
+	}
+
 	private boolean consumesGenerator(
 			String name,
 			boolean method) {

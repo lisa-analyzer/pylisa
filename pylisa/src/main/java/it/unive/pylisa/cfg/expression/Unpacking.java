@@ -160,7 +160,8 @@ public final class Unpacking {
 		return result;
 	}
 
-	private static boolean isTuple(
+	// whether the values of type t are tuples
+	static boolean isTuple(
 			Type t) {
 		return t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
 				&& t.asPointerType().getInnerType().asUnitType().getUnit().getName()

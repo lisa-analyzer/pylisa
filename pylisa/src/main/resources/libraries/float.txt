@@ -33,6 +33,10 @@ class Real:
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
 
+	method __abs__: it.unive.pylisa.libraries.NumAbs
+		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
+
 	method __truediv__: it.unive.pylisa.libraries.floats.FloatTrueDiv
 		type it.unive.lisa.program.type.Float32Type::INSTANCE
 		param self type it.unive.lisa.program.type.Float32Type::INSTANCE
