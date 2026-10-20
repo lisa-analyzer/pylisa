@@ -44,7 +44,7 @@ import java.util.Set;
  * with the category of the violated property, and the possible ones contain
  * {@code might} or {@code possible} (see {@link #message}).
  */
-public class AssertChecker<A extends AbstractLattice<A>, D extends AbstractDomain<A>>
+public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDomain<A>>
 		implements
 		SemanticCheck<A, D> {
 

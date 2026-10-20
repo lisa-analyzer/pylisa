@@ -16,7 +16,7 @@ import it.unive.lisa.program.cfg.fixpoints.optforward.OptimizedForwardAscendingF
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.constants.ConstantPropagationDomain;
 import it.unive.pylisa.analysis.types.PyInferredTypes;
-import it.unive.pylisa.checks.AssertChecker;
+import it.unive.pylisa.checks.ExceptionChecker;
 
 public class TestHelper {
 
@@ -58,11 +58,11 @@ public class TestHelper {
 	/**
 	 * Builds the configuration of {@link #constantPropagationConfig()}, also
 	 * checking the properties of the SV-COMP benchmarks (see
-	 * {@link AssertChecker}).
+	 * {@link ExceptionChecker}).
 	 */
 	public static CronConfiguration svcompConfig() {
 		CronConfiguration conf = constantPropagationConfig();
-		conf.semanticChecks.add(new AssertChecker<>());
+		conf.semanticChecks.add(new ExceptionChecker<>());
 		return conf;
 	}
 }
