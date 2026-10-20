@@ -26,6 +26,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -93,10 +94,17 @@ public class PyMethodCall extends UnresolvedCall {
 				others = true;
 
 		AnalysisState<A> result = state.bottom();
-		if (others)
+		if (others) {
+			AnalysisState<A> resolving = state;
+			if (receiverTypes.stream().anyMatch(ListModel::isList) && ListModel.unmodeled(getTargetName()))
+				// a method of lists that is not modeled (e.g. pop) might
+				// modify the list in any way
+				for (SymbolicExpression receiver : params[0])
+					resolving = ListModel.invalidate(analysis, resolving, receiver, this);
 			// methods of objects, or unknown receivers: regular call
 			// resolution
-			result = result.lub(super.forwardSemanticsAux(interprocedural, state, params, expressions));
+			result = result.lub(super.forwardSemanticsAux(interprocedural, resolving, params, expressions));
+		}
 		if (attribute)
 			result = result.lub(callAttribute(interprocedural, state, params, expressions));
 

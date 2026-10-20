@@ -35,6 +35,11 @@ sealed class List extends Sequence:
 		param self libtype List*
 		param other type it.unive.lisa.program.type.Int32Type::INSTANCE
 
+	instance method append: it.unive.pylisa.libraries.lists.ListAppend
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype List*
+		param x type it.unive.lisa.type.Untyped::INSTANCE
+
 sealed class Set extends Sequence
 sealed class Dict extends Sequence
 sealed class Tuple extends Sequence

@@ -20,12 +20,20 @@ import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.InstrumentedReceiver;
+import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
+/**
+ * A list literal {@code [e0, ..., en]}: a new object is allocated, and the
+ * receiver pointing to it (an {@link InstrumentedReceiver}) is the value of the
+ * literal. The element at index {@code i} is stored in the child {@code i} (an
+ * integer constant) of the object.
+ */
 public class ListCreation extends NaryExpression {
 
 	public ListCreation(
@@ -34,6 +42,12 @@ public class ListCreation extends NaryExpression {
 			Expression... values) {
 		super(cfg, loc, "list", values);
 	}
+
+	/**
+	 * The child of a list holding its elements at unknown indices. It is not a
+	 * valid python identifier, so that it cannot be an attribute of the list.
+	 */
+	public static final String UNKNOWN_INDEX = "$unknown";
 
 	@Override
 	protected int compareSameClassAndParams(
@@ -55,21 +69,32 @@ public class ListCreation extends NaryExpression {
 		ReferenceType reftype = new ReferenceType(listType);
 		MemoryAllocation created = new MemoryAllocation(listType, loc, false);
 		HeapReference ref = new HeapReference(reftype, created, loc);
-		HeapDereference deref = new HeapDereference(listType, ref, loc);
 
-		AnalysisState<A> current = analysis.smallStepSemantics(state, ref, this);
+		InstrumentedReceiver list = new InstrumentedReceiver(reftype, true, loc);
+		AnalysisState<A> current = analysis.assign(state, list, ref, this);
+		HeapDereference deref = new HeapDereference(listType, list, loc);
+		// the heap tracks the fields accessed on each object, but until the
+		// first access to any field in the program, the fields are unknown
+		// for all objects (see PyNewObj): accessing __class__, that all
+		// objects have, makes the elements of the new list known also when it
+		// is empty
+		AccessChild cls = new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, "__class__", loc),
+				loc);
+		current = analysis.smallStepSemantics(current, cls, this).withExecutionExpressions(
+				current.getExecutionExpressions());
 
 		for (int i = 0; i < params.length; i++) {
 			AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, i, loc), loc);
-			AnalysisState<A> slotState = analysis.smallStepSemantics(current, slot, this);
-
 			AnalysisState<A> next = state.bottom();
 			for (SymbolicExpression element : params[i])
-				for (SymbolicExpression slotId : slotState.getExecutionExpressions())
-					next = next.lub(analysis.assign(slotState, slotId, element, this));
+				next = next.lub(analysis.assign(current, slot, element, this));
 			current = next;
 		}
 
-		return analysis.smallStepSemantics(current, ref, this);
+		// the values of the elements are consumed here
+		for (Expression element : getSubExpressions())
+			current = current.forgetIdentifiers(element.getMetaVariables(), this);
+		getMetaVariables().add(list);
+		return analysis.smallStepSemantics(current, list, this);
 	}
 }

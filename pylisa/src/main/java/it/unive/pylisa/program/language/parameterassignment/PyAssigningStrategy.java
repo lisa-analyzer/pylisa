@@ -18,6 +18,7 @@ import it.unive.lisa.program.language.parameterassignment.ParameterAssigningStra
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
@@ -40,6 +41,20 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 	public static final PyAssigningStrategy INSTANCE = new PyAssigningStrategy();
 
 	private PyAssigningStrategy() {
+	}
+
+	/**
+	 * The arguments of a call collected by the {@code *args} parameter of the
+	 * callee, that are stored in a list built before the call.
+	 *
+	 * @param pos      the position of the parameter
+	 * @param elements the arguments
+	 * @param values   the values of the arguments
+	 */
+	private record VarArgs(
+			int pos,
+			Expression[] elements,
+			ExpressionSet[] values) {
 	}
 
 	@Override
@@ -70,6 +85,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			}
 		}
 
+		VarArgs[] varargs = new VarArgs[1];
 		boolean matches = pythonLogic(
 				formals,
 				actuals,
@@ -79,6 +95,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 				defaultTypes,
 				slots,
 				slotsTypes,
+				varargs,
 				interprocedural,
 				call.getCFG(),
 				callState.bottom());
@@ -87,6 +104,15 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			// raises TypeError
 			return Pair.of(PyExceptions.raise(interprocedural.getAnalysis(), callState, call.getCFG(),
 					call.getLocation(), call, LibrarySpecificationProvider.TYPE_ERROR), parameters);
+
+		Set<Identifier> metas = new HashSet<>();
+		if (varargs[0] != null) {
+			// the list holding the arguments collected by *args
+			ListCreation list = new ListCreation(call.getCFG(), call.getLocation(), varargs[0].elements());
+			callState = list.forwardSemanticsAux(interprocedural, callState, varargs[0].values(), expressions);
+			slots[varargs[0].pos()] = callState.getExecutionExpressions();
+			metas.addAll(list.getMetaVariables());
+		}
 
 		// prepare the state for the call: assign the value to each parameter
 		AnalysisState<A> prepared = callState;
@@ -99,7 +125,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		}
 
 		// we remove expressions from the stack
-		prepared = prepared.withExecutionExpressions(new ExpressionSet());
+		prepared = prepared.forgetIdentifiers(metas, call).withExecutionExpressions(new ExpressionSet());
 		return Pair.of(prepared, slots);
 	}
 
@@ -114,6 +140,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			Set<Type>[] defaultTypes,
 			ExpressionSet[] slots,
 			Set<Type>[] slotTypes,
+			VarArgs[] varargs,
 			InterproceduralAnalysis<A, D> interprocedural,
 			CFG callCFG,
 			AnalysisState<A> bottom)
@@ -165,11 +192,9 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			for (int i = 0; i < aPos - offset; i++) {
 				symbolicExprs[i] = given[offset + i];
 			}
-			ListCreation listCreation = new ListCreation(callCFG, SyntheticLocation.INSTANCE,
-					vargsList.toArray(Expression[]::new));
-			AnalysisState<A> listSemantics = listCreation.forwardSemanticsAux(interprocedural,
-					bottom, symbolicExprs, null);
-			slots[fPos] = listSemantics.getExecutionExpressions();
+			// the list is built before the call (see prepare)
+			varargs[0] = new VarArgs(fPos, vargsList.toArray(Expression[]::new), symbolicExprs);
+			slots[fPos] = new ExpressionSet();
 			slotTypes[fPos] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
 			fPos++;
 		}
@@ -246,9 +271,8 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			if (slots[pos] == null) {
 				if (formals[pos] instanceof VarPositionalParameter) {
 					// no positional argument is left for *args: it is empty
-					AnalysisState<A> empty = new ListCreation(callCFG, SyntheticLocation.INSTANCE)
-							.forwardSemanticsAux(interprocedural, bottom, new ExpressionSet[0], null);
-					slots[pos] = empty.getExecutionExpressions();
+					varargs[0] = new VarArgs(pos, new Expression[0], new ExpressionSet[0]);
+					slots[pos] = new ExpressionSet();
 					slotTypes[pos] = Set.of(PyClassType.lookup(LibrarySpecificationProvider.LIST));
 				} else if (defaults[pos] == null)
 					// unfilled and no default value -> TypeError

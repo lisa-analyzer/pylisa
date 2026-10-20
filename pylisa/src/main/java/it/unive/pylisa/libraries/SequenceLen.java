@@ -17,10 +17,12 @@ import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Set;
 
 /**
@@ -84,7 +86,13 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 			anyPointer = true;
 			Type inner = t.asPointerType().getInnerType();
 
-			if (inner.canBeAssignedTo(tupleType)) {
+			if (ListModel.isList(t)) {
+				// the length is computed from the elements
+				Integer length = ListModel.length(analysis, state, expr, this);
+				result = result.lub(analysis.smallStepSemantics(state, length == null
+						? new PushAny(Int32Type.INSTANCE, loc)
+						: new Constant(Int32Type.INSTANCE, length, loc), st));
+			} else if (inner.canBeAssignedTo(tupleType)) {
 				HeapDereference deref = new HeapDereference(inner, expr, loc);
 				Variable lenKey = new Variable(Int32Type.INSTANCE, "length", loc);
 				AccessChild lenAccess = new AccessChild(Int32Type.INSTANCE, deref, lenKey, loc);

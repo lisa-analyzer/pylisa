@@ -633,15 +633,14 @@ public class PyStatementParser
 		if (ctx.DOT() != null)
 			return attribute(base, ctx.name().getText(), getLocation(filePath, ctx));
 
+		// del x[i] calls x.__delitem__(i) (e.g. removing an element of a
+		// list)
 		List<Expression> indexes = extractExpressionsFromSlices(ctx.slices());
-		if (indexes.size() == 1)
-			return new PySingleArrayAccess(currentCFG, getLocation(filePath, ctx), Untyped.INSTANCE, base,
-					indexes.get(0));
-		else if (indexes.size() == 2)
-			return new PyDoubleArrayAccess(currentCFG, getLocation(filePath, ctx), Untyped.INSTANCE, base,
-					indexes.get(0),
-					indexes.get(1));
-		throw new UnsupportedStatementException("Only array accesses with up to 2 indexes are supported");
+		if (indexes.size() > 2)
+			throw new UnsupportedStatementException("Only array accesses with up to 2 indexes are supported");
+		indexes.add(0, base);
+		return new PyMethodCall(currentCFG, getLocation(filePath, ctx), "__delitem__", LeftToRightEvaluation.INSTANCE,
+				indexes.toArray(Expression[]::new));
 	}
 
 	private Expression visitDelTAtom(
