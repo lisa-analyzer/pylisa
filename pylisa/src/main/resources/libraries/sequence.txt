@@ -2,7 +2,7 @@ class Sequence:
 	method __getitem__: it.unive.pylisa.libraries.SequenceGetItem
 		libtype Object*
 		param self libtype Sequence*
-		param index type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param index type it.unive.lisa.type.Untyped::INSTANCE
 
 	method __len__: it.unive.pylisa.libraries.SequenceLen
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
@@ -34,6 +34,20 @@ sealed class List extends Sequence:
 		libtype List*
 		param self libtype List*
 		param other type it.unive.lisa.program.type.Int32Type::INSTANCE
+
+	method __eq__: it.unive.pylisa.libraries.lists.ListEq
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self libtype List*
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	method __ne__: it.unive.pylisa.libraries.lists.ListNe
+		type it.unive.lisa.program.type.BoolType::INSTANCE
+		param self libtype List*
+		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	instance method copy: it.unive.pylisa.libraries.lists.ListCopy
+		libtype List*
+		param self libtype List*
 
 	instance method append: it.unive.pylisa.libraries.lists.ListAppend
 		type it.unive.lisa.type.Untyped::INSTANCE

@@ -26,6 +26,7 @@ import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Set;
 
 public class SequenceGetItem extends BinaryExpression implements PluggableStatement {
@@ -103,19 +104,32 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			Type inner = t.asPointerType().getInnerType();
 			HeapDereference deref = new HeapDereference(inner, left, loc);
 
-			if (inner.canBeAssignedTo(tupleType))
-				result = result.lub(readWithBoundsCheck(analysis, state, deref, right, loc));
+			if (inner.canBeAssignedTo(tupleType)) {
+				Satisfiability integral = hasInt(analysis, state, right);
+				if (integral != Satisfiability.NOT_SATISFIED)
+					result = result.lub(readWithBoundsCheck(analysis, state, deref, right, loc));
+				if (integral != Satisfiability.SATISFIED)
+					// the index of a tuple must be an int
+					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
+							LibrarySpecificationProvider.TYPE_ERROR));
+			} else if (ListModel.isList(t))
+				if (analysis.getRuntimeTypesOf(state, right, this).stream().anyMatch(ListModel::isSlice))
+					// lst[start:stop:step]
+					result = result.lub(ListModel.slice(interprocedural, state, left, right, this));
+				else
+					// bounds and index checked on the elements of the list
+					result = result.lub(ListModel.read(analysis, state, left, right, this));
 			else {
-				// TODO List has no bounds checking: lst[3] on a 3-element
-				// list silently reads an untracked (TOP) slot instead of
-				// raising IndexError, since (unlike Tuple) no length field
-				// is tracked here (a cached length would go stale once
-				// mutation methods like append/pop are implemented).
 				AccessChild access = new AccessChild(Untyped.INSTANCE, deref, right, loc);
 				result = result.lub(analysis.smallStepSemantics(state, access, st));
+				if (inner.isUnitType() && inner.asUnitType().getUnit().getName()
+						.equals(LibrarySpecificationProvider.DICT))
+					// the keys of dicts are not tracked: the key might be
+					// missing
+					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
+							LibrarySpecificationProvider.KEY_ERROR));
 			}
 		}
-
 		if (!anyPointer) {
 			HeapDereference deref = new HeapDereference(Untyped.INSTANCE, left, loc);
 			AccessChild access = new AccessChild(Untyped.INSTANCE, deref, right, loc);
@@ -159,5 +173,21 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		}
 
 		return result;
+	}
+
+	// whether the index is an int (or a bool)
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability hasInt(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression index)
+			throws SemanticException {
+		Set<Type> types = analysis.getRuntimeTypesOf(state, index, this);
+		if (types.isEmpty() || types.stream().anyMatch(Type::isUntyped))
+			return Satisfiability.UNKNOWN;
+		boolean ints = types.stream()
+				.anyMatch(t -> (t.isNumericType() && t.asNumericType().isIntegral()) || t.isBooleanType());
+		boolean others = types.stream()
+				.anyMatch(t -> !((t.isNumericType() && t.asNumericType().isIntegral()) || t.isBooleanType()));
+		return ints && others ? Satisfiability.UNKNOWN : ints ? Satisfiability.SATISFIED : Satisfiability.NOT_SATISFIED;
 	}
 }

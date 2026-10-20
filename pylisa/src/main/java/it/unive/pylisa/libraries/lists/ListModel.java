@@ -5,7 +5,10 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.lattices.heap.allocations.AllocationSite;
 import it.unive.lisa.lattices.heap.allocations.AllocationSites;
 import it.unive.lisa.lattices.heap.allocations.HeapEnvWithFields;
@@ -13,19 +16,31 @@ import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.type.BoolType;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.PushAny;
+import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonGe;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
+import it.unive.lisa.symbolic.value.operator.binary.LogicalAnd;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -191,5 +206,251 @@ public final class ListModel {
 		AccessChild unknown = new AccessChild(Untyped.INSTANCE, deref,
 				new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 		return analysis.assign(result, unknown, new PushAny(Untyped.INSTANCE, loc), pp);
+	}
+
+	/**
+	 * What is known about the elements of a list.
+	 *
+	 * @param length   the length of the list, or {@code null} if it is not
+	 *                     known
+	 * @param prefix   the number of elements at known indices that the list
+	 *                     surely has (that is, the list has at least the
+	 *                     elements at indices {@code 0, ..., prefix - 1})
+	 * @param elements the elements of the list (the children of the objects it
+	 *                     points to), or {@code null} if they are not known
+	 */
+	public record Shape(
+			Integer length,
+			int prefix,
+			Set<SymbolicExpression> elements) {
+	}
+
+	/**
+	 * Yields what is known about the elements of the list.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param list     the list
+	 * @param pp       the program point using the list
+	 *
+	 * @return the shape of the list
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Shape shape(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			ProgramPoint pp)
+			throws SemanticException {
+		Set<AllocationSite> sites = sites(analysis, state, list, pp);
+		HeapEnvWithFields heap = state.getExecutionState().getLatticeInstance(HeapEnvWithFields.class);
+		if (sites == null || heap.fields.isTop() || heap.fields.function == null)
+			return new Shape(null, 0, null);
+		Integer prefix = null;
+		Set<SymbolicExpression> elements = new HashSet<>();
+		for (AllocationSite site : sites) {
+			ExpressionSet fields = heap.fields.getState(site);
+			if (fields.isTop())
+				return new Shape(null, 0, null);
+			Set<Integer> indexes = new HashSet<>();
+			for (SymbolicExpression field : fields)
+				if (field instanceof Variable && ((Variable) field).getName().equals(ListCreation.UNKNOWN_INDEX))
+					elements.add(field);
+				else if (field instanceof Constant && ((Constant) field).getValue() instanceof Integer) {
+					indexes.add((Integer) ((Constant) field).getValue());
+					elements.add(field);
+				}
+			int k = 0;
+			while (indexes.contains(k))
+				k++;
+			// the summary of many lists, whose elements at known indices might
+			// be the ones of some of them only
+			int surely = site.isWeak() ? 0 : k;
+			prefix = prefix == null ? surely : Math.min(prefix, surely);
+		}
+		return new Shape(length(analysis, state, list, pp), prefix == null ? 0 : prefix, elements);
+	}
+
+	/**
+	 * Reads the element at the given index of the list ({@code list[index]}),
+	 * raising {@code IndexError} if the index might be out of range, and
+	 * {@code TypeError} if it might not be an {@code int}. A negative index
+	 * counts from the end of the list. The element is read exactly if the index
+	 * is surely equal to the index of an element that the list surely has,
+	 * otherwise the result is any of the elements of the list.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the state where the list and the index have been
+	 *                     evaluated
+	 * @param list     the list
+	 * @param index    the index
+	 * @param thrower  the statement reading the element
+	 *
+	 * @return the state after the read
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> read(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			SymbolicExpression index,
+			Statement thrower)
+			throws SemanticException {
+		CodeLocation loc = thrower.getLocation();
+		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+		HeapDereference deref = new HeapDereference(listType, list, loc);
+		Shape shape = shape(analysis, state, list, thrower);
+
+		AnalysisState<A> result = state.bottom();
+		boolean typeError = false, indexError = false, any = false;
+		Set<Type> types = analysis.getRuntimeTypesOf(state, index, thrower);
+		if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t)))
+			// e.g. a str, or an unknown value
+			typeError = true;
+		if (types.isEmpty() || types.stream().anyMatch(ListOperations.INT)) {
+			// the indices the index might be equal to (also when it is not a
+			// constant, e.g. -1 or a variable): the ones of the elements
+			// that the list surely has
+			int from = shape.length() == null ? 0 : -shape.length();
+			int to = shape.length() == null ? shape.prefix() : shape.length();
+			Integer exact = null;
+			for (int c = from; c < to && exact == null; c++)
+				if (analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, index,
+						new Constant(Int32Type.INSTANCE, c, loc), ComparisonEq.INSTANCE, loc),
+						thrower) == Satisfiability.SATISFIED)
+					exact = c;
+			if (exact != null)
+				result = result.lub(element(analysis, state, deref,
+						exact < 0 ? shape.length() + exact : exact, thrower));
+			else if (shape.length() != null) {
+				// whether the index is in range
+				Constant low = new Constant(Int32Type.INSTANCE, -shape.length(), loc);
+				Constant high = new Constant(Int32Type.INSTANCE, shape.length(), loc);
+				Satisfiability in = analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE,
+						new BinaryExpression(BoolType.INSTANCE, index, low, ComparisonGe.INSTANCE, loc),
+						new BinaryExpression(BoolType.INSTANCE, index, high, ComparisonLt.INSTANCE, loc),
+						LogicalAnd.INSTANCE, loc), thrower);
+				if (in != Satisfiability.NOT_SATISFIED)
+					any = true;
+				if (in != Satisfiability.SATISFIED)
+					indexError = true;
+			} else {
+				any = true;
+				indexError = true;
+			}
+		}
+
+		if (any)
+			if (shape.elements() == null)
+				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), thrower));
+			else
+				for (SymbolicExpression field : shape.elements())
+					result = result.lub(analysis.smallStepSemantics(state,
+							new AccessChild(Untyped.INSTANCE, deref, field, loc), thrower));
+		if (indexError)
+			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.INDEX_ERROR));
+		if (typeError)
+			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.TYPE_ERROR));
+		return result;
+	}
+
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> element(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			HeapDereference deref,
+			int index,
+			Statement pp)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		return analysis.smallStepSemantics(state,
+				new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, index, loc), loc), pp);
+	}
+
+	/**
+	 * Whether the values of the given type are slices (e.g. {@code 1:3} in
+	 * {@code lst[1:3]}).
+	 *
+	 * @param t the type
+	 *
+	 * @return whether the values are slices
+	 */
+	public static boolean isSlice(
+			Type t) {
+		return t.isUnitType() && t.asUnitType().getUnit().getName().equals(LibrarySpecificationProvider.SLICE);
+	}
+
+	/**
+	 * Reads the slice of the list ({@code list[start:stop:step]}): the result
+	 * is a new list, whose elements are some of the elements of the list, at
+	 * unknown indices. A slice never raises {@code IndexError}, while
+	 * {@code TypeError} is raised if its bounds might not be {@code int}s (or
+	 * {@code None}).
+	 *
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the list and the slice have been
+	 *                            evaluated
+	 * @param list            the list
+	 * @param slice           the slice
+	 * @param thrower         the statement reading the slice
+	 *
+	 * @return the state after the read
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> slice(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			SymbolicExpression slice,
+			Expression thrower)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		CodeLocation loc = thrower.getLocation();
+		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+		HeapDereference source = new HeapDereference(listType, list, loc);
+		Shape shape = shape(analysis, state, list, thrower);
+
+		boolean typeError = !(slice instanceof TernaryExpression);
+		if (slice instanceof TernaryExpression) {
+			TernaryExpression bounds = (TernaryExpression) slice;
+			for (SymbolicExpression bound : new SymbolicExpression[] { bounds.getLeft(), bounds.getMiddle(),
+					bounds.getRight() }) {
+				Set<Type> types = analysis.getRuntimeTypesOf(state, bound, thrower);
+				if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t) && !t.isNullType()))
+					typeError = true;
+			}
+		}
+
+		// the slice is allocated at a location different from the one of the
+		// subscript (see DerivedLocation)
+		ListCreation creation = new ListCreation(thrower.getCFG(), new DerivedLocation(loc, "slice"));
+		AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, state, new ExpressionSet[0],
+				new StatementStore<>(state));
+		AnalysisState<A> result = created.bottom();
+		for (SymbolicExpression copy : created.getExecutionExpressions()) {
+			AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, copy, loc),
+					new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
+			AnalysisState<A> filled = created.bottom();
+			if (shape.elements() == null)
+				filled = analysis.assign(created, unknown, new PushAny(Untyped.INSTANCE, loc), thrower);
+			else
+				for (SymbolicExpression field : shape.elements())
+					for (SymbolicExpression element : analysis.smallStepSemantics(created,
+							new AccessChild(Untyped.INSTANCE, source, field, loc), thrower).getExecutionExpressions())
+						filled = filled.lub(analysis.assign(created, unknown, element, thrower));
+			if (filled.getExecutionState().isBottom())
+				// the list is empty: so is the slice
+				filled = created;
+			result = result.lub(filled.withExecutionExpression(copy));
+		}
+		thrower.getMetaVariables().addAll(creation.getMetaVariables());
+		if (typeError)
+			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.TYPE_ERROR));
+		return result;
 	}
 }
