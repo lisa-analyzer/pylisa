@@ -5,7 +5,9 @@ import static it.unive.pylisa.PyParsingUtils.getLocation;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotation;
+import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -79,21 +81,23 @@ public class PyClassParser
 			throw new UnsupportedStatementException("generic classes are not supported");
 
 		String name = ctx.name().getText();
-		// we do not track inheritance here since it needs runtime symbol
-		// resolution we will do that during the analysis. this should not cause
-		// problems since we will do that where the signature is defined, and
-		// not where it is used.
 		ClassUnit signature = new ClassUnit(getLocation(filePath, ctx), program, name, false);
-		signature.addAnnotation(bases(ctx));
+		Annotation bases = bases(ctx);
+		signature.addAnnotation(bases);
+		// the bases are defined before the class (also those imported from
+		// other modules, that are parsed first)
+		List<ClassUnit> ancestors = ancestors(bases);
 		// the class is registered before its body is parsed, so that its
 		// methods can refer to it (e.g. C.m(...) in a method of C)
 		PyClassType.register(name, signature);
 		program.addUnit(signature);
-		if (ctx.arguments() == null || ctx.arguments().getChildCount() == 0)
-			// without bases, all the methods of the class are known: they are
-			// those defined in its body
+		if (ancestors != null) {
+			// the methods of the class are those defined in its body, and the
+			// ones of its bases (see PyMro)
+			for (ClassUnit ancestor : ancestors)
+				signature.addAncestor(ancestor);
 			signature.addAnnotation(new Annotation(PyBinaryDispatch.FULLY_DEFINED));
-		else
+		} else
 			signature.addAnnotation(new Annotation(PyBinaryDispatch.UNTRACKED_BASES));
 
 		// we parse the body of the class in a synthetic method that will be
@@ -120,6 +124,47 @@ public class PyClassParser
 		cfg.simplify();
 		signature.addCodeMember(cfg);
 		return signature;
+	}
+
+	// the classes the bases of the class refer to, in order, or null if some
+	// of them is not known (e.g. a class of a module that is not modeled, or
+	// a base that is not a name)
+	private List<ClassUnit> ancestors(
+			Annotation bases) {
+		List<ClassUnit> ancestors = new ArrayList<>();
+		for (AnnotationMember member : bases.getAnnotationMembers()) {
+			String base = member.getValue().toString();
+			if (member.getId().equals(ClassBases.METACLASS)) {
+				if (!base.equals("ABCMeta") && !base.equals("abc.ABCMeta"))
+					// a metaclass might change the attributes of the class
+					return null;
+				continue;
+			}
+			if (base.equals("object") || base.equals("ABC") || base.equals("abc.ABC"))
+				// they define no attribute that is modeled
+				continue;
+			ClassUnit unit = classNamed(base);
+			if (unit == null)
+				return null;
+			ancestors.add(unit);
+		}
+		return ancestors;
+	}
+
+	// the class with the given name (e.g. B, m.B for a class of the local
+	// module m, or the name B is imported as)
+	private ClassUnit classNamed(
+			String name) {
+		String simple = name;
+		int dot = name.lastIndexOf('.');
+		if (dot >= 0) {
+			if (imports.module(name.substring(0, dot)) == null)
+				return null;
+			simple = name.substring(dot + 1);
+		} else if (imports.member(name) != null)
+			simple = imports.member(name).name();
+		Unit unit = program.getUnit(simple);
+		return unit instanceof ClassUnit ? (ClassUnit) unit : null;
 	}
 
 	// the bases of the class, as written in the source (see ClassBases)

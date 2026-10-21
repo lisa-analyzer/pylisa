@@ -1,6 +1,7 @@
 package it.unive.pylisa.cfg.expression;
 
 import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeMember;
@@ -13,6 +14,7 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.literal.Literal;
 import it.unive.pylisa.PyClassParser;
+import it.unive.pylisa.cfg.PyMro;
 import it.unive.pylisa.cfg.expression.literal.PyFunctionLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyTypeLiteral;
@@ -70,21 +72,44 @@ public final class PyClassAttributes {
 	}
 
 	/**
-	 * Whether {@code name} is a method of the given class.
+	 * Whether {@code name} is a method of the given class: the first class in
+	 * its method resolution order that defines {@code name} (see
+	 * {@link PyMro#definer}) defines it as a method.
 	 *
 	 * @param unit the class
 	 * @param name the name
 	 *
-	 * @return whether the class defines a method {@code name}
+	 * @return whether the class has a method {@code name}
 	 */
 	public static boolean isMethod(
 			ClassUnit unit,
 			String name) {
-		return !unit.getInstanceCodeMembersByName(name, true).isEmpty() || !unit.getCodeMembersByName(name).isEmpty();
+		CompilationUnit definer = PyMro.definer(unit, name, null);
+		return definer != null && (!definer.getInstanceCodeMembersByName(name, false).isEmpty()
+				|| !definer.getCodeMembersByName(name).isEmpty());
 	}
 
 	/**
-	 * Yields the class attribute {@code name} of the given class.
+	 * Yields the class attribute {@code name} of the given class: the one
+	 * assigned in the body of the first class in its method resolution order
+	 * that defines {@code name} (see {@link PyMro#definer}).
+	 *
+	 * @param unit the class
+	 * @param name the name of the attribute
+	 *
+	 * @return the attribute, or {@code null} if no class assigns {@code name}
+	 *             in its body before defining it as a method
+	 */
+	public static ClassAttribute attribute(
+			ClassUnit unit,
+			String name) {
+		CompilationUnit definer = PyMro.definer(unit, name, null);
+		return definer instanceof ClassUnit ? ownAttribute((ClassUnit) definer, name) : null;
+	}
+
+	/**
+	 * Yields the class attribute {@code name} assigned in the body of the
+	 * given class (not of its bases).
 	 *
 	 * @param unit the class
 	 * @param name the name of the attribute
@@ -92,7 +117,7 @@ public final class PyClassAttributes {
 	 * @return the attribute, or {@code null} if the class does not assign
 	 *             {@code name} in its body
 	 */
-	public static ClassAttribute attribute(
+	public static ClassAttribute ownAttribute(
 			ClassUnit unit,
 			String name) {
 		List<Assignment> writes = new ArrayList<>();

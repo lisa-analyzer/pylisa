@@ -5,7 +5,7 @@ import it.unive.lisa.LiSAReport;
 import it.unive.lisa.analysis.ConstantValuePropagation;
 import it.unive.lisa.analysis.Reachability;
 import it.unive.lisa.analysis.SimpleAbstractDomain;
-import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
+import it.unive.pylisa.analysis.heap.PyHeap;
 import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.conf.LiSAConfiguration;
@@ -284,7 +284,7 @@ public class PyLiSA {
 		conf.semanticChecks.add(new DataframeStructureConstructor());
 
 		conf.analysis = new SimpleAbstractDomain<HeapEnvWithFields, DataframeGraphDomain, TypeEnvironment<TypeSet>>(
-				new FieldSensitivePointBasedHeap(), new DataframeGraphValueDomain(), new PyInferredTypes());
+				new PyHeap(), new DataframeGraphValueDomain(), new PyInferredTypes());
 
 		LiSA lisa = new LiSA(conf);
 		LiSAReport report = lisa.run(program);
@@ -391,7 +391,7 @@ public class PyLiSA {
 		}
 
 		conf.analysis = new Reachability<>(new SimpleAbstractDomain<>(
-				new FieldSensitivePointBasedHeap(),
+				new PyHeap(),
 				domain,
 				new PyInferredTypes()));
 

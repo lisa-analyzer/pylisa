@@ -125,7 +125,9 @@ public class PyNewObj extends NaryExpression {
 		ExpressionSet[] fullParams = ArrayUtils.insert(0, params, callstate.getExecutionExpressions());
 		expressions.put(paramThis, tmp);
 
-		UnresolvedCall call = new UnresolvedCall(getCFG(), getLocation(), CallType.INSTANCE, type.toString(),
+		// __init__ is looked up through the receiver, also in the bases of
+		// the class (see PyMro)
+		UnresolvedCall call = new UnresolvedCall(getCFG(), getLocation(), CallType.INSTANCE, null,
 				getConstructName(), fullExpressions);
 		Call resolved;
 		try {

@@ -2,7 +2,7 @@
   "warnings" : [ {
     "message" : "['py-testcases/method-decorators/method-decorators.py':27:4] on 'untyped py-testcases/method-decorators/method-decorators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/method-decorators/method-decorators.py':27:4"
   }, {
-    "message" : "['py-testcases/method-decorators/method-decorators.py':59:0] on 'untyped py-testcases/method-decorators/method-decorators::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/method-decorators/method-decorators.py':59:0"
+    "message" : "['py-testcases/method-decorators/method-decorators.py':60:0] on 'untyped py-testcases/method-decorators/method-decorators::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/method-decorators/method-decorators.py':60:0"
   }, {
     "message" : "['py-testcases/method-decorators/method-decorators.py':63:4] on 'untyped py-testcases/method-decorators/method-decorators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/method-decorators/method-decorators.py':63:4"
   }, {
@@ -12,15 +12,15 @@
   "files" : [ "report.json", "untyped_M.f()_-58751831.graph.json", "untyped_Rect.__init__(Rect__self,_untyped_w)_-58753815.graph.json", "untyped_Rect.area(Rect__self)_-58750901.graph.json", "untyped_S.add(untyped_x,_untyped_y)_-58731185.graph.json", "untyped_S.add(untyped_x,_untyped_y)_-58744639.graph.json", "untyped_S.add(untyped_x,_untyped_y)_-58752203.graph.json", "untyped_S.add(untyped_x,_untyped_y)_-58752234.graph.json", "untyped_S.get(S__self)_-58752172.graph.json", "untyped_py-testcases_method-decorators_method-decorators.$main().graph.json" ],
   "info" : {
     "cfgs" : "16",
-    "duration" : "7ms",
-    "end" : "2026-10-21T17:05:18.053+02:00",
+    "duration" : "6ms",
+    "end" : "2026-10-21T17:28:21.517+02:00",
     "expressions" : "58",
     "files" : "9",
     "globals" : "0",
     "members" : "183",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-21T17:05:18.046+02:00",
+    "start" : "2026-10-21T17:28:21.511+02:00",
     "statements" : "34",
     "units" : "41",
     "version" : "1.0",

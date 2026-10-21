@@ -8,6 +8,8 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.CompilationUnit;
+import it.unive.pylisa.cfg.PyMro;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -79,9 +81,14 @@ public class PyClassFunctionCall extends UnresolvedCall {
 		if (cls == null)
 			// e.g. a function of a module
 			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
+		// the function of the first class in the method resolution order
+		// defining it
+		CompilationUnit definer = PyMro.definer(cls, getTargetName(), null);
+		if (definer == null)
+			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
 		Set<CFG> cfgs = new HashSet<>();
-		boolean others = add(cls.getInstanceCodeMembersByName(getTargetName(), true), cfgs)
-				| add(cls.getCodeMembersByName(getTargetName()), cfgs);
+		boolean others = add(definer.getInstanceCodeMembersByName(getTargetName(), false), cfgs)
+				| add(definer.getCodeMembersByName(getTargetName()), cfgs);
 		if (cfgs.isEmpty() || others)
 			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
 

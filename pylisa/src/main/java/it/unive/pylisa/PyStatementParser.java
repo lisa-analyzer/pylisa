@@ -222,6 +222,7 @@ import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.PyAssert;
 import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
+import it.unive.pylisa.cfg.expression.PySuperCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.PyBytes;
@@ -2024,6 +2025,13 @@ public class PyStatementParser
 					LocalImports.Member member = localImports.member(method_name);
 					access = new PyModuleCall(currentCFG, getLocation(filePath, frame), member.unit(), member.name(),
 							pars.toArray(Expression[]::new));
+				} else if (attribute && previous_access instanceof SimpleSuperUnresolvedCall) {
+					// super().m(...): the method m of a base of the class,
+					// called on self
+					List<Expression> args = new ArrayList<>(pars);
+					args.add(0, ((SimpleSuperUnresolvedCall) previous_access).getParameters()[1]);
+					access = new PySuperCall(currentCFG, getLocation(filePath, frame), (ClassUnit) currentUnit,
+							method_name, args.toArray(Expression[]::new));
 				} else if (attribute && classNames(previous_access) != null) {
 					// C.m(...): the function m of the class, with no receiver
 					access = new PyClassFunctionCall(
@@ -2763,7 +2771,8 @@ public class PyStatementParser
 				staticMethod);
 		PyCFG cfg = parser.visitFunction_def_raw(ctx.function_def_raw());
 		if (abstractMethod)
-			cfg.getDescriptor().addAnnotation(new Annotation(ClassBases.ABSTRACT));
+			// not propagated by LiSA to the methods overriding it
+			cfg.getDescriptor().addAnnotation(new Annotation(ClassBases.ABSTRACT, true));
 		return cfg;
 	}
 

@@ -298,9 +298,11 @@ public class PyAttributeAccess extends UnaryExpression {
 					Type type = site.getStaticType();
 					if (type.isUnitType() && units.contains(type.asUnitType().getUnit()))
 						missing.add((ClassUnit) type.asUnitType().getUnit());
-					else if (!skipMethods || !type.isUnitType())
+					else if (!type.isUnitType())
 						missing.addAll(units);
-					// otherwise, an object of a class defining the method
+					// otherwise, an object of a class defining the method, or
+					// of a class that the types of the receiver exclude (e.g.
+					// after isinstance(x, C)), that x cannot point to
 				}
 			}
 		}

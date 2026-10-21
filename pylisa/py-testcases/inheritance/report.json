@@ -1,0 +1,44 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/inheritance/inheritance.py':101:4] on 'untyped py-testcases/inheritance/inheritance::$main()': [EXPRESSION] TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/inheritance/inheritance.py':101:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_A.func(A__self)_-882241726.graph.json", "untyped_B.func(B__self)_-882241695.graph.json", "untyped_Base.__init__(Base__self,_untyped_v)_-882200031.graph.json", "untyped_Base.__init__(Base__self,_untyped_v)_-882239773.graph.json", "untyped_Base.__init__(Base__self,_untyped_v)_-882239804.graph.json", "untyped_Base.twice(untyped_x)_-882239742.graph.json", "untyped_Base.twice(untyped_x)_-882239773.graph.json", "untyped_Child.get(Child__self)_-882235495.graph.json", "untyped_Child.get(Child__self)_-882239804.graph.json", "untyped_G.func(G__self)_-882240982.graph.json", "untyped_NoInit.__init__(NoInit__self)_-882242315.graph.json", "untyped_S1.name(S1__self)_-882226195.graph.json", "untyped_S2.name(S2__self)_-882226040.graph.json", "untyped_S3.name(S3__self)_-882240362.graph.json", "untyped_Top.func(Top__self)_-882240951.graph.json", "untyped_py-testcases_inheritance_inheritance.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "27",
+    "duration" : "175ms",
+    "end" : "2026-10-21T17:39:43.411+02:00",
+    "expressions" : "79",
+    "files" : "16",
+    "globals" : "0",
+    "members" : "194",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-21T17:39:43.236+02:00",
+    "statements" : "43",
+    "units" : "49",
+    "version" : "1.0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/inheritance"
+  }
+}

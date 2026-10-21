@@ -2,32 +2,25 @@ package it.unive.pylisa.cfg;
 
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
-import it.unive.lisa.program.SourceCodeLocation;
-import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.annotations.values.StringAnnotationValue;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeMember;
-import it.unive.pylisa.PyClassParser;
-import it.unive.pylisa.cfg.expression.PyClassAttributes;
+import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * The bases of the classes of the program, as written in the source (see
- * {@link #BASES}), used to decide whether a class is abstract (see
- * {@link #isAbstract}): a class whose metaclass is {@code abc.ABCMeta} (e.g. a
- * subclass of {@code abc.ABC}) cannot be instantiated ({@code TypeError})
- * while it has abstract methods, that is, methods decorated with
- * {@code @abc.abstractmethod} (in the class or in its bases) that it does not
- * override. The bases are resolved to the classes of the program with the
- * same name; when they cannot be (e.g. a base that is a library class, or
- * several bases when some abstract method is inherited, as another base might
- * define it), the abstract methods of the class are not known.
+ * {@link #BASES}; {@code PyClassParser} resolves them to the ancestors of the
+ * classes), and the abstract classes: a class whose metaclass is
+ * {@code abc.ABCMeta} (e.g. a subclass of {@code abc.ABC}) cannot be
+ * instantiated ({@code TypeError}) while it has abstract methods, that is,
+ * methods decorated with {@code @abc.abstractmethod} that it does not override
+ * (see {@link #isAbstract}).
  */
 public final class ClassBases {
 
@@ -55,7 +48,9 @@ public final class ClassBases {
 	public static final String UNKNOWN = "?";
 
 	/**
-	 * The annotation of a method decorated with {@code @abc.abstractmethod}.
+	 * The annotation of a method decorated with {@code @abc.abstractmethod}
+	 * (that must not be propagated to the methods overriding it, see
+	 * {@link Annotation#isInherited()}).
 	 */
 	public static final String ABSTRACT = "pylisa.abstract_method";
 
@@ -78,12 +73,17 @@ public final class ClassBases {
 			members.add(new AnnotationMember(BASE, new StringAnnotationValue(base)));
 		if (metaclass != null)
 			members.add(new AnnotationMember(METACLASS, new StringAnnotationValue(metaclass)));
-		return new Annotation(BASES, members);
+		// not propagated by LiSA to the subclasses
+		return new Annotation(BASES, members, true);
 	}
 
 	/**
 	 * Whether creating an object of the given class raises {@code TypeError}
-	 * because the class is abstract.
+	 * because the class is abstract: its metaclass is {@code abc.ABCMeta}, and
+	 * some of its attributes is an abstract method, that is, the first class
+	 * in its method resolution order defining it (see {@link PyMro#definer})
+	 * defines it as an abstract method. This is not known for classes whose
+	 * bases are not known.
 	 *
 	 * @param program the program
 	 * @param unit    the class
@@ -96,115 +96,58 @@ public final class ClassBases {
 		if (program.getAllCFGs().stream().noneMatch(ClassBases::abstractMethod))
 			// no abstract method in the program
 			return Satisfiability.NOT_SATISFIED;
-		Info info = info(program, unit, new HashSet<>());
-		if (info == null)
+		List<CompilationUnit> mro = untracked(unit) ? null : PyMro.of(unit);
+		if (mro == null || mro.stream().anyMatch(ClassBases::untracked))
 			return Satisfiability.UNKNOWN;
-		return Satisfiability.fromBoolean(info.abcMeta() && !info.abstracts().isEmpty());
+		if (mro.stream().noneMatch(ClassBases::declaresABCMeta))
+			return Satisfiability.NOT_SATISFIED;
+		for (CompilationUnit cu : mro)
+			for (CodeMember member : cu.getInstanceCodeMembers(false))
+				if (abstractMethod(member) && PyMro.definer(unit, member.getDescriptor().getName(), null) == cu)
+					return Satisfiability.SATISFIED;
+		return Satisfiability.NOT_SATISFIED;
 	}
 
-	// the abstract methods of a class, and whether its metaclass is ABCMeta
-	private record Info(
-			Set<String> abstracts,
-			boolean abcMeta) {
+	/**
+	 * Whether the given class might have {@code abc.ABCMeta} as metaclass,
+	 * whose instance checks also hold for the virtual subclasses registered
+	 * with {@code register}, that are not tracked.
+	 *
+	 * @param unit the class
+	 *
+	 * @return whether the class might be an abstract base class
+	 */
+	public static boolean mightBeAbstractBase(
+			ClassUnit unit) {
+		List<CompilationUnit> mro = untracked(unit) ? null : PyMro.of(unit);
+		return mro == null || mro.stream().anyMatch(cu -> untracked(cu) || declaresABCMeta(cu));
 	}
 
-	// the info of the class, or null if it is not known
-	private static Info info(
-			Program program,
-			ClassUnit unit,
-			Set<ClassUnit> visiting) {
-		if (!visiting.add(unit))
-			return null;
-		Set<String> inherited = new HashSet<>();
-		boolean abcMeta = false;
-		int bases = 0;
+	// whether the bases of the class are not known
+	private static boolean untracked(
+			CompilationUnit unit) {
+		return unit.getAnnotationList().stream()
+				.anyMatch(a -> a.getAnnotationName().equals(PyBinaryDispatch.UNTRACKED_BASES));
+	}
+
+	// whether the class has ABC as a base, or ABCMeta as metaclass
+	private static boolean declaresABCMeta(
+			CompilationUnit unit) {
 		for (Annotation ann : unit.getAnnotationList())
 			if (ann.getAnnotationName().equals(BASES))
 				for (AnnotationMember member : ann.getAnnotationMembers()) {
 					// toString is the getter of the value
 					String name = member.getValue().toString();
-					if (member.getId().equals(METACLASS)) {
-						if (!isABCMeta(program, name))
-							// another metaclass
-							return null;
-						abcMeta = true;
-						continue;
-					}
-					ClassUnit base = programClass(program, name);
-					if (base != null) {
-						Info baseInfo = info(program, base, visiting);
-						if (baseInfo == null)
-							return null;
-						abcMeta |= baseInfo.abcMeta();
-						bases++;
-						inherited.addAll(baseInfo.abstracts());
-					} else if (isABC(program, name))
-						abcMeta = true;
-					else if (!name.equals("object"))
-						// e.g. a library class
-						return null;
+					if (member.getId().equals(METACLASS) ? name.equals("ABCMeta") || name.equals("abc.ABCMeta")
+							: name.equals("ABC") || name.equals("abc.ABC"))
+						return true;
 				}
-
-		if (bases > 1 && !inherited.isEmpty())
-			// several bases, and abstract methods: one of the bases might
-			// define them, depending on the order of resolution
-			return null;
-		Set<String> abstracts = new HashSet<>();
-		for (String name : inherited)
-			if (!defines(unit, name))
-				abstracts.add(name);
-		for (CodeMember member : members(unit))
-			if (abstractMethod(member))
-				abstracts.add(member.getDescriptor().getName());
-		return new Info(abstracts, abcMeta);
-	}
-
-	// whether the class defines name, with a method that is not abstract or
-	// in its body
-	private static boolean defines(
-			ClassUnit unit,
-			String name) {
-		for (CodeMember member : members(unit))
-			if (member.getDescriptor().getName().equals(name) && !abstractMethod(member))
-				return true;
-		return PyClassAttributes.attribute(unit, name) != null;
-	}
-
-	// the methods of the class (also the static ones)
-	private static List<CodeMember> members(
-			ClassUnit unit) {
-		List<CodeMember> members = new ArrayList<>(unit.getInstanceCodeMembers(false));
-		for (CodeMember member : unit.getCodeMembers())
-			if (!member.getDescriptor().getName().equals(PyClassParser.INSTRUMENTED_CLASS_INIT_NAME))
-				members.add(member);
-		return members;
+		return false;
 	}
 
 	private static boolean abstractMethod(
 			CodeMember member) {
 		return member instanceof CFG && member.getDescriptor().getAnnotationList().stream()
 				.anyMatch(a -> a.getAnnotationName().equals(ABSTRACT));
-	}
-
-	// the class of the program with the given name, if any
-	private static ClassUnit programClass(
-			Program program,
-			String name) {
-		Unit unit = program.getUnit(name);
-		return unit instanceof ClassUnit && ((ClassUnit) unit).getLocation() instanceof SourceCodeLocation
-				? (ClassUnit) unit
-				: null;
-	}
-
-	private static boolean isABC(
-			Program program,
-			String name) {
-		return programClass(program, name) == null && (name.equals("ABC") || name.equals("abc.ABC"));
-	}
-
-	private static boolean isABCMeta(
-			Program program,
-			String name) {
-		return programClass(program, name) == null && (name.equals("ABCMeta") || name.equals("abc.ABCMeta"));
 	}
 }

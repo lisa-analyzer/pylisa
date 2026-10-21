@@ -27,6 +27,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.PyMro;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.dicts.DictModel;
@@ -193,11 +194,15 @@ public class PyMethodCall extends UnresolvedCall {
 			Type t) {
 		Set<CFG> statics = new HashSet<>();
 		if (t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
-				&& t.asPointerType().getInnerType().asUnitType().getUnit() instanceof ClassUnit)
-			for (CodeMember member : t.asPointerType().getInnerType().asUnitType().getUnit()
-					.getCodeMembersByName(getTargetName()))
-				if (member instanceof CFG && !member.getDescriptor().isInstance())
-					statics.add((CFG) member);
+				&& t.asPointerType().getInnerType().asUnitType().getUnit() instanceof ClassUnit) {
+			// the first class in the method resolution order defining it
+			CompilationUnit definer = PyMro.definer(t.asPointerType().getInnerType().asUnitType().getUnit(),
+					getTargetName(), null);
+			if (definer != null)
+				for (CodeMember member : definer.getCodeMembersByName(getTargetName()))
+					if (member instanceof CFG && !member.getDescriptor().isInstance())
+						statics.add((CFG) member);
+		}
 		return statics;
 	}
 
