@@ -18,6 +18,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.libraries.RangeBuiltin;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Set;
@@ -34,7 +35,7 @@ public final class Iteration {
 	 * Yields any of the elements of the iterable (e.g. the one bound to the
 	 * variable of a comprehension, or of a for loop): the elements of a list,
 	 * the keys of a dictionary, the characters of a {@code str}, the bytes of a
-	 * {@code bytes}, and the {@code int}s of {@code range(...)}. Iterating over
+	 * {@code bytes}, and the {@code int}s of a range (see {@link RangeBuiltin}). Iterating over
 	 * values that cannot be iterated (e.g. an {@code int}) raises
 	 * {@code TypeError}; the elements of other iterables (e.g. an object whose
 	 * class defines {@code __iter__}, that is not called) are unknown.
@@ -73,6 +74,8 @@ public final class Iteration {
 				result = result.lub(DictModel.keys(analysis, state, iterable, pp));
 			else if (t.isStringType())
 				result = result.lub(analysis.smallStepSemantics(state, new PushAny(StringType.INSTANCE, loc), pp));
+			else if (RangeBuiltin.isRange(t))
+				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), pp));
 			else if (t instanceof PyBytesType)
 				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), pp));
 			else if (t.isCodeMemberType() || (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t)))

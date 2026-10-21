@@ -17,7 +17,7 @@ import java.util.function.Predicate;
  * The type hints of {@code isinstance(value, hint)} and
  * {@code _sv_verifier.check_type(value, hint)}, given by the runtime type of
  * {@code hint}. The supported hints are {@code int} (also satisfied by a
- * {@code bool}), {@code float}, {@code str}, {@code bytes}, {@code list} and
+ * {@code bool}), {@code float}, {@code str}, {@code bytes}, {@code list}, {@code range} and
  * {@code None}, the classes of the program (also satisfied by the objects of
  * their subclasses; since the bases of the classes are not tracked, both
  * outcomes are possible for an object of a class with bases) and their unions
@@ -115,6 +115,8 @@ public final class TypeHints {
 			return PyNative.BYTES;
 		case "list":
 			return ListModel::isList;
+		case "range":
+			return RangeBuiltin::isRange;
 		default:
 			// a function of the program is not a type either
 			return builtin.isEmpty() || FUNCTIONS.contains(builtin) ? NOT_A_TYPE : null;

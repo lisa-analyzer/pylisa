@@ -19,19 +19,22 @@ import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.RangeBuiltin;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 
 /**
  * Native implementation of {@code list(iterable=None)}: {@code list()} is a new
  * empty list, while {@code list(iterable)} is a new list with the elements of
- * {@code iterable}, that are not tracked: they are unknown elements at unknown
- * indices (see {@link ListCreation#UNKNOWN_INDEX}). {@code TypeError} is raised
- * if {@code iterable} might not be iterable (only lists, {@code str} and
- * {@code bytes} are known to be). As for {@code int}, an explicit {@code None}
+ * {@code iterable} at unknown indices (see {@link ListCreation#UNKNOWN_INDEX}):
+ * any of them (see {@link Iteration#elements}), if {@code iterable} is surely
+ * iterable, unknown values otherwise. {@code TypeError} is raised if
+ * {@code iterable} might not be iterable (only lists, {@code str},
+ * {@code bytes} and ranges are known to be). As for {@code int}, an explicit {@code None}
  * is treated as an omitted argument. The name {@code list} is also the type of
  * lists, e.g. in {@code _sv_verifier.check_type(x, list)}.
  */
@@ -71,7 +74,8 @@ public class ListBuiltin extends PyNative {
 				empty = true;
 			else {
 				copy = true;
-				iterable = iterable.lub(hasType(analysis, state, arg, ListOperations.LIST.or(STR).or(BYTES)));
+				iterable = iterable
+						.lub(hasType(analysis, state, arg, ListOperations.LIST.or(STR).or(BYTES).or(RangeBuiltin::isRange)));
 			}
 
 		if (empty)
@@ -80,11 +84,16 @@ public class ListBuiltin extends PyNative {
 		if (copy && iterable != Satisfiability.NOT_SATISFIED) {
 			AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, state, new ExpressionSet[0],
 					expressions);
+			// the elements of the iterable, if it is surely iterable
+			ExpressionSet elements = new ExpressionSet(new PushAny(Untyped.INSTANCE, loc));
+			if (iterable == Satisfiability.SATISFIED && params[0].elements().size() == 1)
+				elements = Iteration.elements(analysis, created, getSubExpressions()[0],
+						params[0].iterator().next(), st).getExecutionExpressions();
 			for (SymbolicExpression list : created.getExecutionExpressions()) {
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
-				result = result.lub(analysis.assign(created, unknown, new PushAny(Untyped.INSTANCE, loc), st)
-						.withExecutionExpression(list));
+				for (SymbolicExpression element : elements)
+					result = result.lub(analysis.assign(created, unknown, element, st).withExecutionExpression(list));
 			}
 		}
 		if (copy && iterable != Satisfiability.SATISFIED)

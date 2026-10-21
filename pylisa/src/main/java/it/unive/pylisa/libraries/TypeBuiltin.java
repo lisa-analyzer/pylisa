@@ -27,7 +27,8 @@ import java.util.Set;
  * {@code obj}, that is the same value as the name of the class (so that, e.g.,
  * {@code type(x) is int} and {@code type(x) is type(y)} can be decided, see
  * {@code PyBinaryDispatch#identical}). This is the builtin function
- * {@code int}, {@code float}, {@code str}, {@code bytes} or {@code list} for
+ * {@code int}, {@code float}, {@code str}, {@code bytes}, {@code list} or
+ * {@code range} for
  * their values (see {@code PyBuiltinRef}), and the class of an object (see
  * {@code PyTypeLiteral}). The class of any other value (e.g. a {@code bool}
  * or {@code None}, whose classes are not modeled) is unknown.
@@ -79,6 +80,8 @@ public class TypeBuiltin extends PyNative {
 			builtin = "bytes";
 		else if (ListModel.isList(t))
 			builtin = "list";
+		else if (RangeBuiltin.isRange(t))
+			builtin = "range";
 		if (builtin != null) {
 			NativeCFG function = PyBuiltinRef.builtin(getCFG().getProgram(), builtin);
 			return new Constant(new CodeMemberType(Collections.singleton(function)), function, loc);
