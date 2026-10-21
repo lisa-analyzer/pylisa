@@ -24,6 +24,8 @@ import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.RangeBuiltin;
+import it.unive.pylisa.libraries.dicts.DictModel;
+import it.unive.pylisa.libraries.dicts.DictViews;
 import it.unive.pylisa.libraries.PyNative;
 
 /**
@@ -33,7 +35,8 @@ import it.unive.pylisa.libraries.PyNative;
  * any of them (see {@link Iteration#elements}), if {@code iterable} is surely
  * iterable, unknown values otherwise. {@code TypeError} is raised if
  * {@code iterable} might not be iterable (only lists, {@code str},
- * {@code bytes} and ranges are known to be), e.g. for an explicit {@code None}.
+ * {@code bytes}, ranges, dictionaries and their views are known to be), e.g.
+ * for an explicit {@code None}.
  * The name {@code list} is also the type of
  * lists, e.g. in {@code _sv_verifier.check_type(x, list)}.
  */
@@ -73,8 +76,8 @@ public class ListBuiltin extends PyNative {
 				empty = true;
 			else {
 				copy = true;
-				iterable = iterable
-						.lub(hasType(analysis, state, arg, ListOperations.LIST.or(STR).or(BYTES).or(RangeBuiltin::isRange)));
+				iterable = iterable.lub(hasType(analysis, state, arg, ListOperations.LIST.or(STR).or(BYTES)
+						.or(RangeBuiltin::isRange).or(DictModel::isDict).or(DictViews::isView)));
 			}
 
 		if (empty)
@@ -83,16 +86,18 @@ public class ListBuiltin extends PyNative {
 		if (copy && iterable != Satisfiability.NOT_SATISFIED) {
 			AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, state, new ExpressionSet[0],
 					expressions);
-			// the elements of the iterable, if it is surely iterable
-			ExpressionSet elements = new ExpressionSet(new PushAny(Untyped.INSTANCE, loc));
-			if (iterable == Satisfiability.SATISFIED && params[0].elements().size() == 1)
-				elements = Iteration.elements(analysis, created, getSubExpressions()[0],
-						params[0].iterator().next(), st).getExecutionExpressions();
+			// the elements of the iterable, if it is surely iterable (computed
+			// in the state where the list has been created, as they might be
+			// new objects, e.g. the tuples of d.items())
+			AnalysisState<A> elements = iterable == Satisfiability.SATISFIED && params[0].elements().size() == 1
+					? Iteration.elements(analysis, created, getSubExpressions()[0], params[0].iterator().next(), st,
+							getMetaVariables())
+					: analysis.smallStepSemantics(created, new PushAny(Untyped.INSTANCE, loc), st);
 			for (SymbolicExpression list : created.getExecutionExpressions()) {
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
-				for (SymbolicExpression element : elements)
-					result = result.lub(analysis.assign(created, unknown, element, st).withExecutionExpression(list));
+				for (SymbolicExpression element : elements.getExecutionExpressions())
+					result = result.lub(analysis.assign(elements, unknown, element, st).withExecutionExpression(list));
 			}
 		}
 		if (copy && iterable != Satisfiability.SATISFIED)

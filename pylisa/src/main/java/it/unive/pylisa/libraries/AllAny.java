@@ -67,7 +67,7 @@ public abstract class AllAny extends PyNative {
 			return result(analysis, state, !decided, decided || unknown);
 		}
 
-		AnalysisState<A> any = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, st);
+		AnalysisState<A> any = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, st, getMetaVariables());
 		// e.g. the TypeError raised by iterating an int
 		AnalysisState<A> result = any.bottomExecution();
 		if (any.getExecutionState().isBottom())

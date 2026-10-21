@@ -151,7 +151,7 @@ public class PyMinMax extends NaryExpression {
 			SymbolicExpression iterable,
 			SymbolicExpression dflt)
 			throws SemanticException {
-		AnalysisState<A> elements = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, this);
+		AnalysisState<A> elements = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, this, getMetaVariables());
 		// e.g. the TypeError raised by iterating an int
 		AnalysisState<A> result = elements.bottomExecution();
 		if (!elements.getExecutionExpressions().isEmpty())

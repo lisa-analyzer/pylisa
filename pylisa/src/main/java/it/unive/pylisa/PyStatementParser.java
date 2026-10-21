@@ -2468,6 +2468,15 @@ public class PyStatementParser
 			ParserRuleContext ctx,
 			For_if_clausesContext forIfClauses,
 			Supplier<Expression> elementVisitor) {
+		return comprehension(ctx, forIfClauses, null, elementVisitor);
+	}
+
+	// a list comprehension, or a dict comprehension if keyVisitor is not null
+	private Expression comprehension(
+			ParserRuleContext ctx,
+			For_if_clausesContext forIfClauses,
+			Supplier<Expression> keyVisitor,
+			Supplier<Expression> elementVisitor) {
 		SourceCodeLocation loc = getLocation(filePath, ctx);
 		Map<String, String> scope = new HashMap<>();
 		List<PyListComprehension.Clause> clauses = new ArrayList<>();
@@ -2484,8 +2493,9 @@ public class PyStatementParser
 					conditions.add(visitDisjunction(clause.disjunction(i)));
 				clauses.add(new PyListComprehension.Clause(target, iterable, conditions));
 			}
+			Expression key = keyVisitor == null ? null : keyVisitor.get();
 			Expression element = elementVisitor.get();
-			return new PyListComprehension(currentCFG, loc, element, clauses);
+			return new PyListComprehension(currentCFG, loc, key, element, clauses);
 		} finally {
 			comprehensions.pop();
 		}
@@ -2676,8 +2686,13 @@ public class PyStatementParser
 		} else if (ctx.set() != null) {
 			List<Expression> values = extractExpressionsFromStar_named_expressions(ctx.set().star_named_expressions());
 			return new SetCreation(currentCFG, getLocation(filePath, ctx), values.toArray(Expression[]::new));
-		} else if (ctx.dictcomp() != null || ctx.setcomp() != null)
-			throw new UnsupportedStatementException("comprehensions are not supported");
+		} else if (ctx.dictcomp() != null)
+			// {key: value for ...}
+			return comprehension(ctx.dictcomp(), ctx.dictcomp().for_if_clauses(),
+					() -> visitExpression(ctx.dictcomp().kvpair().expression(0)),
+					() -> visitExpression(ctx.dictcomp().kvpair().expression(1)));
+		else if (ctx.setcomp() != null)
+			throw new UnsupportedStatementException("set comprehensions are not supported");
 		else if (ctx.ELLIPSIS() != null)
 			throw new UnsupportedStatementException();
 		throw new UnsupportedStatementException();
