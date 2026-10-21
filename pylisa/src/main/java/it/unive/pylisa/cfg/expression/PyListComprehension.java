@@ -49,12 +49,14 @@ public class PyListComprehension extends NaryExpression {
 	/**
 	 * A {@code for x in iterable if c1 if c2 ...} clause.
 	 *
-	 * @param target     the variable bound to the elements
+	 * @param target     the variable bound to the elements, or the targets
+	 *                       they are unpacked into (a {@link TupleCreation} of
+	 *                       variables, as in {@code for k, v in pairs})
 	 * @param iterable   the iterable
 	 * @param conditions the conditions
 	 */
 	public record Clause(
-			VariableRef target,
+			Expression target,
 			Expression iterable,
 			List<Expression> conditions) {
 	}
@@ -162,7 +164,7 @@ public class PyListComprehension extends NaryExpression {
 		// sub-expressions, are local to it
 		Set<Identifier> locals = new HashSet<>();
 		for (Clause clause : clauses)
-			locals.add(clause.target().getVariable());
+			variables(clause.target(), locals);
 		for (Expression sub : getSubExpressions())
 			locals.addAll(sub.getMetaVariables());
 		getMetaVariables().addAll(creation.getMetaVariables());
@@ -197,7 +199,7 @@ public class PyListComprehension extends NaryExpression {
 		for (SymbolicExpression iterable : state.getExecutionExpressions()) {
 			AnalysisState<A> elements = Iteration.elements(analysis, state, clause.iterable(), iterable, this);
 			for (SymbolicExpression elem : elements.getExecutionExpressions())
-				bound = bound.lub(analysis.assign(elements, clause.target().getVariable(), elem, this));
+				bound = bound.lub(bind(interprocedural, elements, clause.target(), elem));
 			// e.g. the TypeError raised by iterating an int
 			bound = bound.lub(elements.bottomExecution());
 		}
@@ -226,5 +228,38 @@ public class PyListComprehension extends NaryExpression {
 		AnalysisState<A> computed = element.forwardSemantics(bound, interprocedural, expressions);
 		expressions.put(element, computed);
 		return computed;
+	}
+
+	// binds the target to the value, unpacking it into the variables of a
+	// tuple of targets (see Unpacking)
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> bind(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			Expression target,
+			SymbolicExpression value)
+			throws SemanticException {
+		if (target instanceof VariableRef)
+			return interprocedural.getAnalysis().assign(state, ((VariableRef) target).getVariable(), value, this);
+		Expression[] targets = ((TupleCreation) target).getSubExpressions();
+		int star = -1;
+		for (int i = 0; i < targets.length; i++)
+			if (targets[i] instanceof StarExpression)
+				star = i;
+		return Unpacking.unpack(interprocedural, state, value, targets, star, this,
+				(
+						s,
+						t,
+						v) -> bind(interprocedural, s, t, v));
+	}
+
+	// the variables of the target
+	private static void variables(
+			Expression target,
+			Set<Identifier> variables) {
+		if (target instanceof VariableRef)
+			variables.add(((VariableRef) target).getVariable());
+		else
+			for (Expression sub : ((NaryExpression) target).getSubExpressions())
+				variables(sub, variables);
 	}
 }

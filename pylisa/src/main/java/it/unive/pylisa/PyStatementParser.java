@@ -2478,12 +2478,7 @@ public class PyStatementParser
 					throw new UnsupportedStatementException("async comprehensions are not supported");
 				// the iterable sees the variables of the previous clauses
 				Expression iterable = visitDisjunction(clause.disjunction(0));
-				String name = clause.star_targets().getText();
-				if (!name.matches("[A-Za-z_][A-Za-z_0-9]*"))
-					throw new UnsupportedStatementException("Tuple/list unpacking targets are not supported");
-				String local = name + "$comp@" + loc.getLine() + ":" + loc.getCol();
-				scope.put(name, local);
-				VariableRef target = new VariableRef(currentCFG, getLocation(filePath, clause.star_targets()), local);
+				Expression target = comprehensionTarget(clause.star_targets(), scope, loc);
 				List<Expression> conditions = new ArrayList<>();
 				for (int i = 1; i < clause.disjunction().size(); i++)
 					conditions.add(visitDisjunction(clause.disjunction(i)));
@@ -2494,6 +2489,64 @@ public class PyStatementParser
 		} finally {
 			comprehensions.pop();
 		}
+	}
+
+	/**
+	 * The target of a clause of a comprehension, whose names are variables
+	 * local to the comprehension (added to {@code scope}): a name, or a tuple
+	 * or list of targets, possibly starred (e.g. {@code k, v} in
+	 * {@code for k, v in pairs}, see {@link PyListComprehension.Clause}).
+	 */
+	private Expression comprehensionTarget(
+			Star_targetsContext ctx,
+			Map<String, String> scope,
+			SourceCodeLocation loc) {
+		if (ctx.star_target().size() == 1)
+			return comprehensionTarget(ctx.star_target(0), scope, loc);
+		List<Expression> elements = new ArrayList<>();
+		for (Star_targetContext t : ctx.star_target())
+			elements.add(comprehensionTarget(t, scope, loc));
+		return new TupleCreation(currentCFG, getLocation(filePath, ctx), elements.toArray(Expression[]::new));
+	}
+
+	private Expression comprehensionTarget(
+			Star_targetContext ctx,
+			Map<String, String> scope,
+			SourceCodeLocation loc) {
+		if (ctx.STAR() != null)
+			return new StarExpression(currentCFG, getLocation(filePath, ctx),
+					comprehensionTarget(ctx.star_target(), scope, loc));
+		return comprehensionTarget(ctx.target_with_star_atom(), scope, loc);
+	}
+
+	private Expression comprehensionTarget(
+			Target_with_star_atomContext ctx,
+			Map<String, String> scope,
+			SourceCodeLocation loc) {
+		Star_atomContext atom = ctx.star_atom();
+		if (atom == null)
+			// e.g. o.x or l[i]
+			throw new UnsupportedStatementException(
+					"attributes and subscripts as targets of comprehensions are not supported");
+		if (atom.name() != null) {
+			String name = atom.name().getText();
+			String local = name + "$comp@" + loc.getLine() + ":" + loc.getCol();
+			scope.put(name, local);
+			return new VariableRef(currentCFG, getLocation(filePath, atom), local);
+		}
+		if (atom.target_with_star_atom() != null)
+			// (x)
+			return comprehensionTarget(atom.target_with_star_atom(), scope, loc);
+		// a nested target, e.g. (b, c) in for a, (b, c) in ...
+		List<Star_targetContext> targets = atom.star_targets_tuple_seq() != null
+				? atom.star_targets_tuple_seq().star_target()
+				: atom.star_targets_list_seq() != null ? atom.star_targets_list_seq().star_target() : List.of();
+		if (targets.isEmpty())
+			throw new UnsupportedStatementException("Empty unpacking targets are not supported");
+		List<Expression> elements = new ArrayList<>();
+		for (Star_targetContext t : targets)
+			elements.add(comprehensionTarget(t, scope, loc));
+		return new TupleCreation(currentCFG, getLocation(filePath, atom), elements.toArray(Expression[]::new));
 	}
 
 	// the reference to name, at the location of ctx: a variable of a

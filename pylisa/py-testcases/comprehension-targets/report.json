@@ -1,0 +1,46 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/comprehension-targets/comprehension-targets.py':15:10] on 'untyped py-testcases/comprehension-targets/comprehension-targets::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/comprehension-targets/comprehension-targets.py':15:10"
+  }, {
+    "message" : "['py-testcases/comprehension-targets/comprehension-targets.py':8:0] on 'untyped py-testcases/comprehension-targets/comprehension-targets::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/comprehension-targets/comprehension-targets.py':8:0"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_comprehension-targets_comprehension-targets.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "11ms",
+    "end" : "2026-10-21T14:30:26.415+02:00",
+    "expressions" : "112",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "163",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-21T14:30:26.404+02:00",
+    "statements" : "16",
+    "units" : "32",
+    "version" : "1.0",
+    "warnings" : "2"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/comprehension-targets"
+  }
+}
