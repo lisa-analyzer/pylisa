@@ -15,6 +15,7 @@ import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.CFGCall;
+import it.unive.pylisa.cfg.expression.CallSites;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.NativeCall;
@@ -179,10 +180,10 @@ public class NondetList extends PyNative {
 			UnresolvedCall call = new UnresolvedCall(getCFG(), loc, CallType.STATIC, null, "nondet_elem",
 					LeftToRightEvaluation.INSTANCE);
 			if (!cfgs.isEmpty())
-				elements = elements.lub(call(new CFGCall(call, cfgs), interprocedural, state, expressions, metas));
+				elements = elements.lub(call(CallSites.within(new CFGCall(call, cfgs), this), interprocedural, state, expressions, metas));
 			if (!natives.isEmpty())
 				elements = elements
-						.lub(call(new NativeCall(call, natives), interprocedural, state, expressions, metas));
+						.lub(call(CallSites.within(new NativeCall(call, natives), this), interprocedural, state, expressions, metas));
 			if (unknown)
 				elements = elements.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), st));
 		}

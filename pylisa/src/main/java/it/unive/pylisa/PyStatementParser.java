@@ -19,6 +19,12 @@ import it.unive.lisa.program.cfg.controlFlow.Loop;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
+import it.unive.lisa.type.Type;
+import it.unive.pylisa.antlr.PythonParser.Except_blockContext;
+import it.unive.lisa.program.cfg.protection.ProtectionBlock;
+import it.unive.lisa.program.cfg.protection.ProtectedBlock;
+import it.unive.lisa.program.cfg.protection.CatchBlock;
+import it.unive.lisa.program.cfg.edge.ErrorEdge;
 import it.unive.lisa.program.cfg.edge.TrueEdge;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -313,6 +319,10 @@ public class PyStatementParser
 
 	// the number of loops enclosing the statement being parsed
 	private int loops = 0;
+
+	// the variables bound to the exceptions handled by the enclosing except
+	// blocks, innermost first (for raise without an exception)
+	private final Deque<String> handlers = new ArrayDeque<>();
 
 	/**
 	 * Builds the parser for a Python program at {@code filePath}.
@@ -820,11 +830,14 @@ public class PyStatementParser
 	@Override
 	public Statement visitRaise_stmt(
 			Raise_stmtContext ctx) {
-		if (ctx.expression().isEmpty())
-			// the exception being handled is not tracked, as except blocks
-			// are not
-			throw new UnsupportedStatementException("re-raising (raise without an exception) is not supported");
 		SourceCodeLocation loc = getLocation(filePath, ctx);
+		if (ctx.expression().isEmpty()) {
+			if (handlers.isEmpty())
+				// e.g. in a function called by an except block
+				throw new UnsupportedStatementException("raise without an exception outside except blocks is not supported");
+			// the exception being handled
+			return new PyRaise(currentCFG, loc, new VariableRef(currentCFG, loc, handlers.peek()), null);
+		}
 		Expression exception = visitExpression(ctx.expression(0));
 		if (exception instanceof VariableRef) {
 			// raise C, with C a class, raises C()
@@ -1485,9 +1498,110 @@ public class PyStatementParser
 	@Override
 	public ParsedBlock visitTry_stmt(
 			Try_stmtContext ctx) {
-		log.warn("Exceptions are not yet supported. The try block at line " + getLine(ctx) + " of file " + filePath
-				+ " is unsoundly translated considering only the code in the try block");
-		return visitBlock(ctx.block());
+		if (!ctx.except_star_block().isEmpty())
+			throw new UnsupportedStatementException("except* blocks are not supported");
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+		// the ends of the paths that continue after the whole statement
+		Collection<Statement> normalExits = new LinkedList<>();
+
+		ParsedBlock body = visitBlock(ctx.block());
+		block.mergeWith(body.getBody());
+		ProtectedBlock tryBlock = new ProtectedBlock(body.getBegin(), body.getEnd(), body.getBody().getNodes());
+
+		// the else block runs when the body completes normally, and the
+		// exceptions it raises are not caught by the except blocks
+		ProtectedBlock elseBlock = null;
+		if (ctx.else_block() != null) {
+			ParsedBlock orElse = visitBlock(ctx.else_block().block());
+			block.mergeWith(orElse.getBody());
+			if (body.canBeContinued())
+				block.addEdge(new SequentialEdge(body.getEnd(), orElse.getBegin()));
+			elseBlock = new ProtectedBlock(orElse.getBegin(), orElse.getEnd(), orElse.getBody().getNodes());
+			if (orElse.canBeContinued())
+				normalExits.add(orElse.getEnd());
+		} else if (body.canBeContinued())
+			normalExits.add(body.getEnd());
+
+		// the errors raised in the body, that accumulate until its end or
+		// that stop the execution, reach each except block (see ErrorEdge)
+		List<CatchBlock> catches = new LinkedList<>();
+		for (Except_blockContext except : ctx.except_block()) {
+			Type[] types = exceptionClasses(except);
+			SourceCodeLocation loc = getLocation(filePath, except);
+			// the variable bound to the exception: a synthetic one if the
+			// block does not name it, for raise without an exception
+			VariableRef variable = new VariableRef(currentCFG, loc,
+					except.name() != null ? except.name().getText() : "$exc@" + loc.getLine() + ":" + loc.getCol());
+			handlers.push(variable.getName());
+			ParsedBlock handler;
+			try {
+				handler = visitBlock(except.block());
+			} finally {
+				handlers.pop();
+			}
+			block.mergeWith(handler.getBody());
+			CatchBlock catchBlock = new CatchBlock(variable,
+					new ProtectedBlock(handler.getBegin(), handler.getEnd(), handler.getBody().getNodes()), types);
+			catches.add(catchBlock);
+			if (body.canBeContinued())
+				block.addEdge(new ErrorEdge(body.getEnd(), handler.getBegin(), variable, tryBlock, types));
+			for (Statement st : body.getBody().getNodes())
+				if (st.stopsExecution())
+					block.addEdge(new ErrorEdge(st, handler.getBegin(), variable, tryBlock, types));
+			if (handler.canBeContinued())
+				normalExits.add(handler.getEnd());
+		}
+
+		ProtectedBlock finallyBlock = null;
+		if (ctx.finally_block() != null) {
+			ParsedBlock fin = visitBlock(ctx.finally_block().block());
+			block.mergeWith(fin.getBody());
+			finallyBlock = new ProtectedBlock(fin.getBegin(), fin.getEnd(), fin.getBody().getNodes());
+		}
+
+		// the end of the whole statement (unreachable if no path continues
+		// after it, as the statements following it): with a finally block,
+		// CFGTweaker.addFinallyEdges connects the paths to it, and it to the
+		// end
+		NoOp closing = new NoOp(currentCFG, getLocation(filePath, ctx));
+		block.addNode(closing);
+		if (finallyBlock == null)
+			for (Statement st : normalExits)
+				block.addEdge(new SequentialEdge(st, closing));
+		currentCFG.getDescriptor().addProtectionBlock(
+				new ProtectionBlock(tryBlock, catches, elseBlock, finallyBlock, closing));
+		return new ParsedBlock(body.getBegin(), block, closing);
+	}
+
+	// the classes of the exceptions an except block catches: a class, or a
+	// tuple of classes (BaseException, if the block catches everything)
+	private Type[] exceptionClasses(
+			Except_blockContext ctx) {
+		if (ctx.expression() == null && ctx.expressions() == null)
+			return new Type[] { PyClassType.lookup(LibrarySpecificationProvider.BASE_EXCEPTION) };
+		if (ctx.expression() == null)
+			throw new UnsupportedStatementException("except blocks with several expressions are not supported");
+		String text = ctx.expression().getText();
+		List<String> names = text.startsWith("(") && text.endsWith(")")
+				? Arrays.asList(text.substring(1, text.length() - 1).split(","))
+				: List.of(text);
+		List<Type> types = new ArrayList<>();
+		for (String name : names) {
+			ClassUnit cls = exceptionClass(name);
+			if (cls == null)
+				throw new UnsupportedStatementException("the exceptions caught by " + text + " are not known");
+			types.add(PyClassType.lookup(cls.getName()));
+		}
+		return types.toArray(Type[]::new);
+	}
+
+	// the class with the given name (also imported from a local module), if
+	// any
+	private ClassUnit exceptionClass(
+			String name) {
+		LocalImports.Member member = localImports.member(name);
+		Unit unit = program.getUnit(member != null ? member.name() : name);
+		return unit instanceof ClassUnit ? (ClassUnit) unit : null;
 	}
 
 	@Override

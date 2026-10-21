@@ -4,6 +4,7 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
@@ -105,6 +106,26 @@ public final class CallSites {
 	 * call are raised by that statement (see
 	 * {@link it.unive.pylisa.libraries.PyExceptions}).
 	 */
+	/**
+	 * Makes the given call, created by {@code caller} (and not part of the
+	 * cfg), a sub-expression of {@code caller}: the errors raised by the
+	 * targets of the call, that are attributed to the call, are then raised by
+	 * the statement containing {@code caller} (e.g. for the except blocks
+	 * protecting it, see {@code ProtectedBlock}).
+	 *
+	 * @param <C>    the kind of call
+	 * @param call   the call
+	 * @param caller the statement creating the call
+	 *
+	 * @return the call
+	 */
+	public static <C extends Call> C within(
+			C call,
+			Statement caller) {
+		call.setParentStatement(caller);
+		return call;
+	}
+
 	public static final class Site extends UnresolvedCall {
 
 		private final Statement caller;
@@ -118,6 +139,9 @@ public final class CallSites {
 				Expression... args) {
 			super(caller.getCFG(), location, kind, qualifier, name, LeftToRightEvaluation.INSTANCE, args);
 			this.caller = caller;
+			// the errors of the call are raised by the caller (e.g. for the
+			// except blocks protecting it)
+			setParentStatement(caller);
 		}
 
 		/**

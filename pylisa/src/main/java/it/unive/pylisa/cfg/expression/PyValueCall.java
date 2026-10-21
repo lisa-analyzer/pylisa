@@ -149,9 +149,9 @@ public class PyValueCall extends NaryExpression {
 			result = result.lub(PyExceptions.raise(analysis, consumed, getCFG(), getLocation(), this,
 					LibrarySpecificationProvider.TYPE_ERROR));
 		if (!cfgs.isEmpty())
-			result = result.lub(call(new CFGCall(call, cfgs), interprocedural, consumed, args, expressions));
+			result = result.lub(call(CallSites.within(new CFGCall(call, cfgs), this), interprocedural, consumed, args, expressions));
 		if (!natives.isEmpty())
-			result = result.lub(call(new NativeCall(call, natives), interprocedural, consumed, args, expressions));
+			result = result.lub(call(CallSites.within(new NativeCall(call, natives), this), interprocedural, consumed, args, expressions));
 		if (unknown)
 			result = result.lub(analysis.smallStepSemantics(consumed, new PushAny(Untyped.INSTANCE, getLocation()),
 					this));

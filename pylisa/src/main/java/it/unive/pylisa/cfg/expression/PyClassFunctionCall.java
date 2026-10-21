@@ -92,7 +92,7 @@ public class PyClassFunctionCall extends UnresolvedCall {
 		if (cfgs.isEmpty() || others)
 			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
 
-		CFGCall call = new CFGCall(this, cfgs);
+		CFGCall call = CallSites.within(new CFGCall(this, cfgs), this);
 		AnalysisState<A> result = call.forwardSemanticsAux(interprocedural, state, params, expressions);
 		getMetaVariables().addAll(call.getMetaVariables());
 		return result;

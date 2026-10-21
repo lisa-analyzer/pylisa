@@ -139,7 +139,7 @@ public class PyMethodCall extends UnresolvedCall {
 			Expression[] parameters = getParameters();
 			UnresolvedCall call = new UnresolvedCall(getCFG(), getLocation(), CallType.STATIC, null,
 					getTargetName(), getOrder(), Arrays.copyOfRange(parameters, 1, parameters.length));
-			result = result.lub(call(new CFGCall(call, statics), interprocedural, state,
+			result = result.lub(call(CallSites.within(new CFGCall(call, statics), this), interprocedural, state,
 					Arrays.copyOfRange(params, 1, params.length), expressions));
 		}
 
@@ -301,9 +301,9 @@ public class PyMethodCall extends UnresolvedCall {
 				result = result.lub(PyExceptions.raise(analysis, attr, getCFG(), getLocation(), this,
 						LibrarySpecificationProvider.TYPE_ERROR));
 			if (!cfgs.isEmpty())
-				result = result.lub(call(new CFGCall(call, cfgs), interprocedural, attr, args, expressions));
+				result = result.lub(call(CallSites.within(new CFGCall(call, cfgs), this), interprocedural, attr, args, expressions));
 			if (!natives.isEmpty())
-				result = result.lub(call(new NativeCall(call, natives), interprocedural, attr, args, expressions));
+				result = result.lub(call(CallSites.within(new NativeCall(call, natives), this), interprocedural, attr, args, expressions));
 			for (SymbolicExpression bound : bounds)
 				// a bound method stored in the attribute, called on its object
 				result = result.lub(BoundMethods.call(interprocedural, attr, bound, parameters[0],

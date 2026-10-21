@@ -14,6 +14,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.expression.CallSites;
+import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
 
 /**
@@ -43,7 +44,11 @@ public final class PyExceptions {
 		Type exceptionType = PyClassType.lookup(exceptionClassName);
 		thrower = programStatement(thrower);
 
-		MemoryAllocation alloc = new MemoryAllocation(exceptionType, loc, false);
+		// the exception has a location of its own, as the allocations are
+		// identified by their location: the one of the thrower might be also
+		// the one of another object (e.g. the list in [1][2])
+		MemoryAllocation alloc = new MemoryAllocation(exceptionType, new DerivedLocation(loc, exceptionClassName),
+				false);
 		AnalysisState<A> allocState = analysis.smallStepSemantics(state, alloc, thrower);
 
 		AnalysisState<A> exceptionState = state.bottomExecution();

@@ -1,0 +1,46 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/try-except/try-except.py':62:8] on 'untyped py-testcases/try-except/try-except::$main()': [STATEMENT] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/try-except/try-except.py':62:8"
+  }, {
+    "message" : "['py-testcases/try-except/try-except.py':69:8] on 'untyped py-testcases/try-except/try-except::$main()': [STATEMENT] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/try-except/try-except.py':69:8"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_A.__init__(A__self,_untyped_payload)_524827591.graph.json", "untyped_A.__init__(A__self,_untyped_payload)_524827746.graph.json", "untyped_A.__init__(A__self,_untyped_payload)_524832489.graph.json", "untyped_py-testcases_try-except_try-except.$main().graph.json", "untyped_py-testcases_try-except_try-except.f(untyped_x)_524822290.graph.json", "untyped_py-testcases_try-except_try-except.f(untyped_x)_524826289.graph.json" ],
+  "info" : {
+    "cfgs" : "6",
+    "duration" : "152ms",
+    "end" : "2026-10-21T21:07:20.586+02:00",
+    "expressions" : "83",
+    "files" : "6",
+    "globals" : "0",
+    "members" : "173",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-21T21:07:20.434+02:00",
+    "statements" : "52",
+    "units" : "38",
+    "version" : "1.0",
+    "warnings" : "2"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/try-except"
+  }
+}

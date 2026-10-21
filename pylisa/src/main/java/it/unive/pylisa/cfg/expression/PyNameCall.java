@@ -13,6 +13,8 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.pylisa.cfg.DerivedLocation;
+import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.CFGCall;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.NativeCall;
@@ -45,6 +47,10 @@ public class PyNameCall extends UnresolvedCall {
 	 * @param order      the evaluation order of the parameters
 	 * @param parameters the parameters of the call
 	 */
+	// the expression standing for the object of a bound method held by the
+	// variable (see BoundMethods), that is not part of the cfg
+	private final VariableRef boundObject;
+
 	public PyNameCall(
 			CFG cfg,
 			CodeLocation location,
@@ -52,6 +58,7 @@ public class PyNameCall extends UnresolvedCall {
 			EvaluationOrder order,
 			Expression... parameters) {
 		super(cfg, location, CallType.STATIC, null, name, order, parameters);
+		this.boundObject = new VariableRef(cfg, new DerivedLocation(location, "bound object"), name);
 	}
 
 	@Override
@@ -99,13 +106,13 @@ public class PyNameCall extends UnresolvedCall {
 			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
 					LibrarySpecificationProvider.TYPE_ERROR));
 		if (!cfgs.isEmpty())
-			result = result.lub(call(new CFGCall(this, cfgs), interprocedural, state, params, expressions));
+			result = result.lub(call(CallSites.within(new CFGCall(this, cfgs), this), interprocedural, state, params, expressions));
 		if (!natives.isEmpty())
-			result = result.lub(call(new NativeCall(this, natives), interprocedural, state, params, expressions));
+			result = result.lub(call(CallSites.within(new NativeCall(this, natives), this), interprocedural, state, params, expressions));
 		if (bound)
 			// a bound method, called on its object (this call stands for it)
-			result = result.lub(BoundMethods.call(interprocedural, state, callee, this, getParameters(), params, this,
-					expressions, getMetaVariables()));
+			result = result.lub(BoundMethods.call(interprocedural, state, callee, boundObject, getParameters(), params,
+					this, expressions, getMetaVariables()));
 		if (others)
 			// the variable might also hold something else
 			result = result.lub(super.forwardSemanticsAux(interprocedural, state, params, expressions));
