@@ -86,6 +86,26 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			ExpressionSet[] values) {
 	}
 
+	/**
+	 * Prepares the call of a native: the arguments are matched to the
+	 * parameters as for the other calls (see {@link #prepare}), and the native
+	 * is executed in the state where the call happens, as the parameters of a
+	 * native are not variables of its own.
+	 */
+	@Override
+	public <A extends AbstractLattice<A>,
+			D extends AbstractDomain<A>> Pair<AnalysisState<A>, ExpressionSet[]> prepareForNative(
+					Call call,
+					AnalysisState<A> callState,
+					InterproceduralAnalysis<A, D> interprocedural,
+					StatementStore<A> expressions,
+					Parameter[] formals,
+					ExpressionSet[] parameters)
+					throws SemanticException {
+		return Pair.of(callState,
+				prepare(call, callState, interprocedural, expressions, formals, parameters).getRight());
+	}
+
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Pair<AnalysisState<A>, ExpressionSet[]> prepare(
 			Call call,

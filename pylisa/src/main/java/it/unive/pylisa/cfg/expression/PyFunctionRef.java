@@ -85,7 +85,7 @@ public class PyFunctionRef extends VariableRef {
 			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		CodeMember function = entryState.getExecutionState().isBottom() || entryState.knowsIdentifier(getVariable())
+		CodeMember function = entryState.getExecutionState().isBottom() || entryState.knowsIdentifier(getIdentifier())
 				? null
 				: function();
 		if (function == null)

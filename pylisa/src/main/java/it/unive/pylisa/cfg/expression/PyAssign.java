@@ -247,7 +247,7 @@ public class PyAssign extends Assignment {
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		if (target instanceof VariableRef)
-			return analysis.assign(state, ((VariableRef) target).getVariable(), value, this);
+			return analysis.assign(state, ((VariableRef) target).getIdentifier(), value, this);
 		if (target instanceof PyAttributeAccess) {
 			// o.x is evaluated as the target of the assignment
 			AnalysisState<A> evaluated = target.forwardSemantics(state, interprocedural, expressions);

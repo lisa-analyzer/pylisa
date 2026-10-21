@@ -336,7 +336,7 @@ public class PyListComprehension extends NaryExpression {
 			SymbolicExpression value)
 			throws SemanticException {
 		if (target instanceof VariableRef)
-			return interprocedural.getAnalysis().assign(state, ((VariableRef) target).getVariable(), value, this);
+			return interprocedural.getAnalysis().assign(state, ((VariableRef) target).getIdentifier(), value, this);
 		Expression[] targets = ((TupleCreation) target).getSubExpressions();
 		int star = -1;
 		for (int i = 0; i < targets.length; i++)
@@ -354,7 +354,7 @@ public class PyListComprehension extends NaryExpression {
 			Expression target,
 			Set<Identifier> variables) {
 		if (target instanceof VariableRef)
-			variables.add(((VariableRef) target).getVariable());
+			variables.add(((VariableRef) target).getIdentifier());
 		else
 			for (Expression sub : ((NaryExpression) target).getSubExpressions())
 				variables(sub, variables);
