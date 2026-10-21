@@ -28,8 +28,8 @@ import java.util.function.Predicate;
 public final class TypeHints {
 
 	// the builtin functions that are not types
-	private static final Set<String> FUNCTIONS = Set.of("print", "len", "input", "repr", "exec", "eval", "compile",
-			"isinstance");
+	private static final Set<String> FUNCTIONS = Set.of("print", "len", "input", "repr", "exec", "eval", "compile", "sum",
+			"all", "any", "isinstance");
 
 	// the hint of a function that is not a type
 	private static final Predicate<Type> NOT_A_TYPE = t -> false;

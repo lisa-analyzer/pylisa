@@ -128,37 +128,20 @@ public class PyMinMax extends NaryExpression {
 	}
 
 	// min(iterable): the elements of a list or tuple of known length are
-	// compared as values, otherwise the result is any of the elements
+	// compared as values (when each has a single value), otherwise the result
+	// is any of the elements
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> ofIterable(
 			Analysis<A, D> analysis,
 			AnalysisState<A> state,
 			SymbolicExpression iterable,
 			SymbolicExpression dflt)
 			throws SemanticException {
-		CodeLocation loc = getLocation();
-		Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, this);
-		if (!types.isEmpty() && types.size() == 1
-				&& (ListModel.isList(types.iterator().next()) || Unpacking.isTuple(types.iterator().next()))) {
-			Type type = types.iterator().next();
-			ListModel.Shape shape = ListModel.shape(analysis, state, iterable, this);
-			if (shape.length() != null) {
-				HeapDereference deref = new HeapDereference(type.asPointerType().getInnerType(), iterable, loc);
-				List<SymbolicExpression> elements = new ArrayList<>();
-				for (int i = 0; i < shape.length(); i++)
-					for (SymbolicExpression e : analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE,
-							deref, new Constant(Int32Type.INSTANCE, i, loc), loc), this).getExecutionExpressions()) {
-						elements.add(e);
-						// several values for an element: they are not
-						// compared as values
-						if (elements.size() > i + 1)
-							return any(analysis, state, iterable, dflt);
-					}
-				if (elements.isEmpty())
-					return empty(analysis, state, dflt);
-				return ofValues(analysis, state, elements, true);
-			}
-		}
-		return any(analysis, state, iterable, dflt);
+		List<SymbolicExpression> elements = ListModel.exactElements(analysis, state, iterable, this);
+		if (elements == null)
+			return any(analysis, state, iterable, dflt);
+		if (elements.isEmpty())
+			return empty(analysis, state, dflt);
+		return ofValues(analysis, state, elements, true);
 	}
 
 	// min(iterable): any of the elements, that might be empty

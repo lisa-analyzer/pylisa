@@ -38,10 +38,13 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.ListCreation;
+import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -206,6 +209,46 @@ public final class ListModel {
 		AccessChild unknown = new AccessChild(Untyped.INSTANCE, deref,
 				new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 		return analysis.assign(result, unknown, new PushAny(Untyped.INSTANCE, loc), pp);
+	}
+
+	/**
+	 * Yields the elements of a list or tuple of known length, in order, when
+	 * each of them has a single value.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param iterable the list or tuple
+	 * @param pp       the program point using the elements
+	 *
+	 * @return the elements, or {@code null} if they are not known
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> List<SymbolicExpression> exactElements(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression iterable,
+			ProgramPoint pp)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, pp);
+		if (types.size() != 1 || !(isList(types.iterator().next()) || Unpacking.isTuple(types.iterator().next())))
+			return null;
+		Shape shape = shape(analysis, state, iterable, pp);
+		if (shape.length() == null)
+			return null;
+		HeapDereference deref = new HeapDereference(types.iterator().next().asPointerType().getInnerType(), iterable,
+				loc);
+		List<SymbolicExpression> elements = new ArrayList<>();
+		for (int i = 0; i < shape.length(); i++) {
+			ExpressionSet element = analysis.smallStepSemantics(state,
+					new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, i, loc), loc), pp)
+					.getExecutionExpressions();
+			if (element.elements().size() != 1)
+				return null;
+			elements.add(element.elements().iterator().next());
+		}
+		return elements;
 	}
 
 	/**

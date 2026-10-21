@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -91,6 +92,39 @@ public class PyNot extends UnaryExpression {
 		if (unknown)
 			result = result.lub(analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), this));
 		return result;
+	}
+
+	/**
+	 * Python's truth value of {@code value} (e.g. in {@code if value:}, see
+	 * {@link #alwaysTrue(Type)}): it is not known for objects whose class
+	 * defines {@code __bool__} or {@code __len__} (e.g. a list).
+	 *
+	 * @param <A>      the kind of the analysis state
+	 * @param <D>      the kind of the abstract domain
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param value    the value
+	 * @param pp       the program point using the truth value
+	 *
+	 * @return whether the value is true
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability truth(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression value,
+			Statement pp)
+			throws SemanticException {
+		Set<Type> types = analysis.getRuntimeTypesOf(state, value, pp);
+		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, pp))
+			return Satisfiability.UNKNOWN;
+		if (types.stream().allMatch(PyNot::alwaysTrue))
+			return Satisfiability.SATISFIED;
+		if (types.stream().anyMatch(t -> t.isPointerType() || alwaysTrue(t)))
+			return Satisfiability.UNKNOWN;
+		Satisfiability sat = analysis.satisfies(state, value, pp);
+		return sat == Satisfiability.BOTTOM ? Satisfiability.UNKNOWN : sat;
 	}
 
 	/**
