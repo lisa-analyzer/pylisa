@@ -72,6 +72,6 @@ public class FloatMod extends BinaryExpression implements PluggableStatement {
 		it.unive.lisa.symbolic.value.BinaryExpression mod = new it.unive.lisa.symbolic.value.BinaryExpression(
 				getStaticType(), left, right, Modulo.INSTANCE, loc);
 		Constant zero = new Constant(Float32Type.INSTANCE, 0f, loc);
-		return DivisionGuard.guardedCompute(analysis, state, right, zero, mod, getCFG(), loc, st, this);
+		return DivisionGuard.guardedCompute(analysis, state, right, zero, mod, getCFG(), loc, st, st);
 	}
 }

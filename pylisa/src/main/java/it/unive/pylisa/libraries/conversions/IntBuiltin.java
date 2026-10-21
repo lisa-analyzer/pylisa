@@ -61,6 +61,7 @@ public class IntBuiltin extends PyNative {
 		BinaryExpression value = new BinaryExpression(Int32Type.INSTANCE, x, base, ToInt.INSTANCE, loc);
 		BinaryExpression raises = new BinaryExpression(BoolType.INSTANCE, x, base, ConversionRaises.INT, loc);
 		return typeChecked(analysis, state, typed, ExceptionGuard.guardedCompute(analysis, state, raises,
-				LibrarySpecificationProvider.VALUE_ERROR, value, getCFG(), loc, getOriginatingStatement(), this));
+				LibrarySpecificationProvider.VALUE_ERROR, value, getCFG(), loc, getOriginatingStatement(),
+				getOriginatingStatement()));
 	}
 }

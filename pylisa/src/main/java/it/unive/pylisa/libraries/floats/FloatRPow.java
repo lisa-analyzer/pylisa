@@ -65,6 +65,6 @@ public class FloatRPow extends BinaryExpression implements PluggableStatement {
 			throws SemanticException {
 		// other ** self
 		return PowerSemantics.compute(interprocedural.getAnalysis(), state, right, left, false, getCFG(),
-				getLocation(), st, this);
+				getLocation(), st, st);
 	}
 }

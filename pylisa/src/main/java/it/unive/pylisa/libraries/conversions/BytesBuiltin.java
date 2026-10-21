@@ -94,7 +94,7 @@ public class BytesBuiltin extends PyNative {
 									ComparisonLt.INSTANCE, loc),
 							LibrarySpecificationProvider.VALUE_ERROR,
 							new UnaryExpression(PyBytesType.INSTANCE, source, BytesUnary.ZEROS, loc), getCFG(), loc,
-							getOriginatingStatement(), this));
+							getOriginatingStatement(), getOriginatingStatement()));
 		if (isBytes != Satisfiability.NOT_SATISFIED)
 			result = result.lub(!noCodec ? raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR)
 					: compute(analysis, state, source));

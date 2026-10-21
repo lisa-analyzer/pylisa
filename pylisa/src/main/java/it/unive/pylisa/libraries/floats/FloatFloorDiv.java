@@ -72,6 +72,6 @@ public class FloatFloorDiv extends BinaryExpression implements PluggableStatemen
 		it.unive.lisa.symbolic.value.BinaryExpression div = new it.unive.lisa.symbolic.value.BinaryExpression(
 				getStaticType(), left, right, FloorDivision.INSTANCE, loc);
 		Constant zero = new Constant(Float32Type.INSTANCE, 0f, loc);
-		return DivisionGuard.guardedCompute(analysis, state, right, zero, div, getCFG(), loc, st, this);
+		return DivisionGuard.guardedCompute(analysis, state, right, zero, div, getCFG(), loc, st, st);
 	}
 }

@@ -64,6 +64,6 @@ public class IntRPow extends BinaryExpression implements PluggableStatement {
 			throws SemanticException {
 		// other ** self
 		return PowerSemantics.compute(interprocedural.getAnalysis(), state, right, left, true, getCFG(),
-				getLocation(), st, this);
+				getLocation(), st, st);
 	}
 }

@@ -129,7 +129,7 @@ public class StrGetItemNative extends PyNative {
 			result = result.lub(ExceptionGuard.guardedCompute(analysis, state, outOfRange,
 					LibrarySpecificationProvider.INDEX_ERROR,
 					new BinaryExpression(itemType, s, index, itemOp, loc),
-					getCFG(), loc, st, this));
+					getCFG(), loc, st, st));
 		}
 
 		if (slice != Satisfiability.NOT_SATISFIED) {
@@ -145,7 +145,7 @@ public class StrGetItemNative extends PyNative {
 						new Constant(Int32Type.INSTANCE, 0, loc), ComparisonEq.INSTANCE, loc);
 				result = result.lub(typeChecked(analysis, state, typed,
 						ExceptionGuard.guardedCompute(analysis, state, zeroStep,
-								LibrarySpecificationProvider.VALUE_ERROR, value, getCFG(), loc, st, this)));
+								LibrarySpecificationProvider.VALUE_ERROR, value, getCFG(), loc, st, st)));
 			} else
 				// the step of a slice object is not known
 				result = result.lub(compute(analysis, state, value))

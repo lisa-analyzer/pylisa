@@ -60,6 +60,6 @@ public class FloatPow extends BinaryExpression implements PluggableStatement {
 			throws SemanticException {
 		// self ** other
 		return PowerSemantics.compute(interprocedural.getAnalysis(), state, left, right, false, getCFG(),
-				getLocation(), st, this);
+				getLocation(), st, st);
 	}
 }

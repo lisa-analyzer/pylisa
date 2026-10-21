@@ -90,7 +90,7 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 				Type inner = t.asPointerType().getInnerType();
 
 				if (inner.canBeAssignedTo(tupleType)) {
-					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
+					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, st,
 							LibrarySpecificationProvider.TYPE_ERROR));
 					continue;
 				}
@@ -99,7 +99,7 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 					// the elements of the list
 					for (SymbolicExpression index : params[1])
 						for (SymbolicExpression value : params[2])
-							result = result.lub(ListModel.write(analysis, state, self, index, value, this));
+							result = result.lub(ListModel.write(analysis, state, self, index, value, st));
 					continue;
 				}
 
@@ -107,7 +107,7 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 					// the entries of the dictionary
 					for (SymbolicExpression key : params[1])
 						for (SymbolicExpression value : params[2])
-							result = result.lub(DictModel.write(analysis, state, self, key, value, this));
+							result = result.lub(DictModel.write(analysis, state, self, key, value, st));
 					continue;
 				}
 

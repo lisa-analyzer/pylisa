@@ -61,6 +61,6 @@ public class ListMul extends BinaryExpression implements PluggableStatement {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		// the other operand is the right one (the receiver is the list)
-		return ListOperations.unknownResult(interprocedural, state, right, ListOperations.INT, this);
+		return ListOperations.unknownResult(interprocedural, state, right, ListOperations.INT, st);
 	}
 }

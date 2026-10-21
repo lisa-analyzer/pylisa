@@ -55,6 +55,6 @@ public class BytesFromHex extends PyNative {
 				new UnaryExpression(BoolType.INSTANCE, args[0], FromHexRaises.INSTANCE, loc),
 				LibrarySpecificationProvider.VALUE_ERROR,
 				new UnaryExpression(PyBytesType.INSTANCE, args[0], BytesUnary.FROMHEX, loc), getCFG(), loc,
-				getOriginatingStatement(), this));
+				getOriginatingStatement(), getOriginatingStatement()));
 	}
 }

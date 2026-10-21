@@ -66,6 +66,6 @@ public class ListAdd extends BinaryExpression implements PluggableStatement {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		// the other operand is the right one (the receiver is the list)
-		return ListOperations.unknownResult(interprocedural, state, right, ListOperations.LIST, this);
+		return ListOperations.unknownResult(interprocedural, state, right, ListOperations.LIST, st);
 	}
 }

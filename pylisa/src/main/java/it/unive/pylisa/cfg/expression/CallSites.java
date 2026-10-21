@@ -65,8 +65,37 @@ public final class CallSites {
 		synchronized (calls) {
 			return calls.computeIfAbsent(caller, c -> new HashMap<>()).computeIfAbsent(
 					new Key(kind, qualifier, name, List.of(args)),
-					k -> new UnresolvedCall(caller.getCFG(), caller.getLocation(), kind, qualifier, name,
-							LeftToRightEvaluation.INSTANCE, args));
+					k -> new Site(caller, kind, qualifier, name, args));
+		}
+	}
+
+	/**
+	 * A call performed by a statement of the program to implement its semantics
+	 * (e.g. {@code __floordiv__} for {@code x // y}): the errors raised by the
+	 * call are raised by that statement (see
+	 * {@link it.unive.pylisa.libraries.PyExceptions}).
+	 */
+	public static final class Site extends UnresolvedCall {
+
+		private final Statement caller;
+
+		private Site(
+				Statement caller,
+				CallType kind,
+				String qualifier,
+				String name,
+				Expression... args) {
+			super(caller.getCFG(), caller.getLocation(), kind, qualifier, name, LeftToRightEvaluation.INSTANCE, args);
+			this.caller = caller;
+		}
+
+		/**
+		 * Yields the statement performing the call.
+		 *
+		 * @return the statement
+		 */
+		public Statement getCaller() {
+			return caller;
 		}
 	}
 }

@@ -150,7 +150,7 @@ final class StrSearchSemantics {
 		BinaryExpression missing = new BinaryExpression(BoolType.INSTANCE, value,
 				new Constant(Int32Type.INSTANCE, -1, loc), ComparisonEq.INSTANCE, loc);
 		return ExceptionGuard.guardedCompute(analysis, state, missing, LibrarySpecificationProvider.VALUE_ERROR,
-				value, n.getCFG(), loc, n.getOriginatingStatement(), n);
+				value, n.getCFG(), loc, n.getOriginatingStatement(), n.getOriginatingStatement());
 	}
 
 	private static boolean isTuple(

@@ -79,8 +79,8 @@ public class DictOr extends BinaryExpression implements PluggableStatement {
 		getMetaVariables().addAll(creation.getMetaVariables());
 		AnalysisState<A> result = created.bottomExecution();
 		for (SymbolicExpression dict : created.getExecutionExpressions()) {
-			AnalysisState<A> merged = DictModel.unpackInto(analysis, created, dict, left, this, true);
-			merged = DictModel.unpackInto(analysis, merged, dict, right, this, true);
+			AnalysisState<A> merged = DictModel.unpackInto(analysis, created, dict, left, st, true);
+			merged = DictModel.unpackInto(analysis, merged, dict, right, st, true);
 			result = result.lub(analysis.smallStepSemantics(merged, dict, this));
 		}
 		return result;

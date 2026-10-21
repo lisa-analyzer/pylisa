@@ -71,6 +71,6 @@ public class IntLShift extends BinaryExpression implements PluggableStatement {
 		it.unive.lisa.symbolic.value.BinaryExpression negativeCount = new it.unive.lisa.symbolic.value.BinaryExpression(
 				BoolType.INSTANCE, right, new Constant(Int32Type.INSTANCE, 0, loc), ComparisonLt.INSTANCE, loc);
 		return ExceptionGuard.guardedCompute(interprocedural.getAnalysis(), state, negativeCount,
-				LibrarySpecificationProvider.VALUE_ERROR, shift, getCFG(), loc, st, this);
+				LibrarySpecificationProvider.VALUE_ERROR, shift, getCFG(), loc, st, st);
 	}
 }

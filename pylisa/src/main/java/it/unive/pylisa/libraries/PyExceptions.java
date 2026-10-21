@@ -8,10 +8,12 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.symbolic.CFGThrow;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.expression.CallSites;
 import it.unive.pylisa.cfg.type.PyClassType;
 
 /**
@@ -39,6 +41,7 @@ public final class PyExceptions {
 			String exceptionClassName)
 			throws SemanticException {
 		Type exceptionType = PyClassType.lookup(exceptionClassName);
+		thrower = programStatement(thrower);
 
 		MemoryAllocation alloc = new MemoryAllocation(exceptionType, loc, false);
 		AnalysisState<A> allocState = analysis.smallStepSemantics(state, alloc, thrower);
@@ -53,5 +56,31 @@ public final class PyExceptions {
 		}
 
 		return exceptionState;
+	}
+
+	/**
+	 * Yields the statement of the program raising the errors raised by the
+	 * given one: a call raises the errors of the statement it originates from
+	 * (e.g. the call to a native function performed by a call of the program),
+	 * and a call performed to implement the semantics of a statement (see
+	 * {@link CallSites.Site}) raises the errors of that statement. Hence, the
+	 * errors raised by a statement are the same ones, whatever implementation
+	 * computes them (e.g. the {@code ZeroDivisionError} of {@code x // y}, for
+	 * an {@code int} or a {@code float} {@code x}).
+	 *
+	 * @param thrower the statement raising the errors
+	 *
+	 * @return the statement of the program
+	 */
+	public static Statement programStatement(
+			Statement thrower) {
+		Statement result = thrower;
+		while (true)
+			if (result instanceof Call && ((Call) result).getSource() != null)
+				result = ((Call) result).getSource();
+			else if (result instanceof CallSites.Site)
+				result = ((CallSites.Site) result).getCaller();
+			else
+				return result;
 	}
 }

@@ -59,6 +59,7 @@ public class FloatBuiltin extends PyNative {
 		BinaryExpression raises = new BinaryExpression(BoolType.INSTANCE, x, new PyNoneConstant(loc),
 				ConversionRaises.FLOAT, loc);
 		return typeChecked(analysis, state, typed, ExceptionGuard.guardedCompute(analysis, state, raises,
-				LibrarySpecificationProvider.VALUE_ERROR, value, getCFG(), loc, getOriginatingStatement(), this));
+				LibrarySpecificationProvider.VALUE_ERROR, value, getCFG(), loc, getOriginatingStatement(),
+				getOriginatingStatement()));
 	}
 }

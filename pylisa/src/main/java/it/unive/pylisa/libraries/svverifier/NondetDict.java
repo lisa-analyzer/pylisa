@@ -85,7 +85,7 @@ public class NondetDict extends NondetList {
 			for (SymbolicExpression dict : created.getExecutionExpressions())
 				for (Pair<SymbolicExpression, SymbolicExpression> entry : entries)
 					result = result.lub(analysis.smallStepSemantics(
-							DictModel.write(analysis, created, dict, entry.getLeft(), entry.getRight(), this), dict,
+							DictModel.write(analysis, created, dict, entry.getLeft(), entry.getRight(), st), dict,
 							this));
 		}
 		getMetaVariables().addAll(creation.getMetaVariables());

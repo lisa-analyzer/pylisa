@@ -94,10 +94,10 @@ public class StrMod extends BinaryExpression implements PluggableStatement {
 					new it.unive.lisa.symbolic.value.BinaryExpression(type, left, right, StringFormat.INSTANCE, loc),
 					st));
 		if (raisesTypeError != Satisfiability.NOT_SATISFIED)
-			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
+			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, st,
 					LibrarySpecificationProvider.TYPE_ERROR));
 		if (raisesValueError != Satisfiability.NOT_SATISFIED)
-			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
+			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, st,
 					LibrarySpecificationProvider.VALUE_ERROR));
 		return result;
 	}

@@ -11,6 +11,7 @@ import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.CodeMemberDescriptor;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.VariableTableEntry;
 import it.unive.lisa.program.cfg.controlFlow.IfThenElse;
@@ -62,6 +63,7 @@ import it.unive.pylisa.antlr.PythonParser.Compound_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.ConjunctionContext;
 import it.unive.pylisa.antlr.PythonParser.Continue_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.DecoratorsContext;
+import it.unive.pylisa.antlr.PythonParser.Default_assignmentContext;
 import it.unive.pylisa.antlr.PythonParser.Del_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Del_t_atomContext;
 import it.unive.pylisa.antlr.PythonParser.Del_targetContext;
@@ -93,6 +95,12 @@ import it.unive.pylisa.antlr.PythonParser.Import_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.InversionContext;
 import it.unive.pylisa.antlr.PythonParser.Kwarg_or_starredContext;
 import it.unive.pylisa.antlr.PythonParser.KwargsContext;
+import it.unive.pylisa.antlr.PythonParser.Lambda_paramContext;
+import it.unive.pylisa.antlr.PythonParser.Lambda_param_maybe_defaultContext;
+import it.unive.pylisa.antlr.PythonParser.Lambda_param_no_defaultContext;
+import it.unive.pylisa.antlr.PythonParser.Lambda_param_with_defaultContext;
+import it.unive.pylisa.antlr.PythonParser.Lambda_parametersContext;
+import it.unive.pylisa.antlr.PythonParser.Lambda_star_etcContext;
 import it.unive.pylisa.antlr.PythonParser.LambdefContext;
 import it.unive.pylisa.antlr.PythonParser.ListcompContext;
 import it.unive.pylisa.antlr.PythonParser.Literal_patternContext;
@@ -137,7 +145,11 @@ import it.unive.pylisa.antlr.PythonParser.With_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Yield_stmtContext;
 import it.unive.pylisa.antlr.PythonParserBaseVisitor;
 import it.unive.pylisa.cfg.DerivedLocation;
+import it.unive.pylisa.cfg.KeywordOnlyParameter;
 import it.unive.pylisa.cfg.PyCFG;
+import it.unive.pylisa.cfg.PyParameter;
+import it.unive.pylisa.cfg.VarKeywordParameter;
+import it.unive.pylisa.cfg.VarPositionalParameter;
 import it.unive.pylisa.cfg.expression.Break;
 import it.unive.pylisa.cfg.expression.Continue;
 import it.unive.pylisa.cfg.expression.DictionaryCreation;
@@ -1530,17 +1542,92 @@ public class PyStatementParser
 			return visitDisjunction(ctx.disjunction(0));
 	}
 
+	/**
+	 * Translates {@code lambda params: body} into a function of the current
+	 * unit, named {@code $lambda@line:col}, whose body is {@code return body};
+	 * the value of the lambda is the function, as for a {@code def} (see
+	 * {@link PyFunctionLiteral}). The variables of the enclosing function that
+	 * the body uses are not known inside it (closures are not modeled). When
+	 * pandas is used, a lambda without parameters is instead a symbolic value,
+	 * as expected by the dataframe analyses.
+	 */
 	@Override
 	public Expression visitLambdef(
 			LambdefContext ctx) {
+		SourceCodeLocation loc = getLocation(filePath, ctx);
+		if (ctx.lambda_params() == null
+				&& LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS))
+			return new LambdaExpression(new ArrayList<Expression>(), visitExpression(ctx.expression()), currentCFG,
+					loc);
+
+		String name = "$lambda@" + loc.getLine() + ":" + loc.getCol();
+		List<PyParameter> params = new ArrayList<>();
+		List<Pair<PyParameter, Default_assignmentContext>> defaults = new ArrayList<>();
 		if (ctx.lambda_params() != null)
-			throw new UnsupportedStatementException("lambda parameters are not supported");
-		Expression body = visitExpression(ctx.expression());
-		return new LambdaExpression(
-				new ArrayList<Expression>(),
-				body,
-				currentCFG,
-				getLocation(filePath, ctx));
+			lambdaParameters(ctx.lambda_params().lambda_parameters(), params, defaults);
+		CodeMemberDescriptor descriptor = new CodeMemberDescriptor(loc, currentUnit, false, name,
+				params.toArray(PyParameter[]::new));
+		NodeList<CFG, Statement, Edge> list = new NodeList<>(new SequentialEdge());
+		Collection<Statement> entrypoints = new HashSet<>();
+		PyCFG lambda = new PyCFG(descriptor, entrypoints, list);
+		PyStatementParser parser = new PyStatementParser(program, filePath, currentUnit, lambda,
+				new ControlFlowTracker(), localImports);
+		// the default values are parsed in the cfg of the lambda, as for
+		// functions (see PyCodeMemberParser)
+		for (Pair<PyParameter, Default_assignmentContext> def : defaults)
+			def.getLeft().setDefaultValue(parser.visitExpression(def.getRight().expression()));
+
+		Return ret = new Return(lambda, loc, parser.visitExpression(ctx.expression()));
+		list.addNode(ret);
+		entrypoints.add(ret);
+		currentUnit.addCodeMember(lambda);
+		return new PyFunctionLiteral(currentCFG, loc, lambda);
+	}
+
+	// the parameters of a lambda: positional ones (possibly with a default
+	// value, collected in defaults), *args, keyword-only ones and **kwargs
+	private void lambdaParameters(
+			Lambda_parametersContext ctx,
+			List<PyParameter> params,
+			List<Pair<PyParameter, Default_assignmentContext>> defaults) {
+		List<Pair<Lambda_paramContext, Default_assignmentContext>> positional = new ArrayList<>();
+		if (ctx.lambda_slash_no_default() != null)
+			for (Lambda_param_no_defaultContext p : ctx.lambda_slash_no_default().lambda_param_no_default())
+				positional.add(Pair.of(p.lambda_param(), null));
+		else if (ctx.lambda_slash_with_default() != null) {
+			for (Lambda_param_no_defaultContext p : ctx.lambda_slash_with_default().lambda_param_no_default())
+				positional.add(Pair.of(p.lambda_param(), null));
+			for (Lambda_param_with_defaultContext p : ctx.lambda_slash_with_default().lambda_param_with_default())
+				positional.add(Pair.of(p.lambda_param(), p.default_assignment()));
+		}
+		for (Lambda_param_no_defaultContext p : ctx.lambda_param_no_default())
+			positional.add(Pair.of(p.lambda_param(), null));
+		for (Lambda_param_with_defaultContext p : ctx.lambda_param_with_default())
+			positional.add(Pair.of(p.lambda_param(), p.default_assignment()));
+		for (Pair<Lambda_paramContext, Default_assignmentContext> p : positional) {
+			PyParameter parameter = new PyParameter(getLocation(filePath, p.getLeft()),
+					p.getLeft().name().getText());
+			params.add(parameter);
+			if (p.getRight() != null)
+				defaults.add(Pair.of(parameter, p.getRight()));
+		}
+
+		Lambda_star_etcContext star = ctx.lambda_star_etc();
+		if (star == null)
+			return;
+		if (star.lambda_param_no_default() != null)
+			params.add(new VarPositionalParameter(getLocation(filePath, star.lambda_param_no_default()),
+					star.lambda_param_no_default().lambda_param().name().getText()));
+		for (Lambda_param_maybe_defaultContext p : star.lambda_param_maybe_default()) {
+			PyParameter parameter = new KeywordOnlyParameter(getLocation(filePath, p.lambda_param()),
+					p.lambda_param().name().getText());
+			params.add(parameter);
+			if (p.default_assignment() != null)
+				defaults.add(Pair.of(parameter, p.default_assignment()));
+		}
+		if (star.lambda_kwds() != null)
+			params.add(new VarKeywordParameter(getLocation(filePath, star.lambda_kwds()),
+					star.lambda_kwds().lambda_param_no_default().lambda_param().name().getText()));
 	}
 
 	@Override

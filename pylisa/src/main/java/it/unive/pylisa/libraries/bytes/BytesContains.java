@@ -67,7 +67,7 @@ public class BytesContains extends PyNative {
 					LogicalOr.INSTANCE, loc);
 			result = result.lub(ExceptionGuard.guardedCompute(analysis, state, outOfRange,
 					LibrarySpecificationProvider.VALUE_ERROR, contains, getCFG(), loc, getOriginatingStatement(),
-					this));
+					getOriginatingStatement()));
 		}
 		if (isBytes != Satisfiability.NOT_SATISFIED)
 			result = result.lub(compute(analysis, state, contains));

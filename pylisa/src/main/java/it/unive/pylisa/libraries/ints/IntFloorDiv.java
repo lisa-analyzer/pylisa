@@ -72,6 +72,6 @@ public class IntFloorDiv extends BinaryExpression implements PluggableStatement 
 		it.unive.lisa.symbolic.value.BinaryExpression div = new it.unive.lisa.symbolic.value.BinaryExpression(
 				getStaticType(), left, right, FloorDivision.INSTANCE, loc);
 		Constant zero = new Constant(Int32Type.INSTANCE, 0, loc);
-		return DivisionGuard.guardedCompute(analysis, state, right, zero, div, getCFG(), loc, st, this);
+		return DivisionGuard.guardedCompute(analysis, state, right, zero, div, getCFG(), loc, st, st);
 	}
 }

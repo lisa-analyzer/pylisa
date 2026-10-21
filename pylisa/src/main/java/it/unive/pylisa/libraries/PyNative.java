@@ -241,7 +241,7 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 			AnalysisState<A> state,
 			String exception)
 			throws SemanticException {
-		return PyExceptions.raise(analysis, state, getCFG(), getLocation(), this, exception);
+		return PyExceptions.raise(analysis, state, getCFG(), getLocation(), st, exception);
 	}
 
 	/**

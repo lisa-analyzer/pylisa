@@ -78,6 +78,6 @@ public class IntRTrueDiv extends BinaryExpression implements PluggableStatement 
 		it.unive.lisa.symbolic.value.BinaryExpression div = new it.unive.lisa.symbolic.value.BinaryExpression(
 				Float32Type.INSTANCE, right, left, TrueDivision.INSTANCE, loc);
 		Constant zero = new Constant(Int32Type.INSTANCE, 0, loc);
-		return DivisionGuard.guardedCompute(analysis, state, left, zero, div, getCFG(), loc, st, this);
+		return DivisionGuard.guardedCompute(analysis, state, left, zero, div, getCFG(), loc, st, st);
 	}
 }

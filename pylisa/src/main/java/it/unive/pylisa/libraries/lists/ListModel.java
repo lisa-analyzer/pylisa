@@ -397,6 +397,7 @@ public final class ListModel {
 	 *                            evaluated
 	 * @param list            the list
 	 * @param slice           the slice
+	 * @param owner           the expression the new list belongs to
 	 * @param thrower         the statement reading the slice
 	 *
 	 * @return the state after the read
@@ -408,20 +409,21 @@ public final class ListModel {
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			SymbolicExpression slice,
-			Expression thrower)
+			Expression owner,
+			Statement thrower)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		CodeLocation loc = thrower.getLocation();
+		CodeLocation loc = owner.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		HeapDereference source = new HeapDereference(listType, list, loc);
-		Shape shape = shape(analysis, state, list, thrower);
+		Shape shape = shape(analysis, state, list, owner);
 
 		boolean typeError = !(slice instanceof TernaryExpression);
 		if (slice instanceof TernaryExpression) {
 			TernaryExpression bounds = (TernaryExpression) slice;
 			for (SymbolicExpression bound : new SymbolicExpression[] { bounds.getLeft(), bounds.getMiddle(),
 					bounds.getRight() }) {
-				Set<Type> types = analysis.getRuntimeTypesOf(state, bound, thrower);
+				Set<Type> types = analysis.getRuntimeTypesOf(state, bound, owner);
 				if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t) && !t.isNullType()))
 					typeError = true;
 			}
@@ -429,7 +431,7 @@ public final class ListModel {
 
 		// the slice is allocated at a location different from the one of the
 		// subscript (see DerivedLocation)
-		ListCreation creation = new ListCreation(thrower.getCFG(), new DerivedLocation(loc, "slice"));
+		ListCreation creation = new ListCreation(owner.getCFG(), new DerivedLocation(loc, "slice"));
 		AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, state, new ExpressionSet[0],
 				new StatementStore<>(state));
 		AnalysisState<A> result = created.bottomExecution();
@@ -438,18 +440,18 @@ public final class ListModel {
 					new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 			AnalysisState<A> filled = created.bottomExecution();
 			if (shape.elements() == null)
-				filled = analysis.assign(created, unknown, new PushAny(Untyped.INSTANCE, loc), thrower);
+				filled = analysis.assign(created, unknown, new PushAny(Untyped.INSTANCE, loc), owner);
 			else
 				for (SymbolicExpression field : shape.elements())
 					for (SymbolicExpression element : analysis.smallStepSemantics(created,
-							new AccessChild(Untyped.INSTANCE, source, field, loc), thrower).getExecutionExpressions())
-						filled = filled.lub(analysis.assign(created, unknown, element, thrower));
+							new AccessChild(Untyped.INSTANCE, source, field, loc), owner).getExecutionExpressions())
+						filled = filled.lub(analysis.assign(created, unknown, element, owner));
 			if (filled.getExecutionState().isBottom())
 				// the list is empty: so is the slice
 				filled = created;
 			result = result.lub(filled.withExecutionExpression(copy));
 		}
-		thrower.getMetaVariables().addAll(creation.getMetaVariables());
+		owner.getMetaVariables().addAll(creation.getMetaVariables());
 		if (typeError)
 			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
 					LibrarySpecificationProvider.TYPE_ERROR));

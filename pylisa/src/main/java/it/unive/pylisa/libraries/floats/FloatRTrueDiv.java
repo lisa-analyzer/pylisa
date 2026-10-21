@@ -77,6 +77,6 @@ public class FloatRTrueDiv extends BinaryExpression implements PluggableStatemen
 		it.unive.lisa.symbolic.value.BinaryExpression div = new it.unive.lisa.symbolic.value.BinaryExpression(
 				Float32Type.INSTANCE, right, left, TrueDivision.INSTANCE, loc);
 		Constant zero = new Constant(Float32Type.INSTANCE, 0f, loc);
-		return DivisionGuard.guardedCompute(analysis, state, left, zero, div, getCFG(), loc, st, this);
+		return DivisionGuard.guardedCompute(analysis, state, left, zero, div, getCFG(), loc, st, st);
 	}
 }

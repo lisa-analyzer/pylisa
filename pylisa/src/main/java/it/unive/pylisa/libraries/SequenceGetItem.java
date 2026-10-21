@@ -111,7 +111,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 					result = result.lub(readWithBoundsCheck(analysis, state, deref, right, loc));
 				if (integral != Satisfiability.SATISFIED)
 					// the index of a tuple must be an int
-					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
+					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, st,
 							LibrarySpecificationProvider.TYPE_ERROR));
 			} else if (ListModel.isList(t)) {
 				// the index might be both a slice and something else (e.g. if
@@ -119,13 +119,13 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 				Set<Type> indexTypes = analysis.getRuntimeTypesOf(state, right, this);
 				if (indexTypes.stream().anyMatch(ListModel::isSlice))
 					// lst[start:stop:step]
-					result = result.lub(ListModel.slice(interprocedural, state, left, right, this));
+					result = result.lub(ListModel.slice(interprocedural, state, left, right, this, st));
 				if (indexTypes.isEmpty() || !indexTypes.stream().allMatch(ListModel::isSlice))
 					// bounds and index checked on the elements of the list
-					result = result.lub(ListModel.read(analysis, state, left, right, this));
+					result = result.lub(ListModel.read(analysis, state, left, right, st));
 			} else if (DictModel.isDict(t))
 				// the entries of the dictionary
-				result = result.lub(DictModel.read(analysis, state, left, right, this));
+				result = result.lub(DictModel.read(analysis, state, left, right, st));
 			else {
 				AccessChild access = new AccessChild(Untyped.INSTANCE, deref, right, loc);
 				result = result.lub(analysis.smallStepSemantics(state, access, st));
@@ -169,7 +169,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 				result = result.lub(analysis.smallStepSemantics(lenState, access, st));
 			}
 			if (sat != Satisfiability.NOT_SATISFIED)
-				result = result.lub(PyExceptions.raise(analysis, lenState, getCFG(), loc, this,
+				result = result.lub(PyExceptions.raise(analysis, lenState, getCFG(), loc, st,
 						LibrarySpecificationProvider.INDEX_ERROR));
 		}
 
