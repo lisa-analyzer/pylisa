@@ -65,7 +65,7 @@ field
    ;
 
 method
-   : INSTANCE? SEALED? METHOD name = IDENTIFIER COLON implementation = IDENTIFIER type param*
+   : INSTANCE? SEALED? METHOD name = (IDENTIFIER | TYPE) COLON implementation = IDENTIFIER type param*
    ;
 
 classDef

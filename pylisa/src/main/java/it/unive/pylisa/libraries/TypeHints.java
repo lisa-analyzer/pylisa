@@ -91,7 +91,7 @@ public final class TypeHints {
 		Predicate<Type> accepted = accepted(hint);
 		if (accepted != null)
 			return accepted == NOT_A_TYPE ? Satisfiability.NOT_SATISFIED : Satisfiability.SATISFIED;
-		return builtin(hint) != null && builtin(hint).equals("super") ? Satisfiability.SATISFIED
+		return "super".equals(builtin(hint)) || "type".equals(builtin(hint)) ? Satisfiability.SATISFIED
 				: Satisfiability.UNKNOWN;
 	}
 

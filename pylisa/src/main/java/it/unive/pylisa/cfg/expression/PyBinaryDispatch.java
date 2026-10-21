@@ -31,6 +31,8 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyBytesType;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.cfg.type.PyTypeTokenType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.dicts.DictModel;
@@ -327,8 +329,8 @@ public final class PyBinaryDispatch {
 	/**
 	 * Whether two values of the given types are the same object ({@code is}):
 	 * {@code None} is a singleton, a function is the same object only as itself
-	 * (see {@link #sameFunction(Type, Type)}), and values of different classes
-	 * are different objects. This is otherwise unknown (e.g. two objects of the
+	 * (see {@link #sameFunction(Type, Type)}), as a class is, and values of
+	 * different classes are different objects. This is otherwise unknown (e.g. two objects of the
 	 * same class, or two {@code int}s, whose identity is not specified by
 	 * python).
 	 *
@@ -347,11 +349,30 @@ public final class PyBinaryDispatch {
 			return true;
 		if (distinctFunctions(left, right))
 			return false;
+		Type ltoken = classToken(left), rtoken = classToken(right);
+		if (ltoken != null && rtoken != null)
+			return ltoken.equals(rtoken);
+		if ((ltoken != null && !right.isUntyped() && !(right instanceof PyTypeTokenType))
+				|| (rtoken != null && !left.isUntyped() && !(left instanceof PyTypeTokenType)))
+			// a class and a value that is not a class
+			return false;
 		String lcls = left.isCodeMemberType() ? "function" : classOf(left);
 		String rcls = right.isCodeMemberType() ? "function" : classOf(right);
 		if (lcls != null && rcls != null && !lcls.equals(rcls))
 			return false;
 		return null;
+	}
+
+	// the class described by a value of the given type, if it is a class (see
+	// PyTypeLiteral), or null
+	private static Type classToken(
+			Type type) {
+		if (!(type instanceof PyTypeTokenType))
+			return null;
+		Set<Type> classes = type.asTypeTokenType().getTypes();
+		if (classes.size() != 1 || !(classes.iterator().next() instanceof PyClassType))
+			return null;
+		return classes.iterator().next();
 	}
 
 	private static boolean fullyDefined(
