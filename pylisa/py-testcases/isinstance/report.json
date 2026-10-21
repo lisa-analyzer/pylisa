@@ -1,0 +1,52 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/isinstance/isinstance.py':45:8] on 'untyped py-testcases/isinstance/isinstance::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/isinstance/isinstance.py':45:8"
+  }, {
+    "message" : "['py-testcases/isinstance/isinstance.py':49:4] on 'untyped py-testcases/isinstance/isinstance::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/isinstance/isinstance.py':49:4"
+  }, {
+    "message" : "['py-testcases/isinstance/isinstance.py':51:4] on 'untyped py-testcases/isinstance/isinstance::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/isinstance/isinstance.py':51:4"
+  }, {
+    "message" : "['py-testcases/isinstance/isinstance.py':53:4] on 'untyped py-testcases/isinstance/isinstance::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/isinstance/isinstance.py':53:4"
+  }, {
+    "message" : "['py-testcases/isinstance/isinstance.py':55:4] on 'untyped py-testcases/isinstance/isinstance::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/isinstance/isinstance.py':55:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_A.f(A__self)_169506023.graph.json", "untyped_py-testcases_isinstance_isinstance.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "6",
+    "duration" : "146ms",
+    "end" : "2026-10-21T12:31:50.246+02:00",
+    "expressions" : "89",
+    "files" : "2",
+    "globals" : "0",
+    "members" : "161",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-21T12:31:50.100+02:00",
+    "statements" : "39",
+    "units" : "33",
+    "version" : "1.0",
+    "warnings" : "5"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/isinstance"
+  }
+}
