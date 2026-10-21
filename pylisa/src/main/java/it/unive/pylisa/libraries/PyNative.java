@@ -20,6 +20,8 @@ import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyBytesType;
+import it.unive.pylisa.symbolic.PyMissingConstant;
+import it.unive.pylisa.symbolic.PyNoneConstant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -196,6 +198,32 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 		if (types.stream().noneMatch(accepted))
 			return Satisfiability.NOT_SATISFIED;
 		return Satisfiability.UNKNOWN;
+	}
+
+	/**
+	 * Whether the argument was not passed (see {@link PyMissingConstant}).
+	 *
+	 * @param arg the argument
+	 *
+	 * @return whether the argument is missing
+	 */
+	public static boolean missing(
+			SymbolicExpression arg) {
+		return arg instanceof PyMissingConstant;
+	}
+
+	/**
+	 * Yields the argument, or {@code None} if it was not passed: the symbolic
+	 * expressions modeling builtins (e.g. the conversion to {@code int}) use
+	 * {@code None} for a missing argument.
+	 *
+	 * @param arg the argument
+	 *
+	 * @return the argument, or {@code None}
+	 */
+	public static SymbolicExpression orNone(
+			SymbolicExpression arg) {
+		return missing(arg) ? new PyNoneConstant(arg.getCodeLocation()) : arg;
 	}
 
 	/**

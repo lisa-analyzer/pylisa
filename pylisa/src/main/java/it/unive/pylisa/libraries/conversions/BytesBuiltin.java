@@ -23,13 +23,13 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.libraries.bytes.CodecSemantics;
 import it.unive.pylisa.symbolic.PyBytes;
-import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.bytes.BytesUnary;
 import it.unive.pylisa.symbolic.operators.bytes.Codec;
 
 /**
  * Native implementation of
- * {@code bytes(source=None, encoding=None, errors=None)}:
+ * {@code bytes([source[, encoding[, errors]]])}, where an explicit {@code None}
+ * raises {@code TypeError}:
  * <ul>
  * <li>{@code bytes()} is {@code b''};</li>
  * <li>{@code bytes(s, encoding, errors)} encodes the {@code str} {@code s} (see
@@ -69,8 +69,8 @@ public class BytesBuiltin extends PyNative {
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression source = args[0], encoding = args[1], errors = args[2];
-		boolean noCodec = encoding instanceof PyNoneConstant && errors instanceof PyNoneConstant;
-		if (source instanceof PyNoneConstant)
+		boolean noCodec = missing(encoding) && missing(errors);
+		if (missing(source))
 			// bytes() is empty, bytes(encoding=...) raises TypeError
 			return noCodec ? compute(analysis, state, new Constant(PyBytesType.INSTANCE, new PyBytes(new byte[0]), loc))
 					: raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR);
@@ -83,7 +83,7 @@ public class BytesBuiltin extends PyNative {
 
 		AnalysisState<A> result = state.bottomExecution();
 		if (isStr != Satisfiability.NOT_SATISFIED)
-			result = result.lub(encoding instanceof PyNoneConstant
+			result = result.lub(missing(encoding)
 					// a string argument without an encoding
 					? raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR)
 					: CodecSemantics.semantics(this, analysis, state, Codec.ENCODE, source, encoding, errors));

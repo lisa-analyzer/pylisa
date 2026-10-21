@@ -1,0 +1,41 @@
+package it.unive.pylisa.cfg.expression.literal;
+
+import it.unive.lisa.analysis.AbstractDomain;
+import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.AnalysisState;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.statement.literal.Literal;
+import it.unive.lisa.type.VoidType;
+import it.unive.pylisa.symbolic.PyMissingConstant;
+
+/**
+ * The default value of a parameter of a native function that was not passed
+ * (see {@link PyMissingConstant}).
+ */
+public class PyMissingLiteral extends Literal<Object> {
+
+	public PyMissingLiteral(
+			CFG cfg,
+			CodeLocation location) {
+		super(cfg, location, null, VoidType.INSTANCE);
+	}
+
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		return interprocedural.getAnalysis().smallStepSemantics(entryState, new PyMissingConstant(getLocation()),
+				this);
+	}
+
+	@Override
+	public String toString() {
+		return "<missing>";
+	}
+}

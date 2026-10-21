@@ -54,6 +54,7 @@ value
    | BOOLEAN
    | STRING
    | NONE
+   | MISSING
    ;
 
 param

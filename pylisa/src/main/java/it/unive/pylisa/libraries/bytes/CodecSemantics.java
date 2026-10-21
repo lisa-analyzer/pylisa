@@ -18,11 +18,11 @@ import it.unive.pylisa.symbolic.operators.bytes.Codec;
 import it.unive.pylisa.symbolic.operators.bytes.CodecRaises;
 
 /**
- * Shared semantics of {@code str.encode(encoding=None, errors=None)},
- * {@code bytes.decode(encoding=None, errors=None)} and {@code bytes(s,
+ * Shared semantics of {@code str.encode([encoding[, errors]])},
+ * {@code bytes.decode([encoding[, errors]])} and {@code bytes(s,
  * encoding, errors)}: {@code encoding} and {@code errors} must be {@code str}s
- * (or {@code None}, for {@code "utf-8"} and {@code "strict"}), otherwise
- * {@code TypeError} is raised. Encoding or decoding fails with
+ * (when they are passed: they are {@code "utf-8"} and {@code "strict"}
+ * otherwise), so an explicit {@code None} raises {@code TypeError}. Encoding or decoding fails with
  * {@code UnicodeEncodeError} or {@code UnicodeDecodeError}, and an unknown
  * encoding or error handler raises {@code LookupError}: the domains decide
  * which of these can happen.
@@ -57,8 +57,13 @@ public final class CodecSemantics {
 			SymbolicExpression errors)
 			throws SemanticException {
 		CodeLocation loc = n.getLocation();
-		Satisfiability typed = n.hasType(analysis, state, encoding, PyNative.STR.or(PyNative.NONE))
-				.and(n.hasType(analysis, state, errors, PyNative.STR.or(PyNative.NONE)));
+		Satisfiability typed = (PyNative.missing(encoding) ? Satisfiability.SATISFIED
+				: n.hasType(analysis, state, encoding, PyNative.STR))
+				.and(PyNative.missing(errors) ? Satisfiability.SATISFIED
+						: n.hasType(analysis, state, errors, PyNative.STR));
+		// the operators model a missing argument as None
+		encoding = PyNative.orNone(encoding);
+		errors = PyNative.orNone(errors);
 
 		String unicodeError = codec.isEncode() ? LibrarySpecificationProvider.UNICODE_ENCODE_ERROR
 				: LibrarySpecificationProvider.UNICODE_DECODE_ERROR;

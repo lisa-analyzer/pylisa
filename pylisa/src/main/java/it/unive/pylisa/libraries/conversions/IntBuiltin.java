@@ -17,16 +17,15 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyNative;
-import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.conversions.ConversionRaises;
 import it.unive.pylisa.symbolic.operators.conversions.ToInt;
 
 /**
- * Native implementation of {@code int(x=None, base=None)}: {@code int()} is
+ * Native implementation of {@code int([x[, base]])}: {@code int()} is
  * {@code 0}; {@code x} can be a number (truncated towards zero) or, if
  * {@code base} is given, must be a {@code str} (otherwise {@code TypeError} is
- * raised). Invalid strings raise {@code ValueError}. An explicit {@code None}
- * is treated as an omitted argument.
+ * raised, as for an explicit {@code None}). Invalid strings raise
+ * {@code ValueError}.
  */
 public class IntBuiltin extends PyNative {
 
@@ -52,14 +51,16 @@ public class IntBuiltin extends PyNative {
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression x = args[0], base = args[1];
-		if (x instanceof PyNoneConstant && base instanceof PyNoneConstant)
+		if (missing(x) && missing(base))
 			return compute(analysis, state, new Constant(Int32Type.INSTANCE, 0, loc));
 
-		boolean noBase = base instanceof PyNoneConstant;
+		// int(base=b) raises TypeError, as x is not a str
+		boolean noBase = missing(base);
 		Satisfiability typed = noBase ? hasType(analysis, state, x, STR.or(INT.or(t -> t.isNumericType())))
 				: hasType(analysis, state, x, STR).and(hasType(analysis, state, base, INT));
-		BinaryExpression value = new BinaryExpression(Int32Type.INSTANCE, x, base, ToInt.INSTANCE, loc);
-		BinaryExpression raises = new BinaryExpression(BoolType.INSTANCE, x, base, ConversionRaises.INT, loc);
+		BinaryExpression value = new BinaryExpression(Int32Type.INSTANCE, x, orNone(base), ToInt.INSTANCE, loc);
+		BinaryExpression raises = new BinaryExpression(BoolType.INSTANCE, x, orNone(base), ConversionRaises.INT,
+				loc);
 		return typeChecked(analysis, state, typed, ExceptionGuard.guardedCompute(analysis, state, raises,
 				LibrarySpecificationProvider.VALUE_ERROR, value, getCFG(), loc, getOriginatingStatement(),
 				getOriginatingStatement()));

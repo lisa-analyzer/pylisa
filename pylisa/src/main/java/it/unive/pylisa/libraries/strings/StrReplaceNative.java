@@ -20,13 +20,12 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.PyNative;
-import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.strings.ArgPair;
 import it.unive.pylisa.symbolic.operators.strings.StrReplaceCount;
 import java.util.function.Predicate;
 
 /**
- * Native implementation of {@code str.replace(self, old, new, count=None)} and
+ * Native implementation of {@code str.replace(self, old, new, count=-1)} and
  * of the same method of {@code bytes}, whose {@code old} and {@code new} must
  * be {@code bytes}: {@code old} and {@code new} must be {@code str}s and
  * {@code count} an {@code int}, otherwise {@code TypeError} is raised. A
@@ -61,13 +60,13 @@ public class StrReplaceNative extends PyNative {
 			Type type = bytes ? PyBytesType.INSTANCE : StringType.INSTANCE;
 			Satisfiability typed = hasType(analysis, state, args[1], text)
 					.and(hasType(analysis, state, args[2], text))
-					.and(hasType(analysis, state, args[3], INT.or(NONE)));
+					.and(missing(args[3]) ? Satisfiability.SATISFIED : hasType(analysis, state, args[3], INT));
 			SymbolicExpression value;
-			if (!bytes && args[3] instanceof PyNoneConstant)
+			if (!bytes && missing(args[3]))
 				value = new TernaryExpression(type, args[0], args[1], args[2], StringReplace.INSTANCE, loc);
 			else {
 				// bytes always use the python-specific operator
-				SymbolicExpression count = args[3] instanceof PyNoneConstant
+				SymbolicExpression count = missing(args[3])
 						? new Constant(Int32Type.INSTANCE, -1, loc)
 						: args[3];
 				value = new TernaryExpression(type, args[0],

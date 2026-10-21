@@ -15,7 +15,7 @@ import it.unive.pylisa.symbolic.operators.bytes.Codec;
 
 /**
  * Native implementation of
- * {@code str.encode(self, encoding=None, errors=None)}. See
+ * {@code str.encode(self, encoding='utf-8', errors='strict')}. See
  * {@link CodecSemantics}.
  */
 public class StrEncode extends PyNative {

@@ -20,15 +20,13 @@ import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
-import it.unive.pylisa.symbolic.PyNoneConstant;
 
 /**
  * Native implementation of Python's {@code range(stop)} and
  * {@code range(start, stop[, step])}: a new object of the class {@code Range},
  * whose elements are ints (see {@code Iteration}), and whose length is not
  * tracked. The arguments must be ints ({@code TypeError} is raised otherwise),
- * and the step must not be zero ({@code ValueError}). As for {@code list}, an
- * explicit {@code None} is treated as an omitted argument.
+ * and the step must not be zero ({@code ValueError}).
  */
 public class RangeBuiltin extends PyNative {
 
@@ -69,10 +67,10 @@ public class RangeBuiltin extends PyNative {
 		CodeLocation loc = getLocation();
 		Satisfiability typed = hasType(analysis, state, args[0], INT);
 		for (int i = 1; i < args.length; i++)
-			if (!(args[i] instanceof PyNoneConstant))
+			if (!missing(args[i]))
 				typed = typed.and(hasType(analysis, state, args[i], INT));
 		SymbolicExpression step = args[2];
-		Satisfiability zero = step instanceof PyNoneConstant ? Satisfiability.NOT_SATISFIED
+		Satisfiability zero = missing(step) ? Satisfiability.NOT_SATISFIED
 				: analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, step,
 						new Constant(Int32Type.INSTANCE, 0, loc), ComparisonEq.INSTANCE, loc), this);
 

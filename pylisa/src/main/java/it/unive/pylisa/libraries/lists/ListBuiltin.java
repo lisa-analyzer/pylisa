@@ -25,17 +25,16 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.RangeBuiltin;
 import it.unive.pylisa.libraries.PyNative;
-import it.unive.pylisa.symbolic.PyNoneConstant;
 
 /**
- * Native implementation of {@code list(iterable=None)}: {@code list()} is a new
+ * Native implementation of {@code list([iterable])}: {@code list()} is a new
  * empty list, while {@code list(iterable)} is a new list with the elements of
  * {@code iterable} at unknown indices (see {@link ListCreation#UNKNOWN_INDEX}):
  * any of them (see {@link Iteration#elements}), if {@code iterable} is surely
  * iterable, unknown values otherwise. {@code TypeError} is raised if
  * {@code iterable} might not be iterable (only lists, {@code str},
- * {@code bytes} and ranges are known to be). As for {@code int}, an explicit {@code None}
- * is treated as an omitted argument. The name {@code list} is also the type of
+ * {@code bytes} and ranges are known to be), e.g. for an explicit {@code None}.
+ * The name {@code list} is also the type of
  * lists, e.g. in {@code _sv_verifier.check_type(x, list)}.
  */
 public class ListBuiltin extends PyNative {
@@ -70,7 +69,7 @@ public class ListBuiltin extends PyNative {
 		boolean empty = false, copy = false;
 		Satisfiability iterable = Satisfiability.BOTTOM;
 		for (SymbolicExpression arg : params[0])
-			if (arg instanceof PyNoneConstant)
+			if (missing(arg))
 				empty = true;
 			else {
 				copy = true;

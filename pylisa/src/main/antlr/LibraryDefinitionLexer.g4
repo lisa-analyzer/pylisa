@@ -20,6 +20,10 @@ NONE
    : 'none'
    ;
 
+MISSING
+   : 'missing'
+   ;
+
 LIBRARY
    : 'library'
    ;

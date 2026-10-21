@@ -17,6 +17,7 @@ import it.unive.pylisa.libraries.loader.LiSAType;
 import it.unive.pylisa.libraries.loader.LibType;
 import it.unive.pylisa.libraries.loader.Library;
 import it.unive.pylisa.libraries.loader.Method;
+import it.unive.pylisa.libraries.loader.MissingValue;
 import it.unive.pylisa.libraries.loader.NoneValue;
 import it.unive.pylisa.libraries.loader.NumberValue;
 import it.unive.pylisa.libraries.loader.Parameter;
@@ -78,6 +79,8 @@ public class LibrarySpecificationParser extends LibraryDefinitionParserBaseVisit
 		Value def;
 		if (ctx.val.NONE() != null)
 			def = new NoneValue();
+		else if (ctx.val.MISSING() != null)
+			def = new MissingValue();
 		else if (ctx.val.BOOLEAN() != null)
 			def = new BooleanValue(ctx.val.BOOLEAN().getText().equals("true"));
 		else if (ctx.val.STRING() != null)

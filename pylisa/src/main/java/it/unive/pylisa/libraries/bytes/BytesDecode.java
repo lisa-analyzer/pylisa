@@ -14,7 +14,7 @@ import it.unive.pylisa.symbolic.operators.bytes.Codec;
 
 /**
  * Native implementation of
- * {@code bytes.decode(self, encoding=None, errors=None)}. See
+ * {@code bytes.decode(self, encoding='utf-8', errors='strict')}. See
  * {@link CodecSemantics}.
  */
 public class BytesDecode extends PyNative {
