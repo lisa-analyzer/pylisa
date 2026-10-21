@@ -68,15 +68,29 @@ public class PyCodeMemberParser
 	// the names the imports of the file bind to local modules
 	private final LocalImports imports;
 
+	// whether the function is a static method of a class (see
+	// PyStatementParser#visitFunction_def)
+	private final boolean staticMethod;
+
 	public PyCodeMemberParser(
 			String filePath,
 			Program program,
 			Unit unit,
 			LocalImports imports) {
+		this(filePath, program, unit, imports, false);
+	}
+
+	public PyCodeMemberParser(
+			String filePath,
+			Program program,
+			Unit unit,
+			LocalImports imports,
+			boolean staticMethod) {
 		this.filePath = filePath;
 		this.program = program;
 		this.unit = unit;
 		this.imports = imports;
+		this.staticMethod = staticMethod;
 	}
 
 	@Override
@@ -157,7 +171,7 @@ public class PyCodeMemberParser
 		return new CodeMemberDescriptor(
 				getLocation(filePath, funcDecl),
 				unit,
-				unit instanceof ClassUnit ? true : false,
+				unit instanceof ClassUnit && !staticMethod,
 				funcName,
 				cfgArgs);
 	}
@@ -247,7 +261,7 @@ public class PyCodeMemberParser
 			ParamContext param,
 			Default_assignmentContext def,
 			boolean first) {
-		if (first && unit instanceof ClassUnit)
+		if (first && unit instanceof ClassUnit && !staticMethod)
 			// the first parameter of an instance method is 'self': type it
 			// with the enclosing class rather than with its annotation
 			return new PyParameter(

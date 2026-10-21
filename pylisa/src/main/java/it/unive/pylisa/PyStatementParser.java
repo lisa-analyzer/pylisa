@@ -41,6 +41,7 @@ import it.unive.lisa.util.datastructures.graph.code.NodeList;
 import it.unive.lisa.util.frontend.ControlFlowTracker;
 import it.unive.lisa.util.frontend.ParsedBlock;
 import it.unive.pylisa.annotationvalues.DecoratedAnnotation;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.antlr.PythonParser.Annotated_rhsContext;
 import it.unive.pylisa.antlr.PythonParser.ArgumentsContext;
 import it.unive.pylisa.antlr.PythonParser.Assert_stmtContext;
@@ -1009,7 +1010,11 @@ public class PyStatementParser
 		if (ctx.function_def() != null) {
 			PyCFG fun = visitFunction_def(ctx.function_def());
 			if (currentUnit instanceof ClassUnit) {
-				((ClassUnit) currentUnit).addInstanceCodeMember(fun);
+				if (fun.getDescriptor().isInstance())
+					((ClassUnit) currentUnit).addInstanceCodeMember(fun);
+				else
+					// a static method, called without the receiver
+					currentUnit.addCodeMember(fun);
 				// methods are registered as code members of the class
 				return noOpBlock(ctx);
 			}
@@ -1032,10 +1037,9 @@ public class PyStatementParser
 				// the nested class would not be an attribute of the outer one
 				// (e.g. self.Nested(...) would raise AttributeError)
 				throw new UnsupportedStatementException("nested classes are not supported");
-			ClassUnit cu = visitClass_def(ctx.class_def());
-			PyClassType.register(cu.getName(), cu);
-			program.addUnit(cu);
-			// same as above: the class is registered as a unit, not inlined
+			// the class is registered as a unit (see PyClassParser), not
+			// inlined
+			visitClass_def(ctx.class_def());
 			return noOpBlock(ctx);
 		} else if (ctx.if_stmt() != null)
 			return this.visitIf_stmt(ctx.if_stmt());
@@ -2739,9 +2743,33 @@ public class PyStatementParser
 	@Override
 	public PyCFG visitFunction_def(
 			Function_defContext ctx) {
+		// the decorators of methods that change how they are called
+		// (@staticmethod) or created (@abc.abstractmethod, see
+		// ClassBases)
+		boolean staticMethod = false, abstractMethod = false;
 		if (ctx.decorators() != null)
-			throw new UnsupportedStatementException("decorators are not supported");
-		PyCodeMemberParser parser = new PyCodeMemberParser(filePath, program, currentUnit, localImports);
-		return parser.visitFunction_def_raw(ctx.function_def_raw());
+			for (Named_expressionContext decorator : ctx.decorators().named_expression()) {
+				String name = decorator.getText();
+				if (currentUnit instanceof ClassUnit && name.equals("staticmethod") && !defined(name))
+					staticMethod = true;
+				else if (currentUnit instanceof ClassUnit
+						&& (name.equals("abstractmethod") || name.equals("abc.abstractmethod"))
+						&& !defined("abstractmethod"))
+					abstractMethod = true;
+				else
+					throw new UnsupportedStatementException("decorators are not supported");
+			}
+		PyCodeMemberParser parser = new PyCodeMemberParser(filePath, program, currentUnit, localImports,
+				staticMethod);
+		PyCFG cfg = parser.visitFunction_def_raw(ctx.function_def_raw());
+		if (abstractMethod)
+			cfg.getDescriptor().addAnnotation(new Annotation(ClassBases.ABSTRACT));
+		return cfg;
+	}
+
+	// whether the program defines a function with the given name
+	private boolean defined(
+			String name) {
+		return program.getCodeMembersByName(name).stream().anyMatch(m -> !(m instanceof NativeCFG));
 	}
 }

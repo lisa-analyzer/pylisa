@@ -11,6 +11,7 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
+import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
@@ -33,6 +34,7 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import org.apache.commons.lang3.ArrayUtils;
@@ -63,6 +65,29 @@ public class PyNewObj extends NaryExpression {
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		Type type = getStaticType();
+		// an abstract class cannot be instantiated
+		Satisfiability isAbstract = type.isUnitType() && type.asUnitType().getUnit() instanceof ClassUnit
+				? ClassBases.isAbstract(getProgram(), (ClassUnit) type.asUnitType().getUnit())
+				: Satisfiability.NOT_SATISFIED;
+		if (isAbstract == Satisfiability.SATISFIED)
+			return PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
+					LibrarySpecificationProvider.TYPE_ERROR);
+		AnalysisState<A> created = create(interprocedural, state, params, expressions);
+		if (isAbstract == Satisfiability.UNKNOWN)
+			created = created.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
+					LibrarySpecificationProvider.TYPE_ERROR));
+		return created;
+	}
+
+	// creates the object, and initializes it with __init__
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> create(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ExpressionSet[] params,

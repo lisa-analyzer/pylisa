@@ -15,14 +15,25 @@ import it.unive.lisa.util.datastructures.graph.code.NodeList;
 import it.unive.lisa.util.frontend.CFGTweaker;
 import it.unive.lisa.util.frontend.ControlFlowTracker;
 import it.unive.lisa.util.frontend.ParsedBlock;
+import it.unive.pylisa.antlr.PythonParser.ArgsContext;
+import it.unive.pylisa.antlr.PythonParser.Assignment_expressionContext;
 import it.unive.pylisa.antlr.PythonParser.Class_def_rawContext;
+import it.unive.pylisa.antlr.PythonParser.ExpressionContext;
+import it.unive.pylisa.antlr.PythonParser.Kwarg_or_double_starredContext;
+import it.unive.pylisa.antlr.PythonParser.Kwarg_or_starredContext;
+import it.unive.pylisa.antlr.PythonParser.Starred_expressionContext;
 import it.unive.pylisa.antlr.PythonParserBaseVisitor;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.PyParameter;
+import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.function.Function;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 public class PyClassParser
 		extends
@@ -73,6 +84,11 @@ public class PyClassParser
 		// problems since we will do that where the signature is defined, and
 		// not where it is used.
 		ClassUnit signature = new ClassUnit(getLocation(filePath, ctx), program, name, false);
+		signature.addAnnotation(bases(ctx));
+		// the class is registered before its body is parsed, so that its
+		// methods can refer to it (e.g. C.m(...) in a method of C)
+		PyClassType.register(name, signature);
+		program.addUnit(signature);
 		if (ctx.arguments() == null || ctx.arguments().getChildCount() == 0)
 			// without bases, all the methods of the class are known: they are
 			// those defined in its body
@@ -104,6 +120,35 @@ public class PyClassParser
 		cfg.simplify();
 		signature.addCodeMember(cfg);
 		return signature;
+	}
+
+	// the bases of the class, as written in the source (see ClassBases)
+	private static Annotation bases(
+			Class_def_rawContext ctx) {
+		List<String> bases = new ArrayList<>();
+		String metaclass = null;
+		ArgsContext args = ctx.arguments() == null ? null : ctx.arguments().args();
+		if (args != null) {
+			for (ParseTree child : args.children)
+				if (child instanceof ExpressionContext || child instanceof Assignment_expressionContext)
+					bases.add(child.getText());
+				else if (child instanceof Starred_expressionContext)
+					bases.add(ClassBases.UNKNOWN);
+			if (args.kwargs() != null)
+				for (ParseTree child : args.kwargs().children)
+					if (child instanceof Kwarg_or_starredContext && ((Kwarg_or_starredContext) child).name() == null
+							|| child instanceof Kwarg_or_double_starredContext
+									&& ((Kwarg_or_double_starredContext) child).name() == null)
+						// *bases, or **kwargs
+						bases.add(ClassBases.UNKNOWN);
+					else if (child instanceof Kwarg_or_starredContext
+							&& ((Kwarg_or_starredContext) child).name().getText().equals("metaclass"))
+						metaclass = ((Kwarg_or_starredContext) child).expression().getText();
+					else if (child instanceof Kwarg_or_double_starredContext
+							&& ((Kwarg_or_double_starredContext) child).name().getText().equals("metaclass"))
+						metaclass = ((Kwarg_or_double_starredContext) child).expression().getText();
+		}
+		return ClassBases.bases(bases, metaclass);
 	}
 
 	private CodeMemberDescriptor buildMainCFGDescriptor(

@@ -15,9 +15,12 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.analysis.symbols.SymbolAliasing;
+import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.program.cfg.statement.call.CFGCall;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.NativeCall;
+import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.EvaluationOrder;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -85,14 +88,23 @@ public class PyMethodCall extends UnresolvedCall {
 			receiverTypes.addAll(analysis.getRuntimeTypesOf(state, receiver, this));
 
 		Set<Type> valueTypes = new HashSet<>();
+		Set<CFG> statics = new HashSet<>();
+		// the receivers whose methods are resolved by the regular call
+		// resolution
+		Set<Type> objectTypes = new HashSet<>();
 		boolean others = receiverTypes.isEmpty(), attribute = false;
 		for (Type t : receiverTypes)
-			if (PyBinaryDispatch.isBuiltinValueType(t))
+			if (!staticMethods(t).isEmpty())
+				// o.m(...), where the class of o defines the static method m
+				statics.addAll(staticMethods(t));
+			else if (PyBinaryDispatch.isBuiltinValueType(t))
 				valueTypes.add(t);
 			else if (isAttribute(t))
 				attribute = true;
-			else
+			else {
 				others = true;
+				objectTypes.add(t);
+			}
 
 		AnalysisState<A> result = state.bottomExecution();
 		if (others) {
@@ -109,10 +121,26 @@ public class PyMethodCall extends UnresolvedCall {
 					resolving = DictModel.invalidate(analysis, resolving, receiver, this);
 			// methods of objects, or unknown receivers: regular call
 			// resolution
-			result = result.lub(super.forwardSemanticsAux(interprocedural, resolving, params, expressions));
+			if (!objectTypes.isEmpty() && objectTypes.stream().allMatch(this::definedMethod)
+					&& resolve(interprocedural, analysis, resolving, expressions) instanceof OpenCall)
+				// the classes of the receivers, whose methods are all known,
+				// define the method, but it does not accept the arguments (e.g.
+				// a method without self)
+				result = result.lub(PyExceptions.raise(analysis, resolving, getCFG(), getLocation(), this,
+						LibrarySpecificationProvider.TYPE_ERROR));
+			else
+				result = result.lub(super.forwardSemanticsAux(interprocedural, resolving, params, expressions));
 		}
 		if (attribute)
 			result = result.lub(callAttribute(interprocedural, state, params, expressions));
+		if (!statics.isEmpty()) {
+			// the static method is called without the receiver
+			Expression[] parameters = getParameters();
+			UnresolvedCall call = new UnresolvedCall(getCFG(), getLocation(), CallType.STATIC, null,
+					getTargetName(), getOrder(), Arrays.copyOfRange(parameters, 1, parameters.length));
+			result = result.lub(call(new CFGCall(call, statics), interprocedural, state,
+					Arrays.copyOfRange(params, 1, params.length), expressions));
+		}
 
 		if (valueTypes.isEmpty())
 			return result;
@@ -132,6 +160,45 @@ public class PyMethodCall extends UnresolvedCall {
 			}
 		}
 		return result;
+	}
+
+	// whether the objects of type t are of a class whose methods are all
+	// known, defining an instance method named as the call
+	private boolean definedMethod(
+			Type t) {
+		return t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
+				&& PyBinaryDispatch.fullyKnown(t)
+				&& !t.asPointerType().getInnerType().asUnitType().getUnit()
+						.getInstanceCodeMembersByName(getTargetName(), true).isEmpty();
+	}
+
+	// the call resolved by the regular call resolution
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Call resolve(
+			InterproceduralAnalysis<A, D> interprocedural,
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		try {
+			return interprocedural.resolve(this, parameterTypes(expressions, analysis),
+					state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
+		} catch (CallResolutionException e) {
+			throw new SemanticException("Unable to resolve call " + this, e);
+		}
+	}
+
+	// the static methods named as the call, defined by the class of the
+	// objects of type t
+	private Set<CFG> staticMethods(
+			Type t) {
+		Set<CFG> statics = new HashSet<>();
+		if (t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
+				&& t.asPointerType().getInnerType().asUnitType().getUnit() instanceof ClassUnit)
+			for (CodeMember member : t.asPointerType().getInnerType().asUnitType().getUnit()
+					.getCodeMembersByName(getTargetName()))
+				if (member instanceof CFG && !member.getDescriptor().isInstance())
+					statics.add((CFG) member);
+		return statics;
 	}
 
 	// whether name is an attribute of the objects of type t (or a class
