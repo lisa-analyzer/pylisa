@@ -1,22 +1,28 @@
 {
-  "warnings" : [ ],
+  "warnings" : [ {
+    "message" : "['py-testcases/dict-views/dict-views.py':35:8] on 'untyped py-testcases/dict-views/dict-views::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-views/dict-views.py':35:8"
+  }, {
+    "message" : "['py-testcases/dict-views/dict-views.py':38:8] on 'untyped py-testcases/dict-views/dict-views::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-views/dict-views.py':38:8"
+  }, {
+    "message" : "['py-testcases/dict-views/dict-views.py':50:8] on 'untyped py-testcases/dict-views/dict-views::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-views/dict-views.py':50:8"
+  } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_dict-views_dict-views.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "19ms",
-    "end" : "2026-10-21T15:17:46.512+02:00",
-    "expressions" : "164",
+    "duration" : "52ms",
+    "end" : "2026-10-21T15:35:31.888+02:00",
+    "expressions" : "290",
     "files" : "1",
     "globals" : "0",
     "members" : "169",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-21T15:17:46.493+02:00",
-    "statements" : "44",
+    "start" : "2026-10-21T15:35:31.836+02:00",
+    "statements" : "82",
     "units" : "35",
     "version" : "1.0",
-    "warnings" : "0"
+    "warnings" : "3"
   },
   "configuration" : {
     "asynchronousListeners" : "",

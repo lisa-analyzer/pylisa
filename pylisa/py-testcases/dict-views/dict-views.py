@@ -27,3 +27,24 @@ m = len(n.keys()) + 1
 # the values of the untracked keys
 for k, v in n.items():
     r = v + 1
+
+# the keys that are not tracked keep their types: reading with them raises
+# no TypeError (only KeyError, as any key might be missing)
+for k in n:
+    a = k + "!"
+    b = n[k] + 1
+m2 = {**{"x": 1}, **n}
+for k in m2:
+    e = m2[k]
+d2 = {}
+d2[_sv_verifier.nondet_int()] = "v"
+for k in d2:
+    f = k + 1
+o = {k: 1 for k in [1.5, 2.5]}
+for k in o:
+    g = k * 2
+l = {}
+l[_sv_verifier.nondet_str()] = 1
+l |= n
+for k in l:
+    h = l[k]

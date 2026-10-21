@@ -64,6 +64,15 @@ public final class DictModel {
 	 */
 	public static final String UNKNOWN_KEY = "$unknown";
 
+	/**
+	 * The child of a dictionary holding any of the keys that are not tracked
+	 * (whose values are the child {@value #UNKNOWN_KEY}), so that iterating
+	 * over the keys yields values of the right types (e.g. {@code str}s, that
+	 * are hashable). As {@value #UNKNOWN_KEY}, it is not a valid python
+	 * identifier.
+	 */
+	public static final String UNTRACKED_KEYS = "$keys";
+
 	private DictModel() {
 	}
 
@@ -141,6 +150,7 @@ public final class DictModel {
 	private record Entries(
 			Map<AllocationSite, Set<Object>> keys,
 			Set<AllocationSite> unknown,
+			Set<AllocationSite> keyed,
 			boolean weak) {
 	}
 
@@ -168,7 +178,7 @@ public final class DictModel {
 		if (sites.isEmpty())
 			return null;
 		Map<AllocationSite, Set<Object>> keys = new HashMap<>();
-		Set<AllocationSite> unknown = new HashSet<>();
+		Set<AllocationSite> unknown = new HashSet<>(), keyed = new HashSet<>();
 		boolean weak = false;
 		for (AllocationSite site : sites) {
 			ExpressionSet fields = heap.fields.getState(site);
@@ -179,11 +189,13 @@ public final class DictModel {
 			for (SymbolicExpression field : fields)
 				if (field instanceof Variable && ((Variable) field).getName().equals(UNKNOWN_KEY))
 					unknown.add(site);
+				else if (field instanceof Variable && ((Variable) field).getName().equals(UNTRACKED_KEYS))
+					keyed.add(site);
 				else if (field instanceof Constant && trackedKey(field) != null)
 					siteKeys.add(trackedKey(field));
 			keys.put(site, siteKeys);
 		}
-		return new Entries(keys, unknown, weak);
+		return new Entries(keys, unknown, keyed, weak);
 	}
 
 	// the tracked key the key is surely equal to, if any
@@ -368,6 +380,7 @@ public final class DictModel {
 			written = analysis.assign(written,
 					new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc),
 					value, thrower).lub(written);
+			written = analysis.assign(written, untrackedKeys(deref, loc), key, thrower).lub(written);
 		}
 		return written;
 	}
@@ -432,9 +445,11 @@ public final class DictModel {
 				for (Object k : keys)
 					result = analysis.assign(result, new AccessChild(Untyped.INSTANCE, deref, child(k, loc), loc),
 							new PushAny(Untyped.INSTANCE, loc), pp);
-		return analysis.assign(result,
+		result = analysis.assign(result,
 				new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc),
 				new PushAny(Untyped.INSTANCE, loc), pp);
+		// keys of any type might have been added
+		return analysis.assign(result, untrackedKeys(deref, loc), new PushAny(Untyped.INSTANCE, loc), pp);
 	}
 
 	/**
@@ -484,14 +499,16 @@ public final class DictModel {
 							|| ListModel.isList(t) || t.isCodeMemberType());
 			if (!notMappings)
 				// e.g. an object whose class defines keys and __getitem__
-				result = result.lub(anyEntry(analysis, state, dict, new PushAny(Untyped.INSTANCE, loc), thrower));
+				result = result.lub(anyEntry(analysis, state, dict, new PushAny(Untyped.INSTANCE, loc),
+						new PushAny(Untyped.INSTANCE, loc), thrower));
 		}
 		if (types.stream().noneMatch(DictModel::isDict))
 			return result;
 
 		Entries entries = entries(analysis, state, source, thrower);
 		if (entries == null)
-			return result.lub(anyEntry(analysis, state, dict, new PushAny(Untyped.INSTANCE, loc), thrower));
+			return result.lub(anyEntry(analysis, state, dict, new PushAny(Untyped.INSTANCE, loc),
+					new PushAny(Untyped.INSTANCE, loc), thrower));
 
 		HeapDereference from = new HeapDereference(dictType, source, loc);
 		Set<Object> all = new HashSet<>(), sure = null;
@@ -523,25 +540,31 @@ public final class DictModel {
 			current = next;
 		}
 		if (!entries.unknown().isEmpty()) {
-			AnalysisState<A> values = analysis.smallStepSemantics(current,
-					new AccessChild(Untyped.INSTANCE, from, new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc),
-					thrower);
+			// the untracked entries of source, whose keys and values are not
+			// paired
+			AnalysisState<A> keys = untrackedKey(analysis, current, source, entries, thrower);
 			AnalysisState<A> next = current.bottomExecution();
-			for (SymbolicExpression value : values.getExecutionExpressions())
-				next = next.lub(anyEntry(analysis, values, dict, value, thrower));
+			for (SymbolicExpression key : keys.getExecutionExpressions()) {
+				AnalysisState<A> values = analysis.smallStepSemantics(keys,
+						new AccessChild(Untyped.INSTANCE, from, new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc),
+						thrower);
+				for (SymbolicExpression value : values.getExecutionExpressions())
+					next = next.lub(anyEntry(analysis, values, dict, key, value, thrower));
+			}
 			current = next;
 		}
 		return result.lub(current);
 	}
 
 	/**
-	 * Adds an entry whose key is unknown, and that might be equal to any of the
-	 * keys of the dictionary: the values of all the keys are weakly updated. The
-	 * key comes from a mapping, so it is hashable.
+	 * Adds an entry whose key is not tracked, and that might be equal to any of
+	 * the keys of the dictionary: the values of all the keys are weakly updated.
+	 * The key comes from a mapping, so it is hashable.
 	 *
 	 * @param analysis the analysis
 	 * @param state    the current state
 	 * @param dict     the dictionary
+	 * @param key      the key of the entry (e.g. an unknown value)
 	 * @param value    the value of the entry
 	 * @param thrower  the statement adding the entry
 	 *
@@ -553,12 +576,37 @@ public final class DictModel {
 			Analysis<A, D> analysis,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
+			SymbolicExpression key,
 			SymbolicExpression value,
 			Statement thrower)
 			throws SemanticException {
 		// the key comes from a mapping: it is hashable
-		return store(analysis, state, dict, new PushAny(Untyped.INSTANCE, thrower.getLocation()), value, thrower)
-				.lub(state);
+		return store(analysis, state, dict, key, value, thrower).lub(state);
+	}
+
+	// any of the keys that are not tracked: the ones recorded in the child
+	// UNTRACKED_KEYS, if all the dictionaries with untracked entries have it
+	// (and the dictionary is not a summary of many), an unknown value
+	// otherwise
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> untrackedKey(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression dict,
+			Entries entries,
+			ProgramPoint pp)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		if (entries == null || entries.weak() || entries.unknown().isEmpty()
+				|| !entries.keyed().containsAll(entries.unknown()))
+			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp);
+		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.DICT), dict, loc);
+		return analysis.smallStepSemantics(state, untrackedKeys(deref, loc), pp);
+	}
+
+	private static AccessChild untrackedKeys(
+			HeapDereference deref,
+			CodeLocation loc) {
+		return new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, UNTRACKED_KEYS, loc), loc);
 	}
 
 	/**
@@ -585,7 +633,7 @@ public final class DictModel {
 		Entries entries = entries(analysis, state, dict, pp);
 		AnalysisState<A> result = state.bottomExecution();
 		if (entries == null || entries.weak() || !entries.unknown().isEmpty())
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp));
+			result = result.lub(untrackedKey(analysis, state, dict, entries, pp));
 		if (entries != null)
 			for (Set<Object> keys : entries.keys().values())
 				for (Object k : keys)
@@ -672,9 +720,9 @@ public final class DictModel {
 					? analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp)
 					: analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref,
 							new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc), pp);
-			result = result.lub(TupleCreation.create(analysis, value, pp, new DerivedLocation(loc, "item"),
-					new ExpressionSet[] { new ExpressionSet(new PushAny(Untyped.INSTANCE, loc)),
-							value.getExecutionExpressions() },
+			AnalysisState<A> key = untrackedKey(analysis, value, dict, entries, pp);
+			result = result.lub(TupleCreation.create(analysis, key, pp, new DerivedLocation(loc, "item"),
+					new ExpressionSet[] { key.getExecutionExpressions(), value.getExecutionExpressions() },
 					metas));
 		}
 		return result;
