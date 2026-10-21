@@ -222,6 +222,7 @@ import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.PyAssert;
 import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
+import it.unive.pylisa.cfg.expression.PyClassMember;
 import it.unive.pylisa.cfg.expression.PySuperCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -2163,6 +2164,11 @@ public class PyStatementParser
 			Expression receiver,
 			String name,
 			CodeLocation location) {
+		if (receiver instanceof VariableRef
+				&& ClassBases.isProgramClass(program.getUnit(((VariableRef) receiver).getName())))
+			// C.name, for a class C of the program (e.g. a method read as a
+			// function)
+			return new PyClassMember(currentCFG, location, receiver, ((VariableRef) receiver).getName(), name);
 		if (isNamespace(receiver))
 			return new UnresolvedCall(
 					currentCFG,

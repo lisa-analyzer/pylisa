@@ -6,20 +6,17 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.CompilationUnit;
-import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.Unit;
+import it.unive.pylisa.cfg.ClassBases;
+import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.Call;
-import it.unive.lisa.program.cfg.statement.call.Call.CallType;
-import it.unive.lisa.program.cfg.statement.call.OpenCall;
-import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
@@ -49,8 +46,9 @@ import java.util.Set;
  * class {@code BoundMethod}, whose children are {@value #SELF} (that is,
  * {@code o}) and {@value #FUNC} (the function {@code m} of the class of
  * {@code o}). Calling it calls {@code m} on {@code o}: the method is looked up
- * by name in the class of each object {@code o} might be, as for
- * {@code o.m(...)} (see {@code PyMro}).
+ * by name in the class of each value {@code o} might be, as for
+ * {@code o.m(...)} (see {@code PyMro}). This also holds for the methods of
+ * builtin values (e.g. {@code f = "a".upper}).
  */
 public final class BoundMethods {
 
@@ -180,30 +178,29 @@ public final class BoundMethods {
 			for (SymbolicExpression v : actuals[i])
 				types[i].addAll(analysis.getRuntimeTypesOf(self, v, caller));
 		}
-		boolean fullyKnown = !types[0].isEmpty() && types[0].stream().allMatch(PyBinaryDispatch::fullyKnown);
+		Set<Type> selfTypes = types[0];
+		unknown |= selfTypes.isEmpty();
 
+		// a location of its own, as the callee might be the result of another
+		// call at the location of the caller (as in o.f()())
+		CodeLocation location = new DerivedLocation(loc, "bound call");
 		AnalysisState<A> result = state.bottomExecution();
-		for (String name : names) {
-			// a location of its own, as the callee might be the result of
-			// another call at the location of the caller (as in o.f()())
-			UnresolvedCall call = CallSites.get(interprocedural, caller, new DerivedLocation(loc, "bound call"),
-					CallType.INSTANCE, null, name, params);
-			Call resolved;
-			try {
-				resolved = interprocedural.resolve(call, types,
-						self.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
-			} catch (CallResolutionException e) {
-				throw new SemanticException("Unable to resolve call " + call, e);
+		for (String name : names)
+			// as o.name(...), for each class o might be an object of
+			for (Type t : selfTypes) {
+				types[0] = Set.of(t);
+				Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, self, caller, location,
+						PyBinaryDispatch.classOf(t), name, params, types);
+				if (resolved != null) {
+					result = result.lub(resolved.forwardSemanticsAux(interprocedural, self, actuals, expressions));
+					metas.addAll(resolved.getMetaVariables());
+				} else if (PyBinaryDispatch.fullyKnown(t))
+					// the method does not accept the arguments
+					result = result.lub(PyExceptions.raise(analysis, self, caller.getCFG(), loc, caller,
+							LibrarySpecificationProvider.TYPE_ERROR));
+				else
+					unknown = true;
 			}
-			if (resolved instanceof OpenCall && fullyKnown)
-				// the method does not accept the arguments
-				result = result.lub(PyExceptions.raise(analysis, self, caller.getCFG(), loc, caller,
-						LibrarySpecificationProvider.TYPE_ERROR));
-			else {
-				result = result.lub(resolved.forwardSemanticsAux(interprocedural, self, actuals, expressions));
-				metas.addAll(resolved.getMetaVariables());
-			}
-		}
 		if (unknown)
 			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), caller));
 		return result;
@@ -217,27 +214,38 @@ public final class BoundMethods {
 	}
 
 	/**
-	 * Yields the functions of the method {@code name} of the objects of type
-	 * {@code t}, if their class defines it as a method that is not static (a
-	 * static method read from an object is a plain function).
+	 * Yields the functions of the method {@code name} of the values of type
+	 * {@code t}: the methods of its class (the first in the method resolution
+	 * order defining {@code name}, see {@link PyMro#definer}) that are not
+	 * static, as a static method read from an object is a plain function; the
+	 * methods of the library classes (e.g. {@code str.upper}, or
+	 * {@code list.append}) might be static members, that take the value as
+	 * first argument.
 	 *
-	 * @param t    the type of the objects
-	 * @param name the name of the method
+	 * @param program the program
+	 * @param t       the type of the values
+	 * @param name    the name of the method
 	 *
 	 * @return the functions, empty if {@code name} is not such a method
 	 */
 	public static Set<CodeMember> methods(
+			Program program,
 			Type t,
 			String name) {
 		Set<CodeMember> methods = new HashSet<>();
-		if (!t.isPointerType() || !t.asPointerType().getInnerType().isUnitType())
+		Unit unit = t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
+				? t.asPointerType().getInnerType().asUnitType().getUnit()
+				: PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.classOf(t) != null
+						? program.getUnit(PyBinaryDispatch.classOf(t))
+						: null;
+		if (!(unit instanceof CompilationUnit))
 			return methods;
-		CompilationUnit definer = PyMro.definer(t.asPointerType().getInnerType().asUnitType().getUnit(), name,
-				null);
-		if (definer != null)
-			for (CodeMember member : definer.getInstanceCodeMembersByName(name, false))
-				if (member instanceof CFG)
-					methods.add(member);
+		CompilationUnit definer = PyMro.definer((CompilationUnit) unit, name, null);
+		if (definer == null)
+			return methods;
+		methods.addAll(definer.getInstanceCodeMembersByName(name, false));
+		if (!ClassBases.isProgramClass(definer))
+			methods.addAll(definer.getCodeMembersByName(name));
 		return methods;
 	}
 }

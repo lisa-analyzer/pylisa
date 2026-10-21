@@ -138,7 +138,7 @@ public class PyAttributeAccess extends UnaryExpression {
 		boolean onlyMethods = !objects.isEmpty() && !isWriteTarget();
 		if (onlyMethods)
 			for (Type o : objects) {
-				Set<CodeMember> m = BoundMethods.methods(new ReferenceType(o), name);
+				Set<CodeMember> m = BoundMethods.methods(getProgram(), new ReferenceType(o), name);
 				methods.addAll(m);
 				onlyMethods &= !m.isEmpty();
 			}
@@ -164,8 +164,24 @@ public class PyAttributeAccess extends UnaryExpression {
 				for (ClassUnit cls : missing.classes())
 					result = result.lub(classAttribute(interprocedural, state, cls, thrower));
 		}
-		if (others)
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this));
+		if (others) {
+			// the methods of builtin values, read without calling them (e.g.
+			// "a".upper): bound methods
+			Set<CodeMember> valueMethods = new HashSet<>();
+			boolean unknown = types.isEmpty() || isWriteTarget();
+			if (!unknown)
+				for (Type t : types)
+					if (!t.isPointerType() || !t.asPointerType().getInnerType().isUnitType()) {
+						Set<CodeMember> m = BoundMethods.methods(getProgram(), t, name);
+						valueMethods.addAll(m);
+						unknown |= m.isEmpty();
+					}
+			if (!valueMethods.isEmpty())
+				result = result
+						.lub(BoundMethods.create(analysis, state, expr, valueMethods, this, getMetaVariables()));
+			if (unknown)
+				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this));
+		}
 		return result;
 	}
 

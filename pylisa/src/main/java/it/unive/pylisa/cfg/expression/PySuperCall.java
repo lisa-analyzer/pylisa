@@ -12,7 +12,7 @@ import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
-import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -99,7 +99,7 @@ public class PySuperCall extends UnresolvedCall {
 				continue;
 			}
 			CompilationUnit definer = PyMro.definer(unit, getTargetName(), current);
-			if (definer != null && !(definer.getLocation() instanceof SourceCodeLocation))
+			if (definer != null && !ClassBases.isProgramClass(definer))
 				// a method of a library class, that is not called here
 				unknown = true;
 			else if (definer != null)

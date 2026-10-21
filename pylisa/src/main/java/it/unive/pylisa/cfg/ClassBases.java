@@ -4,6 +4,7 @@ import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.annotations.AnnotationMember;
 import it.unive.lisa.program.annotations.values.StringAnnotationValue;
@@ -55,6 +56,20 @@ public final class ClassBases {
 	public static final String ABSTRACT = "pylisa.abstract_method";
 
 	private ClassBases() {
+	}
+
+	/**
+	 * Whether the given unit is a class of the program (and not of a library),
+	 * that is, a class defined by {@code PyClassParser}, that lists its bases.
+	 *
+	 * @param unit the unit
+	 *
+	 * @return whether the unit is a class of the program
+	 */
+	public static boolean isProgramClass(
+			Unit unit) {
+		return unit instanceof ClassUnit && ((ClassUnit) unit).getAnnotationList().stream()
+				.anyMatch(a -> a.getAnnotationName().equals(BASES));
 	}
 
 	/**

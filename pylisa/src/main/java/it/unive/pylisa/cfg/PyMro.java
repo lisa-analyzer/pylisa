@@ -2,7 +2,6 @@ package it.unive.pylisa.cfg;
 
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
-import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
@@ -128,8 +127,7 @@ public final class PyMro implements HierarchyTraversalStrategy {
 		for (CodeMember member : unit.getCodeMembersByName(name))
 			if (!member.getDescriptor().getName().equals(PyClassParser.INSTRUMENTED_CLASS_INIT_NAME))
 				return true;
-		return unit instanceof ClassUnit && ((ClassUnit) unit).getLocation() instanceof SourceCodeLocation
-				&& PyClassAttributes.ownAttribute((ClassUnit) unit, name) != null;
+		return ClassBases.isProgramClass(unit) && PyClassAttributes.ownAttribute((ClassUnit) unit, name) != null;
 	}
 
 	/**
