@@ -268,6 +268,7 @@ public class PyMethodCall extends UnresolvedCall {
 
 			Set<CFG> cfgs = new HashSet<>();
 			Set<NativeCFG> natives = new HashSet<>();
+			Set<SymbolicExpression> bounds = new HashSet<>();
 			boolean unknown = false, notCallable = false;
 			for (SymbolicExpression value : attr.getExecutionExpressions()) {
 				Set<Type> types = analysis.getRuntimeTypesOf(attr, value, this);
@@ -276,7 +277,9 @@ public class PyMethodCall extends UnresolvedCall {
 					continue;
 				}
 				for (Type t : types)
-					if (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
+					if (BoundMethods.isBoundMethod(t))
+						bounds.add(value);
+					else if (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
 						// e.g. an int, that cannot be called
 						notCallable = true;
 					else if (isAttribute(t) && !callable(t))
@@ -301,6 +304,11 @@ public class PyMethodCall extends UnresolvedCall {
 				result = result.lub(call(new CFGCall(call, cfgs), interprocedural, attr, args, expressions));
 			if (!natives.isEmpty())
 				result = result.lub(call(new NativeCall(call, natives), interprocedural, attr, args, expressions));
+			for (SymbolicExpression bound : bounds)
+				// a bound method stored in the attribute, called on its object
+				result = result.lub(BoundMethods.call(interprocedural, attr, bound, parameters[0],
+						Arrays.copyOfRange(parameters, 1, parameters.length), args, this, expressions,
+						getMetaVariables()));
 			if (unknown)
 				// e.g. a class, or an object
 				result = result.lub(analysis.smallStepSemantics(attr, new PushAny(Untyped.INSTANCE, getLocation()),

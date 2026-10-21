@@ -114,6 +114,7 @@ public class PyValueCall extends NaryExpression {
 
 		Set<CFG> cfgs = new HashSet<>();
 		Set<NativeCFG> natives = new HashSet<>();
+		Set<SymbolicExpression> bounds = new HashSet<>();
 		boolean unknown = false, notCallable = false;
 		for (SymbolicExpression callee : params[0]) {
 			Set<Type> types = analysis.getRuntimeTypesOf(state, callee, this);
@@ -122,7 +123,9 @@ public class PyValueCall extends NaryExpression {
 				continue;
 			}
 			for (Type t : types)
-				if (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
+				if (BoundMethods.isBoundMethod(t))
+					bounds.add(callee);
+				else if (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
 					// e.g. an int, that cannot be called
 					notCallable = true;
 				else if (isObject(t) && PyBinaryDispatch.fullyKnown(t) && !callable(t))
@@ -152,6 +155,11 @@ public class PyValueCall extends NaryExpression {
 		if (unknown)
 			result = result.lub(analysis.smallStepSemantics(consumed, new PushAny(Untyped.INSTANCE, getLocation()),
 					this));
+		for (SymbolicExpression bound : bounds)
+			// the bound method is read before its value is consumed
+			result = result.lub(BoundMethods.call(interprocedural, state, bound, subs[0],
+					Arrays.copyOfRange(subs, 1, subs.length), args, this, expressions, getMetaVariables())
+					.forgetIdentifiers(subs[0].getMetaVariables(), this));
 		return result;
 	}
 

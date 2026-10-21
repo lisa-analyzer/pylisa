@@ -68,13 +68,15 @@ public class PyNameCall extends UnresolvedCall {
 
 		Set<CFG> cfgs = new HashSet<>();
 		Set<NativeCFG> natives = new HashSet<>();
-		boolean others = false, notCallable = false;
+		boolean others = false, notCallable = false, bound = false;
 		Set<Type> types = analysis.getRuntimeTypesOf(state, callee, this);
 		if (PyBinaryDispatch.unknownTypes(types, this))
 			// e.g. a library function (as in f = len), whose type is unknown
 			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
 		for (Type t : types)
-			if (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
+			if (BoundMethods.isBoundMethod(t))
+				bound = true;
+			else if (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
 				// e.g. an int, that cannot be called
 				notCallable = true;
 			else if (t.isCodeMemberType())
@@ -88,7 +90,7 @@ public class PyNameCall extends UnresolvedCall {
 			else
 				others = true;
 
-		if (cfgs.isEmpty() && natives.isEmpty() && !notCallable)
+		if (cfgs.isEmpty() && natives.isEmpty() && !notCallable && !bound)
 			// not a variable holding functions
 			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
 
@@ -100,6 +102,10 @@ public class PyNameCall extends UnresolvedCall {
 			result = result.lub(call(new CFGCall(this, cfgs), interprocedural, state, params, expressions));
 		if (!natives.isEmpty())
 			result = result.lub(call(new NativeCall(this, natives), interprocedural, state, params, expressions));
+		if (bound)
+			// a bound method, called on its object (this call stands for it)
+			result = result.lub(BoundMethods.call(interprocedural, state, callee, this, getParameters(), params, this,
+					expressions, getMetaVariables()));
 		if (others)
 			// the variable might also hold something else
 			result = result.lub(super.forwardSemanticsAux(interprocedural, state, params, expressions));

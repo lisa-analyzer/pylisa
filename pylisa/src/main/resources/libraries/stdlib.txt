@@ -99,6 +99,9 @@ class Range:
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self libtype Range*
 
+# the class of the methods read from objects (see BoundMethods)
+class BoundMethod
+
 # the class of None, that defines no operators
 class NoneType
 

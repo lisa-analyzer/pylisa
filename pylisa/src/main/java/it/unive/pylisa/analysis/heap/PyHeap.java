@@ -24,7 +24,8 @@ import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
- * The field-sensitive point-based heap, also refined by {@code isinstance}
+ * The field-sensitive point-based heap, where reading a field holding objects
+ * yields them (see {@link #process}), also refined by {@code isinstance}
  * (see {@link IsInstance}): in the branches of {@code isinstance(x, C)},
  * {@code x} points only to the objects whose class satisfies {@code C}, or
  * only to the ones whose class does not, as its types are refined by the type
@@ -32,6 +33,30 @@ import org.apache.commons.lang3.tuple.Pair;
  * {@code x} would also see the objects that its types exclude.
  */
 public class PyHeap extends FieldSensitivePointBasedHeap {
+
+	/**
+	 * Assigns {@code rhs} to {@code id}. Reading a field holding objects (e.g.
+	 * {@code o.x} in {@code y = o.x}) yields the location of the field: the
+	 * identifier then points to the objects the field points to (otherwise it
+	 * would point to nothing, as only pointers are stored).
+	 */
+	@Override
+	protected HeapEnvWithFields process(
+			HeapEnvWithFields state,
+			Identifier id,
+			SymbolicExpression rhs,
+			ProgramPoint pp,
+			SemanticOracle oracle,
+			List<HeapReplacement> replacements,
+			boolean rhsIsReceiver)
+			throws SemanticException {
+		if (!(rhs instanceof AllocationSite) || !state.knowsIdentifier((Identifier) rhs))
+			return super.process(state, id, rhs, pp, oracle, replacements, rhsIsReceiver);
+		HeapEnvWithFields result = state.bottom();
+		for (SymbolicExpression pointer : resolveIdentifier(state, (Identifier) rhs, pp))
+			result = result.lub(super.process(state, id, pointer, pp, oracle, replacements, rhsIsReceiver));
+		return result;
+	}
 
 	@Override
 	public Pair<HeapEnvWithFields, List<HeapReplacement>> assume(

@@ -26,6 +26,8 @@ import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.program.cfg.CodeMember;
+import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.PyClassAttributes.ClassAttribute;
@@ -130,6 +132,21 @@ public class PyAttributeAccess extends UnaryExpression {
 				others = true;
 
 		AnalysisState<A> result = state.bottomExecution();
+		// the methods read without calling them: bound methods (see
+		// BoundMethods)
+		Set<CodeMember> methods = new HashSet<>();
+		boolean onlyMethods = !objects.isEmpty() && !isWriteTarget();
+		if (onlyMethods)
+			for (Type o : objects) {
+				Set<CodeMember> m = BoundMethods.methods(new ReferenceType(o), name);
+				methods.addAll(m);
+				onlyMethods &= !m.isEmpty();
+			}
+		if (!methods.isEmpty())
+			result = result.lub(BoundMethods.create(analysis, state, expr, methods, this, getMetaVariables()));
+		if (onlyMethods && !mightBeAssigned(analysis, state, expr))
+			// no instance attribute shadows the method
+			objects.clear();
 		if (!objects.isEmpty()) {
 			Missing missing = isWriteTarget() ? null : missing(analysis, state, expr, objects, false);
 			if (missing == null || missing.assigned()) {
@@ -307,6 +324,37 @@ public class PyAttributeAccess extends UnaryExpression {
 			}
 		}
 		return missing.isEmpty() ? null : new Missing(assigned, missing);
+	}
+
+	// whether some of the objects expr points to might have the attribute
+	// (that is, it is assigned on them, or the objects are not known)
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean mightBeAssigned(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression expr)
+			throws SemanticException {
+		HeapEnvWithFields heap = state.getExecutionState().getLatticeInstance(HeapEnvWithFields.class);
+		if (heap == null || heap.isTop() || heap.fields.isTop() || heap.fields.function == null)
+			return true;
+		for (SymbolicExpression rec : analysis.rewrite(state, expr, this)) {
+			Set<AllocationSite> sites;
+			if (rec instanceof MemoryPointer && ((MemoryPointer) rec).getReferencedLocation() instanceof AllocationSite)
+				sites = Set.of((AllocationSite) ((MemoryPointer) rec).getReferencedLocation());
+			else if (rec instanceof Identifier && heap.knowsIdentifier((Identifier) rec)) {
+				AllocationSites pointed = heap.getState((Identifier) rec);
+				if (pointed.isTop() || pointed.isBottom())
+					return true;
+				sites = pointed.elements();
+			} else
+				return true;
+			for (AllocationSite site : sites) {
+				ExpressionSet fields = heap.fields.getState(site);
+				if (fields.isTop() || fields.elements().stream()
+						.anyMatch(f -> f instanceof Variable && ((Variable) f).getName().equals(name)))
+					return true;
+			}
+		}
+		return false;
 	}
 
 	// reads the attribute from the given class, for an object that does not
