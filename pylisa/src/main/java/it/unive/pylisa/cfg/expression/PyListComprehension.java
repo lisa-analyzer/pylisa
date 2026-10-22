@@ -52,16 +52,26 @@ public class PyListComprehension extends NaryExpression {
 	 * @param target     the variable bound to the elements
 	 * @param iterable   the iterable
 	 * @param conditions the conditions
+	 * @param cell       the name of the variable in the program, if it is
+	 *                       shared with lambdas inside the comprehension (see
+	 *                       {@link Cells}), or {@code null}
 	 */
 	public record Clause(
 			VariableRef target,
 			Expression iterable,
-			List<Expression> conditions) {
+			List<Expression> conditions,
+			String cell) {
 	}
 
 	private final Expression element;
 
 	private final List<Clause> clauses;
+
+	// the variable referencing the cells of the comprehension, and their
+	// type, if some variable is shared with lambdas inside the comprehension
+	private final String cells;
+
+	private final PyClassType cellsType;
 
 	/**
 	 * Builds the comprehension.
@@ -76,9 +86,35 @@ public class PyListComprehension extends NaryExpression {
 			CodeLocation location,
 			Expression element,
 			List<Clause> clauses) {
+		this(cfg, location, element, clauses, null, null);
+	}
+
+	/**
+	 * Builds the comprehension, whose variables might be shared with lambdas
+	 * inside it (see {@link Cells}).
+	 *
+	 * @param cfg       the cfg where the comprehension is
+	 * @param location  the location of the comprehension
+	 * @param element   the element
+	 * @param clauses   the clauses
+	 * @param cells     the local variable referencing the cells of the
+	 *                      comprehension, or {@code null} if no variable is
+	 *                      shared
+	 * @param cellsType the type of the object holding the cells, or
+	 *                      {@code null} if no variable is shared
+	 */
+	public PyListComprehension(
+			CFG cfg,
+			CodeLocation location,
+			Expression element,
+			List<Clause> clauses,
+			String cells,
+			PyClassType cellsType) {
 		super(cfg, location, "listcomp", subExpressions(element, clauses));
 		this.element = element;
 		this.clauses = clauses;
+		this.cells = cells;
+		this.cellsType = cellsType;
 	}
 
 	private static Expression[] subExpressions(
@@ -124,6 +160,10 @@ public class PyListComprehension extends NaryExpression {
 		Expression first = clauses.get(0).iterable();
 		AnalysisState<A> start = first.forwardSemantics(entryState, interprocedural, expressions);
 		expressions.put(first, start);
+		if (cells != null)
+			// the cells shared with the lambdas inside the comprehension
+			start = Cells.allocate(analysis, start, cellsType, cells, loc, this)
+					.withExecutionExpressions(start.getExecutionExpressions());
 
 		// the states before the iterations, up to a fixpoint
 		AnalysisState<A> before = start;
@@ -163,6 +203,8 @@ public class PyListComprehension extends NaryExpression {
 		Set<Identifier> locals = new HashSet<>();
 		for (Clause clause : clauses)
 			locals.add(clause.target().getIdentifier());
+		if (cells != null)
+			locals.add(new Variable(Untyped.INSTANCE, cells, loc));
 		for (Expression sub : getSubExpressions())
 			locals.addAll(sub.getMetaVariables());
 		getMetaVariables().addAll(creation.getMetaVariables());
@@ -196,8 +238,14 @@ public class PyListComprehension extends NaryExpression {
 		AnalysisState<A> bound = state.bottomExecution();
 		for (SymbolicExpression iterable : state.getExecutionExpressions()) {
 			AnalysisState<A> elements = Iteration.elements(analysis, state, clause.iterable(), iterable, this);
-			for (SymbolicExpression elem : elements.getExecutionExpressions())
-				bound = bound.lub(analysis.assign(elements, clause.target().getIdentifier(), elem, this));
+			for (SymbolicExpression elem : elements.getExecutionExpressions()) {
+				AnalysisState<A> assigned = analysis.assign(elements, clause.target().getIdentifier(), elem, this);
+				if (clause.cell() != null)
+					// the value is also visible to the lambdas, through the
+					// cell
+					assigned = analysis.assign(assigned, Cells.cell(cells, clause.cell(), getLocation()), elem, this);
+				bound = bound.lub(assigned);
+			}
 			// e.g. the TypeError raised by iterating an int
 			bound = bound.lub(elements.bottomExecution());
 		}

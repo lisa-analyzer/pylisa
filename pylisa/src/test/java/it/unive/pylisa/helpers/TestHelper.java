@@ -1,7 +1,6 @@
 package it.unive.pylisa.helpers;
 
 import it.unive.lisa.analysis.SimpleAbstractDomain;
-import it.unive.lisa.analysis.heap.pointbased.FieldSensitivePointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
@@ -14,6 +13,7 @@ import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.program.cfg.fixpoints.optforward.OptimizedForwardAscendingFixpoint;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.constants.ConstantPropagationDomain;
+import it.unive.pylisa.analysis.heap.PyFieldSensitivePointBasedHeap;
 import it.unive.pylisa.analysis.types.PyInferredTypes;
 import it.unive.pylisa.checks.ExceptionChecker;
 
@@ -49,7 +49,7 @@ public class TestHelper {
 
 		conf.analysis = new SimpleAbstractDomain<HeapEnvWithFields, ValueEnvironment<ConstantPropagation>,
 				TypeEnvironment<TypeSet>>(
-						new FieldSensitivePointBasedHeap(), new ConstantPropagationDomain(), new PyInferredTypes());
+						new PyFieldSensitivePointBasedHeap(), new ConstantPropagationDomain(), new PyInferredTypes());
 
 		return conf;
 	}

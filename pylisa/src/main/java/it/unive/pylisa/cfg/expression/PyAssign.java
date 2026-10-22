@@ -255,16 +255,17 @@ public class PyAssign extends Assignment {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		if (target instanceof VariableRef)
+		if (target instanceof VariableRef && !(target instanceof PyNameRef && ((PyNameRef) target).cell() != null))
 			return bind(target, analysis.assign(state, ((VariableRef) target).getIdentifier(), value, this));
-		if (target instanceof PyAttributeAccess) {
-			// o.x is evaluated as the target of the assignment
+		if (target instanceof PyAttributeAccess || target instanceof PyNameRef) {
+			// o.x, or a name held in a cell, is evaluated as the target of the
+			// assignment
 			AnalysisState<A> evaluated = target.forwardSemantics(state, interprocedural, expressions);
 			expressions.put(target, evaluated);
 			AnalysisState<A> result = evaluated.bottomExecution();
 			for (SymbolicExpression id : evaluated.getExecutionExpressions())
 				result = result.lub(analysis.assign(evaluated, id, value, this));
-			return result.forgetIdentifiers(target.getMetaVariables(), this);
+			return bind(target, result.forgetIdentifiers(target.getMetaVariables(), this));
 		}
 		if (!(target instanceof TupleCreation))
 			throw new UnsupportedStatementException("Unpacking into " + target + " is not supported");

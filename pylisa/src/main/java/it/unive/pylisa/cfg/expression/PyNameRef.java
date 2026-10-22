@@ -22,8 +22,10 @@ import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.NaryStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.LocalImports;
@@ -66,11 +68,13 @@ import org.apache.commons.io.FilenameUtils;
  * <li>if a local name is not bound, {@code UnboundLocalError} is raised;</li>
  * <li>if the name might be bound or not, both cases are considered.</li>
  * </ul>
- * Names that refer to cells of enclosing functions ({@link NameKind#FREE}) are
- * considered bound. When the binding status is not known (e.g. the reference is
- * evaluated outside of its scope, or the analysis state does not contain the
- * {@link Namespaces}), a global name that is not known in the state is resolved
- * statically, in this order:
+ * The names shared with nested functions ({@link NameKind#CELL} and
+ * {@link NameKind#FREE}) are read and written through their cells (see
+ * {@link Cells}); the ones that refer to cells of enclosing functions
+ * ({@link NameKind#FREE}) are always considered bound. When the binding status
+ * is not known (e.g. the reference is evaluated outside of its scope, or the
+ * analysis state does not contain the {@link Namespaces}), a global name that
+ * is not known in the state is resolved statically, in this order:
  * <ol>
  * <li>a name imported from a local module is resolved as the global of that
  * module;</li>
@@ -351,12 +355,15 @@ public class PyNameRef extends VariableRef {
 			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		SymbolicExpression cell = cell();
 		if (target)
-			return super.forwardSemantics(entryState, interprocedural, expressions);
+			return cell == null ? super.forwardSemantics(entryState, interprocedural, expressions)
+					: cellTarget(entryState, interprocedural, expressions, cell);
 
 		Binding status = status(entryState);
 		if (status == null)
-			return staticRead(entryState, interprocedural, expressions);
+			return cell == null ? staticRead(entryState, interprocedural, expressions)
+					: cellRead(entryState, interprocedural, cell);
 
 		AnalysisState<A> result = entryState.bottomExecution();
 		if (status == Binding.BOTTOM || status.mightBeBound())
@@ -372,11 +379,63 @@ public class PyNameRef extends VariableRef {
 			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		SymbolicExpression cell = cell();
+		if (cell != null)
+			return cellRead(entryState, interprocedural, cell);
 		if (imported != null && !entryState.getExecutionState().isBottom()
 				&& !entryState.knowsIdentifier(getIdentifier()))
 			// bound by from m import f, but its value is not known
 			return importedRef().forwardSemantics(entryState, interprocedural, expressions);
 		return super.forwardSemantics(entryState, interprocedural, expressions);
+	}
+
+	/**
+	 * Yields the access to the cell holding the value of the name, if the name
+	 * is a variable shared with nested functions (see {@link Cells}) and this
+	 * reference is evaluated in the function of its scope (see
+	 * {@link #isChecked()}).
+	 *
+	 * @return the access to the cell, or {@code null}
+	 */
+	public SymbolicExpression cell() {
+		if (!checked)
+			return null;
+		if (kind == NameKind.CELL)
+			return Cells.cell(Cells.CELLS, getName(), getLocation());
+		if (kind == NameKind.FREE)
+			return Cells.free(getName(), getLocation());
+		return null;
+	}
+
+	// reads the value of the cell holding the name: if the object holding the
+	// cell is not known (e.g. the closure has been read from a container,
+	// whose elements are not tracked precisely by the heap), the value is
+	// unknown
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> cellRead(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			SymbolicExpression cell)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		AnalysisState<A> read = analysis.smallStepSemantics(entryState, cell, this);
+		if (read.getExecutionState().isBottom() && !entryState.getExecutionState().isBottom())
+			return analysis.smallStepSemantics(entryState, new PushAny(Untyped.INSTANCE, getLocation()), this);
+		return read;
+	}
+
+	// evaluates the cell holding the name as the target of an assignment: if
+	// the object holding the cell is not known, the value is assigned to a
+	// local variable instead, as the cell cannot be located
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> cellTarget(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions,
+			SymbolicExpression cell)
+			throws SemanticException {
+		AnalysisState<A> target = interprocedural.getAnalysis().smallStepSemantics(entryState, cell, this);
+		if (target.getExecutionState().isBottom() && !entryState.getExecutionState().isBottom())
+			return super.forwardSemantics(entryState, interprocedural, expressions);
+		return target;
 	}
 
 	// reads the name when it is not bound

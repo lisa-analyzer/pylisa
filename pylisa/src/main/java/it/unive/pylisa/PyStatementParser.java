@@ -152,6 +152,7 @@ import it.unive.pylisa.cfg.PyParameter;
 import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
 import it.unive.pylisa.cfg.expression.Break;
+import it.unive.pylisa.cfg.expression.Cells;
 import it.unive.pylisa.cfg.expression.Continue;
 import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import it.unive.pylisa.cfg.expression.Empty;
@@ -218,6 +219,7 @@ import it.unive.pylisa.cfg.expression.unary.PyLength;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.PyAssert;
+import it.unive.pylisa.cfg.statement.PyCellsInit;
 import it.unive.pylisa.cfg.statement.PyDelName;
 import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
@@ -930,7 +932,8 @@ public class PyStatementParser
 	@Override
 	public Statement visitNonlocal_stmt(
 			Nonlocal_stmtContext ctx) {
-		throw new UnsupportedStatementException("nonlocal declarations are not supported yet");
+		// a declaration, used by the symbol table (see SymtableBuilder)
+		return new NoOp(currentCFG, getLocation(filePath, ctx));
 	}
 
 	@Override
@@ -1023,12 +1026,14 @@ public class PyStatementParser
 			Compound_stmtContext ctx) {
 		if (ctx.function_def() != null) {
 			PyCFG fun = visitFunction_def(ctx.function_def());
-			if (currentUnit instanceof ClassUnit) {
-				((ClassUnit) currentUnit).addInstanceCodeMember(fun);
+			if (fun.getDescriptor().isInstance()) {
+				if (!((ClassUnit) currentUnit).addInstanceCodeMember(fun))
+					log.warn("Method " + fun.getDescriptor().getSignature() + " is already defined");
 				// methods are registered as code members of the class
 				return noOpBlock(ctx);
 			}
-			currentUnit.addCodeMember(fun);
+			if (!currentUnit.addCodeMember(fun))
+				log.warn("Function " + fun.getDescriptor().getSignature() + " is already defined");
 			if (loops == 0 && currentCFG.getDescriptor().getName().equals(PyFileParser.INSTRUMENTED_MAIN_FUNCTION_NAME))
 				// the def is executed once: there is a single function object
 				// for it
@@ -1038,7 +1043,7 @@ public class PyStatementParser
 			SourceCodeLocation loc = getLocation(filePath, ctx);
 			PyAssign bind = new PyAssign(currentCFG, loc,
 					nameRef(ctx.function_def().function_def_raw().name(), loc, true),
-					new PyFunctionLiteral(currentCFG, loc, fun));
+					Closures.functionValue(program, currentCFG, loc, fun, fun.getScope()));
 			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 			block.addNode(bind);
 			return new ParsedBlock(bind, block, bind);
@@ -1601,11 +1606,12 @@ public class PyStatementParser
 		List<Pair<PyParameter, Default_assignmentContext>> defaults = new ArrayList<>();
 		if (ctx.lambda_params() != null)
 			lambdaParameters(ctx.lambda_params().lambda_parameters(), params, defaults);
+		PyScope scope = symtable.getScope(ctx);
 		CodeMemberDescriptor descriptor = new CodeMemberDescriptor(loc, currentUnit, false, name,
-				params.toArray(PyParameter[]::new));
+				Closures.withClosure(scope, params.toArray(PyParameter[]::new), loc));
 		NodeList<CFG, Statement, Edge> list = new NodeList<>(new SequentialEdge());
 		Collection<Statement> entrypoints = new HashSet<>();
-		PyCFG lambda = new PyCFG(descriptor, entrypoints, list, symtable.getScope(ctx));
+		PyCFG lambda = new PyCFG(descriptor, entrypoints, list, scope);
 		PyStatementParser parser = new PyStatementParser(program, filePath, currentUnit, lambda,
 				new ControlFlowTracker(), localImports, symtable);
 		// the default values are parsed in the cfg of the lambda, as for
@@ -1615,9 +1621,18 @@ public class PyStatementParser
 
 		Return ret = new Return(lambda, loc, parser.visitExpression(ctx.expression()));
 		list.addNode(ret);
-		entrypoints.add(ret);
-		currentUnit.addCodeMember(lambda);
-		return new PyFunctionLiteral(currentCFG, loc, lambda);
+		// the cells shared with nested lambdas are allocated first
+		PyCellsInit cells = Closures.cellsInit(program, scope, lambda, loc);
+		if (cells == null)
+			entrypoints.add(ret);
+		else {
+			list.addNode(cells);
+			list.addEdge(new SequentialEdge(cells, ret));
+			entrypoints.add(cells);
+		}
+		if (!currentUnit.addCodeMember(lambda))
+			log.warn("Function " + lambda.getDescriptor().getSignature() + " is already defined");
+		return Closures.functionValue(program, currentCFG, loc, lambda, scope);
 	}
 
 	// the parameters of a lambda: positional ones (possibly with a default
@@ -2095,33 +2110,44 @@ public class PyStatementParser
 									method_name,
 									LeftToRightEvaluation.INSTANCE,
 									pars.toArray(Expression[]::new))
-							: !attribute && previous_access == null
-									// f(...): f might be a variable holding
-									// functions
-									? new PyNameCall(
-											currentCFG,
-											getLocation(filePath, frame),
-											method_name,
-											access instanceof VariableRef
-													? ((VariableRef) access).getIdentifier()
-													: new Variable(Untyped.INSTANCE, method_name,
-															getLocation(filePath, frame)),
-											access instanceof PyNameRef ? (PyNameRef) access : null,
-											LeftToRightEvaluation.INSTANCE,
-											pars.toArray(Expression[]::new))
-									: new UnresolvedCall(
-											currentCFG,
-											getLocation(filePath, frame),
-											CallType.STATIC,
-											// e.g. bytes.fromhex(s) is looked
-											// up in Bytes
-											attribute && previous_access instanceof VariableRef
-													? BUILTIN_CLASSES
-															.get(((VariableRef) previous_access).getName())
-													: null,
-											method_name,
-											LeftToRightEvaluation.INSTANCE,
-											pars.toArray(Expression[]::new));
+							: !attribute && previous_access == null && access instanceof PyNameRef
+									&& ((PyNameRef) access).cell() != null
+											// f(...), where f is shared with
+											// nested functions: its value is
+											// called
+											? new PyValueCall(currentCFG, getLocation(filePath, frame), access,
+													pars.toArray(Expression[]::new))
+											: !attribute && previous_access == null
+													// f(...): f might be a
+													// variable holding
+													// functions
+													? new PyNameCall(
+															currentCFG,
+															getLocation(filePath, frame),
+															method_name,
+															access instanceof VariableRef
+																	? ((VariableRef) access).getIdentifier()
+																	: new Variable(Untyped.INSTANCE, method_name,
+																			getLocation(filePath, frame)),
+															access instanceof PyNameRef ? (PyNameRef) access : null,
+															LeftToRightEvaluation.INSTANCE,
+															pars.toArray(Expression[]::new))
+													: new UnresolvedCall(
+															currentCFG,
+															getLocation(filePath, frame),
+															CallType.STATIC,
+															// e.g.
+															// bytes.fromhex(s)
+															// is looked
+															// up in Bytes
+															attribute && previous_access instanceof VariableRef
+																	? BUILTIN_CLASSES
+																			.get(((VariableRef) previous_access)
+																					.getName())
+																	: null,
+															method_name,
+															LeftToRightEvaluation.INSTANCE,
+															pars.toArray(Expression[]::new));
 					if (method_name.equals("super") && pars.isEmpty()) {
 						// if super() is inside an instance method
 						if (this.currentCFG.getDescriptor().isInstance()) {
@@ -2522,6 +2548,9 @@ public class PyStatementParser
 		SourceCodeLocation loc = getLocation(filePath, ctx);
 		Map<String, String> scope = new HashMap<>();
 		List<PyListComprehension.Clause> clauses = new ArrayList<>();
+		// the variables shared with lambdas inside the comprehension
+		PyScope compScope = symtable.getScope(ctx);
+		boolean cells = compScope != null && !compScope.getCellVariables().isEmpty();
 		comprehensions.push(scope);
 		try {
 			for (For_if_clauseContext clause : forIfClauses.for_if_clause()) {
@@ -2538,10 +2567,15 @@ public class PyStatementParser
 				List<Expression> conditions = new ArrayList<>();
 				for (int i = 1; i < clause.disjunction().size(); i++)
 					conditions.add(visitDisjunction(clause.disjunction(i)));
-				clauses.add(new PyListComprehension.Clause(target, iterable, conditions));
+				clauses.add(new PyListComprehension.Clause(target, iterable, conditions,
+						cells && compScope.kindOf(name) == NameKind.CELL ? name : null));
 			}
 			Expression element = elementVisitor.get();
-			return new PyListComprehension(currentCFG, loc, element, clauses);
+			if (!cells)
+				return new PyListComprehension(currentCFG, loc, element, clauses);
+			String cellsVar = Closures.comprehensionCells(compScope);
+			return new PyListComprehension(currentCFG, loc, element, clauses, cellsVar,
+					Cells.cellsType(program, loc, currentCFG.getDescriptor().getFullName() + cellsVar));
 		} finally {
 			comprehensions.pop();
 		}

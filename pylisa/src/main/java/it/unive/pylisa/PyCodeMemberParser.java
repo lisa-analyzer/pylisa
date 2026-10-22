@@ -5,6 +5,7 @@ import static it.unive.pylisa.PyParsingUtils.getLocation;
 
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.Program;
+import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -36,7 +37,9 @@ import it.unive.pylisa.cfg.PyParameter;
 import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
 import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
+import it.unive.pylisa.cfg.statement.PyCellsInit;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.scoping.PyScope;
 import it.unive.pylisa.scoping.Symtable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,6 +71,9 @@ public class PyCodeMemberParser
 	 */
 	// the names the imports of the file bind to local modules
 	private final LocalImports imports;
+
+	// whether the function being parsed is a method
+	private boolean method;
 
 	// the symbol table of the file
 	private final Symtable symtable;
@@ -104,7 +110,15 @@ public class PyCodeMemberParser
 		PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, control, imports, symtable);
 		ParsedBlock r = parser.visitBlock(ctx.block());
 		list.mergeWith(r.getBody());
-		entrypoints.add(r.getBegin());
+		// the cells shared with nested functions are allocated first
+		PyCellsInit cells = Closures.cellsInit(program, symtable.getScope(ctx), cfg, descriptor.getLocation());
+		if (cells == null)
+			entrypoints.add(r.getBegin());
+		else {
+			list.addNode(cells);
+			list.addEdge(new SequentialEdge(cells, r.getBegin()));
+			entrypoints.add(cells);
+		}
 		Function<String, ParsingException> factory = (
 				msg) -> new ParsingException(
 						"parse error",
@@ -154,18 +168,23 @@ public class PyCodeMemberParser
 
 	private CodeMemberDescriptor buildCFGDescriptor(
 			Function_def_rawContext funcDecl) {
-		String funcName = funcDecl.name().getText();
+		PyScope scope = symtable.getScope(funcDecl);
+		SourceCodeLocation loc = getLocation(filePath, funcDecl);
+		// methods are the functions defined in the body of a class (a function
+		// nested in a method is not a method)
+		boolean instance = unit instanceof ClassUnit && scope.getParent().getKind() == PyScope.ScopeKind.CLASS;
+		method = instance;
 
 		PyParameter[] cfgArgs = funcDecl.params() != null
 				? visitParameters(funcDecl.params().parameters())
 				: new PyParameter[0];
 
 		return new CodeMemberDescriptor(
-				getLocation(filePath, funcDecl),
+				loc,
 				unit,
-				unit instanceof ClassUnit ? true : false,
-				funcName,
-				cfgArgs);
+				instance,
+				Closures.functionName(scope, loc, unit, instance),
+				Closures.withClosure(scope, cfgArgs, loc));
 	}
 
 	@Override
@@ -255,7 +274,7 @@ public class PyCodeMemberParser
 			ParamContext param,
 			Default_assignmentContext def,
 			boolean first) {
-		if (first && unit instanceof ClassUnit)
+		if (first && method)
 			// the first parameter of an instance method is 'self': type it
 			// with the enclosing class rather than with its annotation
 			return new PyParameter(

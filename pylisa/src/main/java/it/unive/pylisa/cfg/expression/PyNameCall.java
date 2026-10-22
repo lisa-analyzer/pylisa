@@ -10,20 +10,14 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.CodeMember;
-import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.call.CFGCall;
-import it.unive.lisa.program.cfg.statement.call.Call;
-import it.unive.lisa.program.cfg.statement.call.NativeCall;
+import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.EvaluationOrder;
 import it.unive.lisa.symbolic.value.Identifier;
-import it.unive.lisa.type.Type;
 import it.unive.pylisa.analysis.namespaces.Binding;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -110,55 +104,25 @@ public class PyNameCall extends UnresolvedCall {
 		if (!state.knowsIdentifier(callee))
 			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
 
-		Set<CFG> cfgs = new HashSet<>();
-		Set<NativeCFG> natives = new HashSet<>();
-		boolean others = false, notCallable = false;
-		Set<Type> types = analysis.getRuntimeTypesOf(state, callee, this);
-		if (PyBinaryDispatch.unknownTypes(types, this))
-			// e.g. a library function (as in f = len), whose type is unknown
+		CallTargets targets = CallTargets.of(analysis, state, Set.of(callee), false, this);
+		if (!targets.callsSomething() && !targets.notCallable())
+			// not a variable holding functions (e.g. a library function, as
+			// in f = len, whose type is unknown)
 			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
-		for (Type t : types)
-			if (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
-				// e.g. an int, that cannot be called
-				notCallable = true;
-			else if (t.isCodeMemberType())
-				for (CodeMember member : t.asCodeMemberType().getMembers())
-					if (member instanceof CFG)
-						cfgs.add((CFG) member);
-					else if (member instanceof NativeCFG)
-						natives.add((NativeCFG) member);
-					else
-						others = true;
-			else
-				others = true;
 
-		if (cfgs.isEmpty() && natives.isEmpty() && !notCallable)
-			// not a variable holding functions
-			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
+		// the callee is passed to closures, as their first argument
+		Expression calleeExpr = ref != null ? ref : new VariableRef(getCFG(), getLocation(), getTargetName());
+		expressions.put(calleeExpr, analysis.smallStepSemantics(state, callee, this));
 
 		AnalysisState<A> result = state.bottomExecution();
-		if (notCallable)
+		if (targets.notCallable())
 			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
 					LibrarySpecificationProvider.TYPE_ERROR));
-		if (!cfgs.isEmpty())
-			result = result.lub(call(new CFGCall(this, cfgs), interprocedural, state, params, expressions));
-		if (!natives.isEmpty())
-			result = result.lub(call(new NativeCall(this, natives), interprocedural, state, params, expressions));
-		if (others)
+		result = result.lub(
+				targets.call(interprocedural, state, state, this, calleeExpr, params, expressions, getMetaVariables()));
+		if (targets.unknown())
 			// the variable might also hold something else
 			result = result.lub(super.forwardSemanticsAux(interprocedural, state, params, expressions));
-		return result;
-	}
-
-	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> call(
-			Call call,
-			InterproceduralAnalysis<A, D> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		AnalysisState<A> result = call.forwardSemanticsAux(interprocedural, state, params, expressions);
-		getMetaVariables().addAll(call.getMetaVariables());
 		return result;
 	}
 }

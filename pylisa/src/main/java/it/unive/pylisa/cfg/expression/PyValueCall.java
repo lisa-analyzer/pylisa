@@ -8,23 +8,16 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
-import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.CodeMember;
-import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.call.CFGCall;
-import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
-import it.unive.lisa.program.cfg.statement.call.NativeCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
-import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
@@ -112,72 +105,22 @@ public class PyValueCall extends NaryExpression {
 		// the value of the callee is consumed here
 		AnalysisState<A> consumed = state.forgetIdentifiers(subs[0].getMetaVariables(), this);
 
-		Set<CFG> cfgs = new HashSet<>();
-		Set<NativeCFG> natives = new HashSet<>();
-		boolean unknown = false, notCallable = false;
-		for (SymbolicExpression callee : params[0]) {
-			Set<Type> types = analysis.getRuntimeTypesOf(state, callee, this);
-			if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this)) {
-				unknown = true;
-				continue;
-			}
-			for (Type t : types)
-				if (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
-					// e.g. an int, that cannot be called
-					notCallable = true;
-				else if (isObject(t) && PyBinaryDispatch.fullyKnown(t) && !callable(t))
-					// an object whose class does not define __call__
-					notCallable = true;
-				else if (t.isCodeMemberType())
-					for (CodeMember member : t.asCodeMemberType().getMembers())
-						if (member instanceof CFG)
-							cfgs.add((CFG) member);
-						else if (member instanceof NativeCFG)
-							natives.add((NativeCFG) member);
-						else
-							unknown = true;
-				else
-					// e.g. a class, or an object whose class defines __call__
-					unknown = true;
-		}
-
+		CallTargets targets = CallTargets.of(analysis, state, params[0], true, this);
 		AnalysisState<A> result = state.bottomExecution();
-		if (notCallable)
+		if (targets.notCallable())
 			result = result.lub(PyExceptions.raise(analysis, consumed, getCFG(), getLocation(), this,
 					LibrarySpecificationProvider.TYPE_ERROR));
-		if (!cfgs.isEmpty())
-			result = result.lub(call(new CFGCall(call, cfgs), interprocedural, consumed, args, expressions));
-		if (!natives.isEmpty())
-			result = result.lub(call(new NativeCall(call, natives), interprocedural, consumed, args, expressions));
-		if (unknown)
+		// closures receive the value of the callee as their first argument:
+		// it is consumed after the call (unless it is also the result of this
+		// call, e.g. in f()() where the two calls have the same location)
+		AnalysisState<A> called = targets.call(interprocedural, consumed, state, call, subs[0], args, expressions,
+				getMetaVariables());
+		Set<Identifier> calleeValues = new HashSet<>(subs[0].getMetaVariables());
+		calleeValues.removeAll(getMetaVariables());
+		result = result.lub(called.forgetIdentifiers(calleeValues, this));
+		if (targets.unknown())
 			result = result.lub(analysis.smallStepSemantics(consumed, new PushAny(Untyped.INSTANCE, getLocation()),
 					this));
 		return result;
-	}
-
-	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> call(
-			Call call,
-			InterproceduralAnalysis<A, D> interprocedural,
-			AnalysisState<A> state,
-			ExpressionSet[] params,
-			StatementStore<A> expressions)
-			throws SemanticException {
-		AnalysisState<A> result = call.forwardSemanticsAux(interprocedural, state, params, expressions);
-		getMetaVariables().addAll(call.getMetaVariables());
-		return result;
-	}
-
-	// whether t is the type of the objects of a class
-	private static boolean isObject(
-			Type t) {
-		return t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
-				&& t.asPointerType().getInnerType().asUnitType().getUnit() instanceof CompilationUnit;
-	}
-
-	// whether the class of the objects of type t defines __call__
-	private static boolean callable(
-			Type t) {
-		CompilationUnit unit = (CompilationUnit) t.asPointerType().getInnerType().asUnitType().getUnit();
-		return !unit.getInstanceCodeMembersByName("__call__", true).isEmpty();
 	}
 }
