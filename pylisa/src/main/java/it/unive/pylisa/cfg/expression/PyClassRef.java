@@ -53,7 +53,7 @@ public class PyClassRef extends VariableRef {
 			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		if (entryState.getExecutionState().isBottom() || entryState.knowsIdentifier(getVariable())
+		if (entryState.getExecutionState().isBottom() || entryState.knowsIdentifier(getIdentifier())
 				|| PyBuiltinRef.isAssigned(getCFG().getProgram(), getName()))
 			return super.forwardSemantics(entryState, interprocedural, expressions);
 		return new PyTypeLiteral(getCFG(), getLocation(), unit)

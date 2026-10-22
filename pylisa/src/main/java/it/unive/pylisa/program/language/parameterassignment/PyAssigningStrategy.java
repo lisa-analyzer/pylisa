@@ -95,6 +95,30 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			Parameter[] formals,
 			ExpressionSet[] parameters)
 			throws SemanticException {
+		return doPrepare(call, callState, interprocedural, expressions, formals, parameters, true);
+	}
+
+	@Override
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Pair<AnalysisState<A>, ExpressionSet[]> prepareForNative(
+			Call call,
+			AnalysisState<A> callState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions,
+			Parameter[] formals,
+			ExpressionSet[] parameters)
+			throws SemanticException {
+		return doPrepare(call, callState, interprocedural, expressions, formals, parameters, false);
+	}
+
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Pair<AnalysisState<A>, ExpressionSet[]> doPrepare(
+			Call call,
+			AnalysisState<A> callState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions,
+			Parameter[] formals,
+			ExpressionSet[] parameters,
+			boolean assignFormals)
+			throws SemanticException {
 		ExpressionSet[] slots = new ExpressionSet[formals.length];
 		Set<Type>[] slotsTypes = new Set[formals.length];
 		Expression[] actuals = call.getParameters();
@@ -181,14 +205,16 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		}
 
 		// prepare the state for the call: assign the value to each parameter
+		// (skipped for native calls, as they do not have their own scope)
 		AnalysisState<A> prepared = callState;
-		for (int i = 0; i < formals.length; i++) {
-			AnalysisState<A> temp = prepared.bottomExecution();
-			for (SymbolicExpression exp : slots[i])
-				temp = temp.lub(
-						interprocedural.getAnalysis().assign(prepared, formals[i].toSymbolicVariable(), exp, call));
-			prepared = temp;
-		}
+		if (assignFormals)
+			for (int i = 0; i < formals.length; i++) {
+				AnalysisState<A> temp = prepared.bottomExecution();
+				for (SymbolicExpression exp : slots[i])
+					temp = temp.lub(
+							interprocedural.getAnalysis().assign(prepared, formals[i].toSymbolicVariable(), exp, call));
+				prepared = temp;
+			}
 
 		// we remove expressions from the stack
 		prepared = prepared.forgetIdentifiers(metas, call).withExecutionExpressions(new ExpressionSet());
