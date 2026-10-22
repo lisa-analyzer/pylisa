@@ -23,8 +23,8 @@ import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.libraries.RangeBuiltin;
 import it.unive.pylisa.libraries.PyNative;
+import it.unive.pylisa.libraries.RangeBuiltin;
 
 /**
  * Native implementation of {@code list([iterable])}: {@code list()} is a new
@@ -34,8 +34,8 @@ import it.unive.pylisa.libraries.PyNative;
  * iterable, unknown values otherwise. {@code TypeError} is raised if
  * {@code iterable} might not be iterable (only lists, {@code str},
  * {@code bytes} and ranges are known to be), e.g. for an explicit {@code None}.
- * The name {@code list} is also the type of
- * lists, e.g. in {@code _sv_verifier.check_type(x, list)}.
+ * The name {@code list} is also the type of lists, e.g. in
+ * {@code _sv_verifier.check_type(x, list)}.
  */
 public class ListBuiltin extends PyNative {
 
@@ -74,7 +74,8 @@ public class ListBuiltin extends PyNative {
 			else {
 				copy = true;
 				iterable = iterable
-						.lub(hasType(analysis, state, arg, ListOperations.LIST.or(STR).or(BYTES).or(RangeBuiltin::isRange)));
+						.lub(hasType(analysis, state, arg,
+								ListOperations.LIST.or(STR).or(BYTES).or(RangeBuiltin::isRange)));
 			}
 
 		if (empty)

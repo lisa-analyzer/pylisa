@@ -17,19 +17,20 @@ import java.util.function.Predicate;
  * The type hints of {@code isinstance(value, hint)} and
  * {@code _sv_verifier.check_type(value, hint)}, given by the runtime type of
  * {@code hint}. The supported hints are {@code int} (also satisfied by a
- * {@code bool}), {@code float}, {@code str}, {@code bytes}, {@code list}, {@code range} and
- * {@code None}, the classes of the program (also satisfied by the objects of
- * their subclasses; since the bases of the classes are not tracked, both
- * outcomes are possible for an object of a class with bases) and their unions
- * (e.g. {@code int | None}, see {@code PyBitwiseOr}). A builtin function that
- * is not a type (e.g. {@code len}) is never satisfied. For any other hint (e.g.
- * {@code list[int]}), both outcomes are possible.
+ * {@code bool}), {@code float}, {@code str}, {@code bytes}, {@code list},
+ * {@code range} and {@code None}, the classes of the program (also satisfied by
+ * the objects of their subclasses; since the bases of the classes are not
+ * tracked, both outcomes are possible for an object of a class with bases) and
+ * their unions (e.g. {@code int | None}, see {@code PyBitwiseOr}). A builtin
+ * function that is not a type (e.g. {@code len}) is never satisfied. For any
+ * other hint (e.g. {@code list[int]}), both outcomes are possible.
  */
 public final class TypeHints {
 
 	// the builtin functions that are not types
-	private static final Set<String> FUNCTIONS = Set.of("print", "len", "input", "repr", "exec", "eval", "compile", "sum",
-			"all", "any", "isinstance");
+	private static final Set<
+			String> FUNCTIONS = Set.of("print", "len", "input", "repr", "exec", "eval", "compile", "sum",
+					"all", "any", "isinstance");
 
 	// the hint of a function that is not a type
 	private static final Predicate<Type> NOT_A_TYPE = t -> false;

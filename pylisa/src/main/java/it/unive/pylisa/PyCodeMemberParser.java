@@ -234,14 +234,16 @@ public class PyCodeMemberParser
 				if (param.annotation() != null) {
 					// passing null for tracker and control since no new locals
 					// and no control flow should be created here
-					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null, imports, symtable);
+					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null, imports,
+							symtable);
 					String typeHint = parser.visitExpression(param.annotation().expression()).toString();
 					((PyParameter) p).setTypeHint(typeHint);
 				}
 				if (def != null) {
 					// passing null for tracker and control since no new locals
 					// and no control flow should be created here
-					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null, imports, symtable);
+					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null, imports,
+							symtable);
 					Expression defaultValue = parser.visitExpression(def.expression());
 					((PyParameter) p).setDefaultValue(defaultValue);
 				}

@@ -22,10 +22,10 @@ import it.unive.pylisa.symbolic.operators.bytes.CodecRaises;
  * {@code bytes.decode([encoding[, errors]])} and {@code bytes(s,
  * encoding, errors)}: {@code encoding} and {@code errors} must be {@code str}s
  * (when they are passed: they are {@code "utf-8"} and {@code "strict"}
- * otherwise), so an explicit {@code None} raises {@code TypeError}. Encoding or decoding fails with
- * {@code UnicodeEncodeError} or {@code UnicodeDecodeError}, and an unknown
- * encoding or error handler raises {@code LookupError}: the domains decide
- * which of these can happen.
+ * otherwise), so an explicit {@code None} raises {@code TypeError}. Encoding or
+ * decoding fails with {@code UnicodeEncodeError} or {@code UnicodeDecodeError},
+ * and an unknown encoding or error handler raises {@code LookupError}: the
+ * domains decide which of these can happen.
  */
 public final class CodecSemantics {
 
@@ -59,8 +59,8 @@ public final class CodecSemantics {
 		CodeLocation loc = n.getLocation();
 		Satisfiability typed = (PyNative.missing(encoding) ? Satisfiability.SATISFIED
 				: n.hasType(analysis, state, encoding, PyNative.STR))
-				.and(PyNative.missing(errors) ? Satisfiability.SATISFIED
-						: n.hasType(analysis, state, errors, PyNative.STR));
+						.and(PyNative.missing(errors) ? Satisfiability.SATISFIED
+								: n.hasType(analysis, state, errors, PyNative.STR));
 		// the operators model a missing argument as None
 		encoding = PyNative.orNone(encoding);
 		errors = PyNative.orNone(errors);

@@ -8,10 +8,10 @@ import org.antlr.v4.runtime.ParserRuleContext;
 /**
  * The symbol table of a Python module, built by {@link SymtableBuilder}. It
  * holds the tree of {@link PyScope}s of the module, and it associates each
- * occurrence of a name that is read or bound (i.e. each node of the parse
- * tree holding such a name) to the scope it belongs to, so that the
- * {@link NameKind} of the occurrence can be retrieved without tracking scopes
- * while visiting the parse tree.
+ * occurrence of a name that is read or bound (i.e. each node of the parse tree
+ * holding such a name) to the scope it belongs to, so that the {@link NameKind}
+ * of the occurrence can be retrieved without tracking scopes while visiting the
+ * parse tree.
  */
 public class Symtable {
 
@@ -58,8 +58,8 @@ public class Symtable {
 	}
 
 	/**
-	 * Yields all the scopes defined by nodes of the parse tree, indexed by
-	 * such nodes.
+	 * Yields all the scopes defined by nodes of the parse tree, indexed by such
+	 * nodes.
 	 *
 	 * @return the scopes
 	 */

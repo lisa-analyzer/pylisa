@@ -97,7 +97,8 @@ final class LocalModules {
 						.import_from_as_name()) {
 					String member = target.name(0).getText();
 					String local = target.name().size() == 2 ? target.name(1).getText() : member;
-					// from m import x: x is either a submodule of m, or a member
+					// from m import x: x is either a submodule of m, or a
+					// member
 					// of m
 					Path submodule = resolve(root, file, level, name.isEmpty() ? member : name + "." + member);
 					if (submodule != null) {

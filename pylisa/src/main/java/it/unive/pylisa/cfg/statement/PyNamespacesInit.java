@@ -20,11 +20,11 @@ import it.unive.pylisa.analysis.namespaces.Namespaces;
  * ensures that the {@link Namespaces} are part of the {@link FixpointInfo} of
  * the analysis state, storing {@link Namespaces#EMPTY} if they are missing
  * (e.g. when the module is an entry point of the analysis). The
- * {@link FixpointInfo} treats a missing key as carrying no information, so
- * that joining a state without the namespaces with a state having them would
- * yield the latter, losing the names that are not bound in the former: this
- * statement guarantees that all the states of the module (and of the functions
- * it calls) contain the namespaces.
+ * {@link FixpointInfo} treats a missing key as carrying no information, so that
+ * joining a state without the namespaces with a state having them would yield
+ * the latter, losing the names that are not bound in the former: this statement
+ * guarantees that all the states of the module (and of the functions it calls)
+ * contain the namespaces.
  */
 public class PyNamespacesInit extends Statement {
 

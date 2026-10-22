@@ -28,10 +28,9 @@ import java.util.Set;
  * {@code type(x) is int} and {@code type(x) is type(y)} can be decided, see
  * {@code PyBinaryDispatch#identical}). This is the builtin function
  * {@code int}, {@code float}, {@code str}, {@code bytes}, {@code list} or
- * {@code range} for
- * their values (see {@code PyBuiltinRef}), and the class of an object (see
- * {@code PyTypeLiteral}). The class of any other value (e.g. a {@code bool}
- * or {@code None}, whose classes are not modeled) is unknown.
+ * {@code range} for their values (see {@code PyBuiltinRef}), and the class of
+ * an object (see {@code PyTypeLiteral}). The class of any other value (e.g. a
+ * {@code bool} or {@code None}, whose classes are not modeled) is unknown.
  */
 public class TypeBuiltin extends PyNative {
 
@@ -89,7 +88,8 @@ public class TypeBuiltin extends PyNative {
 
 		Type inner = t.isPointerType() ? t.asPointerType().getInnerType() : null;
 		if (inner instanceof PyClassType)
-			return new Constant(new PyTypeTokenType(Collections.singleton(inner)), ((PyClassType) inner).getUnit(), loc);
+			return new Constant(new PyTypeTokenType(Collections.singleton(inner)), ((PyClassType) inner).getUnit(),
+					loc);
 		return null;
 	}
 }

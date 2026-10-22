@@ -330,9 +330,9 @@ public final class PyBinaryDispatch {
 	 * Whether two values of the given types are the same object ({@code is}):
 	 * {@code None} is a singleton, a function is the same object only as itself
 	 * (see {@link #sameFunction(Type, Type)}), as a class is, and values of
-	 * different classes are different objects. This is otherwise unknown (e.g. two objects of the
-	 * same class, or two {@code int}s, whose identity is not specified by
-	 * python).
+	 * different classes are different objects. This is otherwise unknown (e.g.
+	 * two objects of the same class, or two {@code int}s, whose identity is not
+	 * specified by python).
 	 *
 	 * @param left  the type of the first value
 	 * @param right the type of the second value

@@ -318,15 +318,15 @@ public class PyStatementParser
 	/**
 	 * Builds the parser for a Python program at {@code filePath}.
 	 *
-	 * @param program     the LiSA program to which the parsed CFGs will be
-	 *                        added
-	 * @param filePath    file path to a Python program
-	 * @param currentUnit the unit currently under parsing
-	 * @param currentCFG  the CFG currently under parsing
-	 * @param control     the control flow tracker to use for parsing
+	 * @param program      the LiSA program to which the parsed CFGs will be
+	 *                         added
+	 * @param filePath     file path to a Python program
+	 * @param currentUnit  the unit currently under parsing
+	 * @param currentCFG   the CFG currently under parsing
+	 * @param control      the control flow tracker to use for parsing
 	 * @param localImports the names the imports of the file bind to local
 	 *                         modules
-	 * @param symtable    the symbol table of the file
+	 * @param symtable     the symbol table of the file
 	 */
 	public PyStatementParser(
 			Program program,

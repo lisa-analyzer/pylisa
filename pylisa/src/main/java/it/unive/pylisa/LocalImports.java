@@ -3,9 +3,8 @@ package it.unive.pylisa;
 import java.util.Map;
 
 /**
- * The names that the imports of a file bind to the local modules of the
- * program (the python files next to the analyzed one, see
- * {@link LocalModules}).
+ * The names that the imports of a file bind to the local modules of the program
+ * (the python files next to the analyzed one, see {@link LocalModules}).
  *
  * @param modules the names bound to modules (e.g. {@code m} for
  *                    {@code import m}, {@code a.b} for {@code import a.b},

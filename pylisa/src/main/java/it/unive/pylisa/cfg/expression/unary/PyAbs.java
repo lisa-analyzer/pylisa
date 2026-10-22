@@ -16,9 +16,9 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 
 /**
- * Python's {@code abs(x)}: it calls {@code type(x).__abs__(x)} (a
- * {@code bool} uses the one of {@code int}), raising {@code TypeError} if the
- * class of {@code x} does not define it (e.g. {@code abs("a")}). See
+ * Python's {@code abs(x)}: it calls {@code type(x).__abs__(x)} (a {@code bool}
+ * uses the one of {@code int}), raising {@code TypeError} if the class of
+ * {@code x} does not define it (e.g. {@code abs("a")}). See
  * {@link PyBinaryDispatch#dispatchUnary}.
  */
 public class PyAbs extends UnaryExpression {

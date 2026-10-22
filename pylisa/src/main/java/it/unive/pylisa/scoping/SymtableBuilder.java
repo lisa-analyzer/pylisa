@@ -45,12 +45,12 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
  * A visitor of the parse tree of a Python module that builds its
- * {@link Symtable}, following the rules of CPython's symbol tables. The
- * visitor first collects, for each {@link PyScope}, the names that are bound,
- * read, and declared {@code global} or {@code nonlocal} there, and then it
- * resolves the {@link NameKind} of each of them. The scoping errors that
- * Python reports as {@code SyntaxError}s (e.g. a {@code nonlocal} declaration
- * of a name that is not bound by any enclosing function) are reported as
+ * {@link Symtable}, following the rules of CPython's symbol tables. The visitor
+ * first collects, for each {@link PyScope}, the names that are bound, read, and
+ * declared {@code global} or {@code nonlocal} there, and then it resolves the
+ * {@link NameKind} of each of them. The scoping errors that Python reports as
+ * {@code SyntaxError}s (e.g. a {@code nonlocal} declaration of a name that is
+ * not bound by any enclosing function) are reported as
  * {@link ParsingException}s.<br>
  * <br>
  * Comprehensions and generator expressions are evaluated inline by pylisa (as

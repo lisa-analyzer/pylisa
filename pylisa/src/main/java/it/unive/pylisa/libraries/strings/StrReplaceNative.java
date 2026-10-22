@@ -25,9 +25,9 @@ import it.unive.pylisa.symbolic.operators.strings.StrReplaceCount;
 import java.util.function.Predicate;
 
 /**
- * Native implementation of {@code str.replace(self, old, new, count=-1)} and
- * of the same method of {@code bytes}, whose {@code old} and {@code new} must
- * be {@code bytes}: {@code old} and {@code new} must be {@code str}s and
+ * Native implementation of {@code str.replace(self, old, new, count=-1)} and of
+ * the same method of {@code bytes}, whose {@code old} and {@code new} must be
+ * {@code bytes}: {@code old} and {@code new} must be {@code str}s and
  * {@code count} an {@code int}, otherwise {@code TypeError} is raised. A
  * negative or omitted {@code count} replaces all the occurrences.
  */

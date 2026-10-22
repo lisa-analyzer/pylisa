@@ -25,23 +25,22 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * The namespaces of a Python program during the analysis, that is, the
- * binding status ({@link Frame}) of the globals of each module, and of the
- * locals of the function being executed. This is stored in the
- * {@link FixpointInfo} of the analysis states, under key {@link #INFO_KEY}.
- * <br>
+ * The namespaces of a Python program during the analysis, that is, the binding
+ * status ({@link Frame}) of the globals of each module, and of the locals of
+ * the function being executed. This is stored in the {@link FixpointInfo} of
+ * the analysis states, under key {@link #INFO_KEY}. <br>
  * <br>
  * Being a {@link ScopedObject}, instances of this class react to calls (see
  * {@link FixpointInfo#pushScope(ScopeToken, ProgramPoint)}): when a call is
  * made, the frame of the locals of the caller is saved, and the callee starts
  * with an empty frame; when the call returns, the frame of the caller is
- * restored. The frames of the modules are instead shared between the caller
- * and the callee, so that bindings of globals made by the callee are visible
- * after the call. The saved frames are indexed by the {@link ScopeToken} of
- * the call: if a scope is pushed with a token that is already used (e.g. a
- * recursive call through the same call site), the saved frames are merged,
- * so that the number of saved frames is bounded by the number of call sites.
- * Instances of this class are immutable.
+ * restored. The frames of the modules are instead shared between the caller and
+ * the callee, so that bindings of globals made by the callee are visible after
+ * the call. The saved frames are indexed by the {@link ScopeToken} of the call:
+ * if a scope is pushed with a token that is already used (e.g. a recursive call
+ * through the same call site), the saved frames are merged, so that the number
+ * of saved frames is bounded by the number of call sites. Instances of this
+ * class are immutable.
  */
 public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespaces> {
 

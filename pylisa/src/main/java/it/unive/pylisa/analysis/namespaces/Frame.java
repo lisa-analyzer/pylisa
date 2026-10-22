@@ -16,16 +16,16 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * The binding status of the names of a namespace (e.g. the globals of a
- * module, or the locals of a function). The status of each name is one of the
+ * The binding status of the names of a namespace (e.g. the globals of a module,
+ * or the locals of a function). The status of each name is one of the
  * {@link Binding}s, and it is represented through two sets: the names that are
  * definitely bound ({@code must}) and the ones that might be bound
  * ({@code may}, a superset of {@code must}). A name in {@code must} is
  * {@link Binding#BOUND}, a name in {@code may} but not in {@code must} is
  * {@link Binding#MAYBE}, and any other name is {@link Binding#UNBOUND}. After
- * executing code that might bind arbitrary names (e.g. {@code exec}), the
- * frame is <i>havocked</i>: every name might be bound, and no name is
- * definitely bound. Instances of this class are immutable.
+ * executing code that might bind arbitrary names (e.g. {@code exec}), the frame
+ * is <i>havocked</i>: every name might be bound, and no name is definitely
+ * bound. Instances of this class are immutable.
  */
 public class Frame implements BaseLattice<Frame> {
 
@@ -114,8 +114,8 @@ public class Frame implements BaseLattice<Frame> {
 	}
 
 	/**
-	 * Yields whether this frame is havocked, that is, whether any name might
-	 * be bound in it.
+	 * Yields whether this frame is havocked, that is, whether any name might be
+	 * bound in it.
 	 *
 	 * @return whether this frame is havocked
 	 */
@@ -142,9 +142,9 @@ public class Frame implements BaseLattice<Frame> {
 	}
 
 	/**
-	 * Yields a copy of this frame where the given name is not bound (e.g.
-	 * after {@code del name}). If this frame is havocked, the name might still
-	 * be bound.
+	 * Yields a copy of this frame where the given name is not bound (e.g. after
+	 * {@code del name}). If this frame is havocked, the name might still be
+	 * bound.
 	 *
 	 * @param name the name
 	 *

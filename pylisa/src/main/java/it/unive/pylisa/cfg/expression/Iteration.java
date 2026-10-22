@@ -35,10 +35,11 @@ public final class Iteration {
 	 * Yields any of the elements of the iterable (e.g. the one bound to the
 	 * variable of a comprehension, or of a for loop): the elements of a list,
 	 * the keys of a dictionary, the characters of a {@code str}, the bytes of a
-	 * {@code bytes}, and the {@code int}s of a range (see {@link RangeBuiltin}). Iterating over
-	 * values that cannot be iterated (e.g. an {@code int}) raises
-	 * {@code TypeError}; the elements of other iterables (e.g. an object whose
-	 * class defines {@code __iter__}, that is not called) are unknown.
+	 * {@code bytes}, and the {@code int}s of a range (see
+	 * {@link RangeBuiltin}). Iterating over values that cannot be iterated
+	 * (e.g. an {@code int}) raises {@code TypeError}; the elements of other
+	 * iterables (e.g. an object whose class defines {@code __iter__}, that is
+	 * not called) are unknown.
 	 *
 	 * @param analysis   the analysis
 	 * @param state      the state where the iterable has been evaluated

@@ -23,9 +23,9 @@ import it.unive.pylisa.symbolic.operators.conversions.ConversionRaises;
 import it.unive.pylisa.symbolic.operators.conversions.ToFloat;
 
 /**
- * Native implementation of {@code float([x])}: {@code float()} is
- * {@code 0.0}; {@code x} must be a number or a {@code str} (otherwise
- * {@code TypeError} is raised). Invalid strings raise {@code ValueError}.
+ * Native implementation of {@code float([x])}: {@code float()} is {@code 0.0};
+ * {@code x} must be a number or a {@code str} (otherwise {@code TypeError} is
+ * raised). Invalid strings raise {@code ValueError}.
  */
 public class FloatBuiltin extends PyNative {
 

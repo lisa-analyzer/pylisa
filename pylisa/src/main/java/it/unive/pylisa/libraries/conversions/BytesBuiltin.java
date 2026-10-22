@@ -27,9 +27,8 @@ import it.unive.pylisa.symbolic.operators.bytes.BytesUnary;
 import it.unive.pylisa.symbolic.operators.bytes.Codec;
 
 /**
- * Native implementation of
- * {@code bytes([source[, encoding[, errors]]])}, where an explicit {@code None}
- * raises {@code TypeError}:
+ * Native implementation of {@code bytes([source[, encoding[, errors]]])}, where
+ * an explicit {@code None} raises {@code TypeError}:
  * <ul>
  * <li>{@code bytes()} is {@code b''};</li>
  * <li>{@code bytes(s, encoding, errors)} encodes the {@code str} {@code s} (see

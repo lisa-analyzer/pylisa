@@ -22,10 +22,10 @@ import java.util.List;
  * Native implementation of Python's {@code all(iterable)} and
  * {@code any(iterable)}, given by the truth values of the elements (see
  * {@link PyNot#truth}): {@code all} is {@code False} if an element is false,
- * and {@code True} if they are all true (also when there are none);
- * {@code any} is {@code True} if an element is true, and {@code False} if they
- * are all false. The elements of a list or tuple of known length are checked
- * one by one; otherwise, the truth value of any element (see
+ * and {@code True} if they are all true (also when there are none); {@code any}
+ * is {@code True} if an element is true, and {@code False} if they are all
+ * false. The elements of a list or tuple of known length are checked one by
+ * one; otherwise, the truth value of any element (see
  * {@link Iteration#elements}) is checked, and the iterable might be empty
  * unless it is a list or tuple with some elements.
  */

@@ -5,8 +5,8 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.pylisa.cfg.expression.literal.PyMissingLiteral;
 
 /**
- * The {@code missing} default of a parameter: the parameter was not passed
- * (see {@link PyMissingLiteral}).
+ * The {@code missing} default of a parameter: the parameter was not passed (see
+ * {@link PyMissingLiteral}).
  */
 public class MissingValue implements Value {
 

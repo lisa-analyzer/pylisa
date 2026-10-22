@@ -24,9 +24,9 @@ import it.unive.pylisa.libraries.PyExceptions;
  * The call {@code m.f(args)} of the function {@code f} of a local module
  * {@code m} of the program (also when {@code f} is imported with
  * {@code from m import f}): {@code f} is looked up only among the functions of
- * {@code m}. If {@code m} does not define a function {@code f} (e.g.
- * {@code f} is a variable of the module, assigned to a function of another
- * one), the call is unknown code, that might raise any exception.
+ * {@code m}. If {@code m} does not define a function {@code f} (e.g. {@code f}
+ * is a variable of the module, assigned to a function of another one), the call
+ * is unknown code, that might raise any exception.
  */
 public class PyModuleCall extends UnresolvedCall {
 

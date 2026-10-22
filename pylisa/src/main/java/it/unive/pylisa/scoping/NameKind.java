@@ -27,16 +27,16 @@ public enum NameKind {
 	FREE,
 
 	/**
-	 * A name declared {@code global} in the scope: it is looked up and bound
-	 * in the namespace of the module (falling back to builtins when read).
+	 * A name declared {@code global} in the scope: it is looked up and bound in
+	 * the namespace of the module (falling back to builtins when read).
 	 */
 	GLOBAL_EXPLICIT,
 
 	/**
 	 * A name that is read but not bound in the scope, and that is not bound in
 	 * any enclosing function: it is looked up in the namespace of the module
-	 * (falling back to builtins). All the names of the module scope are of
-	 * this kind, unless declared {@code global}.
+	 * (falling back to builtins). All the names of the module scope are of this
+	 * kind, unless declared {@code global}.
 	 */
 	GLOBAL_IMPLICIT;
 

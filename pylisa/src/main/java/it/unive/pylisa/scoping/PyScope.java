@@ -12,11 +12,11 @@ import java.util.TreeSet;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 /**
- * A scope of a Python program, that is, a block of code with its own
- * namespace: a module, a function (including lambdas), a class body, or a
- * comprehension. Scopes are built by {@link SymtableBuilder}, that collects
- * the names bound, read, and declared in each scope, and then resolves the
- * {@link NameKind} of each of them following Python's scoping rules.
+ * A scope of a Python program, that is, a block of code with its own namespace:
+ * a module, a function (including lambdas), a class body, or a comprehension.
+ * Scopes are built by {@link SymtableBuilder}, that collects the names bound,
+ * read, and declared in each scope, and then resolves the {@link NameKind} of
+ * each of them following Python's scoping rules.
  */
 public class PyScope {
 

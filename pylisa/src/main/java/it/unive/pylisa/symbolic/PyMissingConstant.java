@@ -7,9 +7,9 @@ import it.unive.lisa.type.VoidType;
 /**
  * The value of a parameter of a native function that was not passed (the
  * {@code missing} default of the library specifications), so that natives can
- * tell it apart from an explicit {@code None}, which is not a valid argument for
- * many builtins (e.g. {@code range(3, None)} raises {@code TypeError}). It is
- * never a value of the program.
+ * tell it apart from an explicit {@code None}, which is not a valid argument
+ * for many builtins (e.g. {@code range(3, None)} raises {@code TypeError}). It
+ * is never a value of the program.
  */
 public class PyMissingConstant extends Constant {
 
