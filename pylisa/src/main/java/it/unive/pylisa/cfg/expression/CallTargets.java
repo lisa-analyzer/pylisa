@@ -8,7 +8,9 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeMember;
@@ -21,7 +23,11 @@ import it.unive.lisa.program.cfg.statement.call.NativeCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.DerivedLocation;
+import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyClosureUnit;
 import java.util.Collection;
 import java.util.HashSet;
@@ -49,6 +55,12 @@ final class CallTargets {
 	private final Map<String, Set<SymbolicExpression>> closures = new TreeMap<>();
 
 	private final Map<String, CFG> closureFunctions = new TreeMap<>();
+
+	// the objects whose class defines __call__, that is called on them
+	private final Set<SymbolicExpression> callableObjects = new HashSet<>();
+
+	// the classes of the program, whose objects are created by the call
+	private final Map<String, PyClassType> classes = new TreeMap<>();
 
 	// whether the callee might be a value that cannot be called
 	private boolean notCallable = false;
@@ -102,6 +114,16 @@ final class CallTargets {
 				} else if (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
 					// e.g. an int, that cannot be called
 					targets.notCallable = true;
+				else if (isObject(t) && callable(t))
+					// an object whose class defines __call__
+					targets.callableObjects.add(value);
+				else if (t.isTypeTokenType())
+					// a class: its objects are created
+					for (Type cls : t.asTypeTokenType().getTypes())
+						if (isProgramClass(cls))
+							targets.classes.put(cls.toString(), (PyClassType) cls);
+						else
+							targets.unknown = true;
 				else if (objectsNotCallable && isObject(t) && PyBinaryDispatch.fullyKnown(t) && !callable(t))
 					// an object whose class does not define __call__
 					targets.notCallable = true;
@@ -114,7 +136,7 @@ final class CallTargets {
 						else
 							targets.unknown = true;
 				else
-					// e.g. a class, or an object whose class defines __call__
+					// e.g. an object whose class might define __call__
 					targets.unknown = true;
 			}
 		}
@@ -127,7 +149,8 @@ final class CallTargets {
 	 * @return whether something is called
 	 */
 	boolean callsSomething() {
-		return !functions.isEmpty() || !natives.isEmpty() || !closures.isEmpty();
+		return !functions.isEmpty() || !natives.isEmpty() || !closures.isEmpty() || !callableObjects.isEmpty()
+				|| !classes.isEmpty();
 	}
 
 	/**
@@ -150,18 +173,21 @@ final class CallTargets {
 	}
 
 	/**
-	 * Calls the functions, natives, and closures held by the callee. Closures
-	 * are passed as the first argument of their functions (see
-	 * {@link Cells#CLOSURE}).
+	 * Calls the functions, natives, and closures held by the callee, calls
+	 * {@code __call__} on the objects it holds, and creates objects of the
+	 * classes it holds (as {@link PyNewObj}). Closures are passed as the first
+	 * argument of their functions (see {@link Cells#CLOSURE}), and objects as
+	 * the receiver of {@code __call__}.
 	 *
 	 * @param <A>             the kind of {@link AbstractLattice} of the state
 	 * @param <D>             the kind of {@link AbstractDomain} of the analysis
 	 * @param interprocedural the interprocedural analysis
 	 * @param state           the state where the functions and the natives are
 	 *                            called
-	 * @param closureState    the state where the closures are called, where the
-	 *                            values of the callee (passed to the closures
-	 *                            as their first argument) are still available
+	 * @param closureState    the state where the closures and {@code __call__}
+	 *                            are called, where the values of the callee
+	 *                            (passed to them as their first argument) are
+	 *                            still available
 	 * @param call            the call, with the arguments only
 	 * @param callee          the expression computing the callee, whose state
 	 *                            is stored in {@code expressions}
@@ -199,6 +225,26 @@ final class CallTargets {
 				result = result.lub(call(closureCall, interprocedural, closureState, params, expressions, metas));
 			}
 		}
+		if (!callableObjects.isEmpty()) {
+			// o(...) is o.__call__(...)
+			PyMethodCall dunder = new PyMethodCall(call.getCFG(), call.getLocation(), "__call__", call.getOrder(),
+					ArrayUtils.insert(0, call.getParameters(), callee));
+			ExpressionSet[] params = ArrayUtils.insert(0, args, new ExpressionSet(callableObjects));
+			result = result.lub(call(dunder, interprocedural, closureState, params, expressions, metas));
+		}
+		if (!classes.isEmpty() && !(DerivedLocation.source(call.getLocation()) instanceof SourceCodeLocation))
+			// the object cannot be created without a location in the code
+			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state,
+					new PushAny(Untyped.INSTANCE, call.getLocation()), call));
+		else if (!classes.isEmpty()) {
+			// C(...) creates an object of C, initialized by __init__
+			SourceCodeLocation location = (SourceCodeLocation) DerivedLocation.source(call.getLocation());
+			for (PyClassType cls : classes.values()) {
+				PyNewObj creation = new PyNewObj(call.getCFG(), location, "__init__", cls, call.getParameters());
+				result = result.lub(creation.forwardSemanticsAux(interprocedural, state, args, expressions));
+				metas.addAll(creation.getMetaVariables());
+			}
+		}
 		return result;
 	}
 
@@ -229,6 +275,14 @@ final class CallTargets {
 			return null;
 		Unit unit = t.asPointerType().getInnerType().asUnitType().getUnit();
 		return unit instanceof PyClosureUnit ? ((PyClosureUnit) unit).getFunction() : null;
+	}
+
+	// whether t is a class of the program (i.e., defined in its code)
+	private static boolean isProgramClass(
+			Type t) {
+		return t instanceof PyClassType && ((PyClassType) t).getUnit() instanceof ClassUnit
+				&& !(((PyClassType) t).getUnit() instanceof PyClosureUnit)
+				&& DerivedLocation.source(((PyClassType) t).getUnit().getLocation()) instanceof SourceCodeLocation;
 	}
 
 	// whether t is the type of the objects of a class
