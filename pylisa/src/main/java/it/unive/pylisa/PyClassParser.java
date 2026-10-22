@@ -20,6 +20,7 @@ import it.unive.pylisa.antlr.PythonParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.PyParameter;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
+import it.unive.pylisa.scoping.Symtable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.function.Function;
@@ -52,13 +53,18 @@ public class PyClassParser
 	// the names the imports of the file bind to local modules
 	private final LocalImports imports;
 
+	// the symbol table of the file
+	private final Symtable symtable;
+
 	public PyClassParser(
 			Program program,
 			String filePath,
-			LocalImports imports) {
+			LocalImports imports,
+			Symtable symtable) {
 		this.program = program;
 		this.filePath = filePath;
 		this.imports = imports;
+		this.symtable = symtable;
 	}
 
 	@Override
@@ -88,7 +94,7 @@ public class PyClassParser
 		// side effects on entrypoints and matrix will affect the cfg
 		PyCFG cfg = new PyCFG(descriptor, entrypoints, list);
 		ControlFlowTracker control = new ControlFlowTracker();
-		PyStatementParser parser = new PyStatementParser(program, filePath, signature, cfg, control, imports);
+		PyStatementParser parser = new PyStatementParser(program, filePath, signature, cfg, control, imports, symtable);
 		ParsedBlock r = parser.visitBlock(ctx.block());
 		list.mergeWith(r.getBody());
 		entrypoints.add(r.getBegin());

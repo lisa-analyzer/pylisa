@@ -223,6 +223,7 @@ import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.scoping.Symtable;
 import it.unive.pylisa.symbolic.PyBytes;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -308,6 +309,9 @@ public class PyStatementParser
 	// the names the imports of the file bind to local modules
 	private final LocalImports localImports;
 
+	// the symbol table of the file
+	private final Symtable symtable;
+
 	// the number of loops enclosing the statement being parsed
 	private int loops = 0;
 
@@ -320,6 +324,9 @@ public class PyStatementParser
 	 * @param currentUnit the unit currently under parsing
 	 * @param currentCFG  the CFG currently under parsing
 	 * @param control     the control flow tracker to use for parsing
+	 * @param localImports the names the imports of the file bind to local
+	 *                         modules
+	 * @param symtable    the symbol table of the file
 	 */
 	public PyStatementParser(
 			Program program,
@@ -327,13 +334,15 @@ public class PyStatementParser
 			Unit currentUnit,
 			PyCFG currentCFG,
 			ControlFlowTracker control,
-			LocalImports localImports) {
+			LocalImports localImports,
+			Symtable symtable) {
 		this.program = program;
 		this.filePath = filePath;
 		this.currentUnit = currentUnit;
 		this.currentCFG = currentCFG;
 		this.control = control;
 		this.localImports = localImports;
+		this.symtable = symtable;
 	}
 
 	@Override
@@ -1571,7 +1580,7 @@ public class PyStatementParser
 		Collection<Statement> entrypoints = new HashSet<>();
 		PyCFG lambda = new PyCFG(descriptor, entrypoints, list);
 		PyStatementParser parser = new PyStatementParser(program, filePath, currentUnit, lambda,
-				new ControlFlowTracker(), localImports);
+				new ControlFlowTracker(), localImports, symtable);
 		// the default values are parsed in the cfg of the lambda, as for
 		// functions (see PyCodeMemberParser)
 		for (Pair<PyParameter, Default_assignmentContext> def : defaults)
@@ -2664,7 +2673,7 @@ public class PyStatementParser
 			Class_defContext ctx) {
 		if (ctx.decorators() != null)
 			throw new UnsupportedStatementException("decorators are not supported");
-		PyClassParser parser = new PyClassParser(program, filePath, localImports);
+		PyClassParser parser = new PyClassParser(program, filePath, localImports, symtable);
 		return parser.visitClass_def_raw(ctx.class_def_raw());
 	}
 
@@ -2673,7 +2682,7 @@ public class PyStatementParser
 			Function_defContext ctx) {
 		if (ctx.decorators() != null)
 			throw new UnsupportedStatementException("decorators are not supported");
-		PyCodeMemberParser parser = new PyCodeMemberParser(filePath, program, currentUnit, localImports);
+		PyCodeMemberParser parser = new PyCodeMemberParser(filePath, program, currentUnit, localImports, symtable);
 		return parser.visitFunction_def_raw(ctx.function_def_raw());
 	}
 }

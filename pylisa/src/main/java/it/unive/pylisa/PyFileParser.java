@@ -21,6 +21,8 @@ import it.unive.pylisa.antlr.PythonParser.File_inputContext;
 import it.unive.pylisa.antlr.PythonParserBaseVisitor;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.PyParameter;
+import it.unive.pylisa.scoping.Symtable;
+import it.unive.pylisa.scoping.SymtableBuilder;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -123,7 +125,9 @@ public class PyFileParser
 		// side effects on entrypoints and matrix will affect the cfg
 		PyCFG cfg = new PyCFG(descriptor, entrypoints, list);
 		ControlFlowTracker control = new ControlFlowTracker();
-		PyStatementParser parser = new PyStatementParser(program, filePath, rootUnit, cfg, control, imports);
+		Symtable symtable = SymtableBuilder.build(filePath, rootUnit.getName(), ctx);
+		PyStatementParser parser = new PyStatementParser(program, filePath, rootUnit, cfg, control, imports,
+				symtable);
 		ParsedBlock r;
 		if (ctx.statements() == null) {
 			// an empty file (e.g. the __init__.py of a package)

@@ -37,6 +37,7 @@ import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
 import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.scoping.Symtable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -68,15 +69,20 @@ public class PyCodeMemberParser
 	// the names the imports of the file bind to local modules
 	private final LocalImports imports;
 
+	// the symbol table of the file
+	private final Symtable symtable;
+
 	public PyCodeMemberParser(
 			String filePath,
 			Program program,
 			Unit unit,
-			LocalImports imports) {
+			LocalImports imports,
+			Symtable symtable) {
 		this.filePath = filePath;
 		this.program = program;
 		this.unit = unit;
 		this.imports = imports;
+		this.symtable = symtable;
 	}
 
 	@Override
@@ -95,7 +101,7 @@ public class PyCodeMemberParser
 		PyCFG cfg = new PyCFG(descriptor, entrypoints, list);
 		fillDefaultsAndHints(ctx, cfg, descriptor);
 		ControlFlowTracker control = new ControlFlowTracker();
-		PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, control, imports);
+		PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, control, imports, symtable);
 		ParsedBlock r = parser.visitBlock(ctx.block());
 		list.mergeWith(r.getBody());
 		entrypoints.add(r.getBegin());
@@ -228,14 +234,14 @@ public class PyCodeMemberParser
 				if (param.annotation() != null) {
 					// passing null for tracker and control since no new locals
 					// and no control flow should be created here
-					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null, imports);
+					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null, imports, symtable);
 					String typeHint = parser.visitExpression(param.annotation().expression()).toString();
 					((PyParameter) p).setTypeHint(typeHint);
 				}
 				if (def != null) {
 					// passing null for tracker and control since no new locals
 					// and no control flow should be created here
-					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null, imports);
+					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null, imports, symtable);
 					Expression defaultValue = parser.visitExpression(def.expression());
 					((PyParameter) p).setDefaultValue(defaultValue);
 				}
