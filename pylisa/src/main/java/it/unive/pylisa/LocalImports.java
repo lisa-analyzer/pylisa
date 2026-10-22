@@ -12,26 +12,45 @@ import java.util.Map;
  *                    a module), mapped to the names of their units
  * @param members the names bound to members of modules (e.g. {@code f} for
  *                    {@code from m import f}), mapped to the member
+ * @param names   the (dotted) names of the imported modules, indexed by the
+ *                    names of their units (see
+ *                    {@link LocalModules#moduleName(java.nio.file.Path, java.nio.file.Path)})
  */
 public record LocalImports(
 		Map<String, String> modules,
-		Map<String, Member> members) {
+		Map<String, Member> members,
+		Map<String, String> names) {
 
 	/**
 	 * A member of a module.
 	 *
-	 * @param unit the name of the unit of the module
-	 * @param name the name of the member in the module
+	 * @param unit   the name of the unit of the module
+	 * @param module the (dotted) name of the module
+	 * @param name   the name of the member in the module
 	 */
 	public record Member(
 			String unit,
+			String module,
 			String name) {
 	}
 
 	/**
 	 * No imports of local modules.
 	 */
-	public static final LocalImports NONE = new LocalImports(Map.of(), Map.of());
+	public static final LocalImports NONE = new LocalImports(Map.of(), Map.of(), Map.of());
+
+	/**
+	 * Yields the (dotted) name of the imported module with the given unit.
+	 *
+	 * @param unit the name of the unit of the module
+	 *
+	 * @return the name of the module, or {@code null} if the unit is not the
+	 *             one of an imported local module
+	 */
+	public String moduleName(
+			String unit) {
+		return unit == null ? null : names.get(unit);
+	}
 
 	/**
 	 * Yields the unit of the module bound to the given (possibly dotted) name.

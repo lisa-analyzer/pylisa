@@ -287,6 +287,27 @@ public class SymtableBuilderTest {
 	}
 
 	@Test
+	public void patternNamesAreReads() {
+		Symtable table = build(
+				"def f(c):",
+				"    match c:",
+				"        case Color.RED:",
+				"            return 1",
+				"        case Point(x=0):",
+				"            return 2",
+				"        case other:",
+				"            return other");
+		PyScope f = scope(table, "f");
+		assertSame(f, table.getScopeOf(occurrence("Color", 0)));
+		assertEquals(NameKind.GLOBAL_IMPLICIT, table.kindOf(occurrence("Color", 0)));
+		assertEquals(NameKind.GLOBAL_IMPLICIT, table.kindOf(occurrence("Point", 0)));
+		// keyword patterns and attributes are not reads
+		assertNull(table.kindOf(occurrence("RED", 0)));
+		assertNull(table.kindOf(occurrence("x", 0)));
+		assertEquals(NameKind.LOCAL, f.kindOf("other"));
+	}
+
+	@Test
 	public void lambdaParametersAreLocal() {
 		Symtable table = build(
 				"y = 1",

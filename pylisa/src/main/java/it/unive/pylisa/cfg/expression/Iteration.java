@@ -98,6 +98,6 @@ public final class Iteration {
 			Expression expression) {
 		return expression instanceof UnresolvedCall && ((UnresolvedCall) expression).getTargetName().equals("range")
 				&& ((UnresolvedCall) expression).getQualifier() == null
-				&& !PyBuiltinRef.isAssigned(expression.getCFG().getProgram(), "range");
+				&& !PyNameRef.isAssigned(expression.getCFG().getProgram(), "range");
 	}
 }

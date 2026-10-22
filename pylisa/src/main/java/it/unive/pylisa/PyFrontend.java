@@ -20,6 +20,9 @@ import it.unive.pylisa.antlr.PythonLexer;
 import it.unive.pylisa.antlr.PythonParser;
 import it.unive.pylisa.antlr.PythonParser.File_inputContext;
 import it.unive.pylisa.antlr.PythonParserBaseVisitor;
+import it.unive.pylisa.cfg.expression.CallSites;
+import it.unive.pylisa.cfg.expression.PyClassAttributes;
+import it.unive.pylisa.cfg.expression.PyNameRef;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyLambdaType;
@@ -71,6 +74,10 @@ public class PyFrontend
 
 	public void clearAll() {
 		PyClassType.clearAll();
+		PyNameRef.clearAll();
+		PyClassAttributes.clearAll();
+		CallSites.clearAll();
+		LibrarySpecificationProvider.clearAll();
 	}
 
 	public Program getProgram() {
@@ -224,7 +231,8 @@ public class PyFrontend
 		for (Path module : imports.dependencies())
 			parse(module, root, Collections.emptyList(), parsed);
 
-		PyFileParser pyFileParser = new PyFileParser(program, source, imports.bindings());
+		PyFileParser pyFileParser = new PyFileParser(program, source, imports.bindings(),
+				LocalModules.moduleName(path, root));
 		program.addUnit(pyFileParser.parse(tree));
 	}
 

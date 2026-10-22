@@ -105,11 +105,14 @@ final class LocalModules {
 						modules.put(local, unit(submodule));
 						dependencies.add(submodule);
 					} else if (module != null)
-						members.put(local, new LocalImports.Member(unit(module), member));
+						members.put(local, new LocalImports.Member(unit(module), moduleName(module, root), member));
 				}
 			}
 
-		return new Imports(new LocalImports(modules, members), dependencies);
+		Map<String, String> names = new LinkedHashMap<>();
+		for (Path dependency : dependencies)
+			names.put(unit(dependency), moduleName(dependency, root));
+		return new Imports(new LocalImports(modules, members, names), dependencies);
 	}
 
 	// the import statements in the tree, in order
@@ -175,6 +178,36 @@ final class LocalModules {
 			Path path) {
 		Path parent = path.getParent();
 		return parent == null ? Path.of("") : parent;
+	}
+
+	/**
+	 * Yields the (dotted) name of the module in the given file, relative to the
+	 * directory of the analyzed program: {@code a/b.py} is module {@code a.b},
+	 * and {@code a/b/__init__.py} is the package {@code a.b}. If the file is
+	 * not inside the directory of the program, the name of its unit (see
+	 * {@link #unit(Path)}) is used instead.
+	 *
+	 * @param file the file
+	 * @param root the directory of the analyzed program
+	 *
+	 * @return the name of the module
+	 */
+	static String moduleName(
+			Path file,
+			Path root) {
+		Path rel = root.toAbsolutePath().normalize().relativize(file.toAbsolutePath().normalize());
+		List<String> parts = new ArrayList<>();
+		for (Path part : rel)
+			parts.add(part.toString());
+		if (parts.isEmpty() || parts.get(0).equals(".."))
+			return unit(file);
+		parts.set(parts.size() - 1, FilenameUtils.removeExtension(parts.get(parts.size() - 1)));
+		if (parts.get(parts.size() - 1).equals("__init__"))
+			parts.remove(parts.size() - 1);
+		if (parts.isEmpty())
+			// the __init__.py in the directory of the program
+			return unit(file);
+		return String.join(".", parts);
 	}
 
 	/**

@@ -36,6 +36,7 @@ import it.unive.lisa.program.cfg.statement.literal.Float32Literal;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.type.Int32Type;
+import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
 import it.unive.lisa.util.frontend.ControlFlowTracker;
@@ -167,14 +168,11 @@ import it.unive.pylisa.cfg.expression.PyBitwiseNot;
 import it.unive.pylisa.cfg.expression.PyBitwiseOr;
 import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
 import it.unive.pylisa.cfg.expression.PyBitwiseXor;
-import it.unive.pylisa.cfg.expression.PyBuiltinRef;
 import it.unive.pylisa.cfg.expression.PyClassFunctionCall;
-import it.unive.pylisa.cfg.expression.PyClassRef;
 import it.unive.pylisa.cfg.expression.PyDivMod;
 import it.unive.pylisa.cfg.expression.PyDivision;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
 import it.unive.pylisa.cfg.expression.PyFloorDiv;
-import it.unive.pylisa.cfg.expression.PyFunctionRef;
 import it.unive.pylisa.cfg.expression.PyIn;
 import it.unive.pylisa.cfg.expression.PyInPlaceOperation;
 import it.unive.pylisa.cfg.expression.PyIs;
@@ -186,6 +184,7 @@ import it.unive.pylisa.cfg.expression.PyMinMax;
 import it.unive.pylisa.cfg.expression.PyModuleCall;
 import it.unive.pylisa.cfg.expression.PyMultiplication;
 import it.unive.pylisa.cfg.expression.PyNameCall;
+import it.unive.pylisa.cfg.expression.PyNameRef;
 import it.unive.pylisa.cfg.expression.PyNegation;
 import it.unive.pylisa.cfg.expression.PyNewObj;
 import it.unive.pylisa.cfg.expression.PyNot;
@@ -223,6 +222,7 @@ import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.scoping.NameKind;
 import it.unive.pylisa.scoping.Symtable;
 import it.unive.pylisa.symbolic.PyBytes;
 import java.util.ArrayDeque;
@@ -473,13 +473,8 @@ public class PyStatementParser
 
 	private Expression visitSingleTarget(
 			Single_targetContext ctx) {
-		if (ctx.name() != null) {
-			NativeCFG builtin = PyBuiltinRef.builtin(program, ctx.name().getText());
-			if (builtin != null)
-				// e.g. q = len
-				return new PyBuiltinRef(currentCFG, getLocation(filePath, ctx), builtin);
-			return new VariableRef(currentCFG, getLocation(filePath, ctx), ctx.name().getText());
-		}
+		if (ctx.name() != null)
+			return nameRef(ctx.name(), getLocation(filePath, ctx), true);
 		if (ctx.single_target() != null)
 			return visitSingleTarget(ctx.single_target());
 		return visitSingleSubscriptAttributeTarget(ctx.single_subscript_attribute_target());
@@ -523,9 +518,8 @@ public class PyStatementParser
 		List<Statement> prelude = new ArrayList<>();
 		Expression write, read;
 		if (target.name() != null) {
-			String name = target.name().getText();
-			write = new VariableRef(currentCFG, getLocation(filePath, target), name);
-			read = new VariableRef(currentCFG, new DerivedLocation(getLocation(filePath, target), "read"), name);
+			write = nameRef(target.name(), getLocation(filePath, target), true);
+			read = nameRef(target.name(), new DerivedLocation(getLocation(filePath, target), "read"), false);
 		} else {
 			Single_subscript_attribute_targetContext access = target.single_subscript_attribute_target();
 			String base = "$aug@" + tag;
@@ -689,13 +683,8 @@ public class PyStatementParser
 
 	private Expression visitStarAtom(
 			Star_atomContext ctx) {
-		if (ctx.name() != null) {
-			NativeCFG builtin = PyBuiltinRef.builtin(program, ctx.name().getText());
-			if (builtin != null)
-				// e.g. q = len
-				return new PyBuiltinRef(currentCFG, getLocation(filePath, ctx), builtin);
-			return new VariableRef(currentCFG, getLocation(filePath, ctx), ctx.name().getText());
-		}
+		if (ctx.name() != null)
+			return nameRef(ctx.name(), getLocation(filePath, ctx), true);
 		if (ctx.target_with_star_atom() != null)
 			return visitTargetWithStarAtom(ctx.target_with_star_atom());
 		// a nested target, e.g. (b, c) in a, (b, c) = ...
@@ -770,13 +759,8 @@ public class PyStatementParser
 
 	private Expression visitDelTAtom(
 			Del_t_atomContext ctx) {
-		if (ctx.name() != null) {
-			NativeCFG builtin = PyBuiltinRef.builtin(program, ctx.name().getText());
-			if (builtin != null)
-				// e.g. q = len
-				return new PyBuiltinRef(currentCFG, getLocation(filePath, ctx), builtin);
-			return new VariableRef(currentCFG, getLocation(filePath, ctx), ctx.name().getText());
-		}
+		if (ctx.name() != null)
+			return nameRef(ctx.name(), getLocation(filePath, ctx), true);
 		if (ctx.del_target() != null)
 			return visitDelTarget(ctx.del_target());
 		throw new UnsupportedStatementException("Tuple/list del targets are not supported");
@@ -1031,7 +1015,7 @@ public class PyStatementParser
 			// other variables and called through them
 			SourceCodeLocation loc = getLocation(filePath, ctx);
 			PyAssign bind = new PyAssign(currentCFG, loc,
-					new VariableRef(currentCFG, loc, fun.getDescriptor().getName()),
+					nameRef(ctx.function_def().function_def_raw().name(), loc, true),
 					new PyFunctionLiteral(currentCFG, loc, fun));
 			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
 			block.addNode(bind);
@@ -1206,7 +1190,7 @@ public class PyStatementParser
 			String capture = capture(c.patterns().pattern());
 			Statement bind = null;
 			if (capture != null && !capture.equals("_")) {
-				bind = new PyAssign(currentCFG, cloc, new VariableRef(currentCFG, cloc, capture),
+				bind = new PyAssign(currentCFG, cloc, nameRef(captureName(c.patterns().pattern()), cloc, true),
 						new VariableRef(currentCFG, cloc, subject));
 				block.addNode(bind);
 				nodes.add(bind);
@@ -1264,6 +1248,19 @@ public class PyStatementParser
 
 	// the name bound by the pattern if it is a capture (or "_" if it is the
 	// wildcard), that always matches, or null
+	// the occurrence of the name bound by a capture pattern, if any
+	private ParserRuleContext captureName(
+			PatternContext pattern) {
+		if (pattern.as_pattern() != null || pattern.or_pattern().closed_pattern().size() != 1)
+			return null;
+		Closed_patternContext closed = pattern.or_pattern().closed_pattern(0);
+		if (closed.capture_pattern() != null)
+			return closed.capture_pattern().pattern_capture_target().name_except_underscore();
+		if (closed.group_pattern() != null)
+			return captureName(closed.group_pattern().pattern());
+		return null;
+	}
+
 	private String capture(
 			PatternContext pattern) {
 		if (pattern.as_pattern() != null || pattern.or_pattern().closed_pattern().size() != 1)
@@ -1319,7 +1316,7 @@ public class PyStatementParser
 		}
 		if (pattern.value_pattern() != null) {
 			List<NameContext> names = pattern.value_pattern().attr().name();
-			Expression constant = name(names.get(0).getText(), names.get(0));
+			Expression constant = name(names.get(0));
 			for (int i = 1; i < names.size(); i++)
 				constant = attribute(constant, names.get(i).getText(), getLocation(filePath, names.get(i)));
 			return new PyEquals(currentCFG, loc, value, constant);
@@ -2070,6 +2067,10 @@ public class PyStatementParser
 											currentCFG,
 											getLocation(filePath, frame),
 											method_name,
+											access instanceof VariableRef
+													? ((VariableRef) access).getIdentifier()
+													: new Variable(Untyped.INSTANCE, method_name,
+															getLocation(filePath, frame)),
 											LeftToRightEvaluation.INSTANCE,
 											pars.toArray(Expression[]::new))
 									: new UnresolvedCall(
@@ -2178,13 +2179,13 @@ public class PyStatementParser
 	 * of one of those (e.g. {@code os.path}).
 	 */
 	// the names of the class of the program that the expression might refer
-	// to, either defined in this module (see PyClassRef) or imported (from m
+	// to, either defined in this module (see PyNameRef) or imported (from m
 	// import C), if any: imported classes are looked up during the analysis
 	// (see PyClassFunctionCall)
 	private List<String> classNames(
 			Expression expr) {
-		if (expr instanceof PyClassRef)
-			return List.of(((PyClassRef) expr).getClassUnit().getName());
+		if (expr instanceof PyNameRef && ((PyNameRef) expr).getStaticClass() != null)
+			return List.of(((PyNameRef) expr).getStaticClass().getName());
 		if (!(expr instanceof VariableRef) || !imports.containsKey(((VariableRef) expr).getName()))
 			return null;
 		String name = ((VariableRef) expr).getName();
@@ -2209,9 +2210,9 @@ public class PyStatementParser
 
 	/**
 	 * Yields the value of {@code receiver.name} if the receiver is a local
-	 * module and {@code name} is not one of its submodules: a class of the
-	 * module, or a function of the module (see {@link PyFunctionRef}).
-	 * Otherwise, it yields {@code null}.
+	 * module and {@code name} is not one of its submodules: the global
+	 * {@code name} of the module (see {@link PyNameRef}). Otherwise, it yields
+	 * {@code null}.
 	 */
 	private Expression moduleMember(
 			Expression receiver,
@@ -2221,14 +2222,8 @@ public class PyStatementParser
 		String module = localImports.module(path);
 		if (module == null || localImports.module(path + "." + name) != null)
 			return null;
-		Unit unit = program.getUnit(name);
-		if (unit instanceof ClassUnit && ((ClassUnit) unit).getLocation() instanceof SourceCodeLocation
-				&& FilenameUtils
-						.removeExtension(((SourceCodeLocation) ((ClassUnit) unit).getLocation()).getSourceFile())
-						.equals(module))
-			// a class of the module
-			return new PyClassRef(currentCFG, location, (ClassUnit) unit);
-		return new PyFunctionRef(currentCFG, location, path + "." + name, module, name);
+		return new PyNameRef(currentCFG, location, name, NameKind.GLOBAL_EXPLICIT, localImports.moduleName(module),
+				module, null, false, path + "." + name);
 	}
 
 	private boolean isNamespace(
@@ -2312,7 +2307,7 @@ public class PyStatementParser
 	public Expression visitAssignment_expression(
 			Assignment_expressionContext ctx) {
 		return new PyAssign(currentCFG, getLocation(filePath, ctx),
-				new VariableRef(currentCFG, getLocation(filePath, ctx.name()), ctx.name().getText()),
+				nameRef(ctx.name(), getLocation(filePath, ctx.name()), true),
 				visitExpression(ctx.expression()));
 	}
 
@@ -2505,33 +2500,45 @@ public class PyStatementParser
 		}
 	}
 
-	// the reference to name, at the location of ctx: a variable of a
-	// comprehension, a builtin function, a class of the program, a function
-	// of the module (inside functions), or a plain variable
+	// the reference to the name read at the given occurrence: a variable of a
+	// comprehension, or a name of the program (see PyNameRef)
 	private Expression name(
-			String name,
-			ParserRuleContext ctx) {
+			NameContext ctx) {
+		String name = ctx.getText();
 		for (Map<String, String> scope : comprehensions)
 			if (scope.containsKey(name))
 				// a variable of a comprehension
 				return new VariableRef(currentCFG, getLocation(filePath, ctx), scope.get(name));
-		NativeCFG builtin = PyBuiltinRef.builtin(program, name);
-		if (builtin != null)
-			// e.g. q = len
-			return new PyBuiltinRef(currentCFG, getLocation(filePath, ctx), builtin);
-		Unit unit = program.getUnit(name);
-		if (unit instanceof ClassUnit && ((ClassUnit) unit).getLocation() instanceof SourceCodeLocation)
-			// a class defined in the program (e.g. MyClass in
-			// check_type(a, MyClass))
-			return new PyClassRef(currentCFG, getLocation(filePath, ctx), (ClassUnit) unit);
-		LocalImports.Member member = localImports.member(name);
-		if (member != null)
-			// a function imported from a local module (from m import f)
-			return new PyFunctionRef(currentCFG, getLocation(filePath, ctx), name, member.unit(), member.name());
-		if (!currentCFG.getDescriptor().getName().equals(PyFileParser.INSTRUMENTED_MAIN_FUNCTION_NAME))
-			// inside a function, it might be a function of the module
-			return new PyFunctionRef(currentCFG, getLocation(filePath, ctx), name);
-		return new VariableRef(currentCFG, getLocation(filePath, ctx), name);
+		return nameRef(ctx, getLocation(filePath, ctx), false);
+	}
+
+	/**
+	 * Yields the reference to the name at the given occurrence, resolved
+	 * through the symbol table of the module (see {@link PyNameRef}).
+	 *
+	 * @param occurrence the occurrence of the name in the parse tree
+	 * @param location   the location of the reference
+	 * @param target     whether the reference is the target of a binding
+	 *
+	 * @return the reference
+	 */
+	private PyNameRef nameRef(
+			ParserRuleContext occurrence,
+			CodeLocation location,
+			boolean target) {
+		String name = occurrence.getText();
+		NameKind kind = symtable.kindOf(occurrence);
+		if (kind == null) {
+			// the symbol table does not record this occurrence
+			kind = currentCFG.getDescriptor().getName().equals(PyFileParser.INSTRUMENTED_MAIN_FUNCTION_NAME)
+					? NameKind.GLOBAL_IMPLICIT
+					: NameKind.LOCAL;
+			log.warn("No scope recorded for name '" + name + "' at " + location + ", assuming it is "
+					+ kind.name().toLowerCase());
+		}
+		LocalImports.Member imported = kind.isGlobal() ? localImports.member(name) : null;
+		return new PyNameRef(currentCFG, location, name, kind, symtable.getModuleScope().getModule(),
+				FilenameUtils.removeExtension(filePath), imported, target);
 	}
 
 	// the literal of the number with the given text, at the location of ctx
@@ -2591,7 +2598,7 @@ public class PyStatementParser
 	public Expression visitAtom(
 			AtomContext ctx) {
 		if (ctx.name() != null)
-			return name(ctx.name().getText(), ctx);
+			return name(ctx.name());
 		else if (ctx.NUMBER() != null)
 			return number(ctx.NUMBER().getText(), ctx);
 		else if (ctx.FALSE() != null)

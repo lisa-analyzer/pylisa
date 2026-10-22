@@ -93,13 +93,21 @@ public class LibrarySpecificationProvider {
 
 	private static final Collection<String> LOADED_LIBS = new HashSet<>();
 
-	public static void load(
-			Program program)
-			throws AnalysisSetupException {
+	/**
+	 * Clears the libraries loaded by {@link #load(Program)}, so that sequential
+	 * analyses in the same JVM do not interfere with each other.
+	 */
+	public static void clearAll() {
 		init = null;
 		hierarchyRoot = null;
 		AVAILABLE_LIBS.clear();
 		LOADED_LIBS.clear();
+	}
+
+	public static void load(
+			Program program)
+			throws AnalysisSetupException {
+		clearAll();
 
 		Pair<Runtime, Collection<Library>> stdlib = readFile(LIBS_FOLDER + STDLIB_FILE);
 		AtomicReference<CompilationUnit> root = new AtomicReference<CompilationUnit>(null);

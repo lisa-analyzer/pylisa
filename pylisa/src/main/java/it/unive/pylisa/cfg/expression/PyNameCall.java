@@ -18,9 +18,8 @@ import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.NativeCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.EvaluationOrder;
-import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.HashSet;
@@ -36,12 +35,17 @@ import java.util.Set;
  */
 public class PyNameCall extends UnresolvedCall {
 
+	// the identifier the called name resolves to
+	private final Identifier callee;
+
 	/**
 	 * Builds the call.
 	 *
 	 * @param cfg        the cfg where the call happens
 	 * @param location   the location of the call
 	 * @param name       the name being called
+	 * @param callee     the identifier the called name resolves to (see
+	 *                       {@link PyNameRef#getIdentifier()})
 	 * @param order      the evaluation order of the parameters
 	 * @param parameters the parameters of the call
 	 */
@@ -49,9 +53,11 @@ public class PyNameCall extends UnresolvedCall {
 			CFG cfg,
 			CodeLocation location,
 			String name,
+			Identifier callee,
 			EvaluationOrder order,
 			Expression... parameters) {
 		super(cfg, location, CallType.STATIC, null, name, order, parameters);
+		this.callee = callee;
 	}
 
 	@Override
@@ -62,7 +68,6 @@ public class PyNameCall extends UnresolvedCall {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		Variable callee = new Variable(Untyped.INSTANCE, getTargetName(), getLocation());
 		if (!state.knowsIdentifier(callee))
 			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
 

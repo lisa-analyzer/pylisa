@@ -60,6 +60,11 @@ public class PyFileParser
 	private final LocalImports imports;
 
 	/**
+	 * The (dotted) name of the module in the file.
+	 */
+	private final String module;
+
+	/**
 	 * Builds the parser for a Python program at {@code filePath}.
 	 *
 	 * @param program  the LiSA program to which the parsed CFGs will be added
@@ -72,7 +77,9 @@ public class PyFileParser
 	}
 
 	/**
-	 * Builds the parser for a Python program at {@code filePath}.
+	 * Builds the parser for a Python program at {@code filePath}. The name of
+	 * the module in the file is the name of its unit (i.e. the path of the
+	 * file, without extension).
 	 *
 	 * @param program  the LiSA program to which the parsed CFGs will be added
 	 * @param filePath file path to a Python program
@@ -82,9 +89,26 @@ public class PyFileParser
 			Program program,
 			String filePath,
 			LocalImports imports) {
+		this(program, filePath, imports, FilenameUtils.removeExtension(filePath));
+	}
+
+	/**
+	 * Builds the parser for a Python program at {@code filePath}.
+	 *
+	 * @param program  the LiSA program to which the parsed CFGs will be added
+	 * @param filePath file path to a Python program
+	 * @param imports  the names the imports of the file bind to local modules
+	 * @param module   the (dotted) name of the module in the file
+	 */
+	public PyFileParser(
+			Program program,
+			String filePath,
+			LocalImports imports,
+			String module) {
 		this.program = program;
 		this.filePath = filePath;
 		this.imports = imports;
+		this.module = module;
 		this.rootUnit = new CodeUnit(
 				new SourceCodeLocation(filePath, 0, 0),
 				program,
@@ -127,7 +151,7 @@ public class PyFileParser
 		// side effects on entrypoints and matrix will affect the cfg
 		PyCFG cfg = new PyCFG(descriptor, entrypoints, list);
 		ControlFlowTracker control = new ControlFlowTracker();
-		Symtable symtable = SymtableBuilder.build(filePath, rootUnit.getName(), ctx);
+		Symtable symtable = SymtableBuilder.build(filePath, module, ctx);
 		PyStatementParser parser = new PyStatementParser(program, filePath, rootUnit, cfg, control, imports,
 				symtable);
 		ParsedBlock r;

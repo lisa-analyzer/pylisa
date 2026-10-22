@@ -60,6 +60,14 @@ public final class PyClassAttributes {
 	}
 
 	/**
+	 * Clears the caches of this class, so that sequential analyses in the same
+	 * JVM do not interfere with each other.
+	 */
+	public static void clearAll() {
+		WRITTEN.clear();
+	}
+
+	/**
 	 * A class attribute.
 	 *
 	 * @param value the expression computing the value of the attribute, or

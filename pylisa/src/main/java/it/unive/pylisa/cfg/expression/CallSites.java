@@ -41,6 +41,14 @@ public final class CallSites {
 	}
 
 	/**
+	 * Clears the caches of this class, so that sequential analyses in the same
+	 * JVM do not interfere with each other.
+	 */
+	public static void clearAll() {
+		CALLS.clear();
+	}
+
+	/**
 	 * Yields the call {@code qualifier.name(args)} performed by the given
 	 * statement, always the same one for the same analysis.
 	 *

@@ -6,6 +6,7 @@ import it.unive.pylisa.ParsingException;
 import it.unive.pylisa.antlr.PythonParser.AssignmentContext;
 import it.unive.pylisa.antlr.PythonParser.Assignment_expressionContext;
 import it.unive.pylisa.antlr.PythonParser.AtomContext;
+import it.unive.pylisa.antlr.PythonParser.AttrContext;
 import it.unive.pylisa.antlr.PythonParser.Class_def_rawContext;
 import it.unive.pylisa.antlr.PythonParser.Default_assignmentContext;
 import it.unive.pylisa.antlr.PythonParser.Del_t_atomContext;
@@ -27,6 +28,7 @@ import it.unive.pylisa.antlr.PythonParser.Lambda_paramContext;
 import it.unive.pylisa.antlr.PythonParser.LambdefContext;
 import it.unive.pylisa.antlr.PythonParser.ListcompContext;
 import it.unive.pylisa.antlr.PythonParser.NameContext;
+import it.unive.pylisa.antlr.PythonParser.Name_or_attrContext;
 import it.unive.pylisa.antlr.PythonParser.Nonlocal_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.ParamContext;
 import it.unive.pylisa.antlr.PythonParser.Param_star_annotationContext;
@@ -155,6 +157,22 @@ public class SymtableBuilder extends PythonParserBaseVisitor<Void> {
 			read(ctx.name());
 		else
 			visitChildren(ctx);
+		return null;
+	}
+
+	@Override
+	public Void visitAttr(
+			AttrContext ctx) {
+		// e.g. Color.RED in a value pattern: Color is read
+		read(ctx.name(0));
+		return null;
+	}
+
+	@Override
+	public Void visitName_or_attr(
+			Name_or_attrContext ctx) {
+		// e.g. Point in a class pattern: Point is read
+		read(ctx.name(0));
 		return null;
 	}
 

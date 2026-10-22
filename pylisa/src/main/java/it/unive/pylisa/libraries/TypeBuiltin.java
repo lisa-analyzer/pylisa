@@ -14,7 +14,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.CodeMemberType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import it.unive.pylisa.cfg.expression.PyBuiltinRef;
+import it.unive.pylisa.cfg.expression.PyNameRef;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyTypeTokenType;
@@ -28,8 +28,8 @@ import java.util.Set;
  * {@code type(x) is int} and {@code type(x) is type(y)} can be decided, see
  * {@code PyBinaryDispatch#identical}). This is the builtin function
  * {@code int}, {@code float}, {@code str}, {@code bytes}, {@code list} or
- * {@code range} for their values (see {@code PyBuiltinRef}), and the class of
- * an object (see {@code PyTypeLiteral}). The class of any other value (e.g. a
+ * {@code range} for their values (see {@code PyNameRef}), and the class of an
+ * object (see {@code PyTypeLiteral}). The class of any other value (e.g. a
  * {@code bool} or {@code None}, whose classes are not modeled) is unknown.
  */
 public class TypeBuiltin extends PyNative {
@@ -82,7 +82,7 @@ public class TypeBuiltin extends PyNative {
 		else if (RangeBuiltin.isRange(t))
 			builtin = "range";
 		if (builtin != null) {
-			NativeCFG function = PyBuiltinRef.builtin(getCFG().getProgram(), builtin);
+			NativeCFG function = PyNameRef.builtin(getCFG().getProgram(), builtin);
 			return new Constant(new CodeMemberType(Collections.singleton(function)), function, loc);
 		}
 

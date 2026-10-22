@@ -56,7 +56,7 @@ public final class TypeHints {
 			// a member of a union
 			return instanceOf(t, ((PyClassType) hint).getUnit());
 		if (hint instanceof PyTypeTokenType) {
-			// a class (see PyClassRef), or a union: satisfied if one of its
+			// a class (see PyNameRef), or a union: satisfied if one of its
 			// members is
 			Satisfiability sat = Satisfiability.NOT_SATISFIED;
 			for (Type member : hint.asTypeTokenType().getTypes())
