@@ -42,7 +42,10 @@ public class Exec extends PyNative {
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		return compute(analysis, state, new PyNoneConstant(getLocation()))
-				.lub(raise(analysis, state, LibrarySpecificationProvider.EXCEPTION));
+		// the executed code might bind or delete any global of the module,
+		// also when it raises an exception
+		AnalysisState<A> havocked = havocGlobals(analysis, state, args[1]);
+		return compute(analysis, havocked, new PyNoneConstant(getLocation()))
+				.lub(raise(analysis, havocked, LibrarySpecificationProvider.EXCEPTION));
 	}
 }

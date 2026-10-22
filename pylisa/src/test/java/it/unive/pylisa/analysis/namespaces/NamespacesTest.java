@@ -116,6 +116,38 @@ public class NamespacesTest {
 	}
 
 	@Test
+	public void callReturnRestoresTheLocalsAndTheStableModules()
+			throws SemanticException {
+		Namespaces caller = Namespaces.EMPTY.withStable("m").bind("m", "x", false).bind("m", "g", true)
+				.bind("n", "h", true);
+		// e.g. the callee's results are shared with a context where g and h
+		// were not bound yet
+		Namespaces callee = caller.pushScope(CALL1, PP).lub(Namespaces.EMPTY.withStable("m").pushScope(CALL1, PP))
+				.bind("m", "y", false);
+		assertEquals(Binding.MAYBE, callee.status("m", "g", true));
+		Namespaces returned = callee.popScope(CALL1, PP).onCallReturn(caller, PP);
+		// the locals of the caller
+		assertEquals(Binding.BOUND, returned.status("m", "x", false));
+		assertEquals(Binding.UNBOUND, returned.status("m", "y", false));
+		// the globals of the stable module are the ones of the caller
+		assertEquals(Binding.BOUND, returned.status("m", "g", true));
+		// the ones of the other modules are the ones of the callee
+		assertEquals(Binding.MAYBE, returned.status("n", "h", true));
+		assertTrue(returned.isStable("m"));
+	}
+
+	@Test
+	public void stableModulesAreIntersectedByTheLub()
+			throws SemanticException {
+		Namespaces m = Namespaces.EMPTY.withStable("m").withStable("n");
+		Namespaces n = Namespaces.EMPTY.withStable("n");
+		assertFalse(m.lub(n).isStable("m"));
+		assertTrue(m.lub(n).isStable("n"));
+		assertTrue(m.lessOrEqual(n));
+		assertFalse(n.lessOrEqual(m));
+	}
+
+	@Test
 	public void fixpointInfoForwardsTheScopingOperations()
 			throws SemanticException {
 		Namespaces caller = Namespaces.EMPTY.bind("m", "x", false);

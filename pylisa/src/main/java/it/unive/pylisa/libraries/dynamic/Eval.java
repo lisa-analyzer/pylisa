@@ -40,7 +40,10 @@ public class Eval extends PyNative {
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		return unknown(analysis, state, null)
-				.lub(raise(analysis, state, LibrarySpecificationProvider.EXCEPTION));
+		// the evaluated expression might bind any global of the module (e.g.
+		// through an assignment expression), also when it raises an exception
+		AnalysisState<A> havocked = havocGlobals(analysis, state, args[1]);
+		return unknown(analysis, havocked, null)
+				.lub(raise(analysis, havocked, LibrarySpecificationProvider.EXCEPTION));
 	}
 }

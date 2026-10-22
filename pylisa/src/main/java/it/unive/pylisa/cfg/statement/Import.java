@@ -16,8 +16,10 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.collections.CollectionsDiffBuilder;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
+import it.unive.pylisa.cfg.expression.PyNameRef;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -26,14 +28,37 @@ public class Import extends Statement {
 
 	private final Map<String, String> libs;
 
+	// the names bound by the statement
+	private final List<PyNameRef> bound;
+
 	// import <left> as <right>
 	public Import(
 			Program program,
 			Map<String, String> libs,
 			CFG cfg,
 			CodeLocation loc) {
+		this(program, libs, List.of(), cfg, loc);
+	}
+
+	/**
+	 * Builds the statement.
+	 *
+	 * @param program the program
+	 * @param libs    the imported modules, mapped to their aliases (or
+	 *                    {@code null})
+	 * @param bound   the names bound by the statement
+	 * @param cfg     the cfg where the statement is
+	 * @param loc     the location of the statement
+	 */
+	public Import(
+			Program program,
+			Map<String, String> libs,
+			List<PyNameRef> bound,
+			CFG cfg,
+			CodeLocation loc) {
 		super(cfg, loc);
 		this.libs = libs;
+		this.bound = bound;
 		for (String lib : libs.keySet())
 			LibrarySpecificationProvider.importLibrary(program, lib);
 	}
@@ -133,6 +158,6 @@ public class Import extends Statement {
 								.alias(new QualifierSymbol(lib.getKey()), new QualifierSymbol(lib.getValue())));
 		}
 
-		return result;
+		return FromImport.bind(result, bound, false, getCFG());
 	}
 }

@@ -28,6 +28,7 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.UnsupportedStatementException;
+import it.unive.pylisa.analysis.namespaces.Namespaces;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
@@ -209,7 +210,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		// prepare the state for the call: assign the value to each parameter
 		// (skipped for native calls, as they do not have their own scope)
 		AnalysisState<A> prepared = callState;
-		if (assignFormals)
+		if (assignFormals) {
 			for (int i = 0; i < formals.length; i++) {
 				AnalysisState<A> temp = prepared.bottomExecution();
 				for (SymbolicExpression exp : slots[i])
@@ -217,6 +218,14 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 							interprocedural.getAnalysis().assign(prepared, formals[i].toSymbolicVariable(), exp, call));
 				prepared = temp;
 			}
+			// the parameters are bound in the namespace of the callee
+			Namespaces namespaces = Namespaces.of(prepared);
+			if (namespaces != null && !prepared.getExecutionState().isBottom()) {
+				for (Parameter formal : formals)
+					namespaces = namespaces.bind(null, formal.getName(), false);
+				prepared = Namespaces.store(prepared, namespaces);
+			}
+		}
 
 		// we remove expressions from the stack
 		prepared = prepared.forgetIdentifiers(metas, call).withExecutionExpressions(new ExpressionSet());

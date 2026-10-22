@@ -92,7 +92,7 @@ public class PyClassParser
 		NodeList<CFG, Statement, Edge> list = new NodeList<>(new SequentialEdge());
 		Collection<Statement> entrypoints = new HashSet<>();
 		// side effects on entrypoints and matrix will affect the cfg
-		PyCFG cfg = new PyCFG(descriptor, entrypoints, list);
+		PyCFG cfg = new PyCFG(descriptor, entrypoints, list, symtable.getScope(ctx));
 		ControlFlowTracker control = new ControlFlowTracker();
 		PyStatementParser parser = new PyStatementParser(program, filePath, signature, cfg, control, imports, symtable);
 		ParsedBlock r = parser.visitBlock(ctx.block());

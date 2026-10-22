@@ -218,11 +218,13 @@ import it.unive.pylisa.cfg.expression.unary.PyLength;
 import it.unive.pylisa.cfg.statement.FromImport;
 import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.PyAssert;
+import it.unive.pylisa.cfg.statement.PyDelName;
 import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.scoping.NameKind;
+import it.unive.pylisa.scoping.PyScope;
 import it.unive.pylisa.scoping.Symtable;
 import it.unive.pylisa.symbolic.PyBytes;
 import java.util.ArrayDeque;
@@ -728,6 +730,12 @@ public class PyStatementParser
 		for (Del_targetContext t : ctx.del_targets().del_target())
 			targets.add(visitDelTarget(t));
 
+		if (targets.stream().allMatch(PyNameRef.class::isInstance))
+			// del x, y: the names are unbound
+			return new PyDelName(currentCFG, getLocation(filePath, ctx), targets.toArray(PyNameRef[]::new));
+		if (targets.stream().anyMatch(PyNameRef.class::isInstance))
+			throw new UnsupportedStatementException("del statements mixing names and other targets are not supported");
+
 		return new UnresolvedCall(
 				currentCFG,
 				getLocation(filePath, ctx),
@@ -847,31 +855,44 @@ public class PyStatementParser
 
 		Import_from_targetsContext targets = ctx.import_from_targets();
 		if (targets.STAR() != null)
-			return new FromImport(program, name, Map.of("*", "*"), currentCFG, getLocation(filePath, ctx));
+			return new FromImport(program, name, Map.of("*", "*"), List.of(), currentCFG, getLocation(filePath, ctx));
 
 		Map<String, String> components = new HashMap<>();
+		List<PyNameRef> bound = new ArrayList<>();
 		for (Import_from_as_nameContext single : targets.import_from_as_names().import_from_as_name()) {
 			String importedComponent = single.name(0).getText();
 			String as = single.name().size() == 2 ? single.name(1).getText() : null;
 			components.put(importedComponent, as);
 			imports.put(importedComponent, name + "." + importedComponent);
 			namespaces.add(as != null ? as : importedComponent);
+			// from m import a as b binds b, from m import a binds a
+			NameContext target = single.name(single.name().size() - 1);
+			bound.add(nameRef(target, getLocation(filePath, target), true));
 		}
-		return new FromImport(program, name, components, currentCFG, getLocation(filePath, ctx));
+		return new FromImport(program, name, components, bound, currentCFG, getLocation(filePath, ctx));
 	}
 
 	@Override
 	public Statement visitImport_name(
 			Import_nameContext ctx) {
 		Map<String, String> libs = new HashMap<>();
+		List<PyNameRef> bound = new ArrayList<>();
 		for (Dotted_as_nameContext single : ctx.dotted_as_names().dotted_as_name()) {
 			String importedLibrary = dottedNameToString(single.dotted_name());
 			String as = single.name() != null ? single.name().getText() : null;
 			libs.put(importedLibrary, as);
 			// "import a.b.c" binds "a", "import a.b.c as d" binds "d"
 			namespaces.add(as != null ? as : importedLibrary.split("\\.")[0]);
+			NameContext target = single.name();
+			if (target == null) {
+				Dotted_nameContext first = single.dotted_name();
+				while (first.dotted_name() != null)
+					first = first.dotted_name();
+				target = first.name();
+			}
+			bound.add(nameRef(target, getLocation(filePath, target), true));
 		}
-		return new Import(program, libs, currentCFG, getLocation(filePath, ctx));
+		return new Import(program, libs, bound, currentCFG, getLocation(filePath, ctx));
 	}
 
 	private String dottedNameToString(
@@ -902,13 +923,14 @@ public class PyStatementParser
 	@Override
 	public Statement visitGlobal_stmt(
 			Global_stmtContext ctx) {
-		throw new UnsupportedStatementException();
+		// a declaration, used by the symbol table (see SymtableBuilder)
+		return new NoOp(currentCFG, getLocation(filePath, ctx));
 	}
 
 	@Override
 	public Statement visitNonlocal_stmt(
 			Nonlocal_stmtContext ctx) {
-		throw new UnsupportedStatementException();
+		throw new UnsupportedStatementException("nonlocal declarations are not supported yet");
 	}
 
 	@Override
@@ -1028,8 +1050,15 @@ public class PyStatementParser
 			ClassUnit cu = visitClass_def(ctx.class_def());
 			PyClassType.register(cu.getName(), cu);
 			program.addUnit(cu);
-			// same as above: the class is registered as a unit, not inlined
-			return noOpBlock(ctx);
+			// the class is registered as a unit, not inlined, and class C:
+			// binds C to the class
+			SourceCodeLocation loc = getLocation(filePath, ctx);
+			PyAssign bind = new PyAssign(currentCFG, loc,
+					nameRef(ctx.class_def().class_def_raw().name(), loc, true),
+					new PyTypeLiteral(currentCFG, loc, cu));
+			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+			block.addNode(bind);
+			return new ParsedBlock(bind, block, bind);
 		} else if (ctx.if_stmt() != null)
 			return this.visitIf_stmt(ctx.if_stmt());
 		else if (ctx.while_stmt() != null)
@@ -1441,7 +1470,8 @@ public class PyStatementParser
 		Expression element = new PyIteratedElement(currentCFG, loc,
 				new VariableRef(currentCFG, new DerivedLocation(loc, "iter-element"), iterable),
 				collection);
-		Assignment element_assignment = variable instanceof TupleCreation
+		// names and tuples of targets are bound by PyAssign
+		Assignment element_assignment = variable instanceof TupleCreation || variable instanceof PyNameRef
 				? new PyAssign(currentCFG, loc, variable, element)
 				: new Assignment(currentCFG, loc, variable, element);
 		block.addNode(element_assignment);
@@ -1575,7 +1605,7 @@ public class PyStatementParser
 				params.toArray(PyParameter[]::new));
 		NodeList<CFG, Statement, Edge> list = new NodeList<>(new SequentialEdge());
 		Collection<Statement> entrypoints = new HashSet<>();
-		PyCFG lambda = new PyCFG(descriptor, entrypoints, list);
+		PyCFG lambda = new PyCFG(descriptor, entrypoints, list, symtable.getScope(ctx));
 		PyStatementParser parser = new PyStatementParser(program, filePath, currentUnit, lambda,
 				new ControlFlowTracker(), localImports, symtable);
 		// the default values are parsed in the cfg of the lambda, as for
@@ -2007,7 +2037,9 @@ public class PyStatementParser
 								pars.remove(par);
 					}
 				}
-				if (cu != null && cu instanceof ClassUnit) {
+				if (cu != null && cu instanceof ClassUnit && !(!attribute && previous_access == null
+						&& access instanceof PyNameRef && !((PyNameRef) access).getKind().isGlobal())) {
+					// C(...), unless C is a local name
 					if (instance)
 						// x.Cls(...) builds a Cls, with no receiver
 						pars.remove(0);
@@ -2036,10 +2068,11 @@ public class PyStatementParser
 							LeftToRightEvaluation.INSTANCE,
 							pars.toArray(Expression[]::new));
 				} else if (!instance && !attribute && method_name.equals("abs") && pars.size() == 1
-						&& !(pars.get(0) instanceof NamedParameterExpression) && isBuiltin("abs")) {
+						&& !(pars.get(0) instanceof NamedParameterExpression) && isBuiltin("abs")
+						&& builtinCallee(access)) {
 					access = new PyAbs(currentCFG, getLocation(filePath, frame), pars.get(0));
 				} else if (!instance && !attribute && (method_name.equals("min") || method_name.equals("max"))
-						&& minMaxArguments(pars) && isBuiltin(method_name)) {
+						&& minMaxArguments(pars) && isBuiltin(method_name) && builtinCallee(access)) {
 					// min(a, b, ...), min(iterable), min(iterable, default=d)
 					Expression dflt = pars.stream().filter(NamedParameterExpression.class::isInstance).findFirst()
 							.map(p -> ((NamedParameterExpression) p).getSubExpression()).orElse(null);
@@ -2047,10 +2080,12 @@ public class PyStatementParser
 							pars.stream().filter(p -> !(p instanceof NamedParameterExpression))
 									.toArray(Expression[]::new),
 							dflt);
-				} else if (!instance && method_name.equals("len") && pars.size() == 1) {
+				} else if (!instance && method_name.equals("len") && pars.size() == 1
+						&& (attribute || builtinCallee(access))) {
 					access = new PyLength(currentCFG, getLocation(filePath, frame), pars.get(0));
 				} else if (!instance && method_name.equals("divmod") && pars.size() == 2
-						&& pars.stream().noneMatch(NamedParameterExpression.class::isInstance)) {
+						&& pars.stream().noneMatch(NamedParameterExpression.class::isInstance)
+						&& (attribute || builtinCallee(access))) {
 					access = new PyDivMod(currentCFG, getLocation(filePath, frame), pars.get(0), pars.get(1));
 				} else {
 					access = instance
@@ -2071,6 +2106,7 @@ public class PyStatementParser
 													? ((VariableRef) access).getIdentifier()
 													: new Variable(Untyped.INSTANCE, method_name,
 															getLocation(filePath, frame)),
+											access instanceof PyNameRef ? (PyNameRef) access : null,
 											LeftToRightEvaluation.INSTANCE,
 											pars.toArray(Expression[]::new))
 									: new UnresolvedCall(
@@ -2222,8 +2258,9 @@ public class PyStatementParser
 		String module = localImports.module(path);
 		if (module == null || localImports.module(path + "." + name) != null)
 			return null;
+		// the binding status of the globals of other modules is not known
 		return new PyNameRef(currentCFG, location, name, NameKind.GLOBAL_EXPLICIT, localImports.moduleName(module),
-				module, null, false, path + "." + name);
+				module, null, false, false, path + "." + name);
 	}
 
 	private boolean isNamespace(
@@ -2440,6 +2477,16 @@ public class PyStatementParser
 	 */
 	// whether name is the builtin function, that is, the program does not
 	// define a function with that name
+	// whether the called name statically denotes the builtin with the same
+	// name: it is a global name that is never bound by the module
+	private boolean builtinCallee(
+			Expression callee) {
+		if (!(callee instanceof PyNameRef))
+			return false;
+		PyNameRef ref = (PyNameRef) callee;
+		return ref.getKind().isGlobal() && !symtable.getModuleScope().binds(ref.getName());
+	}
+
 	private boolean isBuiltin(
 			String name) {
 		return program.getCodeMembersByName(name).stream().allMatch(NativeCFG.class::isInstance);
@@ -2538,7 +2585,30 @@ public class PyStatementParser
 		}
 		LocalImports.Member imported = kind.isGlobal() ? localImports.member(name) : null;
 		return new PyNameRef(currentCFG, location, name, kind, symtable.getModuleScope().getModule(),
-				FilenameUtils.removeExtension(filePath), imported, target);
+				FilenameUtils.removeExtension(filePath), imported, target, checked(occurrence, kind));
+	}
+
+	/**
+	 * Yields whether the reference at the given occurrence is evaluated in the
+	 * namespace of its scope (see {@link PyNameRef#isChecked()}): the globals
+	 * are shared by all the code of the module, while the locals are the ones
+	 * of the function of the cfg being parsed. This does not hold, for
+	 * instance, for the names in the default values of the parameters of a
+	 * function, that are parsed in the cfg of the function but belong to the
+	 * enclosing scope.
+	 */
+	private boolean checked(
+			ParserRuleContext occurrence,
+			NameKind kind) {
+		PyScope scope = symtable.getScopeOf(occurrence);
+		if (scope == null || currentCFG.getScope() == null)
+			return false;
+		if (kind.isGlobal())
+			return true;
+		// comprehensions are evaluated inline, in the enclosing scope
+		while (scope.getKind() == PyScope.ScopeKind.COMPREHENSION)
+			scope = scope.getParent();
+		return scope == currentCFG.getScope();
 	}
 
 	// the literal of the number with the given text, at the location of ctx

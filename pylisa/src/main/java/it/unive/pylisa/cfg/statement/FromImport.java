@@ -16,8 +16,12 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.collections.CollectionsDiffBuilder;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
+import it.unive.pylisa.analysis.namespaces.Namespaces;
+import it.unive.pylisa.cfg.PyCFG;
+import it.unive.pylisa.cfg.expression.PyNameRef;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -28,15 +32,41 @@ public class FromImport extends Statement {
 	private final Map<String, String> components;
 
 	// from <lib> import <left> as <right>
+	// the names bound by the statement
+	private final List<PyNameRef> bound;
+
 	public FromImport(
 			Program program,
 			String lib,
 			Map<String, String> components,
 			CFG cfg,
 			CodeLocation loc) {
+		this(program, lib, components, List.of(), cfg, loc);
+	}
+
+	/**
+	 * Builds the statement.
+	 *
+	 * @param program    the program
+	 * @param lib        the imported module
+	 * @param components the imported names, mapped to their aliases (or
+	 *                       {@code null}), or {@code * -> *} for
+	 *                       {@code from lib import *}
+	 * @param bound      the names bound by the statement
+	 * @param cfg        the cfg where the statement is
+	 * @param loc        the location of the statement
+	 */
+	public FromImport(
+			Program program,
+			String lib,
+			Map<String, String> components,
+			List<PyNameRef> bound,
+			CFG cfg,
+			CodeLocation loc) {
 		super(cfg, loc);
 		this.lib = lib;
 		this.components = components;
+		this.bound = bound;
 		LibrarySpecificationProvider.importLibrary(program, lib);
 	}
 
@@ -138,6 +168,32 @@ public class FromImport extends Statement {
 								new QualifiedNameSymbol(null, component.getKey())));
 		}
 
-		return result;
+		return bind(result, bound, components.containsKey("*"), getCFG());
+	}
+
+	/**
+	 * Binds the names bound by an import statement. A star import
+	 * ({@code from m import *}) might bind any name of the module.
+	 *
+	 * @param <A>   the kind of {@link AbstractLattice} of the state
+	 * @param state the state
+	 * @param bound the names bound by the statement
+	 * @param star  whether this is a star import
+	 * @param cfg   the cfg where the statement is
+	 *
+	 * @return the updated state
+	 */
+	static <A extends AbstractLattice<A>> AnalysisState<A> bind(
+			AnalysisState<A> state,
+			List<PyNameRef> bound,
+			boolean star,
+			CFG cfg) {
+		for (PyNameRef name : bound)
+			state = name.bind(state);
+		Namespaces namespaces = Namespaces.of(state);
+		String module = PyCFG.moduleOf(cfg);
+		if (star && namespaces != null && module != null && !state.getExecutionState().isBottom())
+			state = Namespaces.store(state, namespaces.havocModule(module));
+		return state;
 	}
 }

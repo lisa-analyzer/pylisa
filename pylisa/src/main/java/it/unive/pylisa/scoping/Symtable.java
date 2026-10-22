@@ -3,6 +3,7 @@ package it.unive.pylisa.scoping;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 /**
@@ -14,6 +15,9 @@ import org.antlr.v4.runtime.ParserRuleContext;
  * parse tree.
  */
 public class Symtable {
+
+	// the builtins that can modify the namespace of the module
+	private static final Set<String> NAMESPACE_BUILTINS = Set.of("exec", "eval", "globals");
 
 	private final PyScope module;
 
@@ -93,6 +97,28 @@ public class Symtable {
 			ParserRuleContext occurrence) {
 		PyScope scope = occurrences.get(occurrence);
 		return scope == null ? null : scope.kindOf(occurrence.getText());
+	}
+
+	/**
+	 * Yields whether the globals of the module can only be bound or deleted by
+	 * the code of the module itself, and never by its functions (or class
+	 * bodies): no other scope binds a name declared {@code global}, nor uses
+	 * the builtins that can modify the namespace of the module (as
+	 * {@code exec}, {@code eval}, and {@code globals}).
+	 *
+	 * @return whether the globals are only bound by the code of the module
+	 */
+	public boolean globalsBoundOnlyByModule() {
+		for (PyScope scope : scopes.values()) {
+			if (scope.getKind() == PyScope.ScopeKind.MODULE)
+				continue;
+			for (Map.Entry<String, NameKind> symbol : scope.getSymbols().entrySet())
+				if (symbol.getValue() == NameKind.GLOBAL_EXPLICIT && scope.binds(symbol.getKey()))
+					return false;
+				else if (symbol.getValue().isGlobal() && NAMESPACE_BUILTINS.contains(symbol.getKey()))
+					return false;
+		}
+		return true;
 	}
 
 	void register(

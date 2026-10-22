@@ -28,22 +28,37 @@ import it.unive.pylisa.analysis.namespaces.Namespaces;
  */
 public class PyNamespacesInit extends Statement {
 
+	// the (dotted) name of the module
+	private final String module;
+
+	// whether the globals of the module are never bound by its functions
+	private final boolean stable;
+
 	/**
 	 * Builds the statement.
 	 *
 	 * @param cfg      the cfg of the code of the module
 	 * @param location the location of the statement
+	 * @param module   the (dotted) name of the module
+	 * @param stable   whether the globals of the module are never bound by its
+	 *                     functions (see {@link Namespaces#withStable(String)})
 	 */
 	public PyNamespacesInit(
 			CFG cfg,
-			CodeLocation location) {
+			CodeLocation location,
+			String module,
+			boolean stable) {
 		super(cfg, location);
+		this.module = module;
+		this.stable = stable;
 	}
 
 	@Override
 	protected int compareSameClass(
 			Statement o) {
-		return 0; // no extra fields to compare
+		PyNamespacesInit other = (PyNamespacesInit) o;
+		int cmp = module.compareTo(other.module);
+		return cmp != 0 ? cmp : Boolean.compare(stable, other.stable);
 	}
 
 	@Override
@@ -60,7 +75,7 @@ public class PyNamespacesInit extends Statement {
 
 	@Override
 	public int hashCode() {
-		return super.hashCode() ^ getClass().getName().hashCode();
+		return super.hashCode() ^ getClass().getName().hashCode() ^ module.hashCode() ^ Boolean.hashCode(stable);
 	}
 
 	@Override
@@ -70,7 +85,10 @@ public class PyNamespacesInit extends Statement {
 			return true;
 		if (!super.equals(obj))
 			return false;
-		return getClass() == obj.getClass();
+		if (getClass() != obj.getClass())
+			return false;
+		PyNamespacesInit other = (PyNamespacesInit) obj;
+		return module.equals(other.module) && stable == other.stable;
 	}
 
 	@Override
@@ -81,8 +99,11 @@ public class PyNamespacesInit extends Statement {
 			throws SemanticException {
 		AnalysisState<A> result = interprocedural.getAnalysis().smallStepSemantics(entryState,
 				new Skip(getLocation()), this);
-		if (Namespaces.of(result) == null)
-			result = Namespaces.store(result, Namespaces.EMPTY);
-		return result;
+		Namespaces namespaces = Namespaces.of(result);
+		if (namespaces == null)
+			namespaces = Namespaces.EMPTY;
+		if (stable)
+			namespaces = namespaces.withStable(module);
+		return Namespaces.store(result, namespaces);
 	}
 }

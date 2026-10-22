@@ -3,6 +3,7 @@ package it.unive.pylisa.analysis.namespaces;
 import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.BaseLattice;
+import it.unive.lisa.analysis.CallAwareObject;
 import it.unive.lisa.analysis.FixpointInfo;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.ScopeToken;
@@ -39,10 +40,17 @@ import java.util.TreeSet;
  * the call. The saved frames are indexed by the {@link ScopeToken} of the call:
  * if a scope is pushed with a token that is already used (e.g. a recursive call
  * through the same call site), the saved frames are merged, so that the number
- * of saved frames is bounded by the number of call sites. Instances of this
- * class are immutable.
+ * of saved frames is bounded by the number of call sites.<br>
+ * <br>
+ * Being a {@link CallAwareObject}, the namespaces after a call are also refined
+ * with the ones of the caller (see
+ * {@link #onCallReturn(Namespaces, ProgramPoint)}): the locals of the caller,
+ * and the globals of the modules whose functions never bind them (see
+ * {@link #withStable(String)}), are restored exactly as they were before the
+ * call, regardless of the calling contexts whose results are shared by the
+ * callee. Instances of this class are immutable.
  */
-public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespaces> {
+public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespaces>, CallAwareObject<Namespaces> {
 
 	/**
 	 * The key of the {@link FixpointInfo} where instances of this class are
@@ -54,18 +62,19 @@ public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespa
 	 * The namespaces where no name is bound.
 	 */
 	public static final Namespaces EMPTY = new Namespaces(Collections.emptyMap(), Frame.EMPTY,
-			Collections.emptyMap());
+			Collections.emptyMap(), Collections.emptySet());
 
 	/**
 	 * The top namespaces, where each name might be bound or not.
 	 */
-	public static final Namespaces TOP = new Namespaces(Collections.emptyMap(), Frame.TOP, Collections.emptyMap());
+	public static final Namespaces TOP = new Namespaces(Collections.emptyMap(), Frame.TOP, Collections.emptyMap(),
+			Collections.emptySet());
 
 	/**
 	 * The bottom namespaces, used for unreachable code.
 	 */
 	public static final Namespaces BOTTOM = new Namespaces(Collections.emptyMap(), Frame.BOTTOM,
-			Collections.emptyMap());
+			Collections.emptyMap(), Collections.emptySet());
 
 	// the frames of the globals of the modules (a missing module is
 	// Frame.EMPTY)
@@ -77,19 +86,26 @@ public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespa
 	// the frames of the locals of the callers, by call
 	private final Map<ScopeToken, Frame> saved;
 
+	// the modules whose globals are never bound by functions (see
+	// withStable)
+	private final Set<String> stable;
+
 	private Namespaces(
 			Map<String, Frame> modules,
 			Frame locals,
-			Map<ScopeToken, Frame> saved) {
+			Map<ScopeToken, Frame> saved,
+			Set<String> stable) {
 		this.modules = modules;
 		this.locals = locals;
 		this.saved = saved;
+		this.stable = stable;
 	}
 
 	private static Namespaces mk(
 			Map<String, Frame> modules,
 			Frame locals,
-			Map<ScopeToken, Frame> saved) {
+			Map<ScopeToken, Frame> saved,
+			Set<String> stable) {
 		// frames of modules that are empty are not stored
 		Map<String, Frame> mods = new HashMap<>();
 		for (Entry<String, Frame> e : modules.entrySet())
@@ -103,7 +119,7 @@ public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespa
 			if (f.isBottom())
 				return BOTTOM;
 		return new Namespaces(Collections.unmodifiableMap(mods), locals,
-				Collections.unmodifiableMap(new HashMap<>(saved)));
+				Collections.unmodifiableMap(new HashMap<>(saved)), Collections.unmodifiableSet(new HashSet<>(stable)));
 	}
 
 	/**
@@ -246,7 +262,7 @@ public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespa
 			return this;
 		Map<String, Frame> mods = new HashMap<>(modules);
 		mods.put(module, frame);
-		return mk(mods, locals, saved);
+		return mk(mods, locals, saved, stable);
 	}
 
 	/**
@@ -261,7 +277,70 @@ public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespa
 			Frame frame) {
 		if (isBottom() || isTop())
 			return this;
-		return mk(modules, frame, saved);
+		return mk(modules, frame, saved, stable);
+	}
+
+	/**
+	 * Yields a copy of these namespaces where the given module is
+	 * <i>stable</i>, that is, its globals are never bound or deleted by the
+	 * functions of the program (e.g. through {@code global} declarations, or by
+	 * executing code with {@code exec}). The frame of a stable module does not
+	 * change during a call, so that it is restored from the caller when the
+	 * call returns (see {@link #onCallReturn(Namespaces, ProgramPoint)}).
+	 *
+	 * @param module the name of the module
+	 *
+	 * @return the updated namespaces
+	 */
+	public Namespaces withStable(
+			String module) {
+		if (isBottom() || isTop() || stable.contains(module))
+			return this;
+		Set<String> st = new HashSet<>(stable);
+		st.add(module);
+		return mk(modules, locals, saved, st);
+	}
+
+	/**
+	 * Yields whether the given module is stable (see
+	 * {@link #withStable(String)}).
+	 *
+	 * @param module the name of the module
+	 *
+	 * @return whether the module is stable
+	 */
+	public boolean isStable(
+			String module) {
+		return stable.contains(module);
+	}
+
+	/**
+	 * Yields the namespaces after returning from a call, given that these are
+	 * the namespaces at the end of the callee, and the given ones are the ones
+	 * of the caller before the call. The locals (and the saved frames of the
+	 * callers) are the ones of the caller, that cannot be modified by the
+	 * callee, as the frames of the stable modules (see
+	 * {@link #withStable(String)}). The frames of the other modules are the
+	 * ones of the callee, that might have bound or deleted their globals.<br>
+	 * <br>
+	 * Restoring these frames from the caller avoids the loss of precision due
+	 * to the callee's results being shared by different calling contexts (e.g.
+	 * with a limited context sensitivity), where the same globals might be
+	 * bound or not.
+	 */
+	@Override
+	public Namespaces onCallReturn(
+			Namespaces caller,
+			ProgramPoint call)
+			throws SemanticException {
+		if (isBottom() || isTop() || caller.isBottom() || caller.isTop())
+			return this;
+		Map<String, Frame> mods = new HashMap<>();
+		for (String module : moduleNames(caller))
+			mods.put(module, (caller.stable.contains(module) ? caller : this).getModule(module));
+		Set<String> st = new HashSet<>(stable);
+		st.retainAll(caller.stable);
+		return mk(mods, caller.locals, caller.saved, st);
 	}
 
 	@Override
@@ -274,7 +353,7 @@ public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespa
 		Map<ScopeToken, Frame> s = new HashMap<>(saved);
 		Frame previous = s.get(token);
 		s.put(token, previous == null ? locals : previous.lub(locals));
-		return mk(modules, Frame.EMPTY, s);
+		return mk(modules, Frame.EMPTY, s, stable);
 	}
 
 	@Override
@@ -288,7 +367,7 @@ public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespa
 		Frame restored = s.remove(token);
 		// a missing frame should not happen: we soundly assume that any name
 		// might be bound
-		return mk(modules, restored == null ? Frame.TOP : restored, s);
+		return mk(modules, restored == null ? Frame.TOP : restored, s, stable);
 	}
 
 	@Override
@@ -303,7 +382,9 @@ public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespa
 			s.merge(e.getKey(), e.getValue(), (
 					f1,
 					f2) -> lub(f1, f2));
-		return mk(mods, locals.lub(other.locals), s);
+		Set<String> st = new HashSet<>(stable);
+		st.retainAll(other.stable);
+		return mk(mods, locals.lub(other.locals), s, st);
 	}
 
 	@Override
@@ -325,13 +406,17 @@ public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespa
 		for (Entry<ScopeToken, Frame> e : saved.entrySet())
 			if (other.saved.containsKey(e.getKey()))
 				s.put(e.getKey(), e.getValue().glb(other.saved.get(e.getKey())));
-		return mk(mods, locals.glb(other.locals), s);
+		Set<String> st = new HashSet<>(stable);
+		st.addAll(other.stable);
+		return mk(mods, locals.glb(other.locals), s, st);
 	}
 
 	@Override
 	public boolean lessOrEqualAux(
 			Namespaces other)
 			throws SemanticException {
+		if (!stable.containsAll(other.stable))
+			return false;
 		for (String module : moduleNames(other))
 			if (!getModule(module).lessOrEqual(other.getModule(module)))
 				return false;
@@ -385,7 +470,7 @@ public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespa
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(modules, locals, saved, isTop(), isBottom());
+		return Objects.hash(modules, locals, saved, stable, isTop(), isBottom());
 	}
 
 	@Override
@@ -398,7 +483,7 @@ public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespa
 		Namespaces other = (Namespaces) obj;
 		// top and bottom are singletons whose content is not meaningful
 		return isTop() == other.isTop() && isBottom() == other.isBottom() && modules.equals(other.modules)
-				&& locals.equals(other.locals) && saved.equals(other.saved);
+				&& locals.equals(other.locals) && saved.equals(other.saved) && stable.equals(other.stable);
 	}
 
 	@Override

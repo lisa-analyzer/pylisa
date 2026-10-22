@@ -308,6 +308,30 @@ public class SymtableBuilderTest {
 	}
 
 	@Test
+	public void globalsBoundOnlyByModuleCode() {
+		assertTrue(build(
+				"x = 1",
+				"def f():",
+				"    global y",
+				"    return x + y",
+				"class C:",
+				"    z = 2").globalsBoundOnlyByModule());
+		assertFalse(build(
+				"def f():",
+				"    global x",
+				"    x = 1").globalsBoundOnlyByModule());
+		assertFalse(build(
+				"def f():",
+				"    global x",
+				"    del x").globalsBoundOnlyByModule());
+		assertFalse(build(
+				"def f(s):",
+				"    exec(s)").globalsBoundOnlyByModule());
+		// exec at module level only affects the code of the module
+		assertTrue(build("exec('x = 1')").globalsBoundOnlyByModule());
+	}
+
+	@Test
 	public void lambdaParametersAreLocal() {
 		Symtable table = build(
 				"y = 1",

@@ -2,6 +2,7 @@ package it.unive.pylisa.cfg.expression;
 
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -26,8 +27,13 @@ import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.LocalImports;
+import it.unive.pylisa.analysis.namespaces.Binding;
+import it.unive.pylisa.analysis.namespaces.Namespaces;
 import it.unive.pylisa.cfg.expression.literal.PyFunctionLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyTypeLiteral;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyBuiltinNames;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.scoping.NameKind;
 import java.util.Collections;
 import java.util.HashSet;
@@ -46,13 +52,28 @@ import org.apache.commons.io.FilenameUtils;
  * are not affected by calls, while the other ones are {@link Variable}s local
  * to the function where they are used.<br>
  * <br>
- * When a global name is read, and it is not known in the analysis state, it
- * might denote something that is not tracked as a value of the namespace of the
- * module. Such cases are resolved statically, in this order:
+ * When the reference is evaluated in the namespace of its scope (see
+ * {@link #isChecked()}), reading the name depends on its binding status in the
+ * {@link Namespaces} of the analysis state:
+ * <ul>
+ * <li>if the name is bound, its value is read (a name imported from a local
+ * module, as {@code f} after {@code from m import f}, whose value is not known,
+ * is resolved as the global {@code f} of {@code m});</li>
+ * <li>if a global name is not bound, it is a builtin: a modeled builtin
+ * function is the function itself, any other builtin name (see
+ * {@link PyBuiltinNames}) has an unknown value, and any other name raises
+ * {@code NameError};</li>
+ * <li>if a local name is not bound, {@code UnboundLocalError} is raised;</li>
+ * <li>if the name might be bound or not, both cases are considered.</li>
+ * </ul>
+ * Names that refer to cells of enclosing functions ({@link NameKind#FREE}) are
+ * considered bound. When the binding status is not known (e.g. the reference is
+ * evaluated outside of its scope, or the analysis state does not contain the
+ * {@link Namespaces}), a global name that is not known in the state is resolved
+ * statically, in this order:
  * <ol>
- * <li>a name imported from a local module ({@code f} after
- * {@code from m import f}) is resolved as the global {@code f} of
- * {@code m};</li>
+ * <li>a name imported from a local module is resolved as the global of that
+ * module;</li>
  * <li>a class defined in the module is the class itself;</li>
  * <li>a function defined in the module, by a single {@code def} executed once
  * (see {@link PyBinaryDispatch#DEFINED_ONCE}), is the function itself;</li>
@@ -91,6 +112,9 @@ public class PyNameRef extends VariableRef {
 	// module m)
 	private final String text;
 
+	// whether the reference is evaluated in the namespace of its scope
+	private final boolean checked;
+
 	/**
 	 * Builds the reference.
 	 *
@@ -104,6 +128,8 @@ public class PyNameRef extends VariableRef {
 	 *                     import ({@code from m import name}), or {@code null}
 	 * @param target   whether this is the target of a binding (e.g. of an
 	 *                     assignment), that is never resolved statically
+	 * @param checked  whether the reference is evaluated in the namespace of
+	 *                     its scope (see {@link #isChecked()})
 	 */
 	public PyNameRef(
 			CFG cfg,
@@ -113,8 +139,9 @@ public class PyNameRef extends VariableRef {
 			String module,
 			String unit,
 			LocalImports.Member imported,
-			boolean target) {
-		this(cfg, location, name, kind, module, unit, imported, target, name);
+			boolean target,
+			boolean checked) {
+		this(cfg, location, name, kind, module, unit, imported, target, checked, name);
 	}
 
 	/**
@@ -132,6 +159,8 @@ public class PyNameRef extends VariableRef {
 	 *                     import ({@code from m import name}), or {@code null}
 	 * @param target   whether this is the target of a binding (e.g. of an
 	 *                     assignment), that is never resolved statically
+	 * @param checked  whether the reference is evaluated in the namespace of
+	 *                     its scope (see {@link #isChecked()})
 	 * @param text     the text of the reference in the program
 	 */
 	public PyNameRef(
@@ -143,6 +172,7 @@ public class PyNameRef extends VariableRef {
 			String unit,
 			LocalImports.Member imported,
 			boolean target,
+			boolean checked,
 			String text) {
 		super(cfg, location, name);
 		this.kind = kind;
@@ -150,6 +180,7 @@ public class PyNameRef extends VariableRef {
 		this.unit = unit;
 		this.imported = imported;
 		this.target = target;
+		this.checked = checked;
 		this.text = text;
 	}
 
@@ -183,6 +214,103 @@ public class PyNameRef extends VariableRef {
 	 */
 	public boolean isTarget() {
 		return target;
+	}
+
+	/**
+	 * Yields whether this reference is evaluated in the namespace of its scope,
+	 * so that the binding status of the name (see {@link Namespaces}) is the
+	 * one of the namespace where it is evaluated. This does not hold, for
+	 * instance, for the references inside default values of parameters (that
+	 * are evaluated in the cfg of the function, but belong to the enclosing
+	 * scope), and for the references to the globals of other modules.
+	 *
+	 * @return whether the reference is evaluated in the namespace of its scope
+	 */
+	public boolean isChecked() {
+		return checked;
+	}
+
+	/**
+	 * Yields the binding status of the name in the given state.
+	 *
+	 * @param state the state
+	 *
+	 * @return the status, or {@code null} if it is not known (see
+	 *             {@link PyNameRef})
+	 */
+	public Binding status(
+			AnalysisState<?> state) {
+		if (!checked || kind == NameKind.FREE)
+			return null;
+		Namespaces namespaces = Namespaces.of(state);
+		return namespaces == null ? null : namespaces.status(module, getName(), kind.isGlobal());
+	}
+
+	/**
+	 * Yields a copy of the given state where the name is bound.
+	 *
+	 * @param <A>   the kind of {@link AbstractLattice} of the state
+	 * @param state the state
+	 *
+	 * @return the updated state
+	 */
+	public <A extends AbstractLattice<A>> AnalysisState<A> bind(
+			AnalysisState<A> state) {
+		Namespaces namespaces = Namespaces.of(state);
+		if (!checked || kind == NameKind.FREE || namespaces == null || state.getExecutionState().isBottom())
+			return state;
+		return Namespaces.store(state, namespaces.bind(module, getName(), kind.isGlobal()));
+	}
+
+	/**
+	 * Yields a copy of the given state where the name is not bound.
+	 *
+	 * @param <A>   the kind of {@link AbstractLattice} of the state
+	 * @param state the state
+	 *
+	 * @return the updated state
+	 */
+	public <A extends AbstractLattice<A>> AnalysisState<A> unbind(
+			AnalysisState<A> state) {
+		Namespaces namespaces = Namespaces.of(state);
+		if (!checked || kind == NameKind.FREE || namespaces == null || state.getExecutionState().isBottom())
+			return state;
+		return Namespaces.store(state, namespaces.unbind(module, getName(), kind.isGlobal()));
+	}
+
+	/**
+	 * Raises the error of reading or deleting the name when it is not bound:
+	 * {@code NameError} for global names, {@code UnboundLocalError} for local
+	 * ones.
+	 *
+	 * @param <A>      the kind of {@link AbstractLattice} of the state
+	 * @param <D>      the kind of {@link AbstractDomain} of the analysis
+	 * @param analysis the analysis
+	 * @param state    the state
+	 *
+	 * @return the state where the error has been raised
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unboundError(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state)
+			throws SemanticException {
+		return PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
+				kind.isGlobal() ? LibrarySpecificationProvider.NAME_ERROR
+						: LibrarySpecificationProvider.UNBOUND_LOCAL_ERROR);
+	}
+
+	/**
+	 * Yields whether the name, when it is global and not bound in the module,
+	 * is a builtin (see {@link PyBuiltinNames}), so that reading or calling it
+	 * does not raise {@code NameError}.
+	 *
+	 * @return whether the name is a builtin one
+	 */
+	public boolean isBuiltin() {
+		return kind.isGlobal()
+				&& (builtin(getCFG().getProgram(), getName()) != null || PyBuiltinNames.isBuiltin(getName()));
 	}
 
 	/**
@@ -223,20 +351,77 @@ public class PyNameRef extends VariableRef {
 			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		if (target || !kind.isGlobal() || entryState.getExecutionState().isBottom()
+		if (target)
+			return super.forwardSemantics(entryState, interprocedural, expressions);
+
+		Binding status = status(entryState);
+		if (status == null)
+			return staticRead(entryState, interprocedural, expressions);
+
+		AnalysisState<A> result = entryState.bottomExecution();
+		if (status == Binding.BOTTOM || status.mightBeBound())
+			result = result.lub(boundRead(entryState, interprocedural, expressions));
+		if (status.mightBeUnbound())
+			result = result.lub(unboundRead(entryState, interprocedural, expressions));
+		return result;
+	}
+
+	// reads the name when it is bound
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> boundRead(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		if (imported != null && !entryState.getExecutionState().isBottom()
+				&& !entryState.knowsIdentifier(getIdentifier()))
+			// bound by from m import f, but its value is not known
+			return importedRef().forwardSemantics(entryState, interprocedural, expressions);
+		return super.forwardSemantics(entryState, interprocedural, expressions);
+	}
+
+	// reads the name when it is not bound
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unboundRead(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		if (kind.isGlobal()) {
+			NativeCFG builtin = builtin(getCFG().getProgram(), getName());
+			if (builtin != null)
+				return new PyFunctionLiteral(getCFG(), getLocation(), builtin)
+						.forwardSemantics(entryState, interprocedural, expressions);
+			if (PyBuiltinNames.isBuiltin(getName()))
+				// a builtin that is not modeled: its value is unknown
+				return super.forwardSemantics(entryState, interprocedural, expressions);
+		}
+		return unboundError(interprocedural.getAnalysis(), entryState);
+	}
+
+	// reads the name when its binding status is not known
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> staticRead(
+			AnalysisState<A> entryState,
+			InterproceduralAnalysis<A, D> interprocedural,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		if (!kind.isGlobal() || entryState.getExecutionState().isBottom()
 				|| entryState.knowsIdentifier(getIdentifier()))
 			return super.forwardSemantics(entryState, interprocedural, expressions);
 
 		if (imported != null)
 			// the global of the module the name is imported from
-			return new PyNameRef(getCFG(), getLocation(), imported.name(), NameKind.GLOBAL_EXPLICIT,
-					imported.module(), imported.unit(), null, false)
-							.forwardSemantics(entryState, interprocedural, expressions);
+			return importedRef().forwardSemantics(entryState, interprocedural, expressions);
 
 		Expression value = staticValue();
 		if (value == null)
 			return super.forwardSemantics(entryState, interprocedural, expressions);
 		return value.forwardSemantics(entryState, interprocedural, expressions);
+	}
+
+	// the reference to the global of the local module the name is imported
+	// from, whose binding status is not known
+	private PyNameRef importedRef() {
+		return new PyNameRef(getCFG(), getLocation(), imported.name(), NameKind.GLOBAL_EXPLICIT, imported.module(),
+				imported.unit(), null, false, false);
 	}
 
 	// the value of the name when it is not tracked by the analysis, if any
@@ -264,8 +449,7 @@ public class PyNameRef extends VariableRef {
 		if (!kind.isGlobal())
 			return null;
 		if (imported != null)
-			return new PyNameRef(getCFG(), getLocation(), imported.name(), NameKind.GLOBAL_EXPLICIT,
-					imported.module(), imported.unit(), null, false).getStaticClass();
+			return importedRef().getStaticClass();
 		return localClass();
 	}
 
@@ -365,7 +549,7 @@ public class PyNameRef extends VariableRef {
 
 	@Override
 	public int hashCode() {
-		return 31 * super.hashCode() + Objects.hash(kind, module, unit, imported, target, text);
+		return 31 * super.hashCode() + Objects.hash(kind, module, unit, imported, target, checked, text);
 	}
 
 	@Override
@@ -378,7 +562,8 @@ public class PyNameRef extends VariableRef {
 		if (getClass() != obj.getClass())
 			return false;
 		PyNameRef other = (PyNameRef) obj;
-		return kind == other.kind && target == other.target && Objects.equals(module, other.module)
+		return kind == other.kind && target == other.target && checked == other.checked
+				&& Objects.equals(module, other.module)
 				&& Objects.equals(unit, other.unit) && Objects.equals(imported, other.imported)
 				&& Objects.equals(text, other.text);
 	}

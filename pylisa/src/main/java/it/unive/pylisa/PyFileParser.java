@@ -149,9 +149,9 @@ public class PyFileParser
 		NodeList<CFG, Statement, Edge> list = new NodeList<>(new SequentialEdge());
 		Collection<Statement> entrypoints = new HashSet<>();
 		// side effects on entrypoints and matrix will affect the cfg
-		PyCFG cfg = new PyCFG(descriptor, entrypoints, list);
-		ControlFlowTracker control = new ControlFlowTracker();
 		Symtable symtable = SymtableBuilder.build(filePath, module, ctx);
+		PyCFG cfg = new PyCFG(descriptor, entrypoints, list, symtable.getModuleScope());
+		ControlFlowTracker control = new ControlFlowTracker();
 		PyStatementParser parser = new PyStatementParser(program, filePath, rootUnit, cfg, control, imports,
 				symtable);
 		ParsedBlock r;
@@ -167,7 +167,8 @@ public class PyFileParser
 		list.mergeWith(r.getBody());
 		// the namespaces must be part of all the states of the module
 		PyNamespacesInit init = new PyNamespacesInit(cfg,
-				new DerivedLocation(getLocation(filePath, ctx), "init-namespaces"));
+				new DerivedLocation(getLocation(filePath, ctx), "init-namespaces"), module,
+				symtable.globalsBoundOnlyByModule());
 		list.addNode(init);
 		list.addEdge(new SequentialEdge(init, r.getBegin()));
 		entrypoints.add(init);

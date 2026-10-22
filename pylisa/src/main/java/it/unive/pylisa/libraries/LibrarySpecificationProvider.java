@@ -60,6 +60,8 @@ public class LibrarySpecificationProvider {
 	public static final String LOOKUP_ERROR = "LookupError";
 	public static final String KEY_ERROR = "KeyError";
 	public static final String ASSERTION_ERROR = "AssertionError";
+	public static final String NAME_ERROR = "NameError";
+	public static final String UNBOUND_LOCAL_ERROR = "UnboundLocalError";
 	public static final String FLOATING_POINT_ERROR = "FloatingPointError";
 	public static final String UNICODE_DECODE_ERROR = "UnicodeDecodeError";
 	public static final String UNICODE_ENCODE_ERROR = "UnicodeEncodeError";

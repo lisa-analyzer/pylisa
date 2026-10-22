@@ -16,9 +16,12 @@ import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.analysis.namespaces.Namespaces;
+import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.symbolic.PyMissingConstant;
 import it.unive.pylisa.symbolic.PyNoneConstant;
@@ -250,6 +253,43 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 			result = result.lub(ifTyped);
 		if (typed != Satisfiability.SATISFIED)
 			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+		return result;
+	}
+
+	/**
+	 * Yields a copy of the given state where the code of the module of this
+	 * native's call might have bound or deleted any global name, if the given
+	 * dictionary of globals is not passed or {@code None} (as for
+	 * {@code exec(source)}, that executes {@code source} in the namespace of
+	 * the module): the namespace of the module is havocked (see
+	 * {@link Namespaces#havocModule(String)}), and the values of its globals
+	 * are forgotten.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param globals  the dictionary of globals passed to the native
+	 *
+	 * @return the updated state
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> havocGlobals(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression globals)
+			throws SemanticException {
+		if (state.getExecutionState().isBottom()
+				|| (!missing(globals) && hasType(analysis, state, globals, NONE) == Satisfiability.NOT_SATISFIED))
+			// an explicit dictionary of globals
+			return state;
+		String module = PyCFG.moduleOf(getCFG());
+		// the globals of the module (or of any module, if it is not known)
+		String prefix = module == null ? null : module + ".";
+		AnalysisState<A> result = state.forgetIdentifiersIf(
+				id -> id instanceof GlobalVariable && (prefix == null || id.getName().startsWith(prefix)), st);
+		Namespaces namespaces = Namespaces.of(result);
+		if (namespaces != null && module != null)
+			result = Namespaces.store(result, namespaces.havocModule(module));
 		return result;
 	}
 

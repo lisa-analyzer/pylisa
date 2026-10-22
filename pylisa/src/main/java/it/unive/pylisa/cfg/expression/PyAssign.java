@@ -197,14 +197,23 @@ public class PyAssign extends Assignment {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		AnalysisState<A> result;
 		if (left instanceof Identifier && left.equals(right))
 			// x = x (e.g. x |= y, where __ior__ returns x itself) does not
 			// change anything, while assigning would lose what is known about
 			// the object x points to, as the heap drops it when x is unbound
-			return interprocedural.getAnalysis().smallStepSemantics(state, left, this);
+			result = interprocedural.getAnalysis().smallStepSemantics(state, left, this);
+		else
+			// tuple targets are unpacked by unpackAssignment
+			result = super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
+		return bind(getLeft(), result);
+	}
 
-		// tuple targets are unpacked by unpackAssignment
-		return super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
+	// binds the name of the target, if it is a name (see PyNameRef)
+	private static <A extends AbstractLattice<A>> AnalysisState<A> bind(
+			Expression target,
+			AnalysisState<A> state) {
+		return target instanceof PyNameRef ? ((PyNameRef) target).bind(state) : state;
 	}
 
 	// a, b = value: the value is evaluated, and unpacked into the targets
@@ -247,7 +256,7 @@ public class PyAssign extends Assignment {
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		if (target instanceof VariableRef)
-			return analysis.assign(state, ((VariableRef) target).getIdentifier(), value, this);
+			return bind(target, analysis.assign(state, ((VariableRef) target).getIdentifier(), value, this));
 		if (target instanceof PyAttributeAccess) {
 			// o.x is evaluated as the target of the assignment
 			AnalysisState<A> evaluated = target.forwardSemantics(state, interprocedural, expressions);

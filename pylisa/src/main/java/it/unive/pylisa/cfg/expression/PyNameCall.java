@@ -20,6 +20,7 @@ import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.EvaluationOrder;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.analysis.namespaces.Binding;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.HashSet;
@@ -38,6 +39,9 @@ public class PyNameCall extends UnresolvedCall {
 	// the identifier the called name resolves to
 	private final Identifier callee;
 
+	// the reference to the called name, if it is a name of the program
+	private final PyNameRef ref;
+
 	/**
 	 * Builds the call.
 	 *
@@ -46,6 +50,10 @@ public class PyNameCall extends UnresolvedCall {
 	 * @param name       the name being called
 	 * @param callee     the identifier the called name resolves to (see
 	 *                       {@link PyNameRef#getIdentifier()})
+	 * @param ref        the reference to the called name, used for its binding
+	 *                       status (see {@link PyNameRef#status}), or
+	 *                       {@code null} if the name is always bound (e.g. a
+	 *                       variable of a comprehension)
 	 * @param order      the evaluation order of the parameters
 	 * @param parameters the parameters of the call
 	 */
@@ -54,14 +62,45 @@ public class PyNameCall extends UnresolvedCall {
 			CodeLocation location,
 			String name,
 			Identifier callee,
+			PyNameRef ref,
 			EvaluationOrder order,
 			Expression... parameters) {
 		super(cfg, location, CallType.STATIC, null, name, order, parameters);
 		this.callee = callee;
+		this.ref = ref;
 	}
 
+	/**
+	 * Calls the name. If the name is bound, the value it holds is called (see
+	 * {@link #boundCall}). If it is not bound, and it is a builtin (see
+	 * {@link PyNameRef#isBuiltin()}), the call is resolved by name (e.g. to the
+	 * native modeling the builtin), otherwise {@code NameError} or
+	 * {@code UnboundLocalError} is raised.
+	 */
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		Binding status = ref == null ? null : ref.status(state);
+		if (status == null || status == Binding.BOTTOM || status == Binding.BOUND)
+			return boundCall(interprocedural, state, params, expressions);
+
+		AnalysisState<A> result = state.bottomExecution();
+		if (status.mightBeBound())
+			result = result.lub(boundCall(interprocedural, state, params, expressions));
+		if (ref.isBuiltin())
+			result = result.lub(super.forwardSemanticsAux(interprocedural, state, params, expressions));
+		else
+			result = result.lub(ref.unboundError(interprocedural.getAnalysis(), state));
+		return result;
+	}
+
+	// calls the name, when it is bound: if its value is known, the functions
+	// it holds are called, otherwise the call is resolved by name
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> boundCall(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
