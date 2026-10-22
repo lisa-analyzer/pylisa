@@ -19,8 +19,10 @@ import it.unive.lisa.util.frontend.ControlFlowTracker;
 import it.unive.lisa.util.frontend.ParsedBlock;
 import it.unive.pylisa.antlr.PythonParser.File_inputContext;
 import it.unive.pylisa.antlr.PythonParserBaseVisitor;
+import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.PyParameter;
+import it.unive.pylisa.cfg.statement.PyNamespacesInit;
 import it.unive.pylisa.scoping.Symtable;
 import it.unive.pylisa.scoping.SymtableBuilder;
 import java.io.IOException;
@@ -139,7 +141,12 @@ public class PyFileParser
 			r = TimerLogger.execSupplier(log, "Parsing statement list of " + filePath,
 					() -> parser.visitStatements(ctx.statements()));
 		list.mergeWith(r.getBody());
-		entrypoints.add(r.getBegin());
+		// the namespaces must be part of all the states of the module
+		PyNamespacesInit init = new PyNamespacesInit(cfg,
+				new DerivedLocation(getLocation(filePath, ctx), "init-namespaces"));
+		list.addNode(init);
+		list.addEdge(new SequentialEdge(init, r.getBegin()));
+		entrypoints.add(init);
 		Function<String, ParsingException> factory = (
 				msg) -> new ParsingException(
 						"parse error",
