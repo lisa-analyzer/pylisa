@@ -72,12 +72,16 @@ public class PyCodeMemberParser
 	// PyStatementParser#visitFunction_def)
 	private final boolean staticMethod;
 
+	// the name of the cfg, if it is not the one of the function (e.g. for a
+	// decorated function, see PyStatementParser#visitFunction_def)
+	private final String name;
+
 	public PyCodeMemberParser(
 			String filePath,
 			Program program,
 			Unit unit,
 			LocalImports imports) {
-		this(filePath, program, unit, imports, false);
+		this(filePath, program, unit, imports, false, null);
 	}
 
 	public PyCodeMemberParser(
@@ -85,12 +89,14 @@ public class PyCodeMemberParser
 			Program program,
 			Unit unit,
 			LocalImports imports,
-			boolean staticMethod) {
+			boolean staticMethod,
+			String name) {
 		this.filePath = filePath;
 		this.program = program;
 		this.unit = unit;
 		this.imports = imports;
 		this.staticMethod = staticMethod;
+		this.name = name;
 	}
 
 	@Override
@@ -162,7 +168,7 @@ public class PyCodeMemberParser
 
 	private CodeMemberDescriptor buildCFGDescriptor(
 			Function_def_rawContext funcDecl) {
-		String funcName = funcDecl.name().getText();
+		String funcName = name != null ? name : funcDecl.name().getText();
 
 		PyParameter[] cfgArgs = funcDecl.params() != null
 				? visitParameters(funcDecl.params().parameters())

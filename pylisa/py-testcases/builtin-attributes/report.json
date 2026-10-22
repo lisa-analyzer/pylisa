@@ -1,0 +1,52 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/builtin-attributes/builtin-attributes.py':12:4] on 'untyped py-testcases/builtin-attributes/builtin-attributes::$main()': [EXPRESSION] TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/builtin-attributes/builtin-attributes.py':12:4"
+  }, {
+    "message" : "['py-testcases/builtin-attributes/builtin-attributes.py':15:4] on 'untyped py-testcases/builtin-attributes/builtin-attributes::$main()': [EXPRESSION] TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/builtin-attributes/builtin-attributes.py':15:4"
+  }, {
+    "message" : "['py-testcases/builtin-attributes/builtin-attributes.py':21:8] on 'untyped py-testcases/builtin-attributes/builtin-attributes::$main()': [EXPRESSION] TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/builtin-attributes/builtin-attributes.py':21:8"
+  }, {
+    "message" : "['py-testcases/builtin-attributes/builtin-attributes.py':6:4] on 'untyped py-testcases/builtin-attributes/builtin-attributes::$main()': [EXPRESSION] TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/builtin-attributes/builtin-attributes.py':6:4"
+  }, {
+    "message" : "['py-testcases/builtin-attributes/builtin-attributes.py':9:4] on 'untyped py-testcases/builtin-attributes/builtin-attributes::$main()': [EXPRESSION] TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/builtin-attributes/builtin-attributes.py':9:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_K.m(K__self)_-1384361233.graph.json", "untyped_py-testcases_builtin-attributes_builtin-attributes.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "4",
+    "duration" : "143ms",
+    "end" : "2026-10-21T21:54:04.324+02:00",
+    "expressions" : "44",
+    "files" : "2",
+    "globals" : "0",
+    "members" : "171",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-21T21:54:04.181+02:00",
+    "statements" : "29",
+    "units" : "37",
+    "version" : "1.0",
+    "warnings" : "5"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/builtin-attributes"
+  }
+}

@@ -9,6 +9,12 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
+import java.util.List;
+import it.unive.lisa.symbolic.value.PushAny;
+import it.unive.lisa.program.annotations.values.StringAnnotationValue;
+import it.unive.lisa.program.annotations.AnnotationMember;
+import it.unive.lisa.program.annotations.Annotation;
+import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.NativeCFG;
@@ -71,7 +77,8 @@ public class PyNameCall extends UnresolvedCall {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Variable callee = new Variable(Untyped.INSTANCE, getTargetName(), getLocation());
 		if (!state.knowsIdentifier(callee))
-			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
+			// e.g. a function of the module, called inside another function
+			return byName(interprocedural, state, params, expressions);
 
 		Set<CFG> cfgs = new HashSet<>();
 		Set<NativeCFG> natives = new HashSet<>();
@@ -79,7 +86,7 @@ public class PyNameCall extends UnresolvedCall {
 		Set<Type> types = analysis.getRuntimeTypesOf(state, callee, this);
 		if (PyBinaryDispatch.unknownTypes(types, this))
 			// e.g. a library function (as in f = len), whose type is unknown
-			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
+			return byName(interprocedural, state, params, expressions);
 		for (Type t : types)
 			if (BoundMethods.isBoundMethod(t))
 				bound = true;
@@ -99,7 +106,7 @@ public class PyNameCall extends UnresolvedCall {
 
 		if (cfgs.isEmpty() && natives.isEmpty() && !notCallable && !bound)
 			// not a variable holding functions
-			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
+			return byName(interprocedural, state, params, expressions);
 
 		AnalysisState<A> result = state.bottomExecution();
 		if (notCallable)
@@ -115,8 +122,28 @@ public class PyNameCall extends UnresolvedCall {
 					this, expressions, getMetaVariables()));
 		if (others)
 			// the variable might also hold something else
-			result = result.lub(super.forwardSemanticsAux(interprocedural, state, params, expressions));
+			result = result.lub(byName(interprocedural, state, params, expressions));
 		return result;
+	}
+
+	// the call of the function with the name of the call (e.g. a def of the
+	// module): if it is the name of a decorated function, the name is bound to
+	// the value returned by the decorator, that is not known here (e.g. inside
+	// another function, or when the decorator is not known), and the call is
+	// code that is not known
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> byName(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		AnalysisState<A> result = super.forwardSemanticsAux(interprocedural, state, params, expressions);
+		if (!decorated(getProgram(), getTargetName()))
+			return result;
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		return result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()), this))
+				.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
+						LibrarySpecificationProvider.EXCEPTION));
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> call(
@@ -129,5 +156,40 @@ public class PyNameCall extends UnresolvedCall {
 		AnalysisState<A> result = call.forwardSemanticsAux(interprocedural, state, params, expressions);
 		getMetaVariables().addAll(call.getMetaVariables());
 		return result;
+	}
+
+	/**
+	 * The annotation of the cfg of a decorated function (that is not named as
+	 * the function, see {@code PyStatementParser#visitFunction_def}).
+	 */
+	public static final String DECORATED = "pylisa.decorated_function";
+
+	/**
+	 * Builds the annotation of the cfg of the decorated function with the given
+	 * name.
+	 *
+	 * @param name the name of the function
+	 *
+	 * @return the annotation
+	 */
+	public static Annotation decorated(
+			String name) {
+		// not propagated by LiSA to overriding members
+		return new Annotation(DECORATED, List.of(new AnnotationMember(DECORATED, new StringAnnotationValue(name))),
+				true);
+	}
+
+	// whether the program has a decorated function with the given name
+	private static boolean decorated(
+			Program program,
+			String name) {
+		for (CFG cfg : program.getAllCFGs())
+			for (Annotation ann : cfg.getDescriptor().getAnnotationList())
+				if (ann.getAnnotationName().equals(DECORATED))
+					for (AnnotationMember member : ann.getAnnotationMembers())
+						// toString is the getter of the value
+						if (member.getValue().toString().equals(name))
+							return true;
+		return false;
 	}
 }

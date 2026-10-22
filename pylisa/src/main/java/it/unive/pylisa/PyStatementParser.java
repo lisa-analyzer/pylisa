@@ -1041,12 +1041,42 @@ public class PyStatementParser
 			// def f(...) binds f to the function, that can then be assigned to
 			// other variables and called through them
 			SourceCodeLocation loc = getLocation(filePath, ctx);
-			PyAssign bind = new PyAssign(currentCFG, loc,
-					new VariableRef(currentCFG, loc, fun.getDescriptor().getName()),
-					new PyFunctionLiteral(currentCFG, loc, fun));
 			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+			Expression value = new PyFunctionLiteral(currentCFG, loc, fun);
+			Statement begin = null, last = null;
+			if (ctx.function_def().decorators() != null) {
+				// @d1 @d2 def f: the decorators are evaluated top-down before
+				// the function is created, then applied bottom-up, and f is
+				// bound to the result, as f = d1(d2(<function>))
+				List<Named_expressionContext> decorators = ctx.function_def().decorators().named_expression();
+				List<String> temps = new ArrayList<>();
+				for (Named_expressionContext decorator : decorators) {
+					SourceCodeLocation dloc = getLocation(filePath, decorator);
+					String temp = "$decorator@" + dloc.getLine() + ":" + dloc.getCol();
+					temps.add(temp);
+					Assignment evaluate = new Assignment(currentCFG, dloc,
+							new VariableRef(currentCFG, new DerivedLocation(dloc, "decorator"), temp),
+							visitNamed_expression(decorator));
+					block.addNode(evaluate);
+					if (last != null)
+						block.addEdge(new SequentialEdge(last, evaluate));
+					else
+						begin = evaluate;
+					last = evaluate;
+				}
+				for (int i = decorators.size() - 1; i >= 0; i--) {
+					SourceCodeLocation dloc = getLocation(filePath, decorators.get(i));
+					value = new PyValueCall(currentCFG, new DerivedLocation(dloc, "decoration"),
+							new VariableRef(currentCFG, new DerivedLocation(dloc, "decorator use"), temps.get(i)),
+							value);
+				}
+			}
+			PyAssign bind = new PyAssign(currentCFG, loc,
+					new VariableRef(currentCFG, loc, ctx.function_def().function_def_raw().name().getText()), value);
 			block.addNode(bind);
-			return new ParsedBlock(bind, block, bind);
+			if (last != null)
+				block.addEdge(new SequentialEdge(last, bind));
+			return new ParsedBlock(begin != null ? begin : bind, block, bind);
 		} else if (ctx.class_def() != null) {
 			if (currentUnit instanceof ClassUnit)
 				// the nested class would not be an attribute of the outer one
@@ -2875,24 +2905,32 @@ public class PyStatementParser
 		// (@staticmethod) or created (@abc.abstractmethod, see
 		// ClassBases)
 		boolean staticMethod = false, abstractMethod = false;
-		if (ctx.decorators() != null)
+		if (ctx.decorators() != null && currentUnit instanceof ClassUnit)
 			for (Named_expressionContext decorator : ctx.decorators().named_expression()) {
 				String name = decorator.getText();
-				if (currentUnit instanceof ClassUnit && name.equals("staticmethod") && !defined(name))
+				if (name.equals("staticmethod") && !defined(name))
 					staticMethod = true;
-				else if (currentUnit instanceof ClassUnit
-						&& (name.equals("abstractmethod") || name.equals("abc.abstractmethod"))
+				else if ((name.equals("abstractmethod") || name.equals("abc.abstractmethod"))
 						&& !defined("abstractmethod"))
 					abstractMethod = true;
 				else
-					throw new UnsupportedStatementException("decorators are not supported");
+					// the method would be the value returned by the decorator
+					throw new UnsupportedStatementException("decorators of methods are not supported");
 			}
+		// a decorated function (outside classes) is reachable only through
+		// the decorator (see visitCompound_stmt): its cfg must not be found by
+		// the name of the function
+		boolean decorated = ctx.decorators() != null && !(currentUnit instanceof ClassUnit);
+		String name = ctx.function_def_raw().name().getText();
+		SourceCodeLocation loc = getLocation(filePath, ctx);
 		PyCodeMemberParser parser = new PyCodeMemberParser(filePath, program, currentUnit, localImports,
-				staticMethod);
+				staticMethod, decorated ? name + "$decorated@" + loc.getLine() + ":" + loc.getCol() : null);
 		PyCFG cfg = parser.visitFunction_def_raw(ctx.function_def_raw());
 		if (abstractMethod)
 			// not propagated by LiSA to the methods overriding it
 			cfg.getDescriptor().addAnnotation(new Annotation(ClassBases.ABSTRACT, true));
+		if (decorated)
+			cfg.getDescriptor().addAnnotation(PyNameCall.decorated(name));
 		return cfg;
 	}
 

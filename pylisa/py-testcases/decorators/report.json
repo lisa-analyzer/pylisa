@@ -1,0 +1,58 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/decorators/decorators.py':113:4] on 'untyped py-testcases/decorators/decorators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/decorators/decorators.py':113:4"
+  }, {
+    "message" : "['py-testcases/decorators/decorators.py':98:4] on 'untyped py-testcases/decorators/decorators::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise FloatingPointError (uncaught FloatingPointError) at 'py-testcases/decorators/decorators.py':98:4"
+  }, {
+    "message" : "['py-testcases/decorators/decorators.py':98:4] on 'untyped py-testcases/decorators/decorators::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise ZeroDivisionError (uncaught ZeroDivisionError) at 'py-testcases/decorators/decorators.py':98:4"
+  }, {
+    "message" : "['py-testcases/decorators/decorators.py':98:4] on 'untyped py-testcases/decorators/decorators::$main()': [EXPRESSION] ASSERTIONS: code that is not known might raise AssertionError (uncaught AssertionError) at 'py-testcases/decorators/decorators.py':98:4"
+  }, {
+    "message" : "['py-testcases/decorators/decorators.py':98:4] on 'untyped py-testcases/decorators/decorators::$main()': [EXPRESSION] LOOKUP: code that is not known might raise IndexError (uncaught IndexError) at 'py-testcases/decorators/decorators.py':98:4"
+  }, {
+    "message" : "['py-testcases/decorators/decorators.py':98:4] on 'untyped py-testcases/decorators/decorators::$main()': [EXPRESSION] LOOKUP: code that is not known might raise KeyError (uncaught KeyError) at 'py-testcases/decorators/decorators.py':98:4"
+  }, {
+    "message" : "['py-testcases/decorators/decorators.py':98:4] on 'untyped py-testcases/decorators/decorators::$main()': [EXPRESSION] TYPING: code that is not known might raise AttributeError (uncaught AttributeError) at 'py-testcases/decorators/decorators.py':98:4"
+  }, {
+    "message" : "['py-testcases/decorators/decorators.py':98:4] on 'untyped py-testcases/decorators/decorators::$main()': [EXPRESSION] TYPING: code that is not known might raise TypeError (uncaught TypeError) at 'py-testcases/decorators/decorators.py':98:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_decorators_decorators.$main().graph.json", "untyped_py-testcases_decorators_decorators.d1(untyped_h)_1368839927.graph.json", "untyped_py-testcases_decorators_decorators.d1(untyped_h)_1368886055.graph.json", "untyped_py-testcases_decorators_decorators.d2(untyped_h)_1368840888.graph.json", "untyped_py-testcases_decorators_decorators.g2()_-622419482.graph.json", "untyped_py-testcases_decorators_decorators.g2()_-622421807.graph.json", "untyped_py-testcases_decorators_decorators.g2()_-622422272.graph.json", "untyped_py-testcases_decorators_decorators.g2()_-622422613.graph.json", "untyped_py-testcases_decorators_decorators.g2()_-622423109.graph.json", "untyped_py-testcases_decorators_decorators.ident(untyped_h)_1368898548.graph.json", "untyped_py-testcases_decorators_decorators.ident(untyped_h)_1368908158.graph.json", "untyped_py-testcases_decorators_decorators.make(untyped_n)_-622427480.graph.json", "untyped_py-testcases_decorators_decorators.make(untyped_n)_-622427728.graph.json", "untyped_py-testcases_decorators_decorators.maybe(untyped_h)_1368927378.graph.json", "untyped_py-testcases_decorators_decorators.q$decorated@65_0()_-622419482.graph.json", "untyped_py-testcases_decorators_decorators.r$decorated@78_0(untyped_x)_-622421156.graph.json", "untyped_py-testcases_decorators_decorators.t()_-622423574.graph.json", "untyped_py-testcases_decorators_decorators.wrap(untyped_h)_1368853381.graph.json", "untyped_py-testcases_decorators_decorators.wrap(untyped_h)_1368863952.graph.json", "untyped_py-testcases_decorators_decorators.wrap(untyped_h)_1368878367.graph.json" ],
+  "info" : {
+    "cfgs" : "18",
+    "duration" : "12ms",
+    "end" : "2026-10-21T21:38:32.920+02:00",
+    "expressions" : "123",
+    "files" : "20",
+    "globals" : "0",
+    "members" : "185",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-21T21:38:32.908+02:00",
+    "statements" : "59",
+    "units" : "36",
+    "version" : "1.0",
+    "warnings" : "8"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/decorators"
+  }
+}

@@ -28,6 +28,7 @@ import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.PyMro;
+import it.unive.pylisa.libraries.BuiltinAttributes;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.dicts.DictModel;
@@ -147,11 +148,19 @@ public class PyMethodCall extends UnresolvedCall {
 			return result;
 
 		Set<Type>[] types = parameterTypes(expressions, analysis);
+		boolean known = !PyBinaryDispatch.unknownTypes(receiverTypes, this);
 		for (Type t : valueTypes) {
 			types[0] = Set.of(t);
 			Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, state, this,
 					PyBinaryDispatch.classOf(t), getTargetName(), getParameters(), types);
-			if (resolved == null)
+			if (resolved == null && known
+					&& BuiltinAttributes.missing(PyBinaryDispatch.classOf(t), getTargetName()))
+				// the values of the class have no such attribute (e.g.
+				// (5).strip()), if the receiver is known to be of that class
+				// (not just any value)
+				result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
+						LibrarySpecificationProvider.ATTRIBUTE_ERROR));
+			else if (resolved == null)
 				// the method is not modeled
 				result = result.lub(analysis.smallStepSemantics(state,
 						new PushAny(Untyped.INSTANCE, getLocation()), this));

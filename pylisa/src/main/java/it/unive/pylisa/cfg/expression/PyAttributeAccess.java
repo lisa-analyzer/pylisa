@@ -31,6 +31,7 @@ import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.PyClassAttributes.ClassAttribute;
+import it.unive.pylisa.libraries.BuiltinAttributes;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.HashSet;
@@ -168,14 +169,26 @@ public class PyAttributeAccess extends UnaryExpression {
 			// the methods of builtin values, read without calling them (e.g.
 			// "a".upper): bound methods
 			Set<CodeMember> valueMethods = new HashSet<>();
-			boolean unknown = types.isEmpty() || isWriteTarget();
+			boolean unknown = types.isEmpty() || isWriteTarget(), missingAttribute = false;
+			boolean known = !PyBinaryDispatch.unknownTypes(types, this);
 			if (!unknown)
 				for (Type t : types)
 					if (!t.isPointerType() || !t.asPointerType().getInnerType().isUnitType()) {
+						if (known && PyBinaryDispatch.isBuiltinValueType(t)
+								&& BuiltinAttributes.missing(PyBinaryDispatch.classOf(t), name)) {
+							// the values of the class have no such attribute
+							// (e.g. (5).strip), if the value is known to be
+							// of that class (not just any value)
+							missingAttribute = true;
+							continue;
+						}
 						Set<CodeMember> m = BoundMethods.methods(getProgram(), t, name);
 						valueMethods.addAll(m);
 						unknown |= m.isEmpty();
 					}
+			if (missingAttribute)
+				result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, thrower,
+						LibrarySpecificationProvider.ATTRIBUTE_ERROR));
 			if (!valueMethods.isEmpty())
 				result = result
 						.lub(BoundMethods.create(analysis, state, expr, valueMethods, this, getMetaVariables()));
