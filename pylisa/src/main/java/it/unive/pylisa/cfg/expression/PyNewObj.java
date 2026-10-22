@@ -11,9 +11,11 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
+import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.Statement;
@@ -33,8 +35,10 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.symbolic.PyNoneConstant;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class PyNewObj extends NaryExpression {
@@ -63,6 +67,29 @@ public class PyNewObj extends NaryExpression {
 
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemanticsAux(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		Type type = getStaticType();
+		// an abstract class cannot be instantiated
+		Satisfiability isAbstract = type.isUnitType() && type.asUnitType().getUnit() instanceof ClassUnit
+				? ClassBases.isAbstract(getProgram(), (ClassUnit) type.asUnitType().getUnit())
+				: Satisfiability.NOT_SATISFIED;
+		if (isAbstract == Satisfiability.SATISFIED)
+			return PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
+					LibrarySpecificationProvider.TYPE_ERROR);
+		AnalysisState<A> created = create(interprocedural, state, params, expressions);
+		if (isAbstract == Satisfiability.UNKNOWN)
+			created = created.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
+					LibrarySpecificationProvider.TYPE_ERROR));
+		return created;
+	}
+
+	// creates the object, and initializes it with __init__
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> create(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
@@ -100,7 +127,9 @@ public class PyNewObj extends NaryExpression {
 		ExpressionSet[] fullParams = ArrayUtils.insert(0, params, callstate.getExecutionExpressions());
 		expressions.put(paramThis, tmp);
 
-		UnresolvedCall call = new UnresolvedCall(getCFG(), getLocation(), CallType.INSTANCE, type.toString(),
+		// __init__ is looked up through the receiver, also in the bases of
+		// the class (see PyMro)
+		UnresolvedCall call = new UnresolvedCall(getCFG(), getLocation(), CallType.INSTANCE, null,
 				getConstructName(), fullExpressions);
 		Call resolved;
 		try {
@@ -124,13 +153,21 @@ public class PyNewObj extends NaryExpression {
 				return PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
 						LibrarySpecificationProvider.TYPE_ERROR);
 			}
+			// no class defines __init__: object.__init__ is called, that does
+			// nothing and returns None
+			resolved = null;
 		}
 
-		AnalysisState<A> sem = resolved.forwardSemanticsAux(interprocedural, tmp, fullParams, expressions);
-		call.getMetaVariables().addAll(resolved.getMetaVariables());
+		AnalysisState<A> sem;
+		if (resolved == null)
+			sem = analysis.smallStepSemantics(tmp, new PyNoneConstant(getLocation()), this);
+		else {
+			sem = resolved.forwardSemanticsAux(interprocedural, tmp, fullParams, expressions);
+			call.getMetaVariables().addAll(resolved.getMetaVariables());
+		}
 
 		// __init__ must return None
-		Satisfiability none = returnsNone(analysis, sem, resolved);
+		Satisfiability none = returnsNone(analysis, sem, resolved, this);
 
 		if (!call.getMetaVariables().isEmpty())
 			sem = sem.forgetIdentifiers(call.getMetaVariables(), this);
@@ -158,12 +195,14 @@ public class PyNewObj extends NaryExpression {
 		return result.lub(badReturn);
 	}
 
-	// whether the value returned by the resolved __init__ is None; the result
-	// of an open call is not known, but it is not checked
+	// whether the value returned by the resolved __init__ (null for
+	// object.__init__) is None; the result of an open call is not known, but it
+	// is not checked
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability returnsNone(
 			Analysis<A, D> analysis,
 			AnalysisState<A> state,
-			Call resolved)
+			Call resolved,
+			ProgramPoint pp)
 			throws SemanticException {
 		if (resolved instanceof OpenCall || state.getExecution().isBottom())
 			return Satisfiability.SATISFIED;
@@ -173,7 +212,7 @@ public class PyNewObj extends NaryExpression {
 				// no return statement
 				none = true;
 			else
-				for (Type t : analysis.getRuntimeTypesOf(state, e, resolved))
+				for (Type t : analysis.getRuntimeTypesOf(state, e, pp))
 					if (t.isNullType())
 						none = true;
 					else

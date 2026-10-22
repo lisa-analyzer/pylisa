@@ -1,11 +1,13 @@
 package it.unive.pylisa.libraries;
 
 import it.unive.lisa.lattices.Satisfiability;
+import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyTypeTokenType;
@@ -17,13 +19,13 @@ import java.util.function.Predicate;
  * The type hints of {@code isinstance(value, hint)} and
  * {@code _sv_verifier.check_type(value, hint)}, given by the runtime type of
  * {@code hint}. The supported hints are {@code int} (also satisfied by a
- * {@code bool}), {@code float}, {@code str}, {@code bytes}, {@code list},
- * {@code range} and {@code None}, the classes of the program (also satisfied by
- * the objects of their subclasses; since the bases of the classes are not
- * tracked, both outcomes are possible for an object of a class with bases) and
- * their unions (e.g. {@code int | None}, see {@code PyBitwiseOr}). A builtin
- * function that is not a type (e.g. {@code len}) is never satisfied. For any
- * other hint (e.g. {@code list[int]}), both outcomes are possible.
+ * {@code bool}), {@code float}, {@code str}, {@code bytes}, {@code list}, {@code range} and
+ * {@code None}, the classes of the program (also satisfied by the objects of
+ * their subclasses; both outcomes are possible for an object of a class whose
+ * bases are not known) and their unions
+ * (e.g. {@code int | None}, see {@code PyBitwiseOr}). A builtin function that
+ * is not a type (e.g. {@code len}) is never satisfied. For any other hint (e.g.
+ * {@code list[int]}), both outcomes are possible.
  */
 public final class TypeHints {
 
@@ -141,9 +143,8 @@ public final class TypeHints {
 	}
 
 	// whether the values of type t are objects of cls, or of one of its
-	// subclasses: the bases of the classes are not tracked (see
-	// PyClassParser), so an object of a class with bases might be an instance
-	// of any class
+	// subclasses: an object of a class whose bases are not known (see
+	// PyClassParser) might be an instance of any class
 	private static Satisfiability instanceOf(
 			Type t,
 			CompilationUnit cls) {
@@ -156,6 +157,9 @@ public final class TypeHints {
 			return Satisfiability.SATISFIED;
 		if (unit != null && unit.getAnnotationList().stream()
 				.anyMatch(a -> a.getAnnotationName().equals(PyBinaryDispatch.UNTRACKED_BASES)))
+			return Satisfiability.UNKNOWN;
+		if (cls instanceof ClassUnit && ClassBases.mightBeAbstractBase((ClassUnit) cls))
+			// a virtual subclass of an abstract base class
 			return Satisfiability.UNKNOWN;
 		return Satisfiability.NOT_SATISFIED;
 	}

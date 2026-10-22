@@ -19,6 +19,12 @@ import it.unive.lisa.program.cfg.controlFlow.Loop;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
+import it.unive.lisa.type.Type;
+import it.unive.pylisa.antlr.PythonParser.Except_blockContext;
+import it.unive.lisa.program.cfg.protection.ProtectionBlock;
+import it.unive.lisa.program.cfg.protection.ProtectedBlock;
+import it.unive.lisa.program.cfg.protection.CatchBlock;
+import it.unive.lisa.program.cfg.edge.ErrorEdge;
 import it.unive.lisa.program.cfg.edge.TrueEdge;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -42,6 +48,7 @@ import it.unive.lisa.util.datastructures.graph.code.NodeList;
 import it.unive.lisa.util.frontend.ControlFlowTracker;
 import it.unive.lisa.util.frontend.ParsedBlock;
 import it.unive.pylisa.annotationvalues.DecoratedAnnotation;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.antlr.PythonParser.Annotated_rhsContext;
 import it.unive.pylisa.antlr.PythonParser.ArgumentsContext;
 import it.unive.pylisa.antlr.PythonParser.Assert_stmtContext;
@@ -223,6 +230,8 @@ import it.unive.pylisa.cfg.statement.PyCellsInit;
 import it.unive.pylisa.cfg.statement.PyDelName;
 import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
+import it.unive.pylisa.cfg.expression.PyClassMember;
+import it.unive.pylisa.cfg.expression.PySuperCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.scoping.NameKind;
@@ -318,6 +327,10 @@ public class PyStatementParser
 
 	// the number of loops enclosing the statement being parsed
 	private int loops = 0;
+
+	// the variables bound to the exceptions handled by the enclosing except
+	// blocks, innermost first (for raise without an exception)
+	private final Deque<String> handlers = new ArrayDeque<>();
 
 	/**
 	 * Builds the parser for a Python program at {@code filePath}.
@@ -820,13 +833,16 @@ public class PyStatementParser
 	@Override
 	public Statement visitRaise_stmt(
 			Raise_stmtContext ctx) {
-		if (ctx.expression().isEmpty())
-			// the exception being handled is not tracked, as except blocks
-			// are not
-			throw new UnsupportedStatementException("re-raising (raise without an exception) is not supported");
 		SourceCodeLocation loc = getLocation(filePath, ctx);
+		if (ctx.expression().isEmpty()) {
+			if (handlers.isEmpty())
+				// e.g. in a function called by an except block
+				throw new UnsupportedStatementException("raise without an exception outside except blocks is not supported");
+			// the exception being handled
+			return new PyRaise(currentCFG, loc, new VariableRef(currentCFG, loc, handlers.peek()), null);
+		}
 		Expression exception = visitExpression(ctx.expression(0));
-		if (exception instanceof VariableRef) {
+		if (exception instanceof PyNameRef && ((PyNameRef) exception).getKind().isGlobal()) {
 			// raise C, with C a class, raises C()
 			Unit unit = program.getUnit(((VariableRef) exception).getName());
 			if (unit instanceof ClassUnit)
@@ -1026,8 +1042,13 @@ public class PyStatementParser
 			Compound_stmtContext ctx) {
 		if (ctx.function_def() != null) {
 			PyCFG fun = visitFunction_def(ctx.function_def());
-			if (fun.getDescriptor().isInstance()) {
-				if (!((ClassUnit) currentUnit).addInstanceCodeMember(fun))
+			if (fun.getScope().getParent().getKind() == PyScope.ScopeKind.CLASS) {
+				// a method: an instance one, or a static one, called without
+				// the receiver
+				boolean added = fun.getDescriptor().isInstance()
+						? ((ClassUnit) currentUnit).addInstanceCodeMember(fun)
+						: currentUnit.addCodeMember(fun);
+				if (!added)
 					log.warn("Method " + fun.getDescriptor().getSignature() + " is already defined");
 				// methods are registered as code members of the class
 				return noOpBlock(ctx);
@@ -1041,22 +1062,50 @@ public class PyStatementParser
 			// def f(...) binds f to the function, that can then be assigned to
 			// other variables and called through them
 			SourceCodeLocation loc = getLocation(filePath, ctx);
-			PyAssign bind = new PyAssign(currentCFG, loc,
-					nameRef(ctx.function_def().function_def_raw().name(), loc, true),
-					Closures.functionValue(program, currentCFG, loc, fun, fun.getScope()));
 			NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+			Expression value = Closures.functionValue(program, currentCFG, loc, fun, fun.getScope());
+			Statement begin = null, last = null;
+			if (ctx.function_def().decorators() != null) {
+				// @d1 @d2 def f: the decorators are evaluated top-down before
+				// the function is created, then applied bottom-up, and f is
+				// bound to the result, as f = d1(d2(<function>))
+				List<Named_expressionContext> decorators = ctx.function_def().decorators().named_expression();
+				List<String> temps = new ArrayList<>();
+				for (Named_expressionContext decorator : decorators) {
+					SourceCodeLocation dloc = getLocation(filePath, decorator);
+					String temp = "$decorator@" + dloc.getLine() + ":" + dloc.getCol();
+					temps.add(temp);
+					Assignment evaluate = new Assignment(currentCFG, dloc,
+							new VariableRef(currentCFG, new DerivedLocation(dloc, "decorator"), temp),
+							visitNamed_expression(decorator));
+					block.addNode(evaluate);
+					if (last != null)
+						block.addEdge(new SequentialEdge(last, evaluate));
+					else
+						begin = evaluate;
+					last = evaluate;
+				}
+				for (int i = decorators.size() - 1; i >= 0; i--) {
+					SourceCodeLocation dloc = getLocation(filePath, decorators.get(i));
+					value = new PyValueCall(currentCFG, new DerivedLocation(dloc, "decoration"),
+							new VariableRef(currentCFG, new DerivedLocation(dloc, "decorator use"), temps.get(i)),
+							value);
+				}
+			}
+			PyAssign bind = new PyAssign(currentCFG, loc,
+					nameRef(ctx.function_def().function_def_raw().name(), loc, true), value);
 			block.addNode(bind);
-			return new ParsedBlock(bind, block, bind);
+			if (last != null)
+				block.addEdge(new SequentialEdge(last, bind));
+			return new ParsedBlock(begin != null ? begin : bind, block, bind);
 		} else if (ctx.class_def() != null) {
 			if (currentUnit instanceof ClassUnit)
 				// the nested class would not be an attribute of the outer one
 				// (e.g. self.Nested(...) would raise AttributeError)
 				throw new UnsupportedStatementException("nested classes are not supported");
+			// the class is registered as a unit (see PyClassParser), not
+			// inlined, and class C: binds C to the class
 			ClassUnit cu = visitClass_def(ctx.class_def());
-			PyClassType.register(cu.getName(), cu);
-			program.addUnit(cu);
-			// the class is registered as a unit, not inlined, and class C:
-			// binds C to the class
 			SourceCodeLocation loc = getLocation(filePath, ctx);
 			PyAssign bind = new PyAssign(currentCFG, loc,
 					nameRef(ctx.class_def().class_def_raw().name(), loc, true),
@@ -1520,9 +1569,121 @@ public class PyStatementParser
 	@Override
 	public ParsedBlock visitTry_stmt(
 			Try_stmtContext ctx) {
-		log.warn("Exceptions are not yet supported. The try block at line " + getLine(ctx) + " of file " + filePath
-				+ " is unsoundly translated considering only the code in the try block");
-		return visitBlock(ctx.block());
+		if (!ctx.except_star_block().isEmpty())
+			throw new UnsupportedStatementException("except* blocks are not supported");
+		NodeList<CFG, Statement, Edge> block = new NodeList<>(SEQUENTIAL_SINGLETON);
+		// the ends of the paths that continue after the whole statement
+		Collection<Statement> normalExits = new LinkedList<>();
+
+		ParsedBlock body = visitBlock(ctx.block());
+		block.mergeWith(body.getBody());
+		ProtectedBlock tryBlock = new ProtectedBlock(body.getBegin(), body.getEnd(), body.getBody().getNodes());
+
+		// the else block runs when the body completes normally, and the
+		// exceptions it raises are not caught by the except blocks
+		ProtectedBlock elseBlock = null;
+		if (ctx.else_block() != null) {
+			ParsedBlock orElse = visitBlock(ctx.else_block().block());
+			block.mergeWith(orElse.getBody());
+			if (body.canBeContinued())
+				block.addEdge(new SequentialEdge(body.getEnd(), orElse.getBegin()));
+			elseBlock = new ProtectedBlock(orElse.getBegin(), orElse.getEnd(), orElse.getBody().getNodes());
+			if (orElse.canBeContinued())
+				normalExits.add(orElse.getEnd());
+		} else if (body.canBeContinued())
+			normalExits.add(body.getEnd());
+
+		// the errors raised in the body, that accumulate until its end or
+		// that stop the execution, reach each except block (see ErrorEdge)
+		List<CatchBlock> catches = new LinkedList<>();
+		for (Except_blockContext except : ctx.except_block()) {
+			Type[] types = exceptionClasses(except);
+			SourceCodeLocation loc = getLocation(filePath, except);
+			// the variable bound to the exception: a synthetic one, also read
+			// by raise without an exception
+			VariableRef variable = new VariableRef(currentCFG, loc, "$exc@" + loc.getLine() + ":" + loc.getCol());
+			handlers.push(variable.getName());
+			ParsedBlock handler;
+			try {
+				handler = visitBlock(except.block());
+			} finally {
+				handlers.pop();
+			}
+			if (except.name() != null) {
+				// except E as e: the block starts by binding e to the
+				// exception, as e is a name of the program (e.g. a global, see
+				// PyNameRef) that becomes bound
+				PyAssign bind = new PyAssign(currentCFG, loc, nameRef(except.name(), loc, true),
+						new VariableRef(currentCFG, new DerivedLocation(loc, "exception"), variable.getName()));
+				NodeList<CFG, Statement, Edge> nodes = new NodeList<>(SEQUENTIAL_SINGLETON);
+				nodes.addNode(bind);
+				nodes.mergeWith(handler.getBody());
+				nodes.addEdge(new SequentialEdge(bind, handler.getBegin()));
+				handler = new ParsedBlock(bind, nodes, handler.getEnd());
+			}
+			block.mergeWith(handler.getBody());
+			CatchBlock catchBlock = new CatchBlock(variable,
+					new ProtectedBlock(handler.getBegin(), handler.getEnd(), handler.getBody().getNodes()), types);
+			catches.add(catchBlock);
+			if (body.canBeContinued())
+				block.addEdge(new ErrorEdge(body.getEnd(), handler.getBegin(), variable, tryBlock, types));
+			for (Statement st : body.getBody().getNodes())
+				if (st.stopsExecution())
+					block.addEdge(new ErrorEdge(st, handler.getBegin(), variable, tryBlock, types));
+			if (handler.canBeContinued())
+				normalExits.add(handler.getEnd());
+		}
+
+		ProtectedBlock finallyBlock = null;
+		if (ctx.finally_block() != null) {
+			ParsedBlock fin = visitBlock(ctx.finally_block().block());
+			block.mergeWith(fin.getBody());
+			finallyBlock = new ProtectedBlock(fin.getBegin(), fin.getEnd(), fin.getBody().getNodes());
+		}
+
+		// the end of the whole statement (unreachable if no path continues
+		// after it, as the statements following it): with a finally block,
+		// CFGTweaker.addFinallyEdges connects the paths to it, and it to the
+		// end
+		NoOp closing = new NoOp(currentCFG, getLocation(filePath, ctx));
+		block.addNode(closing);
+		if (finallyBlock == null)
+			for (Statement st : normalExits)
+				block.addEdge(new SequentialEdge(st, closing));
+		currentCFG.getDescriptor().addProtectionBlock(
+				new ProtectionBlock(tryBlock, catches, elseBlock, finallyBlock, closing));
+		return new ParsedBlock(body.getBegin(), block, closing);
+	}
+
+	// the classes of the exceptions an except block catches: a class, or a
+	// tuple of classes (BaseException, if the block catches everything)
+	private Type[] exceptionClasses(
+			Except_blockContext ctx) {
+		if (ctx.expression() == null && ctx.expressions() == null)
+			return new Type[] { PyClassType.lookup(LibrarySpecificationProvider.BASE_EXCEPTION) };
+		if (ctx.expression() == null)
+			throw new UnsupportedStatementException("except blocks with several expressions are not supported");
+		String text = ctx.expression().getText();
+		List<String> names = text.startsWith("(") && text.endsWith(")")
+				? Arrays.asList(text.substring(1, text.length() - 1).split(","))
+				: List.of(text);
+		List<Type> types = new ArrayList<>();
+		for (String name : names) {
+			ClassUnit cls = exceptionClass(name);
+			if (cls == null)
+				throw new UnsupportedStatementException("the exceptions caught by " + text + " are not known");
+			types.add(PyClassType.lookup(cls.getName()));
+		}
+		return types.toArray(Type[]::new);
+	}
+
+	// the class with the given name (also imported from a local module), if
+	// any
+	private ClassUnit exceptionClass(
+			String name) {
+		LocalImports.Member member = localImports.member(name);
+		Unit unit = program.getUnit(member != null ? member.name() : name);
+		return unit instanceof ClassUnit ? (ClassUnit) unit : null;
 	}
 
 	@Override
@@ -2073,6 +2234,13 @@ public class PyStatementParser
 					LocalImports.Member member = localImports.member(method_name);
 					access = new PyModuleCall(currentCFG, getLocation(filePath, frame), member.unit(), member.name(),
 							pars.toArray(Expression[]::new));
+				} else if (attribute && previous_access instanceof SimpleSuperUnresolvedCall) {
+					// super().m(...): the method m of a base of the class,
+					// called on self
+					List<Expression> args = new ArrayList<>(pars);
+					args.add(0, ((SimpleSuperUnresolvedCall) previous_access).getParameters()[1]);
+					access = new PySuperCall(currentCFG, getLocation(filePath, frame), (ClassUnit) currentUnit,
+							method_name, args.toArray(Expression[]::new));
 				} else if (attribute && classNames(previous_access) != null) {
 					// C.m(...): the function m of the class, with no receiver
 					access = new PyClassFunctionCall(
@@ -2223,6 +2391,11 @@ public class PyStatementParser
 			Expression receiver,
 			String name,
 			CodeLocation location) {
+		if (receiver instanceof PyNameRef && ((PyNameRef) receiver).getKind().isGlobal()
+				&& ClassBases.isProgramClass(program.getUnit(((VariableRef) receiver).getName())))
+			// C.name, for a class C of the program (e.g. a method read as a
+			// function)
+			return new PyClassMember(currentCFG, location, receiver, ((VariableRef) receiver).getName(), name);
 		if (isNamespace(receiver))
 			return new UnresolvedCall(
 					currentCFG,
@@ -2545,6 +2718,15 @@ public class PyStatementParser
 			ParserRuleContext ctx,
 			For_if_clausesContext forIfClauses,
 			Supplier<Expression> elementVisitor) {
+		return comprehension(ctx, forIfClauses, null, elementVisitor);
+	}
+
+	// a list comprehension, or a dict comprehension if keyVisitor is not null
+	private Expression comprehension(
+			ParserRuleContext ctx,
+			For_if_clausesContext forIfClauses,
+			Supplier<Expression> keyVisitor,
+			Supplier<Expression> elementVisitor) {
 		SourceCodeLocation loc = getLocation(filePath, ctx);
 		Map<String, String> scope = new HashMap<>();
 		List<PyListComprehension.Clause> clauses = new ArrayList<>();
@@ -2558,27 +2740,89 @@ public class PyStatementParser
 					throw new UnsupportedStatementException("async comprehensions are not supported");
 				// the iterable sees the variables of the previous clauses
 				Expression iterable = visitDisjunction(clause.disjunction(0));
-				String name = clause.star_targets().getText();
-				if (!name.matches("[A-Za-z_][A-Za-z_0-9]*"))
-					throw new UnsupportedStatementException("Tuple/list unpacking targets are not supported");
-				String local = name + "$comp@" + loc.getLine() + ":" + loc.getCol();
-				scope.put(name, local);
-				VariableRef target = new VariableRef(currentCFG, getLocation(filePath, clause.star_targets()), local);
+				Map<String, String> bound = new HashMap<>();
+				Expression target = comprehensionTarget(clause.star_targets(), bound, loc);
+				scope.putAll(bound);
+				// the variables of the target shared with lambdas, by the name
+				// of their cell
+				Map<String, String> clauseCells = new HashMap<>();
+				if (cells)
+					for (Map.Entry<String, String> name : bound.entrySet())
+						if (compScope.kindOf(name.getKey()) == NameKind.CELL)
+							clauseCells.put(name.getKey(), name.getValue());
 				List<Expression> conditions = new ArrayList<>();
 				for (int i = 1; i < clause.disjunction().size(); i++)
 					conditions.add(visitDisjunction(clause.disjunction(i)));
-				clauses.add(new PyListComprehension.Clause(target, iterable, conditions,
-						cells && compScope.kindOf(name) == NameKind.CELL ? name : null));
+				clauses.add(new PyListComprehension.Clause(target, iterable, conditions, clauseCells));
 			}
+			Expression key = keyVisitor == null ? null : keyVisitor.get();
 			Expression element = elementVisitor.get();
 			if (!cells)
-				return new PyListComprehension(currentCFG, loc, element, clauses);
+				return new PyListComprehension(currentCFG, loc, key, element, clauses);
 			String cellsVar = Closures.comprehensionCells(compScope);
-			return new PyListComprehension(currentCFG, loc, element, clauses, cellsVar,
+			return new PyListComprehension(currentCFG, loc, key, element, clauses, cellsVar,
 					Cells.cellsType(program, loc, currentCFG.getDescriptor().getFullName() + cellsVar));
 		} finally {
 			comprehensions.pop();
 		}
+	}
+
+	/**
+	 * The target of a clause of a comprehension, whose names are variables
+	 * local to the comprehension (added to {@code scope}): a name, or a tuple
+	 * or list of targets, possibly starred (e.g. {@code k, v} in
+	 * {@code for k, v in pairs}, see {@link PyListComprehension.Clause}).
+	 */
+	private Expression comprehensionTarget(
+			Star_targetsContext ctx,
+			Map<String, String> scope,
+			SourceCodeLocation loc) {
+		if (ctx.star_target().size() == 1)
+			return comprehensionTarget(ctx.star_target(0), scope, loc);
+		List<Expression> elements = new ArrayList<>();
+		for (Star_targetContext t : ctx.star_target())
+			elements.add(comprehensionTarget(t, scope, loc));
+		return new TupleCreation(currentCFG, getLocation(filePath, ctx), elements.toArray(Expression[]::new));
+	}
+
+	private Expression comprehensionTarget(
+			Star_targetContext ctx,
+			Map<String, String> scope,
+			SourceCodeLocation loc) {
+		if (ctx.STAR() != null)
+			return new StarExpression(currentCFG, getLocation(filePath, ctx),
+					comprehensionTarget(ctx.star_target(), scope, loc));
+		return comprehensionTarget(ctx.target_with_star_atom(), scope, loc);
+	}
+
+	private Expression comprehensionTarget(
+			Target_with_star_atomContext ctx,
+			Map<String, String> scope,
+			SourceCodeLocation loc) {
+		Star_atomContext atom = ctx.star_atom();
+		if (atom == null)
+			// e.g. o.x or l[i]
+			throw new UnsupportedStatementException(
+					"attributes and subscripts as targets of comprehensions are not supported");
+		if (atom.name() != null) {
+			String name = atom.name().getText();
+			String local = name + "$comp@" + loc.getLine() + ":" + loc.getCol();
+			scope.put(name, local);
+			return new VariableRef(currentCFG, getLocation(filePath, atom), local);
+		}
+		if (atom.target_with_star_atom() != null)
+			// (x)
+			return comprehensionTarget(atom.target_with_star_atom(), scope, loc);
+		// a nested target, e.g. (b, c) in for a, (b, c) in ...
+		List<Star_targetContext> targets = atom.star_targets_tuple_seq() != null
+				? atom.star_targets_tuple_seq().star_target()
+				: atom.star_targets_list_seq() != null ? atom.star_targets_list_seq().star_target() : List.of();
+		if (targets.isEmpty())
+			throw new UnsupportedStatementException("Empty unpacking targets are not supported");
+		List<Expression> elements = new ArrayList<>();
+		for (Star_targetContext t : targets)
+			elements.add(comprehensionTarget(t, scope, loc));
+		return new TupleCreation(currentCFG, getLocation(filePath, atom), elements.toArray(Expression[]::new));
 	}
 
 	// the reference to the name read at the given occurrence: a variable of a
@@ -2743,8 +2987,13 @@ public class PyStatementParser
 		} else if (ctx.set() != null) {
 			List<Expression> values = extractExpressionsFromStar_named_expressions(ctx.set().star_named_expressions());
 			return new SetCreation(currentCFG, getLocation(filePath, ctx), values.toArray(Expression[]::new));
-		} else if (ctx.dictcomp() != null || ctx.setcomp() != null)
-			throw new UnsupportedStatementException("comprehensions are not supported");
+		} else if (ctx.dictcomp() != null)
+			// {key: value for ...}
+			return comprehension(ctx.dictcomp(), ctx.dictcomp().for_if_clauses(),
+					() -> visitExpression(ctx.dictcomp().kvpair().expression(0)),
+					() -> visitExpression(ctx.dictcomp().kvpair().expression(1)));
+		else if (ctx.setcomp() != null)
+			throw new UnsupportedStatementException("set comprehensions are not supported");
 		else if (ctx.ELLIPSIS() != null)
 			throw new UnsupportedStatementException();
 		throw new UnsupportedStatementException();
@@ -2791,9 +3040,42 @@ public class PyStatementParser
 	@Override
 	public PyCFG visitFunction_def(
 			Function_defContext ctx) {
-		if (ctx.decorators() != null)
-			throw new UnsupportedStatementException("decorators are not supported");
-		PyCodeMemberParser parser = new PyCodeMemberParser(filePath, program, currentUnit, localImports, symtable);
-		return parser.visitFunction_def_raw(ctx.function_def_raw());
+		// the decorators of methods that change how they are called
+		// (@staticmethod) or created (@abc.abstractmethod, see
+		// ClassBases)
+		boolean staticMethod = false, abstractMethod = false;
+		if (ctx.decorators() != null && currentUnit instanceof ClassUnit)
+			for (Named_expressionContext decorator : ctx.decorators().named_expression()) {
+				String name = decorator.getText();
+				if (name.equals("staticmethod") && !defined(name))
+					staticMethod = true;
+				else if ((name.equals("abstractmethod") || name.equals("abc.abstractmethod"))
+						&& !defined("abstractmethod"))
+					abstractMethod = true;
+				else
+					// the method would be the value returned by the decorator
+					throw new UnsupportedStatementException("decorators of methods are not supported");
+			}
+		// a decorated function (outside classes) is reachable only through
+		// the decorator (see visitCompound_stmt): its cfg must not be found by
+		// the name of the function
+		boolean decorated = ctx.decorators() != null && !(currentUnit instanceof ClassUnit);
+		String name = ctx.function_def_raw().name().getText();
+		SourceCodeLocation loc = getLocation(filePath, ctx);
+		PyCodeMemberParser parser = new PyCodeMemberParser(filePath, program, currentUnit, localImports, symtable,
+				staticMethod, decorated ? name + "$decorated@" + loc.getLine() + ":" + loc.getCol() : null);
+		PyCFG cfg = parser.visitFunction_def_raw(ctx.function_def_raw());
+		if (abstractMethod)
+			// not propagated by LiSA to the methods overriding it
+			cfg.getDescriptor().addAnnotation(new Annotation(ClassBases.ABSTRACT, true));
+		if (decorated)
+			cfg.getDescriptor().addAnnotation(PyNameCall.decorated(name));
+		return cfg;
+	}
+
+	// whether the program defines a function with the given name
+	private boolean defined(
+			String name) {
+		return program.getCodeMembersByName(name).stream().anyMatch(m -> !(m instanceof NativeCFG));
 	}
 }

@@ -99,6 +99,12 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		return doPrepare(call, callState, interprocedural, expressions, formals, parameters, true);
 	}
 
+	/**
+	 * Prepares the call of a native: the arguments are matched to the
+	 * parameters as for the other calls (see {@link #prepare}), and the native
+	 * is executed in the state where the call happens, as the parameters of a
+	 * native are not variables of its own.
+	 */
 	@Override
 	public <A extends AbstractLattice<A>,
 			D extends AbstractDomain<A>> Pair<AnalysisState<A>, ExpressionSet[]> prepareForNative(
@@ -305,7 +311,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 							"starred arguments of unknown length are supported only as the last positional ones");
 			AnalysisState<A> iterated = state.bottomExecution();
 			for (SymbolicExpression value : given[i])
-				iterated = iterated.lub(Iteration.elements(analysis, state, iterable, value, call));
+				iterated = iterated.lub(Iteration.elements(analysis, state, iterable, value, call, call.getMetaVariables()));
 			errors = errors.lub(iterated.bottomExecution());
 			unknown = iterated.getExecutionExpressions();
 			unknownIterable = iterable;

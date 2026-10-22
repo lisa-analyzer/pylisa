@@ -10,7 +10,7 @@ import it.unive.lisa.lattices.types.TypeSet;
 import it.unive.lisa.program.cfg.fixpoints.optforward.OptimizedForwardAscendingFixpoint;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphValueDomain;
-import it.unive.pylisa.analysis.heap.PyFieldSensitivePointBasedHeap;
+import it.unive.pylisa.analysis.heap.PyHeap;
 import it.unive.pylisa.analysis.types.PyInferredTypes;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
@@ -34,7 +34,7 @@ public class PyTransformationsTest extends AnalysisTestExecutor {
 		conf.semanticChecks.add(new DataframeStructureConstructor());
 
 		conf.analysis = new SimpleAbstractDomain<HeapEnvWithFields, DataframeGraphDomain, TypeEnvironment<TypeSet>>(
-				new PyFieldSensitivePointBasedHeap(), new DataframeGraphValueDomain(), new PyInferredTypes());
+				new PyHeap(), new DataframeGraphValueDomain(), new PyInferredTypes());
 
 		conf.compareWithOptimization = false;
 

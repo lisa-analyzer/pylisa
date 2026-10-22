@@ -78,17 +78,38 @@ public class PyCodeMemberParser
 	// the symbol table of the file
 	private final Symtable symtable;
 
+	// whether the function is a static method of a class (see
+	// PyStatementParser#visitFunction_def)
+	private final boolean staticMethod;
+
+	// the name of the cfg, if it is not the one of the function (e.g. for a
+	// decorated function, see PyStatementParser#visitFunction_def)
+	private final String name;
+
 	public PyCodeMemberParser(
 			String filePath,
 			Program program,
 			Unit unit,
 			LocalImports imports,
 			Symtable symtable) {
+		this(filePath, program, unit, imports, symtable, false, null);
+	}
+
+	public PyCodeMemberParser(
+			String filePath,
+			Program program,
+			Unit unit,
+			LocalImports imports,
+			Symtable symtable,
+			boolean staticMethod,
+			String name) {
 		this.filePath = filePath;
 		this.program = program;
 		this.unit = unit;
 		this.imports = imports;
 		this.symtable = symtable;
+		this.staticMethod = staticMethod;
+		this.name = name;
 	}
 
 	@Override
@@ -171,9 +192,12 @@ public class PyCodeMemberParser
 		PyScope scope = symtable.getScope(funcDecl);
 		SourceCodeLocation loc = getLocation(filePath, funcDecl);
 		// methods are the functions defined in the body of a class (a function
-		// nested in a method is not a method)
-		boolean instance = unit instanceof ClassUnit && scope.getParent().getKind() == PyScope.ScopeKind.CLASS;
+		// nested in a method is not a method), except for static ones, called
+		// without the receiver
+		boolean instance = unit instanceof ClassUnit && scope.getParent().getKind() == PyScope.ScopeKind.CLASS
+				&& !staticMethod;
 		method = instance;
+		String funcName = name != null ? name : Closures.functionName(scope, loc, unit, instance);
 
 		PyParameter[] cfgArgs = funcDecl.params() != null
 				? visitParameters(funcDecl.params().parameters())
@@ -183,7 +207,7 @@ public class PyCodeMemberParser
 				loc,
 				unit,
 				instance,
-				Closures.functionName(scope, loc, unit, instance),
+				funcName,
 				Closures.withClosure(scope, cfgArgs, loc));
 	}
 

@@ -113,7 +113,7 @@ public class PyValueCall extends NaryExpression {
 		// closures receive the value of the callee as their first argument:
 		// it is consumed after the call (unless it is also the result of this
 		// call, e.g. in f()() where the two calls have the same location)
-		AnalysisState<A> called = targets.call(interprocedural, consumed, state, call, subs[0], args, expressions,
+		AnalysisState<A> called = targets.call(interprocedural, consumed, state, this, call, subs[0], args, expressions,
 				getMetaVariables());
 		Set<Identifier> calleeValues = new HashSet<>(subs[0].getMetaVariables());
 		calleeValues.removeAll(getMetaVariables());

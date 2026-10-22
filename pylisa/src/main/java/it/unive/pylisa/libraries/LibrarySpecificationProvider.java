@@ -42,6 +42,10 @@ public class LibrarySpecificationProvider {
 	public static final String TUPLE = "Tuple";
 	public static final String SLICE = "Slice";
 	public static final String RANGE = "Range";
+	public static final String BOUND_METHOD = "BoundMethod";
+	public static final String DICT_KEYS = "DictKeys";
+	public static final String DICT_VALUES = "DictValues";
+	public static final String DICT_ITEMS = "DictItems";
 	public static final String OBJECT = "Object";
 	public static final String INT = "Integral";
 	public static final String FLOAT = "Real";

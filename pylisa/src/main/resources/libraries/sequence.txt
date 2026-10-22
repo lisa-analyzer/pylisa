@@ -66,5 +66,33 @@ sealed class Dict extends Sequence:
 		param self libtype Dict*
 		param other type it.unive.lisa.type.Untyped::INSTANCE
 
+	instance method keys: it.unive.pylisa.libraries.dicts.DictKeysMethod
+		libtype DictKeys*
+		param self libtype Dict*
+
+	instance method values: it.unive.pylisa.libraries.dicts.DictValuesMethod
+		libtype DictValues*
+		param self libtype Dict*
+
+	instance method items: it.unive.pylisa.libraries.dicts.DictItemsMethod
+		libtype DictItems*
+		param self libtype Dict*
+
+# the views of the keys, values and items of a dictionary (see DictViews)
+sealed class DictKeys:
+	method __len__: it.unive.pylisa.libraries.dicts.DictViewLen
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self libtype DictKeys*
+
+sealed class DictValues:
+	method __len__: it.unive.pylisa.libraries.dicts.DictViewLen
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self libtype DictValues*
+
+sealed class DictItems:
+	method __len__: it.unive.pylisa.libraries.dicts.DictViewLen
+		type it.unive.lisa.program.type.Int32Type::INSTANCE
+		param self libtype DictItems*
+
 sealed class Tuple extends Sequence
 sealed class Slice extends Sequence

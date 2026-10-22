@@ -39,7 +39,9 @@ import org.apache.commons.lang3.ArrayUtils;
 /**
  * The targets of a call whose callee is a value (e.g. a variable holding a
  * function): the functions and natives it holds, the closures of nested
- * functions (see {@link PyClosureUnit}), and whether it might hold values that
+ * functions (see {@link PyClosureUnit}), the bound methods (see
+ * {@link BoundMethods}), the objects whose class defines {@code __call__}, the
+ * classes of the program, and whether it might hold values that
  * cannot be called, or whose callability is unknown. This is shared by the
  * calls on names ({@link PyNameCall}) and on other values
  * ({@link PyValueCall}).
@@ -55,6 +57,9 @@ final class CallTargets {
 	private final Map<String, Set<SymbolicExpression>> closures = new TreeMap<>();
 
 	private final Map<String, CFG> closureFunctions = new TreeMap<>();
+
+	// the bound methods, called on their objects
+	private final Set<SymbolicExpression> boundMethods = new HashSet<>();
 
 	// the objects whose class defines __call__, that is called on them
 	private final Set<SymbolicExpression> callableObjects = new HashSet<>();
@@ -107,7 +112,9 @@ final class CallTargets {
 			}
 			for (Type t : types) {
 				CFG closure = closureFunction(t);
-				if (closure != null) {
+				if (BoundMethods.isBoundMethod(t))
+					targets.boundMethods.add(value);
+				else if (closure != null) {
 					String key = closure.getDescriptor().getFullSignature() + closure.getDescriptor().getLocation();
 					targets.closureFunctions.put(key, closure);
 					targets.closures.computeIfAbsent(key, k -> new HashSet<>()).add(value);
@@ -149,8 +156,8 @@ final class CallTargets {
 	 * @return whether something is called
 	 */
 	boolean callsSomething() {
-		return !functions.isEmpty() || !natives.isEmpty() || !closures.isEmpty() || !callableObjects.isEmpty()
-				|| !classes.isEmpty();
+		return !functions.isEmpty() || !natives.isEmpty() || !closures.isEmpty() || !boundMethods.isEmpty()
+				|| !callableObjects.isEmpty() || !classes.isEmpty();
 	}
 
 	/**
@@ -173,21 +180,24 @@ final class CallTargets {
 	}
 
 	/**
-	 * Calls the functions, natives, and closures held by the callee, calls
-	 * {@code __call__} on the objects it holds, and creates objects of the
-	 * classes it holds (as {@link PyNewObj}). Closures are passed as the first
-	 * argument of their functions (see {@link Cells#CLOSURE}), and objects as
-	 * the receiver of {@code __call__}.
+	 * Calls the functions, natives, closures, and bound methods held by the
+	 * callee, calls {@code __call__} on the objects it holds, and creates
+	 * objects of the classes it holds (as {@link PyNewObj}). Closures are passed
+	 * as the first argument of their functions (see {@link Cells#CLOSURE}),
+	 * objects as the receiver of {@code __call__}, and bound methods are called
+	 * on their objects (see {@link BoundMethods#call}). The calls are
+	 * sub-expressions of {@code caller} (see {@link CallSites#within}).
 	 *
 	 * @param <A>             the kind of {@link AbstractLattice} of the state
 	 * @param <D>             the kind of {@link AbstractDomain} of the analysis
 	 * @param interprocedural the interprocedural analysis
 	 * @param state           the state where the functions and the natives are
 	 *                            called
-	 * @param closureState    the state where the closures and {@code __call__}
-	 *                            are called, where the values of the callee
-	 *                            (passed to them as their first argument) are
-	 *                            still available
+	 * @param closureState    the state where the closures, the bound methods,
+	 *                            and {@code __call__} are called, where the
+	 *                            values of the callee (passed to them as their
+	 *                            first argument) are still available
+	 * @param caller          the statement making the call
 	 * @param call            the call, with the arguments only
 	 * @param callee          the expression computing the callee, whose state
 	 *                            is stored in {@code expressions}
@@ -203,6 +213,7 @@ final class CallTargets {
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			AnalysisState<A> closureState,
+			Statement caller,
 			UnresolvedCall call,
 			Expression callee,
 			ExpressionSet[] args,
@@ -211,9 +222,11 @@ final class CallTargets {
 			throws SemanticException {
 		AnalysisState<A> result = state.bottomExecution();
 		if (!functions.isEmpty())
-			result = result.lub(call(new CFGCall(call, functions), interprocedural, state, args, expressions, metas));
+			result = result.lub(call(CallSites.within(new CFGCall(call, functions), caller), interprocedural, state,
+					args, expressions, metas));
 		if (!natives.isEmpty())
-			result = result.lub(call(new NativeCall(call, natives), interprocedural, state, args, expressions, metas));
+			result = result.lub(call(CallSites.within(new NativeCall(call, natives), caller), interprocedural, state,
+					args, expressions, metas));
 		if (!closures.isEmpty()) {
 			// the closure is the first argument
 			UnresolvedCall withClosure = new UnresolvedCall(call.getCFG(), call.getLocation(), call.getCallType(),
@@ -221,17 +234,23 @@ final class CallTargets {
 					ArrayUtils.insert(0, call.getParameters(), callee));
 			for (Map.Entry<String, Set<SymbolicExpression>> entry : closures.entrySet()) {
 				ExpressionSet[] params = ArrayUtils.insert(0, args, new ExpressionSet(entry.getValue()));
-				CFGCall closureCall = new CFGCall(withClosure, Set.of(closureFunctions.get(entry.getKey())));
+				CFGCall closureCall = CallSites.within(
+						new CFGCall(withClosure, Set.of(closureFunctions.get(entry.getKey()))), caller);
 				result = result.lub(call(closureCall, interprocedural, closureState, params, expressions, metas));
 			}
 		}
 		if (!callableObjects.isEmpty()) {
 			// o(...) is o.__call__(...)
-			PyMethodCall dunder = new PyMethodCall(call.getCFG(), call.getLocation(), "__call__", call.getOrder(),
-					ArrayUtils.insert(0, call.getParameters(), callee));
+			PyMethodCall dunder = CallSites.within(new PyMethodCall(call.getCFG(), call.getLocation(), "__call__",
+					call.getOrder(), ArrayUtils.insert(0, call.getParameters(), callee)), caller);
 			ExpressionSet[] params = ArrayUtils.insert(0, args, new ExpressionSet(callableObjects));
 			result = result.lub(call(dunder, interprocedural, closureState, params, expressions, metas));
 		}
+		for (SymbolicExpression bound : boundMethods)
+			// the bound method is called on its object, standing for the
+			// callee in the call
+			result = result.lub(BoundMethods.call(interprocedural, closureState, bound, callee, call.getParameters(),
+					args, caller, expressions, metas));
 		if (!classes.isEmpty() && !(DerivedLocation.source(call.getLocation()) instanceof SourceCodeLocation))
 			// the object cannot be created without a location in the code
 			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state,
@@ -241,6 +260,7 @@ final class CallTargets {
 			SourceCodeLocation location = (SourceCodeLocation) DerivedLocation.source(call.getLocation());
 			for (PyClassType cls : classes.values()) {
 				PyNewObj creation = new PyNewObj(call.getCFG(), location, "__init__", cls, call.getParameters());
+				creation.setParentStatement(caller);
 				result = result.lub(creation.forwardSemanticsAux(interprocedural, state, args, expressions));
 				metas.addAll(creation.getMetaVariables());
 			}

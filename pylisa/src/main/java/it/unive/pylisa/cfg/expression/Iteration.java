@@ -19,6 +19,9 @@ import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.RangeBuiltin;
+import it.unive.pylisa.libraries.dicts.DictViews;
+import it.unive.lisa.symbolic.value.Identifier;
+import java.util.Collection;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Set;
@@ -35,17 +38,22 @@ public final class Iteration {
 	 * Yields any of the elements of the iterable (e.g. the one bound to the
 	 * variable of a comprehension, or of a for loop): the elements of a list,
 	 * the keys of a dictionary, the characters of a {@code str}, the bytes of a
-	 * {@code bytes}, and the {@code int}s of a range (see
-	 * {@link RangeBuiltin}). Iterating over values that cannot be iterated
-	 * (e.g. an {@code int}) raises {@code TypeError}; the elements of other
-	 * iterables (e.g. an object whose class defines {@code __iter__}, that is
-	 * not called) are unknown.
+	 * {@code bytes}, the {@code int}s of a range (see {@link RangeBuiltin}), and
+	 * the keys, values or items of a view of a dictionary (see
+	 * {@link DictViews}). Iterating over
+	 * values that cannot be iterated (e.g. an {@code int}) raises
+	 * {@code TypeError}; the elements of other iterables (e.g. an object whose
+	 * class defines {@code __iter__}, that is not called) are unknown.
 	 *
 	 * @param analysis   the analysis
 	 * @param state      the state where the iterable has been evaluated
 	 * @param expression the expression computing the iterable
 	 * @param iterable   the iterable
 	 * @param pp         the program point iterating over the iterable
+	 * @param metas      where the meta variables of the elements are added,
+	 *                       that {@code pp} must forget (e.g. the receivers
+	 *                       of the tuples of {@code d.items()}, see
+	 *                       {@link DictViews})
 	 *
 	 * @return the state whose computed expressions are the elements
 	 *
@@ -56,7 +64,8 @@ public final class Iteration {
 			AnalysisState<A> state,
 			Expression expression,
 			SymbolicExpression iterable,
-			Statement pp)
+			Statement pp,
+			Collection<Identifier> metas)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		if (isRange(expression))
@@ -75,6 +84,8 @@ public final class Iteration {
 				result = result.lub(DictModel.keys(analysis, state, iterable, pp));
 			else if (t.isStringType())
 				result = result.lub(analysis.smallStepSemantics(state, new PushAny(StringType.INSTANCE, loc), pp));
+			else if (DictViews.isView(t))
+				result = result.lub(DictViews.elements(analysis, state, iterable, t, pp, metas));
 			else if (RangeBuiltin.isRange(t))
 				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), pp));
 			else if (t instanceof PyBytesType)

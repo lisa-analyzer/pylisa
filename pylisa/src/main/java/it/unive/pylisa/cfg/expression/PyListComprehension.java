@@ -23,10 +23,12 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -40,6 +42,12 @@ import java.util.Set;
  * values, at unknown indices (as the number of iterations is not known). The
  * variables of the comprehension are local to it (they are renamed by the
  * parser).
+ * <p>
+ * A dict comprehension {@code {key: element for x in iterable ...}} is
+ * evaluated in the same way: at each iteration, {@code key} is computed before
+ * {@code element}, and the result is either an empty dictionary or one whose
+ * entries have the computed keys, that are not tracked (see
+ * {@link DictModel#write}), and the computed values.
  */
 public class PyListComprehension extends NaryExpression {
 
@@ -49,19 +57,26 @@ public class PyListComprehension extends NaryExpression {
 	/**
 	 * A {@code for x in iterable if c1 if c2 ...} clause.
 	 *
-	 * @param target     the variable bound to the elements
+	 * @param target     the variable bound to the elements, or the targets
+	 *                       they are unpacked into (a {@link TupleCreation} of
+	 *                       variables, as in {@code for k, v in pairs})
 	 * @param iterable   the iterable
 	 * @param conditions the conditions
-	 * @param cell       the name of the variable in the program, if it is
-	 *                       shared with lambdas inside the comprehension (see
-	 *                       {@link Cells}), or {@code null}
+	 * @param cells      the variables of the target that are shared with
+	 *                       lambdas inside the comprehension (see
+	 *                       {@link Cells}), from their names in the program to
+	 *                       the names of the local variables of the
+	 *                       comprehension
 	 */
 	public record Clause(
-			VariableRef target,
+			Expression target,
 			Expression iterable,
 			List<Expression> conditions,
-			String cell) {
+			Map<String, String> cells) {
 	}
+
+	// the key of a dict comprehension, or null
+	private final Expression key;
 
 	private final Expression element;
 
@@ -72,6 +87,10 @@ public class PyListComprehension extends NaryExpression {
 	private final String cells;
 
 	private final PyClassType cellsType;
+
+	// the variable holding the key computed by an iteration of a dict
+	// comprehension
+	private final Variable keyVariable;
 
 	/**
 	 * Builds the comprehension.
@@ -86,16 +105,36 @@ public class PyListComprehension extends NaryExpression {
 			CodeLocation location,
 			Expression element,
 			List<Clause> clauses) {
-		this(cfg, location, element, clauses, null, null);
+		this(cfg, location, null, element, clauses);
 	}
 
 	/**
-	 * Builds the comprehension, whose variables might be shared with lambdas
-	 * inside it (see {@link Cells}).
+	 * Builds the dict comprehension, if {@code key} is not {@code null}.
+	 *
+	 * @param cfg      the cfg where the comprehension is
+	 * @param location the location of the comprehension
+	 * @param key      the key, or {@code null} for a list comprehension
+	 * @param element  the element (the value, for a dict comprehension)
+	 * @param clauses  the clauses
+	 */
+	public PyListComprehension(
+			CFG cfg,
+			CodeLocation location,
+			Expression key,
+			Expression element,
+			List<Clause> clauses) {
+		this(cfg, location, key, element, clauses, null, null);
+	}
+
+	/**
+	 * Builds the comprehension (a dict comprehension, if {@code key} is not
+	 * {@code null}), whose variables might be shared with lambdas inside it
+	 * (see {@link Cells}).
 	 *
 	 * @param cfg       the cfg where the comprehension is
 	 * @param location  the location of the comprehension
-	 * @param element   the element
+	 * @param key       the key, or {@code null} for a list comprehension
+	 * @param element   the element (the value, for a dict comprehension)
 	 * @param clauses   the clauses
 	 * @param cells     the local variable referencing the cells of the
 	 *                      comprehension, or {@code null} if no variable is
@@ -106,18 +145,23 @@ public class PyListComprehension extends NaryExpression {
 	public PyListComprehension(
 			CFG cfg,
 			CodeLocation location,
+			Expression key,
 			Expression element,
 			List<Clause> clauses,
 			String cells,
 			PyClassType cellsType) {
-		super(cfg, location, "listcomp", subExpressions(element, clauses));
+		super(cfg, location, key == null ? "listcomp" : "dictcomp", subExpressions(key, element, clauses));
+		this.key = key;
 		this.element = element;
 		this.clauses = clauses;
 		this.cells = cells;
 		this.cellsType = cellsType;
+		this.keyVariable = new Variable(Untyped.INSTANCE,
+				"$key@" + location.getCodeLocation(), location);
 	}
 
 	private static Expression[] subExpressions(
+			Expression key,
 			Expression element,
 			List<Clause> clauses) {
 		List<Expression> subs = new ArrayList<>();
@@ -126,6 +170,8 @@ public class PyListComprehension extends NaryExpression {
 			subs.add(clause.iterable());
 			subs.addAll(clause.conditions());
 		}
+		if (key != null)
+			subs.add(key);
 		subs.add(element);
 		return subs.toArray(Expression[]::new);
 	}
@@ -138,13 +184,16 @@ public class PyListComprehension extends NaryExpression {
 
 	@Override
 	public String toString() {
-		StringBuilder res = new StringBuilder("[").append(element);
+		StringBuilder res = new StringBuilder(key == null ? "[" : "{");
+		if (key != null)
+			res.append(key).append(": ");
+		res.append(element);
 		for (Clause clause : clauses) {
 			res.append(" for ").append(clause.target()).append(" in ").append(clause.iterable());
 			for (Expression condition : clause.conditions())
 				res.append(" if ").append(condition);
 		}
-		return res.append("]").toString();
+		return res.append(key == null ? "]" : "}").toString();
 	}
 
 	@Override
@@ -177,8 +226,32 @@ public class PyListComprehension extends NaryExpression {
 			body = iterate(interprocedural, before, 0, expressions);
 		}
 
-		// the list: empty if there are no iterations, otherwise with the
-		// computed elements at unknown indices
+		AnalysisState<A> result = key == null ? list(interprocedural, start, body, expressions)
+				: dict(interprocedural, start, body, expressions);
+
+		// the variables of the comprehension, and the values of its
+		// sub-expressions, are local to it
+		Set<Identifier> locals = new HashSet<>();
+		for (Clause clause : clauses)
+			variables(clause.target(), locals);
+		locals.add(keyVariable);
+		if (cells != null)
+			locals.add(new Variable(Untyped.INSTANCE, cells, loc));
+		for (Expression sub : getSubExpressions())
+			locals.addAll(sub.getMetaVariables());
+		return result.forgetIdentifiers(locals, this);
+	}
+
+	// the list: empty if there are no iterations, otherwise with the computed
+	// elements at unknown indices
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> list(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> start,
+			AnalysisState<A> body,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		CodeLocation loc = getLocation();
 		ListCreation creation = new ListCreation(getCFG(), new DerivedLocation(loc, "comprehension"));
 		AnalysisState<A> result = creation.forwardSemanticsAux(interprocedural, start, new ExpressionSet[0],
 				expressions);
@@ -197,18 +270,35 @@ public class PyListComprehension extends NaryExpression {
 		} else
 			// the errors raised by the iterations
 			result = result.lub(body);
-
-		// the variables of the comprehension, and the values of its
-		// sub-expressions, are local to it
-		Set<Identifier> locals = new HashSet<>();
-		for (Clause clause : clauses)
-			locals.add(clause.target().getIdentifier());
-		if (cells != null)
-			locals.add(new Variable(Untyped.INSTANCE, cells, loc));
-		for (Expression sub : getSubExpressions())
-			locals.addAll(sub.getMetaVariables());
 		getMetaVariables().addAll(creation.getMetaVariables());
-		return result.forgetIdentifiers(locals, this);
+		return result;
+	}
+
+	// the dictionary: empty if there are no iterations, otherwise with the
+	// computed entries
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> dict(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> start,
+			AnalysisState<A> body,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		DictionaryCreation creation = new DictionaryCreation(getCFG(), new DerivedLocation(getLocation(),
+				"comprehension"));
+		AnalysisState<A> result = creation.forwardSemanticsAux(interprocedural, start, new ExpressionSet[0],
+				expressions);
+		if (!body.getExecutionState().isBottom()) {
+			AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, body, new ExpressionSet[0],
+					expressions);
+			for (SymbolicExpression dict : created.getExecutionExpressions())
+				for (SymbolicExpression value : body.getExecutionExpressions())
+					result = result.lub(DictModel.write(analysis, created, dict, keyVariable, value, this)
+							.withExecutionExpression(dict));
+		} else
+			// the errors raised by the iterations
+			result = result.lub(body);
+		getMetaVariables().addAll(creation.getMetaVariables());
+		return result;
 	}
 
 	@Override
@@ -234,17 +324,24 @@ public class PyListComprehension extends NaryExpression {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Clause clause = clauses.get(i);
 
-		// the target is bound to any of the elements of the iterable
+		// the target is bound to any of the elements of the iterable; the
+		// meta variables of the elements (e.g. the receivers of the tuples of
+		// d.items()) are forgotten once the target is bound, as each
+		// iteration creates new ones (otherwise, the objects of the previous
+		// iteration would still be reachable, and their allocation sites
+		// would become weak)
 		AnalysisState<A> bound = state.bottomExecution();
 		for (SymbolicExpression iterable : state.getExecutionExpressions()) {
-			AnalysisState<A> elements = Iteration.elements(analysis, state, clause.iterable(), iterable, this);
+			Set<Identifier> metas = new HashSet<>();
+			AnalysisState<A> elements = Iteration.elements(analysis, state, clause.iterable(), iterable, this, metas);
 			for (SymbolicExpression elem : elements.getExecutionExpressions()) {
-				AnalysisState<A> assigned = analysis.assign(elements, clause.target().getIdentifier(), elem, this);
-				if (clause.cell() != null)
-					// the value is also visible to the lambdas, through the
-					// cell
-					assigned = analysis.assign(assigned, Cells.cell(cells, clause.cell(), getLocation()), elem, this);
-				bound = bound.lub(assigned);
+				AnalysisState<A> assigned = bind(interprocedural, elements, clause.target(), elem);
+				// the values of the variables shared with the lambdas are also
+				// visible through their cells
+				for (Map.Entry<String, String> cell : clause.cells().entrySet())
+					assigned = analysis.assign(assigned, Cells.cell(cells, cell.getKey(), getLocation()),
+							new Variable(Untyped.INSTANCE, cell.getValue(), getLocation()), this);
+				bound = bound.lub(assigned.forgetIdentifiers(metas, this));
 			}
 			// e.g. the TypeError raised by iterating an int
 			bound = bound.lub(elements.bottomExecution());
@@ -271,8 +368,50 @@ public class PyListComprehension extends NaryExpression {
 			expressions.put(next, evaluated);
 			return iterate(interprocedural, evaluated, i + 1, expressions);
 		}
+		if (key != null) {
+			// the key is computed before the value
+			AnalysisState<A> evaluated = key.forwardSemantics(bound, interprocedural, expressions);
+			expressions.put(key, evaluated);
+			AnalysisState<A> assigned = evaluated.bottomExecution();
+			for (SymbolicExpression k : evaluated.getExecutionExpressions())
+				assigned = assigned.lub(analysis.assign(evaluated, keyVariable, k, this));
+			bound = assigned.forgetIdentifiers(key.getMetaVariables(), this);
+		}
 		AnalysisState<A> computed = element.forwardSemantics(bound, interprocedural, expressions);
 		expressions.put(element, computed);
 		return computed;
+	}
+
+	// binds the target to the value, unpacking it into the variables of a
+	// tuple of targets (see Unpacking)
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> bind(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			Expression target,
+			SymbolicExpression value)
+			throws SemanticException {
+		if (target instanceof VariableRef)
+			return interprocedural.getAnalysis().assign(state, ((VariableRef) target).getIdentifier(), value, this);
+		Expression[] targets = ((TupleCreation) target).getSubExpressions();
+		int star = -1;
+		for (int i = 0; i < targets.length; i++)
+			if (targets[i] instanceof StarExpression)
+				star = i;
+		return Unpacking.unpack(interprocedural, state, value, targets, star, this,
+				(
+						s,
+						t,
+						v) -> bind(interprocedural, s, t, v));
+	}
+
+	// the variables of the target
+	private static void variables(
+			Expression target,
+			Set<Identifier> variables) {
+		if (target instanceof VariableRef)
+			variables.add(((VariableRef) target).getIdentifier());
+		else
+			for (Expression sub : ((NaryExpression) target).getSubExpressions())
+				variables(sub, variables);
 	}
 }

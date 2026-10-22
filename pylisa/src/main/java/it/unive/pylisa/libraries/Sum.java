@@ -84,7 +84,7 @@ public class Sum extends PyNative {
 				// the elements are added one by one
 				return compute(analysis, state, add(start, exact, starts, elements));
 		} else {
-			AnalysisState<A> any = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, st);
+			AnalysisState<A> any = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, st, getMetaVariables());
 			// e.g. the TypeError raised by iterating an int
 			result = any.bottomExecution();
 			if (any.getExecutionState().isBottom())

@@ -75,7 +75,11 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 			Map<Type, Set<Statement>> raised = new HashMap<>();
 			boolean terminates = false;
 			for (Statement exit : graph.getAllExitpoints()) {
-				AnalysisState<A> state = result.getAnalysisStateAfter(exit);
+				// the errors caught by the except blocks the exit is in (e.g.
+				// raised by a raise inside a try) do not end the execution, as
+				// for the results of calls (see ContextBasedAnalysis)
+				AnalysisState<A> state = tool.getAnalysis().removeCaughtErrors(result.getAnalysisStateAfter(exit),
+						exit);
 				if (!state.getExecutionState().isBottom())
 					terminates = true;
 				if (!state.getHalt().isBottom())

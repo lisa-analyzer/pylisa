@@ -513,6 +513,35 @@ public final class PyBinaryDispatch {
 			String name,
 			Expression[] args,
 			Set<Type>[] types) {
+		return resolveInClass(interprocedural, state, caller, caller.getLocation(), cls, name, args, types);
+	}
+
+	/**
+	 * Resolves the call {@code cls.name(args)} as
+	 * {@link #resolveInClass(InterproceduralAnalysis, AnalysisState, Expression, String, String, Expression[], Set[])},
+	 * at the given location (see {@link CallSites}).
+	 *
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the arguments have been evaluated
+	 * @param caller          the statement performing the call
+	 * @param location        the location of the call
+	 * @param cls             the name of the class, or {@code null}
+	 * @param name            the name of the method
+	 * @param args            the arguments, receiver included
+	 * @param types           the runtime types of the arguments
+	 *
+	 * @return the resolved call, or {@code null} if {@code cls} does not define
+	 *             a suitable {@code name}
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Call resolveInClass(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			Statement caller,
+			CodeLocation location,
+			String cls,
+			String name,
+			Expression[] args,
+			Set<Type>[] types) {
 		if (cls == null)
 			return null;
 
@@ -521,14 +550,14 @@ public final class PyBinaryDispatch {
 		// receiver, following inheritance
 		if (types[0].stream().anyMatch(t -> t.isPointerType() || t.isUnitType())) {
 			Call resolved = resolve(interprocedural, state,
-					CallSites.get(interprocedural, caller, CallType.INSTANCE, null, name, args), types);
+					CallSites.get(interprocedural, caller, location, CallType.INSTANCE, null, name, args), types);
 			if (resolved != null)
 				return resolved;
 		}
 
 		// library classes define them as static members
-		return resolve(interprocedural, state, CallSites.get(interprocedural, caller, CallType.STATIC, cls, name, args),
-				types);
+		return resolve(interprocedural, state,
+				CallSites.get(interprocedural, caller, location, CallType.STATIC, cls, name, args), types);
 	}
 
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Call resolve(

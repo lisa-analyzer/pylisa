@@ -1,8 +1,10 @@
 package it.unive.pylisa.cfg.expression;
 
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
@@ -25,6 +27,7 @@ import java.util.WeakHashMap;
 public final class CallSites {
 
 	private record Key(
+			CodeLocation location,
 			CallType kind,
 			String qualifier,
 			String name,
@@ -68,12 +71,40 @@ public final class CallSites {
 			String qualifier,
 			String name,
 			Expression... args) {
+		return get(interprocedural, caller, caller.getLocation(), kind, qualifier, name, args);
+	}
+
+	/**
+	 * Yields the call with the given location, made by {@code caller}: the
+	 * location distinguishes it from the other calls at the location of
+	 * {@code caller}, whose values are stored in variables named after it (e.g.
+	 * the call of a bound method returned by another call, as in
+	 * {@code o.f()()}, see {@link BoundMethods}).
+	 *
+	 * @param interprocedural the interprocedural analysis
+	 * @param caller          the statement making the call
+	 * @param location        the location of the call
+	 * @param kind            the kind of the call
+	 * @param qualifier       the qualifier of the call
+	 * @param name            the name of the called function
+	 * @param args            the arguments of the call
+	 *
+	 * @return the call
+	 */
+	public static UnresolvedCall get(
+			InterproceduralAnalysis<?, ?> interprocedural,
+			Statement caller,
+			CodeLocation location,
+			CallType kind,
+			String qualifier,
+			String name,
+			Expression... args) {
 		Map<Statement, Map<Key, UnresolvedCall>> calls = CALLS.computeIfAbsent(interprocedural,
 				i -> new IdentityHashMap<>());
 		synchronized (calls) {
 			return calls.computeIfAbsent(caller, c -> new HashMap<>()).computeIfAbsent(
-					new Key(kind, qualifier, name, List.of(args)),
-					k -> new Site(caller, kind, qualifier, name, args));
+					new Key(location, kind, qualifier, name, List.of(args)),
+					k -> new Site(caller, location, kind, qualifier, name, args));
 		}
 	}
 
@@ -83,18 +114,42 @@ public final class CallSites {
 	 * call are raised by that statement (see
 	 * {@link it.unive.pylisa.libraries.PyExceptions}).
 	 */
+	/**
+	 * Makes the given call, created by {@code caller} (and not part of the
+	 * cfg), a sub-expression of {@code caller}: the errors raised by the
+	 * targets of the call, that are attributed to the call, are then raised by
+	 * the statement containing {@code caller} (e.g. for the except blocks
+	 * protecting it, see {@code ProtectedBlock}).
+	 *
+	 * @param <C>    the kind of call
+	 * @param call   the call
+	 * @param caller the statement creating the call
+	 *
+	 * @return the call
+	 */
+	public static <C extends Call> C within(
+			C call,
+			Statement caller) {
+		call.setParentStatement(caller);
+		return call;
+	}
+
 	public static final class Site extends UnresolvedCall {
 
 		private final Statement caller;
 
 		private Site(
 				Statement caller,
+				CodeLocation location,
 				CallType kind,
 				String qualifier,
 				String name,
 				Expression... args) {
-			super(caller.getCFG(), caller.getLocation(), kind, qualifier, name, LeftToRightEvaluation.INSTANCE, args);
+			super(caller.getCFG(), location, kind, qualifier, name, LeftToRightEvaluation.INSTANCE, args);
 			this.caller = caller;
+			// the errors of the call are raised by the caller (e.g. for the
+			// except blocks protecting it)
+			setParentStatement(caller);
 		}
 
 		/**

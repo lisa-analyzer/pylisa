@@ -26,9 +26,12 @@ import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.program.cfg.CodeMember;
+import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.PyClassAttributes.ClassAttribute;
+import it.unive.pylisa.libraries.BuiltinAttributes;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.HashSet;
@@ -130,6 +133,21 @@ public class PyAttributeAccess extends UnaryExpression {
 				others = true;
 
 		AnalysisState<A> result = state.bottomExecution();
+		// the methods read without calling them: bound methods (see
+		// BoundMethods)
+		Set<CodeMember> methods = new HashSet<>();
+		boolean onlyMethods = !objects.isEmpty() && !isWriteTarget();
+		if (onlyMethods)
+			for (Type o : objects) {
+				Set<CodeMember> m = BoundMethods.methods(getProgram(), new ReferenceType(o), name);
+				methods.addAll(m);
+				onlyMethods &= !m.isEmpty();
+			}
+		if (!methods.isEmpty())
+			result = result.lub(BoundMethods.create(analysis, state, expr, methods, this, getMetaVariables()));
+		if (onlyMethods && !mightBeAssigned(analysis, state, expr))
+			// no instance attribute shadows the method
+			objects.clear();
 		if (!objects.isEmpty()) {
 			Missing missing = isWriteTarget() ? null : missing(analysis, state, expr, objects, false);
 			if (missing == null || missing.assigned()) {
@@ -147,8 +165,36 @@ public class PyAttributeAccess extends UnaryExpression {
 				for (ClassUnit cls : missing.classes())
 					result = result.lub(classAttribute(interprocedural, state, cls, thrower));
 		}
-		if (others)
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this));
+		if (others) {
+			// the methods of builtin values, read without calling them (e.g.
+			// "a".upper): bound methods
+			Set<CodeMember> valueMethods = new HashSet<>();
+			boolean unknown = types.isEmpty() || isWriteTarget(), missingAttribute = false;
+			boolean known = !PyBinaryDispatch.unknownTypes(types, this);
+			if (!unknown)
+				for (Type t : types)
+					if (!t.isPointerType() || !t.asPointerType().getInnerType().isUnitType()) {
+						if (known && PyBinaryDispatch.isBuiltinValueType(t)
+								&& BuiltinAttributes.missing(PyBinaryDispatch.classOf(t), name)) {
+							// the values of the class have no such attribute
+							// (e.g. (5).strip), if the value is known to be
+							// of that class (not just any value)
+							missingAttribute = true;
+							continue;
+						}
+						Set<CodeMember> m = BoundMethods.methods(getProgram(), t, name);
+						valueMethods.addAll(m);
+						unknown |= m.isEmpty();
+					}
+			if (missingAttribute)
+				result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, thrower,
+						LibrarySpecificationProvider.ATTRIBUTE_ERROR));
+			if (!valueMethods.isEmpty())
+				result = result
+						.lub(BoundMethods.create(analysis, state, expr, valueMethods, this, getMetaVariables()));
+			if (unknown)
+				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this));
+		}
 		return result;
 	}
 
@@ -298,13 +344,46 @@ public class PyAttributeAccess extends UnaryExpression {
 					Type type = site.getStaticType();
 					if (type.isUnitType() && units.contains(type.asUnitType().getUnit()))
 						missing.add((ClassUnit) type.asUnitType().getUnit());
-					else if (!skipMethods || !type.isUnitType())
+					else if (!type.isUnitType())
 						missing.addAll(units);
-					// otherwise, an object of a class defining the method
+					// otherwise, an object of a class defining the method, or
+					// of a class that the types of the receiver exclude (e.g.
+					// after isinstance(x, C)), that x cannot point to
 				}
 			}
 		}
 		return missing.isEmpty() ? null : new Missing(assigned, missing);
+	}
+
+	// whether some of the objects expr points to might have the attribute
+	// (that is, it is assigned on them, or the objects are not known)
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean mightBeAssigned(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression expr)
+			throws SemanticException {
+		HeapEnvWithFields heap = state.getExecutionState().getLatticeInstance(HeapEnvWithFields.class);
+		if (heap == null || heap.isTop() || heap.fields.isTop() || heap.fields.function == null)
+			return true;
+		for (SymbolicExpression rec : analysis.rewrite(state, expr, this)) {
+			Set<AllocationSite> sites;
+			if (rec instanceof MemoryPointer && ((MemoryPointer) rec).getReferencedLocation() instanceof AllocationSite)
+				sites = Set.of((AllocationSite) ((MemoryPointer) rec).getReferencedLocation());
+			else if (rec instanceof Identifier && heap.knowsIdentifier((Identifier) rec)) {
+				AllocationSites pointed = heap.getState((Identifier) rec);
+				if (pointed.isTop() || pointed.isBottom())
+					return true;
+				sites = pointed.elements();
+			} else
+				return true;
+			for (AllocationSite site : sites) {
+				ExpressionSet fields = heap.fields.getState(site);
+				if (fields.isTop() || fields.elements().stream()
+						.anyMatch(f -> f instanceof Variable && ((Variable) f).getName().equals(name)))
+					return true;
+			}
+		}
+		return false;
 	}
 
 	// reads the attribute from the given class, for an object that does not

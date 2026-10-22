@@ -98,7 +98,7 @@ public class PyClosureCreation extends Expression {
 		for (FreeVariable var : free) {
 			// the object holding the cell (note that copying $closure.x into
 			// the field of the new closure relies on the heap following the
-			// references held by fields, see PyFieldSensitivePointBasedHeap)
+			// references held by fields, see PyHeap)
 			SymbolicExpression owner = var.cells() != null
 					? new Variable(Untyped.INSTANCE, var.cells(), loc)
 					: Cells.cell(Cells.CLOSURE, var.name(), loc);
