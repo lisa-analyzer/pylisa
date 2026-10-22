@@ -6,6 +6,10 @@ library _sv_verifier:
         type it.unive.lisa.program.type.Int32Type::INSTANCE
     method nondet_float: it.unive.pylisa.libraries.svverifier.NondetFloat
         type it.unive.lisa.program.type.Float32Type::INSTANCE
+    method nondet_float_range: it.unive.pylisa.libraries.svverifier.NondetFloatRange
+        type it.unive.lisa.program.type.Float32Type::INSTANCE
+        param a type it.unive.lisa.type.Untyped::INSTANCE
+        param b type it.unive.lisa.type.Untyped::INSTANCE
     method nondet_str: it.unive.pylisa.libraries.svverifier.NondetStr
         type it.unive.lisa.program.type.StringType::INSTANCE
     method nondet_list: it.unive.pylisa.libraries.svverifier.NondetList

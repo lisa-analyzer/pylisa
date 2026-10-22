@@ -6,7 +6,9 @@ import java.util.Set;
 /**
  * The attributes of the objects of the builtin classes {@code int},
  * {@code bool}, {@code float}, {@code str}, {@code bytes} and {@code NoneType}
- * (the names in {@code dir} of each class, as of python 3.13.2). Reading any other
+ * (the names in {@code dir} of each class, as of python 3.13.2, plus
+ * {@code float.from_number}, the only one added in python 3.14, that the
+ * benchmarks assume by default). Reading any other
  * attribute of their objects (e.g. {@code (5).strip}) raises
  * {@code AttributeError}. Builtin classes gain attributes in newer versions of
  * python, and practically never lose them: an attribute of a newer version is
@@ -40,7 +42,7 @@ public final class BuiltinAttributes {
 			"__xor__", "as_integer_ratio", "bit_count", "bit_length", "conjugate", "denominator", "from_bytes",
 			"imag", "is_integer", "numerator", "real", "to_bytes");
 
-	// dir(float)
+	// dir(float), with from_number (added in python 3.14)
 	private static final Set<String> FLOAT = Set.of(
 			"__abs__", "__add__", "__bool__", "__ceil__", "__class__", "__delattr__", "__dir__", "__divmod__",
 			"__doc__", "__eq__", "__float__", "__floor__", "__floordiv__", "__format__", "__ge__", "__getattribute__",
@@ -48,8 +50,8 @@ public final class BuiltinAttributes {
 			"__int__", "__le__", "__lt__", "__mod__", "__mul__", "__ne__", "__neg__", "__new__", "__pos__", "__pow__",
 			"__radd__", "__rdivmod__", "__reduce__", "__reduce_ex__", "__repr__", "__rfloordiv__", "__rmod__",
 			"__rmul__", "__round__", "__rpow__", "__rsub__", "__rtruediv__", "__setattr__", "__sizeof__", "__str__",
-			"__sub__", "__subclasshook__", "__truediv__", "__trunc__", "as_integer_ratio", "conjugate", "fromhex",
-			"hex", "imag", "is_integer", "real");
+			"__sub__", "__subclasshook__", "__truediv__", "__trunc__", "as_integer_ratio", "conjugate", "from_number",
+			"fromhex", "hex", "imag", "is_integer", "real");
 
 	// dir(str)
 	private static final Set<String> STR = Set.of(
