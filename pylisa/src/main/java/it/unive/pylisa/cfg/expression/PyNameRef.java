@@ -72,8 +72,10 @@ import org.apache.commons.io.FilenameUtils;
  * {@link NameKind#FREE}) are read and written through their cells (see
  * {@link Cells}); the ones that refer to cells of enclosing functions
  * ({@link NameKind#FREE}) are always considered bound. When the binding status
- * is not known (e.g. the reference is evaluated outside of its scope, or the
- * analysis state does not contain the {@link Namespaces}), a global name that
+ * is not known (e.g. the reference is evaluated outside of its scope, the
+ * analysis state does not contain the {@link Namespaces}, or the name is a
+ * global of a module whose code has not started, see
+ * {@link Namespaces#withStarted(String)}), a global name that
  * is not known in the state is resolved statically, in this order:
  * <ol>
  * <li>a name imported from a local module is resolved as the global of that
@@ -247,7 +249,12 @@ public class PyNameRef extends VariableRef {
 		if (!checked || kind == NameKind.FREE)
 			return null;
 		Namespaces namespaces = Namespaces.of(state);
-		return namespaces == null ? null : namespaces.status(module, getName(), kind.isGlobal());
+		if (namespaces == null || (kind.isGlobal() && !namespaces.isStarted(module)))
+			// the globals of a module whose code has not started (e.g. a
+			// function of an imported module, whose code is analyzed
+			// separately) might be bound by the module
+			return null;
+		return namespaces.status(module, getName(), kind.isGlobal());
 	}
 
 	/**

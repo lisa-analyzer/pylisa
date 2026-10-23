@@ -24,7 +24,8 @@ import it.unive.pylisa.analysis.namespaces.Namespaces;
  * joining a state without the namespaces with a state having them would yield
  * the latter, losing the names that are not bound in the former: this statement
  * guarantees that all the states of the module (and of the functions it calls)
- * contain the namespaces.
+ * contain the namespaces. It also records that the code of the module has
+ * started (see {@link Namespaces#withStarted(String)}).
  */
 public class PyNamespacesInit extends Statement {
 
@@ -104,6 +105,6 @@ public class PyNamespacesInit extends Statement {
 			namespaces = Namespaces.EMPTY;
 		if (stable)
 			namespaces = namespaces.withStable(module);
-		return Namespaces.store(result, namespaces);
+		return Namespaces.store(result, namespaces.withStarted(module));
 	}
 }

@@ -1,0 +1,44 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/imported-globals/main.py':10:4] on 'untyped py-testcases/imported-globals/main::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/imported-globals/main.py':10:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_imported-globals_helper.$main().graph.json", "untyped_py-testcases_imported-globals_helper.get()_-439285612.graph.json", "untyped_py-testcases_imported-globals_helper.k_value()_-439285426.graph.json", "untyped_py-testcases_imported-globals_helper.text()_320029409.graph.json", "untyped_py-testcases_imported-globals_main.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "6",
+    "duration" : "128ms",
+    "end" : "2026-10-22T20:09:03.897+02:00",
+    "expressions" : "20",
+    "files" : "5",
+    "globals" : "0",
+    "members" : "174",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-22T20:09:03.769+02:00",
+    "statements" : "19",
+    "units" : "39",
+    "version" : "1.0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/imported-globals"
+  }
+}
