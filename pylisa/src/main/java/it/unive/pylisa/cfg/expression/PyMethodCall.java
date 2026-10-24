@@ -6,7 +6,9 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
@@ -15,8 +17,6 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.analysis.symbols.SymbolAliasing;
-import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.program.cfg.statement.call.CFGCall;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.NativeCall;
@@ -310,9 +310,11 @@ public class PyMethodCall extends UnresolvedCall {
 				result = result.lub(PyExceptions.raise(analysis, attr, getCFG(), getLocation(), this,
 						LibrarySpecificationProvider.TYPE_ERROR));
 			if (!cfgs.isEmpty())
-				result = result.lub(call(CallSites.within(new CFGCall(call, cfgs), this), interprocedural, attr, args, expressions));
+				result = result.lub(call(CallSites.within(new CFGCall(call, cfgs), this), interprocedural, attr, args,
+						expressions));
 			if (!natives.isEmpty())
-				result = result.lub(call(CallSites.within(new NativeCall(call, natives), this), interprocedural, attr, args, expressions));
+				result = result.lub(call(CallSites.within(new NativeCall(call, natives), this), interprocedural, attr,
+						args, expressions));
 			for (SymbolicExpression bound : bounds)
 				// a bound method stored in the attribute, called on its object
 				result = result.lub(BoundMethods.call(interprocedural, attr, bound, parameters[0],

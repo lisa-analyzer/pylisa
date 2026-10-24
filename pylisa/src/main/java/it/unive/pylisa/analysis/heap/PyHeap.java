@@ -25,12 +25,12 @@ import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * The field-sensitive point-based heap, where reading a field holding objects
- * yields them (see {@link #process}), also refined by {@code isinstance}
- * (see {@link IsInstance}): in the branches of {@code isinstance(x, C)},
- * {@code x} points only to the objects whose class satisfies {@code C}, or
- * only to the ones whose class does not, as its types are refined by the type
- * domain (see {@code PyInferredTypes}). Otherwise, the methods called on
- * {@code x} would also see the objects that its types exclude.
+ * yields them (see {@link #process}), also refined by {@code isinstance} (see
+ * {@link IsInstance}): in the branches of {@code isinstance(x, C)}, {@code x}
+ * points only to the objects whose class satisfies {@code C}, or only to the
+ * ones whose class does not, as its types are refined by the type domain (see
+ * {@code PyInferredTypes}). Otherwise, the methods called on {@code x} would
+ * also see the objects that its types exclude.
  */
 public class PyHeap extends FieldSensitivePointBasedHeap {
 
@@ -77,8 +77,7 @@ public class PyHeap extends FieldSensitivePointBasedHeap {
 			ProgramPoint dest,
 			SemanticOracle oracle)
 			throws SemanticException {
-		Pair<HeapEnvWithFields, List<HeapReplacement>> result = super
-				.assume(state, expression, src, dest, oracle);
+		Pair<HeapEnvWithFields, List<HeapReplacement>> result = super.assume(state, expression, src, dest, oracle);
 		HeapEnvWithFields assumed = result.getLeft();
 		// the expression is not rewritten yet (e.g. not o.x), so negations
 		// are removed here

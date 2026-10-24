@@ -1,0 +1,46 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/reachability/function/main.py':12:8] on 'untyped py-testcases/reachability/function/main::$main()': [EXPRESSION] ARITHMETIC: possible division by zero (uncaught ZeroDivisionError) at 'py-testcases/reachability/function/main.py':12:8"
+  }, {
+    "message" : "['py-testcases/reachability/function/main.py':13:0] on 'untyped py-testcases/reachability/function/main::$main()': [EXPRESSION] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/reachability/function/main.py':13:0"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_reachability_function_main.$main().graph.json", "untyped_py-testcases_reachability_function_main.f()_977835150.graph.json" ],
+  "info" : {
+    "cfgs" : "3",
+    "duration" : "10ms",
+    "end" : "2026-10-24T11:15:56.913+02:00",
+    "expressions" : "10",
+    "files" : "2",
+    "globals" : "0",
+    "members" : "171",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-24T11:15:56.903+02:00",
+    "statements" : "10",
+    "units" : "38",
+    "version" : "1.0",
+    "warnings" : "2"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/reachability/function"
+  }
+}

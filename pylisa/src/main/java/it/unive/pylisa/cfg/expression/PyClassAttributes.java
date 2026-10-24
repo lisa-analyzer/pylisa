@@ -116,8 +116,8 @@ public final class PyClassAttributes {
 	}
 
 	/**
-	 * Yields the class attribute {@code name} assigned in the body of the
-	 * given class (not of its bases).
+	 * Yields the class attribute {@code name} assigned in the body of the given
+	 * class (not of its bases).
 	 *
 	 * @param unit the class
 	 * @param name the name of the attribute

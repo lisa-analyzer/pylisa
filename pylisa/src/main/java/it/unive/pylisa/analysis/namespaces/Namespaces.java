@@ -328,9 +328,9 @@ public class Namespaces implements BaseLattice<Namespaces>, ScopedObject<Namespa
 	 * started (see {@code PyNamespacesInit}). The frame of a module whose code
 	 * has not started does not hold the binding status of its globals: it is
 	 * empty, while the module, when it is executed (e.g. when imported), binds
-	 * them. This happens, for instance, when a function of a module imported
-	 * by the module being analyzed is called, as the code of imported modules
-	 * is analyzed separately.
+	 * them. This happens, for instance, when a function of a module imported by
+	 * the module being analyzed is called, as the code of imported modules is
+	 * analyzed separately.
 	 *
 	 * @param module the name of the module
 	 *

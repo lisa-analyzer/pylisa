@@ -19,13 +19,13 @@ import java.util.function.Predicate;
  * The type hints of {@code isinstance(value, hint)} and
  * {@code _sv_verifier.check_type(value, hint)}, given by the runtime type of
  * {@code hint}. The supported hints are {@code int} (also satisfied by a
- * {@code bool}), {@code float}, {@code str}, {@code bytes}, {@code list}, {@code range} and
- * {@code None}, the classes of the program (also satisfied by the objects of
- * their subclasses; both outcomes are possible for an object of a class whose
- * bases are not known) and their unions
- * (e.g. {@code int | None}, see {@code PyBitwiseOr}). A builtin function that
- * is not a type (e.g. {@code len}) is never satisfied. For any other hint (e.g.
- * {@code list[int]}), both outcomes are possible.
+ * {@code bool}), {@code float}, {@code str}, {@code bytes}, {@code list},
+ * {@code range} and {@code None}, the classes of the program (also satisfied by
+ * the objects of their subclasses; both outcomes are possible for an object of
+ * a class whose bases are not known) and their unions (e.g. {@code int | None},
+ * see {@code PyBitwiseOr}). A builtin function that is not a type (e.g.
+ * {@code len}) is never satisfied. For any other hint (e.g. {@code list[int]}),
+ * both outcomes are possible.
  */
 public final class TypeHints {
 

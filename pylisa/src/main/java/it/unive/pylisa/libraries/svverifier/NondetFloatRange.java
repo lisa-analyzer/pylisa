@@ -15,11 +15,11 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.PyNative;
 
 /**
- * Native implementation of {@code _sv_verifier.nondet_float_range(a, b)},
- * that is {@code random.uniform(a, b)} ({@code a + (b - a) * random()}): the
- * result is any {@code float} (also infinite or {@code nan}, e.g. if {@code a}
- * is infinite), if {@code a} and {@code b} are numbers ({@code int},
- * {@code bool} or {@code float}); {@code TypeError} is raised otherwise.
+ * Native implementation of {@code _sv_verifier.nondet_float_range(a, b)}, that
+ * is {@code random.uniform(a, b)} ({@code a + (b - a) * random()}): the result
+ * is any {@code float} (also infinite or {@code nan}, e.g. if {@code a} is
+ * infinite), if {@code a} and {@code b} are numbers ({@code int}, {@code bool}
+ * or {@code float}); {@code TypeError} is raised otherwise.
  */
 public class NondetFloatRange extends PyNative {
 

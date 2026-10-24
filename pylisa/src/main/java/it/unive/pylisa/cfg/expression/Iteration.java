@@ -12,6 +12,7 @@ import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -19,11 +20,10 @@ import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.RangeBuiltin;
-import it.unive.pylisa.libraries.dicts.DictViews;
-import it.unive.lisa.symbolic.value.Identifier;
-import java.util.Collection;
 import it.unive.pylisa.libraries.dicts.DictModel;
+import it.unive.pylisa.libraries.dicts.DictViews;
 import it.unive.pylisa.libraries.lists.ListModel;
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -38,12 +38,12 @@ public final class Iteration {
 	 * Yields any of the elements of the iterable (e.g. the one bound to the
 	 * variable of a comprehension, or of a for loop): the elements of a list,
 	 * the keys of a dictionary, the characters of a {@code str}, the bytes of a
-	 * {@code bytes}, the {@code int}s of a range (see {@link RangeBuiltin}), and
-	 * the keys, values or items of a view of a dictionary (see
-	 * {@link DictViews}). Iterating over
-	 * values that cannot be iterated (e.g. an {@code int}) raises
-	 * {@code TypeError}; the elements of other iterables (e.g. an object whose
-	 * class defines {@code __iter__}, that is not called) are unknown.
+	 * {@code bytes}, the {@code int}s of a range (see {@link RangeBuiltin}),
+	 * and the keys, values or items of a view of a dictionary (see
+	 * {@link DictViews}). Iterating over values that cannot be iterated (e.g.
+	 * an {@code int}) raises {@code TypeError}; the elements of other iterables
+	 * (e.g. an object whose class defines {@code __iter__}, that is not called)
+	 * are unknown.
 	 *
 	 * @param analysis   the analysis
 	 * @param state      the state where the iterable has been evaluated
@@ -51,8 +51,8 @@ public final class Iteration {
 	 * @param iterable   the iterable
 	 * @param pp         the program point iterating over the iterable
 	 * @param metas      where the meta variables of the elements are added,
-	 *                       that {@code pp} must forget (e.g. the receivers
-	 *                       of the tuples of {@code d.items()}, see
+	 *                       that {@code pp} must forget (e.g. the receivers of
+	 *                       the tuples of {@code d.items()}, see
 	 *                       {@link DictViews})
 	 *
 	 * @return the state whose computed expressions are the elements

@@ -12,7 +12,6 @@ import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
-import it.unive.pylisa.cfg.ClassBases;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -25,6 +24,7 @@ import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.PyMro;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -42,8 +42,8 @@ import java.util.Set;
  * arguments, or no class defines it, {@code TypeError} or
  * {@code AttributeError} are raised, if the methods of the classes are all
  * known; the call is unknown otherwise (also for the methods of library
- * classes). {@code object.__init__}, that is
- * called when no class defines {@code __init__}, returns {@code None}.
+ * classes). {@code object.__init__}, that is called when no class defines
+ * {@code __init__}, returns {@code None}.
  */
 public class PySuperCall extends UnresolvedCall {
 

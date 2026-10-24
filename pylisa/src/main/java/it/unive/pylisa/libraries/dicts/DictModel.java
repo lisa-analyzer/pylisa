@@ -15,9 +15,6 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.pylisa.cfg.DerivedLocation;
-import it.unive.pylisa.cfg.expression.TupleCreation;
-import java.util.Collection;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
@@ -33,11 +30,14 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
+import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.lists.ListModel;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -558,8 +558,8 @@ public final class DictModel {
 
 	/**
 	 * Adds an entry whose key is not tracked, and that might be equal to any of
-	 * the keys of the dictionary: the values of all the keys are weakly updated.
-	 * The key comes from a mapping, so it is hashable.
+	 * the keys of the dictionary: the values of all the keys are weakly
+	 * updated. The key comes from a mapping, so it is hashable.
 	 *
 	 * @param analysis the analysis
 	 * @param state    the current state

@@ -9,9 +9,8 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.CompilationUnit;
-import it.unive.lisa.program.Unit;
-import it.unive.pylisa.cfg.ClassBases;
 import it.unive.lisa.program.Program;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -31,6 +30,7 @@ import it.unive.lisa.type.CodeMemberType;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.PyMro;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -126,8 +126,8 @@ public final class BoundMethods {
 	 * @param interprocedural the interprocedural analysis
 	 * @param state           the state where the call happens
 	 * @param bound           the bound method
-	 * @param receiver        the expression standing for the object in the
-	 *                            call (e.g. the callee)
+	 * @param receiver        the expression standing for the object in the call
+	 *                            (e.g. the callee)
 	 * @param args            the arguments
 	 * @param values          the values of the arguments
 	 * @param caller          the statement calling the bound method

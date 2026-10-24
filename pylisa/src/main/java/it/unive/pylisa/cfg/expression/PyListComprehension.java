@@ -23,8 +23,8 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
-import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.dicts.DictModel;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -57,8 +57,8 @@ public class PyListComprehension extends NaryExpression {
 	/**
 	 * A {@code for x in iterable if c1 if c2 ...} clause.
 	 *
-	 * @param target     the variable bound to the elements, or the targets
-	 *                       they are unpacked into (a {@link TupleCreation} of
+	 * @param target     the variable bound to the elements, or the targets they
+	 *                       are unpacked into (a {@link TupleCreation} of
 	 *                       variables, as in {@code for k, v in pairs})
 	 * @param iterable   the iterable
 	 * @param conditions the conditions

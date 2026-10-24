@@ -75,8 +75,8 @@ import org.apache.commons.io.FilenameUtils;
  * is not known (e.g. the reference is evaluated outside of its scope, the
  * analysis state does not contain the {@link Namespaces}, or the name is a
  * global of a module whose code has not started, see
- * {@link Namespaces#withStarted(String)}), a global name that
- * is not known in the state is resolved statically, in this order:
+ * {@link Namespaces#withStarted(String)}), a global name that is not known in
+ * the state is resolved statically, in this order:
  * <ol>
  * <li>a name imported from a local module is resolved as the global of that
  * module;</li>

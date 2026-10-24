@@ -3,9 +3,7 @@ package it.unive.pylisa;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAReport;
 import it.unive.lisa.analysis.ConstantValuePropagation;
-import it.unive.lisa.analysis.Reachability;
 import it.unive.lisa.analysis.SimpleAbstractDomain;
-import it.unive.pylisa.analysis.heap.PyHeap;
 import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.conf.LiSAConfiguration;
@@ -22,8 +20,10 @@ import it.unive.lisa.outputs.JSONReportDumper;
 import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.outputs.messages.Message;
 import it.unive.lisa.program.Program;
+import it.unive.pylisa.analysis.PyReachability;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphValueDomain;
+import it.unive.pylisa.analysis.heap.PyHeap;
 import it.unive.pylisa.analysis.types.PyInferredTypes;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
@@ -390,7 +390,7 @@ public class PyLiSA {
 			throw new ParseException("Invalid numerical domain name: " + numericalDomain);
 		}
 
-		conf.analysis = new Reachability<>(new SimpleAbstractDomain<>(
+		conf.analysis = new PyReachability<>(new SimpleAbstractDomain<>(
 				new PyHeap(),
 				domain,
 				new PyInferredTypes()));

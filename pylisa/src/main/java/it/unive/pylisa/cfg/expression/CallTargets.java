@@ -41,10 +41,9 @@ import org.apache.commons.lang3.ArrayUtils;
  * function): the functions and natives it holds, the closures of nested
  * functions (see {@link PyClosureUnit}), the bound methods (see
  * {@link BoundMethods}), the objects whose class defines {@code __call__}, the
- * classes of the program, and whether it might hold values that
- * cannot be called, or whose callability is unknown. This is shared by the
- * calls on names ({@link PyNameCall}) and on other values
- * ({@link PyValueCall}).
+ * classes of the program, and whether it might hold values that cannot be
+ * called, or whose callability is unknown. This is shared by the calls on names
+ * ({@link PyNameCall}) and on other values ({@link PyValueCall}).
  */
 final class CallTargets {
 
@@ -182,11 +181,12 @@ final class CallTargets {
 	/**
 	 * Calls the functions, natives, closures, and bound methods held by the
 	 * callee, calls {@code __call__} on the objects it holds, and creates
-	 * objects of the classes it holds (as {@link PyNewObj}). Closures are passed
-	 * as the first argument of their functions (see {@link Cells#CLOSURE}),
-	 * objects as the receiver of {@code __call__}, and bound methods are called
-	 * on their objects (see {@link BoundMethods#call}). The calls are
-	 * sub-expressions of {@code caller} (see {@link CallSites#within}).
+	 * objects of the classes it holds (as {@link PyNewObj}). Closures are
+	 * passed as the first argument of their functions (see
+	 * {@link Cells#CLOSURE}), objects as the receiver of {@code __call__}, and
+	 * bound methods are called on their objects (see
+	 * {@link BoundMethods#call}). The calls are sub-expressions of
+	 * {@code caller} (see {@link CallSites#within}).
 	 *
 	 * @param <A>             the kind of {@link AbstractLattice} of the state
 	 * @param <D>             the kind of {@link AbstractDomain} of the analysis

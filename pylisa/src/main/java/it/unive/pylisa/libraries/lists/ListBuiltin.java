@@ -23,11 +23,10 @@ import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.libraries.RangeBuiltin;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.dicts.DictViews;
-import it.unive.pylisa.libraries.PyNative;
-import it.unive.pylisa.libraries.RangeBuiltin;
 
 /**
  * Native implementation of {@code list([iterable])}: {@code list()} is a new
@@ -37,8 +36,7 @@ import it.unive.pylisa.libraries.RangeBuiltin;
  * iterable, unknown values otherwise. {@code TypeError} is raised if
  * {@code iterable} might not be iterable (only lists, {@code str},
  * {@code bytes}, ranges, dictionaries and their views are known to be), e.g.
- * for an explicit {@code None}.
- * The name {@code list} is also the type of
+ * for an explicit {@code None}. The name {@code list} is also the type of
  * lists, e.g. in {@code _sv_verifier.check_type(x, list)}.
  */
 public class ListBuiltin extends PyNative {

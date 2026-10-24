@@ -311,7 +311,8 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 							"starred arguments of unknown length are supported only as the last positional ones");
 			AnalysisState<A> iterated = state.bottomExecution();
 			for (SymbolicExpression value : given[i])
-				iterated = iterated.lub(Iteration.elements(analysis, state, iterable, value, call, call.getMetaVariables()));
+				iterated = iterated
+						.lub(Iteration.elements(analysis, state, iterable, value, call, call.getMetaVariables()));
 			errors = errors.lub(iterated.bottomExecution());
 			unknown = iterated.getExecutionExpressions();
 			unknownIterable = iterable;
