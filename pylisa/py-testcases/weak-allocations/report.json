@@ -1,0 +1,46 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/weak-allocations/weak-allocations.py':27:4] on 'untyped py-testcases/weak-allocations/weak-allocations::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/weak-allocations/weak-allocations.py':27:4"
+  }, {
+    "message" : "['py-testcases/weak-allocations/weak-allocations.py':43:0] on 'untyped py-testcases/weak-allocations/weak-allocations::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/weak-allocations/weak-allocations.py':43:0"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_weak-allocations_weak-allocations.$main().graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.a(untyped_x)_-878892562.graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.b(untyped_x)_-878892562.graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.dec(untyped_f)_-878901769.graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.dec(untyped_f)_-878901800.graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.dec._locals_.inner(untyped_$closure,_untyped_x)_-878902668.graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.mk(untyped_v)_-878902141.graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.mk(untyped_v)_-878902172.graph.json" ],
+  "info" : {
+    "cfgs" : "8",
+    "duration" : "160ms",
+    "end" : "2026-10-24T13:49:58.409+02:00",
+    "expressions" : "51",
+    "files" : "8",
+    "globals" : "0",
+    "members" : "176",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-24T13:49:58.249+02:00",
+    "statements" : "28",
+    "units" : "39",
+    "version" : "1.0",
+    "warnings" : "2"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/weak-allocations"
+  }
+}

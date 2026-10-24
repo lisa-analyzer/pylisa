@@ -26,6 +26,7 @@ import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.dicts.DictModel;
@@ -101,9 +102,11 @@ public class DictionaryCreation extends NaryExpression {
 		CodeLocation loc = getLocation();
 		Type dictType = PyClassType.lookup(LibrarySpecificationProvider.DICT);
 		ReferenceType reftype = new ReferenceType(dictType);
-		HeapReference ref = new HeapReference(reftype, new MemoryAllocation(dictType, loc, false), loc);
+		MemoryAllocation alloc = new MemoryAllocation(dictType, loc, false);
+		HeapReference ref = new HeapReference(reftype, alloc, loc);
 		InstrumentedReceiver dict = new InstrumentedReceiver(reftype, false, loc);
-		AnalysisState<A> current = analysis.assign(state, dict, ref, this);
+		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, alloc, this), dict, ref,
+				this);
 		HeapDereference deref = new HeapDereference(dictType, dict, loc);
 		// the heap tracks the fields accessed on each object, but until the
 		// first access to any field in the program, the fields are unknown

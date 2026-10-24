@@ -35,6 +35,7 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
@@ -105,8 +106,10 @@ public class PyNewObj extends NaryExpression {
 		VariableRef paramThis = new VariableRef(getCFG(), getLocation(), "$self@" + getLocation(), reftype);
 		Expression[] fullExpressions = ArrayUtils.insert(0, getSubExpressions(), paramThis);
 
-		// we also have to add the receiver inside the state
-		AnalysisState<A> callstate = paramThis.forwardSemantics(state, interprocedural, expressions);
+		// we also have to add the receiver inside the state, where the object
+		// has been allocated
+		AnalysisState<A> callstate = paramThis.forwardSemantics(
+				Allocations.allocate(analysis, state, created, this), interprocedural, expressions);
 		AnalysisState<A> tmp = state.bottomExecution();
 		for (SymbolicExpression v : callstate.getExecutionExpressions()) {
 			AnalysisState<A> assigned = analysis.assign(callstate, v, ref, paramThis);

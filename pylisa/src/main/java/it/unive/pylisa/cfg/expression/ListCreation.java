@@ -25,6 +25,7 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 
@@ -71,7 +72,8 @@ public class ListCreation extends NaryExpression {
 		HeapReference ref = new HeapReference(reftype, created, loc);
 
 		InstrumentedReceiver list = new InstrumentedReceiver(reftype, true, loc);
-		AnalysisState<A> current = analysis.assign(state, list, ref, this);
+		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, created, this), list, ref,
+				this);
 		HeapDereference deref = new HeapDereference(listType, list, loc);
 		// the heap tracks the fields accessed on each object, but until the
 		// first access to any field in the program, the fields are unknown

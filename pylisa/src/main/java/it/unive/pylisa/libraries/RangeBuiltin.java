@@ -19,6 +19,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.type.PyClassType;
 
 /**
@@ -78,8 +79,9 @@ public class RangeBuiltin extends PyNative {
 		if (typed != Satisfiability.NOT_SATISFIED) {
 			if (zero != Satisfiability.SATISFIED) {
 				Type range = PyClassType.lookup(LibrarySpecificationProvider.RANGE);
-				result = result.lub(compute(analysis, state, new HeapReference(new ReferenceType(range),
-						new MemoryAllocation(range, loc, false), loc)));
+				MemoryAllocation alloc = new MemoryAllocation(range, loc, false);
+				result = result.lub(compute(analysis, Allocations.allocate(analysis, state, alloc, st),
+						new HeapReference(new ReferenceType(range), alloc, loc)));
 			}
 			if (zero != Satisfiability.NOT_SATISFIED)
 				result = result.lub(raise(analysis, state, LibrarySpecificationProvider.VALUE_ERROR));

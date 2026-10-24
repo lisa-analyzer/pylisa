@@ -26,6 +26,7 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -120,9 +121,10 @@ public class TupleCreation extends NaryExpression {
 			throws SemanticException {
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 		ReferenceType reftype = new ReferenceType(tupleType);
-		HeapReference ref = new HeapReference(reftype, new MemoryAllocation(tupleType, location), location);
+		MemoryAllocation alloc = new MemoryAllocation(tupleType, location);
+		HeapReference ref = new HeapReference(reftype, alloc, location);
 		InstrumentedReceiver tuple = new InstrumentedReceiver(reftype, false, location);
-		AnalysisState<A> current = analysis.assign(state, tuple, ref, pp);
+		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, alloc, pp), tuple, ref, pp);
 		HeapDereference deref = new HeapDereference(tupleType, tuple, location);
 
 		for (int i = 0; i < params.length; i++) {
