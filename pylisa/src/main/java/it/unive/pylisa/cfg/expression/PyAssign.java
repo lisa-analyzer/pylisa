@@ -17,6 +17,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
+import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.RightToLeftEvaluation;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -25,6 +26,9 @@ import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.UnsupportedStatementException;
+import it.unive.pylisa.cfg.ClassBases;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -86,6 +90,12 @@ public class PyAssign extends Assignment {
 		AnalysisState<A> selfState = evalSub(selfExpr, valueState, interprocedural, expressions);
 		AnalysisState<A> indexState = evalSub(indexExpr, selfState, interprocedural, expressions);
 
+		if (indexState.getExecutionState().isBottom())
+			// unreachable code (e.g. a branch excluded by its condition), or
+			// the evaluation of the value, the receiver, or the index always
+			// raises an error: nothing is assigned
+			return indexState;
+
 		ExpressionSet valueIds = valueState.getExecutionExpressions();
 		ExpressionSet selfIds = selfState.getExecutionExpressions();
 		ExpressionSet indexIds = indexState.getExecutionExpressions();
@@ -113,12 +123,28 @@ public class PyAssign extends Assignment {
 						: rtsIndex;
 
 			for (Type tSelf : rtsSelf) {
-				UnresolvedCall setitem = CallSites.get(interprocedural, this, CallType.STATIC, null, "__setitem__",
+				// the methods of the classes of the program are instance
+				// methods, looked up in the method resolution order of the
+				// class (see PyMro), while the natives of the library classes
+				// (e.g. list) take the receiver as their first argument
+				CallType kind = tSelf.isPointerType() && tSelf.asPointerType().getInnerType().isUnitType()
+						&& ClassBases.isProgramClass(tSelf.asPointerType().getInnerType().asUnitType().getUnit())
+								? CallType.INSTANCE
+								: CallType.STATIC;
+				UnresolvedCall setitem = CallSites.get(interprocedural, this, kind, null, "__setitem__",
 						selfExpr, indexExpr, valueExpr);
 				try {
 					Call call = interprocedural.resolve(setitem,
 							new Set[] { Collections.singleton(tSelf), rtsIndex, rtsValue }, aliasing);
 					resolved = true;
+					if (call instanceof OpenCall && PyBinaryDispatch.fullyKnown(tSelf)) {
+						// all the methods of the class of the receiver are
+						// known, and none is a __setitem__ accepting the
+						// arguments (e.g. an int, a str, or None)
+						result = result.lub(PyExceptions.raise(analysis, indexState, getCFG(), loc, this,
+								LibrarySpecificationProvider.TYPE_ERROR));
+						continue;
+					}
 					result = result.lub(call.forwardSemanticsAux(interprocedural, indexState, args, expressions));
 					setitems.add(call);
 				} catch (CallResolutionException e) {
@@ -129,8 +155,7 @@ public class PyAssign extends Assignment {
 		}
 
 		if (!resolved)
-			// no type implements __setitem__: real Python raises TypeError,
-			// which is not modeled here
+			// the call cannot be resolved for any type of the receiver
 			throw new UnsupportedStatementException(this);
 
 		// as sub-expressions are evaluated here, their meta variables (e.g.,
