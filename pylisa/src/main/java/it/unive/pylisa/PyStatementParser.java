@@ -233,6 +233,7 @@ import it.unive.pylisa.cfg.statement.PyDelName;
 import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibraryConstants;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.scoping.NameKind;
 import it.unive.pylisa.scoping.PyScope;
@@ -277,6 +278,14 @@ public class PyStatementParser
 	 * calls on a receiver.
 	 */
 	private final Set<String> namespaces = new HashSet<>();
+
+	/**
+	 * The names bound to modules by import statements, mapped to the (dotted)
+	 * names of the modules (e.g. {@code m} to {@code math} for
+	 * {@code import math as m}, {@code os} to {@code os} for
+	 * {@code import os.path}).
+	 */
+	private final Map<String, String> importedModules = new HashMap<>();
 
 	/**
 	 * The variables of the comprehensions being parsed (innermost first),
@@ -548,7 +557,7 @@ public class PyStatementParser
 			if (access.DOT() != null) {
 				String name = access.name().getText();
 				write = attribute(writeBase, name, new DerivedLocation(loc, "write"));
-				read = attribute(readBase, name, new DerivedLocation(loc, "read"));
+				read = readAttribute(readBase, name, new DerivedLocation(loc, "read"));
 			} else {
 				List<Expression> indexes = extractExpressionsFromSlices(access.slices());
 				if (indexes.size() != 1)
@@ -723,7 +732,7 @@ public class PyStatementParser
 
 		Expression base = visitTPrimary(ctx.t_primary());
 		if (ctx.DOT() != null)
-			return attribute(base, ctx.name().getText(), getLocation(filePath, ctx));
+			return readAttribute(base, ctx.name().getText(), getLocation(filePath, ctx));
 		else if (ctx.LSQB() != null) {
 			List<Expression> indexes = extractExpressionsFromSlices(ctx.slices());
 			if (indexes.size() == 1)
@@ -913,6 +922,8 @@ public class PyStatementParser
 			libs.put(importedLibrary, as);
 			// "import a.b.c" binds "a", "import a.b.c as d" binds "d"
 			namespaces.add(as != null ? as : importedLibrary.split("\\.")[0]);
+			importedModules.put(as != null ? as : importedLibrary.split("\\.")[0],
+					as != null ? importedLibrary : importedLibrary.split("\\.")[0]);
 			NameContext target = single.name();
 			if (target == null) {
 				Dotted_nameContext first = single.dotted_name();
@@ -1413,7 +1424,7 @@ public class PyStatementParser
 			List<NameContext> names = pattern.value_pattern().attr().name();
 			Expression constant = name(names.get(0));
 			for (int i = 1; i < names.size(); i++)
-				constant = attribute(constant, names.get(i).getText(), getLocation(filePath, names.get(i)));
+				constant = readAttribute(constant, names.get(i).getText(), getLocation(filePath, names.get(i)));
 			return new PyEquals(currentCFG, loc, value, constant);
 		}
 		if (pattern.group_pattern() != null)
@@ -2178,7 +2189,7 @@ public class PyStatementParser
 				previous_access = access;
 				attribute = true;
 				Expression member = moduleMember(access, last_name, getLocation(filePath, frame));
-				access = member != null ? member : attribute(access, last_name, getLocation(filePath, frame));
+				access = member != null ? member : readAttribute(access, last_name, getLocation(filePath, frame));
 			} else if (frame.LPAR() != null || frame.genexp() != null) {
 				List<Expression> arguments;
 				if (frame.genexp() == null)
@@ -2391,6 +2402,28 @@ public class PyStatementParser
 				|| (receiver instanceof UnresolvedCall && ((UnresolvedCall) receiver).getTargetName().equals("super")))
 			return false;
 		return !isNamespace(receiver);
+	}
+
+	/**
+	 * Builds the read of the attribute {@code name} of {@code receiver}: the
+	 * value of a constant of a module of the standard library (see
+	 * {@link LibraryConstants}), if {@code receiver} is a name bound to that
+	 * module by an import (and not to a local module), and the attribute
+	 * otherwise (see {@link #attribute}).
+	 */
+	private Expression readAttribute(
+			Expression receiver,
+			String name,
+			CodeLocation location) {
+		if (receiver instanceof VariableRef && isNamespace(receiver)
+				&& localImports.module(((VariableRef) receiver).getName()) == null) {
+			String module = importedModules.get(((VariableRef) receiver).getName());
+			Expression constant = module == null ? null
+					: LibraryConstants.constant(currentCFG, location, module, name);
+			if (constant != null)
+				return constant;
+		}
+		return attribute(receiver, name, location);
 	}
 
 	/**

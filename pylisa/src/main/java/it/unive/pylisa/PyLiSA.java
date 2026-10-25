@@ -2,7 +2,6 @@ package it.unive.pylisa;
 
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAReport;
-import it.unive.lisa.analysis.ConstantValuePropagation;
 import it.unive.lisa.analysis.SimpleAbstractDomain;
 import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
 import it.unive.lisa.analysis.value.ValueDomain;
@@ -21,6 +20,7 @@ import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.outputs.messages.Message;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.analysis.PyReachability;
+import it.unive.pylisa.analysis.constants.ConstantPropagationDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphValueDomain;
 import it.unive.pylisa.analysis.heap.PyHeap;
@@ -384,7 +384,10 @@ public class PyLiSA {
 		ValueDomain<?> domain;
 		switch (numericalDomain) {
 		case "ConstantPropagation":
-			domain = new ConstantValuePropagation();
+			// the constant propagation of pylisa, that evaluates the
+			// operators of python (e.g. the conversions to int), as in the
+			// tests (see TestHelper)
+			domain = new ConstantPropagationDomain();
 			break;
 		default:
 			throw new ParseException("Invalid numerical domain name: " + numericalDomain);
