@@ -1,0 +1,48 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/list-truthiness/list-truthiness.py':11:8] on 'untyped py-testcases/list-truthiness/list-truthiness::$main()': [EXPRESSION] LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/list-truthiness/list-truthiness.py':11:8"
+  }, {
+    "message" : "['py-testcases/list-truthiness/list-truthiness.py':20:4] on 'untyped py-testcases/list-truthiness/list-truthiness::$main()': [EXPRESSION] LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/list-truthiness/list-truthiness.py':20:4"
+  }, {
+    "message" : "['py-testcases/list-truthiness/list-truthiness.py':27:8] on 'untyped py-testcases/list-truthiness/list-truthiness::$main()': [EXPRESSION] LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/list-truthiness/list-truthiness.py':27:8"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_list-truthiness_list-truthiness.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "7ms",
+    "end" : "2026-10-25T10:19:14.994+01:00",
+    "expressions" : "47",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "178",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-25T10:19:14.987+01:00",
+    "statements" : "23",
+    "units" : "40",
+    "version" : "1.0",
+    "warnings" : "3"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/list-truthiness"
+  }
+}

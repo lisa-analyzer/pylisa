@@ -244,10 +244,100 @@ public final class ListModel {
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
-		AccessChild shrunk = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
-				new Variable(Untyped.INSTANCE, SHRUNK, loc), loc);
-		return analysis.assign(state, shrunk, new Constant(BoolType.INSTANCE, true, loc), pp)
+		HeapDereference deref = new HeapDereference(listType, list, loc);
+		AccessChild shrunk = new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, SHRUNK, loc),
+				loc);
+		AnalysisState<A> result = analysis.assign(state, shrunk, new Constant(BoolType.INSTANCE, true, loc), pp);
+		// the list might have lost its last element
+		return setNonEmpty(analysis, result, list, false, pp).withExecutionExpressions(state.getExecutionExpressions());
+	}
+
+	/**
+	 * The child of the lists that is {@code True} if the list surely has an
+	 * element, and {@code False} if it is not known (e.g. after {@code if xs:},
+	 * {@code xs} has an element, see {@code PyReachability}). It is
+	 * {@code False} when the list is created (see {@link ListCreation}), so
+	 * that it is defined for all the lists, and it is set to {@code False}
+	 * whenever elements might be removed (see {@link #shrink}). It complements
+	 * the elements that the list surely has at known indices (see
+	 * {@link #shape}), as it does not tell at which indices the elements are.
+	 */
+	public static final String NONEMPTY = "$nonempty";
+
+	/**
+	 * Records whether the list surely has an element (see {@link #NONEMPTY}).
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param list     the list
+	 * @param nonEmpty whether the list surely has an element
+	 * @param pp       the program point
+	 *
+	 * @return the updated state, whose computed expressions are the ones of
+	 *             {@code state}
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> setNonEmpty(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			boolean nonEmpty,
+			ProgramPoint pp)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+		AccessChild child = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
+				new Variable(Untyped.INSTANCE, NONEMPTY, loc), loc);
+		return analysis.assign(state, child, new Constant(BoolType.INSTANCE, nonEmpty, loc), pp)
 				.withExecutionExpressions(state.getExecutionExpressions());
+	}
+
+	/**
+	 * Yields whether the list surely has an element according to
+	 * {@link #NONEMPTY}: this holds only for lists that are single objects (and
+	 * not the summary of many, as the lists created by a literal in a loop),
+	 * whose child is surely {@code True}.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param list     the list
+	 * @param pp       the program point using the list
+	 *
+	 * @return whether the list surely has an element
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean nonEmpty(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			ProgramPoint pp)
+			throws SemanticException {
+		Set<AllocationSite> sites = sites(analysis, state, list, pp);
+		if (sites == null || sites.stream().anyMatch(AllocationSite::isWeak))
+			return false;
+		CodeLocation loc = pp.getLocation();
+		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+		AccessChild child = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
+				new Variable(Untyped.INSTANCE, NONEMPTY, loc), loc);
+		return analysis.satisfies(state, child, pp) == Satisfiability.SATISFIED;
+	}
+
+	// whether the value is surely the given int
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean surely(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression value,
+			int c,
+			ProgramPoint pp)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		Set<Type> types = analysis.getRuntimeTypesOf(state, value, pp);
+		return !types.isEmpty() && types.stream().allMatch(ListOperations.INT)
+				&& analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, value,
+						new Constant(Int32Type.INSTANCE, c, loc), ComparisonEq.INSTANCE, loc),
+						pp) == Satisfiability.SATISFIED;
 	}
 
 	/**
@@ -428,7 +518,10 @@ public final class ListModel {
 					indexError = true;
 			} else {
 				any = true;
-				indexError = true;
+				// 0 and -1 are in range if the list surely has an element,
+				// that is any of its elements if its length is not known
+				indexError = !((shape.prefix() > 0 || nonEmpty(analysis, state, list, thrower))
+						&& (surely(analysis, state, index, 0, thrower) || surely(analysis, state, index, -1, thrower)));
 			}
 		}
 

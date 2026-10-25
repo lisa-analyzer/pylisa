@@ -27,7 +27,8 @@ import it.unive.pylisa.symbolic.PyNoneConstant;
  * the elements at unknown indices of the list (see
  * {@link ListCreation#UNKNOWN_INDEX}), joining it with the ones already there
  * (a weak update, as the list might grow any number of times). The elements at
- * known indices are not changed, as appending does not move them.
+ * known indices are not changed, as appending does not move them. The list
+ * surely has an element afterwards (see {@link ListModel#NONEMPTY}).
  */
 public class ListAppend extends PyNative {
 
@@ -57,6 +58,8 @@ public class ListAppend extends PyNative {
 				new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 		// weak update: the new element is joined with the previous ones
 		AnalysisState<A> appended = analysis.assign(state, unknown, args[1], st).lub(state);
+		// the list surely has an element
+		appended = ListModel.setNonEmpty(analysis, appended, args[0], true, st);
 		return compute(analysis, appended, new PyNoneConstant(loc));
 	}
 }

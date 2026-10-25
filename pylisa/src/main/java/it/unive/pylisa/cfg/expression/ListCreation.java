@@ -28,6 +28,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.lists.ListModel;
 
 /**
  * A list literal {@code [e0, ..., en]}: a new object is allocated, and the
@@ -84,6 +85,9 @@ public class ListCreation extends NaryExpression {
 				loc);
 		current = analysis.smallStepSemantics(current, cls, this).withExecutionExpressions(
 				current.getExecutionExpressions());
+		// defined for all the lists (see ListModel#NONEMPTY): the elements of
+		// the list literal are known by their indices
+		current = ListModel.setNonEmpty(analysis, current, list, false, this);
 
 		for (int i = 0; i < params.length; i++) {
 			AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, i, loc), loc);
