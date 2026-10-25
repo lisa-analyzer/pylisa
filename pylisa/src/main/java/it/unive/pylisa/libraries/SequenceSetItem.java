@@ -96,10 +96,16 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 				}
 
 				if (ListModel.isList(t)) {
-					// the elements of the list
-					for (SymbolicExpression index : params[1])
+					// the elements of the list, or its slices
+					for (SymbolicExpression index : params[1]) {
+						Set<Type> indexTypes = analysis.getRuntimeTypesOf(state, index, this);
+						boolean slice = !indexTypes.isEmpty() && indexTypes.stream().allMatch(ListModel::isSlice);
 						for (SymbolicExpression value : params[2])
-							result = result.lub(ListModel.write(analysis, state, self, index, value, st));
+							result = result.lub(slice
+									? ListModel.assignSlice(analysis, state, self, index, value, st,
+											getMetaVariables())
+									: ListModel.write(analysis, state, self, index, value, st));
+					}
 					continue;
 				}
 

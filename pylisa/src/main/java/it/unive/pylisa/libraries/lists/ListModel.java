@@ -37,12 +37,14 @@ import it.unive.lisa.symbolic.value.operator.binary.LogicalAnd;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
+import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -571,7 +573,7 @@ public final class ListModel {
 	 * is a new list, whose elements are some of the elements of the list, at
 	 * unknown indices. A slice never raises {@code IndexError}, while
 	 * {@code TypeError} is raised if its bounds might not be {@code int}s (or
-	 * {@code None}).
+	 * {@code None}), and {@code ValueError} if its step might be {@code 0}.
 	 *
 	 * @param interprocedural the interprocedural analysis
 	 * @param state           the state where the list and the slice have been
@@ -599,16 +601,8 @@ public final class ListModel {
 		HeapDereference source = new HeapDereference(listType, list, loc);
 		Shape shape = shape(analysis, state, list, owner);
 
-		boolean typeError = !(slice instanceof TernaryExpression);
-		if (slice instanceof TernaryExpression) {
-			TernaryExpression bounds = (TernaryExpression) slice;
-			for (SymbolicExpression bound : new SymbolicExpression[] { bounds.getLeft(), bounds.getMiddle(),
-					bounds.getRight() }) {
-				Set<Type> types = analysis.getRuntimeTypesOf(state, bound, owner);
-				if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t) && !t.isNullType()))
-					typeError = true;
-			}
-		}
+		boolean typeError = !boundsTyped(analysis, state, slice, owner);
+		Satisfiability zero = stepZero(analysis, state, slice, owner);
 
 		// the slice is allocated at a location different from the one of the
 		// subscript (see DerivedLocation)
@@ -633,10 +627,135 @@ public final class ListModel {
 			result = result.lub(filled.withExecutionExpression(copy));
 		}
 		owner.getMetaVariables().addAll(creation.getMetaVariables());
+		if (zero == Satisfiability.SATISFIED)
+			result = result.bottomExecution();
+		if (zero != Satisfiability.NOT_SATISFIED)
+			// a step of 0
+			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.VALUE_ERROR));
 		if (typeError)
 			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
 					LibrarySpecificationProvider.TYPE_ERROR));
 		return result;
+	}
+
+	/**
+	 * Assigns the elements of {@code value} to the slice of the list
+	 * ({@code list[start:stop:step] = value}): they replace the elements of the
+	 * slice, so that the list might have more or less elements, at other
+	 * indices. The list is then one whose elements might have been removed (see
+	 * {@link #SHRUNK}), whose elements at unknown indices are joined with the
+	 * elements of {@code value} (see {@link Iteration#elements}).
+	 * {@code TypeError} is raised if the bounds might not be {@code int}s (or
+	 * {@code None}), or if {@code value} might not be iterable (see
+	 * {@link Iteration#iterable}); {@code ValueError} is raised if the step
+	 * might be {@code 0}, and might be raised if it might be different from
+	 * {@code 1} (the elements of an extended slice are replaced only by as many
+	 * elements).
+	 *
+	 * @param analysis the analysis
+	 * @param state    the state where the list, the slice and the value have
+	 *                     been evaluated
+	 * @param list     the list
+	 * @param slice    the slice
+	 * @param value    the value
+	 * @param thrower  the statement assigning the slice
+	 * @param metas    where the meta variables of the elements of the value are
+	 *                     added (e.g. the tuples of {@code d.items()})
+	 *
+	 * @return the state after the assignment
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> assignSlice(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			SymbolicExpression slice,
+			SymbolicExpression value,
+			Statement thrower,
+			Collection<Identifier> metas)
+			throws SemanticException {
+		CodeLocation loc = thrower.getLocation();
+		boolean typed = boundsTyped(analysis, state, slice, thrower);
+		Satisfiability iterable = Iteration.iterable(analysis, state, value, thrower);
+		Satisfiability zero = stepZero(analysis, state, slice, thrower);
+		// whether the step might be different from 1 (and from None)
+		boolean extended = false;
+		if (slice instanceof TernaryExpression) {
+			SymbolicExpression step = ((TernaryExpression) slice).getRight();
+			Set<Type> types = analysis.getRuntimeTypesOf(state, step, thrower);
+			extended = !types.stream().allMatch(Type::isNullType)
+					&& analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, step,
+							new Constant(Int32Type.INSTANCE, 1, loc), ComparisonEq.INSTANCE, loc),
+							thrower) != Satisfiability.SATISFIED;
+		}
+
+		AnalysisState<A> result = state.bottomExecution();
+		if (typed && iterable != Satisfiability.NOT_SATISFIED && zero != Satisfiability.SATISFIED) {
+			Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+			AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
+					new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
+			// the value might have no element (e.g. xs[0:2] = [])
+			AnalysisState<A> assigned = shrink(analysis, state, list, thrower);
+			AnalysisState<A> elements = Iteration.elements(analysis, state, null, value, thrower, metas);
+			if (!elements.getExecutionState().isBottom()) {
+				AnalysisState<A> shrunk = shrink(analysis, elements, list, thrower);
+				// weak update: the new elements are joined with the previous
+				// ones, that might still be elements of the list
+				for (SymbolicExpression element : elements.getExecutionExpressions())
+					assigned = assigned.lub(analysis.assign(shrunk, unknown, element, thrower).lub(shrunk));
+			}
+			result = assigned;
+			if (extended)
+				// an extended slice, whose length might not be the one of the
+				// value
+				result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
+						LibrarySpecificationProvider.VALUE_ERROR));
+		}
+		if (zero != Satisfiability.NOT_SATISFIED)
+			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.VALUE_ERROR));
+		if (!typed || iterable != Satisfiability.SATISFIED)
+			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.TYPE_ERROR));
+		return result;
+	}
+
+	// whether the bounds of the slice are surely ints or None
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean boundsTyped(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression slice,
+			ProgramPoint pp)
+			throws SemanticException {
+		if (!(slice instanceof TernaryExpression))
+			return false;
+		TernaryExpression bounds = (TernaryExpression) slice;
+		for (SymbolicExpression bound : new SymbolicExpression[] { bounds.getLeft(), bounds.getMiddle(),
+				bounds.getRight() }) {
+			Set<Type> types = analysis.getRuntimeTypesOf(state, bound, pp);
+			if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t) && !t.isNullType()))
+				return false;
+		}
+		return true;
+	}
+
+	// whether the step of the slice is 0 (that raises ValueError)
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability stepZero(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression slice,
+			ProgramPoint pp)
+			throws SemanticException {
+		if (!(slice instanceof TernaryExpression))
+			return Satisfiability.NOT_SATISFIED;
+		SymbolicExpression step = ((TernaryExpression) slice).getRight();
+		Set<Type> types = analysis.getRuntimeTypesOf(state, step, pp);
+		if (!types.isEmpty() && types.stream().allMatch(Type::isNullType))
+			return Satisfiability.NOT_SATISFIED;
+		return analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, step,
+				new Constant(Int32Type.INSTANCE, 0, pp.getLocation()), ComparisonEq.INSTANCE, pp.getLocation()), pp);
 	}
 
 	/**
