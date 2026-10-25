@@ -157,8 +157,9 @@ public final class ListModel {
 				return null;
 			Set<Integer> indexes = new TreeSet<>();
 			for (SymbolicExpression field : fields)
-				if (field instanceof Variable && ((Variable) field).getName().equals(ListCreation.UNKNOWN_INDEX))
-					// elements at unknown indices
+				if (field instanceof Variable && (((Variable) field).getName().equals(ListCreation.UNKNOWN_INDEX)
+						|| ((Variable) field).getName().equals(SHRUNK)))
+					// elements at unknown indices, or removed
 					return null;
 				else if (field instanceof Constant && ((Constant) field).getValue() instanceof Integer)
 					indexes.add((Integer) ((Constant) field).getValue());
@@ -175,9 +176,10 @@ public final class ListModel {
 
 	/**
 	 * Invalidates what is known about the elements of the list, as done by the
-	 * operations on lists that are not modeled (e.g. {@code pop}): the elements
-	 * at known indices become unknown, and the list has elements at unknown
-	 * indices (so that its length is unknown).
+	 * operations on lists that are not modeled (e.g. {@code remove}): the
+	 * elements at known indices become unknown, the list has elements at
+	 * unknown indices, and elements might have been removed (see
+	 * {@link #SHRUNK}).
 	 *
 	 * @param analysis the analysis
 	 * @param state    the current state
@@ -208,7 +210,44 @@ public final class ListModel {
 								new PushAny(Untyped.INSTANCE, loc), pp);
 		AccessChild unknown = new AccessChild(Untyped.INSTANCE, deref,
 				new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
-		return analysis.assign(result, unknown, new PushAny(Untyped.INSTANCE, loc), pp);
+		return shrink(analysis, analysis.assign(result, unknown, new PushAny(Untyped.INSTANCE, loc), pp), list, pp);
+	}
+
+	/**
+	 * The child of the lists from which elements might have been removed (e.g.
+	 * by {@code pop}): the elements at their known indices might be at other
+	 * indices, or might have been removed, so that the lists are not known to
+	 * have any element (see {@link #shape}), and their length is not known (see
+	 * {@link #length}). The values of their elements are still the ones of the
+	 * elements at known and unknown indices.
+	 */
+	public static final String SHRUNK = "$shrunk";
+
+	/**
+	 * Records that elements might have been removed from the list (see
+	 * {@link #SHRUNK}).
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param list     the list
+	 * @param pp       the program point removing the elements
+	 *
+	 * @return the state where the list is marked
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> shrink(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			ProgramPoint pp)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+		AccessChild shrunk = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
+				new Variable(Untyped.INSTANCE, SHRUNK, loc), loc);
+		return analysis.assign(state, shrunk, new Constant(BoolType.INSTANCE, true, loc), pp)
+				.withExecutionExpressions(state.getExecutionExpressions());
 	}
 
 	/**
@@ -297,8 +336,12 @@ public final class ListModel {
 			if (fields.isTop())
 				return new Shape(null, 0, null);
 			Set<Integer> indexes = new HashSet<>();
+			boolean shrunk = false;
 			for (SymbolicExpression field : fields)
-				if (field instanceof Variable && ((Variable) field).getName().equals(ListCreation.UNKNOWN_INDEX))
+				if (field instanceof Variable && ((Variable) field).getName().equals(SHRUNK))
+					shrunk = true;
+				else if (field instanceof Variable
+						&& ((Variable) field).getName().equals(ListCreation.UNKNOWN_INDEX))
 					elements.add(field);
 				else if (field instanceof Constant && ((Constant) field).getValue() instanceof Integer) {
 					indexes.add((Integer) ((Constant) field).getValue());
@@ -309,7 +352,9 @@ public final class ListModel {
 				k++;
 			// the summary of many lists, whose elements at known indices might
 			// be the ones of some of them only
-			int surely = site.isWeak() ? 0 : k;
+			// (and, after elements are removed, the elements at known indices
+			// might be at other indices, or removed)
+			int surely = site.isWeak() || shrunk ? 0 : k;
 			prefix = prefix == null ? surely : Math.min(prefix, surely);
 		}
 		return new Shape(length(analysis, state, list, pp), prefix == null ? 0 : prefix, elements);

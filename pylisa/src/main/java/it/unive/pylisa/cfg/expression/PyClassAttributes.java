@@ -100,7 +100,11 @@ public final class PyClassAttributes {
 	/**
 	 * Yields the class attribute {@code name} of the given class: the one
 	 * assigned in the body of the first class in its method resolution order
-	 * that defines {@code name} (see {@link PyMro#definer}).
+	 * that defines {@code name} (see {@link PyMro#definer}). Its value is not
+	 * known if the attribute is assigned through that class, or through one of
+	 * the classes before it in the order (e.g. {@code Sub.v = 5}, where
+	 * {@code v} is assigned in the body of a base of {@code Sub}), anywhere in
+	 * the program.
 	 *
 	 * @param unit the class
 	 * @param name the name of the attribute
@@ -112,7 +116,18 @@ public final class PyClassAttributes {
 			ClassUnit unit,
 			String name) {
 		CompilationUnit definer = PyMro.definer(unit, name, null);
-		return definer instanceof ClassUnit ? ownAttribute((ClassUnit) definer, name) : null;
+		if (!(definer instanceof ClassUnit))
+			return null;
+		ClassAttribute attribute = ownAttribute((ClassUnit) definer, name);
+		if (attribute == null)
+			return null;
+		for (CompilationUnit cu : PyMro.of(unit)) {
+			if (cu == definer)
+				break;
+			if (cu instanceof ClassUnit && written((ClassUnit) cu, name))
+				return new ClassAttribute(null);
+		}
+		return attribute;
 	}
 
 	/**

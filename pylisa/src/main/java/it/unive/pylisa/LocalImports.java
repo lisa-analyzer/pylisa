@@ -1,6 +1,8 @@
 package it.unive.pylisa;
 
 import java.util.Map;
+import java.util.Set;
+import org.antlr.v4.runtime.ParserRuleContext;
 
 /**
  * The names that the imports of a file bind to the local modules of the program
@@ -15,11 +17,16 @@ import java.util.Map;
  * @param names   the (dotted) names of the imported modules, indexed by the
  *                    names of their units (see
  *                    {@link LocalModules#moduleName(java.nio.file.Path, java.nio.file.Path)})
+ * @param stars   the names bound by the {@code from m import *} statements
+ *                    whose names are known (see
+ *                    {@link LocalModules#publicNames(java.nio.file.Path, java.nio.file.Path)}),
+ *                    indexed by the statements in the parse tree
  */
 public record LocalImports(
 		Map<String, String> modules,
 		Map<String, Member> members,
-		Map<String, String> names) {
+		Map<String, String> names,
+		Map<ParserRuleContext, Set<String>> stars) {
 
 	/**
 	 * A member of a module.
@@ -37,7 +44,7 @@ public record LocalImports(
 	/**
 	 * No imports of local modules.
 	 */
-	public static final LocalImports NONE = new LocalImports(Map.of(), Map.of(), Map.of());
+	public static final LocalImports NONE = new LocalImports(Map.of(), Map.of(), Map.of(), Map.of());
 
 	/**
 	 * Yields the (dotted) name of the imported module with the given unit.
@@ -76,5 +83,17 @@ public record LocalImports(
 	public Member member(
 			String name) {
 		return members.get(name);
+	}
+
+	/**
+	 * Yields the names bound by the given {@code from m import *} statement.
+	 *
+	 * @param statement the statement in the parse tree
+	 *
+	 * @return the names, or {@code null} if they are not known
+	 */
+	public Set<String> starNames(
+			ParserRuleContext statement) {
+		return stars.get(statement);
 	}
 }

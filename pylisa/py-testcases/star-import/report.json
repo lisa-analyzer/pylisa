@@ -1,0 +1,56 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/star-import/main.py':13:8] on 'untyped py-testcases/star-import/main::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise FloatingPointError (uncaught FloatingPointError) at 'py-testcases/star-import/main.py':13:8"
+  }, {
+    "message" : "['py-testcases/star-import/main.py':13:8] on 'untyped py-testcases/star-import/main::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise ZeroDivisionError (uncaught ZeroDivisionError) at 'py-testcases/star-import/main.py':13:8"
+  }, {
+    "message" : "['py-testcases/star-import/main.py':13:8] on 'untyped py-testcases/star-import/main::$main()': [EXPRESSION] ASSERTIONS: code that is not known might raise AssertionError (uncaught AssertionError) at 'py-testcases/star-import/main.py':13:8"
+  }, {
+    "message" : "['py-testcases/star-import/main.py':13:8] on 'untyped py-testcases/star-import/main::$main()': [EXPRESSION] LOOKUP: code that is not known might raise IndexError (uncaught IndexError) at 'py-testcases/star-import/main.py':13:8"
+  }, {
+    "message" : "['py-testcases/star-import/main.py':13:8] on 'untyped py-testcases/star-import/main::$main()': [EXPRESSION] LOOKUP: code that is not known might raise KeyError (uncaught KeyError) at 'py-testcases/star-import/main.py':13:8"
+  }, {
+    "message" : "['py-testcases/star-import/main.py':13:8] on 'untyped py-testcases/star-import/main::$main()': [EXPRESSION] TYPING: code that is not known might raise AttributeError (uncaught AttributeError) at 'py-testcases/star-import/main.py':13:8"
+  }, {
+    "message" : "['py-testcases/star-import/main.py':13:8] on 'untyped py-testcases/star-import/main::$main()': [EXPRESSION] TYPING: code that is not known might raise TypeError (uncaught TypeError) at 'py-testcases/star-import/main.py':13:8"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_star-import_helper.$main().graph.json", "untyped_py-testcases_star-import_helper.one()_-1232480983.graph.json", "untyped_py-testcases_star-import_helper.text()_-1232480921.graph.json", "untyped_py-testcases_star-import_main.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "5",
+    "duration" : "3ms",
+    "end" : "2026-10-24T22:19:42.067+02:00",
+    "expressions" : "23",
+    "files" : "4",
+    "globals" : "0",
+    "members" : "181",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-24T22:19:42.064+02:00",
+    "statements" : "19",
+    "units" : "41",
+    "version" : "1.0",
+    "warnings" : "7"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/star-import"
+  }
+}

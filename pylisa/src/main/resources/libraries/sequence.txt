@@ -54,6 +54,16 @@ sealed class List extends Sequence:
 		param self libtype List*
 		param x type it.unive.lisa.type.Untyped::INSTANCE
 
+	instance method extend: it.unive.pylisa.libraries.lists.ListExtend
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype List*
+		param iterable type it.unive.lisa.type.Untyped::INSTANCE
+
+	instance method pop: it.unive.pylisa.libraries.lists.ListPop
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype List*
+		param index type it.unive.lisa.type.Untyped::INSTANCE default missing
+
 sealed class Set extends Sequence
 sealed class Dict extends Sequence:
 	method __or__: it.unive.pylisa.libraries.dicts.DictOr
@@ -65,6 +75,12 @@ sealed class Dict extends Sequence:
 		libtype Dict*
 		param self libtype Dict*
 		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	instance method update: it.unive.pylisa.libraries.dicts.DictUpdate
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype Dict*
+		param other type it.unive.lisa.type.Untyped::INSTANCE default missing
+		param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
 
 	instance method keys: it.unive.pylisa.libraries.dicts.DictKeysMethod
 		libtype DictKeys*

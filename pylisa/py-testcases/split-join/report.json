@@ -1,0 +1,48 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/split-join/split-join.py':14:10] on 'untyped py-testcases/split-join/split-join::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/split-join/split-join.py':14:10"
+  }, {
+    "message" : "['py-testcases/split-join/split-join.py':25:10] on 'untyped py-testcases/split-join/split-join::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/split-join/split-join.py':25:10"
+  }, {
+    "message" : "['py-testcases/split-join/split-join.py':28:10] on 'untyped py-testcases/split-join/split-join::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/split-join/split-join.py':28:10"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_split-join_split-join.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "6ms",
+    "end" : "2026-10-24T22:19:41.542+02:00",
+    "expressions" : "69",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "178",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-24T22:19:41.536+02:00",
+    "statements" : "29",
+    "units" : "40",
+    "version" : "1.0",
+    "warnings" : "3"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/split-join"
+  }
+}

@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
@@ -17,9 +18,11 @@ import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyBytesType;
+import it.unive.pylisa.libraries.EnumerateBuiltin;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.RangeBuiltin;
+import it.unive.pylisa.libraries.ZipBuiltin;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.dicts.DictViews;
 import it.unive.pylisa.libraries.lists.ListModel;
@@ -86,6 +89,10 @@ public final class Iteration {
 				result = result.lub(analysis.smallStepSemantics(state, new PushAny(StringType.INSTANCE, loc), pp));
 			else if (DictViews.isView(t))
 				result = result.lub(DictViews.elements(analysis, state, iterable, t, pp, metas));
+			else if (ZipBuiltin.isZip(t))
+				result = result.lub(ZipBuiltin.elements(analysis, state, iterable, pp, metas));
+			else if (EnumerateBuiltin.isEnumerate(t))
+				result = result.lub(EnumerateBuiltin.elements(analysis, state, iterable, pp, metas));
 			else if (RangeBuiltin.isRange(t))
 				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), pp));
 			else if (t instanceof PyBytesType)
@@ -105,6 +112,49 @@ public final class Iteration {
 	}
 
 	// whether the expression is a call to the range builtin
+	/**
+	 * Whether the given value is surely ({@code SATISFIED}), possibly
+	 * ({@code UNKNOWN}) or surely not ({@code NOT_SATISFIED}) iterable: lists,
+	 * tuples, dictionaries, their views, {@code str}, {@code bytes}, ranges,
+	 * zip and enumerate objects are, the values of the builtin classes whose
+	 * methods are all known (e.g. {@code int}) and functions are not, and the
+	 * objects of the other classes might be (e.g. if their class defines
+	 * {@code __iter__}).
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param value    the value
+	 * @param pp       the program point using the value
+	 *
+	 * @return whether the value is iterable
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability iterable(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression value,
+			Statement pp)
+			throws SemanticException {
+		Set<Type> types = analysis.getRuntimeTypesOf(state, value, pp);
+		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, pp))
+			return Satisfiability.UNKNOWN;
+		boolean iterable = false, notIterable = false;
+		for (Type t : types)
+			if (ListModel.isList(t) || Unpacking.isTuple(t) || DictModel.isDict(t) || t.isStringType()
+					|| DictViews.isView(t) || RangeBuiltin.isRange(t) || t instanceof PyBytesType
+					|| ZipBuiltin.isZip(t) || EnumerateBuiltin.isEnumerate(t))
+				iterable = true;
+			else if (t.isCodeMemberType()
+					|| (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t)))
+				notIterable = true;
+			else
+				return Satisfiability.UNKNOWN;
+		if (iterable && notIterable)
+			return Satisfiability.UNKNOWN;
+		return iterable ? Satisfiability.SATISFIED : Satisfiability.NOT_SATISFIED;
+	}
+
 	private static boolean isRange(
 			Expression expression) {
 		return expression instanceof UnresolvedCall && ((UnresolvedCall) expression).getTargetName().equals("range")

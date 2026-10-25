@@ -873,8 +873,19 @@ public class PyStatementParser
 			name = ".";
 
 		Import_from_targetsContext targets = ctx.import_from_targets();
-		if (targets.STAR() != null)
-			return new FromImport(program, name, Map.of("*", "*"), List.of(), currentCFG, getLocation(filePath, ctx));
+		if (targets.STAR() != null) {
+			// the names bound by the import, if they are known (see
+			// LocalModules): star imports are allowed only in the code of
+			// modules
+			List<PyNameRef> bound = new ArrayList<>();
+			Set<String> names = localImports.starNames(ctx);
+			if (names != null)
+				for (String imported : names)
+					bound.add(new PyNameRef(currentCFG, getLocation(filePath, ctx), imported, NameKind.GLOBAL_IMPLICIT,
+							symtable.getModuleScope().getModule(), FilenameUtils.removeExtension(filePath), null, true,
+							true));
+			return new FromImport(program, name, Map.of("*", "*"), bound, currentCFG, getLocation(filePath, ctx));
+		}
 
 		Map<String, String> components = new HashMap<>();
 		List<PyNameRef> bound = new ArrayList<>();

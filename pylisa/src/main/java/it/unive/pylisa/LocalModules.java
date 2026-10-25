@@ -1,17 +1,28 @@
 package it.unive.pylisa;
 
+import it.unive.pylisa.antlr.PythonLexer;
+import it.unive.pylisa.antlr.PythonParser;
 import it.unive.pylisa.antlr.PythonParser.Dotted_as_nameContext;
 import it.unive.pylisa.antlr.PythonParser.Dotted_nameContext;
+import it.unive.pylisa.antlr.PythonParser.File_inputContext;
 import it.unive.pylisa.antlr.PythonParser.Import_fromContext;
 import it.unive.pylisa.antlr.PythonParser.Import_from_as_nameContext;
 import it.unive.pylisa.antlr.PythonParser.Import_nameContext;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.scoping.PyScope;
+import it.unive.pylisa.scoping.SymtableBuilder;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.io.FilenameUtils;
@@ -56,6 +67,7 @@ final class LocalModules {
 			Path root) {
 		Map<String, String> modules = new LinkedHashMap<>();
 		Map<String, LocalImports.Member> members = new LinkedHashMap<>();
+		Map<ParserRuleContext, Set<String>> stars = new LinkedHashMap<>();
 		List<Path> dependencies = new ArrayList<>();
 		List<ParserRuleContext> imports = new ArrayList<>();
 		collect(tree, imports);
@@ -84,15 +96,23 @@ final class LocalModules {
 				}
 			else {
 				Import_fromContext from = (Import_fromContext) imp;
-				if (from.import_from_targets().import_from_as_names() == null)
-					// from m import *
-					continue;
 				// '...' is a single token
 				int level = from.DOT().size() + 3 * from.ELLIPSIS().size();
 				String name = from.dotted_name() == null ? "" : String.join(".", parts(from.dotted_name()));
 				Path module = resolve(root, file, level, name);
 				if (module != null)
 					dependencies.add(module);
+				if (from.import_from_targets().import_from_as_names() == null) {
+					// from m import *: the public names of m, if they are known
+					Set<String> imported = module == null ? null : publicNames(module, root);
+					if (imported != null) {
+						for (String member : imported)
+							members.put(member,
+									new LocalImports.Member(unit(module), moduleName(module, root), member));
+						stars.put(from, imported);
+					}
+					continue;
+				}
 				for (Import_from_as_nameContext target : from.import_from_targets().import_from_as_names()
 						.import_from_as_name()) {
 					String member = target.name(0).getText();
@@ -112,7 +132,56 @@ final class LocalModules {
 		Map<String, String> names = new LinkedHashMap<>();
 		for (Path dependency : dependencies)
 			names.put(unit(dependency), moduleName(dependency, root));
-		return new Imports(new LocalImports(modules, members, names), dependencies);
+		return new Imports(new LocalImports(modules, members, names, stars), dependencies);
+	}
+
+	/**
+	 * Yields the names bound by {@code from m import *}, for the given module
+	 * {@code m}: the names bound in the namespace of the module (by its code,
+	 * or by its functions through {@code global} declarations) that do not
+	 * start with an underscore. These are not known if the module defines
+	 * {@code __all__} (the names it lists are bound instead), or if it contains
+	 * a {@code from ... import *} itself. As the code of the module might not
+	 * bind all of them (e.g. names bound inside an {@code if}), they might be
+	 * unbound after the import (see {@code FromImport}).
+	 *
+	 * @param module the file of the module
+	 * @param root   the directory of the analyzed program
+	 *
+	 * @return the names, or {@code null} if they are not known
+	 */
+	static Set<String> publicNames(
+			Path module,
+			Path root) {
+		File_inputContext tree;
+		try {
+			PythonLexer lexer = new PythonLexer(CharStreams.fromPath(module, StandardCharsets.UTF_8));
+			tree = new PythonParser(new CommonTokenStream(lexer)).file_input();
+		} catch (IOException e) {
+			// the module is parsed again later, where the error is reported
+			return null;
+		}
+		PyScope scope = SymtableBuilder.build(module.toString(), moduleName(module, root), tree).getModuleScope();
+		if (scope.hasStarImport())
+			return null;
+		Set<String> names = new TreeSet<>();
+		bound(scope, names);
+		if (names.contains("__all__"))
+			return null;
+		names.removeIf(n -> n.startsWith("_"));
+		return names;
+	}
+
+	// the names of the module bound by the given scope, or by the ones nested
+	// into it
+	private static void bound(
+			PyScope scope,
+			Set<String> names) {
+		for (String name : scope.getSymbols().keySet())
+			if (scope.binds(name) && scope.kindOf(name).isGlobal())
+				names.add(name);
+		for (PyScope child : scope.getChildren())
+			bound(child, names);
 	}
 
 	// the import statements in the tree, in order

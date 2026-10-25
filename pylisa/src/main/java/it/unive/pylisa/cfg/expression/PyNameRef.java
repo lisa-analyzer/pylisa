@@ -31,6 +31,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.LocalImports;
 import it.unive.pylisa.analysis.namespaces.Binding;
 import it.unive.pylisa.analysis.namespaces.Namespaces;
+import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.expression.literal.PyFunctionLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyTypeLiteral;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -83,7 +84,9 @@ import org.apache.commons.io.FilenameUtils;
  * <li>a class defined in the module is the class itself;</li>
  * <li>a function defined in the module, by a single {@code def} executed once
  * (see {@link PyBinaryDispatch#DEFINED_ONCE}), is the function itself;</li>
- * <li>a builtin function is the function itself.</li>
+ * <li>a builtin function is the function itself, unless the name is a global of
+ * another module (e.g. {@code f}, after {@code from m import f}), that is bound
+ * by that module.</li>
  * </ol>
  * Otherwise, the name is read as any other global.
  */
@@ -498,6 +501,11 @@ public class PyNameRef extends VariableRef {
 		CodeMember function = localFunction();
 		if (function != null)
 			return new PyFunctionLiteral(getCFG(), getLocation(), function);
+		String reading = PyCFG.moduleOf(getCFG());
+		if (reading != null && !reading.equals(module))
+			// a name of another module (e.g. f, after from m import f, or m.f)
+			// is bound by that module: it is never a builtin
+			return null;
 		NativeCFG builtin = builtin(getCFG().getProgram(), getName());
 		if (builtin != null)
 			return new PyFunctionLiteral(getCFG(), getLocation(), builtin);

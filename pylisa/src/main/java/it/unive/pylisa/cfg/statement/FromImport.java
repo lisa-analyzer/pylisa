@@ -173,7 +173,8 @@ public class FromImport extends Statement {
 
 	/**
 	 * Binds the names bound by an import statement. A star import
-	 * ({@code from m import *}) might bind any name of the module.
+	 * ({@code from m import *}) might bind the given names, if they are known
+	 * (see {@code LocalModules}), and any name of the module otherwise.
 	 *
 	 * @param <A>   the kind of {@link AbstractLattice} of the state
 	 * @param state the state
@@ -187,13 +188,19 @@ public class FromImport extends Statement {
 			AnalysisState<A> state,
 			List<PyNameRef> bound,
 			boolean star,
-			CFG cfg) {
+			CFG cfg)
+			throws SemanticException {
+		AnalysisState<A> result = state;
 		for (PyNameRef name : bound)
-			state = name.bind(state);
-		Namespaces namespaces = Namespaces.of(state);
+			result = name.bind(result);
+		if (star && !bound.isEmpty())
+			// the names of the module are known, but the module might not
+			// bind all of them (e.g. if some are bound inside an if)
+			return state.lub(result);
+		Namespaces namespaces = Namespaces.of(result);
 		String module = PyCFG.moduleOf(cfg);
-		if (star && namespaces != null && module != null && !state.getExecutionState().isBottom())
-			state = Namespaces.store(state, namespaces.havocModule(module));
-		return state;
+		if (star && namespaces != null && module != null && !result.getExecutionState().isBottom())
+			result = Namespaces.store(result, namespaces.havocModule(module));
+		return result;
 	}
 }
