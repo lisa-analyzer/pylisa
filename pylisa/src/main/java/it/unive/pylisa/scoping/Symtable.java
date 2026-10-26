@@ -1,7 +1,10 @@
 package it.unive.pylisa.scoping;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -26,6 +29,9 @@ public class Symtable {
 
 	// the scope of each occurrence of a name
 	private final Map<ParserRuleContext, PyScope> occurrences = new IdentityHashMap<>();
+
+	// the occurrences binding each name, indexed by their scope
+	private final Map<PyScope, Map<String, List<ParserRuleContext>>> bindings = new IdentityHashMap<>();
 
 	/**
 	 * Builds the symbol table.
@@ -130,5 +136,27 @@ public class Symtable {
 			ParserRuleContext occurrence,
 			PyScope scope) {
 		occurrences.put(occurrence, scope);
+	}
+
+	void addBinding(
+			ParserRuleContext occurrence,
+			PyScope scope) {
+		bindings.computeIfAbsent(scope, s -> new HashMap<>())
+				.computeIfAbsent(occurrence.getText(), n -> new ArrayList<>()).add(occurrence);
+	}
+
+	/**
+	 * Yields the occurrences of the given name that bind (or delete) it in the
+	 * given scope, in the order they appear in the module.
+	 *
+	 * @param scope the scope
+	 * @param name  the name
+	 *
+	 * @return the occurrences
+	 */
+	public List<ParserRuleContext> bindingsOf(
+			PyScope scope,
+			String name) {
+		return Collections.unmodifiableList(bindings.getOrDefault(scope, Map.of()).getOrDefault(name, List.of()));
 	}
 }

@@ -21,7 +21,9 @@ f = helpers.func
 assert f() == 42
 b = Box()
 assert b.get() == 1
-# the value of a variable of a module is not known: any exception might be raised
+# a variable of a module assigned once to a function of another module is an
+# alias of the function
 x = sub.alias()
+assert x == 7
 # TypeError: get expects self
 y = Box.get()

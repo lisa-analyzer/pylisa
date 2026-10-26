@@ -2251,9 +2251,15 @@ public class PyStatementParser
 							PyClassType.register(cu.getName(), (ClassUnit) cu),
 							pars.toArray(Expression[]::new));
 				} else if (attribute && localImports.module(dotted(previous_access)) != null) {
-					// m.f(...): the function f of the local module m
-					access = new PyModuleCall(currentCFG, getLocation(filePath, frame),
-							localImports.module(dotted(previous_access)), method_name, pars.toArray(Expression[]::new));
+					// m.f(...): the function f of the local module m, or of the
+					// module defining it if f is an alias in m
+					String unit = localImports.module(dotted(previous_access));
+					LocalImports.Member alias = localImports.reexport(unit, method_name);
+					access = alias != null
+							? new PyModuleCall(currentCFG, getLocation(filePath, frame), alias.unit(), alias.name(),
+									pars.toArray(Expression[]::new))
+							: new PyModuleCall(currentCFG, getLocation(filePath, frame), unit, method_name,
+									pars.toArray(Expression[]::new));
 				} else if (!attribute && previous_access == null && localImports.member(method_name) != null) {
 					// f(...), with f imported from a local module
 					LocalImports.Member member = localImports.member(method_name);
@@ -2504,6 +2510,11 @@ public class PyStatementParser
 		String module = localImports.module(path);
 		if (module == null || localImports.module(path + "." + name) != null)
 			return null;
+		LocalImports.Member alias = localImports.reexport(module, name);
+		if (alias != null)
+			// an alias of a member of another module, or of a function of m
+			return new PyNameRef(currentCFG, location, alias.name(), NameKind.GLOBAL_EXPLICIT, alias.module(),
+					alias.unit(), null, false, false, path + "." + name);
 		// the binding status of the globals of other modules is not known
 		return new PyNameRef(currentCFG, location, name, NameKind.GLOBAL_EXPLICIT, localImports.moduleName(module),
 				module, null, false, false, path + "." + name);

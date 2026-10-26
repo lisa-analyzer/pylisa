@@ -1,38 +1,24 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/local-imports/main.py':25:4] on 'untyped py-testcases/local-imports/main::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise FloatingPointError (uncaught FloatingPointError) at 'py-testcases/local-imports/main.py':25:4"
-  }, {
-    "message" : "['py-testcases/local-imports/main.py':25:4] on 'untyped py-testcases/local-imports/main::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise ZeroDivisionError (uncaught ZeroDivisionError) at 'py-testcases/local-imports/main.py':25:4"
-  }, {
-    "message" : "['py-testcases/local-imports/main.py':25:4] on 'untyped py-testcases/local-imports/main::$main()': [EXPRESSION] ASSERTIONS: code that is not known might raise AssertionError (uncaught AssertionError) at 'py-testcases/local-imports/main.py':25:4"
-  }, {
-    "message" : "['py-testcases/local-imports/main.py':25:4] on 'untyped py-testcases/local-imports/main::$main()': [EXPRESSION] LOOKUP: code that is not known might raise IndexError (uncaught IndexError) at 'py-testcases/local-imports/main.py':25:4"
-  }, {
-    "message" : "['py-testcases/local-imports/main.py':25:4] on 'untyped py-testcases/local-imports/main::$main()': [EXPRESSION] LOOKUP: code that is not known might raise KeyError (uncaught KeyError) at 'py-testcases/local-imports/main.py':25:4"
-  }, {
-    "message" : "['py-testcases/local-imports/main.py':25:4] on 'untyped py-testcases/local-imports/main::$main()': [EXPRESSION] TYPING: code that is not known might raise AttributeError (uncaught AttributeError) at 'py-testcases/local-imports/main.py':25:4"
-  }, {
-    "message" : "['py-testcases/local-imports/main.py':25:4] on 'untyped py-testcases/local-imports/main::$main()': [EXPRESSION] TYPING: code that is not known might raise TypeError (uncaught TypeError) at 'py-testcases/local-imports/main.py':25:4"
-  }, {
-    "message" : "['py-testcases/local-imports/main.py':27:4] on 'untyped py-testcases/local-imports/main::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/local-imports/main.py':27:4"
+    "message" : "['py-testcases/local-imports/main.py':29:4] on 'untyped py-testcases/local-imports/main::$main()': [EXPRESSION] TYPING: a value of the wrong type is used (uncaught TypeError) at 'py-testcases/local-imports/main.py':29:4"
   } ],
   "notices" : [ ],
-  "files" : [ "report.json", "untyped_Box.get(Box__self)_1293168064.graph.json", "untyped_Box.get(Box__self)_1293170823.graph.json", "untyped_py-testcases_local-imports_helpers.$main().graph.json", "untyped_py-testcases_local-imports_helpers.func()_1293170544.graph.json", "untyped_py-testcases_local-imports_helpers.func()_1293170575.graph.json", "untyped_py-testcases_local-imports_helpers.func()_1293170606.graph.json", "untyped_py-testcases_local-imports_helpers.func()_1293170761.graph.json", "untyped_py-testcases_local-imports_main.$main().graph.json", "untyped_py-testcases_local-imports_main.func()_1293170513.graph.json", "untyped_py-testcases_local-imports_pkg___init__.$main().graph.json", "untyped_py-testcases_local-imports_pkg___init__.func()_1293170637.graph.json", "untyped_py-testcases_local-imports_pkg_inner.$main().graph.json", "untyped_py-testcases_local-imports_pkg_sub.$main().graph.json", "untyped_py-testcases_local-imports_pkg_sub.func()_1293170668.graph.json", "untyped_py-testcases_local-imports_pkg_sub.func()_1293170699.graph.json" ],
+  "files" : [ "report.json", "untyped_Box.get(Box__self)_1293168126.graph.json", "untyped_Box.get(Box__self)_1293170823.graph.json", "untyped_py-testcases_local-imports_helpers.$main().graph.json", "untyped_py-testcases_local-imports_helpers.func()_1293170544.graph.json", "untyped_py-testcases_local-imports_helpers.func()_1293170575.graph.json", "untyped_py-testcases_local-imports_helpers.func()_1293170606.graph.json", "untyped_py-testcases_local-imports_helpers.func()_1293170761.graph.json", "untyped_py-testcases_local-imports_main.$main().graph.json", "untyped_py-testcases_local-imports_main.func()_1293170513.graph.json", "untyped_py-testcases_local-imports_pkg___init__.$main().graph.json", "untyped_py-testcases_local-imports_pkg___init__.func()_1293170637.graph.json", "untyped_py-testcases_local-imports_pkg_inner.$main().graph.json", "untyped_py-testcases_local-imports_pkg_inner.func()_1293168033.graph.json", "untyped_py-testcases_local-imports_pkg_sub.$main().graph.json", "untyped_py-testcases_local-imports_pkg_sub.func()_1293170668.graph.json", "untyped_py-testcases_local-imports_pkg_sub.func()_1293170699.graph.json" ],
   "info" : {
     "cfgs" : "13",
-    "duration" : "6ms",
-    "end" : "2026-10-26T14:47:14.742+01:00",
-    "expressions" : "56",
-    "files" : "15",
+    "duration" : "177ms",
+    "end" : "2026-10-26T15:23:54.736+01:00",
+    "expressions" : "59",
+    "files" : "16",
     "globals" : "0",
     "members" : "184",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-26T14:47:14.736+01:00",
-    "statements" : "44",
+    "start" : "2026-10-26T15:23:54.559+01:00",
+    "statements" : "45",
     "units" : "45",
     "version" : "1.0",
-    "warnings" : "8"
+    "warnings" : "1"
   },
   "configuration" : {
     "asynchronousListeners" : "",

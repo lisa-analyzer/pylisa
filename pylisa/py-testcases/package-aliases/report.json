@@ -1,0 +1,70 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/package-aliases/main.py':15:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise FloatingPointError (uncaught FloatingPointError) at 'py-testcases/package-aliases/main.py':15:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':15:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise ZeroDivisionError (uncaught ZeroDivisionError) at 'py-testcases/package-aliases/main.py':15:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':15:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] ASSERTIONS: code that is not known might raise AssertionError (uncaught AssertionError) at 'py-testcases/package-aliases/main.py':15:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':15:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] LOOKUP: code that is not known might raise IndexError (uncaught IndexError) at 'py-testcases/package-aliases/main.py':15:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':15:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] LOOKUP: code that is not known might raise KeyError (uncaught KeyError) at 'py-testcases/package-aliases/main.py':15:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':15:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] TYPING: code that is not known might raise AttributeError (uncaught AttributeError) at 'py-testcases/package-aliases/main.py':15:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':15:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] TYPING: code that is not known might raise TypeError (uncaught TypeError) at 'py-testcases/package-aliases/main.py':15:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':18:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise FloatingPointError (uncaught FloatingPointError) at 'py-testcases/package-aliases/main.py':18:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':18:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise ZeroDivisionError (uncaught ZeroDivisionError) at 'py-testcases/package-aliases/main.py':18:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':18:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] ASSERTIONS: code that is not known might raise AssertionError (uncaught AssertionError) at 'py-testcases/package-aliases/main.py':18:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':18:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] LOOKUP: code that is not known might raise IndexError (uncaught IndexError) at 'py-testcases/package-aliases/main.py':18:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':18:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] LOOKUP: code that is not known might raise KeyError (uncaught KeyError) at 'py-testcases/package-aliases/main.py':18:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':18:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] TYPING: code that is not known might raise AttributeError (uncaught AttributeError) at 'py-testcases/package-aliases/main.py':18:4"
+  }, {
+    "message" : "['py-testcases/package-aliases/main.py':18:4] on 'untyped py-testcases/package-aliases/main::$main()': [EXPRESSION] TYPING: code that is not known might raise TypeError (uncaught TypeError) at 'py-testcases/package-aliases/main.py':18:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_package-aliases_main.$main().graph.json", "untyped_py-testcases_package-aliases_pkg___init__.$main().graph.json", "untyped_py-testcases_package-aliases_pkg_helpers.$main().graph.json", "untyped_py-testcases_package-aliases_pkg_helpers.half()_-709803088.graph.json", "untyped_py-testcases_package-aliases_pkg_mod.$main().graph.json", "untyped_py-testcases_package-aliases_pkg_mod.number()_-709803119.graph.json", "untyped_py-testcases_package-aliases_pkg_mod.number()_-709803181.graph.json", "untyped_py-testcases_package-aliases_pkg_other.$main().graph.json", "untyped_py-testcases_package-aliases_pkg_other.text()_-709803026.graph.json", "untyped_py-testcases_package-aliases_pkg_other.text()_-709803150.graph.json" ],
+  "info" : {
+    "cfgs" : "11",
+    "duration" : "151ms",
+    "end" : "2026-10-26T15:12:25.502+01:00",
+    "expressions" : "31",
+    "files" : "10",
+    "globals" : "0",
+    "members" : "190",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-26T15:12:25.351+01:00",
+    "statements" : "43",
+    "units" : "45",
+    "version" : "1.0",
+    "warnings" : "14"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/package-aliases"
+  }
+}

@@ -148,6 +148,7 @@ public class SymtableBuilder extends PythonParserBaseVisitor<Void> {
 			PyScope scope) {
 		scope.addBound(name.getText());
 		symtable.addOccurrence(name, scope);
+		symtable.addBinding(name, scope);
 	}
 
 	@Override
