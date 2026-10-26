@@ -31,7 +31,6 @@ import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collection;
-import org.apache.commons.lang3.StringUtils;
 
 public class TupleCreation extends NaryExpression {
 
@@ -69,7 +68,7 @@ public class TupleCreation extends NaryExpression {
 	public String toString() {
 		Expression[] subs = getSubExpressions();
 		if (subs.length == 1)
-			return "(" + StringUtils.join(subs, ", ") + ")";
+			return "(" + subs[0] + ",)";
 		return super.toString();
 	}
 
@@ -81,12 +80,6 @@ public class TupleCreation extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		// a tuple creation is also created when parsing expressions between
-		// parentheses
-		// if we only have one sub-expression, we assume to be in that case
-		if (params.length == 1)
-			return state;
-
 		return create(analysis, state, this, allocation(), params, getMetaVariables());
 	}
 

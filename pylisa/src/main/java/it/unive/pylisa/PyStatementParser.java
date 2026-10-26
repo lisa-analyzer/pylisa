@@ -653,7 +653,8 @@ public class PyStatementParser
 	@Override
 	public Expression visitStar_expressions(
 			Star_expressionsContext ctx) {
-		if (ctx.star_expression().size() == 1)
+		// a single expression, unless it is followed by a comma (e.g. 1,)
+		if (ctx.star_expression().size() == 1 && ctx.COMMA().isEmpty())
 			return visitStar_expression(ctx.star_expression(0));
 		List<Expression> elements = new ArrayList<>();
 		for (Star_expressionContext e : ctx.star_expression())
@@ -672,7 +673,8 @@ public class PyStatementParser
 	@Override
 	public Expression visitStar_targets(
 			Star_targetsContext ctx) {
-		if (ctx.star_target().size() == 1)
+		// a single target, unless it is followed by a comma (e.g. a, = xs)
+		if (ctx.star_target().size() == 1 && ctx.COMMA().isEmpty())
 			return visitTarget(ctx.star_target(0));
 		List<Expression> elements = new ArrayList<>();
 		for (Star_targetContext t : ctx.star_target())
@@ -2822,7 +2824,9 @@ public class PyStatementParser
 			Star_targetsContext ctx,
 			Map<String, String> scope,
 			SourceCodeLocation loc) {
-		if (ctx.star_target().size() == 1)
+		// a single target, unless it is followed by a comma (e.g. for x, in
+		// ...)
+		if (ctx.star_target().size() == 1 && ctx.COMMA().isEmpty())
 			return comprehensionTarget(ctx.star_target(0), scope, loc);
 		List<Expression> elements = new ArrayList<>();
 		for (Star_targetContext t : ctx.star_target())
@@ -3008,11 +3012,10 @@ public class PyStatementParser
 			if (tuple.star_named_expression() != null)
 				elements.add(visitStar_named_expression(tuple.star_named_expression()));
 			elements.addAll(extractExpressionsFromStar_named_expressions(tuple.star_named_expressions()));
-			TupleCreation tupleCreation = new TupleCreation(currentCFG, getLocation(filePath, ctx),
-					elements.toArray(Expression[]::new));
-			if (tupleCreation.getSubExpressions().length == 1)
-				return tupleCreation.getSubExpressions()[0];
-			return tupleCreation;
+			// also a single element is a tuple (e.g. (1,)), as the
+			// parenthesized
+			// expressions are groups
+			return new TupleCreation(currentCFG, getLocation(filePath, ctx), elements.toArray(Expression[]::new));
 		} else if (ctx.group() != null) {
 			if (ctx.group().named_expression() == null)
 				throw new UnsupportedStatementException("yield expressions are not supported");

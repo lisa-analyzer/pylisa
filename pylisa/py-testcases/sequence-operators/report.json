@@ -1,0 +1,52 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/sequence-operators/sequence-operators.py':11:8] on 'untyped py-testcases/sequence-operators/sequence-operators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':11:8"
+  }, {
+    "message" : "['py-testcases/sequence-operators/sequence-operators.py':14:8] on 'untyped py-testcases/sequence-operators/sequence-operators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':14:8"
+  }, {
+    "message" : "['py-testcases/sequence-operators/sequence-operators.py':17:8] on 'untyped py-testcases/sequence-operators/sequence-operators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':17:8"
+  }, {
+    "message" : "['py-testcases/sequence-operators/sequence-operators.py':20:8] on 'untyped py-testcases/sequence-operators/sequence-operators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':20:8"
+  }, {
+    "message" : "['py-testcases/sequence-operators/sequence-operators.py':8:8] on 'untyped py-testcases/sequence-operators/sequence-operators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':8:8"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_sequence-operators_sequence-operators.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "5ms",
+    "end" : "2026-10-26T12:47:55.611+01:00",
+    "expressions" : "52",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "178",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-26T12:47:55.606+01:00",
+    "statements" : "19",
+    "units" : "40",
+    "version" : "1.0",
+    "warnings" : "5"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/sequence-operators"
+  }
+}
