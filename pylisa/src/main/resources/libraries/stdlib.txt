@@ -37,6 +37,10 @@ method isinstance: it.unive.pylisa.libraries.IsInstanceBuiltin
     param obj type it.unive.lisa.type.Untyped::INSTANCE
     param classinfo type it.unive.lisa.type.Untyped::INSTANCE
 
+method callable: it.unive.pylisa.libraries.CallableBuiltin
+    type it.unive.lisa.program.type.BoolType::INSTANCE
+    param obj type it.unive.lisa.type.Untyped::INSTANCE
+
 method type: it.unive.pylisa.libraries.TypeBuiltin
     type it.unive.lisa.type.Untyped::INSTANCE
     param obj type it.unive.lisa.type.Untyped::INSTANCE
@@ -75,6 +79,11 @@ method zip: it.unive.pylisa.libraries.ZipBuiltin
     libtype Zip*
     param *iterables type it.unive.lisa.type.Untyped::INSTANCE
     param &strict type it.unive.lisa.type.Untyped::INSTANCE default false
+
+method map: it.unive.pylisa.libraries.MapBuiltin
+    libtype Map*
+    param function type it.unive.lisa.type.Untyped::INSTANCE
+    param *iterables type it.unive.lisa.type.Untyped::INSTANCE
 
 method bytes: it.unive.pylisa.libraries.conversions.BytesBuiltin
     type it.unive.pylisa.cfg.type.PyBytesType::INSTANCE
@@ -126,6 +135,10 @@ class Zip
 # the class of enumerate(...), whose objects are iterated as tuples (see
 # EnumerateBuiltin)
 class Enumerate
+
+# the class of map(...), whose objects are iterated as the results of the
+# function (see MapBuiltin)
+class Map
 
 # the class of the methods read from objects (see BoundMethods)
 class BoundMethod

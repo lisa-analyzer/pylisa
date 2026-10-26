@@ -84,7 +84,8 @@ public class ListBuiltin extends PyNative {
 			// in the state where the list has been created, as they might be
 			// new objects, e.g. the tuples of d.items())
 			AnalysisState<A> elements = iterable == Satisfiability.SATISFIED && params[0].elements().size() == 1
-					? Iteration.elements(analysis, created, getSubExpressions()[0], params[0].iterator().next(), st,
+					? Iteration.elements(interprocedural, created, getSubExpressions()[0], params[0].iterator().next(),
+							st,
 							getMetaVariables())
 					: analysis.smallStepSemantics(created, new PushAny(Untyped.INSTANCE, loc), st);
 			for (SymbolicExpression list : created.getExecutionExpressions()) {

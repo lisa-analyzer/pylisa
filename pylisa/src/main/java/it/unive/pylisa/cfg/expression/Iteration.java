@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -20,6 +21,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.EnumerateBuiltin;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.MapBuiltin;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.RangeBuiltin;
 import it.unive.pylisa.libraries.ZipBuiltin;
@@ -70,6 +72,48 @@ public final class Iteration {
 			Statement pp,
 			Collection<Identifier> metas)
 			throws SemanticException {
+		return elements(analysis, null, state, expression, iterable, pp, metas);
+	}
+
+	/**
+	 * Yields any of the elements of the iterable, as
+	 * {@link #elements(Analysis, AnalysisState, Expression, SymbolicExpression, Statement, Collection)},
+	 * where the elements of a map object are the results of calling its
+	 * function (see {@link MapBuiltin#elements}), that are unknown otherwise
+	 * (see {@link MapBuiltin#uncalled}).
+	 *
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the iterable has been evaluated
+	 * @param expression      the expression computing the iterable
+	 * @param iterable        the iterable
+	 * @param pp              the program point iterating over the iterable
+	 * @param metas           where the meta variables of the elements are
+	 *                            added, that {@code pp} must forget
+	 *
+	 * @return the state whose computed expressions are the elements
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			Expression expression,
+			SymbolicExpression iterable,
+			Statement pp,
+			Collection<Identifier> metas)
+			throws SemanticException {
+		return elements(interprocedural.getAnalysis(), interprocedural, state, expression, iterable, pp, metas);
+	}
+
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
+			Analysis<A, D> analysis,
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			Expression expression,
+			SymbolicExpression iterable,
+			Statement pp,
+			Collection<Identifier> metas)
+			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		if (isRange(expression))
 			// range(...), whose elements are ints
@@ -93,6 +137,10 @@ public final class Iteration {
 				result = result.lub(ZipBuiltin.elements(analysis, state, iterable, pp, metas));
 			else if (EnumerateBuiltin.isEnumerate(t))
 				result = result.lub(EnumerateBuiltin.elements(analysis, state, iterable, pp, metas));
+			else if (MapBuiltin.isMap(t))
+				result = result.lub(interprocedural != null
+						? MapBuiltin.elements(interprocedural, state, iterable, pp, metas)
+						: MapBuiltin.uncalled(analysis, state, pp));
 			else if (RangeBuiltin.isRange(t))
 				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), pp));
 			else if (t instanceof PyBytesType)
@@ -116,9 +164,9 @@ public final class Iteration {
 	 * Whether the given value is surely ({@code SATISFIED}), possibly
 	 * ({@code UNKNOWN}) or surely not ({@code NOT_SATISFIED}) iterable: lists,
 	 * tuples, dictionaries, their views, {@code str}, {@code bytes}, ranges,
-	 * zip and enumerate objects are, the values of the builtin classes whose
-	 * methods are all known (e.g. {@code int}) and functions are not, and the
-	 * objects of the other classes might be (e.g. if their class defines
+	 * zip, enumerate and map objects are, the values of the builtin classes
+	 * whose methods are all known (e.g. {@code int}) and functions are not, and
+	 * the objects of the other classes might be (e.g. if their class defines
 	 * {@code __iter__}).
 	 *
 	 * @param analysis the analysis
@@ -143,7 +191,7 @@ public final class Iteration {
 		for (Type t : types)
 			if (ListModel.isList(t) || Unpacking.isTuple(t) || DictModel.isDict(t) || t.isStringType()
 					|| DictViews.isView(t) || RangeBuiltin.isRange(t) || t instanceof PyBytesType
-					|| ZipBuiltin.isZip(t) || EnumerateBuiltin.isEnumerate(t))
+					|| ZipBuiltin.isZip(t) || EnumerateBuiltin.isEnumerate(t) || MapBuiltin.isMap(t))
 				iterable = true;
 			else if (t.isCodeMemberType()
 					|| (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t)))

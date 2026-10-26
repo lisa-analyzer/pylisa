@@ -1,0 +1,7 @@
+library functools:
+    location functools
+    method reduce: it.unive.pylisa.libraries.functools.Reduce
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param function type it.unive.lisa.type.Untyped::INSTANCE
+        param iterable type it.unive.lisa.type.Untyped::INSTANCE
+        param initial type it.unive.lisa.type.Untyped::INSTANCE default missing

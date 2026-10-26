@@ -1,0 +1,44 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/callable/callable.py':30:4] on 'untyped py-testcases/callable/callable::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/callable/callable.py':30:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_callable_callable.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "7",
+    "duration" : "4ms",
+    "end" : "2026-10-26T14:47:03.276+01:00",
+    "expressions" : "37",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "186",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-26T14:47:03.272+01:00",
+    "statements" : "23",
+    "units" : "43",
+    "version" : "1.0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/callable"
+  }
+}

@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.SourceCodeLocation;
@@ -29,6 +30,8 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyClosureUnit;
+import it.unive.pylisa.libraries.dicts.DictModel;
+import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -147,6 +150,41 @@ final class CallTargets {
 			}
 		}
 		return targets;
+	}
+
+	/**
+	 * Whether the values of the given types can be called, as classified by
+	 * {@link #of} (where the objects of the classes of the program that do not
+	 * define {@code __call__} cannot be called): functions, natives, closures,
+	 * bound methods, classes and the objects whose class defines
+	 * {@code __call__} can be called, while the values of the builtin classes
+	 * whose methods are all known, lists, dictionaries and tuples cannot.
+	 *
+	 * @param types the runtime types of the values
+	 * @param pp    the statement using the values
+	 *
+	 * @return whether the values can be called
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	static Satisfiability callable(
+			Set<Type> types,
+			Statement pp)
+			throws SemanticException {
+		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, pp))
+			return Satisfiability.UNKNOWN;
+		Satisfiability result = Satisfiability.BOTTOM;
+		for (Type t : types)
+			if (BoundMethods.isBoundMethod(t) || closureFunction(t) != null || t.isTypeTokenType()
+					|| t.isCodeMemberType() || (isObject(t) && callable(t)))
+				result = result.lub(Satisfiability.SATISFIED);
+			else if ((PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
+					|| (isObject(t) && PyBinaryDispatch.fullyKnown(t))
+					|| ListModel.isList(t) || DictModel.isDict(t) || Unpacking.isTuple(t))
+				result = result.lub(Satisfiability.NOT_SATISFIED);
+			else
+				return Satisfiability.UNKNOWN;
+		return result;
 	}
 
 	/**

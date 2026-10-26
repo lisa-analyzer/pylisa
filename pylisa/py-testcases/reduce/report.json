@@ -1,0 +1,50 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/reduce/reduce.py':27:4] on 'untyped py-testcases/reduce/reduce::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':27:4"
+  }, {
+    "message" : "['py-testcases/reduce/reduce.py':30:4] on 'untyped py-testcases/reduce/reduce::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':30:4"
+  }, {
+    "message" : "['py-testcases/reduce/reduce.py':33:4] on 'untyped py-testcases/reduce/reduce::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':33:4"
+  }, {
+    "message" : "['py-testcases/reduce/reduce.py':36:4#reduce] on 'untyped py-testcases/reduce/reduce::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':36:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_reduce_reduce.$lambda@17_11(untyped_acc,_untyped_s)_-159674742.graph.json", "untyped_py-testcases_reduce_reduce.$main().graph.json", "untyped_py-testcases_reduce_reduce.mul(untyped_x,_untyped_y)_-159656483.graph.json", "untyped_py-testcases_reduce_reduce.mul(untyped_x,_untyped_y)_-159665132.graph.json", "untyped_py-testcases_reduce_reduce.mul(untyped_x,_untyped_y)_-159668976.graph.json", "untyped_py-testcases_reduce_reduce.mul(untyped_x,_untyped_y)_-159676664.graph.json", "untyped_py-testcases_reduce_reduce.mul(untyped_x,_untyped_y)_-159679547.graph.json" ],
+  "info" : {
+    "cfgs" : "4",
+    "duration" : "14ms",
+    "end" : "2026-10-26T14:47:21.309+01:00",
+    "expressions" : "68",
+    "files" : "7",
+    "globals" : "0",
+    "members" : "184",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-26T14:47:21.295+01:00",
+    "statements" : "27",
+    "units" : "42",
+    "version" : "1.0",
+    "warnings" : "4"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/reduce"
+  }
+}
