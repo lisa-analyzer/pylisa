@@ -1,0 +1,48 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/sorted-key/sorted-key.py':15:4] on 'untyped py-testcases/sorted-key/sorted-key::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted-key/sorted-key.py':15:4"
+  }, {
+    "message" : "['py-testcases/sorted-key/sorted-key.py':18:4#key] on 'untyped py-testcases/sorted-key/sorted-key::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/sorted-key/sorted-key.py':18:4"
+  }, {
+    "message" : "['py-testcases/sorted-key/sorted-key.py':18:4] on 'untyped py-testcases/sorted-key/sorted-key::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted-key/sorted-key.py':18:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_sorted-key_sorted-key.$lambda@12_26(untyped_v)_-1092517123.graph.json", "untyped_py-testcases_sorted-key_sorted-key.$lambda@15_25(untyped_v)_-1092544031.graph.json", "untyped_py-testcases_sorted-key_sorted-key.$lambda@18_21(untyped_x)_-1092541148.graph.json", "untyped_py-testcases_sorted-key_sorted-key.$lambda@5_22(untyped_x)_-1092523850.graph.json", "untyped_py-testcases_sorted-key_sorted-key.$lambda@8_24(untyped_v)_-1092520967.graph.json", "untyped_py-testcases_sorted-key_sorted-key.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "7",
+    "duration" : "8ms",
+    "end" : "2026-10-26T17:26:45.343+01:00",
+    "expressions" : "84",
+    "files" : "6",
+    "globals" : "0",
+    "members" : "188",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-26T17:26:45.335+01:00",
+    "statements" : "29",
+    "units" : "41",
+    "version" : "1.0",
+    "warnings" : "3"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/sorted-key"
+  }
+}

@@ -3,38 +3,24 @@
     "message" : "['py-testcases/sorted/sorted.py':14:10] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted/sorted.py':14:10"
   }, {
     "message" : "['py-testcases/sorted/sorted.py':17:10] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted/sorted.py':17:10"
-  }, {
-    "message" : "['py-testcases/sorted/sorted.py':20:8] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise FloatingPointError (uncaught FloatingPointError) at 'py-testcases/sorted/sorted.py':20:8"
-  }, {
-    "message" : "['py-testcases/sorted/sorted.py':20:8] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise ZeroDivisionError (uncaught ZeroDivisionError) at 'py-testcases/sorted/sorted.py':20:8"
-  }, {
-    "message" : "['py-testcases/sorted/sorted.py':20:8] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] ASSERTIONS: code that is not known might raise AssertionError (uncaught AssertionError) at 'py-testcases/sorted/sorted.py':20:8"
-  }, {
-    "message" : "['py-testcases/sorted/sorted.py':20:8] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] LOOKUP: code that is not known might raise IndexError (uncaught IndexError) at 'py-testcases/sorted/sorted.py':20:8"
-  }, {
-    "message" : "['py-testcases/sorted/sorted.py':20:8] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] LOOKUP: code that is not known might raise KeyError (uncaught KeyError) at 'py-testcases/sorted/sorted.py':20:8"
-  }, {
-    "message" : "['py-testcases/sorted/sorted.py':20:8] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] TYPING: code that is not known might raise AttributeError (uncaught AttributeError) at 'py-testcases/sorted/sorted.py':20:8"
-  }, {
-    "message" : "['py-testcases/sorted/sorted.py':20:8] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] TYPING: code that is not known might raise TypeError (uncaught TypeError) at 'py-testcases/sorted/sorted.py':20:8"
   } ],
   "notices" : [ ],
-  "files" : [ "report.json", "untyped_py-testcases_sorted_sorted.$main().graph.json" ],
+  "files" : [ "report.json", "untyped_py-testcases_sorted_sorted.$lambda@20_23(untyped_v)_1741071458.graph.json", "untyped_py-testcases_sorted_sorted.$main().graph.json" ],
   "info" : {
     "cfgs" : "3",
     "duration" : "6ms",
-    "end" : "2026-10-26T17:10:08.745+01:00",
+    "end" : "2026-10-26T17:26:45.614+01:00",
     "expressions" : "65",
-    "files" : "1",
+    "files" : "2",
     "globals" : "0",
     "members" : "184",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-26T17:10:08.739+01:00",
+    "start" : "2026-10-26T17:26:45.608+01:00",
     "statements" : "27",
     "units" : "41",
     "version" : "1.0",
-    "warnings" : "9"
+    "warnings" : "2"
   },
   "configuration" : {
     "asynchronousListeners" : "",

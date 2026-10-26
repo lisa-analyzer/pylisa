@@ -16,5 +16,5 @@ if _sv_verifier.nondet_bool():
     # TypeError: not iterable
     bad = sorted(5)
 if _sv_verifier.nondet_bool():
-    # the code of key is not known: it might raise any exception
+    # key is called on the elements (ints): it raises nothing
     k = sorted(xs, key=lambda v: -v)

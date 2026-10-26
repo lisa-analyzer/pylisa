@@ -20,6 +20,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.ListCreation;
+import it.unive.pylisa.cfg.expression.PyValueCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyNative;
@@ -35,8 +36,10 @@ import java.util.function.Predicate;
  * or if the elements might not be compared: they are all numbers, all
  * {@code str}s, or all {@code bytes}, otherwise comparing two of them might
  * raise {@code TypeError} (e.g. an {@code int} and a {@code str}). If
- * {@code key} might not be {@code None}, it is called on the elements, and the
- * code it runs is not known: it might raise any exception.
+ * {@code key} might not be {@code None}, it is called on the elements (see
+ * {@link PyValueCall#call}), raising the exceptions it might raise, and its
+ * results are compared instead of the elements; if it is not known whether it
+ * can be called, any exception might be raised.
  */
 public class SortedBuiltin extends PyNative {
 
@@ -71,7 +74,49 @@ public class SortedBuiltin extends PyNative {
 		AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, state, new ExpressionSet[0],
 				expressions);
 		getMetaVariables().addAll(creation.getMetaVariables());
-		return super.forwardSemanticsAux(interprocedural, created, params, expressions);
+		AnalysisState<A> result = super.forwardSemanticsAux(interprocedural, created, params, expressions);
+
+		// key is called on the elements, and its results are compared
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		Expression[] subs = getSubExpressions();
+		for (SymbolicExpression key : params[1]) {
+			if (hasType(analysis, created, key, NONE) == Satisfiability.SATISFIED)
+				continue;
+			if (PyValueCall.callable(analysis, created, key, st) == Satisfiability.UNKNOWN)
+				// the code of key is not known
+				result = result.lub(raise(analysis, created, LibrarySpecificationProvider.EXCEPTION));
+			for (SymbolicExpression iterable : params[0]) {
+				if (Iteration.iterable(analysis, created, iterable, st) == Satisfiability.NOT_SATISFIED)
+					continue;
+				AnalysisState<A> elements = Iteration.elements(interprocedural, created,
+						subs.length > 0 ? subs[0] : null, iterable, st, getMetaVariables());
+				AnalysisState<A> keys = PyValueCall.call(interprocedural, elements, new ExpressionSet(key),
+						new ExpressionSet[] { elements.getExecutionExpressions() }, st, "key",
+						new StatementStore<>(elements), getMetaVariables());
+				// the exceptions raised by key
+				result = result.lub(keys.bottomExecution());
+				if (!comparable(analysis, keys, keys.getExecutionExpressions()))
+					result = result.lub(raise(analysis, created, LibrarySpecificationProvider.TYPE_ERROR));
+			}
+		}
+		return result;
+	}
+
+	// whether the values can be compared with each other: there are none, or
+	// they are all numbers, all str or all bytes
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean comparable(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			ExpressionSet values)
+			throws SemanticException {
+		Satisfiability numbers = Satisfiability.BOTTOM, strs = Satisfiability.BOTTOM, bytes = Satisfiability.BOTTOM;
+		for (SymbolicExpression value : values) {
+			numbers = numbers.lub(hasType(analysis, state, value, NUMBER));
+			strs = strs.lub(hasType(analysis, state, value, STR));
+			bytes = bytes.lub(hasType(analysis, state, value, BYTES));
+		}
+		return numbers == Satisfiability.BOTTOM || numbers == Satisfiability.SATISFIED
+				|| strs == Satisfiability.SATISFIED || bytes == Satisfiability.SATISFIED;
 	}
 
 	@Override
@@ -87,21 +132,10 @@ public class SortedBuiltin extends PyNative {
 			typed = typed.and(hasType(analysis, state, reverse, INT));
 
 		AnalysisState<A> result = state.bottomExecution();
-		boolean comparable = true;
 		if (typed != Satisfiability.NOT_SATISFIED) {
 			Expression[] subs = getSubExpressions();
 			AnalysisState<A> elements = Iteration.elements(analysis, state, subs.length > 0 ? subs[0] : null,
 					iterable, st, getMetaVariables());
-			Satisfiability numbers = Satisfiability.BOTTOM, strs = Satisfiability.BOTTOM,
-					bytes = Satisfiability.BOTTOM;
-			for (SymbolicExpression element : elements.getExecutionExpressions()) {
-				numbers = numbers.lub(hasType(analysis, elements, element, NUMBER));
-				strs = strs.lub(hasType(analysis, elements, element, STR));
-				bytes = bytes.lub(hasType(analysis, elements, element, BYTES));
-			}
-			// no element (e.g. an empty list), or elements of a single family
-			comparable = numbers == Satisfiability.BOTTOM || numbers == Satisfiability.SATISFIED
-					|| strs == Satisfiability.SATISFIED || bytes == Satisfiability.SATISFIED;
 
 			// the elements at unknown indices of the new list
 			Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
@@ -114,11 +148,11 @@ public class SortedBuiltin extends PyNative {
 							.withExecutionExpression(list));
 			}
 			result = filled;
-			if (!comparable)
+			if (hasType(analysis, state, key, NONE) != Satisfiability.NOT_SATISFIED
+					&& !comparable(analysis, elements, elements.getExecutionExpressions()))
+				// without key, the elements are compared (with key, its results
+				// are, see forwardSemanticsAux)
 				result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
-			if (hasType(analysis, state, key, NONE) != Satisfiability.SATISFIED)
-				// the code of key is not known
-				result = result.lub(raise(analysis, state, LibrarySpecificationProvider.EXCEPTION));
 		}
 		return typeChecked(analysis, state, typed, result);
 	}
