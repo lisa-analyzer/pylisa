@@ -223,3 +223,6 @@ gradle-app.setting
 .classpath
 
 # End of https://www.toptal.com/developers/gitignore/api/java,gradle,intellij,eclipse
+/pylisa/.jd-breaks
+/pylisa/run
+/pylisa/run-output
