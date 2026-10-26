@@ -37,6 +37,13 @@ method isinstance: it.unive.pylisa.libraries.IsInstanceBuiltin
     param obj type it.unive.lisa.type.Untyped::INSTANCE
     param classinfo type it.unive.lisa.type.Untyped::INSTANCE
 
+method bool: it.unive.pylisa.libraries.BoolBuiltin
+    type it.unive.lisa.program.type.BoolType::INSTANCE
+    param x type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+method object: it.unive.pylisa.libraries.ObjectBuiltin
+    type it.unive.lisa.type.Untyped::INSTANCE
+
 method callable: it.unive.pylisa.libraries.CallableBuiltin
     type it.unive.lisa.program.type.BoolType::INSTANCE
     param obj type it.unive.lisa.type.Untyped::INSTANCE

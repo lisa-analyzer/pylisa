@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.Unit;
@@ -31,6 +32,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.LocalImports;
 import it.unive.pylisa.analysis.namespaces.Binding;
 import it.unive.pylisa.analysis.namespaces.Namespaces;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.expression.literal.PyFunctionLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyTypeLiteral;
@@ -459,6 +461,10 @@ public class PyNameRef extends VariableRef {
 			if (builtin != null)
 				return new PyFunctionLiteral(getCFG(), getLocation(), builtin)
 						.forwardSemantics(entryState, interprocedural, expressions);
+			ClassUnit exception = builtinException(getCFG().getProgram(), getName());
+			if (exception != null)
+				return new PyTypeLiteral(getCFG(), getLocation(), exception)
+						.forwardSemantics(entryState, interprocedural, expressions);
 			if (PyBuiltinNames.isBuiltin(getName()))
 				// a builtin that is not modeled: its value is unknown
 				return super.forwardSemantics(entryState, interprocedural, expressions);
@@ -509,7 +515,23 @@ public class PyNameRef extends VariableRef {
 		NativeCFG builtin = builtin(getCFG().getProgram(), getName());
 		if (builtin != null)
 			return new PyFunctionLiteral(getCFG(), getLocation(), builtin);
+		ClassUnit exception = builtinException(getCFG().getProgram(), getName());
+		if (exception != null)
+			return new PyTypeLiteral(getCFG(), getLocation(), exception);
 		return null;
+	}
+
+	// the builtin exception class named name (e.g. ValueError, modeled by a
+	// library class with the same name), if any
+	private static ClassUnit builtinException(
+			Program program,
+			String name) {
+		Unit unit = program.getUnit(name);
+		Unit base = program.getUnit(LibrarySpecificationProvider.BASE_EXCEPTION);
+		if (!(unit instanceof ClassUnit) || !(base instanceof CompilationUnit) || ClassBases.isProgramClass(unit))
+			// not a class of a library (e.g. one of the program)
+			return null;
+		return ((ClassUnit) unit).isInstanceOf((CompilationUnit) base) ? (ClassUnit) unit : null;
 	}
 
 	/**
