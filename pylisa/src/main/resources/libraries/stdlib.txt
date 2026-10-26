@@ -86,6 +86,11 @@ method list: it.unive.pylisa.libraries.lists.ListBuiltin
     type it.unive.lisa.type.Untyped::INSTANCE
     param iterable type it.unive.lisa.type.Untyped::INSTANCE default missing
 
+method dict: it.unive.pylisa.libraries.dicts.DictBuiltin
+    type it.unive.lisa.type.Untyped::INSTANCE
+    param iterable type it.unive.lisa.type.Untyped::INSTANCE default missing
+    param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+
 method exec: it.unive.pylisa.libraries.dynamic.Exec
     type it.unive.lisa.type.Untyped::INSTANCE
     param source type it.unive.lisa.type.Untyped::INSTANCE
