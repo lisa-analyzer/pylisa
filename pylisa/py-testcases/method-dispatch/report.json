@@ -1,0 +1,44 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/method-dispatch/method-dispatch.py':48:4] on 'untyped py-testcases/method-dispatch/method-dispatch::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/method-dispatch/method-dispatch.py':48:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_A.func(A__self)_-1530671524.graph.json", "untyped_B.func(B__self)_-1530667370.graph.json", "untyped_B.func(B__self)_-1530671369.graph.json", "untyped_C.func(C__self)_-1530681010.graph.json", "untyped_C.func(C__self)_-1530681258.graph.json", "untyped_D.func(D__self)_-1530681258.graph.json", "untyped_E.func(E__self)_-1530681010.graph.json", "untyped_py-testcases_method-dispatch_method-dispatch.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "13",
+    "duration" : "21ms",
+    "end" : "2026-10-25T12:46:50.976+01:00",
+    "expressions" : "33",
+    "files" : "8",
+    "globals" : "0",
+    "members" : "189",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-25T12:46:50.955+01:00",
+    "statements" : "29",
+    "units" : "45",
+    "version" : "1.0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/method-dispatch"
+  }
+}
