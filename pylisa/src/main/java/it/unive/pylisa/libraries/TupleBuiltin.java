@@ -10,18 +10,12 @@ import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.heap.AccessChild;
-import it.unive.lisa.symbolic.heap.HeapDereference;
-import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.expression.Unpacking;
-import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.List;
 import java.util.Set;
@@ -83,14 +77,8 @@ public class TupleBuiltin extends PyNative {
 				// a tuple whose length (and elements) are not known
 				AnalysisState<A> created = TupleCreation.create(analysis, state, st, loc, new ExpressionSet[0],
 						getMetaVariables());
-				Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
-				for (SymbolicExpression tuple : created.getExecutionExpressions()) {
-					AccessChild length = new AccessChild(Int32Type.INSTANCE,
-							new HeapDereference(tupleType, tuple, loc),
-							new Variable(Int32Type.INSTANCE, "length", loc), loc);
-					result = result.lub(analysis.assign(created, length, new PushAny(Int32Type.INSTANCE, loc), st)
-							.withExecutionExpression(tuple));
-				}
+				for (SymbolicExpression tuple : created.getExecutionExpressions())
+					result = result.lub(TupleCreation.unknownLength(analysis, created, tuple, st, loc));
 			}
 		}
 		if (it != Satisfiability.SATISFIED)

@@ -22,6 +22,7 @@ import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.InstrumentedReceiver;
+import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
@@ -172,5 +173,42 @@ public class TupleCreation extends NaryExpression {
 
 		metas.add(tuple);
 		return analysis.smallStepSemantics(current, tuple, pp);
+	}
+
+	/**
+	 * Makes the length and the elements of the given new tuple (without
+	 * elements) unknown: its length is any {@code int}, and any value might be
+	 * one of its elements, at unknown indices (see
+	 * {@link ListCreation#UNKNOWN_INDEX}), so that its length is not known also
+	 * from its elements (see {@code ListModel#length}).
+	 *
+	 * @param <A>      the kind of the analysis state
+	 * @param <D>      the kind of the abstract domain
+	 * @param analysis the analysis
+	 * @param state    the state where the tuple has been created
+	 * @param tuple    the tuple
+	 * @param pp       the statement creating the tuple
+	 * @param location the location of the tuple
+	 *
+	 * @return the state whose computed expression is the tuple
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unknownLength(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression tuple,
+			Statement pp,
+			CodeLocation location)
+			throws SemanticException {
+		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.TUPLE), tuple,
+				location);
+		AnalysisState<A> result = analysis.assign(state, new AccessChild(Int32Type.INSTANCE, deref,
+				new Variable(Int32Type.INSTANCE, "length", location), location),
+				new PushAny(Int32Type.INSTANCE, location), pp);
+		result = analysis.assign(result, new AccessChild(Untyped.INSTANCE, deref,
+				new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, location), location),
+				new PushAny(Untyped.INSTANCE, location), pp);
+		return result.withExecutionExpression(tuple);
 	}
 }

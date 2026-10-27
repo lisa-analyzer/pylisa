@@ -44,6 +44,11 @@ method bool: it.unive.pylisa.libraries.BoolBuiltin
 method object: it.unive.pylisa.libraries.ObjectBuiltin
     type it.unive.lisa.type.Untyped::INSTANCE
 
+method next: it.unive.pylisa.libraries.itertools.NextBuiltin
+    type it.unive.lisa.type.Untyped::INSTANCE
+    param iterator type it.unive.lisa.type.Untyped::INSTANCE
+    param fallback type it.unive.lisa.type.Untyped::INSTANCE default missing
+
 method callable: it.unive.pylisa.libraries.CallableBuiltin
     type it.unive.lisa.program.type.BoolType::INSTANCE
     param obj type it.unive.lisa.type.Untyped::INSTANCE
@@ -155,6 +160,10 @@ class Enumerate
 # function (see MapBuiltin)
 class Map
 
+# the class of the iterators of itertools, whose elements are computed when they
+# are iterated (see ItertoolsModel)
+class Itertool
+
 # the class of the methods read from objects (see BoundMethods)
 class BoundMethod
 
@@ -182,6 +191,8 @@ class OverflowError extends ArithmeticError
 class FloatingPointError extends ArithmeticError
 
 class ValueError extends Exception
+
+class StopIteration extends Exception
 
 class AttributeError extends Exception
 

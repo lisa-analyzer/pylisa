@@ -863,12 +863,36 @@ public final class ListModel {
 			SymbolicExpression list,
 			ProgramPoint pp)
 			throws SemanticException {
+		return elements(analysis, state, list, PyClassType.lookup(LibrarySpecificationProvider.LIST), pp);
+	}
+
+	/**
+	 * Yields any of the elements of the list or tuple, as
+	 * {@link #elements(Analysis, AnalysisState, SymbolicExpression, ProgramPoint)},
+	 * whose class is the given one.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the current state
+	 * @param list     the list or tuple
+	 * @param type     the class of {@code list}
+	 * @param pp       the program point reading the elements
+	 *
+	 * @return the state whose computed expressions are the elements
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			Type type,
+			ProgramPoint pp)
+			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		Shape shape = shape(analysis, state, list, pp);
 		if (shape.elements() == null)
 			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp);
-		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.LIST), list,
-				loc);
+		HeapDereference deref = new HeapDereference(type, list, loc);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression field : shape.elements())
 			result = result.lub(

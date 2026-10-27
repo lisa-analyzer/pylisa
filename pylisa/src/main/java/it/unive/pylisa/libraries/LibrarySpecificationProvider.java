@@ -64,6 +64,7 @@ public class LibrarySpecificationProvider {
 	public static final String ZERO_DIVISION_ERROR = "ZeroDivisionError";
 	public static final String OVERFLOW_ERROR = "OverflowError";
 	public static final String VALUE_ERROR = "ValueError";
+	public static final String STOP_ITERATION = "StopIteration";
 	public static final String ATTRIBUTE_ERROR = "AttributeError";
 	public static final String LOOKUP_ERROR = "LookupError";
 	public static final String KEY_ERROR = "KeyError";
