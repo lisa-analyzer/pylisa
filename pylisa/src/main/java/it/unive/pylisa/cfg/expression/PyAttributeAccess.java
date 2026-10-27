@@ -12,6 +12,7 @@ import it.unive.lisa.lattices.heap.allocations.AllocationSite;
 import it.unive.lisa.lattices.heap.allocations.AllocationSites;
 import it.unive.lisa.lattices.heap.allocations.HeapEnvWithFields;
 import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -31,6 +32,7 @@ import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.analysis.heap.PyHeap;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.expression.PyClassAttributes.ClassAttribute;
 import it.unive.pylisa.libraries.BuiltinAttributes;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -149,6 +151,10 @@ public class PyAttributeAccess extends UnaryExpression {
 		if (onlyMethods && !mightBeAssigned(analysis, state, expr))
 			// no instance attribute shadows the method
 			objects.clear();
+		if (isWriteTarget() && objects.removeIf(PyAttributeAccess::noAttributes))
+			// e.g. the attributes of a list cannot be assigned
+			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, thrower,
+					LibrarySpecificationProvider.ATTRIBUTE_ERROR));
 		if (!objects.isEmpty()) {
 			Missing missing = isWriteTarget() ? null : missing(analysis, state, expr, objects, false);
 			if (missing == null || missing.assigned()) {
@@ -249,6 +255,26 @@ public class PyAttributeAccess extends UnaryExpression {
 	private record Missing(
 			boolean assigned,
 			Set<ClassUnit> classes) {
+	}
+
+	// the builtin classes whose objects have no instance attributes, that
+	// cannot be assigned (raising AttributeError)
+	private static final Set<String> WITHOUT_ATTRIBUTES = Set.of(LibrarySpecificationProvider.LIST,
+			LibrarySpecificationProvider.DICT, LibrarySpecificationProvider.TUPLE,
+			LibrarySpecificationProvider.NAMED_TUPLE, LibrarySpecificationProvider.SET,
+			LibrarySpecificationProvider.RANGE, LibrarySpecificationProvider.ZIP,
+			LibrarySpecificationProvider.ENUMERATE, LibrarySpecificationProvider.MAP,
+			LibrarySpecificationProvider.DICT_KEYS, LibrarySpecificationProvider.DICT_VALUES,
+			LibrarySpecificationProvider.DICT_ITEMS, LibrarySpecificationProvider.BOUND_METHOD);
+
+	// whether the objects of the given class have no instance attributes:
+	// the objects of the builtin classes above, and the ones created by
+	// object() (whose class is the root of the hierarchy)
+	private static boolean noAttributes(
+			Type object) {
+		Unit unit = object.asUnitType().getUnit();
+		return unit == LibrarySpecificationProvider.hierarchyRoot
+				|| (!ClassBases.isProgramClass(unit) && WITHOUT_ATTRIBUTES.contains(unit.getName()));
 	}
 
 	/**

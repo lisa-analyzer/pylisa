@@ -185,7 +185,8 @@ public final class Unpacking {
 	}
 
 	/**
-	 * Whether the values of the given type are tuples.
+	 * Whether the values of the given type are tuples (also the ones created by
+	 * the classes of {@code collections.namedtuple}).
 	 *
 	 * @param t the type
 	 *
@@ -193,9 +194,10 @@ public final class Unpacking {
 	 */
 	public static boolean isTuple(
 			Type t) {
-		return t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
-				&& t.asPointerType().getInnerType().asUnitType().getUnit().getName()
-						.equals(LibrarySpecificationProvider.TUPLE);
+		if (!t.isPointerType() || !t.asPointerType().getInnerType().isUnitType())
+			return false;
+		String name = t.asPointerType().getInnerType().asUnitType().getUnit().getName();
+		return name.equals(LibrarySpecificationProvider.TUPLE) || name.equals(LibrarySpecificationProvider.NAMED_TUPLE);
 	}
 
 	// the elements of a sequence of known length n, matching the targets

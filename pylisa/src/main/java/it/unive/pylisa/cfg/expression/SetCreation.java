@@ -18,11 +18,19 @@ import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.sets.SetModel;
 import it.unive.pylisa.symbolic.SetConstant;
 import it.unive.pylisa.symbolic.operators.SetAdd;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+/**
+ * A set literal {@code {e0, ..., en}}: a new set in the heap with the given
+ * elements (see {@link SetModel}). When pandas is used, the set is instead a
+ * symbolic value, as expected by the dataframe analyses.
+ */
 public class SetCreation extends NaryExpression {
 
 	public SetCreation(
@@ -46,6 +54,20 @@ public class SetCreation extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
+		if (!LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
+			// a set in the heap (see SetModel)
+			List<AnalysisState<A>> elements = new ArrayList<>();
+			for (ExpressionSet param : params)
+				elements.add(state.withExecutionExpressions(param));
+			AnalysisState<A> created = SetModel.create(interprocedural.getAnalysis(), state, this, loc, elements,
+					getMetaVariables());
+			// the values of the elements are consumed here
+			for (Expression element : getSubExpressions())
+				created = created.forgetIdentifiers(element.getMetaVariables(), this);
+			return created;
+		}
+		// when pandas is used, sets are symbolic values, as expected by the
+		// dataframe analyses
 		SetConstant set = new SetConstant(loc);
 		if (params.length == 0)
 			return interprocedural.getAnalysis().smallStepSemantics(state, set, this);

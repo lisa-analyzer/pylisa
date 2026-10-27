@@ -1,0 +1,48 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/tuple-builtin/tuple-builtin.py':20:4] on 'untyped py-testcases/tuple-builtin/tuple-builtin::$main()': [EXPRESSION] LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/tuple-builtin/tuple-builtin.py':20:4"
+  }, {
+    "message" : "['py-testcases/tuple-builtin/tuple-builtin.py':23:4] on 'untyped py-testcases/tuple-builtin/tuple-builtin::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/tuple-builtin/tuple-builtin.py':23:4"
+  }, {
+    "message" : "['py-testcases/tuple-builtin/tuple-builtin.py':26:4] on 'untyped py-testcases/tuple-builtin/tuple-builtin::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/tuple-builtin/tuple-builtin.py':26:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_tuple-builtin_tuple-builtin.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "5ms",
+    "end" : "2026-10-27T13:19:42.536+01:00",
+    "expressions" : "51",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "192",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-27T13:19:42.531+01:00",
+    "statements" : "23",
+    "units" : "42",
+    "version" : "1.0",
+    "warnings" : "3"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/tuple-builtin"
+  }
+}

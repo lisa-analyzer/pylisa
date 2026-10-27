@@ -28,6 +28,7 @@ import it.unive.pylisa.libraries.ZipBuiltin;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.dicts.DictViews;
 import it.unive.pylisa.libraries.lists.ListModel;
+import it.unive.pylisa.libraries.sets.SetModel;
 import java.util.Collection;
 import java.util.Set;
 
@@ -42,13 +43,13 @@ public final class Iteration {
 	/**
 	 * Yields any of the elements of the iterable (e.g. the one bound to the
 	 * variable of a comprehension, or of a for loop): the elements of a list,
-	 * the keys of a dictionary, the characters of a {@code str}, the bytes of a
-	 * {@code bytes}, the {@code int}s of a range (see {@link RangeBuiltin}),
-	 * and the keys, values or items of a view of a dictionary (see
-	 * {@link DictViews}). Iterating over values that cannot be iterated (e.g.
-	 * an {@code int}) raises {@code TypeError}; the elements of other iterables
-	 * (e.g. an object whose class defines {@code __iter__}, that is not called)
-	 * are unknown.
+	 * the elements of a set (see {@link SetModel}), the keys of a dictionary,
+	 * the characters of a {@code str}, the bytes of a {@code bytes}, the
+	 * {@code int}s of a range (see {@link RangeBuiltin}), and the keys, values
+	 * or items of a view of a dictionary (see {@link DictViews}). Iterating
+	 * over values that cannot be iterated (e.g. an {@code int}) raises
+	 * {@code TypeError}; the elements of other iterables (e.g. an object whose
+	 * class defines {@code __iter__}, that is not called) are unknown.
 	 *
 	 * @param analysis   the analysis
 	 * @param state      the state where the iterable has been evaluated
@@ -137,6 +138,8 @@ public final class Iteration {
 				result = result.lub(ZipBuiltin.elements(analysis, state, iterable, pp, metas));
 			else if (EnumerateBuiltin.isEnumerate(t))
 				result = result.lub(EnumerateBuiltin.elements(analysis, state, iterable, pp, metas));
+			else if (SetModel.isSet(t))
+				result = result.lub(SetModel.elements(analysis, state, iterable, pp));
 			else if (MapBuiltin.isMap(t))
 				result = result.lub(interprocedural != null
 						? MapBuiltin.elements(interprocedural, state, iterable, pp, metas)
@@ -164,10 +167,10 @@ public final class Iteration {
 	 * Whether the given value is surely ({@code SATISFIED}), possibly
 	 * ({@code UNKNOWN}) or surely not ({@code NOT_SATISFIED}) iterable: lists,
 	 * tuples, dictionaries, their views, {@code str}, {@code bytes}, ranges,
-	 * zip, enumerate and map objects are, the values of the builtin classes
-	 * whose methods are all known (e.g. {@code int}) and functions are not, and
-	 * the objects of the other classes might be (e.g. if their class defines
-	 * {@code __iter__}).
+	 * zip, enumerate and map objects, and sets are, the values of the builtin
+	 * classes whose methods are all known (e.g. {@code int}) and functions are
+	 * not, and the objects of the other classes might be (e.g. if their class
+	 * defines {@code __iter__}).
 	 *
 	 * @param analysis the analysis
 	 * @param state    the current state
@@ -191,7 +194,8 @@ public final class Iteration {
 		for (Type t : types)
 			if (ListModel.isList(t) || Unpacking.isTuple(t) || DictModel.isDict(t) || t.isStringType()
 					|| DictViews.isView(t) || RangeBuiltin.isRange(t) || t instanceof PyBytesType
-					|| ZipBuiltin.isZip(t) || EnumerateBuiltin.isEnumerate(t) || MapBuiltin.isMap(t))
+					|| ZipBuiltin.isZip(t) || EnumerateBuiltin.isEnumerate(t) || MapBuiltin.isMap(t)
+					|| SetModel.isSet(t))
 				iterable = true;
 			else if (t.isCodeMemberType()
 					|| (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t)))

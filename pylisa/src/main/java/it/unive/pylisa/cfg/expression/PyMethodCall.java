@@ -40,6 +40,7 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
+import it.unive.pylisa.libraries.sets.SetModel;
 import it.unive.pylisa.symbolic.operators.compare.IsInstance;
 import java.util.Arrays;
 import java.util.Collections;
@@ -125,6 +126,11 @@ public class PyMethodCall extends UnresolvedCall {
 				// modify the list in any way
 				for (SymbolicExpression receiver : params[0])
 					resolving = ListModel.invalidate(analysis, resolving, receiver, this);
+			if (receiverTypes.stream().anyMatch(SetModel::isSet) && SetModel.unmodeled(getTargetName()))
+				// a method of sets that is not modeled (e.g. update) might
+				// modify the set in any way
+				for (SymbolicExpression receiver : params[0])
+					resolving = SetModel.invalidate(analysis, resolving, receiver, this);
 			if (receiverTypes.stream().anyMatch(DictModel::isDict) && DictModel.unmodeled(getTargetName()))
 				// a method of dictionaries that is not modeled (e.g. pop) might
 				// modify the dictionary in any way

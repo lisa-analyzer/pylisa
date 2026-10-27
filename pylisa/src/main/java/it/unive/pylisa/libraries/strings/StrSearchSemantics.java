@@ -19,6 +19,7 @@ import it.unive.lisa.symbolic.value.operator.binary.ComparisonGt;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.symbolic.value.operator.binary.LogicalOr;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -26,7 +27,6 @@ import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.strings.StrSearch;
-import java.util.function.Predicate;
 
 /**
  * Shared semantics of {@code find}, {@code rfind}, {@code index},
@@ -155,7 +155,6 @@ final class StrSearchSemantics {
 
 	private static boolean isTuple(
 			Type t) {
-		Predicate<Type> tuple = PyClassType.lookup(LibrarySpecificationProvider.TUPLE)::equals;
-		return t.isPointerType() && tuple.test(t.asPointerType().getInnerType());
+		return Unpacking.isTuple(t);
 	}
 }

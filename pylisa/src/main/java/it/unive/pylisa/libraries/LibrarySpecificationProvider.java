@@ -45,6 +45,7 @@ public class LibrarySpecificationProvider {
 	public static final String ZIP = "Zip";
 	public static final String ENUMERATE = "Enumerate";
 	public static final String MAP = "Map";
+	public static final String NAMED_TUPLE = "NamedTuple";
 	public static final String BOUND_METHOD = "BoundMethod";
 	public static final String DICT_KEYS = "DictKeys";
 	public static final String DICT_VALUES = "DictValues";

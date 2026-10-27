@@ -1,0 +1,9 @@
+library collections:
+    location collections
+    method namedtuple: it.unive.pylisa.libraries.collections.NamedTupleBuiltin
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param typename type it.unive.lisa.type.Untyped::INSTANCE
+        param field_names type it.unive.lisa.type.Untyped::INSTANCE
+        param &rename type it.unive.lisa.type.Untyped::INSTANCE default false
+        param &defaults type it.unive.lisa.type.Untyped::INSTANCE default none
+        param &module type it.unive.lisa.type.Untyped::INSTANCE default none

@@ -9,10 +9,12 @@ import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
+import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyTypeTokenType;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
+import it.unive.pylisa.libraries.sets.SetModel;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -22,13 +24,13 @@ import java.util.function.Predicate;
  * {@code hint}. The supported hints are {@code object} (satisfied by all the
  * values), {@code type} (satisfied by the classes), {@code bool}, {@code int}
  * (also satisfied by a {@code bool}), {@code float}, {@code str},
- * {@code bytes}, {@code list}, {@code dict}, {@code range}, {@code None} and
- * {@code type(None)}, the classes of the program (also satisfied by the objects
- * of their subclasses; both outcomes are possible for an object of a class
- * whose bases are not known) and their unions (e.g. {@code int | None}, see
- * {@code PyBitwiseOr}). A builtin function that is not a type (e.g.
- * {@code len}) is never satisfied. For any other hint (e.g. {@code list[int]}),
- * both outcomes are possible.
+ * {@code bytes}, {@code list}, {@code tuple}, {@code set}, {@code dict},
+ * {@code range}, {@code None} and {@code type(None)}, the classes of the
+ * program (also satisfied by the objects of their subclasses; both outcomes are
+ * possible for an object of a class whose bases are not known) and their unions
+ * (e.g. {@code int | None}, see {@code PyBitwiseOr}). A builtin function that
+ * is not a type (e.g. {@code len}) is never satisfied. For any other hint (e.g.
+ * {@code list[int]}), both outcomes are possible.
  */
 public final class TypeHints {
 
@@ -39,7 +41,7 @@ public final class TypeHints {
 
 	// the builtin functions that are classes
 	private static final Set<String> TYPES = Set.of("object", "type", "bool", "int", "float", "str", "bytes", "list",
-			"dict", "range", "zip", "enumerate", "map", "super");
+			"tuple", "set", "dict", "range", "zip", "enumerate", "map", "super");
 
 	// the hint of a function that is not a type
 	private static final Predicate<Type> NOT_A_TYPE = t -> false;
@@ -139,6 +141,10 @@ public final class TypeHints {
 			return ListModel::isList;
 		case "dict":
 			return DictModel::isDict;
+		case "tuple":
+			return Unpacking::isTuple;
+		case "set":
+			return SetModel::isSet;
 		case "range":
 			return RangeBuiltin::isRange;
 		default:

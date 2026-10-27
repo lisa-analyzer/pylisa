@@ -112,7 +112,40 @@ public class TupleCreation extends NaryExpression {
 			ExpressionSet[] params,
 			Collection<Identifier> metas)
 			throws SemanticException {
-		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
+		return create(analysis, state, pp, location, PyClassType.lookup(LibrarySpecificationProvider.TUPLE), params,
+				metas);
+	}
+
+	/**
+	 * Creates a tuple with the given elements, as
+	 * {@link #create(Analysis, AnalysisState, Statement, CodeLocation, ExpressionSet[], Collection)},
+	 * whose class is the given one (e.g. the class of the tuples created by the
+	 * classes of {@code collections.namedtuple}).
+	 *
+	 * @param <A>       the kind of the analysis state
+	 * @param <D>       the kind of the abstract domain
+	 * @param analysis  the analysis
+	 * @param state     the state where the elements have been computed
+	 * @param pp        the statement creating the tuple
+	 * @param location  the location of the tuple
+	 * @param tupleType the class of the tuple
+	 * @param params    the elements
+	 * @param metas     where the receiver is added, as it is a meta variable
+	 *                      that the statement using the tuple must forget
+	 *
+	 * @return the state where the tuple has been created
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> create(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			Statement pp,
+			CodeLocation location,
+			Type tupleType,
+			ExpressionSet[] params,
+			Collection<Identifier> metas)
+			throws SemanticException {
 		ReferenceType reftype = new ReferenceType(tupleType);
 		MemoryAllocation alloc = new MemoryAllocation(tupleType, location);
 		HeapReference ref = new HeapReference(reftype, alloc, location);

@@ -15,11 +15,14 @@ import it.unive.lisa.type.CodeMemberType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.PyNameRef;
+import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyTypeTokenType;
+import it.unive.pylisa.libraries.collections.NamedTuples;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
+import it.unive.pylisa.libraries.sets.SetModel;
 import java.util.Collections;
 import java.util.Set;
 
@@ -29,10 +32,11 @@ import java.util.Set;
  * {@code type(x) is int} and {@code type(x) is type(y)} can be decided, see
  * {@code PyBinaryDispatch#identical}). This is the builtin function
  * {@code bool}, {@code int}, {@code float}, {@code str}, {@code bytes},
- * {@code list}, {@code dict}, {@code range}, {@code zip}, {@code enumerate},
- * {@code map} or {@code object} for their values (see {@code PyNameRef}), the
- * class {@code NoneType} for {@code None}, and the class of an object (see
- * {@code PyTypeLiteral}). The class of any other value is unknown.
+ * {@code list}, {@code tuple}, {@code set}, {@code dict}, {@code range},
+ * {@code zip}, {@code enumerate}, {@code map} or {@code object} for their
+ * values (see {@code PyNameRef}), the class {@code NoneType} for {@code None},
+ * and the class of an object (see {@code PyTypeLiteral}). The class of any
+ * other value is unknown.
  */
 public class TypeBuiltin extends PyNative {
 
@@ -83,6 +87,13 @@ public class TypeBuiltin extends PyNative {
 			builtin = "bytes";
 		else if (ListModel.isList(t))
 			builtin = "list";
+		else if (NamedTuples.isNamedTuple(t))
+			// the class created by collections.namedtuple, not known here
+			return null;
+		else if (Unpacking.isTuple(t))
+			builtin = "tuple";
+		else if (SetModel.isSet(t))
+			builtin = "set";
 		else if (DictModel.isDict(t))
 			builtin = "dict";
 		else if (RangeBuiltin.isRange(t))

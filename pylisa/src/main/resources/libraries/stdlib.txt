@@ -102,6 +102,14 @@ method list: it.unive.pylisa.libraries.lists.ListBuiltin
     type it.unive.lisa.type.Untyped::INSTANCE
     param iterable type it.unive.lisa.type.Untyped::INSTANCE default missing
 
+method set: it.unive.pylisa.libraries.sets.SetBuiltin
+    type it.unive.lisa.type.Untyped::INSTANCE
+    param iterable type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+method tuple: it.unive.pylisa.libraries.TupleBuiltin
+    type it.unive.lisa.type.Untyped::INSTANCE
+    param iterable type it.unive.lisa.type.Untyped::INSTANCE default missing
+
 method dict: it.unive.pylisa.libraries.dicts.DictBuiltin
     type it.unive.lisa.type.Untyped::INSTANCE
     param iterable type it.unive.lisa.type.Untyped::INSTANCE default missing
