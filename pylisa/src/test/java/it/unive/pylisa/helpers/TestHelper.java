@@ -44,7 +44,11 @@ public class TestHelper {
 		conf.outputs.add(new JSONResults<>());
 //		conf.forceUpdate = true;
 //		conf.outputs.add(new HtmlResults<>(true));
-		conf.interproceduralAnalysis = new ContextBasedAnalysis<>();
+		// sensitive to the last three calls: with fewer, the calls made by a
+		// function from the same location (e.g. f(x) in g, called on two
+		// objects) share their context, whose result joins the heaps of all
+		// the callers of g, and returns it to each of them
+		conf.interproceduralAnalysis = new ContextBasedAnalysis<>(3);
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 
