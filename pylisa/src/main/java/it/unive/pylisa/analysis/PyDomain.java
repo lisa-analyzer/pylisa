@@ -25,9 +25,17 @@ import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Set;
 
 /**
- * The {@link SimpleAbstractDomain} of python programs: when a list is assumed
- * to be truthy (e.g. in {@code if xs:}), it is also recorded that it surely has
- * an element (see {@code ListModel#NONEMPTY}).
+ * The {@link SimpleAbstractDomain} of python programs, where a state with a
+ * bottom component is the bottom state. In {@link SimpleAbstractDomain}, a
+ * state is bottom only if all its components are: assuming a condition that
+ * cannot hold (e.g. the one of an assertion that surely fails) yields a bottom
+ * value and type state, but the heap state is not bottom, and the state would
+ * still be analyzed as a reachable one, where the variables are not bound
+ * anymore. A state with a bottom component denotes no concrete state: here, it
+ * is the bottom state.<br>
+ * <br>
+ * When a list is assumed to be truthy (e.g. in {@code if xs:}), it is also
+ * recorded that it surely has an element (see {@code ListModel#NONEMPTY}).
  *
  * @param <H> the type of lattice of the heap domain
  * @param <V> the type of lattice of the value domain
@@ -52,13 +60,52 @@ public class PyDomain<H extends HeapLattice<H>, V extends ValueLattice<V>, T ext
 	}
 
 	@Override
+	public SimpleAbstractState<H, V, T> assign(
+			SimpleAbstractState<H, V, T> state,
+			Identifier id,
+			SymbolicExpression expression,
+			ProgramPoint pp)
+			throws SemanticException {
+		return normalize(super.assign(state, id, expression, pp));
+	}
+
+	@Override
+	public SimpleAbstractState<H, V, T> smallStepSemantics(
+			SimpleAbstractState<H, V, T> state,
+			SymbolicExpression expression,
+			ProgramPoint pp)
+			throws SemanticException {
+		return normalize(super.smallStepSemantics(state, expression, pp));
+	}
+
+	@Override
 	public SimpleAbstractState<H, V, T> assume(
 			SimpleAbstractState<H, V, T> state,
 			SymbolicExpression expression,
 			ProgramPoint src,
 			ProgramPoint dest)
 			throws SemanticException {
-		return truthy(super.assume(state, expression, src, dest), expression, src);
+		return truthy(normalize(super.assume(state, expression, src, dest)), expression, src);
+	}
+
+	@Override
+	public SimpleAbstractState<H, V, T> onCallReturn(
+			SimpleAbstractState<H, V, T> entryState,
+			SimpleAbstractState<H, V, T> callres,
+			ProgramPoint call)
+			throws SemanticException {
+		return normalize(super.onCallReturn(entryState, callres, call));
+	}
+
+	// the bottom state, if any component of the given one is bottom
+	private static <H extends HeapLattice<H>,
+			V extends ValueLattice<V>,
+			T extends TypeLattice<T>> SimpleAbstractState<H, V, T> normalize(
+					SimpleAbstractState<H, V, T> state) {
+		if (!state.isBottom()
+				&& (state.heapState.isBottom() || state.valueState.isBottom() || state.typeState.isBottom()))
+			return state.bottom();
+		return state;
 	}
 
 	// after assuming that a list is truthy (e.g. xs in if xs:, while xs:, or
