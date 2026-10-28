@@ -9,9 +9,8 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.CompilationUnit;
-import it.unive.lisa.program.Unit;
-import it.unive.pylisa.cfg.ClassBases;
 import it.unive.lisa.program.Program;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -31,6 +30,7 @@ import it.unive.lisa.type.CodeMemberType;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.PyMro;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -126,8 +126,8 @@ public final class BoundMethods {
 	 * @param interprocedural the interprocedural analysis
 	 * @param state           the state where the call happens
 	 * @param bound           the bound method
-	 * @param receiver        the expression standing for the object in the
-	 *                            call (e.g. the callee)
+	 * @param receiver        the expression standing for the object in the call
+	 *                            (e.g. the callee)
 	 * @param args            the arguments
 	 * @param values          the values of the arguments
 	 * @param caller          the statement calling the bound method
@@ -148,6 +148,47 @@ public final class BoundMethods {
 			Statement caller,
 			StatementStore<A> expressions,
 			Collection<Identifier> metas)
+			throws SemanticException {
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis());
+		AnalysisState<A> result = call(interprocedural, state, bound, receiver, args, values, caller, expressions,
+				metas, raising);
+		return raising.moveFrom(result);
+	}
+
+	/**
+	 * Calls the bound method with the given arguments, as
+	 * {@link #call(InterproceduralAnalysis, AnalysisState, SymbolicExpression, Expression, Expression[], ExpressionSet[], Statement, StatementStore, Collection)},
+	 * when the call is one of the possible behaviors of {@code caller}: the
+	 * executions raising errors are not moved to the error channel, but are
+	 * collected by the given {@link PyExceptions.Raising}.
+	 *
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the call happens
+	 * @param bound           the bound method
+	 * @param receiver        the expression standing for the object in the call
+	 *                            (e.g. the callee)
+	 * @param args            the arguments
+	 * @param values          the values of the arguments
+	 * @param caller          the statement calling the bound method
+	 * @param expressions     the states of the sub-expressions of the caller
+	 * @param metas           where the meta variables of the call are added
+	 * @param raising         the collector of the executions raising errors
+	 *
+	 * @return the state after the call, without the executions raising errors
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> call(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression bound,
+			Expression receiver,
+			Expression[] args,
+			ExpressionSet[] values,
+			Statement caller,
+			StatementStore<A> expressions,
+			Collection<Identifier> metas,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation loc = caller.getLocation();
@@ -171,7 +212,6 @@ public final class BoundMethods {
 		ExpressionSet[] actuals = new ExpressionSet[values.length + 1];
 		actuals[0] = self.getExecutionExpressions();
 		System.arraycopy(values, 0, actuals, 1, values.length);
-		@SuppressWarnings("unchecked")
 		Set<Type>[] types = new Set[actuals.length];
 		for (int i = 0; i < actuals.length; i++) {
 			types[i] = new HashSet<>();
@@ -196,8 +236,7 @@ public final class BoundMethods {
 					metas.addAll(resolved.getMetaVariables());
 				} else if (PyBinaryDispatch.fullyKnown(t))
 					// the method does not accept the arguments
-					result = result.lub(PyExceptions.raise(analysis, self, caller.getCFG(), loc, caller,
-							LibrarySpecificationProvider.TYPE_ERROR));
+					raising.raise(self, caller.getCFG(), loc, caller, LibrarySpecificationProvider.TYPE_ERROR);
 				else
 					unknown = true;
 			}

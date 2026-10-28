@@ -16,6 +16,7 @@ import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.operators.conversions.ConversionRaises;
 import it.unive.pylisa.symbolic.operators.conversions.ToInt;
@@ -61,8 +62,10 @@ public class IntBuiltin extends PyNative {
 		BinaryExpression value = new BinaryExpression(Int32Type.INSTANCE, x, orNone(base), ToInt.INSTANCE, loc);
 		BinaryExpression raises = new BinaryExpression(BoolType.INSTANCE, x, orNone(base), ConversionRaises.INT,
 				loc);
-		return typeChecked(analysis, state, typed, ExceptionGuard.guardedCompute(analysis, state, raises,
-				LibrarySpecificationProvider.VALUE_ERROR, value, getCFG(), loc, getOriginatingStatement(),
-				getOriginatingStatement()));
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		AnalysisState<A> ifTyped = typed == Satisfiability.NOT_SATISFIED ? state.bottomExecution()
+				: ExceptionGuard.guardedCompute(analysis, state, raises, LibrarySpecificationProvider.VALUE_ERROR,
+						value, getCFG(), loc, getOriginatingStatement(), getOriginatingStatement(), raising);
+		return raising.moveFrom(typeChecked(state, typed, ifTyped, raising));
 	}
 }

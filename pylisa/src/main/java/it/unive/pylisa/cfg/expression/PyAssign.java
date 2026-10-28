@@ -25,6 +25,7 @@ import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.UnsupportedStatementException;
+import it.unive.pylisa.libraries.PyExceptions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -228,8 +229,10 @@ public class PyAssign extends Assignment {
 		AnalysisState<A> valueState = evalSub(valueExpr, entryState, interprocedural, expressions);
 
 		AnalysisState<A> result = valueState.bottomExecution();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		for (SymbolicExpression value : valueState.getExecutionExpressions())
-			result = result.lub(unpack(interprocedural, valueState, getLeft(), value, expressions));
+			result = result.lub(unpack(interprocedural, valueState, getLeft(), value, expressions, raising));
+		result = raising.moveFrom(result);
 		expressions.put(getLeft(), result);
 
 		Collection<Identifier> metas = getMetaVariables();
@@ -246,13 +249,15 @@ public class PyAssign extends Assignment {
 		return finalResult;
 	}
 
-	// assigns value to target, unpacking it if target is a tuple of targets
+	// assigns value to target, unpacking it if target is a tuple of targets;
+	// the raised exceptions are collected by raising
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unpack(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			Expression target,
 			SymbolicExpression value,
-			StatementStore<A> expressions)
+			StatementStore<A> expressions,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		if (target instanceof VariableRef && !(target instanceof PyNameRef && ((PyNameRef) target).cell() != null))
@@ -282,6 +287,7 @@ public class PyAssign extends Assignment {
 				(
 						s,
 						t,
-						v) -> unpack(interprocedural, s, t, v, expressions));
+						v) -> unpack(interprocedural, s, t, v, expressions, raising),
+				raising);
 	}
 }

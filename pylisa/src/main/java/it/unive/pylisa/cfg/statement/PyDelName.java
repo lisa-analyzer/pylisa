@@ -15,6 +15,7 @@ import it.unive.lisa.symbolic.value.Skip;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.analysis.namespaces.Binding;
 import it.unive.pylisa.cfg.expression.PyNameRef;
+import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -63,12 +64,13 @@ public class PyDelName extends Statement {
 		AnalysisState<A> state = entryState;
 		for (PyNameRef name : names) {
 			Binding status = name.status(state);
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 			AnalysisState<A> result = state.bottomExecution();
 			if (status == null || status == Binding.BOTTOM || status.mightBeBound())
 				result = result.lub(name.unbind(state.forgetIdentifier(name.getIdentifier(), this)));
 			if (status != null && status.mightBeUnbound())
-				result = result.lub(name.unboundError(analysis, state));
-			state = result;
+				name.unboundError(raising, state);
+			state = raising.moveFrom(result);
 		}
 		return analysis.smallStepSemantics(state, new Skip(getLocation()), this);
 	}

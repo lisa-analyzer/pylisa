@@ -10,6 +10,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 
@@ -45,7 +46,8 @@ public class Exec extends PyNative {
 		// the executed code might bind or delete any global of the module,
 		// also when it raises an exception
 		AnalysisState<A> havocked = havocGlobals(analysis, state, args[1]);
-		return compute(analysis, havocked, new PyNoneConstant(getLocation()))
-				.lub(raise(analysis, havocked, LibrarySpecificationProvider.EXCEPTION));
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		raise(raising, havocked, LibrarySpecificationProvider.EXCEPTION);
+		return raising.moveFrom(compute(analysis, havocked, new PyNoneConstant(getLocation())));
 	}
 }

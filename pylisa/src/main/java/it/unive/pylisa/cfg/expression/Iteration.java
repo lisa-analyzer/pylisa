@@ -12,6 +12,7 @@ import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -19,11 +20,10 @@ import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.RangeBuiltin;
-import it.unive.pylisa.libraries.dicts.DictViews;
-import it.unive.lisa.symbolic.value.Identifier;
-import java.util.Collection;
 import it.unive.pylisa.libraries.dicts.DictModel;
+import it.unive.pylisa.libraries.dicts.DictViews;
 import it.unive.pylisa.libraries.lists.ListModel;
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -38,12 +38,12 @@ public final class Iteration {
 	 * Yields any of the elements of the iterable (e.g. the one bound to the
 	 * variable of a comprehension, or of a for loop): the elements of a list,
 	 * the keys of a dictionary, the characters of a {@code str}, the bytes of a
-	 * {@code bytes}, the {@code int}s of a range (see {@link RangeBuiltin}), and
-	 * the keys, values or items of a view of a dictionary (see
-	 * {@link DictViews}). Iterating over
-	 * values that cannot be iterated (e.g. an {@code int}) raises
-	 * {@code TypeError}; the elements of other iterables (e.g. an object whose
-	 * class defines {@code __iter__}, that is not called) are unknown.
+	 * {@code bytes}, the {@code int}s of a range (see {@link RangeBuiltin}),
+	 * and the keys, values or items of a view of a dictionary (see
+	 * {@link DictViews}). Iterating over values that cannot be iterated (e.g.
+	 * an {@code int}) raises {@code TypeError}; the elements of other iterables
+	 * (e.g. an object whose class defines {@code __iter__}, that is not called)
+	 * are unknown.
 	 *
 	 * @param analysis   the analysis
 	 * @param state      the state where the iterable has been evaluated
@@ -51,8 +51,8 @@ public final class Iteration {
 	 * @param iterable   the iterable
 	 * @param pp         the program point iterating over the iterable
 	 * @param metas      where the meta variables of the elements are added,
-	 *                       that {@code pp} must forget (e.g. the receivers
-	 *                       of the tuples of {@code d.items()}, see
+	 *                       that {@code pp} must forget (e.g. the receivers of
+	 *                       the tuples of {@code d.items()}, see
 	 *                       {@link DictViews})
 	 *
 	 * @return the state whose computed expressions are the elements
@@ -66,6 +66,39 @@ public final class Iteration {
 			SymbolicExpression iterable,
 			Statement pp,
 			Collection<Identifier> metas)
+			throws SemanticException {
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		return raising.moveFrom(elements(analysis, state, expression, iterable, pp, metas, raising));
+	}
+
+	/**
+	 * Yields any of the elements of the iterable, as
+	 * {@link #elements(Analysis, AnalysisState, Expression, SymbolicExpression, Statement, Collection)},
+	 * where the exceptions raised by the iteration are collected by the given
+	 * {@link PyExceptions.Raising} instead of being moved to the error channel.
+	 *
+	 * @param analysis   the analysis
+	 * @param state      the state where the iterable has been evaluated
+	 * @param expression the expression computing the iterable
+	 * @param iterable   the iterable
+	 * @param pp         the program point iterating over the iterable
+	 * @param metas      where the meta variables of the elements are added,
+	 *                       that {@code pp} must forget
+	 * @param raising    where the raised exceptions are collected
+	 *
+	 * @return the state whose computed expressions are the elements, for the
+	 *             executions that do not raise
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			Expression expression,
+			SymbolicExpression iterable,
+			Statement pp,
+			Collection<Identifier> metas,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		if (isRange(expression))
@@ -99,8 +132,7 @@ public final class Iteration {
 		if (unknown)
 			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp));
 		if (notIterable)
-			result = result.lub(PyExceptions.raise(analysis, state, pp.getCFG(), loc, pp,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 

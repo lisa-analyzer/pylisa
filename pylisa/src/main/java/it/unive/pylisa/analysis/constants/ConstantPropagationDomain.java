@@ -272,8 +272,6 @@ public class ConstantPropagationDomain
 			Double d = v instanceof String ? PyNumbers.parseFloat((String) v)
 					: v instanceof Boolean ? ((Boolean) v ? 1.0 : 0.0)
 							: v instanceof Number ? ((Number) v).doubleValue() : null;
-			if (d == null)
-				return v instanceof String ? ConstantPropagation.BOTTOM : ConstantPropagation.TOP;
 			return new ConstantPropagation(new Constant(Float32Type.INSTANCE, d.floatValue(), pp.getLocation()));
 		}
 		return ConstantPropagation.TOP;

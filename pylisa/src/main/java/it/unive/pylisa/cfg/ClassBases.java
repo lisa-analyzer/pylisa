@@ -26,10 +26,10 @@ import java.util.List;
 public final class ClassBases {
 
 	/**
-	 * The annotation of a class listing its bases, as written in the source:
-	 * a member {@value #BASE} for each base, and {@value #METACLASS} for the
-	 * {@code metaclass} keyword. A base that is not a name (e.g. {@code *bases})
-	 * is {@value #UNKNOWN}.
+	 * The annotation of a class listing its bases, as written in the source: a
+	 * member {@value #BASE} for each base, and {@value #METACLASS} for the
+	 * {@code metaclass} keyword. A base that is not a name (e.g.
+	 * {@code *bases}) is {@value #UNKNOWN}.
 	 */
 	public static final String BASES = "pylisa.bases";
 
@@ -95,8 +95,8 @@ public final class ClassBases {
 	/**
 	 * Whether creating an object of the given class raises {@code TypeError}
 	 * because the class is abstract: its metaclass is {@code abc.ABCMeta}, and
-	 * some of its attributes is an abstract method, that is, the first class
-	 * in its method resolution order defining it (see {@link PyMro#definer})
+	 * some of its attributes is an abstract method, that is, the first class in
+	 * its method resolution order defining it (see {@link PyMro#definer})
 	 * defines it as an abstract method. This is not known for classes whose
 	 * bases are not known.
 	 *

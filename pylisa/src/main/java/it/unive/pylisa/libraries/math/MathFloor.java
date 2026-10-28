@@ -22,6 +22,7 @@ import it.unive.lisa.symbolic.value.operator.binary.LogicalOr;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.operators.conversions.Floor;
 import java.util.Set;
@@ -71,6 +72,7 @@ public class MathFloor extends PyNative {
 		boolean notNumber = unknown || types.stream().anyMatch(t -> !t.isNumericType() && !t.isBooleanType()
 				&& PyBinaryDispatch.isBuiltinValueType(t));
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		UnaryExpression value = new UnaryExpression(Int32Type.INSTANCE, x, Floor.INSTANCE, loc);
 		if (!real) {
@@ -92,15 +94,15 @@ public class MathFloor extends PyNative {
 			if (nan != Satisfiability.SATISFIED && inf != Satisfiability.SATISFIED)
 				result = result.lub(compute(analysis, state, value));
 			if (nan != Satisfiability.NOT_SATISFIED)
-				result = result.lub(raise(analysis, state, LibrarySpecificationProvider.VALUE_ERROR));
+				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
 			if (inf != Satisfiability.NOT_SATISFIED)
-				result = result.lub(raise(analysis, state, LibrarySpecificationProvider.OVERFLOW_ERROR));
+				raise(raising, state, LibrarySpecificationProvider.OVERFLOW_ERROR);
 		}
 
 		if (notNumber)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		if (object)
 			result = result.lub(unknown(analysis, state, Int32Type.INSTANCE));
-		return result;
+		return raising.moveFrom(result);
 	}
 }

@@ -61,6 +61,7 @@ public class Sum extends PyNative {
 			throws SemanticException {
 		SymbolicExpression iterable = args[0], start = args[1];
 		Set<Type> starts = analysis.getRuntimeTypesOf(state, start, this);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 
 		List<SymbolicExpression> exact = ListModel.exactElements(analysis, state, iterable, this);
@@ -84,11 +85,13 @@ public class Sum extends PyNative {
 				// the elements are added one by one
 				return compute(analysis, state, add(start, exact, starts, elements));
 		} else {
-			AnalysisState<A> any = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, st, getMetaVariables());
+			AnalysisState<A> any = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, st,
+					getMetaVariables(),
+					raising);
 			// e.g. the TypeError raised by iterating an int
 			result = any.bottomExecution();
 			if (any.getExecutionState().isBottom())
-				return result;
+				return raising.moveFrom(result);
 			for (SymbolicExpression e : any.getExecutionExpressions())
 				elements.addAll(analysis.getRuntimeTypesOf(any, e, this));
 			empty = any.getExecutionExpressions().isEmpty();
@@ -98,17 +101,17 @@ public class Sum extends PyNative {
 		if (starts.isEmpty() || !starts.stream().allMatch(Sum::number)) {
 			// e.g. sum(lists, []): the additions are not executed
 			result = result.lub(unknown(analysis, state, Untyped.INSTANCE));
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 			if (starts.isEmpty() || starts.stream().anyMatch(Sum::object) || elements.stream().anyMatch(Sum::object))
-				result = result.lub(raise(analysis, state, LibrarySpecificationProvider.EXCEPTION));
-			return result;
+				raise(raising, state, LibrarySpecificationProvider.EXCEPTION);
+			return raising.moveFrom(result);
 		}
 
 		if (!nonEmpty)
 			// no elements: the result is start
 			result = result.lub(compute(analysis, state, start));
 		if (empty)
-			return result;
+			return raising.moveFrom(result);
 		Set<Type> numbers = new HashSet<>();
 		for (Type t : elements)
 			if (number(t))
@@ -126,13 +129,13 @@ public class Sum extends PyNative {
 				result = result.lub(unknown(analysis, state, Int32Type.INSTANCE));
 		}
 		if (elements.stream().anyMatch(Sum::notAddable))
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		if (elements.isEmpty() || elements.stream().anyMatch(Sum::object)) {
 			// e.g. an object whose class defines __radd__
 			result = result.lub(unknown(analysis, state, Untyped.INSTANCE));
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.EXCEPTION));
+			raise(raising, state, LibrarySpecificationProvider.EXCEPTION);
 		}
-		return result;
+		return raising.moveFrom(result);
 	}
 
 	// start + e0 + e1 + ...

@@ -194,6 +194,7 @@ public final class PyBinaryDispatch {
 		ExpressionSet leftSet = new ExpressionSet(left);
 		ExpressionSet rightSet = new ExpressionSet(right);
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type tl : rtsl)
 			for (Type tr : rtsr) {
@@ -213,13 +214,13 @@ public final class PyBinaryDispatch {
 							operator.getRight(), operator.getLeft(), rightSet, leftSet, tr, tl);
 				if (res == null)
 					res = operatorsKnown(tl) && operatorsKnown(tr)
-							? fallback(analysis, state, operator, fallback, tl, tr)
+							? fallback(analysis, raising, state, operator, fallback, tl, tr)
 							: analysis.smallStepSemantics(state,
 									new PushAny(Untyped.INSTANCE, operator.getLocation()), operator);
 				result = result.lub(res);
 			}
 
-		return result;
+		return raising.moveFrom(result);
 	}
 
 	/**
@@ -402,7 +403,6 @@ public final class PyBinaryDispatch {
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */
-	@SuppressWarnings("unchecked")
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> dispatchUnary(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
@@ -413,6 +413,7 @@ public final class PyBinaryDispatch {
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Expression[] params = { operator.getSubExpression() };
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type t : analysis.getRuntimeTypesOf(state, arg, operator)) {
 			Type type = t;
@@ -432,13 +433,13 @@ public final class PyBinaryDispatch {
 						new ExpressionSet[] { value }, expressions));
 				operator.getMetaVariables().addAll(resolved.getMetaVariables());
 			} else if (operatorsKnown(t))
-				result = result.lub(PyExceptions.raise(analysis, state, operator.getCFG(), operator.getLocation(),
-						operator, LibrarySpecificationProvider.TYPE_ERROR));
+				raising.raise(state, operator.getCFG(), operator.getLocation(), operator,
+						LibrarySpecificationProvider.TYPE_ERROR);
 			else
 				result = result.lub(analysis.smallStepSemantics(state,
 						new PushAny(Untyped.INSTANCE, operator.getLocation()), operator));
 		}
-		return result;
+		return raising.moveFrom(result);
 	}
 
 	/**
@@ -683,7 +684,6 @@ public final class PyBinaryDispatch {
 			Type selfType,
 			Type otherType)
 			throws SemanticException {
-		@SuppressWarnings("unchecked")
 		Set<Type>[] types = new Set[] { Collections.singleton(selfType), Collections.singleton(otherType) };
 		Call resolved = resolveInClass(interprocedural, state, operator, cls, name, new Expression[] { self, other },
 				types);
@@ -703,8 +703,10 @@ public final class PyBinaryDispatch {
 		return result.lessOrEqual(state.bottomExecution()) ? null : result;
 	}
 
+	// the raised exceptions are collected by raising
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fallback(
 			Analysis<A, D> analysis,
+			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			Expression operator,
 			Fallback fallback,
@@ -731,8 +733,8 @@ public final class PyBinaryDispatch {
 			return analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, true, loc), operator);
 		case TYPE_ERROR:
 		default:
-			return PyExceptions.raise(analysis, state, operator.getCFG(), loc, operator,
-					LibrarySpecificationProvider.TYPE_ERROR);
+			raising.raise(state, operator.getCFG(), loc, operator, LibrarySpecificationProvider.TYPE_ERROR);
+			return state.bottomExecution();
 		}
 	}
 }

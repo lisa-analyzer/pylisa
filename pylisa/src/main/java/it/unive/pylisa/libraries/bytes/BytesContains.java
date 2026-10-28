@@ -20,6 +20,7 @@ import it.unive.lisa.symbolic.value.operator.binary.LogicalOr;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.operators.bytes.BytesOperation;
 
@@ -57,6 +58,7 @@ public class BytesContains extends PyNative {
 		Satisfiability isBytes = hasType(analysis, state, item, t -> t instanceof PyBytesType);
 		BinaryExpression contains = new BinaryExpression(BoolType.INSTANCE, self, item, BytesOperation.CONTAINS, loc);
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (isInt != Satisfiability.NOT_SATISFIED) {
 			BinaryExpression outOfRange = new BinaryExpression(BoolType.INSTANCE,
@@ -67,12 +69,12 @@ public class BytesContains extends PyNative {
 					LogicalOr.INSTANCE, loc);
 			result = result.lub(ExceptionGuard.guardedCompute(analysis, state, outOfRange,
 					LibrarySpecificationProvider.VALUE_ERROR, contains, getCFG(), loc, getOriginatingStatement(),
-					getOriginatingStatement()));
+					getOriginatingStatement(), raising));
 		}
 		if (isBytes != Satisfiability.NOT_SATISFIED)
 			result = result.lub(compute(analysis, state, contains));
 		if (isInt != Satisfiability.SATISFIED && isBytes != Satisfiability.SATISFIED)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(result);
 	}
 }

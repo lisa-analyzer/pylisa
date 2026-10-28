@@ -96,6 +96,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
 		AnalysisState<A> result = state.bottomExecution();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		boolean anyPointer = false;
 		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);
 		for (Type t : rts) {
@@ -108,24 +109,23 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			if (inner.canBeAssignedTo(tupleType)) {
 				Satisfiability integral = hasInt(analysis, state, right);
 				if (integral != Satisfiability.NOT_SATISFIED)
-					result = result.lub(readWithBoundsCheck(analysis, state, deref, right, loc));
+					result = result.lub(readWithBoundsCheck(analysis, state, deref, right, loc, raising));
 				if (integral != Satisfiability.SATISFIED)
 					// the index of a tuple must be an int
-					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, st,
-							LibrarySpecificationProvider.TYPE_ERROR));
+					raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
 			} else if (ListModel.isList(t)) {
 				// the index might be both a slice and something else (e.g. if
 				// it is unknown)
 				Set<Type> indexTypes = analysis.getRuntimeTypesOf(state, right, this);
 				if (indexTypes.stream().anyMatch(ListModel::isSlice))
 					// lst[start:stop:step]
-					result = result.lub(ListModel.slice(interprocedural, state, left, right, this, st));
+					result = result.lub(ListModel.slice(interprocedural, state, left, right, this, st, raising));
 				if (indexTypes.isEmpty() || !indexTypes.stream().allMatch(ListModel::isSlice))
 					// bounds and index checked on the elements of the list
-					result = result.lub(ListModel.read(analysis, state, left, right, st));
+					result = result.lub(ListModel.read(analysis, state, left, right, st, raising));
 			} else if (DictModel.isDict(t))
 				// the entries of the dictionary
-				result = result.lub(DictModel.read(analysis, state, left, right, st));
+				result = result.lub(DictModel.read(analysis, state, left, right, st, raising));
 			else {
 				AccessChild access = new AccessChild(Untyped.INSTANCE, deref, right, loc);
 				result = result.lub(analysis.smallStepSemantics(state, access, st));
@@ -137,7 +137,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			result = result.lub(analysis.smallStepSemantics(state, access, st));
 		}
 
-		return result;
+		return raising.moveFrom(result);
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> readWithBoundsCheck(
@@ -145,7 +145,8 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			AnalysisState<A> state,
 			HeapDereference deref,
 			SymbolicExpression index,
-			CodeLocation loc)
+			CodeLocation loc,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Variable lenKey = new Variable(Int32Type.INSTANCE, "length", loc);
 		AccessChild lenAccess = new AccessChild(Int32Type.INSTANCE, deref, lenKey, loc);
@@ -169,8 +170,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 				result = result.lub(analysis.smallStepSemantics(lenState, access, st));
 			}
 			if (sat != Satisfiability.NOT_SATISFIED)
-				result = result.lub(PyExceptions.raise(analysis, lenState, getCFG(), loc, st,
-						LibrarySpecificationProvider.INDEX_ERROR));
+				raising.raise(lenState, getCFG(), loc, st, LibrarySpecificationProvider.INDEX_ERROR);
 		}
 
 		return result;

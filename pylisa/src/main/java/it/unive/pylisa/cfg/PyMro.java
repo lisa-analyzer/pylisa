@@ -18,8 +18,8 @@ import java.util.List;
  * class and of its bases (the ancestors of its unit, in the order in which they
  * are listed in the class definition, see {@code PyClassParser}). An attribute
  * of a class (e.g. a method) is the one defined by the first class in the order
- * that defines it. This is also the traversal strategy of the hierarchy for
- * the resolution of calls (see {@link #traverse}).
+ * that defines it. This is also the traversal strategy of the hierarchy for the
+ * resolution of calls (see {@link #traverse}).
  */
 public final class PyMro implements HierarchyTraversalStrategy {
 
@@ -111,8 +111,8 @@ public final class PyMro implements HierarchyTraversalStrategy {
 	}
 
 	/**
-	 * Whether the class itself (not its bases) defines the given attribute:
-	 * as a method (also static), or by assigning it in its body.
+	 * Whether the class itself (not its bases) defines the given attribute: as
+	 * a method (also static), or by assigning it in its body.
 	 *
 	 * @param unit the class
 	 * @param name the name of the attribute

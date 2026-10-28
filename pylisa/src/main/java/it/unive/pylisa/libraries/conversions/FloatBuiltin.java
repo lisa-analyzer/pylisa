@@ -17,6 +17,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.conversions.ConversionRaises;
@@ -58,8 +59,10 @@ public class FloatBuiltin extends PyNative {
 		UnaryExpression value = new UnaryExpression(Float32Type.INSTANCE, x, ToFloat.INSTANCE, loc);
 		BinaryExpression raises = new BinaryExpression(BoolType.INSTANCE, x, new PyNoneConstant(loc),
 				ConversionRaises.FLOAT, loc);
-		return typeChecked(analysis, state, typed, ExceptionGuard.guardedCompute(analysis, state, raises,
-				LibrarySpecificationProvider.VALUE_ERROR, value, getCFG(), loc, getOriginatingStatement(),
-				getOriginatingStatement()));
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		AnalysisState<A> ifTyped = typed == Satisfiability.NOT_SATISFIED ? state.bottomExecution()
+				: ExceptionGuard.guardedCompute(analysis, state, raises, LibrarySpecificationProvider.VALUE_ERROR,
+						value, getCFG(), loc, getOriginatingStatement(), getOriginatingStatement(), raising);
+		return raising.moveFrom(typeChecked(state, typed, ifTyped, raising));
 	}
 }

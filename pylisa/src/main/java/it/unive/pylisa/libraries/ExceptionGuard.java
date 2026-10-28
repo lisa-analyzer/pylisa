@@ -36,13 +36,56 @@ public final class ExceptionGuard {
 			Statement dispatchTarget,
 			Statement thrower)
 			throws SemanticException {
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		return raising.moveFrom(guardedCompute(analysis, state, raiseCondition, exception, operation, cfg, loc,
+				dispatchTarget, thrower, raising));
+	}
+
+	/**
+	 * Same as
+	 * {@link #guardedCompute(Analysis, AnalysisState, SymbolicExpression, String, SymbolicExpression, CFG, CodeLocation, Statement, Statement)},
+	 * but the exception is collected in {@code raising} instead of being moved
+	 * to the error channel, for operations whose result is joined with the one
+	 * of other operations.
+	 *
+	 * @param <A>            the kind of {@link AbstractLattice} of the state
+	 * @param <D>            the kind of {@link AbstractDomain} of the analysis
+	 * @param analysis       the analysis
+	 * @param state          the state where the operands have been evaluated
+	 * @param raiseCondition the condition under which the exception is raised
+	 * @param exception      the name of the class of the exception
+	 * @param operation      the operation computed when the exception is not
+	 *                           raised
+	 * @param cfg            the cfg where the exception is raised
+	 * @param loc            the location where the exception is raised
+	 * @param dispatchTarget the statement computing the operation
+	 * @param thrower        the statement raising the exception
+	 * @param raising        where the raised exception is collected
+	 *
+	 * @return the state after the operation, where the executions raising the
+	 *             exception have not been moved yet
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> guardedCompute(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression raiseCondition,
+			String exception,
+			SymbolicExpression operation,
+			CFG cfg,
+			CodeLocation loc,
+			Statement dispatchTarget,
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
 		Satisfiability sat = analysis.satisfies(state, raiseCondition, thrower);
 
 		AnalysisState<A> result = state.bottomExecution();
 		if (sat != Satisfiability.SATISFIED)
 			result = result.lub(analysis.smallStepSemantics(state, operation, dispatchTarget));
 		if (sat != Satisfiability.NOT_SATISFIED)
-			result = result.lub(PyExceptions.raise(analysis, state, cfg, loc, thrower, exception));
+			raising.raise(state, cfg, loc, thrower, exception);
 
 		return result;
 	}

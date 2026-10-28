@@ -29,6 +29,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyClosureUnit;
+import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -41,10 +42,9 @@ import org.apache.commons.lang3.ArrayUtils;
  * function): the functions and natives it holds, the closures of nested
  * functions (see {@link PyClosureUnit}), the bound methods (see
  * {@link BoundMethods}), the objects whose class defines {@code __call__}, the
- * classes of the program, and whether it might hold values that
- * cannot be called, or whose callability is unknown. This is shared by the
- * calls on names ({@link PyNameCall}) and on other values
- * ({@link PyValueCall}).
+ * classes of the program, and whether it might hold values that cannot be
+ * called, or whose callability is unknown. This is shared by the calls on names
+ * ({@link PyNameCall}) and on other values ({@link PyValueCall}).
  */
 final class CallTargets {
 
@@ -182,11 +182,12 @@ final class CallTargets {
 	/**
 	 * Calls the functions, natives, closures, and bound methods held by the
 	 * callee, calls {@code __call__} on the objects it holds, and creates
-	 * objects of the classes it holds (as {@link PyNewObj}). Closures are passed
-	 * as the first argument of their functions (see {@link Cells#CLOSURE}),
-	 * objects as the receiver of {@code __call__}, and bound methods are called
-	 * on their objects (see {@link BoundMethods#call}). The calls are
-	 * sub-expressions of {@code caller} (see {@link CallSites#within}).
+	 * objects of the classes it holds (as {@link PyNewObj}). Closures are
+	 * passed as the first argument of their functions (see
+	 * {@link Cells#CLOSURE}), objects as the receiver of {@code __call__}, and
+	 * bound methods are called on their objects (see
+	 * {@link BoundMethods#call}). The calls are sub-expressions of
+	 * {@code caller} (see {@link CallSites#within}).
 	 *
 	 * @param <A>             the kind of {@link AbstractLattice} of the state
 	 * @param <D>             the kind of {@link AbstractDomain} of the analysis
@@ -204,6 +205,8 @@ final class CallTargets {
 	 * @param args            the values of the arguments
 	 * @param expressions     the states of the sub-expressions
 	 * @param metas           where the meta variables of the calls are added
+	 * @param raising         where the exceptions raised by the calls of the
+	 *                            bound methods are collected
 	 *
 	 * @return the result of the calls (bottom if nothing is called)
 	 *
@@ -218,7 +221,8 @@ final class CallTargets {
 			Expression callee,
 			ExpressionSet[] args,
 			StatementStore<A> expressions,
-			Collection<Identifier> metas)
+			Collection<Identifier> metas,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		AnalysisState<A> result = state.bottomExecution();
 		if (!functions.isEmpty())
@@ -250,7 +254,7 @@ final class CallTargets {
 			// the bound method is called on its object, standing for the
 			// callee in the call
 			result = result.lub(BoundMethods.call(interprocedural, closureState, bound, callee, call.getParameters(),
-					args, caller, expressions, metas));
+					args, caller, expressions, metas, raising));
 		if (!classes.isEmpty() && !(DerivedLocation.source(call.getLocation()) instanceof SourceCodeLocation))
 			// the object cannot be created without a location in the code
 			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state,

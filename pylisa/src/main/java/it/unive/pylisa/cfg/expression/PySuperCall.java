@@ -12,7 +12,6 @@ import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
-import it.unive.pylisa.cfg.ClassBases;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -25,6 +24,7 @@ import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.PyMro;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -42,8 +42,8 @@ import java.util.Set;
  * arguments, or no class defines it, {@code TypeError} or
  * {@code AttributeError} are raised, if the methods of the classes are all
  * known; the call is unknown otherwise (also for the methods of library
- * classes). {@code object.__init__}, that is
- * called when no class defines {@code __init__}, returns {@code None}.
+ * classes). {@code object.__init__}, that is called when no class defines
+ * {@code __init__}, returns {@code None}.
  */
 public class PySuperCall extends UnresolvedCall {
 
@@ -87,6 +87,7 @@ public class PySuperCall extends UnresolvedCall {
 		for (SymbolicExpression self : params[0])
 			selfTypes.addAll(analysis.getRuntimeTypesOf(state, self, this));
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		boolean unknown = selfTypes.isEmpty();
 		Set<CompilationUnit> definers = new HashSet<>();
@@ -108,13 +109,12 @@ public class PySuperCall extends UnresolvedCall {
 				unknown = true;
 			else if (getTargetName().equals("__init__"))
 				// object.__init__, that accepts no arguments
-				result = result.lub(params.length == 1
-						? analysis.smallStepSemantics(state, new PyNoneConstant(loc), this)
-						: PyExceptions.raise(analysis, state, getCFG(), loc, this,
-								LibrarySpecificationProvider.TYPE_ERROR));
+				if (params.length == 1)
+					result = result.lub(analysis.smallStepSemantics(state, new PyNoneConstant(loc), this));
+				else
+					raising.raise(state, getCFG(), loc, this, LibrarySpecificationProvider.TYPE_ERROR);
 			else
-				result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
-						LibrarySpecificationProvider.ATTRIBUTE_ERROR));
+				raising.raise(state, getCFG(), loc, this, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 		}
 
 		Set<Type>[] types = parameterTypes(expressions, analysis);
@@ -130,8 +130,7 @@ public class PySuperCall extends UnresolvedCall {
 			}
 			if (resolved instanceof OpenCall)
 				// it does not accept the arguments
-				result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
-						LibrarySpecificationProvider.TYPE_ERROR));
+				raising.raise(state, getCFG(), loc, this, LibrarySpecificationProvider.TYPE_ERROR);
 			else {
 				result = result.lub(resolved.forwardSemanticsAux(interprocedural, state, params, expressions));
 				getMetaVariables().addAll(resolved.getMetaVariables());
@@ -139,6 +138,6 @@ public class PySuperCall extends UnresolvedCall {
 		}
 		if (unknown)
 			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this));
-		return result;
+		return raising.moveFrom(result);
 	}
 }

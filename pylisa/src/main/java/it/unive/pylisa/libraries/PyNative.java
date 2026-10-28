@@ -248,11 +248,37 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 			Satisfiability typed,
 			AnalysisState<A> ifTyped)
 			throws SemanticException {
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		return raising.moveFrom(typeChecked(state, typed, ifTyped, raising));
+	}
+
+	/**
+	 * Same as
+	 * {@link #typeChecked(Analysis, AnalysisState, Satisfiability, AnalysisState)},
+	 * but the {@code TypeError} is collected in {@code raising} instead of
+	 * being moved to the error channel.
+	 *
+	 * @param state   the current state
+	 * @param typed   whether the arguments have the right types
+	 * @param ifTyped the result when the arguments have the right types
+	 * @param raising where the raised exception is collected
+	 *
+	 * @return the joined result, where the executions raising the exception
+	 *             have not been moved yet
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> typeChecked(
+			AnalysisState<A> state,
+			Satisfiability typed,
+			AnalysisState<A> ifTyped,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
 		AnalysisState<A> result = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED)
 			result = result.lub(ifTyped);
 		if (typed != Satisfiability.SATISFIED)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 
@@ -294,7 +320,8 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	}
 
 	/**
-	 * Raises the given exception.
+	 * Raises the given exception in all the executions of the given state (see
+	 * {@link PyExceptions}).
 	 *
 	 * @param analysis  the analysis
 	 * @param state     the current state
@@ -310,6 +337,25 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 			String exception)
 			throws SemanticException {
 		return PyExceptions.raise(analysis, state, getCFG(), getLocation(), st, exception);
+	}
+
+	/**
+	 * Raises the given exception in the executions of the given state,
+	 * collecting it in {@code raising} (see {@link PyExceptions.Raising}), for
+	 * natives where only some executions raise it.
+	 *
+	 * @param raising   where the raised exception is collected
+	 * @param state     the state of the executions raising the exception
+	 * @param exception the name of the exception
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> void raise(
+			PyExceptions.Raising<A, D> raising,
+			AnalysisState<A> state,
+			String exception)
+			throws SemanticException {
+		raising.raise(state, getCFG(), getLocation(), st, exception);
 	}
 
 	/**

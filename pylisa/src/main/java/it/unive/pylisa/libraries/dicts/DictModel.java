@@ -15,9 +15,6 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.pylisa.cfg.DerivedLocation;
-import it.unive.pylisa.cfg.expression.TupleCreation;
-import java.util.Collection;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
@@ -33,11 +30,14 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
+import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.lists.ListModel;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -243,8 +243,10 @@ public final class DictModel {
 	 * @param dict     the dictionary
 	 * @param key      the key
 	 * @param thrower  the statement reading the value
+	 * @param raising  where the exceptions raised by the read are collected
 	 *
-	 * @return the state after the read
+	 * @return the state after the read, where the executions raising exceptions
+	 *             have not been moved yet
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */
@@ -253,21 +255,20 @@ public final class DictModel {
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			SymbolicExpression key,
-			Statement thrower)
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		CodeLocation loc = thrower.getLocation();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.DICT), dict, loc);
 		AnalysisState<A> result = state.bottomExecution();
 		if (unhashable(analysis, state, key, thrower))
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 
 		Entries entries = entries(analysis, state, dict, thrower);
-		if (entries == null)
-			return result
-					.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), thrower))
-					.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-							LibrarySpecificationProvider.KEY_ERROR));
+		if (entries == null) {
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.KEY_ERROR);
+			return result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), thrower));
+		}
 
 		Set<Object> all = new HashSet<>();
 		entries.keys().values().forEach(all::addAll);
@@ -302,8 +303,7 @@ public final class DictModel {
 			result = result.lub(
 					analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref, field, loc), thrower));
 		if (keyError)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.KEY_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.KEY_ERROR);
 		return result;
 	}
 
@@ -335,11 +335,43 @@ public final class DictModel {
 			SymbolicExpression value,
 			Statement thrower)
 			throws SemanticException {
-		AnalysisState<A> result = state.bottomExecution();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		return raising.moveFrom(write(analysis, state, dict, key, value, thrower, raising));
+	}
+
+	/**
+	 * Writes the value of the given key of the dictionary as
+	 * {@link #write(Analysis, AnalysisState, SymbolicExpression, SymbolicExpression, SymbolicExpression, Statement)},
+	 * collecting the exceptions it raises in {@code raising} instead of moving
+	 * them to the error channel.
+	 *
+	 * @param analysis the analysis
+	 * @param state    the state where the dictionary, the key and the value
+	 *                     have been evaluated
+	 * @param dict     the dictionary
+	 * @param key      the key
+	 * @param value    the value
+	 * @param thrower  the statement writing the value
+	 * @param raising  where the exceptions raised by the write are collected
+	 *
+	 * @return the state after the write, where the executions raising
+	 *             exceptions have not been moved yet
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> write(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression dict,
+			SymbolicExpression key,
+			SymbolicExpression value,
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
 		if (unhashable(analysis, state, key, thrower))
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), thrower.getLocation(), thrower,
-					LibrarySpecificationProvider.TYPE_ERROR));
-		return result.lub(store(analysis, state, dict, key, value, thrower));
+			raising.raise(state, thrower.getCFG(), thrower.getLocation(), thrower,
+					LibrarySpecificationProvider.TYPE_ERROR);
+		return store(analysis, state, dict, key, value, thrower);
 	}
 
 	// writes the value of the given key, that is hashable (see write)
@@ -490,10 +522,10 @@ public final class DictModel {
 		HeapDereference target = new HeapDereference(dictType, dict, loc);
 		Set<Type> types = analysis.getRuntimeTypesOf(state, source, thrower);
 		AnalysisState<A> result = state.bottomExecution();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 
 		if (types.isEmpty() || types.stream().anyMatch(t -> !isDict(t))) {
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 			boolean notMappings = !types.isEmpty() && types.stream().filter(t -> !isDict(t))
 					.allMatch(t -> (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
 							|| ListModel.isList(t) || t.isCodeMemberType());
@@ -503,12 +535,12 @@ public final class DictModel {
 						new PushAny(Untyped.INSTANCE, loc), thrower));
 		}
 		if (types.stream().noneMatch(DictModel::isDict))
-			return result;
+			return raising.moveFrom(result);
 
 		Entries entries = entries(analysis, state, source, thrower);
 		if (entries == null)
-			return result.lub(anyEntry(analysis, state, dict, new PushAny(Untyped.INSTANCE, loc),
-					new PushAny(Untyped.INSTANCE, loc), thrower));
+			return raising.moveFrom(result.lub(anyEntry(analysis, state, dict, new PushAny(Untyped.INSTANCE, loc),
+					new PushAny(Untyped.INSTANCE, loc), thrower)));
 
 		HeapDereference from = new HeapDereference(dictType, source, loc);
 		Set<Object> all = new HashSet<>(), sure = null;
@@ -553,13 +585,13 @@ public final class DictModel {
 			}
 			current = next;
 		}
-		return result.lub(current);
+		return raising.moveFrom(result.lub(current));
 	}
 
 	/**
 	 * Adds an entry whose key is not tracked, and that might be equal to any of
-	 * the keys of the dictionary: the values of all the keys are weakly updated.
-	 * The key comes from a mapping, so it is hashable.
+	 * the keys of the dictionary: the values of all the keys are weakly
+	 * updated. The key comes from a mapping, so it is hashable.
 	 *
 	 * @param analysis the analysis
 	 * @param state    the current state

@@ -66,6 +66,7 @@ public class IsInstanceBuiltin extends PyNative {
 		}
 
 		CodeLocation loc = getLocation();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (maybeTrue && maybeFalse)
 			// the branches of a condition refine the types of obj
@@ -74,7 +75,7 @@ public class IsInstanceBuiltin extends PyNative {
 		else if (maybeTrue || maybeFalse)
 			result = compute(analysis, state, new Constant(BoolType.INSTANCE, maybeTrue, loc));
 		if (raises)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(result);
 	}
 }

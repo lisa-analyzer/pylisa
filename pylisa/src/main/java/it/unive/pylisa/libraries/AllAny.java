@@ -67,11 +67,14 @@ public abstract class AllAny extends PyNative {
 			return result(analysis, state, !decided, decided || unknown);
 		}
 
-		AnalysisState<A> any = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, st, getMetaVariables());
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		AnalysisState<
+				A> any = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, st, getMetaVariables(),
+						raising);
 		// e.g. the TypeError raised by iterating an int
 		AnalysisState<A> result = any.bottomExecution();
 		if (any.getExecutionState().isBottom())
-			return result;
+			return raising.moveFrom(result);
 		// no elements: the iterable is empty
 		boolean allDecisive = !any.getExecutionExpressions().isEmpty(), allNeutral = true;
 		for (SymbolicExpression e : any.getExecutionExpressions()) {
@@ -80,7 +83,7 @@ public abstract class AllAny extends PyNative {
 			allNeutral &= sat == neutral;
 		}
 		boolean nonEmpty = nonEmpty(analysis, state, iterable);
-		return result.lub(result(analysis, state, !(allDecisive && nonEmpty), !allNeutral));
+		return raising.moveFrom(result.lub(result(analysis, state, !(allDecisive && nonEmpty), !allNeutral)));
 	}
 
 	// the result: the value of all (or any) if no element decides it, its

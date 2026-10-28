@@ -29,9 +29,10 @@ import java.util.Collection;
  * {@code d}. Since a view reads the dictionary when it is used, it reflects the
  * changes made to the dictionary after its creation. Iterating a view yields
  * the keys, the values or the items of the dictionary (see
- * {@link DictModel#keys}, {@link DictModel#values} and {@link DictModel#items}),
- * and its length is the one of the dictionary. The other operations of views
- * (e.g. {@code in}, or the set operations of {@code keys()}) are not modeled.
+ * {@link DictModel#keys}, {@link DictModel#values} and
+ * {@link DictModel#items}), and its length is the one of the dictionary. The
+ * other operations of views (e.g. {@code in}, or the set operations of
+ * {@code keys()}) are not modeled.
  */
 public final class DictViews {
 

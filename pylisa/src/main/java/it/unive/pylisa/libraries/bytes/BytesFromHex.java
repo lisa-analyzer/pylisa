@@ -15,6 +15,7 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.operators.bytes.BytesUnary;
 import it.unive.pylisa.symbolic.operators.bytes.FromHexRaises;
@@ -51,10 +52,13 @@ public class BytesFromHex extends PyNative {
 		CodeLocation loc = getLocation();
 		// a str or, since python 3.14, bytes
 		Satisfiability typed = hasType(analysis, state, args[0], STR.or(BYTES));
-		return typeChecked(analysis, state, typed, ExceptionGuard.guardedCompute(analysis, state,
-				new UnaryExpression(BoolType.INSTANCE, args[0], FromHexRaises.INSTANCE, loc),
-				LibrarySpecificationProvider.VALUE_ERROR,
-				new UnaryExpression(PyBytesType.INSTANCE, args[0], BytesUnary.FROMHEX, loc), getCFG(), loc,
-				getOriginatingStatement(), getOriginatingStatement()));
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		AnalysisState<A> ifTyped = typed == Satisfiability.NOT_SATISFIED ? state.bottomExecution()
+				: ExceptionGuard.guardedCompute(analysis, state,
+						new UnaryExpression(BoolType.INSTANCE, args[0], FromHexRaises.INSTANCE, loc),
+						LibrarySpecificationProvider.VALUE_ERROR,
+						new UnaryExpression(PyBytesType.INSTANCE, args[0], BytesUnary.FROMHEX, loc), getCFG(), loc,
+						getOriginatingStatement(), getOriginatingStatement(), raising);
+		return raising.moveFrom(typeChecked(state, typed, ifTyped, raising));
 	}
 }

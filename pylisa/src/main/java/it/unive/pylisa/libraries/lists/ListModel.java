@@ -329,8 +329,10 @@ public final class ListModel {
 	 * @param list     the list
 	 * @param index    the index
 	 * @param thrower  the statement reading the element
+	 * @param raising  where the exceptions raised by the read are collected
 	 *
-	 * @return the state after the read
+	 * @return the state after the read, where the executions raising exceptions
+	 *             have not been moved yet
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */
@@ -339,7 +341,8 @@ public final class ListModel {
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			SymbolicExpression index,
-			Statement thrower)
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		CodeLocation loc = thrower.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
@@ -395,11 +398,9 @@ public final class ListModel {
 					result = result.lub(analysis.smallStepSemantics(state,
 							new AccessChild(Untyped.INSTANCE, deref, field, loc), thrower));
 		if (indexError)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.INDEX_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
 		if (typeError)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 
@@ -442,8 +443,11 @@ public final class ListModel {
 	 * @param slice           the slice
 	 * @param owner           the expression the new list belongs to
 	 * @param thrower         the statement reading the slice
+	 * @param raising         where the exceptions raised by the read are
+	 *                            collected
 	 *
-	 * @return the state after the read
+	 * @return the state after the read, where the executions raising exceptions
+	 *             have not been moved yet
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */
@@ -453,7 +457,8 @@ public final class ListModel {
 			SymbolicExpression list,
 			SymbolicExpression slice,
 			Expression owner,
-			Statement thrower)
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation loc = owner.getLocation();
@@ -496,8 +501,7 @@ public final class ListModel {
 		}
 		owner.getMetaVariables().addAll(creation.getMetaVariables());
 		if (typeError)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 
@@ -516,8 +520,10 @@ public final class ListModel {
 	 * @param index    the index
 	 * @param value    the value
 	 * @param thrower  the statement writing the element
+	 * @param raising  where the exceptions raised by the write are collected
 	 *
-	 * @return the state after the write
+	 * @return the state after the write, where the executions raising
+	 *             exceptions have not been moved yet
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */
@@ -527,7 +533,8 @@ public final class ListModel {
 			SymbolicExpression list,
 			SymbolicExpression index,
 			SymbolicExpression value,
-			Statement thrower)
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		CodeLocation loc = thrower.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
@@ -579,11 +586,9 @@ public final class ListModel {
 			result = result.lub(written);
 		}
 		if (indexError)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.INDEX_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
 		if (typeError)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 

@@ -12,6 +12,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.libraries.TypeHints;
 import it.unive.pylisa.symbolic.PyNoneConstant;
@@ -56,11 +57,12 @@ public class CheckType extends PyNative {
 				fails |= sat != Satisfiability.SATISFIED;
 			}
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (matches)
 			result = result.lub(compute(analysis, state, new PyNoneConstant(getLocation())));
 		if (fails)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(result);
 	}
 }

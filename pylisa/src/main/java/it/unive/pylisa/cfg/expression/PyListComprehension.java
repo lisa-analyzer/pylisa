@@ -23,8 +23,9 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
-import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.libraries.dicts.DictModel;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -57,8 +58,8 @@ public class PyListComprehension extends NaryExpression {
 	/**
 	 * A {@code for x in iterable if c1 if c2 ...} clause.
 	 *
-	 * @param target     the variable bound to the elements, or the targets
-	 *                       they are unpacked into (a {@link TupleCreation} of
+	 * @param target     the variable bound to the elements, or the targets they
+	 *                       are unpacked into (a {@link TupleCreation} of
 	 *                       variables, as in {@code for k, v in pairs})
 	 * @param iterable   the iterable
 	 * @param conditions the conditions
@@ -290,10 +291,12 @@ public class PyListComprehension extends NaryExpression {
 		if (!body.getExecutionState().isBottom()) {
 			AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, body, new ExpressionSet[0],
 					expressions);
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 			for (SymbolicExpression dict : created.getExecutionExpressions())
 				for (SymbolicExpression value : body.getExecutionExpressions())
-					result = result.lub(DictModel.write(analysis, created, dict, keyVariable, value, this)
+					result = result.lub(DictModel.write(analysis, created, dict, keyVariable, value, this, raising)
 							.withExecutionExpression(dict));
+			result = raising.moveFrom(result);
 		} else
 			// the errors raised by the iterations
 			result = result.lub(body);
@@ -331,11 +334,13 @@ public class PyListComprehension extends NaryExpression {
 		// iteration would still be reachable, and their allocation sites
 		// would become weak)
 		AnalysisState<A> bound = state.bottomExecution();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		for (SymbolicExpression iterable : state.getExecutionExpressions()) {
 			Set<Identifier> metas = new HashSet<>();
-			AnalysisState<A> elements = Iteration.elements(analysis, state, clause.iterable(), iterable, this, metas);
+			AnalysisState<A> elements = Iteration.elements(analysis, state, clause.iterable(), iterable, this, metas,
+					raising);
 			for (SymbolicExpression elem : elements.getExecutionExpressions()) {
-				AnalysisState<A> assigned = bind(interprocedural, elements, clause.target(), elem);
+				AnalysisState<A> assigned = bind(interprocedural, elements, clause.target(), elem, raising);
 				// the values of the variables shared with the lambdas are also
 				// visible through their cells
 				for (Map.Entry<String, String> cell : clause.cells().entrySet())
@@ -346,6 +351,7 @@ public class PyListComprehension extends NaryExpression {
 			// e.g. the TypeError raised by iterating an int
 			bound = bound.lub(elements.bottomExecution());
 		}
+		bound = raising.moveFrom(bound);
 
 		// the conditions hold
 		for (Expression condition : clause.conditions()) {
@@ -383,12 +389,14 @@ public class PyListComprehension extends NaryExpression {
 	}
 
 	// binds the target to the value, unpacking it into the variables of a
-	// tuple of targets (see Unpacking)
+	// tuple of targets (see Unpacking); the raised exceptions are collected by
+	// raising
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> bind(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			Expression target,
-			SymbolicExpression value)
+			SymbolicExpression value,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		if (target instanceof VariableRef)
 			return interprocedural.getAnalysis().assign(state, ((VariableRef) target).getIdentifier(), value, this);
@@ -401,7 +409,8 @@ public class PyListComprehension extends NaryExpression {
 				(
 						s,
 						t,
-						v) -> bind(interprocedural, s, t, v));
+						v) -> bind(interprocedural, s, t, v, raising),
+				raising);
 	}
 
 	// the variables of the target

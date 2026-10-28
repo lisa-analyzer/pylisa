@@ -8,11 +8,10 @@ import java.util.Set;
  * {@code bool}, {@code float}, {@code str}, {@code bytes} and {@code NoneType}
  * (the names in {@code dir} of each class, as of python 3.13.2, plus
  * {@code float.from_number}, the only one added in python 3.14, that the
- * benchmarks assume by default). Reading any other
- * attribute of their objects (e.g. {@code (5).strip}) raises
- * {@code AttributeError}. Builtin classes gain attributes in newer versions of
- * python, and practically never lose them: an attribute of a newer version is
- * then not known, rather than missing.
+ * benchmarks assume by default). Reading any other attribute of their objects
+ * (e.g. {@code (5).strip}) raises {@code AttributeError}. Builtin classes gain
+ * attributes in newer versions of python, and practically never lose them: an
+ * attribute of a newer version is then not known, rather than missing.
  */
 public final class BuiltinAttributes {
 
@@ -100,8 +99,8 @@ public final class BuiltinAttributes {
 
 	/**
 	 * Whether the objects of the given library class, that is the class of
-	 * builtin values (see {@code PyBinaryDispatch#classOf}), surely do not
-	 * have the given attribute.
+	 * builtin values (see {@code PyBinaryDispatch#classOf}), surely do not have
+	 * the given attribute.
 	 *
 	 * @param cls  the name of the library class
 	 * @param name the name of the attribute

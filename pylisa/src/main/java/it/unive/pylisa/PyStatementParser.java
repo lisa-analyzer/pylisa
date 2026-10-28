@@ -17,15 +17,13 @@ import it.unive.lisa.program.cfg.VariableTableEntry;
 import it.unive.lisa.program.cfg.controlFlow.IfThenElse;
 import it.unive.lisa.program.cfg.controlFlow.Loop;
 import it.unive.lisa.program.cfg.edge.Edge;
+import it.unive.lisa.program.cfg.edge.ErrorEdge;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
-import it.unive.lisa.type.Type;
-import it.unive.pylisa.antlr.PythonParser.Except_blockContext;
-import it.unive.lisa.program.cfg.protection.ProtectionBlock;
-import it.unive.lisa.program.cfg.protection.ProtectedBlock;
-import it.unive.lisa.program.cfg.protection.CatchBlock;
-import it.unive.lisa.program.cfg.edge.ErrorEdge;
 import it.unive.lisa.program.cfg.edge.TrueEdge;
+import it.unive.lisa.program.cfg.protection.CatchBlock;
+import it.unive.lisa.program.cfg.protection.ProtectedBlock;
+import it.unive.lisa.program.cfg.protection.ProtectionBlock;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NoOp;
@@ -43,12 +41,12 @@ import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.datastructures.graph.code.NodeList;
 import it.unive.lisa.util.frontend.ControlFlowTracker;
 import it.unive.lisa.util.frontend.ParsedBlock;
 import it.unive.pylisa.annotationvalues.DecoratedAnnotation;
-import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.antlr.PythonParser.Annotated_rhsContext;
 import it.unive.pylisa.antlr.PythonParser.ArgumentsContext;
 import it.unive.pylisa.antlr.PythonParser.Assert_stmtContext;
@@ -83,6 +81,7 @@ import it.unive.pylisa.antlr.PythonParser.Double_starred_kvpairContext;
 import it.unive.pylisa.antlr.PythonParser.Double_starred_kvpairsContext;
 import it.unive.pylisa.antlr.PythonParser.Elif_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Else_blockContext;
+import it.unive.pylisa.antlr.PythonParser.Except_blockContext;
 import it.unive.pylisa.antlr.PythonParser.ExpressionContext;
 import it.unive.pylisa.antlr.PythonParser.FactorContext;
 import it.unive.pylisa.antlr.PythonParser.For_if_clauseContext;
@@ -152,6 +151,7 @@ import it.unive.pylisa.antlr.PythonParser.With_itemContext;
 import it.unive.pylisa.antlr.PythonParser.With_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Yield_stmtContext;
 import it.unive.pylisa.antlr.PythonParserBaseVisitor;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.KeywordOnlyParameter;
 import it.unive.pylisa.cfg.PyCFG;
@@ -177,6 +177,7 @@ import it.unive.pylisa.cfg.expression.PyBitwiseOr;
 import it.unive.pylisa.cfg.expression.PyBitwiseRIghtShift;
 import it.unive.pylisa.cfg.expression.PyBitwiseXor;
 import it.unive.pylisa.cfg.expression.PyClassFunctionCall;
+import it.unive.pylisa.cfg.expression.PyClassMember;
 import it.unive.pylisa.cfg.expression.PyDivMod;
 import it.unive.pylisa.cfg.expression.PyDivision;
 import it.unive.pylisa.cfg.expression.PyDoubleArrayAccess;
@@ -200,6 +201,7 @@ import it.unive.pylisa.cfg.expression.PyPower;
 import it.unive.pylisa.cfg.expression.PyRemainder;
 import it.unive.pylisa.cfg.expression.PySingleArrayAccess;
 import it.unive.pylisa.cfg.expression.PySubtraction;
+import it.unive.pylisa.cfg.expression.PySuperCall;
 import it.unive.pylisa.cfg.expression.PyTernaryOperator;
 import it.unive.pylisa.cfg.expression.PyValueCall;
 import it.unive.pylisa.cfg.expression.RangeValue;
@@ -230,8 +232,6 @@ import it.unive.pylisa.cfg.statement.PyCellsInit;
 import it.unive.pylisa.cfg.statement.PyDelName;
 import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
-import it.unive.pylisa.cfg.expression.PyClassMember;
-import it.unive.pylisa.cfg.expression.PySuperCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.scoping.NameKind;
@@ -486,32 +486,6 @@ public class PyStatementParser
 		for (int i = targets.size() - 1; i >= 0; i--)
 			value = new PyAssign(currentCFG, getLocation(filePath, ctx), visitStar_targets(targets.get(i)), value);
 		return value;
-	}
-
-	private Expression visitSingleTarget(
-			Single_targetContext ctx) {
-		if (ctx.name() != null)
-			return nameRef(ctx.name(), getLocation(filePath, ctx), true);
-		if (ctx.single_target() != null)
-			return visitSingleTarget(ctx.single_target());
-		return visitSingleSubscriptAttributeTarget(ctx.single_subscript_attribute_target());
-	}
-
-	private Expression visitSingleSubscriptAttributeTarget(
-			Single_subscript_attribute_targetContext ctx) {
-		Expression base = visitTPrimary(ctx.t_primary());
-		if (ctx.DOT() != null)
-			return attribute(base, ctx.name().getText(), getLocation(filePath, ctx));
-
-		List<Expression> indexes = extractExpressionsFromSlices(ctx.slices());
-		if (indexes.size() == 1)
-			return new PySingleArrayAccess(currentCFG, getLocation(filePath, ctx), Untyped.INSTANCE, base,
-					indexes.get(0));
-		else if (indexes.size() == 2)
-			return new PyDoubleArrayAccess(currentCFG, getLocation(filePath, ctx), Untyped.INSTANCE, base,
-					indexes.get(0),
-					indexes.get(1));
-		throw new UnsupportedStatementException("Only array accesses with up to 2 indexes are supported");
 	}
 
 	/**
@@ -837,7 +811,8 @@ public class PyStatementParser
 		if (ctx.expression().isEmpty()) {
 			if (handlers.isEmpty())
 				// e.g. in a function called by an except block
-				throw new UnsupportedStatementException("raise without an exception outside except blocks is not supported");
+				throw new UnsupportedStatementException(
+						"raise without an exception outside except blocks is not supported");
 			// the exception being handled
 			return new PyRaise(currentCFG, loc, new VariableRef(currentCFG, loc, handlers.peek()), null);
 		}

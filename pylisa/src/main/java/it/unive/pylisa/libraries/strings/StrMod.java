@@ -89,16 +89,15 @@ public class StrMod extends BinaryExpression implements PluggableStatement {
 		Type type = analysis.getRuntimeTypesOf(state, left, this).stream()
 				.anyMatch(t -> t instanceof PyBytesType) ? PyBytesType.INSTANCE : StringType.INSTANCE;
 		AnalysisState<A> result = state.bottomExecution();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		if (raisesTypeError != Satisfiability.SATISFIED && raisesValueError != Satisfiability.SATISFIED)
 			result = result.lub(analysis.smallStepSemantics(state,
 					new it.unive.lisa.symbolic.value.BinaryExpression(type, left, right, StringFormat.INSTANCE, loc),
 					st));
 		if (raisesTypeError != Satisfiability.NOT_SATISFIED)
-			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, st,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
 		if (raisesValueError != Satisfiability.NOT_SATISFIED)
-			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, st,
-					LibrarySpecificationProvider.VALUE_ERROR));
-		return result;
+			raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.VALUE_ERROR);
+		return raising.moveFrom(result);
 	}
 }

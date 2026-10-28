@@ -22,6 +22,7 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
@@ -102,10 +103,12 @@ final class StrSearchSemantics {
 			value = new TernaryExpression(type, s, sub, slice, search, loc);
 		}
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (isText != Satisfiability.NOT_SATISFIED)
-			result = result.lub(n.typeChecked(analysis, state, bounds,
-					computed(n, analysis, state, value, raiseIfMissing)));
+			result = result.lub(n.typeChecked(state, bounds, bounds == Satisfiability.NOT_SATISFIED
+					? state.bottomExecution()
+					: computed(n, analysis, state, value, raiseIfMissing, raising), raising));
 
 		if (isByte != Satisfiability.NOT_SATISFIED) {
 			// a single byte must be between 0 and 255
@@ -117,23 +120,26 @@ final class StrSearchSemantics {
 					LogicalOr.INSTANCE, loc);
 			Satisfiability out = analysis.satisfies(state, outOfRange, n);
 			AnalysisState<A> byteResult = state.bottomExecution();
-			if (out != Satisfiability.SATISFIED)
-				byteResult = byteResult.lub(computed(n, analysis, state, value, raiseIfMissing));
-			if (out != Satisfiability.NOT_SATISFIED)
-				byteResult = byteResult.lub(n.raise(analysis, state, LibrarySpecificationProvider.VALUE_ERROR));
-			result = result.lub(n.typeChecked(analysis, state, bounds, byteResult));
+			if (bounds != Satisfiability.NOT_SATISFIED) {
+				if (out != Satisfiability.SATISFIED)
+					byteResult = byteResult.lub(computed(n, analysis, state, value, raiseIfMissing, raising));
+				if (out != Satisfiability.NOT_SATISFIED)
+					n.raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+			}
+			result = result.lub(n.typeChecked(state, bounds, byteResult, raising));
 		}
 
-		if (isTuple != Satisfiability.NOT_SATISFIED)
+		if (isTuple != Satisfiability.NOT_SATISFIED) {
 			// the elements of the tuple are not known: they might also not have
 			// the right type
-			result = result.lub(n.unknown(analysis, state, BoolType.INSTANCE))
-					.lub(n.raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+			result = result.lub(n.unknown(analysis, state, BoolType.INSTANCE));
+			n.raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		}
 
 		if (isText != Satisfiability.SATISFIED && isByte != Satisfiability.SATISFIED
 				&& isTuple != Satisfiability.SATISFIED)
-			result = result.lub(n.raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
+			n.raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(result);
 	}
 
 	// the search, raising ValueError if needed when the substring is missing
@@ -142,7 +148,8 @@ final class StrSearchSemantics {
 			Analysis<A, D> analysis,
 			AnalysisState<A> state,
 			SymbolicExpression value,
-			boolean raiseIfMissing)
+			boolean raiseIfMissing,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		if (!raiseIfMissing)
 			return n.compute(analysis, state, value);
@@ -150,7 +157,7 @@ final class StrSearchSemantics {
 		BinaryExpression missing = new BinaryExpression(BoolType.INSTANCE, value,
 				new Constant(Int32Type.INSTANCE, -1, loc), ComparisonEq.INSTANCE, loc);
 		return ExceptionGuard.guardedCompute(analysis, state, missing, LibrarySpecificationProvider.VALUE_ERROR,
-				value, n.getCFG(), loc, n.getOriginatingStatement(), n.getOriginatingStatement());
+				value, n.getCFG(), loc, n.getOriginatingStatement(), n.getOriginatingStatement(), raising);
 	}
 
 	private static boolean isTuple(

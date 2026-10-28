@@ -64,10 +64,12 @@ public class PyModuleCall extends UnresolvedCall {
 		} catch (CallResolutionException e) {
 			throw new SemanticException("Unable to resolve call " + this, e);
 		}
-		if (resolved instanceof OpenCall)
+		if (resolved instanceof OpenCall) {
 			// not a function of the module: unknown code
-			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
-					LibrarySpecificationProvider.EXCEPTION));
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.EXCEPTION);
+			return raising.moveFrom(result);
+		}
 		return result;
 	}
 }

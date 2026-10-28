@@ -107,20 +107,20 @@ public class PyValueCall extends NaryExpression {
 
 		CallTargets targets = CallTargets.of(analysis, state, params[0], true, this);
 		AnalysisState<A> result = state.bottomExecution();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		if (targets.notCallable())
-			result = result.lub(PyExceptions.raise(analysis, consumed, getCFG(), getLocation(), this,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(consumed, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 		// closures receive the value of the callee as their first argument:
 		// it is consumed after the call (unless it is also the result of this
 		// call, e.g. in f()() where the two calls have the same location)
 		AnalysisState<A> called = targets.call(interprocedural, consumed, state, this, call, subs[0], args, expressions,
-				getMetaVariables());
+				getMetaVariables(), raising);
 		Set<Identifier> calleeValues = new HashSet<>(subs[0].getMetaVariables());
 		calleeValues.removeAll(getMetaVariables());
 		result = result.lub(called.forgetIdentifiers(calleeValues, this));
 		if (targets.unknown())
 			result = result.lub(analysis.smallStepSemantics(consumed, new PushAny(Untyped.INSTANCE, getLocation()),
 					this));
-		return result;
+		return raising.moveFrom(result);
 	}
 }
