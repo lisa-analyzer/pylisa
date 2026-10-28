@@ -75,6 +75,7 @@ public class RangeBuiltin extends PyNative {
 				: analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, step,
 						new Constant(Int32Type.INSTANCE, 0, loc), ComparisonEq.INSTANCE, loc), this);
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED) {
 			if (zero != Satisfiability.SATISFIED) {
@@ -84,10 +85,10 @@ public class RangeBuiltin extends PyNative {
 						new HeapReference(new ReferenceType(range), alloc, loc)));
 			}
 			if (zero != Satisfiability.NOT_SATISFIED)
-				result = result.lub(raise(analysis, state, LibrarySpecificationProvider.VALUE_ERROR));
+				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
 		}
 		if (typed != Satisfiability.SATISFIED)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(result);
 	}
 }

@@ -29,6 +29,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.symbolic.DictConstant;
 import it.unive.pylisa.symbolic.operators.DictPut;
@@ -128,6 +129,7 @@ public class DictionaryCreation extends NaryExpression {
 				i++;
 				continue;
 			}
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 			for (SymbolicExpression key : params[i])
 				for (SymbolicExpression value : params[i + 1])
 					if (params[i].size() == 1 && DictModel.trackedKey(key) != null)
@@ -135,8 +137,8 @@ public class DictionaryCreation extends NaryExpression {
 						next = next.lub(analysis.assign(current, new AccessChild(Untyped.INSTANCE, deref,
 								DictModel.child(DictModel.trackedKey(key), loc), loc), value, this));
 					else
-						next = next.lub(DictModel.write(analysis, current, dict, key, value, this));
-			current = next;
+						next = next.lub(DictModel.write(analysis, current, dict, key, value, this, raising));
+			current = raising.moveFrom(next);
 			i += 2;
 		}
 

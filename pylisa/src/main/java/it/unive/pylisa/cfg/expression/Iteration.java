@@ -75,7 +75,40 @@ public final class Iteration {
 			Statement pp,
 			Collection<Identifier> metas)
 			throws SemanticException {
-		return elements(analysis, null, state, expression, iterable, pp, metas);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		return raising.moveFrom(elements(analysis, null, state, expression, iterable, pp, metas, raising));
+	}
+
+	/**
+	 * Yields any of the elements of the iterable, as
+	 * {@link #elements(Analysis, AnalysisState, Expression, SymbolicExpression, Statement, Collection)},
+	 * where the exceptions raised by the iteration are collected by the given
+	 * {@link PyExceptions.Raising} instead of being moved to the error channel.
+	 *
+	 * @param analysis   the analysis
+	 * @param state      the state where the iterable has been evaluated
+	 * @param expression the expression computing the iterable
+	 * @param iterable   the iterable
+	 * @param pp         the program point iterating over the iterable
+	 * @param metas      where the meta variables of the elements are added,
+	 *                       that {@code pp} must forget
+	 * @param raising    where the raised exceptions are collected
+	 *
+	 * @return the state whose computed expressions are the elements, for the
+	 *             executions that do not raise
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			Expression expression,
+			SymbolicExpression iterable,
+			Statement pp,
+			Collection<Identifier> metas,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
+		return elements(analysis, null, state, expression, iterable, pp, metas, raising);
 	}
 
 	/**
@@ -105,7 +138,43 @@ public final class Iteration {
 			Statement pp,
 			Collection<Identifier> metas)
 			throws SemanticException {
-		return elements(interprocedural.getAnalysis(), interprocedural, state, expression, iterable, pp, metas);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis());
+		return raising.moveFrom(
+				elements(interprocedural.getAnalysis(), interprocedural, state, expression, iterable, pp, metas,
+						raising));
+	}
+
+	/**
+	 * Yields any of the elements of the iterable, as
+	 * {@link #elements(InterproceduralAnalysis, AnalysisState, Expression, SymbolicExpression, Statement, Collection)},
+	 * where the exceptions raised by the iteration are collected by the given
+	 * {@link PyExceptions.Raising} instead of being moved to the error channel.
+	 *
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the iterable has been evaluated
+	 * @param expression      the expression computing the iterable
+	 * @param iterable        the iterable
+	 * @param pp              the program point iterating over the iterable
+	 * @param metas           where the meta variables of the elements are
+	 *                            added, that {@code pp} must forget
+	 * @param raising         where the raised exceptions are collected
+	 *
+	 * @return the state whose computed expressions are the elements, for the
+	 *             executions that do not raise
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			Expression expression,
+			SymbolicExpression iterable,
+			Statement pp,
+			Collection<Identifier> metas,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
+		return elements(interprocedural.getAnalysis(), interprocedural, state, expression, iterable, pp, metas,
+				raising);
 	}
 
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
@@ -115,7 +184,8 @@ public final class Iteration {
 			Expression expression,
 			SymbolicExpression iterable,
 			Statement pp,
-			Collection<Identifier> metas)
+			Collection<Identifier> metas,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		if (isRange(expression))
@@ -164,8 +234,7 @@ public final class Iteration {
 		if (unknown)
 			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp));
 		if (notIterable)
-			result = result.lub(PyExceptions.raise(analysis, state, pp.getCFG(), loc, pp,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 

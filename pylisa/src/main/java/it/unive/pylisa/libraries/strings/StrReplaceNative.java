@@ -19,6 +19,7 @@ import it.unive.lisa.symbolic.value.operator.ternary.StringReplace;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyBytesType;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.operators.strings.ArgPair;
 import it.unive.pylisa.symbolic.operators.strings.StrReplaceCount;
@@ -54,6 +55,7 @@ public class StrReplaceNative extends PyNative {
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		for (boolean bytes : textModes(analysis, state, args[0])) {
 			Predicate<Type> text = bytes ? BYTES : STR;
@@ -73,8 +75,8 @@ public class StrReplaceNative extends PyNative {
 						new BinaryExpression(Untyped.INSTANCE, args[1], args[2], ArgPair.INSTANCE, loc),
 						count, StrReplaceCount.INSTANCE, loc);
 			}
-			result = result.lub(typeChecked(analysis, state, typed, compute(analysis, state, value)));
+			result = result.lub(typeChecked(state, typed, compute(analysis, state, value), raising));
 		}
-		return result;
+		return raising.moveFrom(result);
 	}
 }

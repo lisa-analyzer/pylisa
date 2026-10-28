@@ -1,6 +1,5 @@
 package it.unive.pylisa.helpers;
 
-import it.unive.lisa.analysis.SimpleAbstractDomain;
 import it.unive.lisa.analysis.nonrelational.type.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.interprocedural.ReturnTopPolicy;
@@ -11,7 +10,7 @@ import it.unive.lisa.lattices.types.TypeSet;
 import it.unive.lisa.outputs.HtmlInputs;
 import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.program.cfg.fixpoints.optforward.OptimizedForwardAscendingFixpoint;
-import it.unive.pylisa.analysis.PyReachability;
+import it.unive.pylisa.analysis.PyDomain;
 import it.unive.pylisa.analysis.constants.ConstantPropagation;
 import it.unive.pylisa.analysis.constants.ConstantPropagationDomain;
 import it.unive.pylisa.analysis.heap.PyHeap;
@@ -53,9 +52,8 @@ public class TestHelper {
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 
 		// as in the command line interface (see PyLiSA), and in JLiSA
-		conf.analysis = new PyReachability<>(new SimpleAbstractDomain<HeapEnvWithFields,
-				ValueEnvironment<ConstantPropagation>, TypeEnvironment<TypeSet>>(
-						new PyHeap(), new ConstantPropagationDomain(), new PyInferredTypes()));
+		conf.analysis = new PyDomain<HeapEnvWithFields, ValueEnvironment<ConstantPropagation>,
+				TypeEnvironment<TypeSet>>(new PyHeap(), new ConstantPropagationDomain(), new PyInferredTypes());
 
 		return conf;
 	}

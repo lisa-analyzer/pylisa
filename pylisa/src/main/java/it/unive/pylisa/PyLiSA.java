@@ -19,7 +19,7 @@ import it.unive.lisa.outputs.JSONReportDumper;
 import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.outputs.messages.Message;
 import it.unive.lisa.program.Program;
-import it.unive.pylisa.analysis.PyReachability;
+import it.unive.pylisa.analysis.PyDomain;
 import it.unive.pylisa.analysis.constants.ConstantPropagationDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphValueDomain;
@@ -393,10 +393,10 @@ public class PyLiSA {
 			throw new ParseException("Invalid numerical domain name: " + numericalDomain);
 		}
 
-		conf.analysis = new PyReachability<>(new SimpleAbstractDomain<>(
+		conf.analysis = new PyDomain<>(
 				new PyHeap(),
 				domain,
-				new PyInferredTypes()));
+				new PyInferredTypes());
 
 		if (htmlOutput)
 			conf.outputs.add(new HtmlResults<>(true));

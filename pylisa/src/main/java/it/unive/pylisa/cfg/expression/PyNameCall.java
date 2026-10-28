@@ -85,37 +85,40 @@ public class PyNameCall extends UnresolvedCall {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis());
 		Binding status = ref == null ? null : ref.status(state);
 		if (status == null || status == Binding.BOTTOM || status == Binding.BOUND)
-			return boundCall(interprocedural, state, params, expressions);
+			return raising.moveFrom(boundCall(interprocedural, state, params, expressions, raising));
 
 		AnalysisState<A> result = state.bottomExecution();
 		if (status.mightBeBound())
-			result = result.lub(boundCall(interprocedural, state, params, expressions));
+			result = result.lub(boundCall(interprocedural, state, params, expressions, raising));
 		if (ref.isBuiltin())
 			result = result.lub(super.forwardSemanticsAux(interprocedural, state, params, expressions));
 		else
-			result = result.lub(ref.unboundError(interprocedural.getAnalysis(), state));
-		return result;
+			ref.unboundError(raising, state);
+		return raising.moveFrom(result);
 	}
 
 	// calls the name, when it is bound: if its value is known, the functions
-	// it holds are called, otherwise the call is resolved by name (see byName)
+	// it holds are called, otherwise the call is resolved by name (see byName);
+	// the raised exceptions are collected by raising
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> boundCall(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
-			StatementStore<A> expressions)
+			StatementStore<A> expressions,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		if (!state.knowsIdentifier(callee))
-			return byName(interprocedural, state, params, expressions);
+			return byName(interprocedural, state, params, expressions, raising);
 
 		CallTargets targets = CallTargets.of(analysis, state, Set.of(callee), false, this);
 		if (!targets.callsSomething() && !targets.notCallable())
 			// not a variable holding functions (e.g. a library function, as
 			// in f = len, whose type is unknown)
-			return byName(interprocedural, state, params, expressions);
+			return byName(interprocedural, state, params, expressions, raising);
 
 		// the callee is passed to closures, as their first argument
 		Expression calleeExpr = ref != null ? ref : new VariableRef(getCFG(), getLocation(), getTargetName());
@@ -123,14 +126,13 @@ public class PyNameCall extends UnresolvedCall {
 
 		AnalysisState<A> result = state.bottomExecution();
 		if (targets.notCallable())
-			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 		result = result.lub(
 				targets.call(interprocedural, state, state, this, this, calleeExpr, params, expressions,
-						getMetaVariables()));
+						getMetaVariables(), raising));
 		if (targets.unknown())
 			// the variable might also hold something else
-			result = result.lub(byName(interprocedural, state, params, expressions));
+			result = result.lub(byName(interprocedural, state, params, expressions, raising));
 		return result;
 	}
 
@@ -138,20 +140,20 @@ public class PyNameCall extends UnresolvedCall {
 	// module): if it is the name of a decorated function, the name is bound to
 	// the value returned by the decorator, that is not known here (e.g. inside
 	// another function, or when the decorator is not known), and the call is
-	// code that is not known
+	// code that is not known; the raised exceptions are collected by raising
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> byName(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
-			StatementStore<A> expressions)
+			StatementStore<A> expressions,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		AnalysisState<A> result = super.forwardSemanticsAux(interprocedural, state, params, expressions);
 		if (!decorated(getProgram(), getTargetName()))
 			return result;
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		return result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()), this))
-				.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
-						LibrarySpecificationProvider.EXCEPTION));
+		raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.EXCEPTION);
+		return result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()), this));
 	}
 
 	/**

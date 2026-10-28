@@ -11,6 +11,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 
 /**
@@ -46,8 +47,9 @@ public class ListPop extends PyNative {
 			throws SemanticException {
 		SymbolicExpression list = args[0];
 		SymbolicExpression index = missing(args[1]) ? new Constant(Int32Type.INSTANCE, -1, getLocation()) : args[1];
-		AnalysisState<A> read = ListModel.read(analysis, state, list, index, st);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		AnalysisState<A> read = ListModel.read(analysis, state, list, index, st, raising);
 		// the list loses an element on the paths where it is read
-		return ListModel.shrink(analysis, read, list, st);
+		return raising.moveFrom(ListModel.shrink(analysis, read, list, st));
 	}
 }

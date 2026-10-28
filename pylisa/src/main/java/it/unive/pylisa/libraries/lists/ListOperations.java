@@ -65,9 +65,11 @@ final class ListOperations {
 		AnalysisState<A> result = analysis.smallStepSemantics(state,
 				new PushAny(Untyped.INSTANCE, st.getLocation()), st);
 		Set<Type> types = analysis.getRuntimeTypesOf(state, other, st);
-		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st) || !types.stream().allMatch(accepted))
-			result = result.lub(PyExceptions.raise(analysis, state, st.getCFG(), st.getLocation(), st,
-					LibrarySpecificationProvider.TYPE_ERROR));
+		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st) || !types.stream().allMatch(accepted)) {
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			raising.raise(state, st.getCFG(), st.getLocation(), st, LibrarySpecificationProvider.TYPE_ERROR);
+			return raising.moveFrom(result);
+		}
 		return result;
 	}
 }

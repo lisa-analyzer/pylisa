@@ -257,12 +257,12 @@ public final class ListModel {
 	/**
 	 * The child of the lists that is {@code True} if the list surely has an
 	 * element, and {@code False} if it is not known (e.g. after {@code if xs:},
-	 * {@code xs} has an element, see {@code PyReachability}). It is
-	 * {@code False} when the list is created (see {@link ListCreation}), so
-	 * that it is defined for all the lists, and it is set to {@code False}
-	 * whenever elements might be removed (see {@link #shrink}). It complements
-	 * the elements that the list surely has at known indices (see
-	 * {@link #shape}), as it does not tell at which indices the elements are.
+	 * {@code xs} has an element, see {@code PyDomain}). It is {@code False}
+	 * when the list is created (see {@link ListCreation}), so that it is
+	 * defined for all the lists, and it is set to {@code False} whenever
+	 * elements might be removed (see {@link #shrink}). It complements the
+	 * elements that the list surely has at known indices (see {@link #shape}),
+	 * as it does not tell at which indices the elements are.
 	 */
 	public static final String NONEMPTY = "$nonempty";
 
@@ -466,8 +466,10 @@ public final class ListModel {
 	 * @param list     the list
 	 * @param index    the index
 	 * @param thrower  the statement reading the element
+	 * @param raising  where the exceptions raised by the read are collected
 	 *
-	 * @return the state after the read
+	 * @return the state after the read, where the executions raising exceptions
+	 *             have not been moved yet
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */
@@ -476,7 +478,8 @@ public final class ListModel {
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			SymbolicExpression index,
-			Statement thrower)
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		CodeLocation loc = thrower.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
@@ -535,11 +538,9 @@ public final class ListModel {
 					result = result.lub(analysis.smallStepSemantics(state,
 							new AccessChild(Untyped.INSTANCE, deref, field, loc), thrower));
 		if (indexError)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.INDEX_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
 		if (typeError)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 
@@ -582,8 +583,11 @@ public final class ListModel {
 	 * @param slice           the slice
 	 * @param owner           the expression the new list belongs to
 	 * @param thrower         the statement reading the slice
+	 * @param raising         where the exceptions raised by the read are
+	 *                            collected
 	 *
-	 * @return the state after the read
+	 * @return the state after the read, where the executions raising exceptions
+	 *             have not been moved yet
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */
@@ -593,7 +597,8 @@ public final class ListModel {
 			SymbolicExpression list,
 			SymbolicExpression slice,
 			Expression owner,
-			Statement thrower)
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation loc = owner.getLocation();
@@ -634,8 +639,7 @@ public final class ListModel {
 			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
 					LibrarySpecificationProvider.VALUE_ERROR));
 		if (typeError)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 
@@ -662,8 +666,11 @@ public final class ListModel {
 	 * @param thrower  the statement assigning the slice
 	 * @param metas    where the meta variables of the elements of the value are
 	 *                     added (e.g. the tuples of {@code d.items()})
+	 * @param raising  where the exceptions raised by the assignment are
+	 *                     collected
 	 *
-	 * @return the state after the assignment
+	 * @return the state after the assignment, where the executions raising
+	 *             exceptions have not been moved yet
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */
@@ -674,7 +681,8 @@ public final class ListModel {
 			SymbolicExpression slice,
 			SymbolicExpression value,
 			Statement thrower,
-			Collection<Identifier> metas)
+			Collection<Identifier> metas,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		CodeLocation loc = thrower.getLocation();
 		boolean typed = boundsTyped(analysis, state, slice, thrower);
@@ -698,7 +706,7 @@ public final class ListModel {
 					new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 			// the value might have no element (e.g. xs[0:2] = [])
 			AnalysisState<A> assigned = shrink(analysis, state, list, thrower);
-			AnalysisState<A> elements = Iteration.elements(analysis, state, null, value, thrower, metas);
+			AnalysisState<A> elements = Iteration.elements(analysis, state, null, value, thrower, metas, raising);
 			if (!elements.getExecutionState().isBottom()) {
 				AnalysisState<A> shrunk = shrink(analysis, elements, list, thrower);
 				// weak update: the new elements are joined with the previous
@@ -710,15 +718,12 @@ public final class ListModel {
 			if (extended)
 				// an extended slice, whose length might not be the one of the
 				// value
-				result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-						LibrarySpecificationProvider.VALUE_ERROR));
+				raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.VALUE_ERROR);
 		}
 		if (zero != Satisfiability.NOT_SATISFIED)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.VALUE_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.VALUE_ERROR);
 		if (!typed || iterable != Satisfiability.SATISFIED)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 
@@ -773,8 +778,10 @@ public final class ListModel {
 	 * @param index    the index
 	 * @param value    the value
 	 * @param thrower  the statement writing the element
+	 * @param raising  where the exceptions raised by the write are collected
 	 *
-	 * @return the state after the write
+	 * @return the state after the write, where the executions raising
+	 *             exceptions have not been moved yet
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */
@@ -784,7 +791,8 @@ public final class ListModel {
 			SymbolicExpression list,
 			SymbolicExpression index,
 			SymbolicExpression value,
-			Statement thrower)
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		CodeLocation loc = thrower.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
@@ -836,11 +844,9 @@ public final class ListModel {
 			result = result.lub(written);
 		}
 		if (indexError)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.INDEX_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
 		if (typeError)
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 

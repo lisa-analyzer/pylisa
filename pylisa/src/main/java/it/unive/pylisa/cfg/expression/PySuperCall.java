@@ -87,6 +87,7 @@ public class PySuperCall extends UnresolvedCall {
 		for (SymbolicExpression self : params[0])
 			selfTypes.addAll(analysis.getRuntimeTypesOf(state, self, this));
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		boolean unknown = selfTypes.isEmpty();
 		Set<CompilationUnit> definers = new HashSet<>();
@@ -108,13 +109,12 @@ public class PySuperCall extends UnresolvedCall {
 				unknown = true;
 			else if (getTargetName().equals("__init__"))
 				// object.__init__, that accepts no arguments
-				result = result.lub(params.length == 1
-						? analysis.smallStepSemantics(state, new PyNoneConstant(loc), this)
-						: PyExceptions.raise(analysis, state, getCFG(), loc, this,
-								LibrarySpecificationProvider.TYPE_ERROR));
+				if (params.length == 1)
+					result = result.lub(analysis.smallStepSemantics(state, new PyNoneConstant(loc), this));
+				else
+					raising.raise(state, getCFG(), loc, this, LibrarySpecificationProvider.TYPE_ERROR);
 			else
-				result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
-						LibrarySpecificationProvider.ATTRIBUTE_ERROR));
+				raising.raise(state, getCFG(), loc, this, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 		}
 
 		Set<Type>[] types = parameterTypes(expressions, analysis);
@@ -130,8 +130,7 @@ public class PySuperCall extends UnresolvedCall {
 			}
 			if (resolved instanceof OpenCall)
 				// it does not accept the arguments
-				result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
-						LibrarySpecificationProvider.TYPE_ERROR));
+				raising.raise(state, getCFG(), loc, this, LibrarySpecificationProvider.TYPE_ERROR);
 			else {
 				result = result.lub(resolved.forwardSemanticsAux(interprocedural, state, params, expressions));
 				getMetaVariables().addAll(resolved.getMetaVariables());
@@ -139,6 +138,6 @@ public class PySuperCall extends UnresolvedCall {
 		}
 		if (unknown)
 			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this));
-		return result;
+		return raising.moveFrom(result);
 	}
 }

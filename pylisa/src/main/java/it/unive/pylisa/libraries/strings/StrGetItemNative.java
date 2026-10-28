@@ -28,6 +28,7 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.operators.SliceCreation;
 import it.unive.pylisa.symbolic.operators.strings.StrGetItem;
@@ -116,6 +117,7 @@ public class StrGetItemNative extends PyNative {
 		Satisfiability integer = literalSlice ? Satisfiability.NOT_SATISFIED : hasType(analysis, state, index, INT);
 		Satisfiability slice = literalSlice ? Satisfiability.SATISFIED : hasType(analysis, state, index, isSlice);
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (integer != Satisfiability.NOT_SATISFIED) {
 			// IndexError if index >= len(s) or index < -len(s)
@@ -129,7 +131,7 @@ public class StrGetItemNative extends PyNative {
 			result = result.lub(ExceptionGuard.guardedCompute(analysis, state, outOfRange,
 					LibrarySpecificationProvider.INDEX_ERROR,
 					new BinaryExpression(itemType, s, index, itemOp, loc),
-					getCFG(), loc, st, st));
+					getCFG(), loc, st, st, raising));
 		}
 
 		if (slice != Satisfiability.NOT_SATISFIED) {
@@ -143,17 +145,19 @@ public class StrGetItemNative extends PyNative {
 					typed = typed.and(hasType(analysis, state, bound, INT.or(NONE)));
 				BinaryExpression zeroStep = new BinaryExpression(BoolType.INSTANCE, sl.getRight(),
 						new Constant(Int32Type.INSTANCE, 0, loc), ComparisonEq.INSTANCE, loc);
-				result = result.lub(typeChecked(analysis, state, typed,
-						ExceptionGuard.guardedCompute(analysis, state, zeroStep,
-								LibrarySpecificationProvider.VALUE_ERROR, value, getCFG(), loc, st, st)));
-			} else
+				AnalysisState<A> ifTyped = typed == Satisfiability.NOT_SATISFIED ? state.bottomExecution()
+						: ExceptionGuard.guardedCompute(analysis, state, zeroStep,
+								LibrarySpecificationProvider.VALUE_ERROR, value, getCFG(), loc, st, st, raising);
+				result = result.lub(typeChecked(state, typed, ifTyped, raising));
+			} else {
 				// the step of a slice object is not known
-				result = result.lub(compute(analysis, state, value))
-						.lub(raise(analysis, state, LibrarySpecificationProvider.VALUE_ERROR));
+				result = result.lub(compute(analysis, state, value));
+				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+			}
 		}
 
 		if (integer != Satisfiability.SATISFIED && slice != Satisfiability.SATISFIED)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(result);
 	}
 }

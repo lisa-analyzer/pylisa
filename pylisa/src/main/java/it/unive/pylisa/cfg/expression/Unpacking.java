@@ -100,6 +100,40 @@ public final class Unpacking {
 			Statement pp,
 			Assigner<A> assigner)
 			throws SemanticException {
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis());
+		AnalysisState<A> result = unpack(interprocedural, state, value, targets, star, pp, assigner, raising);
+		return raising.moveFrom(result);
+	}
+
+	/**
+	 * Unpacks the value into the targets, collecting the raised exceptions
+	 * instead of moving them to the error channel.
+	 *
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the value has been computed
+	 * @param value           the value
+	 * @param targets         the targets
+	 * @param star            the index of the starred target (a
+	 *                            {@link StarExpression}), or {@code -1}
+	 * @param pp              the statement unpacking the value
+	 * @param assigner        the assignment of the elements to the targets
+	 * @param raising         where the raised exceptions are collected
+	 *
+	 * @return the state after the unpacking, where the exceptions have not been
+	 *             raised yet
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unpack(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression value,
+			Expression[] targets,
+			int star,
+			Statement pp,
+			Assigner<A> assigner,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation loc = pp.getLocation();
 		Set<Type> types = analysis.getRuntimeTypesOf(state, value, pp);
@@ -176,11 +210,9 @@ public final class Unpacking {
 				}
 
 		if (valueError)
-			result = result.lub(PyExceptions.raise(analysis, state, pp.getCFG(), loc, pp,
-					LibrarySpecificationProvider.VALUE_ERROR));
+			raising.raise(state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.VALUE_ERROR);
 		if (typeError)
-			result = result.lub(PyExceptions.raise(analysis, state, pp.getCFG(), loc, pp,
-					LibrarySpecificationProvider.TYPE_ERROR));
+			raising.raise(state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 

@@ -70,13 +70,13 @@ public class PyIn extends BinaryExpression {
 		Set<Type> rtsNeedle = analysis.getRuntimeTypesOf(state, left, this);
 		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type tContainer : rtsContainer) {
 			for (Type tNeedle : rtsNeedle) {
 				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {
 					// str, bytes, int, ...: __contains__ is looked up in their
 					// class
-					@SuppressWarnings("unchecked")
 					Set<Type>[] types = new Set[] { Collections.singleton(tContainer),
 							Collections.singleton(tNeedle) };
 					Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, state, this,
@@ -84,8 +84,7 @@ public class PyIn extends BinaryExpression {
 							new Expression[] { getRight(), getLeft() }, types);
 					if (resolved == null)
 						// e.g. 1 in 5: the container is not iterable
-						result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
-								LibrarySpecificationProvider.TYPE_ERROR));
+						raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 					else {
 						result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
 								new ExpressionSet[] { new ExpressionSet(right), new ExpressionSet(left) },
@@ -124,6 +123,6 @@ public class PyIn extends BinaryExpression {
 			}
 		}
 
-		return result;
+		return raising.moveFrom(result);
 	}
 }

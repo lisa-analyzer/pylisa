@@ -312,9 +312,32 @@ public class PyNameRef extends VariableRef {
 			Analysis<A, D> analysis,
 			AnalysisState<A> state)
 			throws SemanticException {
-		return PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
-				kind.isGlobal() ? LibrarySpecificationProvider.NAME_ERROR
-						: LibrarySpecificationProvider.UNBOUND_LOCAL_ERROR);
+		return PyExceptions.raise(analysis, state, getCFG(), getLocation(), this, unboundErrorName());
+	}
+
+	/**
+	 * Raises the error of reading or deleting the name when it is not bound
+	 * (see {@link #unboundError(Analysis, AnalysisState)}) in the executions of
+	 * the given state, when only some executions raise it: the executions are
+	 * moved to the error channel by the given {@link PyExceptions.Raising}.
+	 *
+	 * @param <A>     the kind of {@link AbstractLattice} of the state
+	 * @param <D>     the kind of {@link AbstractDomain} of the analysis
+	 * @param raising the collector of the executions raising errors
+	 * @param state   the state of the executions raising the error
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> void unboundError(
+			PyExceptions.Raising<A, D> raising,
+			AnalysisState<A> state)
+			throws SemanticException {
+		raising.raise(state, getCFG(), getLocation(), this, unboundErrorName());
+	}
+
+	private String unboundErrorName() {
+		return kind.isGlobal() ? LibrarySpecificationProvider.NAME_ERROR
+				: LibrarySpecificationProvider.UNBOUND_LOCAL_ERROR;
 	}
 
 	/**
@@ -377,12 +400,13 @@ public class PyNameRef extends VariableRef {
 			return cell == null ? staticRead(entryState, interprocedural, expressions)
 					: cellRead(entryState, interprocedural, cell);
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis());
 		AnalysisState<A> result = entryState.bottomExecution();
 		if (status == Binding.BOTTOM || status.mightBeBound())
 			result = result.lub(boundRead(entryState, interprocedural, expressions));
 		if (status.mightBeUnbound())
-			result = result.lub(unboundRead(entryState, interprocedural, expressions));
-		return result;
+			result = result.lub(unboundRead(entryState, interprocedural, expressions, raising));
+		return raising.moveFrom(result);
 	}
 
 	// reads the name when it is bound
@@ -454,7 +478,8 @@ public class PyNameRef extends VariableRef {
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unboundRead(
 			AnalysisState<A> entryState,
 			InterproceduralAnalysis<A, D> interprocedural,
-			StatementStore<A> expressions)
+			StatementStore<A> expressions,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		if (kind.isGlobal()) {
 			NativeCFG builtin = builtin(getCFG().getProgram(), getName());
@@ -469,7 +494,8 @@ public class PyNameRef extends VariableRef {
 				// a builtin that is not modeled: its value is unknown
 				return super.forwardSemantics(entryState, interprocedural, expressions);
 		}
-		return unboundError(interprocedural.getAnalysis(), entryState);
+		unboundError(raising, entryState);
+		return entryState.bottomExecution();
 	}
 
 	// reads the name when its binding status is not known

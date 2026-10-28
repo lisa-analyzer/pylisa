@@ -78,12 +78,13 @@ public class DictIOr extends BinaryExpression implements PluggableStatement {
 		AnalysisState<A> result;
 		if (!types.isEmpty() && types.stream().allMatch(DictModel::isDict))
 			result = DictModel.unpackInto(analysis, state, left, right, st, false);
-		else
+		else {
 			// e.g. a list of pairs: any entry, or TypeError
-			result = DictModel.anyEntry(analysis, state, left, new PushAny(Untyped.INSTANCE, loc),
-					new PushAny(Untyped.INSTANCE, loc), st)
-					.lub(PyExceptions.raise(analysis, state, getCFG(), loc, st,
-							LibrarySpecificationProvider.TYPE_ERROR));
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
+			result = raising.moveFrom(DictModel.anyEntry(analysis, state, left, new PushAny(Untyped.INSTANCE, loc),
+					new PushAny(Untyped.INSTANCE, loc), st));
+		}
 		// the dictionary itself is the result
 		return analysis.smallStepSemantics(result, left, this);
 	}

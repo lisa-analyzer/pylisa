@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.symbolic.CFGThrow;
@@ -16,23 +17,51 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.CallSites;
 import it.unive.pylisa.cfg.type.PyClassType;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Shared helper to raise a native Python exception from a library
  * implementation, mirroring how JLiSA raises {@code ArrayIndexOutOfBounds
  * Exception} in {@code JavaArrayAccess}: it allocates an instance of the given
  * (built-in, field-less) exception class, wraps it in a {@link CFGThrow}, and
- * moves the resulting state to the error channel via
- * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState.Error, it.unive.lisa.program.cfg.ProgramPoint)}.
- * The returned state's normal execution is empty ({@code bottomExecution()});
- * callers {@code lub} it together with whatever non-exceptional continuation(s)
- * apply.
+ * moves the resulting state to the error channel. The move is <i>total</i> (see
+ * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState.Error, ProgramPoint)})
+ * when all executions raise the exception, as in
+ * {@link #raise(Analysis, AnalysisState, CFG, CodeLocation, Statement, String)},
+ * whose returned state has an empty normal execution. When only some executions
+ * raise it, the move must instead be <i>partial</i> (see
+ * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState, AnalysisState.Error, ProgramPoint)}),
+ * knowing all the executions that continue normally: {@link Raising} collects
+ * the raising executions until these are known.
  */
 public final class PyExceptions {
 
 	private PyExceptions() {
 	}
 
+	/**
+	 * Raises the given exception in all executions of the given state
+	 * (<i>total</i> move): the returned state has an empty normal execution.
+	 * Use {@link Raising} if only some executions raise it.
+	 *
+	 * @param <A>                the kind of {@link AbstractLattice} of the
+	 *                               state
+	 * @param <D>                the kind of {@link AbstractDomain} of the
+	 *                               analysis
+	 * @param analysis           the analysis
+	 * @param state              the state of the executions raising the
+	 *                               exception
+	 * @param cfg                the cfg where the exception is raised
+	 * @param loc                the location where the exception is raised
+	 * @param thrower            the statement raising the exception
+	 * @param exceptionClassName the name of the class of the exception
+	 *
+	 * @return the state where the exception has been raised
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> raise(
 			Analysis<A, D> analysis,
 			AnalysisState<A> state,
@@ -41,6 +70,24 @@ public final class PyExceptions {
 			Statement thrower,
 			String exceptionClassName)
 			throws SemanticException {
+		Pair<AnalysisState.Error, AnalysisState<A>> raising = prepare(analysis, state, cfg, loc, thrower,
+				exceptionClassName);
+		AnalysisState.Error error = raising.getLeft();
+		return analysis.moveExecutionToError(raising.getRight(), error, error.getThrower());
+	}
+
+	// yields the error raised by the given exception and the state of the
+	// executions raising it, where the exception is the execution expression
+	// and the execution has not been moved yet
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Pair<AnalysisState.Error,
+			AnalysisState<A>> prepare(
+					Analysis<A, D> analysis,
+					AnalysisState<A> state,
+					CFG cfg,
+					CodeLocation loc,
+					Statement thrower,
+					String exceptionClassName)
+					throws SemanticException {
 		Type exceptionType = PyClassType.lookup(exceptionClassName);
 		thrower = programStatement(thrower);
 
@@ -55,12 +102,99 @@ public final class PyExceptions {
 		for (SymbolicExpression th : allocState.getExecutionExpressions()) {
 			CFGThrow throwVar = new CFGThrow(cfg, exceptionType, loc);
 			AnalysisState<A> tmp = analysis.assign(allocState, throwVar, th, thrower);
-			exceptionState = exceptionState.lub(
-					analysis.moveExecutionToError(tmp.withExecutionExpression(throwVar),
-							new AnalysisState.Error(exceptionType, thrower), thrower));
+			exceptionState = exceptionState.lub(tmp.withExecutionExpression(throwVar));
 		}
 
-		return exceptionState;
+		return Pair.of(new AnalysisState.Error(exceptionType, thrower), exceptionState);
+	}
+
+	/**
+	 * Collects the executions raising exceptions in a statement that only
+	 * sometimes raises them (e.g. depending on the runtime types of its
+	 * operands), so that they can be moved to the error channel with a
+	 * <i>partial</i> move once all the executions that continue normally are
+	 * known: exceptions are registered with
+	 * {@link #raise(AnalysisState, CFG, CodeLocation, Statement, String)}, and
+	 * {@link #moveFrom(AnalysisState)} performs the moves. If no execution
+	 * continues normally, the moves fall back to <i>total</i> ones.
+	 *
+	 * @param <A> the kind of {@link AbstractLattice} of the states
+	 * @param <D> the kind of {@link AbstractDomain} of the analysis
+	 */
+	public static final class Raising<A extends AbstractLattice<A>, D extends AbstractDomain<A>> {
+
+		private final Analysis<A, D> analysis;
+
+		// the state of the executions raising each error, not moved yet
+		private final Map<AnalysisState.Error, AnalysisState<A>> raised = new LinkedHashMap<>();
+
+		/**
+		 * Builds the collector.
+		 *
+		 * @param analysis the analysis
+		 */
+		public Raising(
+				Analysis<A, D> analysis) {
+			this.analysis = analysis;
+		}
+
+		/**
+		 * Yields whether no exception has been raised.
+		 *
+		 * @return whether no exception has been raised
+		 */
+		public boolean isEmpty() {
+			return raised.isEmpty();
+		}
+
+		/**
+		 * Raises the given exception in the executions of the given state, that
+		 * will be moved to the error channel by
+		 * {@link #moveFrom(AnalysisState)}.
+		 *
+		 * @param state              the state of the executions raising the
+		 *                               exception
+		 * @param cfg                the cfg where the exception is raised
+		 * @param loc                the location where the exception is raised
+		 * @param thrower            the statement raising the exception
+		 * @param exceptionClassName the name of the class of the exception
+		 *
+		 * @throws SemanticException if the analysis fails
+		 */
+		public void raise(
+				AnalysisState<A> state,
+				CFG cfg,
+				CodeLocation loc,
+				Statement thrower,
+				String exceptionClassName)
+				throws SemanticException {
+			Pair<AnalysisState.Error, AnalysisState<A>> raising = prepare(analysis, state, cfg, loc, thrower,
+					exceptionClassName);
+			AnalysisState<A> previous = raised.get(raising.getLeft());
+			raised.put(raising.getLeft(),
+					previous == null ? raising.getRight() : previous.lub(raising.getRight()));
+		}
+
+		/**
+		 * Moves the executions raising the exceptions to the error channel,
+		 * given the state of all the executions continuing normally.
+		 *
+		 * @param normal the state of the executions that do not raise any of
+		 *                   the exceptions
+		 *
+		 * @return the state after the moves
+		 *
+		 * @throws SemanticException if the analysis fails
+		 */
+		public AnalysisState<A> moveFrom(
+				AnalysisState<A> normal)
+				throws SemanticException {
+			AnalysisState<A> result = normal;
+			for (Map.Entry<AnalysisState.Error, AnalysisState<A>> entry : raised.entrySet())
+				result = analysis.moveExecutionToError(result, entry.getValue(), entry.getKey(),
+						entry.getKey().getThrower());
+			return result;
+		}
 	}
 
 	/**

@@ -63,6 +63,7 @@ public class DivMod extends PyNative {
 				new Constant(Int32Type.INSTANCE, 0, loc), ComparisonEq.INSTANCE, loc);
 		Satisfiability byZero = analysis.satisfies(state, zero, this);
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (byZero != Satisfiability.SATISFIED) {
 			// the same quotient and remainder of // and %
@@ -75,7 +76,7 @@ public class DivMod extends PyNative {
 					getMetaVariables()));
 		}
 		if (byZero != Satisfiability.NOT_SATISFIED)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.ZERO_DIVISION_ERROR));
-		return result;
+			raise(raising, state, LibrarySpecificationProvider.ZERO_DIVISION_ERROR);
+		return raising.moveFrom(result);
 	}
 }

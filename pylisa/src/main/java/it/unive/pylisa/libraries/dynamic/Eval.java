@@ -10,6 +10,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 
 /**
@@ -43,7 +44,8 @@ public class Eval extends PyNative {
 		// the evaluated expression might bind any global of the module (e.g.
 		// through an assignment expression), also when it raises an exception
 		AnalysisState<A> havocked = havocGlobals(analysis, state, args[1]);
-		return unknown(analysis, havocked, null)
-				.lub(raise(analysis, havocked, LibrarySpecificationProvider.EXCEPTION));
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		raise(raising, havocked, LibrarySpecificationProvider.EXCEPTION);
+		return raising.moveFrom(unknown(analysis, havocked, null));
 	}
 }

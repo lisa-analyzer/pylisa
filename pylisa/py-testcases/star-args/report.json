@@ -2,21 +2,21 @@
   "warnings" : [ {
     "message" : "['py-testcases/star-args/star-args.py':12:0] on 'untyped py-testcases/star-args/star-args::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/star-args/star-args.py':12:0"
   }, {
-    "message" : "['py-testcases/star-args/star-args.py':16:4] on 'untyped py-testcases/star-args/star-args::$main()': [EXPRESSION] TYPING: a value of the wrong type is used (uncaught TypeError) at 'py-testcases/star-args/star-args.py':16:4"
+    "message" : "['py-testcases/star-args/star-args.py':16:4] on 'untyped py-testcases/star-args/star-args::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/star-args/star-args.py':16:4"
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_star-args_star-args.$main().graph.json", "untyped_py-testcases_star-args_star-args.add(untyped_a,_untyped_b,_untyped_c)_-1262558697.graph.json", "untyped_py-testcases_star-args_star-args.add(untyped_a,_untyped_b,_untyped_c)_-1262558759.graph.json", "untyped_py-testcases_star-args_star-args.add(untyped_a,_untyped_b,_untyped_c)_-1262561270.graph.json", "untyped_py-testcases_star-args_star-args.total(untyped_a,_untyped_rest)_-1262558480.graph.json", "untyped_py-testcases_star-args_star-args.total(untyped_a,_untyped_rest)_-1262558511.graph.json" ],
   "info" : {
     "cfgs" : "4",
     "duration" : "6ms",
-    "end" : "2026-10-27T16:07:47.182+01:00",
+    "end" : "2026-10-28T11:41:19.261+01:00",
     "expressions" : "72",
     "files" : "6",
     "globals" : "0",
     "members" : "187",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-27T16:07:47.176+01:00",
+    "start" : "2026-10-28T11:41:19.255+01:00",
     "statements" : "21",
     "units" : "43",
     "version" : "1.0",

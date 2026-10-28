@@ -5,19 +5,12 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
-import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.call.OpenCall;
-import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.numeric.Addition;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.type.Type;
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * Python's {@code a + b}: it calls {@code type(a).__add__(a, b)}, falling back
@@ -54,21 +47,4 @@ public class PyAddition extends Addition {
 				"__add__", "__radd__", false, PyBinaryDispatch.Fallback.TYPE_ERROR);
 	}
 
-	@SuppressWarnings("unchecked")
-	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean resolves(
-			InterproceduralAnalysis<A, D> interprocedural,
-			UnresolvedCall call,
-			Type self,
-			Type other,
-			SymbolAliasing aliasing) {
-		try {
-			// the call graph does not throw when no target is found, it
-			// yields an OpenCall instead
-			return !(interprocedural.resolve(call,
-					new Set[] { Collections.singleton(self), Collections.singleton(other) },
-					aliasing) instanceof OpenCall);
-		} catch (CallResolutionException e) {
-			return false;
-		}
-	}
 }

@@ -82,19 +82,21 @@ public class PyNewObj extends NaryExpression {
 		if (isAbstract == Satisfiability.SATISFIED)
 			return PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
 					LibrarySpecificationProvider.TYPE_ERROR);
-		AnalysisState<A> created = create(interprocedural, state, params, expressions);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		AnalysisState<A> created = create(interprocedural, state, params, expressions, raising);
 		if (isAbstract == Satisfiability.UNKNOWN)
-			created = created.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
-					LibrarySpecificationProvider.TYPE_ERROR));
-		return created;
+			raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(created);
 	}
 
-	// creates the object, and initializes it with __init__
+	// creates the object, and initializes it with __init__: the raised
+	// exceptions are collected by raising
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> create(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
-			StatementStore<A> expressions)
+			StatementStore<A> expressions,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Type type = getStaticType();
@@ -153,8 +155,8 @@ public class PyNewObj extends NaryExpression {
 				// there is no __init__ and object.__init__ takes no
 				// arguments (unless they are consumed by __new__)
 				expressions.forget(paramThis);
-				return PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
-						LibrarySpecificationProvider.TYPE_ERROR);
+				raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
+				return state.bottomExecution();
 			}
 			// no class defines __init__: object.__init__ is called, that does
 			// nothing and returns None
@@ -175,9 +177,8 @@ public class PyNewObj extends NaryExpression {
 		if (!call.getMetaVariables().isEmpty())
 			sem = sem.forgetIdentifiers(call.getMetaVariables(), this);
 
-		AnalysisState<A> badReturn = none == Satisfiability.SATISFIED ? sem.bottom()
-				: PyExceptions.raise(analysis, sem, getCFG(), getLocation(), this,
-						LibrarySpecificationProvider.TYPE_ERROR);
+		if (none != Satisfiability.SATISFIED)
+			raising.raise(sem, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 
 		// the result is the instrumented receiver, pointing to the object
 		// allocated above: the allocation is not evaluated again, as it would
@@ -195,7 +196,7 @@ public class PyNewObj extends NaryExpression {
 					result = result.lub(analysis.smallStepSemantics(sem, v, call));
 				}
 
-		return result.lub(badReturn);
+		return result.lub(sem.bottomExecution());
 	}
 
 	// whether the value returned by the resolved __init__ (null for

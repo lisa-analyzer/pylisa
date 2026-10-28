@@ -31,6 +31,7 @@ import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.NamedTupleClassType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyClosureUnit;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.collections.NamedTuples;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
@@ -253,6 +254,8 @@ final class CallTargets {
 	 * @param args            the values of the arguments
 	 * @param expressions     the states of the sub-expressions
 	 * @param metas           where the meta variables of the calls are added
+	 * @param raising         where the exceptions raised by the calls of the
+	 *                            bound methods are collected
 	 *
 	 * @return the result of the calls (bottom if nothing is called)
 	 *
@@ -267,7 +270,8 @@ final class CallTargets {
 			Expression callee,
 			ExpressionSet[] args,
 			StatementStore<A> expressions,
-			Collection<Identifier> metas)
+			Collection<Identifier> metas,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		AnalysisState<A> result = state.bottomExecution();
 		if (!functions.isEmpty())
@@ -299,7 +303,7 @@ final class CallTargets {
 			// the bound method is called on its object, standing for the
 			// callee in the call
 			result = result.lub(BoundMethods.call(interprocedural, closureState, bound, callee, call.getParameters(),
-					args, caller, expressions, metas));
+					args, caller, expressions, metas, raising));
 		for (NamedTupleClassType cls : namedTuples.values())
 			result = result.lub(NamedTuples.create(interprocedural.getAnalysis(), state, cls, call.getParameters(),
 					args, caller, metas));

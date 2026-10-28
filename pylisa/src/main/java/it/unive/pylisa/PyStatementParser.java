@@ -497,32 +497,6 @@ public class PyStatementParser
 		return value;
 	}
 
-	private Expression visitSingleTarget(
-			Single_targetContext ctx) {
-		if (ctx.name() != null)
-			return nameRef(ctx.name(), getLocation(filePath, ctx), true);
-		if (ctx.single_target() != null)
-			return visitSingleTarget(ctx.single_target());
-		return visitSingleSubscriptAttributeTarget(ctx.single_subscript_attribute_target());
-	}
-
-	private Expression visitSingleSubscriptAttributeTarget(
-			Single_subscript_attribute_targetContext ctx) {
-		Expression base = visitTPrimary(ctx.t_primary());
-		if (ctx.DOT() != null)
-			return attribute(base, ctx.name().getText(), getLocation(filePath, ctx));
-
-		List<Expression> indexes = extractExpressionsFromSlices(ctx.slices());
-		if (indexes.size() == 1)
-			return new PySingleArrayAccess(currentCFG, getLocation(filePath, ctx), Untyped.INSTANCE, base,
-					indexes.get(0));
-		else if (indexes.size() == 2)
-			return new PyDoubleArrayAccess(currentCFG, getLocation(filePath, ctx), Untyped.INSTANCE, base,
-					indexes.get(0),
-					indexes.get(1));
-		throw new UnsupportedStatementException("Only array accesses with up to 2 indexes are supported");
-	}
-
 	/**
 	 * Translates {@code target op= value}: the base and the index of the target
 	 * (e.g. {@code a} and {@code i} in {@code a[i] += v}) are evaluated once,

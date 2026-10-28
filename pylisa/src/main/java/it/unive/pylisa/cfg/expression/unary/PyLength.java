@@ -91,18 +91,17 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 		Set<Type> rts = analysis.getRuntimeTypesOf(state, expr, this);
 		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type t : rts) {
 			if (PyBinaryDispatch.isBuiltinValueType(t)) {
 				// str, bytes, int, ...: __len__ is looked up in their class
-				@SuppressWarnings("unchecked")
 				Set<Type>[] types = new Set[] { Collections.singleton(t) };
 				Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, state, this,
 						PyBinaryDispatch.classOf(t), "__len__", new Expression[] { getSubExpression() }, types);
 				if (resolved == null)
 					// e.g. len(5)
-					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), thrower,
-							LibrarySpecificationProvider.TYPE_ERROR));
+					raising.raise(state, getCFG(), getLocation(), thrower, LibrarySpecificationProvider.TYPE_ERROR);
 				else {
 					result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
 							new ExpressionSet[] { new ExpressionSet(expr) }, expressions));
@@ -145,7 +144,7 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 			getMetaVariables().addAll(len.getMetaVariables());
 		}
 
-		return result;
+		return raising.moveFrom(result);
 	}
 
 }

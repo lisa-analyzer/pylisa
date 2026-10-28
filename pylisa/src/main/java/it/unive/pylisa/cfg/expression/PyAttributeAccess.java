@@ -117,6 +117,37 @@ public class PyAttributeAccess extends UnaryExpression {
 			SymbolicExpression expr,
 			Statement thrower)
 			throws SemanticException {
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis());
+		AnalysisState<A> result = read(interprocedural, state, expr, thrower, raising);
+		return raising.moveFrom(result);
+	}
+
+	/**
+	 * Reads the attribute from the receiver {@code expr}, as
+	 * {@link #read(InterproceduralAnalysis, AnalysisState, SymbolicExpression, Statement)},
+	 * when the read is one of the possible behaviors of {@code thrower}: the
+	 * executions raising errors are not moved to the error channel, but are
+	 * collected by the given {@link PyExceptions.Raising}.
+	 *
+	 * @param <A>             the kind of the analysis state
+	 * @param <D>             the kind of the abstract domain
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the attribute is read
+	 * @param expr            the receiver
+	 * @param thrower         the statement raising the errors of the read
+	 * @param raising         the collector of the executions raising errors
+	 *
+	 * @return the state after the read, without the executions raising errors
+	 *
+	 * @throws SemanticException if something goes wrong during the computation
+	 */
+	<A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> read(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression expr,
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
 		if (state.getExecutionState().isBottom())
 			// unreachable: nothing is computed, and nothing is left on the
 			// stack
@@ -170,7 +201,7 @@ public class PyAttributeAccess extends UnaryExpression {
 				// the objects without the attribute: the attribute is looked
 				// up in their class
 				for (ClassUnit cls : missing.classes())
-					result = result.lub(classAttribute(interprocedural, state, cls, thrower));
+					result = result.lub(classAttribute(interprocedural, state, cls, thrower, raising));
 		}
 		if (others) {
 			// the methods of builtin values, read without calling them (e.g.
@@ -194,8 +225,7 @@ public class PyAttributeAccess extends UnaryExpression {
 						unknown |= m.isEmpty();
 					}
 			if (missingAttribute)
-				result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, thrower,
-						LibrarySpecificationProvider.ATTRIBUTE_ERROR));
+				raising.raise(state, getCFG(), loc, thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			if (!valueMethods.isEmpty())
 				result = result
 						.lub(BoundMethods.create(analysis, state, expr, valueMethods, this, getMetaVariables()));
@@ -212,7 +242,9 @@ public class PyAttributeAccess extends UnaryExpression {
 	 * where {@code c} is an object of a class defining {@code func}, or of one
 	 * that does not): that is, the {@code AttributeError} raised for the
 	 * objects on which the attribute has never been assigned, and whose class
-	 * does not define it as a class attribute.
+	 * does not define it as a class attribute. These are collected by the given
+	 * {@link PyExceptions.Raising}, as the read is one of the possible
+	 * behaviors of {@code thrower}.
 	 *
 	 * @param <A>             the kind of the analysis state
 	 * @param <D>             the kind of the abstract domain
@@ -220,8 +252,10 @@ public class PyAttributeAccess extends UnaryExpression {
 	 * @param state           the state where the attribute is read
 	 * @param expr            the receiver
 	 * @param thrower         the statement raising the errors of the read
+	 * @param raising         the collector of the executions raising errors
 	 *
-	 * @return the state with the raised errors, and no normal execution
+	 * @return the state with the errors raised while computing the class
+	 *             attributes, and no normal execution
 	 *
 	 * @throws SemanticException if something goes wrong during the computation
 	 */
@@ -229,7 +263,8 @@ public class PyAttributeAccess extends UnaryExpression {
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			SymbolicExpression expr,
-			Statement thrower)
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Set<Type> objects = new HashSet<>();
@@ -241,7 +276,7 @@ public class PyAttributeAccess extends UnaryExpression {
 		if (missing != null)
 			for (ClassUnit cls : missing.classes())
 				// only the errors: the value of the attribute is not known
-				result = result.lub(classAttribute(interprocedural, state, cls, thrower).bottomExecution());
+				result = result.lub(classAttribute(interprocedural, state, cls, thrower, raising).bottomExecution());
 		return result;
 	}
 
@@ -428,13 +463,15 @@ public class PyAttributeAccess extends UnaryExpression {
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ClassUnit cls,
-			Statement thrower)
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		ClassAttribute attribute = PyClassAttributes.attribute(cls, name);
-		if (attribute == null)
-			return PyExceptions.raise(analysis, state, getCFG(), getLocation(), thrower,
-					LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+		if (attribute == null) {
+			raising.raise(state, getCFG(), getLocation(), thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+			return state.bottomExecution();
+		}
 		if (attribute.value() == null)
 			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()), this);
 		// the body of the class is not executed: its constant value is

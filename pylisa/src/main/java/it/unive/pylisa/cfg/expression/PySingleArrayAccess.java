@@ -74,20 +74,19 @@ public class PySingleArrayAccess extends BinaryExpression {
 		Set<Type> rtsIndex = analysis.getRuntimeTypesOf(state, right, this);
 		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type tContainer : rtsContainer) {
 			for (Type tIndex : rtsIndex) {
 				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {
 					// str, int, ...: __getitem__ is looked up in their class
-					@SuppressWarnings("unchecked")
 					Set<Type>[] types = new Set[] { Collections.singleton(tContainer), Collections.singleton(tIndex) };
 					Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, state, this,
 							PyBinaryDispatch.classOf(tContainer), "__getitem__",
 							new Expression[] { getLeft(), getRight() }, types);
 					if (resolved == null)
 						// e.g. 5[0]: the object is not subscriptable
-						result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
-								LibrarySpecificationProvider.TYPE_ERROR));
+						raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 					else {
 						result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
 								new ExpressionSet[] { new ExpressionSet(left), new ExpressionSet(right) },
@@ -129,6 +128,6 @@ public class PySingleArrayAccess extends BinaryExpression {
 			}
 		}
 
-		return result;
+		return raising.moveFrom(result);
 	}
 }

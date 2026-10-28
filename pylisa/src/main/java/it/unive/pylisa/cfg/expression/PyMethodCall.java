@@ -118,6 +118,7 @@ public class PyMethodCall extends UnresolvedCall {
 				objectTypes.add(t);
 			}
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (others) {
 			AnalysisState<A> resolving = state;
@@ -143,13 +144,12 @@ public class PyMethodCall extends UnresolvedCall {
 				// the classes of the receivers, whose methods are all known,
 				// define the method, but it does not accept the arguments (e.g.
 				// a method without self)
-				result = result.lub(PyExceptions.raise(analysis, resolving, getCFG(), getLocation(), this,
-						LibrarySpecificationProvider.TYPE_ERROR));
+				raising.raise(resolving, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 			else
 				result = result.lub(dispatch(interprocedural, resolving, params, expressions));
 		}
 		if (attribute)
-			result = result.lub(callAttribute(interprocedural, state, params, expressions));
+			result = result.lub(callAttribute(interprocedural, state, params, expressions, raising));
 		if (!statics.isEmpty()) {
 			// the static method is called without the receiver
 			Expression[] parameters = getParameters();
@@ -160,7 +160,7 @@ public class PyMethodCall extends UnresolvedCall {
 		}
 
 		if (valueTypes.isEmpty())
-			return result;
+			return raising.moveFrom(result);
 
 		Set<Type>[] types = parameterTypes(expressions, analysis);
 		boolean known = !PyBinaryDispatch.unknownTypes(receiverTypes, this);
@@ -173,8 +173,7 @@ public class PyMethodCall extends UnresolvedCall {
 				// the values of the class have no such attribute (e.g.
 				// (5).strip()), if the receiver is known to be of that class
 				// (not just any value)
-				result = result.lub(PyExceptions.raise(analysis, state, getCFG(), getLocation(), this,
-						LibrarySpecificationProvider.ATTRIBUTE_ERROR));
+				raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			else if (resolved == null)
 				// the method is not modeled
 				result = result.lub(analysis.smallStepSemantics(state,
@@ -184,7 +183,7 @@ public class PyMethodCall extends UnresolvedCall {
 				getMetaVariables().addAll(resolved.getMetaVariables());
 			}
 		}
-		return result;
+		return raising.moveFrom(result);
 	}
 
 	// whether the objects of type t are of a class whose methods are all
@@ -291,7 +290,8 @@ public class PyMethodCall extends UnresolvedCall {
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
-			StatementStore<A> expressions)
+			StatementStore<A> expressions,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Expression[] parameters = getParameters();
@@ -315,12 +315,12 @@ public class PyMethodCall extends UnresolvedCall {
 				// AttributeError if they cannot have it
 				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()),
 						this));
-				result = result.lub(read.missingErrors(interprocedural, state, receiver, this));
+				result = result.lub(read.missingErrors(interprocedural, state, receiver, this, raising));
 				continue;
 			}
 
 			// also raises AttributeError if the attribute is not assigned
-			AnalysisState<A> attr = read.read(interprocedural, state, receiver, this);
+			AnalysisState<A> attr = read.read(interprocedural, state, receiver, this, raising);
 			getMetaVariables().addAll(read.getMetaVariables());
 			if (attr.getExecutionState().isBottom()) {
 				result = result.lub(attr);
@@ -359,8 +359,7 @@ public class PyMethodCall extends UnresolvedCall {
 			}
 
 			if (notCallable)
-				result = result.lub(PyExceptions.raise(analysis, attr, getCFG(), getLocation(), this,
-						LibrarySpecificationProvider.TYPE_ERROR));
+				raising.raise(attr, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 			if (!cfgs.isEmpty())
 				result = result.lub(call(CallSites.within(new CFGCall(call, cfgs), this), interprocedural, attr, args,
 						expressions));
@@ -371,7 +370,7 @@ public class PyMethodCall extends UnresolvedCall {
 				// a bound method stored in the attribute, called on its object
 				result = result.lub(BoundMethods.call(interprocedural, attr, bound, parameters[0],
 						Arrays.copyOfRange(parameters, 1, parameters.length), args, this, expressions,
-						getMetaVariables()));
+						getMetaVariables(), raising));
 			if (unknown)
 				// e.g. a class, or an object
 				result = result.lub(analysis.smallStepSemantics(attr, new PushAny(Untyped.INSTANCE, getLocation()),

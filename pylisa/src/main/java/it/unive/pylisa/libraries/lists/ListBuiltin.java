@@ -23,6 +23,7 @@ import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 
 /**
@@ -63,6 +64,7 @@ public class ListBuiltin extends PyNative {
 		ListCreation creation = new ListCreation(getCFG(), loc);
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		boolean empty = false, copy = false;
 		Satisfiability iterable = Satisfiability.BOTTOM;
@@ -85,8 +87,7 @@ public class ListBuiltin extends PyNative {
 			// new objects, e.g. the tuples of d.items())
 			AnalysisState<A> elements = iterable == Satisfiability.SATISFIED && params[0].elements().size() == 1
 					? Iteration.elements(interprocedural, created, getSubExpressions()[0], params[0].iterator().next(),
-							st,
-							getMetaVariables())
+							st, getMetaVariables(), raising)
 					: analysis.smallStepSemantics(created, new PushAny(Untyped.INSTANCE, loc), st);
 			for (SymbolicExpression list : created.getExecutionExpressions()) {
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
@@ -96,9 +97,9 @@ public class ListBuiltin extends PyNative {
 			}
 		}
 		if (copy && iterable != Satisfiability.SATISFIED)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		getMetaVariables().addAll(creation.getMetaVariables());
-		return result;
+		return raising.moveFrom(result);
 	}
 
 	@Override

@@ -7,24 +7,20 @@ import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.OptimizedAnalyzedCFG;
 import it.unive.lisa.analysis.ProgramState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.reachability.ReachabilityStatus;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.checks.semantic.SemanticTool;
 import it.unive.lisa.conf.FixpointConfiguration;
 import it.unive.lisa.lattices.GenericSetLattice;
-import it.unive.lisa.lattices.ReachLattice;
-import it.unive.lisa.lattices.ReachLattice.ReachabilityStatus;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.NaryExpression;
-import it.unive.lisa.program.cfg.statement.NaryStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,16 +44,15 @@ import java.util.Set;
  * the {@code assert} raising {@code AssertionError}, also inside a function
  * called by the main module): the violation is definite if every execution
  * raises that exception at that statement, possible otherwise. With
- * reachability (see {@link it.unive.lisa.analysis.Reachability}), as in JLiSA,
- * the violation at a statement of the main module is also definite if the
- * statement is definitely reachable, and every execution reaching it raises
- * there only that exception (the exceptions raised before reaching it are not
- * considered). An exception of an ancestor of the classes above (e.g.
- * {@code Exception}, raised by code that is not known, such as the one run by
- * {@code exec}) might be any of their subclasses: it is a possible violation of
- * every property. The warnings start with the category of the violated
- * property, and the possible ones contain {@code might} or {@code possible}
- * (see {@link #message}).
+ * reachability (see {@link SemanticTool#getReachability}), as in JLiSA, the
+ * violation at a statement of the main module is also definite if the statement
+ * is definitely reachable, and every execution reaching it raises there only
+ * that exception (the exceptions raised before reaching it are not considered).
+ * An exception of an ancestor of the classes above (e.g. {@code Exception},
+ * raised by code that is not known, such as the one run by {@code exec}) might
+ * be any of their subclasses: it is a possible violation of every property. The
+ * warnings start with the category of the violated property, and the possible
+ * ones contain {@code might} or {@code possible} (see {@link #message}).
  */
 public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDomain<A>>
 		implements
@@ -178,14 +173,8 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 	}
 
 	// whether the statement of the cfg containing the given one is definitely
-	// reachable (see Reachability): if the analysis does not track
-	// reachability, it is not. The reachability of a statement is the one of
-	// the states of its sub-expressions, as it is refined while evaluating the
-	// statement (e.g. restored at the end of a branch, see
-	// Reachability#smallStepSemantics), and it is the same for all of them:
-	// it is read from one whose state is not bottom (that would be
-	// unreachable), and the statement is not definitely reachable if there is
-	// none (e.g. it has no sub-expressions)
+	// reachable from the entry of the program (see
+	// SemanticTool#getReachability)
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean reachable(
 			SemanticTool<A, D> tool,
 			AnalyzedCFG<A> result,
@@ -193,31 +182,11 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 		Statement root = root(result, thrower);
 		if (root == null)
 			return false;
-		for (Expression sub : subExpressions(root)) {
-			AnalysisState<A> state = stateAfter(tool, result, sub);
-			if (state.getExecutionState().isBottom())
-				continue;
-			try {
-				ReachLattice reach = state.getExecutionState().getLatticeInstance(ReachLattice.class);
-				return reach != null && reach.lattice == ReachabilityStatus.REACHABLE;
-			} catch (SemanticException e) {
-				throw new IllegalStateException("Unable to retrieve the reachability of " + root, e);
-			}
+		try {
+			return tool.getReachability(result, root) == ReachabilityStatus.REACHABLE;
+		} catch (SemanticException e) {
+			throw new IllegalStateException("Unable to retrieve the reachability of " + root, e);
 		}
-		return false;
-	}
-
-	// the sub-expressions of the given statement, also nested ones
-	private static List<Expression> subExpressions(
-			Statement st) {
-		List<Expression> result = new ArrayList<>();
-		Expression[] subs = st instanceof NaryStatement ? ((NaryStatement) st).getSubExpressions()
-				: st instanceof NaryExpression ? ((NaryExpression) st).getSubExpressions() : new Expression[0];
-		for (Expression sub : subs) {
-			result.add(sub);
-			result.addAll(subExpressions(sub));
-		}
-		return result;
 	}
 
 	// whether every execution reaching the statement of the cfg containing the

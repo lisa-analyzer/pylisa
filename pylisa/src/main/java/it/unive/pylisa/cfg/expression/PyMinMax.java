@@ -99,26 +99,29 @@ public class PyMinMax extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		if (positional == 0 || (hasDefault && positional > 1))
 			// e.g. min(), or min(a, b, default=c)
-			return raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR);
-		return combinations(analysis, state, params, new SymbolicExpression[params.length], 0);
+			return raising.moveFrom(raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR));
+		return raising.moveFrom(
+				combinations(analysis, raising, state, params, new SymbolicExpression[params.length], 0));
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> combinations(
 			Analysis<A, D> analysis,
+			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
 			SymbolicExpression[] args,
 			int pos)
 			throws SemanticException {
 		if (pos == params.length)
-			return positional == 1 ? ofIterable(analysis, state, args[0], hasDefault ? args[1] : null)
-					: ofValues(analysis, state, List.of(args), true);
+			return positional == 1 ? ofIterable(analysis, raising, state, args[0], hasDefault ? args[1] : null)
+					: ofValues(analysis, raising, state, List.of(args), true);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression e : params[pos]) {
 			args[pos] = e;
-			result = result.lub(combinations(analysis, state, params, args, pos + 1));
+			result = result.lub(combinations(analysis, raising, state, params, args, pos + 1));
 		}
 		return result;
 	}
@@ -128,32 +131,34 @@ public class PyMinMax extends NaryExpression {
 	// is any of the elements
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> ofIterable(
 			Analysis<A, D> analysis,
+			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			SymbolicExpression iterable,
 			SymbolicExpression dflt)
 			throws SemanticException {
 		List<SymbolicExpression> elements = ListModel.exactElements(analysis, state, iterable, this);
 		if (elements == null)
-			return any(analysis, state, iterable, dflt);
+			return any(analysis, raising, state, iterable, dflt);
 		if (elements.isEmpty())
-			return empty(analysis, state, dflt);
-		return ofValues(analysis, state, elements, true);
+			return empty(analysis, raising, state, dflt);
+		return ofValues(analysis, raising, state, elements, true);
 	}
 
 	// min(iterable): any of the elements, that might be empty
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> any(
 			Analysis<A, D> analysis,
+			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			SymbolicExpression iterable,
 			SymbolicExpression dflt)
 			throws SemanticException {
 		AnalysisState<A> elements = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, this,
-				getMetaVariables());
+				getMetaVariables(), raising);
 		// e.g. the TypeError raised by iterating an int
 		AnalysisState<A> result = elements.bottomExecution();
 		if (!elements.getExecutionExpressions().isEmpty())
-			result = result.lub(ofValues(analysis, elements, list(elements.getExecutionExpressions()), false));
-		return result.lub(empty(analysis, state, dflt));
+			result = result.lub(ofValues(analysis, raising, elements, list(elements.getExecutionExpressions()), false));
+		return result.lub(empty(analysis, raising, state, dflt));
 	}
 
 	private static List<SymbolicExpression> list(
@@ -167,12 +172,13 @@ public class PyMinMax extends NaryExpression {
 	// the result of an empty iterable
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> empty(
 			Analysis<A, D> analysis,
+			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			SymbolicExpression dflt)
 			throws SemanticException {
 		if (dflt != null)
 			return analysis.smallStepSemantics(state, dflt, this);
-		return raise(analysis, state, LibrarySpecificationProvider.VALUE_ERROR);
+		return raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
 	}
 
 	/**
@@ -183,6 +189,7 @@ public class PyMinMax extends NaryExpression {
 	 */
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> ofValues(
 			Analysis<A, D> analysis,
+			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			List<SymbolicExpression> values,
 			boolean exact)
@@ -209,7 +216,7 @@ public class PyMinMax extends NaryExpression {
 			mightError = comparable(all, all) != Satisfiability.SATISFIED;
 		}
 		if (error)
-			return raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR);
+			return raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 
 		AnalysisState<A> result = state.bottomExecution();
 		for (int c = 0; c < values.size(); c++) {
@@ -227,7 +234,7 @@ public class PyMinMax extends NaryExpression {
 				result = result.lub(analysis.smallStepSemantics(state, values.get(c), this));
 		}
 		if (mightError)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+			result = result.lub(raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR));
 		return result;
 	}
 
@@ -290,11 +297,14 @@ public class PyMinMax extends NaryExpression {
 		return UNKNOWN;
 	}
 
+	// raises the exception in the executions of the given state, that are
+	// moved to the error channel by raising: the result has no normal execution
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> raise(
-			Analysis<A, D> analysis,
+			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			String exception)
 			throws SemanticException {
-		return PyExceptions.raise(analysis, state, getCFG(), getLocation(), this, exception);
+		raising.raise(state, getCFG(), getLocation(), this, exception);
+		return state.bottomExecution();
 	}
 }

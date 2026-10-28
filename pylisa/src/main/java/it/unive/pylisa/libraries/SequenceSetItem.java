@@ -82,6 +82,7 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
 		AnalysisState<A> result = state.bottomExecution();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		for (SymbolicExpression self : params[0]) {
 			Set<Type> rts = analysis.getRuntimeTypesOf(state, self, this);
 			for (Type t : rts) {
@@ -90,8 +91,7 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 				Type inner = t.asPointerType().getInnerType();
 
 				if (inner.canBeAssignedTo(tupleType)) {
-					result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, st,
-							LibrarySpecificationProvider.TYPE_ERROR));
+					raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
 					continue;
 				}
 
@@ -103,8 +103,8 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 						for (SymbolicExpression value : params[2])
 							result = result.lub(slice
 									? ListModel.assignSlice(analysis, state, self, index, value, st,
-											getMetaVariables())
-									: ListModel.write(analysis, state, self, index, value, st));
+											getMetaVariables(), raising)
+									: ListModel.write(analysis, state, self, index, value, st, raising));
 					}
 					continue;
 				}
@@ -113,7 +113,7 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 					// the entries of the dictionary
 					for (SymbolicExpression key : params[1])
 						for (SymbolicExpression value : params[2])
-							result = result.lub(DictModel.write(analysis, state, self, key, value, st));
+							result = result.lub(DictModel.write(analysis, state, self, key, value, st, raising));
 					continue;
 				}
 
@@ -128,6 +128,6 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 			}
 		}
 
-		return result;
+		return raising.moveFrom(result);
 	}
 }

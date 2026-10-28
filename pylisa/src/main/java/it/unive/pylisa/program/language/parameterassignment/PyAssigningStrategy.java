@@ -151,14 +151,13 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		// arguments
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Set<Type>[] actualTypes = call.parameterTypes(expressions, analysis);
-		Starred starred = starred(analysis, callState, call, formals, actuals, parameters, actualTypes);
+		Starred<A, D> starred = starred(analysis, callState, call, formals, actuals, parameters, actualTypes);
 		actuals = starred.actuals();
 		parameters = starred.given();
 		actualTypes = starred.types();
-		callState = callState.lub(starred.errors());
+		callState = starred.raising().moveFrom(callState.lub(starred.errors()));
 
 		VarArgs[] varargs = new VarArgs[1];
-		@SuppressWarnings("unchecked")
 		KwArgs[] kwargs = new KwArgs[1];
 		boolean matches = pythonLogic(
 				formals,
@@ -256,16 +255,19 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 	 * @param unknown the elements of the starred argument of unknown length,
 	 *                    that are passed to {@code *args} (if any), or
 	 *                    {@code null}
-	 * @param errors  the errors raised by passing the starred arguments (e.g.
+	 * @param errors  the errors already raised by passing the starred arguments
+	 * @param raising the errors raised by passing the starred arguments (e.g.
 	 *                    {@code TypeError} if they are not iterable, or if
-	 *                    their length might not match the parameters)
+	 *                    their length might not match the parameters), not
+	 *                    moved yet
 	 */
-	private record Starred<A extends AbstractLattice<A>>(
+	private record Starred<A extends AbstractLattice<A>, D extends AbstractDomain<A>>(
 			Expression[] actuals,
 			ExpressionSet[] given,
 			Set<Type>[] types,
 			ExpressionSet unknown,
-			AnalysisState<A> errors) {
+			AnalysisState<A> errors,
+			PyExceptions.Raising<A, D> raising) {
 	}
 
 	/**
@@ -276,8 +278,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 	 * and the others are collected by {@code *args}; {@code TypeError} might be
 	 * raised, as its length might not match them.
 	 */
-	@SuppressWarnings("unchecked")
-	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Starred<A> starred(
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Starred<A, D> starred(
 			Analysis<A, D> analysis,
 			AnalysisState<A> state,
 			Call call,
@@ -287,8 +288,9 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			Set<Type>[] types)
 			throws SemanticException {
 		AnalysisState<A> errors = state.bottomExecution();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		if (Arrays.stream(actuals).noneMatch(StarExpression.class::isInstance))
-			return new Starred<>(actuals, given, types, null, errors);
+			return new Starred<>(actuals, given, types, null, errors, raising);
 
 		List<Expression> acts = new ArrayList<>();
 		List<ExpressionSet> values = new ArrayList<>();
@@ -319,8 +321,8 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 							"starred arguments of unknown length are supported only as the last positional ones");
 			AnalysisState<A> iterated = state.bottomExecution();
 			for (SymbolicExpression value : given[i])
-				iterated = iterated
-						.lub(Iteration.elements(analysis, state, iterable, value, call, call.getMetaVariables()));
+				iterated = iterated.lub(Iteration.elements(analysis, state, iterable, value, call,
+						call.getMetaVariables(), raising));
 			errors = errors.lub(iterated.bottomExecution());
 			unknown = iterated.getExecutionExpressions();
 			unknownIterable = iterable;
@@ -346,13 +348,12 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			}
 			if (filled > 0 || !varargs)
 				// the length might not match the parameters
-				errors = errors.lub(PyExceptions.raise(analysis, state, call.getCFG(), call.getLocation(), call,
-						LibrarySpecificationProvider.TYPE_ERROR));
+				raising.raise(state, call.getCFG(), call.getLocation(), call, LibrarySpecificationProvider.TYPE_ERROR);
 			if (!varargs)
 				unknown = null;
 		}
 		return new Starred<>(acts.toArray(Expression[]::new), values.toArray(ExpressionSet[]::new),
-				valueTypes.toArray(Set[]::new), unknown, errors);
+				valueTypes.toArray(Set[]::new), unknown, errors, raising);
 	}
 
 	// the elements of the list or tuple, if its length is known
