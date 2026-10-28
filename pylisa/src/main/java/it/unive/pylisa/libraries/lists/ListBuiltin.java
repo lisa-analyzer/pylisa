@@ -25,9 +25,6 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
-import it.unive.pylisa.libraries.RangeBuiltin;
-import it.unive.pylisa.libraries.dicts.DictModel;
-import it.unive.pylisa.libraries.dicts.DictViews;
 
 /**
  * Native implementation of {@code list([iterable])}: {@code list()} is a new
@@ -35,8 +32,7 @@ import it.unive.pylisa.libraries.dicts.DictViews;
  * {@code iterable} at unknown indices (see {@link ListCreation#UNKNOWN_INDEX}):
  * any of them (see {@link Iteration#elements}), if {@code iterable} is surely
  * iterable, unknown values otherwise. {@code TypeError} is raised if
- * {@code iterable} might not be iterable (only lists, {@code str},
- * {@code bytes}, ranges, dictionaries and their views are known to be), e.g.
+ * {@code iterable} might not be iterable (see {@link Iteration#iterable}), e.g.
  * for an explicit {@code None}. The name {@code list} is also the type of
  * lists, e.g. in {@code _sv_verifier.check_type(x, list)}.
  */
@@ -77,8 +73,7 @@ public class ListBuiltin extends PyNative {
 				empty = true;
 			else {
 				copy = true;
-				iterable = iterable.lub(hasType(analysis, state, arg, ListOperations.LIST.or(STR).or(BYTES)
-						.or(RangeBuiltin::isRange).or(DictModel::isDict).or(DictViews::isView)));
+				iterable = iterable.lub(Iteration.iterable(analysis, state, arg, st));
 			}
 
 		if (empty)
@@ -91,8 +86,8 @@ public class ListBuiltin extends PyNative {
 			// in the state where the list has been created, as they might be
 			// new objects, e.g. the tuples of d.items())
 			AnalysisState<A> elements = iterable == Satisfiability.SATISFIED && params[0].elements().size() == 1
-					? Iteration.elements(analysis, created, getSubExpressions()[0], params[0].iterator().next(), st,
-							getMetaVariables(), raising)
+					? Iteration.elements(interprocedural, created, getSubExpressions()[0], params[0].iterator().next(),
+							st, getMetaVariables(), raising)
 					: analysis.smallStepSemantics(created, new PushAny(Untyped.INSTANCE, loc), st);
 			for (SymbolicExpression list : created.getExecutionExpressions()) {
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),

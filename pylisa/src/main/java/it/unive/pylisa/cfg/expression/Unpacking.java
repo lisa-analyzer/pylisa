@@ -17,6 +17,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
@@ -25,9 +26,11 @@ import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.MapBuiltin;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -163,6 +166,27 @@ public final class Unpacking {
 						valueError = true;
 					else
 						result = result.lub(exact(interprocedural, state, deref, n, targets, star, pp, assigner));
+				} else if (MapBuiltin.isMap(t)) {
+					// the map object might have been iterated already, or have
+					// another number of elements
+					valueError = true;
+					Set<Identifier> metas = new HashSet<>();
+					MapBuiltin.Positional<A> positional = MapBuiltin.positional(interprocedural, state, value, pp,
+							metas);
+					AnalysisState<A> unpacked;
+					if (positional != null && star < 0 && positional.values().size() == targets.length) {
+						// the results of the calls, in order
+						unpacked = positional.state();
+						for (int i = 0; i < targets.length; i++) {
+							AnalysisState<A> next = unpacked.bottomExecution();
+							for (SymbolicExpression element : positional.values().get(i))
+								next = next.lub(assigner.assign(unpacked, targets[i], element));
+							unpacked = next;
+						}
+					} else
+						unpacked = any(interprocedural, state, MapBuiltin.elements(interprocedural, state, value, pp,
+								metas), targets, star, pp, assigner);
+					result = result.lub(unpacked.forgetIdentifiers(metas, pp));
 				} else if (DictModel.isDict(t)) {
 					valueError = true;
 					result = result.lub(any(interprocedural, state, DictModel.keys(analysis, state, value, pp),
@@ -193,7 +217,8 @@ public final class Unpacking {
 	}
 
 	/**
-	 * Whether the values of the given type are tuples.
+	 * Whether the values of the given type are tuples (also the ones created by
+	 * the classes of {@code collections.namedtuple}).
 	 *
 	 * @param t the type
 	 *
@@ -201,9 +226,10 @@ public final class Unpacking {
 	 */
 	public static boolean isTuple(
 			Type t) {
-		return t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
-				&& t.asPointerType().getInnerType().asUnitType().getUnit().getName()
-						.equals(LibrarySpecificationProvider.TUPLE);
+		if (!t.isPointerType() || !t.asPointerType().getInnerType().isUnitType())
+			return false;
+		String name = t.asPointerType().getInnerType().asUnitType().getUnit().getName();
+		return name.equals(LibrarySpecificationProvider.TUPLE) || name.equals(LibrarySpecificationProvider.NAMED_TUPLE);
 	}
 
 	// the elements of a sequence of known length n, matching the targets

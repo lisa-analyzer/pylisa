@@ -17,6 +17,7 @@ import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.scoping.NameKind;
 
@@ -140,6 +141,7 @@ public final class Cells {
 			throws SemanticException {
 		MemoryAllocation alloc = new MemoryAllocation(type, location, false);
 		HeapReference ref = new HeapReference(new ReferenceType(type), alloc, location);
-		return analysis.assign(state, new Variable(Untyped.INSTANCE, variable, location), ref, pp);
+		return analysis.assign(Allocations.allocate(analysis, state, alloc, pp),
+				new Variable(Untyped.INSTANCE, variable, location), ref, pp);
 	}
 }

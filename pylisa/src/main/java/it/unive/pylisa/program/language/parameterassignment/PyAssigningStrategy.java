@@ -233,7 +233,15 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		}
 
 		// we remove expressions from the stack
-		prepared = prepared.forgetIdentifiers(metas, call).withExecutionExpressions(new ExpressionSet());
+		if (assignFormals)
+			prepared = prepared.forgetIdentifiers(metas, call);
+		else
+			// natives receive the list of *args and the dictionary of
+			// **kwargs themselves, as they have no parameters to assign: these
+			// are forgotten with the meta variables of the call, once its
+			// result is used
+			call.getMetaVariables().addAll(metas);
+		prepared = prepared.withExecutionExpressions(new ExpressionSet());
 		return Pair.of(prepared, slots);
 	}
 

@@ -2,6 +2,7 @@ package it.unive.pylisa.cfg.expression;
 
 import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
+import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
@@ -17,11 +18,16 @@ import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.CodeMemberType;
+import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.PyClassParser;
 import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.PyMro;
+import it.unive.pylisa.cfg.expression.PyClassAttributes.ClassAttribute;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -30,9 +36,16 @@ import java.util.Set;
  * value (and not called, see {@link PyClassFunctionCall}): if the first class
  * in the method resolution order of {@code C} defining {@code name} (see
  * {@link PyMro#definer}) defines it as a method, its value is the function
- * (e.g. {@code f = C.m}, then {@code f(o)}). Otherwise, it is the read of an
- * attribute of a namespace, as for the other attributes of classes (see
- * {@link PyClassAttributes}).
+ * (e.g. {@code f = C.m}, then {@code f(o)}). Otherwise, its value is the one
+ * assigned in the body of that class, if it is a known constant (see
+ * {@link PyClassAttributes#attribute}), and unknown if it is not, or if that
+ * class is a library one. If no class in the order defines {@code name}, its
+ * value is unknown: for {@code mro} and the names of special attributes (e.g.
+ * {@code __name__}, {@code __mro__}), that all classes have, and otherwise also
+ * {@code AttributeError} might be raised (the attribute might be assigned
+ * through the class, as in {@code C.name = v}, or defined by its metaclass). As
+ * the target of an assignment ({@code C.name = v}), it is an attribute of a
+ * namespace, whose assignment is not tracked (see {@link PyClassAttributes}).
  */
 public class PyClassMember extends UnresolvedCall {
 
@@ -68,12 +81,56 @@ public class PyClassMember extends UnresolvedCall {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		Set<CodeMember> functions = isWriteTarget() ? Set.of() : functions();
-		if (functions.isEmpty())
+		if (isWriteTarget())
+			// C.name = v: the attributes assigned through classes are not
+			// tracked (see PyClassAttributes)
 			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
+		Set<CodeMember> functions = functions();
+		if (functions.isEmpty())
+			return attribute(interprocedural, state);
 		CodeMember function = functions.iterator().next();
 		return interprocedural.getAnalysis().smallStepSemantics(state,
 				new Constant(new CodeMemberType(functions), function, getLocation()), this);
+	}
+
+	// the value of the attribute, when it is not a method (see the
+	// documentation of this class)
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> attribute(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		CodeLocation loc = getLocation();
+		AnalysisState<A> unknown = analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this);
+		Unit unit = getProgram().getUnit(cls);
+		if (!ClassBases.isProgramClass(unit))
+			return unknown;
+		CompilationUnit definer = PyMro.definer((ClassUnit) unit, name, null);
+		if (definer == null) {
+			if (name.equals("mro") || (name.startsWith("__") && name.endsWith("__")))
+				// an attribute that all classes have (e.g. __name__, __mro__),
+				// or that object defines (e.g. __init__)
+				return unknown;
+			// the attribute might be assigned through the class (C.name = v),
+			// or defined by its metaclass
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			raising.raise(state, getCFG(), loc, this, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+			return raising.moveFrom(unknown);
+		}
+		ClassAttribute attribute = ClassBases.isProgramClass(definer)
+				? PyClassAttributes.attribute((ClassUnit) unit, name)
+				: null;
+		if (attribute == null || attribute.value() == null)
+			// defined by a library class, or whose value is not known
+			return unknown;
+		// the body of the class is not executed: its constant value is
+		// computed here
+		Expression value = attribute.value();
+		AnalysisState<A> result = value.forwardSemantics(state, interprocedural, new StatementStore<>(state));
+		// e.g. the return value of the call computing -1: they are forgotten
+		// by the statement using this attribute
+		getMetaVariables().addAll(value.getMetaVariables());
+		return result;
 	}
 
 	// the functions of the method name of the class, if it is one

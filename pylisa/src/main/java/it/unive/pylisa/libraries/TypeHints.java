@@ -9,23 +9,28 @@ import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
+import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyTypeTokenType;
+import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
+import it.unive.pylisa.libraries.sets.SetModel;
 import java.util.Set;
 import java.util.function.Predicate;
 
 /**
  * The type hints of {@code isinstance(value, hint)} and
  * {@code _sv_verifier.check_type(value, hint)}, given by the runtime type of
- * {@code hint}. The supported hints are {@code int} (also satisfied by a
- * {@code bool}), {@code float}, {@code str}, {@code bytes}, {@code list},
- * {@code range} and {@code None}, the classes of the program (also satisfied by
- * the objects of their subclasses; both outcomes are possible for an object of
- * a class whose bases are not known) and their unions (e.g. {@code int | None},
- * see {@code PyBitwiseOr}). A builtin function that is not a type (e.g.
- * {@code len}) is never satisfied. For any other hint (e.g. {@code list[int]}),
- * both outcomes are possible.
+ * {@code hint}. The supported hints are {@code object} (satisfied by all the
+ * values), {@code type} (satisfied by the classes), {@code bool}, {@code int}
+ * (also satisfied by a {@code bool}), {@code float}, {@code str},
+ * {@code bytes}, {@code list}, {@code tuple}, {@code set}, {@code dict},
+ * {@code range}, {@code None} and {@code type(None)}, the classes of the
+ * program (also satisfied by the objects of their subclasses; both outcomes are
+ * possible for an object of a class whose bases are not known) and their unions
+ * (e.g. {@code int | None}, see {@code PyBitwiseOr}). A builtin function that
+ * is not a type (e.g. {@code len}) is never satisfied. For any other hint (e.g.
+ * {@code list[int]}), both outcomes are possible.
  */
 public final class TypeHints {
 
@@ -33,6 +38,10 @@ public final class TypeHints {
 	private static final Set<
 			String> FUNCTIONS = Set.of("print", "len", "input", "repr", "exec", "eval", "compile", "sum",
 					"all", "any", "isinstance");
+
+	// the builtin functions that are classes
+	private static final Set<String> TYPES = Set.of("object", "type", "bool", "int", "float", "str", "bytes", "list",
+			"tuple", "set", "dict", "range", "zip", "enumerate", "map", "super");
 
 	// the hint of a function that is not a type
 	private static final Predicate<Type> NOT_A_TYPE = t -> false;
@@ -54,6 +63,10 @@ public final class TypeHints {
 			Type hint) {
 		if (t.isUntyped())
 			return Satisfiability.UNKNOWN;
+		if (hint instanceof PyClassType && ((PyClassType) hint).getUnit().getName()
+				.equals(LibrarySpecificationProvider.NONE_TYPE))
+			// the class of None (e.g. type(None))
+			return t.isNullType() ? Satisfiability.SATISFIED : Satisfiability.NOT_SATISFIED;
 		if (hint instanceof PyClassType)
 			// a member of a union
 			return instanceOf(t, ((PyClassType) hint).getUnit());
@@ -108,6 +121,14 @@ public final class TypeHints {
 		if (builtin == null)
 			return null;
 		switch (builtin) {
+		case "object":
+			return t -> true;
+		case "type":
+			// the classes: the ones of the program and of the libraries, and
+			// the builtin functions that are classes
+			return t -> t.isTypeTokenType() || (t.isCodeMemberType() && TYPES.contains(builtin(t)));
+		case "bool":
+			return Type::isBooleanType;
 		case "int":
 			return PyNative.INT;
 		case "float":
@@ -118,6 +139,12 @@ public final class TypeHints {
 			return PyNative.BYTES;
 		case "list":
 			return ListModel::isList;
+		case "dict":
+			return DictModel::isDict;
+		case "tuple":
+			return Unpacking::isTuple;
+		case "set":
+			return SetModel::isSet;
 		case "range":
 			return RangeBuiltin::isRange;
 		default:

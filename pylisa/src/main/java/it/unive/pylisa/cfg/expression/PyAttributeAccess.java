@@ -12,6 +12,7 @@ import it.unive.lisa.lattices.heap.allocations.AllocationSite;
 import it.unive.lisa.lattices.heap.allocations.AllocationSites;
 import it.unive.lisa.lattices.heap.allocations.HeapEnvWithFields;
 import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -30,6 +31,8 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.analysis.heap.PyHeap;
+import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.expression.PyClassAttributes.ClassAttribute;
 import it.unive.pylisa.libraries.BuiltinAttributes;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -179,6 +182,9 @@ public class PyAttributeAccess extends UnaryExpression {
 		if (onlyMethods && !mightBeAssigned(analysis, state, expr))
 			// no instance attribute shadows the method
 			objects.clear();
+		if (isWriteTarget() && objects.removeIf(PyAttributeAccess::noAttributes))
+			// e.g. the attributes of a list cannot be assigned
+			raising.raise(state, getCFG(), loc, thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 		if (!objects.isEmpty()) {
 			Missing missing = isWriteTarget() ? null : missing(analysis, state, expr, objects, false);
 			if (missing == null || missing.assigned()) {
@@ -285,9 +291,33 @@ public class PyAttributeAccess extends UnaryExpression {
 			Set<ClassUnit> classes) {
 	}
 
-	// whether this access is the target of an assignment (also inside a
-	// tuple, as in o.x, y = ...)
-	private boolean isWriteTarget() {
+	// the builtin classes whose objects have no instance attributes, that
+	// cannot be assigned (raising AttributeError)
+	private static final Set<String> WITHOUT_ATTRIBUTES = Set.of(LibrarySpecificationProvider.LIST,
+			LibrarySpecificationProvider.DICT, LibrarySpecificationProvider.TUPLE,
+			LibrarySpecificationProvider.NAMED_TUPLE, LibrarySpecificationProvider.SET,
+			LibrarySpecificationProvider.RANGE, LibrarySpecificationProvider.ZIP,
+			LibrarySpecificationProvider.ENUMERATE, LibrarySpecificationProvider.MAP,
+			LibrarySpecificationProvider.DICT_KEYS, LibrarySpecificationProvider.DICT_VALUES,
+			LibrarySpecificationProvider.DICT_ITEMS, LibrarySpecificationProvider.BOUND_METHOD);
+
+	// whether the objects of the given class have no instance attributes:
+	// the objects of the builtin classes above, and the ones created by
+	// object() (whose class is the root of the hierarchy)
+	private static boolean noAttributes(
+			Type object) {
+		Unit unit = object.asUnitType().getUnit();
+		return unit == LibrarySpecificationProvider.hierarchyRoot
+				|| (!ClassBases.isProgramClass(unit) && WITHOUT_ATTRIBUTES.contains(unit.getName()));
+	}
+
+	/**
+	 * Yields whether this access is the target of an assignment (also inside a
+	 * tuple, as in {@code o.x, y = ...}).
+	 *
+	 * @return whether this access is the target of an assignment
+	 */
+	public boolean isWriteTarget() {
 		Statement child = this;
 		Statement parent = getParentStatement();
 		while (parent instanceof TupleCreation) {
@@ -303,9 +333,11 @@ public class PyAttributeAccess extends UnaryExpression {
 	 * if the attribute is surely assigned on all of them (or this is unknown).
 	 * This is decided only for objects of classes whose attributes are all
 	 * known (that is, classes without bases, where the attribute is not a
-	 * method), relying on the fields the heap tracks for each object. Since the
-	 * heap tracks the fields assigned on some path, an attribute assigned only
-	 * on some paths is considered assigned.
+	 * method), relying on the fields the heap tracks for each object, and on
+	 * whether they are surely initialized (see
+	 * {@link PyHeap#surelyInitialized}): an attribute assigned only on some
+	 * paths, or on the objects of a weak allocation site, might not be
+	 * assigned.
 	 */
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Missing missing(
 			Analysis<A, D> analysis,
@@ -371,10 +403,12 @@ public class PyAttributeAccess extends UnaryExpression {
 				ExpressionSet fields = heap.fields.getState(site);
 				if (fields.isTop())
 					return null;
-				if (fields.elements().stream()
-						.anyMatch(f -> f instanceof Variable && ((Variable) f).getName().equals(name)))
+				boolean has = fields.elements().stream()
+						.anyMatch(f -> f instanceof Variable && ((Variable) f).getName().equals(name));
+				if (has)
 					assigned = true;
-				else {
+				if (!has || !PyHeap.surelyInitialized(heap, site, name)) {
+					// the attribute might not be assigned on the object
 					// the class of the object, if known
 					Type type = site.getStaticType();
 					if (type.isUnitType() && units.contains(type.asUnitType().getUnit()))

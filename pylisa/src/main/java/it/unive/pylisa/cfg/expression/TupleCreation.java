@@ -22,15 +22,16 @@ import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.InstrumentedReceiver;
+import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collection;
-import org.apache.commons.lang3.StringUtils;
 
 public class TupleCreation extends NaryExpression {
 
@@ -68,7 +69,7 @@ public class TupleCreation extends NaryExpression {
 	public String toString() {
 		Expression[] subs = getSubExpressions();
 		if (subs.length == 1)
-			return "(" + StringUtils.join(subs, ", ") + ")";
+			return "(" + subs[0] + ",)";
 		return super.toString();
 	}
 
@@ -80,12 +81,6 @@ public class TupleCreation extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		// a tuple creation is also created when parsing expressions between
-		// parentheses
-		// if we only have one sub-expression, we assume to be in that case
-		if (params.length == 1)
-			return state;
-
 		return create(analysis, state, this, allocation(), params, getMetaVariables());
 	}
 
@@ -118,11 +113,45 @@ public class TupleCreation extends NaryExpression {
 			ExpressionSet[] params,
 			Collection<Identifier> metas)
 			throws SemanticException {
-		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
+		return create(analysis, state, pp, location, PyClassType.lookup(LibrarySpecificationProvider.TUPLE), params,
+				metas);
+	}
+
+	/**
+	 * Creates a tuple with the given elements, as
+	 * {@link #create(Analysis, AnalysisState, Statement, CodeLocation, ExpressionSet[], Collection)},
+	 * whose class is the given one (e.g. the class of the tuples created by the
+	 * classes of {@code collections.namedtuple}).
+	 *
+	 * @param <A>       the kind of the analysis state
+	 * @param <D>       the kind of the abstract domain
+	 * @param analysis  the analysis
+	 * @param state     the state where the elements have been computed
+	 * @param pp        the statement creating the tuple
+	 * @param location  the location of the tuple
+	 * @param tupleType the class of the tuple
+	 * @param params    the elements
+	 * @param metas     where the receiver is added, as it is a meta variable
+	 *                      that the statement using the tuple must forget
+	 *
+	 * @return the state where the tuple has been created
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> create(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			Statement pp,
+			CodeLocation location,
+			Type tupleType,
+			ExpressionSet[] params,
+			Collection<Identifier> metas)
+			throws SemanticException {
 		ReferenceType reftype = new ReferenceType(tupleType);
-		HeapReference ref = new HeapReference(reftype, new MemoryAllocation(tupleType, location), location);
+		MemoryAllocation alloc = new MemoryAllocation(tupleType, location);
+		HeapReference ref = new HeapReference(reftype, alloc, location);
 		InstrumentedReceiver tuple = new InstrumentedReceiver(reftype, false, location);
-		AnalysisState<A> current = analysis.assign(state, tuple, ref, pp);
+		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, alloc, pp), tuple, ref, pp);
 		HeapDereference deref = new HeapDereference(tupleType, tuple, location);
 
 		for (int i = 0; i < params.length; i++) {
@@ -144,5 +173,42 @@ public class TupleCreation extends NaryExpression {
 
 		metas.add(tuple);
 		return analysis.smallStepSemantics(current, tuple, pp);
+	}
+
+	/**
+	 * Makes the length and the elements of the given new tuple (without
+	 * elements) unknown: its length is any {@code int}, and any value might be
+	 * one of its elements, at unknown indices (see
+	 * {@link ListCreation#UNKNOWN_INDEX}), so that its length is not known also
+	 * from its elements (see {@code ListModel#length}).
+	 *
+	 * @param <A>      the kind of the analysis state
+	 * @param <D>      the kind of the abstract domain
+	 * @param analysis the analysis
+	 * @param state    the state where the tuple has been created
+	 * @param tuple    the tuple
+	 * @param pp       the statement creating the tuple
+	 * @param location the location of the tuple
+	 *
+	 * @return the state whose computed expression is the tuple
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unknownLength(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression tuple,
+			Statement pp,
+			CodeLocation location)
+			throws SemanticException {
+		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.TUPLE), tuple,
+				location);
+		AnalysisState<A> result = analysis.assign(state, new AccessChild(Int32Type.INSTANCE, deref,
+				new Variable(Int32Type.INSTANCE, "length", location), location),
+				new PushAny(Int32Type.INSTANCE, location), pp);
+		result = analysis.assign(result, new AccessChild(Untyped.INSTANCE, deref,
+				new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, location), location),
+				new PushAny(Untyped.INSTANCE, location), pp);
+		return result.withExecutionExpression(tuple);
 	}
 }

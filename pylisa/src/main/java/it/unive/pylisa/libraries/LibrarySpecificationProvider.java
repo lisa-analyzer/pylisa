@@ -42,6 +42,10 @@ public class LibrarySpecificationProvider {
 	public static final String TUPLE = "Tuple";
 	public static final String SLICE = "Slice";
 	public static final String RANGE = "Range";
+	public static final String ZIP = "Zip";
+	public static final String ENUMERATE = "Enumerate";
+	public static final String MAP = "Map";
+	public static final String NAMED_TUPLE = "NamedTuple";
 	public static final String BOUND_METHOD = "BoundMethod";
 	public static final String DICT_KEYS = "DictKeys";
 	public static final String DICT_VALUES = "DictValues";
@@ -60,6 +64,7 @@ public class LibrarySpecificationProvider {
 	public static final String ZERO_DIVISION_ERROR = "ZeroDivisionError";
 	public static final String OVERFLOW_ERROR = "OverflowError";
 	public static final String VALUE_ERROR = "ValueError";
+	public static final String STOP_ITERATION = "StopIteration";
 	public static final String ATTRIBUTE_ERROR = "AttributeError";
 	public static final String LOOKUP_ERROR = "LookupError";
 	public static final String KEY_ERROR = "KeyError";

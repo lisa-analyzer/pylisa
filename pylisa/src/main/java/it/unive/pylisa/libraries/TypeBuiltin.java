@@ -15,10 +15,14 @@ import it.unive.lisa.type.CodeMemberType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.PyNameRef;
+import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyTypeTokenType;
+import it.unive.pylisa.libraries.collections.NamedTuples;
+import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
+import it.unive.pylisa.libraries.sets.SetModel;
 import java.util.Collections;
 import java.util.Set;
 
@@ -27,10 +31,12 @@ import java.util.Set;
  * {@code obj}, that is the same value as the name of the class (so that, e.g.,
  * {@code type(x) is int} and {@code type(x) is type(y)} can be decided, see
  * {@code PyBinaryDispatch#identical}). This is the builtin function
- * {@code int}, {@code float}, {@code str}, {@code bytes}, {@code list} or
- * {@code range} for their values (see {@code PyNameRef}), and the class of an
- * object (see {@code PyTypeLiteral}). The class of any other value (e.g. a
- * {@code bool} or {@code None}, whose classes are not modeled) is unknown.
+ * {@code bool}, {@code int}, {@code float}, {@code str}, {@code bytes},
+ * {@code list}, {@code tuple}, {@code set}, {@code dict}, {@code range},
+ * {@code zip}, {@code enumerate}, {@code map} or {@code object} for their
+ * values (see {@code PyNameRef}), the class {@code NoneType} for {@code None},
+ * and the class of an object (see {@code PyTypeLiteral}). The class of any
+ * other value is unknown.
  */
 public class TypeBuiltin extends PyNative {
 
@@ -71,7 +77,9 @@ public class TypeBuiltin extends PyNative {
 			Type t) {
 		CodeLocation loc = getLocation();
 		String builtin = null;
-		if (t.isNumericType())
+		if (t.isBooleanType())
+			builtin = "bool";
+		else if (t.isNumericType())
 			builtin = t.asNumericType().isIntegral() ? "int" : "float";
 		else if (t.isStringType())
 			builtin = "str";
@@ -79,11 +87,33 @@ public class TypeBuiltin extends PyNative {
 			builtin = "bytes";
 		else if (ListModel.isList(t))
 			builtin = "list";
+		else if (NamedTuples.isNamedTuple(t))
+			// the class created by collections.namedtuple, not known here
+			return null;
+		else if (Unpacking.isTuple(t))
+			builtin = "tuple";
+		else if (SetModel.isSet(t))
+			builtin = "set";
+		else if (DictModel.isDict(t))
+			builtin = "dict";
 		else if (RangeBuiltin.isRange(t))
 			builtin = "range";
+		else if (ZipBuiltin.isZip(t))
+			builtin = "zip";
+		else if (EnumerateBuiltin.isEnumerate(t))
+			builtin = "enumerate";
+		else if (MapBuiltin.isMap(t))
+			builtin = "map";
+		else if (ObjectBuiltin.isObject(t))
+			builtin = "object";
 		if (builtin != null) {
 			NativeCFG function = PyNameRef.builtin(getCFG().getProgram(), builtin);
 			return new Constant(new CodeMemberType(Collections.singleton(function)), function, loc);
+		}
+		if (t.isNullType()) {
+			// the class of None
+			PyClassType none = PyClassType.lookup(LibrarySpecificationProvider.NONE_TYPE);
+			return new Constant(new PyTypeTokenType(Collections.singleton(none)), none.getUnit(), loc);
 		}
 
 		Type inner = t.isPointerType() ? t.asPointerType().getInnerType() : null;

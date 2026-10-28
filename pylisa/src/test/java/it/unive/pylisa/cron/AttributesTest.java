@@ -12,6 +12,11 @@ public class AttributesTest extends AnalysisTestExecutor {
 		CronConfiguration conf = TestHelper.constantPropagationConfig();
 		conf.testDir = "attributes";
 		conf.programFile = "attributes.py";
+		// Reachability keeps the reachability of a guard from the first time
+		// it is reached: the optimized fixpoint, reaching the guard of the
+		// loop in a different order, finds its body possibly reachable rather
+		// than reachable
+		conf.compareWithOptimization = false;
 		perform(conf);
 	}
 }

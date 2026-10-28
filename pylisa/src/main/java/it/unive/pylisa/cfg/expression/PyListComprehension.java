@@ -337,8 +337,8 @@ public class PyListComprehension extends NaryExpression {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		for (SymbolicExpression iterable : state.getExecutionExpressions()) {
 			Set<Identifier> metas = new HashSet<>();
-			AnalysisState<A> elements = Iteration.elements(analysis, state, clause.iterable(), iterable, this, metas,
-					raising);
+			AnalysisState<A> elements = Iteration.elements(interprocedural, state, clause.iterable(), iterable, this,
+					metas, raising);
 			for (SymbolicExpression elem : elements.getExecutionExpressions()) {
 				AnalysisState<A> assigned = bind(interprocedural, elements, clause.target(), elem, raising);
 				// the values of the variables shared with the lambdas are also

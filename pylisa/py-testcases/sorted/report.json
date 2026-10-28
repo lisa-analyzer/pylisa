@@ -1,0 +1,46 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/sorted/sorted.py':14:10] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted/sorted.py':14:10"
+  }, {
+    "message" : "['py-testcases/sorted/sorted.py':17:10] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted/sorted.py':17:10"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_sorted_sorted.$lambda@20_23(untyped_v)_1741071458.graph.json", "untyped_py-testcases_sorted_sorted.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "3",
+    "duration" : "6ms",
+    "end" : "2026-10-28T11:41:18.672+01:00",
+    "expressions" : "65",
+    "files" : "2",
+    "globals" : "0",
+    "members" : "194",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-28T11:41:18.666+01:00",
+    "statements" : "27",
+    "units" : "44",
+    "version" : "1.0",
+    "warnings" : "2"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/sorted"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/itertools/itertools-functions.py':32:4] on 'untyped py-testcases/itertools/itertools-functions::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/itertools/itertools-functions.py':32:4"
+  }, {
+    "message" : "['py-testcases/itertools/itertools-functions.py':35:4] on 'untyped py-testcases/itertools/itertools-functions::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/itertools/itertools-functions.py':35:4"
+  }, {
+    "message" : "['py-testcases/itertools/itertools-functions.py':38:4] on 'untyped py-testcases/itertools/itertools-functions::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/itertools/itertools-functions.py':38:4"
+  }, {
+    "message" : "['py-testcases/itertools/itertools-functions.py':41:4#key] on 'untyped py-testcases/itertools/itertools-functions::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/itertools/itertools-functions.py':41:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_itertools_itertools-functions.$lambda@22_56(untyped_d)_-1847441054.graph.json", "untyped_py-testcases_itertools_itertools-functions.$lambda@41_52(untyped_d)_-1847303631.graph.json", "untyped_py-testcases_itertools_itertools-functions.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "4",
+    "duration" : "73ms",
+    "end" : "2026-10-28T13:59:38.405+01:00",
+    "expressions" : "222",
+    "files" : "3",
+    "globals" : "0",
+    "members" : "204",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-28T13:59:38.332+01:00",
+    "statements" : "74",
+    "units" : "45",
+    "version" : "1.0",
+    "warnings" : "4"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/itertools"
+  }
+}

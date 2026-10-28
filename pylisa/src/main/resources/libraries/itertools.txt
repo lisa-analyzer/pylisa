@@ -1,0 +1,36 @@
+library itertools:
+    location itertools
+    method count: it.unive.pylisa.libraries.itertools.CountBuiltin
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param start type it.unive.lisa.type.Untyped::INSTANCE default missing
+        param step type it.unive.lisa.type.Untyped::INSTANCE default missing
+    method cycle: it.unive.pylisa.libraries.itertools.CycleBuiltin
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param iterable type it.unive.lisa.type.Untyped::INSTANCE
+    method repeat: it.unive.pylisa.libraries.itertools.RepeatBuiltin
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param object type it.unive.lisa.type.Untyped::INSTANCE
+        param times type it.unive.lisa.type.Untyped::INSTANCE default missing
+    method chain: it.unive.pylisa.libraries.itertools.ChainBuiltin
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param *iterables type it.unive.lisa.type.Untyped::INSTANCE
+    method compress: it.unive.pylisa.libraries.itertools.CompressBuiltin
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param data type it.unive.lisa.type.Untyped::INSTANCE
+        param selectors type it.unive.lisa.type.Untyped::INSTANCE
+    method permutations: it.unive.pylisa.libraries.itertools.PermutationsBuiltin
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param iterable type it.unive.lisa.type.Untyped::INSTANCE
+        param r type it.unive.lisa.type.Untyped::INSTANCE default none
+    method combinations: it.unive.pylisa.libraries.itertools.CombinationsBuiltin
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param iterable type it.unive.lisa.type.Untyped::INSTANCE
+        param r type it.unive.lisa.type.Untyped::INSTANCE
+    method product: it.unive.pylisa.libraries.itertools.ProductBuiltin
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param *iterables type it.unive.lisa.type.Untyped::INSTANCE
+        param &repeat type it.unive.lisa.type.Untyped::INSTANCE default missing
+    method groupby: it.unive.pylisa.libraries.itertools.GroupByBuiltin
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param iterable type it.unive.lisa.type.Untyped::INSTANCE
+        param key type it.unive.lisa.type.Untyped::INSTANCE default none

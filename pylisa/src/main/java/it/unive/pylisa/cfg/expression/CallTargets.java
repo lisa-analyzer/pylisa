@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.SourceCodeLocation;
@@ -27,9 +28,13 @@ import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
+import it.unive.pylisa.cfg.type.NamedTupleClassType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyClosureUnit;
 import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.libraries.collections.NamedTuples;
+import it.unive.pylisa.libraries.dicts.DictModel;
+import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -42,8 +47,9 @@ import org.apache.commons.lang3.ArrayUtils;
  * function): the functions and natives it holds, the closures of nested
  * functions (see {@link PyClosureUnit}), the bound methods (see
  * {@link BoundMethods}), the objects whose class defines {@code __call__}, the
- * classes of the program, and whether it might hold values that cannot be
- * called, or whose callability is unknown. This is shared by the calls on names
+ * classes of the program, the classes of {@code collections.namedtuple} (see
+ * {@link NamedTuples}), and whether it might hold values that cannot be called,
+ * or whose callability is unknown. This is shared by the calls on names
  * ({@link PyNameCall}) and on other values ({@link PyValueCall}).
  */
 final class CallTargets {
@@ -66,6 +72,10 @@ final class CallTargets {
 
 	// the classes of the program, whose objects are created by the call
 	private final Map<String, PyClassType> classes = new TreeMap<>();
+
+	// the classes of collections.namedtuple, whose tuples are created by the
+	// call
+	private final Map<String, NamedTupleClassType> namedTuples = new TreeMap<>();
 
 	// whether the callee might be a value that cannot be called
 	private boolean notCallable = false;
@@ -124,6 +134,9 @@ final class CallTargets {
 				else if (isObject(t) && callable(t))
 					// an object whose class defines __call__
 					targets.callableObjects.add(value);
+				else if (t instanceof NamedTupleClassType)
+					// a class of collections.namedtuple: its tuples are created
+					targets.namedTuples.put(t.toString(), (NamedTupleClassType) t);
 				else if (t.isTypeTokenType())
 					// a class: its objects are created
 					for (Type cls : t.asTypeTokenType().getTypes())
@@ -151,13 +164,49 @@ final class CallTargets {
 	}
 
 	/**
+	 * Whether the values of the given types can be called, as classified by
+	 * {@link #of} (where the objects of the classes of the program that do not
+	 * define {@code __call__} cannot be called): functions, natives, closures,
+	 * bound methods, classes and the objects whose class defines
+	 * {@code __call__} can be called, while the values of the builtin classes
+	 * whose methods are all known, lists, dictionaries and tuples cannot.
+	 *
+	 * @param types the runtime types of the values
+	 * @param pp    the statement using the values
+	 *
+	 * @return whether the values can be called
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	static Satisfiability callable(
+			Set<Type> types,
+			Statement pp)
+			throws SemanticException {
+		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, pp))
+			return Satisfiability.UNKNOWN;
+		Satisfiability result = Satisfiability.BOTTOM;
+		for (Type t : types)
+			if (BoundMethods.isBoundMethod(t) || closureFunction(t) != null || t.isTypeTokenType()
+					|| t instanceof NamedTupleClassType
+					|| t.isCodeMemberType() || (isObject(t) && callable(t)))
+				result = result.lub(Satisfiability.SATISFIED);
+			else if ((PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
+					|| (isObject(t) && PyBinaryDispatch.fullyKnown(t))
+					|| ListModel.isList(t) || DictModel.isDict(t) || Unpacking.isTuple(t))
+				result = result.lub(Satisfiability.NOT_SATISFIED);
+			else
+				return Satisfiability.UNKNOWN;
+		return result;
+	}
+
+	/**
 	 * Yields whether the callee might hold functions, natives, or closures.
 	 *
 	 * @return whether something is called
 	 */
 	boolean callsSomething() {
 		return !functions.isEmpty() || !natives.isEmpty() || !closures.isEmpty() || !boundMethods.isEmpty()
-				|| !callableObjects.isEmpty() || !classes.isEmpty();
+				|| !callableObjects.isEmpty() || !classes.isEmpty() || !namedTuples.isEmpty();
 	}
 
 	/**
@@ -255,6 +304,9 @@ final class CallTargets {
 			// callee in the call
 			result = result.lub(BoundMethods.call(interprocedural, closureState, bound, callee, call.getParameters(),
 					args, caller, expressions, metas, raising));
+		for (NamedTupleClassType cls : namedTuples.values())
+			result = result.lub(NamedTuples.create(interprocedural.getAnalysis(), state, cls, call.getParameters(),
+					args, caller, metas));
 		if (!classes.isEmpty() && !(DerivedLocation.source(call.getLocation()) instanceof SourceCodeLocation))
 			// the object cannot be created without a location in the code
 			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state,

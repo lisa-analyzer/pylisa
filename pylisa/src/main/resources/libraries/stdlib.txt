@@ -37,6 +37,22 @@ method isinstance: it.unive.pylisa.libraries.IsInstanceBuiltin
     param obj type it.unive.lisa.type.Untyped::INSTANCE
     param classinfo type it.unive.lisa.type.Untyped::INSTANCE
 
+method bool: it.unive.pylisa.libraries.BoolBuiltin
+    type it.unive.lisa.program.type.BoolType::INSTANCE
+    param x type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+method object: it.unive.pylisa.libraries.ObjectBuiltin
+    type it.unive.lisa.type.Untyped::INSTANCE
+
+method next: it.unive.pylisa.libraries.itertools.NextBuiltin
+    type it.unive.lisa.type.Untyped::INSTANCE
+    param iterator type it.unive.lisa.type.Untyped::INSTANCE
+    param fallback type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+method callable: it.unive.pylisa.libraries.CallableBuiltin
+    type it.unive.lisa.program.type.BoolType::INSTANCE
+    param obj type it.unive.lisa.type.Untyped::INSTANCE
+
 method type: it.unive.pylisa.libraries.TypeBuiltin
     type it.unive.lisa.type.Untyped::INSTANCE
     param obj type it.unive.lisa.type.Untyped::INSTANCE
@@ -60,6 +76,27 @@ method range: it.unive.pylisa.libraries.RangeBuiltin
     param stop type it.unive.lisa.type.Untyped::INSTANCE default missing
     param step type it.unive.lisa.type.Untyped::INSTANCE default missing
 
+method sorted: it.unive.pylisa.libraries.lists.SortedBuiltin
+    type it.unive.lisa.type.Untyped::INSTANCE
+    param iterable type it.unive.lisa.type.Untyped::INSTANCE
+    param &key type it.unive.lisa.type.Untyped::INSTANCE default none
+    param &reverse type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+method enumerate: it.unive.pylisa.libraries.EnumerateBuiltin
+    libtype Enumerate*
+    param iterable type it.unive.lisa.type.Untyped::INSTANCE
+    param start type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+method zip: it.unive.pylisa.libraries.ZipBuiltin
+    libtype Zip*
+    param *iterables type it.unive.lisa.type.Untyped::INSTANCE
+    param &strict type it.unive.lisa.type.Untyped::INSTANCE default false
+
+method map: it.unive.pylisa.libraries.MapBuiltin
+    libtype Map*
+    param function type it.unive.lisa.type.Untyped::INSTANCE
+    param *iterables type it.unive.lisa.type.Untyped::INSTANCE
+
 method bytes: it.unive.pylisa.libraries.conversions.BytesBuiltin
     type it.unive.pylisa.cfg.type.PyBytesType::INSTANCE
     param source type it.unive.lisa.type.Untyped::INSTANCE default missing
@@ -69,6 +106,19 @@ method bytes: it.unive.pylisa.libraries.conversions.BytesBuiltin
 method list: it.unive.pylisa.libraries.lists.ListBuiltin
     type it.unive.lisa.type.Untyped::INSTANCE
     param iterable type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+method set: it.unive.pylisa.libraries.sets.SetBuiltin
+    type it.unive.lisa.type.Untyped::INSTANCE
+    param iterable type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+method tuple: it.unive.pylisa.libraries.TupleBuiltin
+    type it.unive.lisa.type.Untyped::INSTANCE
+    param iterable type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+method dict: it.unive.pylisa.libraries.dicts.DictBuiltin
+    type it.unive.lisa.type.Untyped::INSTANCE
+    param iterable type it.unive.lisa.type.Untyped::INSTANCE default missing
+    param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
 
 method exec: it.unive.pylisa.libraries.dynamic.Exec
     type it.unive.lisa.type.Untyped::INSTANCE
@@ -99,6 +149,21 @@ class Range:
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self libtype Range*
 
+# the class of zip(...), whose objects are iterated as tuples (see ZipBuiltin)
+class Zip
+
+# the class of enumerate(...), whose objects are iterated as tuples (see
+# EnumerateBuiltin)
+class Enumerate
+
+# the class of map(...), whose objects are iterated as the results of the
+# function (see MapBuiltin)
+class Map
+
+# the class of the iterators of itertools, whose elements are computed when they
+# are iterated (see ItertoolsModel)
+class Itertool
+
 # the class of the methods read from objects (see BoundMethods)
 class BoundMethod
 
@@ -126,6 +191,8 @@ class OverflowError extends ArithmeticError
 class FloatingPointError extends ArithmeticError
 
 class ValueError extends Exception
+
+class StopIteration extends Exception
 
 class AttributeError extends Exception
 

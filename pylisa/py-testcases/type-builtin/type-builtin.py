@@ -29,6 +29,7 @@ assert type(x)("5") == 5
 y = "a" if _sv_verifier.nondet_bool() else 4
 assert type(y) is str
 
-# classes not modeled (bool, None): unknown
+# the class of True is bool, and the one of None is NoneType
+# AssertionError: bool is not int
 assert type(True) is int
 assert type(None) is not int

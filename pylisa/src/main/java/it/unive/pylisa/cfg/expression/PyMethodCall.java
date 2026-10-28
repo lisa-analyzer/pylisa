@@ -12,6 +12,7 @@ import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
@@ -23,17 +24,26 @@ import it.unive.lisa.program.cfg.statement.call.NativeCall;
 import it.unive.lisa.program.cfg.statement.call.OpenCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.EvaluationOrder;
+import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.PyMro;
+import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.cfg.type.PyTypeTokenType;
 import it.unive.pylisa.libraries.BuiltinAttributes;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
+import it.unive.pylisa.libraries.sets.SetModel;
+import it.unive.pylisa.symbolic.operators.compare.IsInstance;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -117,6 +127,11 @@ public class PyMethodCall extends UnresolvedCall {
 				// modify the list in any way
 				for (SymbolicExpression receiver : params[0])
 					resolving = ListModel.invalidate(analysis, resolving, receiver, this);
+			if (receiverTypes.stream().anyMatch(SetModel::isSet) && SetModel.unmodeled(getTargetName()))
+				// a method of sets that is not modeled (e.g. update) might
+				// modify the set in any way
+				for (SymbolicExpression receiver : params[0])
+					resolving = SetModel.invalidate(analysis, resolving, receiver, this);
 			if (receiverTypes.stream().anyMatch(DictModel::isDict) && DictModel.unmodeled(getTargetName()))
 				// a method of dictionaries that is not modeled (e.g. pop) might
 				// modify the dictionary in any way
@@ -131,7 +146,7 @@ public class PyMethodCall extends UnresolvedCall {
 				// a method without self)
 				raising.raise(resolving, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 			else
-				result = result.lub(super.forwardSemanticsAux(interprocedural, resolving, params, expressions));
+				result = result.lub(dispatch(interprocedural, resolving, params, expressions));
 		}
 		if (attribute)
 			result = result.lub(callAttribute(interprocedural, state, params, expressions, raising));
@@ -179,6 +194,43 @@ public class PyMethodCall extends UnresolvedCall {
 				&& PyBinaryDispatch.fullyKnown(t)
 				&& !t.asPointerType().getInnerType().asUnitType().getUnit()
 						.getInstanceCodeMembersByName(getTargetName(), true).isEmpty();
+	}
+
+	// calls the methods found by the regular call resolution: a method of a
+	// class K is only called on the instances of K (e.g. in c.f(), where c is
+	// an A or a B, A.f is called on the As and B.f on the Bs, if neither
+	// class is a subclass of the other), as the receiver is a single
+	// variable whose objects are refined as in the branches of
+	// isinstance(receiver, K) (see PyHeap)
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> dispatch(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet[] params,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		Call resolved = resolve(interprocedural, analysis, state, expressions);
+		if (!(resolved instanceof CFGCall) || ((CFGCall) resolved).getTargetedCFGs().size() < 2
+				|| params[0].size() != 1 || !(params[0].iterator().next() instanceof Identifier))
+			return call(resolved, interprocedural, state, params, expressions);
+
+		CodeLocation loc = getLocation();
+		SymbolicExpression receiver = params[0].iterator().next();
+		AnalysisState<A> result = state.bottomExecution();
+		for (CFG target : ((CFGCall) resolved).getTargetedCFGs()) {
+			AnalysisState<A> receiving = state;
+			Unit unit = target.getDescriptor().getUnit();
+			if (target.getDescriptor().isInstance() && unit instanceof ClassUnit) {
+				Constant cls = new Constant(
+						new PyTypeTokenType(Collections.singleton(PyClassType.lookup(unit.getName()))), unit, loc);
+				receiving = analysis.assume(state,
+						new BinaryExpression(BoolType.INSTANCE, receiver, cls, IsInstance.INSTANCE, loc), this, this);
+			}
+			if (!receiving.getExecutionState().isBottom())
+				result = result.lub(call(CallSites.within(new CFGCall(this, Collections.singleton(target)), this),
+						interprocedural, receiving, params, expressions));
+		}
+		return result;
 	}
 
 	// the call resolved by the regular call resolution

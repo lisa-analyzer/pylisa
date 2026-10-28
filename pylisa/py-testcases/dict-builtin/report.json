@@ -1,0 +1,50 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/dict-builtin/dict-builtin.py':26:24] on 'untyped py-testcases/dict-builtin/dict-builtin::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-builtin/dict-builtin.py':26:24"
+  }, {
+    "message" : "['py-testcases/dict-builtin/dict-builtin.py':30:8] on 'untyped py-testcases/dict-builtin/dict-builtin::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/dict-builtin/dict-builtin.py':30:8"
+  }, {
+    "message" : "['py-testcases/dict-builtin/dict-builtin.py':33:4] on 'untyped py-testcases/dict-builtin/dict-builtin::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/dict-builtin/dict-builtin.py':33:4"
+  }, {
+    "message" : "['py-testcases/dict-builtin/dict-builtin.py':9:4] on 'untyped py-testcases/dict-builtin/dict-builtin::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-builtin/dict-builtin.py':9:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_dict-builtin_dict-builtin.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "16ms",
+    "end" : "2026-10-28T11:40:58.003+01:00",
+    "expressions" : "86",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "193",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-28T11:40:57.987+01:00",
+    "statements" : "33",
+    "units" : "44",
+    "version" : "1.0",
+    "warnings" : "4"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/dict-builtin"
+  }
+}

@@ -4,9 +4,13 @@ import it.unive.lisa.analysis.AbstractDomain;
 import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.AnalyzedCFG;
+import it.unive.lisa.analysis.OptimizedAnalyzedCFG;
 import it.unive.lisa.analysis.ProgramState;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.reachability.ReachabilityStatus;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.checks.semantic.SemanticTool;
+import it.unive.lisa.conf.FixpointConfiguration;
 import it.unive.lisa.lattices.GenericSetLattice;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
@@ -39,12 +43,16 @@ import java.util.Set;
  * raised on each statement that might raise one of the exceptions above (e.g.
  * the {@code assert} raising {@code AssertionError}, also inside a function
  * called by the main module): the violation is definite if every execution
- * raises that exception at that statement, possible otherwise. An exception of
- * an ancestor of the classes above (e.g. {@code Exception}, raised by code that
- * is not known, such as the one run by {@code exec}) might be any of their
- * subclasses: it is a possible violation of every property. The warnings start
- * with the category of the violated property, and the possible ones contain
- * {@code might} or {@code possible} (see {@link #message}).
+ * raises that exception at that statement, possible otherwise. With
+ * reachability (see {@link SemanticTool#getReachability}), as in JLiSA, the
+ * violation at a statement of the main module is also definite if the statement
+ * is definitely reachable, and every execution reaching it raises there only
+ * that exception (the exceptions raised before reaching it are not considered).
+ * An exception of an ancestor of the classes above (e.g. {@code Exception},
+ * raised by code that is not known, such as the one run by {@code exec}) might
+ * be any of their subclasses: it is a possible violation of every property. The
+ * warnings start with the category of the violated property, and the possible
+ * ones contain {@code might} or {@code possible} (see {@link #message}).
  */
 public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDomain<A>>
 		implements
@@ -131,7 +139,12 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 					// statement of x = f() raising TypeError on some paths;
 					// 1 + "a", raising it on all the other ones)
 					boolean definite = !terminates && only
-							&& (throwers.size() == 1 || alwaysRaises(result, thrower));
+							&& (throwers.size() == 1 || alwaysRaises(tool, result, thrower));
+					// it is also definite if the statement is definitely
+					// reachable (see Reachability), and every execution
+					// reaching it raises the exception there (as in JLiSA)
+					definite |= matching.contains(thrower) && reachable(tool, result, thrower)
+							&& onlyRaises(tool, result, thrower, cls);
 					String message = message(exception, definite, !matching.contains(thrower),
 							thrower == null ? graph.getDescriptor().getLocation()
 									: DerivedLocation.source(thrower.getLocation()));
@@ -148,16 +161,92 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 	// whether every execution reaching the statement raises an exception
 	// there, that is, the statement of the cfg containing it never completes
 	// normally
-	private static <A extends AbstractLattice<A>> boolean alwaysRaises(
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean alwaysRaises(
+			SemanticTool<A, D> tool,
 			AnalyzedCFG<A> result,
 			Statement thrower) {
-		if (thrower == null)
+		Statement root = root(result, thrower);
+		if (root == null)
 			return false;
-		Statement root = thrower instanceof Expression ? ((Expression) thrower).getRootStatement() : thrower;
-		if (root == null || !result.getNodes().contains(root))
-			return false;
-		AnalysisState<A> after = result.getAnalysisStateAfter(root);
+		AnalysisState<A> after = stateAfter(tool, result, root);
 		return after.getExecutionState().isBottom() && after.getHalt().isBottom();
+	}
+
+	// whether the statement of the cfg containing the given one is definitely
+	// reachable from the entry of the program (see
+	// SemanticTool#getReachability)
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean reachable(
+			SemanticTool<A, D> tool,
+			AnalyzedCFG<A> result,
+			Statement thrower) {
+		Statement root = root(result, thrower);
+		if (root == null)
+			return false;
+		try {
+			return tool.getReachability(result, root) == ReachabilityStatus.REACHABLE;
+		} catch (SemanticException e) {
+			throw new IllegalStateException("Unable to retrieve the reachability of " + root, e);
+		}
+	}
+
+	// whether every execution reaching the statement of the cfg containing the
+	// given one raises an exception there (see alwaysRaises), and all the
+	// exceptions raised there are of the given class
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean onlyRaises(
+			SemanticTool<A, D> tool,
+			AnalyzedCFG<A> result,
+			Statement thrower,
+			PyClassType cls) {
+		if (!alwaysRaises(tool, result, thrower))
+			return false;
+		Statement root = root(result, thrower);
+		AnalysisState<A> after = stateAfter(tool, result, root);
+		if (!after.getErrors().isBottom() && !after.getErrors().isTop() && after.getErrors().function != null)
+			for (Map.Entry<AnalysisState.Error, ProgramState<A>> error : after.getErrors())
+				if (!error.getValue().isBottom() && root(result, error.getKey().getThrower()) == root
+						&& !isInstance(error.getKey().getType(), cls))
+					return false;
+		if (!after.getSmashedErrors().isBottom() && !after.getSmashedErrors().isTop()
+				&& after.getSmashedErrors().function != null)
+			for (Map.Entry<Type, GenericSetLattice<Statement>> error : after.getSmashedErrors())
+				for (Statement st : error.getValue().elements())
+					if (root(result, st) == root && !isInstance(error.getKey(), cls))
+						return false;
+		return true;
+	}
+
+	// the state after the given statement: the results of an optimized
+	// fixpoint do not keep the states of all the statements (e.g. of the
+	// sub-expressions), that are then computed again from the kept ones
+	@SuppressWarnings("unchecked")
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> stateAfter(
+			SemanticTool<A, D> tool,
+			AnalyzedCFG<A> result,
+			Statement st) {
+		if (result instanceof OptimizedAnalyzedCFG)
+			return ((OptimizedAnalyzedCFG<A, D>) result).getUnwindedAnalysisStateAfter(st,
+					new FixpointConfiguration<>(tool.getConfiguration()));
+		return result.getAnalysisStateAfter(st);
+	}
+
+	// the statement of the cfg containing the given one, if the cfg is the
+	// one of the result
+	private static <A extends AbstractLattice<A>> Statement root(
+			AnalyzedCFG<A> result,
+			Statement st) {
+		if (st == null)
+			return null;
+		Statement root = st instanceof Expression ? ((Expression) st).getRootStatement() : st;
+		return root != null && result.getNodes().contains(root) ? root : null;
+	}
+
+	// whether the exceptions of the given type are instances of the given
+	// class
+	private static boolean isInstance(
+			Type type,
+			PyClassType cls) {
+		CompilationUnit unit = classOf(type);
+		return unit != null && unit.isInstanceOf(cls.getUnit());
 	}
 
 	/**

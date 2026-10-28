@@ -30,6 +30,7 @@ import it.unive.lisa.type.CodeMemberType;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.PyMro;
@@ -107,8 +108,9 @@ public final class BoundMethods {
 		Type type = PyClassType.lookup(LibrarySpecificationProvider.BOUND_METHOD);
 		ReferenceType reftype = new ReferenceType(type);
 		InstrumentedReceiver bound = new InstrumentedReceiver(reftype, false, loc);
-		AnalysisState<A> current = analysis.assign(state, bound,
-				new HeapReference(reftype, new MemoryAllocation(type, loc, false), loc), pp);
+		MemoryAllocation alloc = new MemoryAllocation(type, loc, false);
+		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, alloc, pp), bound,
+				new HeapReference(reftype, alloc, loc), pp);
 		HeapDereference deref = new HeapDereference(type, bound, loc);
 		current = analysis.assign(current, child(deref, SELF, loc), self, pp);
 		AnalysisState<A> withFunc = current.bottomExecution();

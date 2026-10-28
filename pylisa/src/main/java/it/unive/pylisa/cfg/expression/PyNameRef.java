@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.ClassUnit;
+import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.Unit;
@@ -31,6 +32,8 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.LocalImports;
 import it.unive.pylisa.analysis.namespaces.Binding;
 import it.unive.pylisa.analysis.namespaces.Namespaces;
+import it.unive.pylisa.cfg.ClassBases;
+import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.expression.literal.PyFunctionLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyTypeLiteral;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
@@ -83,7 +86,9 @@ import org.apache.commons.io.FilenameUtils;
  * <li>a class defined in the module is the class itself;</li>
  * <li>a function defined in the module, by a single {@code def} executed once
  * (see {@link PyBinaryDispatch#DEFINED_ONCE}), is the function itself;</li>
- * <li>a builtin function is the function itself.</li>
+ * <li>a builtin function is the function itself, unless the name is a global of
+ * another module (e.g. {@code f}, after {@code from m import f}), that is bound
+ * by that module.</li>
  * </ol>
  * Otherwise, the name is read as any other global.
  */
@@ -481,6 +486,10 @@ public class PyNameRef extends VariableRef {
 			if (builtin != null)
 				return new PyFunctionLiteral(getCFG(), getLocation(), builtin)
 						.forwardSemantics(entryState, interprocedural, expressions);
+			ClassUnit exception = builtinException(getCFG().getProgram(), getName());
+			if (exception != null)
+				return new PyTypeLiteral(getCFG(), getLocation(), exception)
+						.forwardSemantics(entryState, interprocedural, expressions);
 			if (PyBuiltinNames.isBuiltin(getName()))
 				// a builtin that is not modeled: its value is unknown
 				return super.forwardSemantics(entryState, interprocedural, expressions);
@@ -524,10 +533,31 @@ public class PyNameRef extends VariableRef {
 		CodeMember function = localFunction();
 		if (function != null)
 			return new PyFunctionLiteral(getCFG(), getLocation(), function);
+		String reading = PyCFG.moduleOf(getCFG());
+		if (reading != null && !reading.equals(module))
+			// a name of another module (e.g. f, after from m import f, or m.f)
+			// is bound by that module: it is never a builtin
+			return null;
 		NativeCFG builtin = builtin(getCFG().getProgram(), getName());
 		if (builtin != null)
 			return new PyFunctionLiteral(getCFG(), getLocation(), builtin);
+		ClassUnit exception = builtinException(getCFG().getProgram(), getName());
+		if (exception != null)
+			return new PyTypeLiteral(getCFG(), getLocation(), exception);
 		return null;
+	}
+
+	// the builtin exception class named name (e.g. ValueError, modeled by a
+	// library class with the same name), if any
+	private static ClassUnit builtinException(
+			Program program,
+			String name) {
+		Unit unit = program.getUnit(name);
+		Unit base = program.getUnit(LibrarySpecificationProvider.BASE_EXCEPTION);
+		if (!(unit instanceof ClassUnit) || !(base instanceof CompilationUnit) || ClassBases.isProgramClass(unit))
+			// not a class of a library (e.g. one of the program)
+			return null;
+		return ((ClassUnit) unit).isInstanceOf((CompilationUnit) base) ? (ClassUnit) unit : null;
 	}
 
 	/**

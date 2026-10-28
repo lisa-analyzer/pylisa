@@ -1,0 +1,50 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/namedtuple/namedtuple.py':22:4] on 'untyped py-testcases/namedtuple/namedtuple::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/namedtuple/namedtuple.py':22:4"
+  }, {
+    "message" : "['py-testcases/namedtuple/namedtuple.py':25:4] on 'untyped py-testcases/namedtuple/namedtuple::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/namedtuple/namedtuple.py':25:4"
+  }, {
+    "message" : "['py-testcases/namedtuple/namedtuple.py':28:4] on 'untyped py-testcases/namedtuple/namedtuple::$main()': [EXPRESSION] LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/namedtuple/namedtuple.py':28:4"
+  }, {
+    "message" : "['py-testcases/namedtuple/namedtuple.py':31:4] on 'untyped py-testcases/namedtuple/namedtuple::$main()': [EXPRESSION] TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/namedtuple/namedtuple.py':31:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_namedtuple_namedtuple.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "2",
+    "duration" : "6ms",
+    "end" : "2026-10-28T11:41:09.827+01:00",
+    "expressions" : "62",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "194",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-28T11:41:09.821+01:00",
+    "statements" : "27",
+    "units" : "45",
+    "version" : "1.0",
+    "warnings" : "4"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/namedtuple"
+  }
+}

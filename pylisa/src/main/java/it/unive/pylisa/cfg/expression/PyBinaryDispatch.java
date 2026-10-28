@@ -36,6 +36,7 @@ import it.unive.pylisa.cfg.type.PyTypeTokenType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.dicts.DictModel;
+import it.unive.pylisa.libraries.lists.ListModel;
 import it.unive.pylisa.symbolic.operators.conversions.BoolToInt;
 import java.util.Collections;
 import java.util.HashSet;
@@ -213,7 +214,7 @@ public final class PyBinaryDispatch {
 					res = tryCall(interprocedural, state, expressions, operator, cr, rop,
 							operator.getRight(), operator.getLeft(), rightSet, leftSet, tr, tl);
 				if (res == null)
-					res = operatorsKnown(tl) && operatorsKnown(tr)
+					res = operatorsKnown(tl, iop, op) && operatorsKnown(tr, rop)
 							? fallback(analysis, raising, state, operator, fallback, tl, tr)
 							: analysis.smallStepSemantics(state,
 									new PushAny(Untyped.INSTANCE, operator.getLocation()), operator);
@@ -285,6 +286,50 @@ public final class PyBinaryDispatch {
 	public static boolean operatorsKnown(
 			Type type) {
 		return fullyKnown(type) || DictModel.isDict(type);
+	}
+
+	// the operator methods that neither lists nor tuples define
+	private static final Set<String> NOT_IN_SEQUENCES = Set.of(
+			"__sub__", "__truediv__", "__floordiv__", "__mod__", "__divmod__", "__pow__", "__and__", "__or__",
+			"__xor__", "__lshift__", "__rshift__",
+			"__radd__", "__rsub__", "__rtruediv__", "__rfloordiv__", "__rmod__", "__rdivmod__", "__rpow__",
+			"__rand__", "__ror__", "__rxor__", "__rlshift__", "__rrshift__",
+			"__isub__", "__itruediv__", "__ifloordiv__", "__imod__", "__ipow__", "__iand__", "__ior__",
+			"__ixor__", "__ilshift__", "__irshift__",
+			"__neg__", "__pos__", "__invert__");
+
+	// the operator methods of lists that are modeled (see sequence.txt), whose
+	// declared parameters are the values they accept
+	private static final Set<String> MODELED_IN_LISTS = Set.of("__add__", "__eq__", "__ne__");
+
+	/**
+	 * Whether the operator methods with the given names of the class of the
+	 * given runtime type are known, so that a missing one means that python
+	 * raises {@code TypeError}: this holds for the classes whose operator
+	 * methods are all known (see {@link #operatorsKnown(Type)}), and, for each
+	 * method, for lists and tuples, when it is modeled ({@code +}, {@code ==}
+	 * and {@code !=} of lists) or when they do not define it (e.g.
+	 * {@code __radd__}, so that {@code [1] + (2,)} raises {@code TypeError}).
+	 * The methods they define that are not modeled (e.g. {@code +} of tuples,
+	 * or the comparisons) are not known.
+	 *
+	 * @param type  the runtime type
+	 * @param names the names of the methods ({@code null}s are ignored)
+	 *
+	 * @return whether the methods of its class are known
+	 */
+	public static boolean operatorsKnown(
+			Type type,
+			String... names) {
+		if (operatorsKnown(type))
+			return true;
+		boolean list = ListModel.isList(type);
+		if (!list && !Unpacking.isTuple(type))
+			return false;
+		for (String name : names)
+			if (name != null && !NOT_IN_SEQUENCES.contains(name) && !(list && MODELED_IN_LISTS.contains(name)))
+				return false;
+		return true;
 	}
 
 	// whether values of the given type are compared by identity (functions
@@ -432,7 +477,7 @@ public final class PyBinaryDispatch {
 				result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
 						new ExpressionSet[] { value }, expressions));
 				operator.getMetaVariables().addAll(resolved.getMetaVariables());
-			} else if (operatorsKnown(t))
+			} else if (operatorsKnown(t, name))
 				raising.raise(state, operator.getCFG(), operator.getLocation(), operator,
 						LibrarySpecificationProvider.TYPE_ERROR);
 			else

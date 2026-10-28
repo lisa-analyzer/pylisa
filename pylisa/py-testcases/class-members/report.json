@@ -1,0 +1,50 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/class-members/class-members.py':18:8] on 'untyped py-testcases/class-members/class-members::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/class-members/class-members.py':18:8"
+  }, {
+    "message" : "['py-testcases/class-members/class-members.py':23:8] on 'untyped py-testcases/class-members/class-members::$main()': [EXPRESSION] TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/class-members/class-members.py':23:8"
+  }, {
+    "message" : "['py-testcases/class-members/class-members.py':39:4] on 'untyped py-testcases/class-members/class-members::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/class-members/class-members.py':39:4"
+  }, {
+    "message" : "['py-testcases/class-members/class-members.py':41:4] on 'untyped py-testcases/class-members/class-members::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/class-members/class-members.py':41:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_class-members_class-members.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "5",
+    "duration" : "13ms",
+    "end" : "2026-10-28T11:40:55.604+01:00",
+    "expressions" : "55",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "196",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-28T11:40:55.591+01:00",
+    "statements" : "28",
+    "units" : "47",
+    "version" : "1.0",
+    "warnings" : "4"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/class-members"
+  }
+}

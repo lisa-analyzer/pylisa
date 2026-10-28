@@ -27,3 +27,11 @@ n_lst = len(lst)
 other = [7]
 add(other, "y")
 n_other = len(other)
+
+# an element assignment in unreachable code assigns nothing
+u = [0, 0]
+w = 5
+if w == 5:
+    pass
+else:
+    u[w] = 1

@@ -233,6 +233,7 @@ import it.unive.pylisa.cfg.statement.PyDelName;
 import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.LibraryConstants;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.scoping.NameKind;
 import it.unive.pylisa.scoping.PyScope;
@@ -277,6 +278,14 @@ public class PyStatementParser
 	 * calls on a receiver.
 	 */
 	private final Set<String> namespaces = new HashSet<>();
+
+	/**
+	 * The names bound to modules by import statements, mapped to the (dotted)
+	 * names of the modules (e.g. {@code m} to {@code math} for
+	 * {@code import math as m}, {@code os} to {@code os} for
+	 * {@code import os.path}).
+	 */
+	private final Map<String, String> importedModules = new HashMap<>();
 
 	/**
 	 * The variables of the comprehensions being parsed (innermost first),
@@ -522,7 +531,7 @@ public class PyStatementParser
 			if (access.DOT() != null) {
 				String name = access.name().getText();
 				write = attribute(writeBase, name, new DerivedLocation(loc, "write"));
-				read = attribute(readBase, name, new DerivedLocation(loc, "read"));
+				read = readAttribute(readBase, name, new DerivedLocation(loc, "read"));
 			} else {
 				List<Expression> indexes = extractExpressionsFromSlices(access.slices());
 				if (indexes.size() != 1)
@@ -618,7 +627,8 @@ public class PyStatementParser
 	@Override
 	public Expression visitStar_expressions(
 			Star_expressionsContext ctx) {
-		if (ctx.star_expression().size() == 1)
+		// a single expression, unless it is followed by a comma (e.g. 1,)
+		if (ctx.star_expression().size() == 1 && ctx.COMMA().isEmpty())
 			return visitStar_expression(ctx.star_expression(0));
 		List<Expression> elements = new ArrayList<>();
 		for (Star_expressionContext e : ctx.star_expression())
@@ -637,7 +647,8 @@ public class PyStatementParser
 	@Override
 	public Expression visitStar_targets(
 			Star_targetsContext ctx) {
-		if (ctx.star_target().size() == 1)
+		// a single target, unless it is followed by a comma (e.g. a, = xs)
+		if (ctx.star_target().size() == 1 && ctx.COMMA().isEmpty())
 			return visitTarget(ctx.star_target(0));
 		List<Expression> elements = new ArrayList<>();
 		for (Star_targetContext t : ctx.star_target())
@@ -697,7 +708,7 @@ public class PyStatementParser
 
 		Expression base = visitTPrimary(ctx.t_primary());
 		if (ctx.DOT() != null)
-			return attribute(base, ctx.name().getText(), getLocation(filePath, ctx));
+			return readAttribute(base, ctx.name().getText(), getLocation(filePath, ctx));
 		else if (ctx.LSQB() != null) {
 			List<Expression> indexes = extractExpressionsFromSlices(ctx.slices());
 			if (indexes.size() == 1)
@@ -847,8 +858,19 @@ public class PyStatementParser
 			name = ".";
 
 		Import_from_targetsContext targets = ctx.import_from_targets();
-		if (targets.STAR() != null)
-			return new FromImport(program, name, Map.of("*", "*"), List.of(), currentCFG, getLocation(filePath, ctx));
+		if (targets.STAR() != null) {
+			// the names bound by the import, if they are known (see
+			// LocalModules): star imports are allowed only in the code of
+			// modules
+			List<PyNameRef> bound = new ArrayList<>();
+			Set<String> names = localImports.starNames(ctx);
+			if (names != null)
+				for (String imported : names)
+					bound.add(new PyNameRef(currentCFG, getLocation(filePath, ctx), imported, NameKind.GLOBAL_IMPLICIT,
+							symtable.getModuleScope().getModule(), FilenameUtils.removeExtension(filePath), null, true,
+							true));
+			return new FromImport(program, name, Map.of("*", "*"), bound, currentCFG, getLocation(filePath, ctx));
+		}
 
 		Map<String, String> components = new HashMap<>();
 		List<PyNameRef> bound = new ArrayList<>();
@@ -876,6 +898,8 @@ public class PyStatementParser
 			libs.put(importedLibrary, as);
 			// "import a.b.c" binds "a", "import a.b.c as d" binds "d"
 			namespaces.add(as != null ? as : importedLibrary.split("\\.")[0]);
+			importedModules.put(as != null ? as : importedLibrary.split("\\.")[0],
+					as != null ? importedLibrary : importedLibrary.split("\\.")[0]);
 			NameContext target = single.name();
 			if (target == null) {
 				Dotted_nameContext first = single.dotted_name();
@@ -1376,7 +1400,7 @@ public class PyStatementParser
 			List<NameContext> names = pattern.value_pattern().attr().name();
 			Expression constant = name(names.get(0));
 			for (int i = 1; i < names.size(); i++)
-				constant = attribute(constant, names.get(i).getText(), getLocation(filePath, names.get(i)));
+				constant = readAttribute(constant, names.get(i).getText(), getLocation(filePath, names.get(i)));
 			return new PyEquals(currentCFG, loc, value, constant);
 		}
 		if (pattern.group_pattern() != null)
@@ -2141,7 +2165,7 @@ public class PyStatementParser
 				previous_access = access;
 				attribute = true;
 				Expression member = moduleMember(access, last_name, getLocation(filePath, frame));
-				access = member != null ? member : attribute(access, last_name, getLocation(filePath, frame));
+				access = member != null ? member : readAttribute(access, last_name, getLocation(filePath, frame));
 			} else if (frame.LPAR() != null || frame.genexp() != null) {
 				List<Expression> arguments;
 				if (frame.genexp() == null)
@@ -2201,9 +2225,15 @@ public class PyStatementParser
 							PyClassType.register(cu.getName(), (ClassUnit) cu),
 							pars.toArray(Expression[]::new));
 				} else if (attribute && localImports.module(dotted(previous_access)) != null) {
-					// m.f(...): the function f of the local module m
-					access = new PyModuleCall(currentCFG, getLocation(filePath, frame),
-							localImports.module(dotted(previous_access)), method_name, pars.toArray(Expression[]::new));
+					// m.f(...): the function f of the local module m, or of the
+					// module defining it if f is an alias in m
+					String unit = localImports.module(dotted(previous_access));
+					LocalImports.Member alias = localImports.reexport(unit, method_name);
+					access = alias != null
+							? new PyModuleCall(currentCFG, getLocation(filePath, frame), alias.unit(), alias.name(),
+									pars.toArray(Expression[]::new))
+							: new PyModuleCall(currentCFG, getLocation(filePath, frame), unit, method_name,
+									pars.toArray(Expression[]::new));
 				} else if (!attribute && previous_access == null && localImports.member(method_name) != null) {
 					// f(...), with f imported from a local module
 					LocalImports.Member member = localImports.member(method_name);
@@ -2357,6 +2387,28 @@ public class PyStatementParser
 	}
 
 	/**
+	 * Builds the read of the attribute {@code name} of {@code receiver}: the
+	 * value of a constant of a module of the standard library (see
+	 * {@link LibraryConstants}), if {@code receiver} is a name bound to that
+	 * module by an import (and not to a local module), and the attribute
+	 * otherwise (see {@link #attribute}).
+	 */
+	private Expression readAttribute(
+			Expression receiver,
+			String name,
+			CodeLocation location) {
+		if (receiver instanceof VariableRef && isNamespace(receiver)
+				&& localImports.module(((VariableRef) receiver).getName()) == null) {
+			String module = importedModules.get(((VariableRef) receiver).getName());
+			Expression constant = module == null ? null
+					: LibraryConstants.constant(currentCFG, location, module, name);
+			if (constant != null)
+				return constant;
+		}
+		return attribute(receiver, name, location);
+	}
+
+	/**
 	 * Builds the access to the attribute {@code name} of {@code receiver}: a
 	 * {@link PyAttributeAccess} for values, or a call to
 	 * {@code __getattribute__} for namespaces (e.g. {@code math.floor}, whose
@@ -2432,6 +2484,11 @@ public class PyStatementParser
 		String module = localImports.module(path);
 		if (module == null || localImports.module(path + "." + name) != null)
 			return null;
+		LocalImports.Member alias = localImports.reexport(module, name);
+		if (alias != null)
+			// an alias of a member of another module, or of a function of m
+			return new PyNameRef(currentCFG, location, alias.name(), NameKind.GLOBAL_EXPLICIT, alias.module(),
+					alias.unit(), null, false, false, path + "." + name);
 		// the binding status of the globals of other modules is not known
 		return new PyNameRef(currentCFG, location, name, NameKind.GLOBAL_EXPLICIT, localImports.moduleName(module),
 				module, null, false, false, path + "." + name);
@@ -2752,7 +2809,9 @@ public class PyStatementParser
 			Star_targetsContext ctx,
 			Map<String, String> scope,
 			SourceCodeLocation loc) {
-		if (ctx.star_target().size() == 1)
+		// a single target, unless it is followed by a comma (e.g. for x, in
+		// ...)
+		if (ctx.star_target().size() == 1 && ctx.COMMA().isEmpty())
 			return comprehensionTarget(ctx.star_target(0), scope, loc);
 		List<Expression> elements = new ArrayList<>();
 		for (Star_targetContext t : ctx.star_target())
@@ -2938,11 +2997,10 @@ public class PyStatementParser
 			if (tuple.star_named_expression() != null)
 				elements.add(visitStar_named_expression(tuple.star_named_expression()));
 			elements.addAll(extractExpressionsFromStar_named_expressions(tuple.star_named_expressions()));
-			TupleCreation tupleCreation = new TupleCreation(currentCFG, getLocation(filePath, ctx),
-					elements.toArray(Expression[]::new));
-			if (tupleCreation.getSubExpressions().length == 1)
-				return tupleCreation.getSubExpressions()[0];
-			return tupleCreation;
+			// also a single element is a tuple (e.g. (1,)), as the
+			// parenthesized
+			// expressions are groups
+			return new TupleCreation(currentCFG, getLocation(filePath, ctx), elements.toArray(Expression[]::new));
 		} else if (ctx.group() != null) {
 			if (ctx.group().named_expression() == null)
 				throw new UnsupportedStatementException("yield expressions are not supported");

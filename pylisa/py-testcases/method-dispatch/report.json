@@ -1,0 +1,44 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/method-dispatch/method-dispatch.py':48:4] on 'untyped py-testcases/method-dispatch/method-dispatch::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/method-dispatch/method-dispatch.py':48:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_A.func(A__self)_452248891.graph.json", "untyped_A.func(A__self)_452372860.graph.json", "untyped_A.func(A__self)_452487219.graph.json", "untyped_B.func(B__self)_-1737142454.graph.json", "untyped_B.func(B__self)_-1737146143.graph.json", "untyped_B.func(B__self)_-1737150142.graph.json", "untyped_C.func(C__self)_-1530681010.graph.json", "untyped_C.func(C__self)_-1530681258.graph.json", "untyped_D.func(D__self)_-1530681258.graph.json", "untyped_E.func(E__self)_-1530681010.graph.json", "untyped_py-testcases_method-dispatch_method-dispatch.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "13",
+    "duration" : "15ms",
+    "end" : "2026-10-28T11:41:08.910+01:00",
+    "expressions" : "33",
+    "files" : "11",
+    "globals" : "0",
+    "members" : "204",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-28T11:41:08.895+01:00",
+    "statements" : "29",
+    "units" : "49",
+    "version" : "1.0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/method-dispatch"
+  }
+}

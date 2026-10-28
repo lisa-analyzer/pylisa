@@ -67,6 +67,6 @@ public class PyIteratedElement extends UnaryExpression {
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		return Iteration.elements(interprocedural.getAnalysis(), state, source, expr, this, getMetaVariables());
+		return Iteration.elements(interprocedural, state, source, expr, this, getMetaVariables());
 	}
 }

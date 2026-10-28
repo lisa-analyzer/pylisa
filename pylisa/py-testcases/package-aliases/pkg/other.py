@@ -1,0 +1,2 @@
+def text():
+    return "s"

@@ -25,8 +25,10 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.lists.ListModel;
 
 /**
  * A list literal {@code [e0, ..., en]}: a new object is allocated, and the
@@ -71,7 +73,8 @@ public class ListCreation extends NaryExpression {
 		HeapReference ref = new HeapReference(reftype, created, loc);
 
 		InstrumentedReceiver list = new InstrumentedReceiver(reftype, true, loc);
-		AnalysisState<A> current = analysis.assign(state, list, ref, this);
+		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, created, this), list, ref,
+				this);
 		HeapDereference deref = new HeapDereference(listType, list, loc);
 		// the heap tracks the fields accessed on each object, but until the
 		// first access to any field in the program, the fields are unknown
@@ -82,6 +85,9 @@ public class ListCreation extends NaryExpression {
 				loc);
 		current = analysis.smallStepSemantics(current, cls, this).withExecutionExpressions(
 				current.getExecutionExpressions());
+		// defined for all the lists (see ListModel#NONEMPTY): the elements of
+		// the list literal are known by their indices
+		current = ListModel.setNonEmpty(analysis, current, list, false, this);
 
 		for (int i = 0; i < params.length; i++) {
 			AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, i, loc), loc);

@@ -1,0 +1,50 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/type-hints/type-hints.py':30:4] on 'untyped py-testcases/type-hints/type-hints::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':30:4"
+  }, {
+    "message" : "['py-testcases/type-hints/type-hints.py':33:4] on 'untyped py-testcases/type-hints/type-hints::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':33:4"
+  }, {
+    "message" : "['py-testcases/type-hints/type-hints.py':36:4] on 'untyped py-testcases/type-hints/type-hints::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':36:4"
+  }, {
+    "message" : "['py-testcases/type-hints/type-hints.py':39:4] on 'untyped py-testcases/type-hints/type-hints::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':39:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_type-hints_type-hints.$main().graph.json" ],
+  "info" : {
+    "cfgs" : "4",
+    "duration" : "5ms",
+    "end" : "2026-10-28T11:41:22.861+01:00",
+    "expressions" : "61",
+    "files" : "1",
+    "globals" : "0",
+    "members" : "195",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-28T11:41:22.856+01:00",
+    "statements" : "30",
+    "units" : "46",
+    "version" : "1.0",
+    "warnings" : "4"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/type-hints"
+  }
+}

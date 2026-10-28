@@ -54,7 +54,49 @@ sealed class List extends Sequence:
 		param self libtype List*
 		param x type it.unive.lisa.type.Untyped::INSTANCE
 
-sealed class Set extends Sequence
+	instance method extend: it.unive.pylisa.libraries.lists.ListExtend
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype List*
+		param iterable type it.unive.lisa.type.Untyped::INSTANCE
+
+	instance method pop: it.unive.pylisa.libraries.lists.ListPop
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype List*
+		param index type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+sealed class Set extends Sequence:
+	instance method add: it.unive.pylisa.libraries.sets.SetAddMethod
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype Set*
+		param elem type it.unive.lisa.type.Untyped::INSTANCE
+
+	instance method remove: it.unive.pylisa.libraries.sets.SetRemove
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype Set*
+		param elem type it.unive.lisa.type.Untyped::INSTANCE
+
+	instance method discard: it.unive.pylisa.libraries.sets.SetDiscard
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype Set*
+		param elem type it.unive.lisa.type.Untyped::INSTANCE
+
+	instance method pop: it.unive.pylisa.libraries.sets.SetPop
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype Set*
+
+	instance method clear: it.unive.pylisa.libraries.sets.SetClear
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype Set*
+
+	instance method copy: it.unive.pylisa.libraries.sets.SetCopy
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype Set*
+
+	instance method update: it.unive.pylisa.libraries.sets.SetUpdate
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype Set*
+		param *others type it.unive.lisa.type.Untyped::INSTANCE
+
 sealed class Dict extends Sequence:
 	method __or__: it.unive.pylisa.libraries.dicts.DictOr
 		libtype Dict*
@@ -65,6 +107,12 @@ sealed class Dict extends Sequence:
 		libtype Dict*
 		param self libtype Dict*
 		param other type it.unive.lisa.type.Untyped::INSTANCE
+
+	instance method update: it.unive.pylisa.libraries.dicts.DictUpdate
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype Dict*
+		param other type it.unive.lisa.type.Untyped::INSTANCE default missing
+		param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
 
 	instance method keys: it.unive.pylisa.libraries.dicts.DictKeysMethod
 		libtype DictKeys*
@@ -94,5 +142,9 @@ sealed class DictItems:
 		type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param self libtype DictItems*
 
-sealed class Tuple extends Sequence
+class Tuple extends Sequence
+
+# the class of the tuples created by the classes of collections.namedtuple (see
+# NamedTuples)
+sealed class NamedTuple extends Tuple
 sealed class Slice extends Sequence

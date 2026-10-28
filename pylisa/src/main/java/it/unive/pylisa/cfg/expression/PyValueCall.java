@@ -8,20 +8,25 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
+import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -122,5 +127,93 @@ public class PyValueCall extends NaryExpression {
 			result = result.lub(analysis.smallStepSemantics(consumed, new PushAny(Untyped.INSTANCE, getLocation()),
 					this));
 		return raising.moveFrom(result);
+	}
+
+	/**
+	 * Calls the given values of a callee on the given values of the arguments,
+	 * as done by a call {@code f(a0, ..., an)} at {@code pp} whose callee and
+	 * arguments have already been evaluated (e.g. the function passed to a
+	 * native, as in {@code functools.reduce(f, xs)}): the targets are the same
+	 * (see {@link CallTargets}), {@code TypeError} is raised if the callee
+	 * might not be callable, and the result is unknown if its targets might not
+	 * be known. The call happens at a location derived from the one of
+	 * {@code pp} with the given name (see {@link DerivedLocation}), so that its
+	 * result does not overwrite the one of {@code pp}.
+	 *
+	 * @param <A>             the kind of the analysis state
+	 * @param <D>             the kind of the abstract domain
+	 * @param interprocedural the interprocedural analysis
+	 * @param state           the state where the callee and the arguments have
+	 *                            been evaluated
+	 * @param callee          the values of the callee
+	 * @param args            the values of the arguments
+	 * @param pp              the statement making the call
+	 * @param name            the name of the call
+	 * @param expressions     the states of the sub-expressions
+	 * @param metas           where the meta variables of the call are added
+	 *
+	 * @return the state after the call
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> call(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet callee,
+			ExpressionSet[] args,
+			Statement pp,
+			String name,
+			StatementStore<A> expressions,
+			Collection<Identifier> metas)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		CFG cfg = pp.getCFG();
+		CodeLocation loc = new DerivedLocation(pp.getLocation(), name);
+		// the callee and the arguments are not expressions of the program:
+		// they stand for their values, in the store of the sub-expressions
+		Expression calleeExpr = new VariableRef(cfg, new DerivedLocation(loc, "callee"), "$callee");
+		expressions.put(calleeExpr, state.withExecutionExpressions(callee));
+		Expression[] actuals = new Expression[args.length];
+		for (int i = 0; i < args.length; i++) {
+			actuals[i] = new VariableRef(cfg, new DerivedLocation(loc, "arg" + i), "$arg" + i);
+			expressions.put(actuals[i], state.withExecutionExpressions(args[i]));
+		}
+		UnresolvedCall call = new UnresolvedCall(cfg, loc, CallType.STATIC, null, name,
+				LeftToRightEvaluation.INSTANCE, actuals);
+		call.setParentStatement(pp);
+
+		CallTargets targets = CallTargets.of(analysis, state, callee, true, pp);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		AnalysisState<A> result = targets.call(interprocedural, state, state, pp, call, calleeExpr, args, expressions,
+				metas, raising);
+		if (targets.notCallable())
+			raising.raise(state, cfg, pp.getLocation(), pp, LibrarySpecificationProvider.TYPE_ERROR);
+		if (targets.unknown())
+			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp));
+		return raising.moveFrom(result);
+	}
+
+	/**
+	 * Whether the given value can be called (see {@code CallTargets}), as
+	 * {@code callable(value)}.
+	 *
+	 * @param <A>      the kind of the analysis state
+	 * @param <D>      the kind of the abstract domain
+	 * @param analysis the analysis
+	 * @param state    the state where the value has been computed
+	 * @param value    the value
+	 * @param pp       the program point using the value
+	 *
+	 * @return whether the value can be called
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability callable(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			SymbolicExpression value,
+			Statement pp)
+			throws SemanticException {
+		return CallTargets.callable(analysis.getRuntimeTypesOf(state, value, pp), pp);
 	}
 }

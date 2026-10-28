@@ -18,6 +18,7 @@ import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import java.util.Collection;
@@ -94,8 +95,9 @@ public final class DictViews {
 		Type type = PyClassType.lookup(kind);
 		ReferenceType reftype = new ReferenceType(type);
 		InstrumentedReceiver view = new InstrumentedReceiver(reftype, false, loc);
-		AnalysisState<A> current = analysis.assign(state, view,
-				new HeapReference(reftype, new MemoryAllocation(type, loc, false), loc), pp);
+		MemoryAllocation alloc = new MemoryAllocation(type, loc, false);
+		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, alloc, pp), view,
+				new HeapReference(reftype, alloc, loc), pp);
 		current = analysis.assign(current, mapping(view, type, loc), dict, pp);
 		metas.add(view);
 		return analysis.smallStepSemantics(current, view, pp);
