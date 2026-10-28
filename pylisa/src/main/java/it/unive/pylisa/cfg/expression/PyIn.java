@@ -115,7 +115,12 @@ public class PyIn extends BinaryExpression {
 					// back to
 					// iterating the container, which is not modeled here
 					throw new UnsupportedStatementException(this);
-				result = result.lub(contains.forwardSemantics(state, interprocedural, expressions));
+				// the container and the needle have already been evaluated:
+				// evaluating the call would evaluate them again (e.g. calling
+				// f twice in x in f())
+				result = result.lub(contains.forwardSemanticsAux(interprocedural, state,
+						new ExpressionSet[] { new ExpressionSet(right), new ExpressionSet(left) }, expressions));
+				getMetaVariables().addAll(contains.getMetaVariables());
 			}
 		}
 

@@ -1,0 +1,44 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/subscript-calls/subscript-calls.py':38:4] on 'untyped py-testcases/subscript-calls/subscript-calls::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/subscript-calls/subscript-calls.py':38:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_subscript-calls_subscript-calls.$main().graph.json", "untyped_py-testcases_subscript-calls_subscript-calls.counted()_1997787526.graph.json", "untyped_py-testcases_subscript-calls_subscript-calls.counted()_1997792455.graph.json", "untyped_py-testcases_subscript-calls_subscript-calls.index()_1997794315.graph.json", "untyped_py-testcases_subscript-calls_subscript-calls.pair()_1997791215.graph.json", "untyped_py-testcases_subscript-calls_subscript-calls.pair()_1997792207.graph.json" ],
+  "info" : {
+    "cfgs" : "5",
+    "duration" : "166ms",
+    "end" : "2026-10-28T09:06:10.246+01:00",
+    "expressions" : "84",
+    "files" : "6",
+    "globals" : "0",
+    "members" : "196",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-28T09:06:10.080+01:00",
+    "statements" : "26",
+    "units" : "44",
+    "version" : "1.0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/subscript-calls"
+  }
+}

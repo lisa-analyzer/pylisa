@@ -120,7 +120,12 @@ public class PySingleArrayAccess extends BinaryExpression {
 					// no type implements __getitem__ for this pair: real Python
 					// raises TypeError, which is not modeled here
 					throw new UnsupportedStatementException(this);
-				result = result.lub(getitem.forwardSemantics(state, interprocedural, expressions));
+				// the receiver and the index have already been evaluated:
+				// evaluating the call would evaluate them again (e.g. calling
+				// f twice in f()[0])
+				result = result.lub(getitem.forwardSemanticsAux(interprocedural, state,
+						new ExpressionSet[] { new ExpressionSet(left), new ExpressionSet(right) }, expressions));
+				getMetaVariables().addAll(getitem.getMetaVariables());
 			}
 		}
 
