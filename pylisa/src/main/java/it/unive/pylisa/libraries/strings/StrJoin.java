@@ -14,6 +14,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.libraries.lists.ListModel;
 
@@ -68,11 +69,12 @@ public class StrJoin extends PyNative {
 		boolean nonEmpty = analysis.getRuntimeTypesOf(state, iterable, st).stream().allMatch(ListModel::isList)
 				&& ListModel.shape(analysis, state, iterable, st).prefix() > 0;
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (iterates != Satisfiability.NOT_SATISFIED && (mightBeStr || !nonEmpty))
 			result = result.lub(compute(analysis, state, new PushAny(StringType.INSTANCE, getLocation())));
 		if (iterates != Satisfiability.SATISFIED || mightNotBeStr)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(result);
 	}
 }

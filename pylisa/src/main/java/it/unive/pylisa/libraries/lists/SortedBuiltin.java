@@ -23,6 +23,7 @@ import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.PyValueCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import java.util.function.Predicate;
 
@@ -78,13 +79,14 @@ public class SortedBuiltin extends PyNative {
 
 		// key is called on the elements, and its results are compared
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		Expression[] subs = getSubExpressions();
 		for (SymbolicExpression key : params[1]) {
 			if (hasType(analysis, created, key, NONE) == Satisfiability.SATISFIED)
 				continue;
 			if (PyValueCall.callable(analysis, created, key, st) == Satisfiability.UNKNOWN)
 				// the code of key is not known
-				result = result.lub(raise(analysis, created, LibrarySpecificationProvider.EXCEPTION));
+				raise(raising, created, LibrarySpecificationProvider.EXCEPTION);
 			for (SymbolicExpression iterable : params[0]) {
 				if (Iteration.iterable(analysis, created, iterable, st) == Satisfiability.NOT_SATISFIED)
 					continue;
@@ -96,10 +98,10 @@ public class SortedBuiltin extends PyNative {
 				// the exceptions raised by key
 				result = result.lub(keys.bottomExecution());
 				if (!comparable(analysis, keys, keys.getExecutionExpressions()))
-					result = result.lub(raise(analysis, created, LibrarySpecificationProvider.TYPE_ERROR));
+					raise(raising, created, LibrarySpecificationProvider.TYPE_ERROR);
 			}
 		}
-		return result;
+		return raising.moveFrom(result);
 	}
 
 	// whether the values can be compared with each other: there are none, or
@@ -131,11 +133,12 @@ public class SortedBuiltin extends PyNative {
 		if (!missing(reverse))
 			typed = typed.and(hasType(analysis, state, reverse, INT));
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED) {
 			Expression[] subs = getSubExpressions();
 			AnalysisState<A> elements = Iteration.elements(analysis, state, subs.length > 0 ? subs[0] : null,
-					iterable, st, getMetaVariables());
+					iterable, st, getMetaVariables(), raising);
 
 			// the elements at unknown indices of the new list
 			Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
@@ -152,8 +155,8 @@ public class SortedBuiltin extends PyNative {
 					&& !comparable(analysis, elements, elements.getExecutionExpressions()))
 				// without key, the elements are compared (with key, its results
 				// are, see forwardSemanticsAux)
-				result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		}
-		return typeChecked(analysis, state, typed, result);
+		return raising.moveFrom(typeChecked(state, typed, result, raising));
 	}
 }

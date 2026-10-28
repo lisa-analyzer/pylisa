@@ -17,6 +17,7 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.PyValueCall;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Set;
@@ -69,11 +70,12 @@ public class Reduce extends PyNative {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Expression[] subs = getSubExpressions();
 		Expression iterableExpr = subs.length > 1 ? subs[1] : null;
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression iterable : params[1]) {
 			Satisfiability it = Iteration.iterable(analysis, state, iterable, st);
 			if (it != Satisfiability.SATISFIED)
-				result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 			if (it == Satisfiability.NOT_SATISFIED)
 				continue;
 
@@ -90,13 +92,13 @@ public class Reduce extends PyNative {
 				if (!given && surely == 0)
 					// reduce() of an iterable that might be empty with no
 					// initial value
-					result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+					raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 				if (!given && length != null && length == 0)
 					continue;
 
 				// the values of acc: initial, or the first element
 				AnalysisState<A> acc = given ? state.withExecutionExpressions(new ExpressionSet(initial))
-						: Iteration.elements(analysis, state, iterableExpr, iterable, st, getMetaVariables());
+						: Iteration.elements(analysis, state, iterableExpr, iterable, st, getMetaVariables(), raising);
 				if (given || length == null || length != 1)
 					// function is surely called if the iterable surely has an
 					// element (two, without an initial value)
@@ -105,7 +107,7 @@ public class Reduce extends PyNative {
 				result = result.lub(acc);
 			}
 		}
-		return result;
+		return raising.moveFrom(result);
 	}
 
 	@Override

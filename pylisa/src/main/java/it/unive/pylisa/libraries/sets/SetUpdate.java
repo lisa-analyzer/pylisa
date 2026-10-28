@@ -12,6 +12,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.libraries.lists.ListModel;
 import it.unive.pylisa.symbolic.PyNoneConstant;
@@ -49,9 +50,12 @@ public class SetUpdate extends PyNative {
 			throws SemanticException {
 		SymbolicExpression self = args[0], others = args[1];
 		java.util.List<SymbolicExpression> iterables = ListModel.exactElements(analysis, state, others, st);
-		if (iterables == null)
-			return compute(analysis, SetModel.invalidate(analysis, state, self, st), new PyNoneConstant(getLocation()))
-					.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		if (iterables == null) {
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			return raising.moveFrom(compute(analysis, SetModel.invalidate(analysis, state, self, st),
+					new PyNoneConstant(getLocation())));
+		}
 		AnalysisState<A> current = state;
 		boolean typeError = false;
 		for (SymbolicExpression iterable : iterables) {
@@ -62,7 +66,7 @@ public class SetUpdate extends PyNative {
 				break;
 			}
 			AnalysisState<A> elements = Iteration.elements(analysis, current, null, iterable, st,
-					getMetaVariables());
+					getMetaVariables(), raising);
 			AnalysisState<A> next = elements.getExecutionState().isBottom() ? current : current.bottomExecution();
 			for (SymbolicExpression element : elements.getExecutionExpressions())
 				next = next.lub(SetModel.add(analysis, elements, self, element, st));
@@ -70,7 +74,7 @@ public class SetUpdate extends PyNative {
 		}
 		AnalysisState<A> result = compute(analysis, current, new PyNoneConstant(getLocation()));
 		if (typeError)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(result);
 	}
 }

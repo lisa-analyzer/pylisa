@@ -19,6 +19,7 @@ import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 
@@ -54,11 +55,12 @@ public class ListExtend extends PyNative {
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		Satisfiability iterable = Iteration.iterable(analysis, state, args[1], st);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (iterable != Satisfiability.NOT_SATISFIED) {
 			Expression[] subs = getSubExpressions();
 			AnalysisState<A> elements = Iteration.elements(analysis, state, subs.length > 1 ? subs[1] : null,
-					args[1], st, getMetaVariables());
+					args[1], st, getMetaVariables(), raising);
 			Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 			AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, args[0], loc),
 					new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
@@ -70,7 +72,7 @@ public class ListExtend extends PyNative {
 			result = compute(analysis, extended, new PyNoneConstant(loc));
 		}
 		if (iterable != Satisfiability.SATISFIED)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(result);
 	}
 }

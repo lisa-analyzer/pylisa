@@ -96,13 +96,13 @@ public class ListAdd extends BinaryExpression implements PluggableStatement {
 			return ListOperations.unknownResult(interprocedural, state, right, ListOperations.LIST, st);
 		Set<Type> types = analysis.getRuntimeTypesOf(state, right, st);
 		boolean unknown = types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (unknown || types.stream().anyMatch(ListOperations.LIST))
 			result = concat(interprocedural, state, left, right, expressions);
 		if (unknown || !types.stream().allMatch(ListOperations.LIST))
-			result = result.lub(PyExceptions.raise(analysis, state, st.getCFG(), loc, st,
-					LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
+			raising.raise(state, st.getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(result);
 	}
 
 	// the new list with the elements of left, and then the ones of right

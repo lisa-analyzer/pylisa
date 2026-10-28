@@ -108,6 +108,7 @@ public class PyAssign extends Assignment {
 		for (SymbolicExpression valueSym : valueIds)
 			rtsValue.addAll(analysis.getRuntimeTypesOf(indexState, valueSym, this));
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = indexState.bottomExecution();
 		boolean resolved = false;
 		List<Call> setitems = new ArrayList<>();
@@ -141,8 +142,7 @@ public class PyAssign extends Assignment {
 						// all the methods of the class of the receiver are
 						// known, and none is a __setitem__ accepting the
 						// arguments (e.g. an int, a str, or None)
-						result = result.lub(PyExceptions.raise(analysis, indexState, getCFG(), loc, this,
-								LibrarySpecificationProvider.TYPE_ERROR));
+						raising.raise(indexState, getCFG(), loc, this, LibrarySpecificationProvider.TYPE_ERROR);
 						continue;
 					}
 					result = result.lub(call.forwardSemanticsAux(interprocedural, indexState, args, expressions));
@@ -157,6 +157,7 @@ public class PyAssign extends Assignment {
 		if (!resolved)
 			// the call cannot be resolved for any type of the receiver
 			throw new UnsupportedStatementException(this);
+		result = raising.moveFrom(result);
 
 		// as sub-expressions are evaluated here, their meta variables (e.g.,
 		// the return value of a call) are propagated to this assignment, as

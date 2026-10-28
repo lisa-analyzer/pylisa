@@ -10,6 +10,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 
@@ -46,6 +47,9 @@ public class SetRemove extends PyNative {
 		AnalysisState<A> result = state.bottomExecution();
 		if (!SetModel.elements(analysis, state, args[0], st).getExecutionState().isBottom())
 			result = compute(analysis, state, new PyNoneConstant(getLocation()));
-		return result.lub(raise(analysis, state, LibrarySpecificationProvider.KEY_ERROR));
+		// KeyError if the element might not be in the set
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		raise(raising, state, LibrarySpecificationProvider.KEY_ERROR);
+		return raising.moveFrom(result);
 	}
 }

@@ -25,6 +25,7 @@ import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Set;
@@ -90,6 +91,7 @@ public class DictBuiltin extends PyNative {
 			SymbolicExpression[] args)
 			throws SemanticException {
 		SymbolicExpression iterable = args[0], kwargs = args[1];
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression dict : state.getExecutionExpressions()) {
 			AnalysisState<A> filled = state;
@@ -101,12 +103,12 @@ public class DictBuiltin extends PyNative {
 					Satisfiability it = Iteration.iterable(analysis, state, iterable, st);
 					filled = state.bottomExecution();
 					if (it != Satisfiability.NOT_SATISFIED)
-						filled = pairs(analysis, state, dict, iterable);
+						filled = pairs(analysis, state, dict, iterable, raising);
 					if (types.stream().anyMatch(DictModel::isDict))
 						// a dictionary, or another iterable
 						filled = filled.lub(DictModel.unpackInto(analysis, state, dict, iterable, st, true));
 					if (it != Satisfiability.SATISFIED)
-						filled = filled.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+						raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 				}
 			}
 			if (!missing(kwargs))
@@ -115,7 +117,7 @@ public class DictBuiltin extends PyNative {
 				filled = DictModel.unpackInto(analysis, filled, dict, kwargs, st, true);
 			result = result.lub(compute(analysis, filled, dict));
 		}
-		return result;
+		return raising.moveFrom(result);
 	}
 
 	// adds the pairs of the iterable: none of them, or any of them, any number
@@ -124,14 +126,15 @@ public class DictBuiltin extends PyNative {
 			Analysis<A, D> analysis,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
-			SymbolicExpression iterable)
+			SymbolicExpression iterable,
+			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		Expression[] subs = getSubExpressions();
 		// the elements are computed in the state where the dictionary has
 		// been created, as they might be new objects (e.g. the tuples of zip)
 		AnalysisState<A> elements = Iteration.elements(analysis, state, subs.length > 0 ? subs[0] : null, iterable,
-				st, getMetaVariables());
+				st, getMetaVariables(), raising);
 		// no element
 		AnalysisState<A> current = elements;
 		boolean unknown = false, wrongLength = false;
@@ -162,9 +165,9 @@ public class DictBuiltin extends PyNative {
 		}
 		if (unknown)
 			// e.g. a str, whose length is not known, or an object
-			current = current.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		if (unknown || wrongLength)
-			current = current.lub(raise(analysis, state, LibrarySpecificationProvider.VALUE_ERROR));
+			raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
 		return current;
 	}
 }

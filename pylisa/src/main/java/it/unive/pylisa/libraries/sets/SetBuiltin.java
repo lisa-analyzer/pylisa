@@ -15,6 +15,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import java.util.List;
 
@@ -58,15 +59,16 @@ public class SetBuiltin extends PyNative {
 		if (missing(iterable))
 			return SetModel.create(analysis, state, st, loc, List.of(), getMetaVariables());
 		Satisfiability it = Iteration.iterable(analysis, state, iterable, st);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (it != Satisfiability.NOT_SATISFIED) {
 			Expression[] subs = getSubExpressions();
 			AnalysisState<A> elements = Iteration.elements(analysis, state, subs.length > 0 ? subs[0] : null,
-					iterable, st, getMetaVariables());
+					iterable, st, getMetaVariables(), raising);
 			result = SetModel.create(analysis, elements, st, loc, List.of(elements), getMetaVariables());
 		}
 		if (it != Satisfiability.SATISFIED)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(result);
 	}
 }

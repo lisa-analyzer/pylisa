@@ -113,8 +113,9 @@ public class PyClassMember extends UnresolvedCall {
 				return unknown;
 			// the attribute might be assigned through the class (C.name = v),
 			// or defined by its metaclass
-			return unknown.lub(PyExceptions.raise(analysis, state, getCFG(), loc, this,
-					LibrarySpecificationProvider.ATTRIBUTE_ERROR));
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			raising.raise(state, getCFG(), loc, this, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+			return raising.moveFrom(unknown);
 		}
 		ClassAttribute attribute = ClassBases.isProgramClass(definer)
 				? PyClassAttributes.attribute((ClassUnit) unit, name)

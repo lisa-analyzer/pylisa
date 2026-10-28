@@ -133,9 +133,11 @@ public final class NamedTuples {
 				result = result.lub(analysis.smallStepSemantics(current, tuple, pp));
 			}
 		}
-		if (typeError)
-			result = result.lub(PyExceptions.raise(analysis, state, pp.getCFG(), pp.getLocation(), pp,
-					LibrarySpecificationProvider.TYPE_ERROR));
+		if (typeError) {
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			raising.raise(state, pp.getCFG(), pp.getLocation(), pp, LibrarySpecificationProvider.TYPE_ERROR);
+			return raising.moveFrom(result);
+		}
 		return result;
 	}
 }

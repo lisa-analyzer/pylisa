@@ -269,8 +269,9 @@ public class MapBuiltin extends PyNative {
 			Statement pp)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
-		return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp)
-				.lub(PyExceptions.raise(analysis, state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.EXCEPTION));
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		raising.raise(state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.EXCEPTION);
+		return raising.moveFrom(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp));
 	}
 
 	private static AccessChild child(

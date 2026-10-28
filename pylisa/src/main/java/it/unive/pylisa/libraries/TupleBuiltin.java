@@ -65,6 +65,7 @@ public class TupleBuiltin extends PyNative {
 			return compute(analysis, state, iterable);
 
 		Satisfiability it = Iteration.iterable(analysis, state, iterable, st);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (it != Satisfiability.NOT_SATISFIED) {
 			List<SymbolicExpression> elements = ListModel.exactElements(analysis, state, iterable, st);
@@ -82,7 +83,7 @@ public class TupleBuiltin extends PyNative {
 			}
 		}
 		if (it != Satisfiability.SATISFIED)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
-		return result;
+			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		return raising.moveFrom(result);
 	}
 }

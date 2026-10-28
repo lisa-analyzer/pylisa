@@ -10,6 +10,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 
 /**
@@ -41,7 +42,9 @@ public class SetPop extends PyNative {
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		return SetModel.elements(analysis, state, args[0], st)
-				.lub(raise(analysis, state, LibrarySpecificationProvider.KEY_ERROR));
+		// KeyError if the set is empty
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		raise(raising, state, LibrarySpecificationProvider.KEY_ERROR);
+		return raising.moveFrom(SetModel.elements(analysis, state, args[0], st));
 	}
 }

@@ -13,6 +13,7 @@ import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.pylisa.cfg.expression.Iteration;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.List;
 
@@ -56,9 +57,12 @@ public class ProductBuiltin extends ItertoolBuiltin {
 		else
 			for (SymbolicExpression iterable : iterables)
 				typed = typed.and(Iteration.iterable(analysis, state, iterable, st));
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = checked(analysis, state, typed, ItertoolsModel.PRODUCT,
 				new String[] { ItertoolsModel.ITERABLES, ItertoolsModel.REPEATS },
-				new SymbolicExpression[] { args[0], repeat });
-		return missing(args[1]) ? result : result.lub(negative(analysis, state, repeat));
+				new SymbolicExpression[] { args[0], repeat }, raising);
+		if (!missing(args[1]))
+			negative(analysis, raising, state, repeat);
+		return raising.moveFrom(result);
 	}
 }

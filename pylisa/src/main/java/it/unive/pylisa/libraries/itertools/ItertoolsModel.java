@@ -427,11 +427,13 @@ public final class ItertoolsModel {
 			for (SymbolicExpression key : functions.getExecutionExpressions())
 				if (analysis.getRuntimeTypesOf(functions, key, pp).stream().allMatch(Type::isNullType))
 					keys = keys.lub(elements);
-				else if (interprocedural == null)
-					keys = keys.lub(analysis.smallStepSemantics(elements, new PushAny(Untyped.INSTANCE, loc), pp))
-							.lub(PyExceptions.raise(analysis, elements, pp.getCFG(), loc, pp,
-									LibrarySpecificationProvider.EXCEPTION));
-				else
+				else if (interprocedural == null) {
+					// the key is not called: any exception might be raised
+					PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+					raising.raise(elements, pp.getCFG(), loc, pp, LibrarySpecificationProvider.EXCEPTION);
+					keys = keys.lub(raising.moveFrom(
+							analysis.smallStepSemantics(elements, new PushAny(Untyped.INSTANCE, loc), pp)));
+				} else
 					keys = keys.lub(PyValueCall.call(interprocedural, functions, new ExpressionSet(key),
 							new ExpressionSet[] { elements.getExecutionExpressions() }, pp, "key",
 							new StatementStore<>(functions), metas));

@@ -27,6 +27,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 
 /**
@@ -98,12 +99,13 @@ public class StrSplit extends PyNative {
 				: analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, sep,
 						new Constant(StringType.INSTANCE, "", loc), ComparisonEq.INSTANCE, loc), st);
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		if (empty != Satisfiability.SATISFIED)
 			// the computed expressions of the state are the new list
 			result = result.lub(state);
 		if (empty != Satisfiability.NOT_SATISFIED)
-			result = result.lub(raise(analysis, state, LibrarySpecificationProvider.VALUE_ERROR));
-		return typeChecked(analysis, state, typed, result);
+			raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+		return raising.moveFrom(typeChecked(state, typed, result, raising));
 	}
 }

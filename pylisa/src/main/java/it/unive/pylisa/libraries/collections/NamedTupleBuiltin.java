@@ -19,6 +19,7 @@ import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.type.NamedTupleClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -77,10 +78,12 @@ public class NamedTupleBuiltin extends PyNative {
 		List<String> fields = subs.length > 1 ? fields(subs[1]) : null;
 		boolean plain = (missing(rename) || analysis.satisfies(state, rename, st) == Satisfiability.NOT_SATISFIED)
 				&& (missing(defaults) || hasType(analysis, state, defaults, NONE) == Satisfiability.SATISFIED);
-		if (name == null || !valid(name) || fields == null || !plain)
+		if (name == null || !valid(name) || fields == null || !plain) {
 			// the class is not known
-			return compute(analysis, state, new PushAny(Untyped.INSTANCE, loc))
-					.lub(raise(analysis, state, LibrarySpecificationProvider.VALUE_ERROR));
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+			return raising.moveFrom(compute(analysis, state, new PushAny(Untyped.INSTANCE, loc)));
+		}
 		NamedTupleClassType type = new NamedTupleClassType(name, fields, loc);
 		return compute(analysis, state, new Constant(type, type, loc));
 	}

@@ -23,6 +23,7 @@ import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.libraries.EnumerateBuiltin;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.MapBuiltin;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.libraries.RangeBuiltin;
 import it.unive.pylisa.libraries.ZipBuiltin;
@@ -93,12 +94,13 @@ public class NextBuiltin extends PyNative {
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation loc = getLocation();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression it : params[0]) {
 			Set<Type> types = analysis.getRuntimeTypesOf(state, it, st);
 			if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st)) {
-				result = result.lub(compute(analysis, state, new PushAny(Untyped.INSTANCE, loc)))
-						.lub(raise(analysis, state, LibrarySpecificationProvider.EXCEPTION));
+				result = result.lub(compute(analysis, state, new PushAny(Untyped.INSTANCE, loc)));
+				raise(raising, state, LibrarySpecificationProvider.EXCEPTION);
 				continue;
 			}
 			boolean iterators = false, finite = false, notIterators = false, unknown = false;
@@ -113,20 +115,23 @@ public class NextBuiltin extends PyNative {
 					// not called
 					unknown = true;
 			if (iterators)
-				result = result.lub(Iteration.elements(interprocedural, state, null, it, st, getMetaVariables()));
-			if (unknown)
-				result = result.lub(compute(analysis, state, new PushAny(Untyped.INSTANCE, loc)))
-						.lub(raise(analysis, state, LibrarySpecificationProvider.EXCEPTION));
+				result = result.lub(
+						Iteration.elements(interprocedural, state, null, it, st, getMetaVariables(), raising));
+			if (unknown) {
+				result = result.lub(compute(analysis, state, new PushAny(Untyped.INSTANCE, loc)));
+				raise(raising, state, LibrarySpecificationProvider.EXCEPTION);
+			}
 			if (notIterators)
-				result = result.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 			if (iterators && finite)
 				// the iterator might be exhausted
 				for (SymbolicExpression def : params.length > 1 ? params[1] : new ExpressionSet())
-					result = result
-							.lub(missing(def) ? raise(analysis, state, LibrarySpecificationProvider.STOP_ITERATION)
-									: compute(analysis, state, def));
+					if (missing(def))
+						raise(raising, state, LibrarySpecificationProvider.STOP_ITERATION);
+					else
+						result = result.lub(compute(analysis, state, def));
 		}
-		return result;
+		return raising.moveFrom(result);
 	}
 
 	@Override

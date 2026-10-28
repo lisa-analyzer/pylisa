@@ -95,6 +95,7 @@ public class ZipBuiltin extends PyNative {
 			for (SymbolicExpression iterable : known)
 				typed = typed.and(Iteration.iterable(analysis, state, iterable, st));
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> created = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED) {
 			Type type = PyClassType.lookup(LibrarySpecificationProvider.ZIP);
@@ -112,9 +113,9 @@ public class ZipBuiltin extends PyNative {
 			created = compute(analysis, created, zip);
 			if (analysis.satisfies(state, strict, st) != Satisfiability.NOT_SATISFIED)
 				// strict, with iterables of different lengths
-				created = created.lub(raise(analysis, state, LibrarySpecificationProvider.VALUE_ERROR));
+				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
 		}
-		return typeChecked(analysis, state, typed, created);
+		return raising.moveFrom(typeChecked(state, typed, created, raising));
 	}
 
 	/**

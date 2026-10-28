@@ -636,8 +636,7 @@ public final class ListModel {
 			result = result.bottomExecution();
 		if (zero != Satisfiability.NOT_SATISFIED)
 			// a step of 0
-			result = result.lub(PyExceptions.raise(analysis, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.VALUE_ERROR));
+			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.VALUE_ERROR);
 		if (typeError)
 			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;

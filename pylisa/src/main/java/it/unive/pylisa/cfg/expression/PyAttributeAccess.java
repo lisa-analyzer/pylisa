@@ -184,8 +184,7 @@ public class PyAttributeAccess extends UnaryExpression {
 			objects.clear();
 		if (isWriteTarget() && objects.removeIf(PyAttributeAccess::noAttributes))
 			// e.g. the attributes of a list cannot be assigned
-			result = result.lub(PyExceptions.raise(analysis, state, getCFG(), loc, thrower,
-					LibrarySpecificationProvider.ATTRIBUTE_ERROR));
+			raising.raise(state, getCFG(), loc, thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 		if (!objects.isEmpty()) {
 			Missing missing = isWriteTarget() ? null : missing(analysis, state, expr, objects, false);
 			if (missing == null || missing.assigned()) {

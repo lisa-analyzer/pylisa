@@ -15,6 +15,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import java.util.Set;
@@ -60,6 +61,7 @@ public class DictUpdate extends PyNative {
 			// dictionaries are symbolic values (see DictionaryCreation)
 			return compute(analysis, state, new PyNoneConstant(loc));
 
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
 		AnalysisState<A> updated = state;
 		if (!missing(other)) {
 			Set<Type> types = analysis.getRuntimeTypesOf(state, other, st);
@@ -68,18 +70,18 @@ public class DictUpdate extends PyNative {
 			else {
 				Satisfiability iterable = Iteration.iterable(analysis, state, other, st);
 				updated = state.bottomExecution();
-				if (iterable != Satisfiability.NOT_SATISFIED)
+				if (iterable != Satisfiability.NOT_SATISFIED) {
 					// an iterable of pairs, whose entries are not known
 					updated = DictModel.anyEntry(analysis, state, dict, new PushAny(Untyped.INSTANCE, loc),
-							new PushAny(Untyped.INSTANCE, loc), st)
-							.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR))
-							.lub(raise(analysis, state, LibrarySpecificationProvider.VALUE_ERROR));
-				else
-					updated = updated.lub(raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR));
+							new PushAny(Untyped.INSTANCE, loc), st);
+					raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+					raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+				} else
+					raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 			}
 		}
 		if (!missing(kwargs))
 			updated = DictModel.unpackInto(analysis, updated, dict, kwargs, st, false);
-		return compute(analysis, updated, new PyNoneConstant(loc));
+		return raising.moveFrom(compute(analysis, updated, new PyNoneConstant(loc)));
 	}
 }
