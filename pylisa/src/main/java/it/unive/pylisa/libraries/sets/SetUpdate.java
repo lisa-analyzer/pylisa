@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -45,34 +46,35 @@ public class SetUpdate extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		SymbolicExpression self = args[0], others = args[1];
-		java.util.List<SymbolicExpression> iterables = ListModel.exactElements(analysis, state, others, st);
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		java.util.List<SymbolicExpression> iterables = ListModel.exactElements(analysis, context, state, others, st);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		if (iterables == null) {
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
-			return raising.moveFrom(compute(analysis, SetModel.invalidate(analysis, state, self, st),
+			return raising.moveFrom(compute(analysis, context, SetModel.invalidate(analysis, context, state, self, st),
 					new PyNoneConstant(getLocation())));
 		}
 		AnalysisState<A> current = state;
 		boolean typeError = false;
 		for (SymbolicExpression iterable : iterables) {
-			Satisfiability it = Iteration.iterable(analysis, current, iterable, st);
+			Satisfiability it = Iteration.iterable(analysis, context, current, iterable, st);
 			typeError |= it != Satisfiability.SATISFIED;
 			if (it == Satisfiability.NOT_SATISFIED) {
 				current = current.bottomExecution();
 				break;
 			}
-			AnalysisState<A> elements = Iteration.elements(analysis, current, null, iterable, st,
+			AnalysisState<A> elements = Iteration.elements(analysis, context, current, null, iterable, st,
 					getMetaVariables(), raising);
 			AnalysisState<A> next = elements.getExecutionState().isBottom() ? current : current.bottomExecution();
 			for (SymbolicExpression element : elements.getExecutionExpressions())
-				next = next.lub(SetModel.add(analysis, elements, self, element, st));
+				next = next.lub(SetModel.add(analysis, context, elements, self, element, st));
 			current = next;
 		}
-		AnalysisState<A> result = compute(analysis, current, new PyNoneConstant(getLocation()));
+		AnalysisState<A> result = compute(analysis, context, current, new PyNoneConstant(getLocation()));
 		if (typeError)
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);

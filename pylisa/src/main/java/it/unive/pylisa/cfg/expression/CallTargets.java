@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.ClassUnit;
@@ -94,6 +95,8 @@ final class CallTargets {
 	 * @param <D>                the kind of {@link AbstractDomain} of the
 	 *                               analysis
 	 * @param analysis           the analysis
+	 * @param context            the interprocedural context where the
+	 *                               computation happens
 	 * @param state              the state where the values are computed
 	 * @param values             the values of the callee
 	 * @param objectsNotCallable whether the objects of classes of the program
@@ -108,6 +111,7 @@ final class CallTargets {
 	 */
 	static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> CallTargets of(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Iterable<SymbolicExpression> values,
 			boolean objectsNotCallable,
@@ -115,7 +119,7 @@ final class CallTargets {
 			throws SemanticException {
 		CallTargets targets = new CallTargets();
 		for (SymbolicExpression value : values) {
-			Set<Type> types = analysis.getRuntimeTypesOf(state, value, pp);
+			Set<Type> types = analysis.getRuntimeTypesOf(state, value, context, pp);
 			if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, pp)) {
 				targets.unknown = true;
 				continue;
@@ -273,6 +277,7 @@ final class CallTargets {
 			Collection<Identifier> metas,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		AnalysisState<A> result = state.bottomExecution();
 		if (!functions.isEmpty())
 			result = result.lub(call(CallSites.within(new CFGCall(call, functions), caller), interprocedural, state,
@@ -305,12 +310,13 @@ final class CallTargets {
 			result = result.lub(BoundMethods.call(interprocedural, closureState, bound, callee, call.getParameters(),
 					args, caller, expressions, metas, raising));
 		for (NamedTupleClassType cls : namedTuples.values())
-			result = result.lub(NamedTuples.create(interprocedural.getAnalysis(), state, cls, call.getParameters(),
-					args, caller, metas));
+			result = result
+					.lub(NamedTuples.create(interprocedural.getAnalysis(), context, state, cls, call.getParameters(),
+							args, caller, metas));
 		if (!classes.isEmpty() && !(DerivedLocation.source(call.getLocation()) instanceof SourceCodeLocation))
 			// the object cannot be created without a location in the code
 			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state,
-					new PushAny(Untyped.INSTANCE, call.getLocation()), call));
+					new PushAny(Untyped.INSTANCE, call.getLocation()), context, call));
 		else if (!classes.isEmpty()) {
 			// C(...) creates an object of C, initialized by __init__
 			SourceCodeLocation location = (SourceCodeLocation) DerivedLocation.source(call.getLocation());

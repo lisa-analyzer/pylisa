@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -59,27 +60,29 @@ public class ListEq extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
-		Satisfiability equal = equal(analysis, state, args[0], args[1]);
+		Satisfiability equal = equal(analysis, context, state, args[0], args[1]);
 		if (negated)
 			equal = equal.negate();
 		if (equal == Satisfiability.SATISFIED || equal == Satisfiability.NOT_SATISFIED)
-			return compute(analysis, state,
+			return compute(analysis, context, state,
 					new Constant(BoolType.INSTANCE, equal == Satisfiability.SATISFIED, loc));
-		return unknown(analysis, state, BoolType.INSTANCE);
+		return unknown(analysis, context, state, BoolType.INSTANCE);
 	}
 
 	// whether the list self is equal to other
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability equal(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression self,
 			SymbolicExpression other)
 			throws SemanticException {
-		Set<Type> types = analysis.getRuntimeTypesOf(state, other, this);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, other, context, this);
 		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this))
 			return Satisfiability.UNKNOWN;
 		boolean lists = types.stream().anyMatch(ListModel::isList);
@@ -88,8 +91,8 @@ public class ListEq extends PyNative {
 		if (!lists)
 			return result;
 
-		ListModel.Shape left = ListModel.shape(analysis, state, self, this);
-		ListModel.Shape right = ListModel.shape(analysis, state, other, this);
+		ListModel.Shape left = ListModel.shape(analysis, context, state, self, this);
+		ListModel.Shape right = ListModel.shape(analysis, context, state, other, this);
 		if (left.length() == null || right.length() == null)
 			return result.lub(Satisfiability.UNKNOWN);
 		if (!left.length().equals(right.length()))
@@ -104,14 +107,14 @@ public class ListEq extends PyNative {
 		for (int i = 0; i < left.length() && elements != Satisfiability.NOT_SATISFIED; i++) {
 			Constant index = new Constant(Int32Type.INSTANCE, i, loc);
 			AnalysisState<A> le = analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, l, index, loc),
-					this);
+					context, this);
 			Satisfiability pair = Satisfiability.BOTTOM;
 			for (SymbolicExpression a : le.getExecutionExpressions()) {
 				AnalysisState<A> re = analysis.smallStepSemantics(le,
-						new AccessChild(Untyped.INSTANCE, r, index, loc), this);
+						new AccessChild(Untyped.INSTANCE, r, index, loc), context, this);
 				for (SymbolicExpression b : re.getExecutionExpressions())
 					pair = pair.lub(analysis.satisfies(re,
-							new BinaryExpression(BoolType.INSTANCE, a, b, ComparisonEq.INSTANCE, loc), this));
+							new BinaryExpression(BoolType.INSTANCE, a, b, ComparisonEq.INSTANCE, loc), context, this));
 			}
 			if (pair == Satisfiability.BOTTOM)
 				pair = Satisfiability.UNKNOWN;

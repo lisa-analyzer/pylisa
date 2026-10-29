@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -84,9 +85,10 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		if (right instanceof Constant && right.getStaticType().isNullType())
 			// no subset - we access the whole dataframe
-			return interprocedural.getAnalysis().smallStepSemantics(state, left, st);
+			return interprocedural.getAnalysis().smallStepSemantics(state, left, context, st);
 
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
@@ -94,6 +96,7 @@ public class DataframeFunctionWithSubsetAccess extends it.unive.lisa.program.cfg
 		BinaryExpression access = new BinaryExpression(dftype, derefLeft, right,
 				new ColumnProjection(0), location);
 		return interprocedural.getAnalysis()
-				.smallStepSemantics(interprocedural.getAnalysis().smallStepSemantics(state, access, st), left, st);
+				.smallStepSemantics(interprocedural.getAnalysis().smallStepSemantics(state, access, context, st), left,
+						context, st);
 	}
 }

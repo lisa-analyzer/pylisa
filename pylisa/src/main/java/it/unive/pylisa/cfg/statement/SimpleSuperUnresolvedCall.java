@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
@@ -69,9 +70,10 @@ public class SimpleSuperUnresolvedCall extends UnresolvedCall {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Call resolved;
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		Set<Type>[] ptypes = parameterTypes(expressions, analysis);
+		Set<Type>[] ptypes = parameterTypes(expressions, analysis, context);
 		try {
 			resolved = interprocedural.resolve(
 					call,

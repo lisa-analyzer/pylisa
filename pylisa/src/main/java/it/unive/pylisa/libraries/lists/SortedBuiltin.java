@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -68,6 +69,7 @@ public class SortedBuiltin extends PyNative {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		// the new list: the state of the arguments is the one where it has
 		// been created, whose computed expressions are the list (see
 		// semantics)
@@ -79,16 +81,16 @@ public class SortedBuiltin extends PyNative {
 
 		// key is called on the elements, and its results are compared
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		Expression[] subs = getSubExpressions();
 		for (SymbolicExpression key : params[1]) {
-			if (hasType(analysis, created, key, NONE) == Satisfiability.SATISFIED)
+			if (hasType(analysis, context, created, key, NONE) == Satisfiability.SATISFIED)
 				continue;
-			if (PyValueCall.callable(analysis, created, key, st) == Satisfiability.UNKNOWN)
+			if (PyValueCall.callable(analysis, context, created, key, st) == Satisfiability.UNKNOWN)
 				// the code of key is not known
 				raise(raising, created, LibrarySpecificationProvider.EXCEPTION);
 			for (SymbolicExpression iterable : params[0]) {
-				if (Iteration.iterable(analysis, created, iterable, st) == Satisfiability.NOT_SATISFIED)
+				if (Iteration.iterable(analysis, context, created, iterable, st) == Satisfiability.NOT_SATISFIED)
 					continue;
 				AnalysisState<A> elements = Iteration.elements(interprocedural, created,
 						subs.length > 0 ? subs[0] : null, iterable, st, getMetaVariables());
@@ -97,7 +99,7 @@ public class SortedBuiltin extends PyNative {
 						new StatementStore<>(elements), getMetaVariables());
 				// the exceptions raised by key
 				result = result.lub(keys.bottomExecution());
-				if (!comparable(analysis, keys, keys.getExecutionExpressions()))
+				if (!comparable(analysis, context, keys, keys.getExecutionExpressions()))
 					raise(raising, created, LibrarySpecificationProvider.TYPE_ERROR);
 			}
 		}
@@ -108,14 +110,15 @@ public class SortedBuiltin extends PyNative {
 	// they are all numbers, all str or all bytes
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean comparable(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			ExpressionSet values)
 			throws SemanticException {
 		Satisfiability numbers = Satisfiability.BOTTOM, strs = Satisfiability.BOTTOM, bytes = Satisfiability.BOTTOM;
 		for (SymbolicExpression value : values) {
-			numbers = numbers.lub(hasType(analysis, state, value, NUMBER));
-			strs = strs.lub(hasType(analysis, state, value, STR));
-			bytes = bytes.lub(hasType(analysis, state, value, BYTES));
+			numbers = numbers.lub(hasType(analysis, context, state, value, NUMBER));
+			strs = strs.lub(hasType(analysis, context, state, value, STR));
+			bytes = bytes.lub(hasType(analysis, context, state, value, BYTES));
 		}
 		return numbers == Satisfiability.BOTTOM || numbers == Satisfiability.SATISFIED
 				|| strs == Satisfiability.SATISFIED || bytes == Satisfiability.SATISFIED;
@@ -124,20 +127,21 @@ public class SortedBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression iterable = args[0], key = args[1], reverse = args[2];
-		Satisfiability typed = Iteration.iterable(analysis, state, iterable, st);
+		Satisfiability typed = Iteration.iterable(analysis, context, state, iterable, st);
 		if (!missing(reverse))
-			typed = typed.and(hasType(analysis, state, reverse, INT));
+			typed = typed.and(hasType(analysis, context, state, reverse, INT));
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED) {
 			Expression[] subs = getSubExpressions();
-			AnalysisState<A> elements = Iteration.elements(analysis, state, subs.length > 0 ? subs[0] : null,
+			AnalysisState<A> elements = Iteration.elements(analysis, context, state, subs.length > 0 ? subs[0] : null,
 					iterable, st, getMetaVariables(), raising);
 
 			// the elements at unknown indices of the new list
@@ -147,12 +151,12 @@ public class SortedBuiltin extends PyNative {
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 				for (SymbolicExpression element : elements.getExecutionExpressions())
-					filled = filled.lub(analysis.assign(elements, unknown, element, st)
+					filled = filled.lub(analysis.assign(elements, unknown, element, context, st)
 							.withExecutionExpression(list));
 			}
 			result = filled;
-			if (hasType(analysis, state, key, NONE) != Satisfiability.NOT_SATISFIED
-					&& !comparable(analysis, elements, elements.getExecutionExpressions()))
+			if (hasType(analysis, context, state, key, NONE) != Satisfiability.NOT_SATISFIED
+					&& !comparable(analysis, context, elements, elements.getExecutionExpressions()))
 				// without key, the elements are compared (with key, its results
 				// are, see forwardSemanticsAux)
 				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);

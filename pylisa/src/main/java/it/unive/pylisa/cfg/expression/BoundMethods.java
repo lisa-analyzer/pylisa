@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
@@ -84,6 +85,8 @@ public final class BoundMethods {
 	 * Creates a bound method of the given object.
 	 *
 	 * @param analysis  the analysis
+	 * @param context   the interprocedural context where the computation
+	 *                      happens
 	 * @param state     the state where the object has been evaluated
 	 * @param self      the object
 	 * @param functions the functions the method might be
@@ -98,6 +101,7 @@ public final class BoundMethods {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> create(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression self,
 			Set<CodeMember> functions,
@@ -109,16 +113,16 @@ public final class BoundMethods {
 		ReferenceType reftype = new ReferenceType(type);
 		InstrumentedReceiver bound = new InstrumentedReceiver(reftype, false, loc);
 		MemoryAllocation alloc = new MemoryAllocation(type, loc, false);
-		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, alloc, pp), bound,
-				new HeapReference(reftype, alloc, loc), pp);
+		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, context, state, alloc, pp), bound,
+				new HeapReference(reftype, alloc, loc), context, pp);
 		HeapDereference deref = new HeapDereference(type, bound, loc);
-		current = analysis.assign(current, child(deref, SELF, loc), self, pp);
+		current = analysis.assign(current, child(deref, SELF, loc), self, context, pp);
 		AnalysisState<A> withFunc = current.bottomExecution();
 		for (CodeMember function : functions)
 			withFunc = withFunc.lub(analysis.assign(current, child(deref, FUNC, loc),
-					new Constant(new CodeMemberType(Set.of(function)), function, loc), pp));
+					new Constant(new CodeMemberType(Set.of(function)), function, loc), context, pp));
 		metas.add(bound);
-		return analysis.smallStepSemantics(withFunc, bound, pp);
+		return analysis.smallStepSemantics(withFunc, bound, context, pp);
 	}
 
 	/**
@@ -151,7 +155,8 @@ public final class BoundMethods {
 			StatementStore<A> expressions,
 			Collection<Identifier> metas)
 			throws SemanticException {
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis());
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis(), context);
 		AnalysisState<A> result = call(interprocedural, state, bound, receiver, args, values, caller, expressions,
 				metas, raising);
 		return raising.moveFrom(result);
@@ -193,15 +198,16 @@ public final class BoundMethods {
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = caller.getLocation();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.BOUND_METHOD),
 				bound, loc);
-		AnalysisState<A> self = analysis.smallStepSemantics(state, child(deref, SELF, loc), caller);
-		AnalysisState<A> func = analysis.smallStepSemantics(self, child(deref, FUNC, loc), caller);
+		AnalysisState<A> self = analysis.smallStepSemantics(state, child(deref, SELF, loc), context, caller);
+		AnalysisState<A> func = analysis.smallStepSemantics(self, child(deref, FUNC, loc), context, caller);
 		Set<String> names = new HashSet<>();
 		boolean unknown = false;
 		for (SymbolicExpression f : func.getExecutionExpressions())
-			for (Type t : analysis.getRuntimeTypesOf(func, f, caller))
+			for (Type t : analysis.getRuntimeTypesOf(func, f, context, caller))
 				if (t.isCodeMemberType())
 					for (CodeMember member : t.asCodeMemberType().getMembers())
 						names.add(member.getDescriptor().getName());
@@ -218,7 +224,7 @@ public final class BoundMethods {
 		for (int i = 0; i < actuals.length; i++) {
 			types[i] = new HashSet<>();
 			for (SymbolicExpression v : actuals[i])
-				types[i].addAll(analysis.getRuntimeTypesOf(self, v, caller));
+				types[i].addAll(analysis.getRuntimeTypesOf(self, v, context, caller));
 		}
 		Set<Type> selfTypes = types[0];
 		unknown |= selfTypes.isEmpty();
@@ -243,7 +249,8 @@ public final class BoundMethods {
 					unknown = true;
 			}
 		if (unknown)
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), caller));
+			result = result
+					.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, caller));
 		return result;
 	}
 

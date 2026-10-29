@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -31,6 +32,7 @@ public class PandasSemantics {
 
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> createAndInitDataframe(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression init,
 			ProgramPoint pp)
@@ -41,13 +43,14 @@ public class PandasSemantics {
 		Type dfref = ((PyClassType) dftype).getReference();
 
 		MemoryAllocation allocation = new MemoryAllocation(dftype, location);
-		AnalysisState<A> allocated = analysis.smallStepSemantics(state, allocation, pp);
+		AnalysisState<A> allocated = analysis.smallStepSemantics(state, allocation, context, pp);
 
 		for (SymbolicExpression loc : allocated.getExecutionExpressions()) {
 			HeapReference ref = new HeapReference(dfref, loc, location);
 			AnalysisState<
-					A> readState = analysis.assign(analysis.smallStepSemantics(allocated, init, pp), loc, init, pp);
-			assigned = analysis.smallStepSemantics(readState, ref, pp);
+					A> readState = analysis.assign(analysis.smallStepSemantics(allocated, init, context, pp), loc, init,
+							context, pp);
+			assigned = analysis.smallStepSemantics(readState, ref, context, pp);
 		}
 
 		return assigned;
@@ -55,6 +58,7 @@ public class PandasSemantics {
 
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> copyDataframe(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dataframe,
 			ProgramPoint pp)
@@ -67,19 +71,21 @@ public class PandasSemantics {
 
 		// we allocate the copy of the dataframe
 		MemoryAllocation allocation = new MemoryAllocation(dftype, location);
-		AnalysisState<A> allocated = analysis.smallStepSemantics(state, allocation, pp);
+		AnalysisState<A> allocated = analysis.smallStepSemantics(state, allocation, context, pp);
 
 		AnalysisState<A> copy = state.bottomExecution();
 		UnaryExpression cp = new UnaryExpression(dftype, dataframe, new CopyDataframe(0), location);
 		for (SymbolicExpression loc : allocated.getExecutionExpressions())
 			// copy the dataframe
-			copy = copy.lub(analysis.assign(analysis.smallStepSemantics(allocated, cp, pp), loc, cp, pp));
+			copy = copy.lub(
+					analysis.assign(analysis.smallStepSemantics(allocated, cp, context, pp), loc, cp, context, pp));
 
 		return copy;
 	}
 
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> applyUnary(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dataframe,
 			ProgramPoint pp,
@@ -95,16 +101,16 @@ public class PandasSemantics {
 			dataframe = ((AccessChild) dataframe).getContainer();
 
 		// we allocate the copy that will contain the converted portion
-		AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, state, dataframe, pp);
+		AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, context, state, dataframe, pp);
 
 		for (SymbolicExpression id : copied.getExecutionExpressions()) {
 			// the new dataframe will receive the conversion
 			UnaryExpression transform = new UnaryExpression(seriestype, id, op, loc);
-			AnalysisState<A> tmp = analysis.smallStepSemantics(copied, transform, pp);
+			AnalysisState<A> tmp = analysis.smallStepSemantics(copied, transform, context, pp);
 
 			// we leave a reference to the fresh dataframe on the stack
 			HeapReference ref = new HeapReference(dfref, id, loc);
-			result = result.lub(analysis.smallStepSemantics(tmp, ref, pp));
+			result = result.lub(analysis.smallStepSemantics(tmp, ref, context, pp));
 		}
 
 		return result;
@@ -115,6 +121,7 @@ public class PandasSemantics {
 					SymbolicExpression left,
 					ProgramPoint pp,
 					Analysis<A, D> analysis,
+					ScopeId<?> context,
 					AnalysisState<A> state) {
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
@@ -127,7 +134,7 @@ public class PandasSemantics {
 
 		Set<Type> rts = null;
 		try {
-			rts = analysis.getRuntimeTypesOf(state, expression, pp);
+			rts = analysis.getRuntimeTypesOf(state, expression, context, pp);
 		} catch (SemanticException e) {
 			return false;
 		}
@@ -142,13 +149,14 @@ public class PandasSemantics {
 			SymbolicExpression expr,
 			ProgramPoint pp,
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state)
 			throws SemanticException {
-		if (isDataframePortionThatCanBeAssignedTo(expr, pp, analysis, state)) {
+		if (isDataframePortionThatCanBeAssignedTo(expr, pp, analysis, context, state)) {
 			HeapDereference firstDeref = (HeapDereference) ((AccessChild) ((HeapReference) expr).getExpression())
 					.getContainer();
 
-			if (!isDataframePortionThatCanBeAssignedTo(firstDeref.getExpression(), pp, analysis, state))
+			if (!isDataframePortionThatCanBeAssignedTo(firstDeref.getExpression(), pp, analysis, context, state))
 				return firstDeref;
 
 			HeapDereference secondDereference = (HeapDereference) ((AccessChild) ((HeapReference) firstDeref
@@ -161,6 +169,7 @@ public class PandasSemantics {
 
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> compare(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression left,
 			SymbolicExpression right,
@@ -169,46 +178,46 @@ public class PandasSemantics {
 			throws SemanticException {
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		Type seriesref = ((PyClassType) seriestype).getReference();
-		if (analysis.getRuntimeTypesOf(state, left, pp).stream().anyMatch(t -> t.equals(seriesref))) {
+		if (analysis.getRuntimeTypesOf(state, left, context, pp).stream().anyMatch(t -> t.equals(seriesref))) {
 			// custom behavior for comparison of expressions of the form
 			// df["col1"] <= 4
 
-			if (isDataframePortionThatCanBeAssignedTo(left, pp, analysis, state))
-				left = getDataframeDereference(left, pp, analysis, state);
+			if (isDataframePortionThatCanBeAssignedTo(left, pp, analysis, context, state))
+				left = getDataframeDereference(left, pp, analysis, context, state);
 
 			// we allocate the copy that will contain the converted portion
-			AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, state, left, pp);
+			AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, context, state, left, pp);
 
 			AnalysisState<A> result = state.bottomExecution();
 			CodeLocation loc = pp.getLocation();
 			for (SymbolicExpression id : copied.getExecutionExpressions()) {
 				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, right,
 						new SeriesComparison(0, op), loc);
-				AnalysisState<A> tmp = analysis.smallStepSemantics(copied, seriesComp, pp);
+				AnalysisState<A> tmp = analysis.smallStepSemantics(copied, seriesComp, context, pp);
 
 				HeapReference ref = new HeapReference(seriesref, id, loc);
-				result = result.lub(analysis.smallStepSemantics(tmp, ref, pp));
+				result = result.lub(analysis.smallStepSemantics(tmp, ref, context, pp));
 			}
 			return result;
-		} else if (analysis.getRuntimeTypesOf(state, right, pp).stream().anyMatch(t -> t.equals(seriesref))) {
+		} else if (analysis.getRuntimeTypesOf(state, right, context, pp).stream().anyMatch(t -> t.equals(seriesref))) {
 			// custom behavior for comparison of expressions of the form
 			// 4 <= df["col1"]
 
-			if (isDataframePortionThatCanBeAssignedTo(right, pp, analysis, state))
-				right = getDataframeDereference(right, pp, analysis, state);
+			if (isDataframePortionThatCanBeAssignedTo(right, pp, analysis, context, state))
+				right = getDataframeDereference(right, pp, analysis, context, state);
 
 			// we allocate the copy that will contain the converted portion
-			AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, state, right, pp);
+			AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, context, state, right, pp);
 
 			AnalysisState<A> result = state.bottomExecution();
 			CodeLocation loc = pp.getLocation();
 			for (SymbolicExpression id : copied.getExecutionExpressions()) {
 				BinaryExpression seriesComp = new BinaryExpression(seriestype, id, left,
 						new SeriesComparison(0, op), loc);
-				AnalysisState<A> tmp = analysis.smallStepSemantics(copied, seriesComp, pp);
+				AnalysisState<A> tmp = analysis.smallStepSemantics(copied, seriesComp, context, pp);
 
 				HeapReference ref = new HeapReference(seriesref, id, loc);
-				result = result.lub(analysis.smallStepSemantics(tmp, ref, pp));
+				result = result.lub(analysis.smallStepSemantics(tmp, ref, context, pp));
 			}
 			return result;
 		}

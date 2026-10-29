@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -40,11 +41,12 @@ public class NondetFloatRange extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		Satisfiability typed = hasType(analysis, state, args[0], INT.or(Type::isNumericType))
-				.and(hasType(analysis, state, args[1], INT.or(Type::isNumericType)));
-		return typeChecked(analysis, state, typed, unknown(analysis, state, Float32Type.INSTANCE));
+		Satisfiability typed = hasType(analysis, context, state, args[0], INT.or(Type::isNumericType))
+				.and(hasType(analysis, context, state, args[1], INT.or(Type::isNumericType)));
+		return typeChecked(analysis, context, state, typed, unknown(analysis, context, state, Float32Type.INSTANCE));
 	}
 }

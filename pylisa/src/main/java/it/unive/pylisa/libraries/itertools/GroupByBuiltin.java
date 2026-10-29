@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -38,10 +39,12 @@ public class GroupByBuiltin extends ItertoolBuiltin {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		return checked(analysis, state, Iteration.iterable(analysis, state, args[0], st), ItertoolsModel.GROUPBY,
+		return checked(analysis, context, state, Iteration.iterable(analysis, context, state, args[0], st),
+				ItertoolsModel.GROUPBY,
 				new String[] { ItertoolsModel.ITERABLE, ItertoolsModel.KEY },
 				new SymbolicExpression[] { args[0], args[1] });
 	}

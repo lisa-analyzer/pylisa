@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -79,14 +80,15 @@ public class EnumerateBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression iterable = args[0], start = args[1];
-		Satisfiability typed = Iteration.iterable(analysis, state, iterable, st);
+		Satisfiability typed = Iteration.iterable(analysis, context, state, iterable, st);
 		if (!missing(start))
-			typed = typed.and(hasType(analysis, state, start, INT));
+			typed = typed.and(hasType(analysis, context, state, start, INT));
 
 		AnalysisState<A> created = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED) {
@@ -94,13 +96,14 @@ public class EnumerateBuiltin extends PyNative {
 			ReferenceType reftype = new ReferenceType(type);
 			MemoryAllocation alloc = new MemoryAllocation(type, loc, false);
 			InstrumentedReceiver enumerate = new InstrumentedReceiver(reftype, false, loc);
-			created = analysis.assign(Allocations.allocate(analysis, state, alloc, st), enumerate,
-					new HeapReference(reftype, alloc, loc), st);
-			created = analysis.assign(created, child(new HeapDereference(type, enumerate, loc), loc), iterable, st);
+			created = analysis.assign(Allocations.allocate(analysis, context, state, alloc, st), enumerate,
+					new HeapReference(reftype, alloc, loc), context, st);
+			created = analysis.assign(created, child(new HeapDereference(type, enumerate, loc), loc), iterable, context,
+					st);
 			getMetaVariables().add(enumerate);
-			created = compute(analysis, created, enumerate);
+			created = compute(analysis, context, created, enumerate);
 		}
-		return typeChecked(analysis, state, typed, created);
+		return typeChecked(analysis, context, state, typed, created);
 	}
 
 	/**
@@ -109,6 +112,8 @@ public class EnumerateBuiltin extends PyNative {
 	 * from its current elements (see {@link Iteration#elements}).
 	 *
 	 * @param analysis  the analysis
+	 * @param context   the interprocedural context where the computation
+	 *                      happens
 	 * @param state     the current state
 	 * @param enumerate the enumerate object
 	 * @param pp        the program point iterating the object
@@ -120,6 +125,7 @@ public class EnumerateBuiltin extends PyNative {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression enumerate,
 			Statement pp,
@@ -128,15 +134,16 @@ public class EnumerateBuiltin extends PyNative {
 		CodeLocation loc = pp.getLocation();
 		Type type = PyClassType.lookup(LibrarySpecificationProvider.ENUMERATE);
 		AnalysisState<A> iterables = analysis.smallStepSemantics(state,
-				child(new HeapDereference(type, enumerate, loc), loc), pp);
+				child(new HeapDereference(type, enumerate, loc), loc), context, pp);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression iterable : iterables.getExecutionExpressions()) {
 			AnalysisState<A> count = analysis.smallStepSemantics(iterables, new PushAny(Int32Type.INSTANCE, loc),
-					pp);
-			AnalysisState<A> element = Iteration.elements(analysis, count, null, iterable, pp, metas);
+					context, pp);
+			AnalysisState<A> element = Iteration.elements(analysis, context, count, null, iterable, pp, metas);
 			ExpressionSet[] values = { count.getExecutionExpressions(), element.getExecutionExpressions() };
-			result = result.lub(TupleCreation.create(analysis, element, pp, new DerivedLocation(loc, "enumerate"),
-					values, metas));
+			result = result
+					.lub(TupleCreation.create(analysis, context, element, pp, new DerivedLocation(loc, "enumerate"),
+							values, metas));
 		}
 		return result;
 	}

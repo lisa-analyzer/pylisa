@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -44,6 +45,8 @@ public final class PowerSemantics {
 	 * Computes {@code base ** exponent}.
 	 *
 	 * @param analysis       the analysis
+	 * @param context        the interprocedural context where the computation
+	 *                           happens
 	 * @param state          the state where both operands have been evaluated
 	 * @param base           the base
 	 * @param exponent       the exponent
@@ -59,6 +62,7 @@ public final class PowerSemantics {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> compute(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression base,
 			SymbolicExpression exponent,
@@ -78,17 +82,18 @@ public final class PowerSemantics {
 				FloatPower.INSTANCE, loc);
 
 		if (!intOperands)
-			return ExceptionGuard.guardedCompute(analysis, state, zeroDivision,
+			return ExceptionGuard.guardedCompute(analysis, context, state, zeroDivision,
 					LibrarySpecificationProvider.ZERO_DIVISION_ERROR, floatPower, cfg, loc, dispatchTarget, thrower);
 
-		Satisfiability negative = analysis.satisfies(state, negativeExponent, thrower);
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		Satisfiability negative = analysis.satisfies(state, negativeExponent, context, thrower);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (negative != Satisfiability.SATISFIED)
 			result = result.lub(analysis.smallStepSemantics(state,
-					new BinaryExpression(Int32Type.INSTANCE, base, exponent, Power.INSTANCE, loc), dispatchTarget));
+					new BinaryExpression(Int32Type.INSTANCE, base, exponent, Power.INSTANCE, loc), context,
+					dispatchTarget));
 		if (negative != Satisfiability.NOT_SATISFIED)
-			result = result.lub(ExceptionGuard.guardedCompute(analysis, state, zeroDivision,
+			result = result.lub(ExceptionGuard.guardedCompute(analysis, context, state, zeroDivision,
 					LibrarySpecificationProvider.ZERO_DIVISION_ERROR, floatPower, cfg, loc, dispatchTarget, thrower,
 					raising));
 		return raising.moveFrom(result);

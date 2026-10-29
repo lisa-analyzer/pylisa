@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -53,14 +54,16 @@ public class SetCreation extends NaryExpression {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		if (!LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			// a set in the heap (see SetModel)
 			List<AnalysisState<A>> elements = new ArrayList<>();
 			for (ExpressionSet param : params)
 				elements.add(state.withExecutionExpressions(param));
-			AnalysisState<A> created = SetModel.create(interprocedural.getAnalysis(), state, this, loc, elements,
-					getMetaVariables());
+			AnalysisState<
+					A> created = SetModel.create(interprocedural.getAnalysis(), context, state, this, loc, elements,
+							getMetaVariables());
 			// the values of the elements are consumed here
 			for (Expression element : getSubExpressions())
 				created = created.forgetIdentifiers(element.getMetaVariables(), this);
@@ -70,7 +73,7 @@ public class SetCreation extends NaryExpression {
 		// dataframe analyses
 		SetConstant set = new SetConstant(loc);
 		if (params.length == 0)
-			return interprocedural.getAnalysis().smallStepSemantics(state, set, this);
+			return interprocedural.getAnalysis().smallStepSemantics(state, set, context, this);
 		Type setType = PyClassType.lookup(LibrarySpecificationProvider.SET);
 		BinaryOperator add = SetAdd.INSTANCE;
 
@@ -88,7 +91,7 @@ public class SetCreation extends NaryExpression {
 
 		AnalysisState<A> result = state.bottomExecution();
 		for (BinaryExpression completeSet : ws)
-			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state, completeSet, this));
+			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state, completeSet, context, this));
 
 		return result;
 	}

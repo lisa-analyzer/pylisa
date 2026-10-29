@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -27,6 +28,7 @@ public final class ExceptionGuard {
 
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> guardedCompute(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression raiseCondition,
 			String exception,
@@ -36,14 +38,14 @@ public final class ExceptionGuard {
 			Statement dispatchTarget,
 			Statement thrower)
 			throws SemanticException {
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
-		return raising.moveFrom(guardedCompute(analysis, state, raiseCondition, exception, operation, cfg, loc,
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+		return raising.moveFrom(guardedCompute(analysis, context, state, raiseCondition, exception, operation, cfg, loc,
 				dispatchTarget, thrower, raising));
 	}
 
 	/**
 	 * Same as
-	 * {@link #guardedCompute(Analysis, AnalysisState, SymbolicExpression, String, SymbolicExpression, CFG, CodeLocation, Statement, Statement)},
+	 * {@link #guardedCompute(Analysis, ScopeId, AnalysisState, SymbolicExpression, String, SymbolicExpression, CFG, CodeLocation, Statement, Statement)},
 	 * but the exception is collected in {@code raising} instead of being moved
 	 * to the error channel, for operations whose result is joined with the one
 	 * of other operations.
@@ -51,6 +53,8 @@ public final class ExceptionGuard {
 	 * @param <A>            the kind of {@link AbstractLattice} of the state
 	 * @param <D>            the kind of {@link AbstractDomain} of the analysis
 	 * @param analysis       the analysis
+	 * @param context        the interprocedural context where the computation
+	 *                           happens
 	 * @param state          the state where the operands have been evaluated
 	 * @param raiseCondition the condition under which the exception is raised
 	 * @param exception      the name of the class of the exception
@@ -69,6 +73,7 @@ public final class ExceptionGuard {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> guardedCompute(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression raiseCondition,
 			String exception,
@@ -79,11 +84,11 @@ public final class ExceptionGuard {
 			Statement thrower,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
-		Satisfiability sat = analysis.satisfies(state, raiseCondition, thrower);
+		Satisfiability sat = analysis.satisfies(state, raiseCondition, context, thrower);
 
 		AnalysisState<A> result = state.bottomExecution();
 		if (sat != Satisfiability.SATISFIED)
-			result = result.lub(analysis.smallStepSemantics(state, operation, dispatchTarget));
+			result = result.lub(analysis.smallStepSemantics(state, operation, context, dispatchTarget));
 		if (sat != Satisfiability.NOT_SATISFIED)
 			raising.raise(state, cfg, loc, thrower, exception);
 

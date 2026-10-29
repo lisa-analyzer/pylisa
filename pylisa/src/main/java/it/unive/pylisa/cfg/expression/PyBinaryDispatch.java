@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.CompilationUnit;
@@ -190,12 +191,13 @@ public final class PyBinaryDispatch {
 			Fallback fallback)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		Set<Type> rtsl = analysis.getRuntimeTypesOf(state, left, operator);
-		Set<Type> rtsr = analysis.getRuntimeTypesOf(state, right, operator);
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		Set<Type> rtsl = analysis.getRuntimeTypesOf(state, left, context, operator);
+		Set<Type> rtsr = analysis.getRuntimeTypesOf(state, right, context, operator);
 		ExpressionSet leftSet = new ExpressionSet(left);
 		ExpressionSet rightSet = new ExpressionSet(right);
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type tl : rtsl)
 			for (Type tr : rtsr) {
@@ -215,9 +217,9 @@ public final class PyBinaryDispatch {
 							operator.getRight(), operator.getLeft(), rightSet, leftSet, tr, tl);
 				if (res == null)
 					res = operatorsKnown(tl, iop, op) && operatorsKnown(tr, rop)
-							? fallback(analysis, raising, state, operator, fallback, tl, tr)
+							? fallback(analysis, context, raising, state, operator, fallback, tl, tr)
 							: analysis.smallStepSemantics(state,
-									new PushAny(Untyped.INSTANCE, operator.getLocation()), operator);
+									new PushAny(Untyped.INSTANCE, operator.getLocation()), context, operator);
 				result = result.lub(res);
 			}
 
@@ -457,10 +459,11 @@ public final class PyBinaryDispatch {
 			String name)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Expression[] params = { operator.getSubExpression() };
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
-		for (Type t : analysis.getRuntimeTypesOf(state, arg, operator)) {
+		for (Type t : analysis.getRuntimeTypesOf(state, arg, context, operator)) {
 			Type type = t;
 			ExpressionSet value = new ExpressionSet(arg);
 			Call resolved = resolveInClass(interprocedural, state, operator, classOf(type), name, params,
@@ -482,7 +485,7 @@ public final class PyBinaryDispatch {
 						LibrarySpecificationProvider.TYPE_ERROR);
 			else
 				result = result.lub(analysis.smallStepSemantics(state,
-						new PushAny(Untyped.INSTANCE, operator.getLocation()), operator));
+						new PushAny(Untyped.INSTANCE, operator.getLocation()), context, operator));
 		}
 		return raising.moveFrom(result);
 	}
@@ -751,6 +754,7 @@ public final class PyBinaryDispatch {
 	// the raised exceptions are collected by raising
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fallback(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			Expression operator,
@@ -762,20 +766,20 @@ public final class PyBinaryDispatch {
 		if (fallback != Fallback.TYPE_ERROR && left.isNullType() && right.isNullType())
 			// None is a singleton, so None == None and not None != None
 			return analysis.smallStepSemantics(state,
-					new Constant(BoolType.INSTANCE, fallback == Fallback.FALSE, loc), operator);
+					new Constant(BoolType.INSTANCE, fallback == Fallback.FALSE, loc), context, operator);
 		if (fallback != Fallback.TYPE_ERROR && sameFunction(left, right))
 			// == and != compare functions by identity
 			return analysis.smallStepSemantics(state,
-					new Constant(BoolType.INSTANCE, fallback == Fallback.FALSE, loc), operator);
+					new Constant(BoolType.INSTANCE, fallback == Fallback.FALSE, loc), context, operator);
 		if (fallback != Fallback.TYPE_ERROR && isObject(left) && isObject(right) && !distinctFunctions(left, right))
 			// == and != compare by identity, and two objects might be the same
 			// one (allocation sites cannot tell)
-			return analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), operator);
+			return analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), context, operator);
 		switch (fallback) {
 		case FALSE:
-			return analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, false, loc), operator);
+			return analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, false, loc), context, operator);
 		case TRUE:
-			return analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, true, loc), operator);
+			return analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, true, loc), context, operator);
 		case TYPE_ERROR:
 		default:
 			raising.raise(state, operator.getCFG(), loc, operator, LibrarySpecificationProvider.TYPE_ERROR);

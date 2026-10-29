@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
@@ -62,8 +63,9 @@ public class IntRPow extends BinaryExpression implements PluggableStatement {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		// other ** self
-		return PowerSemantics.compute(interprocedural.getAnalysis(), state, right, left, true, getCFG(),
+		return PowerSemantics.compute(interprocedural.getAnalysis(), context, state, right, left, true, getCFG(),
 				getLocation(), st, st);
 	}
 }

@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -49,23 +50,24 @@ public class SetBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = new DerivedLocation(getLocation(), "set");
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS))
-			return compute(analysis, state, new PushAny(Untyped.INSTANCE, getLocation()));
+			return compute(analysis, context, state, new PushAny(Untyped.INSTANCE, getLocation()));
 		SymbolicExpression iterable = args[0];
 		if (missing(iterable))
-			return SetModel.create(analysis, state, st, loc, List.of(), getMetaVariables());
-		Satisfiability it = Iteration.iterable(analysis, state, iterable, st);
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			return SetModel.create(analysis, context, state, st, loc, List.of(), getMetaVariables());
+		Satisfiability it = Iteration.iterable(analysis, context, state, iterable, st);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (it != Satisfiability.NOT_SATISFIED) {
 			Expression[] subs = getSubExpressions();
-			AnalysisState<A> elements = Iteration.elements(analysis, state, subs.length > 0 ? subs[0] : null,
+			AnalysisState<A> elements = Iteration.elements(analysis, context, state, subs.length > 0 ? subs[0] : null,
 					iterable, st, getMetaVariables(), raising);
-			result = SetModel.create(analysis, elements, st, loc, List.of(elements), getMetaVariables());
+			result = SetModel.create(analysis, context, elements, st, loc, List.of(elements), getMetaVariables());
 		}
 		if (it != Satisfiability.SATISFIED)
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);

@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
@@ -27,12 +28,12 @@ import org.apache.commons.lang3.tuple.Pair;
  * Exception} in {@code JavaArrayAccess}: it allocates an instance of the given
  * (built-in, field-less) exception class, wraps it in a {@link CFGThrow}, and
  * moves the resulting state to the error channel. The move is <i>total</i> (see
- * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState.Error, ProgramPoint)})
+ * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState.Error, ScopeId, ProgramPoint)})
  * when all executions raise the exception, as in
- * {@link #raise(Analysis, AnalysisState, CFG, CodeLocation, Statement, String)},
+ * {@link #raise(Analysis, ScopeId, AnalysisState, CFG, CodeLocation, Statement, String)},
  * whose returned state has an empty normal execution. When only some executions
  * raise it, the move must instead be <i>partial</i> (see
- * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState, AnalysisState.Error, ProgramPoint)}),
+ * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState, AnalysisState.Error, ScopeId, ProgramPoint)}),
  * knowing all the executions that continue normally: {@link Raising} collects
  * the raising executions until these are known.
  */
@@ -51,6 +52,8 @@ public final class PyExceptions {
 	 * @param <D>                the kind of {@link AbstractDomain} of the
 	 *                               analysis
 	 * @param analysis           the analysis
+	 * @param context            the interprocedural context where the
+	 *                               computation happens
 	 * @param state              the state of the executions raising the
 	 *                               exception
 	 * @param cfg                the cfg where the exception is raised
@@ -64,16 +67,17 @@ public final class PyExceptions {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> raise(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			CFG cfg,
 			CodeLocation loc,
 			Statement thrower,
 			String exceptionClassName)
 			throws SemanticException {
-		Pair<AnalysisState.Error, AnalysisState<A>> raising = prepare(analysis, state, cfg, loc, thrower,
+		Pair<AnalysisState.Error, AnalysisState<A>> raising = prepare(analysis, context, state, cfg, loc, thrower,
 				exceptionClassName);
 		AnalysisState.Error error = raising.getLeft();
-		return analysis.moveExecutionToError(raising.getRight(), error, error.getThrower());
+		return analysis.moveExecutionToError(raising.getRight(), error, context, error.getThrower());
 	}
 
 	// yields the error raised by the given exception and the state of the
@@ -82,6 +86,7 @@ public final class PyExceptions {
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Pair<AnalysisState.Error,
 			AnalysisState<A>> prepare(
 					Analysis<A, D> analysis,
+					ScopeId<?> context,
 					AnalysisState<A> state,
 					CFG cfg,
 					CodeLocation loc,
@@ -96,12 +101,12 @@ public final class PyExceptions {
 		// the one of another object (e.g. the list in [1][2])
 		MemoryAllocation alloc = new MemoryAllocation(exceptionType, new DerivedLocation(loc, exceptionClassName),
 				false);
-		AnalysisState<A> allocState = analysis.smallStepSemantics(state, alloc, thrower);
+		AnalysisState<A> allocState = analysis.smallStepSemantics(state, alloc, context, thrower);
 
 		AnalysisState<A> exceptionState = state.bottomExecution();
 		for (SymbolicExpression th : allocState.getExecutionExpressions()) {
 			CFGThrow throwVar = new CFGThrow(cfg, exceptionType, loc);
-			AnalysisState<A> tmp = analysis.assign(allocState, throwVar, th, thrower);
+			AnalysisState<A> tmp = analysis.assign(allocState, throwVar, th, context, thrower);
 			exceptionState = exceptionState.lub(tmp.withExecutionExpression(throwVar));
 		}
 
@@ -125,6 +130,8 @@ public final class PyExceptions {
 
 		private final Analysis<A, D> analysis;
 
+		private final ScopeId<?> context;
+
 		// the state of the executions raising each error, not moved yet
 		private final Map<AnalysisState.Error, AnalysisState<A>> raised = new LinkedHashMap<>();
 
@@ -132,10 +139,14 @@ public final class PyExceptions {
 		 * Builds the collector.
 		 *
 		 * @param analysis the analysis
+		 * @param context  the interprocedural context where the exceptions are
+		 *                     raised
 		 */
 		public Raising(
-				Analysis<A, D> analysis) {
+				Analysis<A, D> analysis,
+				ScopeId<?> context) {
 			this.analysis = analysis;
+			this.context = context;
 		}
 
 		/**
@@ -168,7 +179,7 @@ public final class PyExceptions {
 				Statement thrower,
 				String exceptionClassName)
 				throws SemanticException {
-			Pair<AnalysisState.Error, AnalysisState<A>> raising = prepare(analysis, state, cfg, loc, thrower,
+			Pair<AnalysisState.Error, AnalysisState<A>> raising = prepare(analysis, context, state, cfg, loc, thrower,
 					exceptionClassName);
 			AnalysisState<A> previous = raised.get(raising.getLeft());
 			raised.put(raising.getLeft(),
@@ -192,7 +203,7 @@ public final class PyExceptions {
 			AnalysisState<A> result = normal;
 			for (Map.Entry<AnalysisState.Error, AnalysisState<A>> entry : raised.entrySet())
 				result = analysis.moveExecutionToError(result, entry.getValue(), entry.getKey(),
-						entry.getKey().getThrower());
+						context, entry.getKey().getThrower());
 			return result;
 		}
 	}

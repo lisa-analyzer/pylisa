@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -88,22 +89,24 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		return combinations(interprocedural.getAnalysis(), state, params, new SymbolicExpression[params.length], 0);
+		return combinations(interprocedural.getAnalysis(), interprocedural.getCurrentContext(), state, params,
+				new SymbolicExpression[params.length], 0);
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> combinations(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
 			SymbolicExpression[] args,
 			int pos)
 			throws SemanticException {
 		if (pos == params.length)
-			return semantics(analysis, state, args.clone());
+			return semantics(analysis, context, state, args.clone());
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression e : params[pos]) {
 			args[pos] = e;
-			result = result.lub(combinations(analysis, state, params, args, pos + 1));
+			result = result.lub(combinations(analysis, context, state, params, args, pos + 1));
 		}
 		return result;
 	}
@@ -112,6 +115,7 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 * The semantics on the given arguments.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the call is evaluated
 	 * @param state    the state where the arguments have been evaluated
 	 * @param args     the arguments
 	 *
@@ -121,6 +125,7 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 */
 	protected abstract <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException;
@@ -147,6 +152,7 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 * can be a {@code str}, and {@code true} if it can be {@code bytes}.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param self     the receiver
 	 *
@@ -156,10 +162,11 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 */
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> List<Boolean> textModes(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression self)
 			throws SemanticException {
-		Satisfiability bytes = hasType(analysis, state, self, BYTES);
+		Satisfiability bytes = hasType(analysis, context, state, self, BYTES);
 		List<Boolean> modes = new ArrayList<>(2);
 		if (bytes != Satisfiability.SATISFIED)
 			modes.add(false);
@@ -179,6 +186,7 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 * satisfying {@code accepted}.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param arg      the argument
 	 * @param accepted the accepted types
@@ -189,11 +197,12 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 */
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability hasType(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression arg,
 			Predicate<Type> accepted)
 			throws SemanticException {
-		Set<Type> types = analysis.getRuntimeTypesOf(state, arg, this);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, arg, context, this);
 		if (types.isEmpty() || types.stream().anyMatch(Type::isUntyped))
 			return Satisfiability.UNKNOWN;
 		if (types.stream().allMatch(accepted))
@@ -234,6 +243,7 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 * with a {@code TypeError} (when they might not).
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param typed    whether the arguments have the right types
 	 * @param ifTyped  the result when the arguments have the right types
@@ -244,17 +254,18 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 */
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> typeChecked(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Satisfiability typed,
 			AnalysisState<A> ifTyped)
 			throws SemanticException {
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		return raising.moveFrom(typeChecked(state, typed, ifTyped, raising));
 	}
 
 	/**
 	 * Same as
-	 * {@link #typeChecked(Analysis, AnalysisState, Satisfiability, AnalysisState)},
+	 * {@link #typeChecked(Analysis, ScopeId, AnalysisState, Satisfiability, AnalysisState)},
 	 * but the {@code TypeError} is collected in {@code raising} instead of
 	 * being moved to the error channel.
 	 *
@@ -292,6 +303,7 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 * are forgotten.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param globals  the dictionary of globals passed to the native
 	 *
@@ -301,11 +313,13 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 */
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> havocGlobals(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression globals)
 			throws SemanticException {
 		if (state.getExecutionState().isBottom()
-				|| (!missing(globals) && hasType(analysis, state, globals, NONE) == Satisfiability.NOT_SATISFIED))
+				|| (!missing(globals)
+						&& hasType(analysis, context, state, globals, NONE) == Satisfiability.NOT_SATISFIED))
 			// an explicit dictionary of globals
 			return state;
 		String module = PyCFG.moduleOf(getCFG());
@@ -324,6 +338,8 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 * {@link PyExceptions}).
 	 *
 	 * @param analysis  the analysis
+	 * @param context   the interprocedural context where the computation
+	 *                      happens
 	 * @param state     the current state
 	 * @param exception the name of the exception
 	 *
@@ -333,10 +349,11 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 */
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> raise(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			String exception)
 			throws SemanticException {
-		return PyExceptions.raise(analysis, state, getCFG(), getLocation(), st, exception);
+		return PyExceptions.raise(analysis, context, state, getCFG(), getLocation(), st, exception);
 	}
 
 	/**
@@ -362,6 +379,7 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 * Computes the given value.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param value    the value
 	 *
@@ -371,16 +389,18 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 */
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> compute(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression value)
 			throws SemanticException {
-		return analysis.smallStepSemantics(state, value, st);
+		return analysis.smallStepSemantics(state, value, context, st);
 	}
 
 	/**
 	 * Computes an unknown value of the given type.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param type     the type of the value
 	 *
@@ -390,10 +410,11 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	 */
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unknown(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Type type)
 			throws SemanticException {
 		return analysis.smallStepSemantics(state, new PushAny(type == null ? Untyped.INSTANCE : type, getLocation()),
-				st);
+				context, st);
 	}
 }

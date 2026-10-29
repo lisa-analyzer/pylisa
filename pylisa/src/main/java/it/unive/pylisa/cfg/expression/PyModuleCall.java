@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
@@ -56,17 +57,18 @@ public class PyModuleCall extends UnresolvedCall {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		AnalysisState<A> result = super.forwardSemanticsAux(interprocedural, state, params, expressions);
 		Call resolved;
 		try {
-			resolved = interprocedural.resolve(this, parameterTypes(expressions, analysis),
+			resolved = interprocedural.resolve(this, parameterTypes(expressions, analysis, context),
 					state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
 		} catch (CallResolutionException e) {
 			throw new SemanticException("Unable to resolve call " + this, e);
 		}
 		if (resolved instanceof OpenCall) {
 			// not a function of the module: unknown code
-			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 			raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.EXCEPTION);
 			return raising.moveFrom(result);
 		}

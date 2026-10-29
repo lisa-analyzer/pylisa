@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -69,8 +70,9 @@ public class LambdaExpression extends Expression {
 			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		return interprocedural.getAnalysis().smallStepSemantics(entryState,
 				new LambdaConstant(PyLambdaType.INSTANCE, getLocation(), arguments, body),
-				this);
+				context, this);
 	}
 }

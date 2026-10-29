@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.NativeCFG;
@@ -57,17 +58,18 @@ public class TypeBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		Set<Type> types = analysis.getRuntimeTypesOf(state, args[0], this);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, args[0], context, this);
 		if (types.isEmpty())
-			return unknown(analysis, state, Untyped.INSTANCE);
+			return unknown(analysis, context, state, Untyped.INSTANCE);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type t : types) {
 			Constant cls = classOf(t);
-			result = result.lub(cls == null ? unknown(analysis, state, Untyped.INSTANCE)
-					: compute(analysis, state, cls));
+			result = result.lub(cls == null ? unknown(analysis, context, state, Untyped.INSTANCE)
+					: compute(analysis, context, state, cls));
 		}
 		return result;
 	}

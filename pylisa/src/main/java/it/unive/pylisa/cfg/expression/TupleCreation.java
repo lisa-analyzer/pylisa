@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -81,7 +82,8 @@ public class TupleCreation extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		return create(analysis, state, this, allocation(), params, getMetaVariables());
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		return create(analysis, context, state, this, allocation(), params, getMetaVariables());
 	}
 
 	/**
@@ -94,6 +96,7 @@ public class TupleCreation extends NaryExpression {
 	 * @param <A>      the kind of the analysis state
 	 * @param <D>      the kind of the abstract domain
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the elements have been computed
 	 * @param pp       the statement creating the tuple
 	 * @param location the location of the tuple
@@ -107,25 +110,29 @@ public class TupleCreation extends NaryExpression {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> create(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Statement pp,
 			CodeLocation location,
 			ExpressionSet[] params,
 			Collection<Identifier> metas)
 			throws SemanticException {
-		return create(analysis, state, pp, location, PyClassType.lookup(LibrarySpecificationProvider.TUPLE), params,
+		return create(analysis, context, state, pp, location, PyClassType.lookup(LibrarySpecificationProvider.TUPLE),
+				params,
 				metas);
 	}
 
 	/**
 	 * Creates a tuple with the given elements, as
-	 * {@link #create(Analysis, AnalysisState, Statement, CodeLocation, ExpressionSet[], Collection)},
+	 * {@link #create(Analysis, ScopeId, AnalysisState, Statement, CodeLocation, ExpressionSet[], Collection)},
 	 * whose class is the given one (e.g. the class of the tuples created by the
 	 * classes of {@code collections.namedtuple}).
 	 *
 	 * @param <A>       the kind of the analysis state
 	 * @param <D>       the kind of the abstract domain
 	 * @param analysis  the analysis
+	 * @param context   the interprocedural context where the computation
+	 *                      happens
 	 * @param state     the state where the elements have been computed
 	 * @param pp        the statement creating the tuple
 	 * @param location  the location of the tuple
@@ -140,6 +147,7 @@ public class TupleCreation extends NaryExpression {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> create(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Statement pp,
 			CodeLocation location,
@@ -151,7 +159,8 @@ public class TupleCreation extends NaryExpression {
 		MemoryAllocation alloc = new MemoryAllocation(tupleType, location);
 		HeapReference ref = new HeapReference(reftype, alloc, location);
 		InstrumentedReceiver tuple = new InstrumentedReceiver(reftype, false, location);
-		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, alloc, pp), tuple, ref, pp);
+		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, context, state, alloc, pp), tuple,
+				ref, context, pp);
 		HeapDereference deref = new HeapDereference(tupleType, tuple, location);
 
 		for (int i = 0; i < params.length; i++) {
@@ -160,7 +169,7 @@ public class TupleCreation extends NaryExpression {
 					location);
 			AnalysisState<A> next = state.bottomExecution();
 			for (SymbolicExpression init : params[i])
-				next = next.lub(analysis.assign(current, element, init, pp));
+				next = next.lub(analysis.assign(current, element, init, context, pp));
 			current = next;
 		}
 
@@ -169,10 +178,11 @@ public class TupleCreation extends NaryExpression {
 		// SequenceGetItem can raise IndexError on out-of-bounds accesses
 		AccessChild length = new AccessChild(Untyped.INSTANCE, deref,
 				new Variable(Int32Type.INSTANCE, "length", location), location);
-		current = analysis.assign(current, length, new Constant(Int32Type.INSTANCE, params.length, location), pp);
+		current = analysis.assign(current, length, new Constant(Int32Type.INSTANCE, params.length, location), context,
+				pp);
 
 		metas.add(tuple);
-		return analysis.smallStepSemantics(current, tuple, pp);
+		return analysis.smallStepSemantics(current, tuple, context, pp);
 	}
 
 	/**
@@ -185,6 +195,7 @@ public class TupleCreation extends NaryExpression {
 	 * @param <A>      the kind of the analysis state
 	 * @param <D>      the kind of the abstract domain
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the tuple has been created
 	 * @param tuple    the tuple
 	 * @param pp       the statement creating the tuple
@@ -196,6 +207,7 @@ public class TupleCreation extends NaryExpression {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unknownLength(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression tuple,
 			Statement pp,
@@ -205,10 +217,10 @@ public class TupleCreation extends NaryExpression {
 				location);
 		AnalysisState<A> result = analysis.assign(state, new AccessChild(Int32Type.INSTANCE, deref,
 				new Variable(Int32Type.INSTANCE, "length", location), location),
-				new PushAny(Int32Type.INSTANCE, location), pp);
+				new PushAny(Int32Type.INSTANCE, location), context, pp);
 		result = analysis.assign(result, new AccessChild(Untyped.INSTANCE, deref,
 				new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, location), location),
-				new PushAny(Untyped.INSTANCE, location), pp);
+				new PushAny(Untyped.INSTANCE, location), context, pp);
 		return result.withExecutionExpression(tuple);
 	}
 }

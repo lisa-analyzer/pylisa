@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -60,21 +61,22 @@ public class Keys extends it.unive.lisa.program.cfg.statement.UnaryExpression im
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		PyClassType seriestype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_SERIES);
 		Type seriesref = ((PyClassType) seriestype).getReference();
 
 		HeapDereference deref = new HeapDereference(dftype, expr, loc);
-		AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, state, deref, st);
+		AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, context, state, deref, st);
 
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression id : copied.getExecutionExpressions()) {
 			UnaryExpression transform = new UnaryExpression(seriestype, id, new AccessKeys(0), loc);
-			AnalysisState<A> tmp = analysis.smallStepSemantics(copied, transform, st);
+			AnalysisState<A> tmp = analysis.smallStepSemantics(copied, transform, context, st);
 
 			HeapReference ref = new HeapReference(seriesref, id, loc);
-			result = result.lub(analysis.smallStepSemantics(tmp, ref, st));
+			result = result.lub(analysis.smallStepSemantics(tmp, ref, context, st));
 		}
 		return result;
 	}

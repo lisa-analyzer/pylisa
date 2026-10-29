@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.FixpointInfo;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -98,8 +99,9 @@ public class PyNamespacesInit extends Statement {
 			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		AnalysisState<A> result = interprocedural.getAnalysis().smallStepSemantics(entryState,
-				new Skip(getLocation()), this);
+				new Skip(getLocation()), context, this);
 		Namespaces namespaces = Namespaces.of(result);
 		if (namespaces == null)
 			namespaces = Namespaces.EMPTY;

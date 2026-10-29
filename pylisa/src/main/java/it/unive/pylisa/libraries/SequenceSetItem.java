@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -78,13 +79,14 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
 		AnalysisState<A> result = state.bottomExecution();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		for (SymbolicExpression self : params[0]) {
-			Set<Type> rts = analysis.getRuntimeTypesOf(state, self, this);
+			Set<Type> rts = analysis.getRuntimeTypesOf(state, self, context, this);
 			for (Type t : rts) {
 				if (!t.isPointerType())
 					continue;
@@ -98,13 +100,13 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 				if (ListModel.isList(t)) {
 					// the elements of the list, or its slices
 					for (SymbolicExpression index : params[1]) {
-						Set<Type> indexTypes = analysis.getRuntimeTypesOf(state, index, this);
+						Set<Type> indexTypes = analysis.getRuntimeTypesOf(state, index, context, this);
 						boolean slice = !indexTypes.isEmpty() && indexTypes.stream().allMatch(ListModel::isSlice);
 						for (SymbolicExpression value : params[2])
 							result = result.lub(slice
-									? ListModel.assignSlice(analysis, state, self, index, value, st,
+									? ListModel.assignSlice(analysis, context, state, self, index, value, st,
 											getMetaVariables(), raising)
-									: ListModel.write(analysis, state, self, index, value, st, raising));
+									: ListModel.write(analysis, context, state, self, index, value, st, raising));
 					}
 					continue;
 				}
@@ -113,17 +115,18 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 					// the entries of the dictionary
 					for (SymbolicExpression key : params[1])
 						for (SymbolicExpression value : params[2])
-							result = result.lub(DictModel.write(analysis, state, self, key, value, st, raising));
+							result = result
+									.lub(DictModel.write(analysis, context, state, self, key, value, st, raising));
 					continue;
 				}
 
 				HeapDereference deref = new HeapDereference(inner, self, loc);
 				for (SymbolicExpression index : params[1]) {
 					AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, index, loc);
-					AnalysisState<A> slotState = analysis.smallStepSemantics(state, slot, this);
+					AnalysisState<A> slotState = analysis.smallStepSemantics(state, slot, context, this);
 					for (SymbolicExpression value : params[2])
 						for (SymbolicExpression slotId : slotState.getExecutionExpressions())
-							result = result.lub(analysis.assign(slotState, slotId, value, this));
+							result = result.lub(analysis.assign(slotState, slotId, value, context, this));
 				}
 			}
 		}

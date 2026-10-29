@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -90,6 +91,7 @@ public final class SetModel {
 	 * Creates a new set, with the given elements.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param pp       the statement creating the set
 	 * @param location the location of the set
@@ -105,6 +107,7 @@ public final class SetModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> create(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Statement pp,
 			CodeLocation location,
@@ -115,8 +118,8 @@ public final class SetModel {
 		ReferenceType reftype = new ReferenceType(setType);
 		MemoryAllocation alloc = new MemoryAllocation(setType, location, false);
 		InstrumentedReceiver set = new InstrumentedReceiver(reftype, false, location);
-		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, alloc, pp), set,
-				new HeapReference(reftype, alloc, location), pp);
+		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, context, state, alloc, pp), set,
+				new HeapReference(reftype, alloc, location), context, pp);
 		HeapDereference deref = new HeapDereference(setType, set, location);
 		// the heap tracks the fields accessed on each object, but until the
 		// first access to any field in the program, the fields are unknown
@@ -126,19 +129,19 @@ public final class SetModel {
 		AccessChild cls = new AccessChild(Untyped.INSTANCE, deref,
 				new Variable(Untyped.INSTANCE, "__class__", location),
 				location);
-		current = analysis.smallStepSemantics(current, cls, pp).withExecutionExpressions(
+		current = analysis.smallStepSemantics(current, cls, context, pp).withExecutionExpressions(
 				current.getExecutionExpressions());
 		AccessChild child = elements(deref, location);
 		boolean first = true;
 		for (AnalysisState<A> element : elements)
 			for (SymbolicExpression value : element.getExecutionExpressions()) {
-				AnalysisState<A> added = analysis.assign(current, child, value, pp);
+				AnalysisState<A> added = analysis.assign(current, child, value, context, pp);
 				// the first element is assigned, the others are joined with it
 				current = first ? added : added.lub(current);
 				first = false;
 			}
 		metas.add(set);
-		return analysis.smallStepSemantics(current, set, pp);
+		return analysis.smallStepSemantics(current, set, context, pp);
 	}
 
 	/**
@@ -147,6 +150,7 @@ public final class SetModel {
 	 * an unknown value if its elements are not known.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param set      the set
 	 * @param pp       the program point reading the elements
@@ -157,6 +161,7 @@ public final class SetModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression set,
 			ProgramPoint pp)
@@ -165,20 +170,21 @@ public final class SetModel {
 		// the child holding the elements, if the set has it (see
 		// ListModel#shape, as the child has the name of the elements at
 		// unknown indices of lists)
-		ListModel.Shape shape = ListModel.shape(analysis, state, set, pp);
+		ListModel.Shape shape = ListModel.shape(analysis, context, state, set, pp);
 		if (shape.elements() == null)
-			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp);
+			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp);
 		if (shape.elements().isEmpty())
 			// no elements
 			return state.bottomExecution();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.SET), set, loc);
-		return analysis.smallStepSemantics(state, elements(deref, loc), pp);
+		return analysis.smallStepSemantics(state, elements(deref, loc), context, pp);
 	}
 
 	/**
 	 * Adds the given element to the set (a weak update of its elements).
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param set      the set
 	 * @param element  the element
@@ -190,6 +196,7 @@ public final class SetModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> add(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression set,
 			SymbolicExpression element,
@@ -197,7 +204,7 @@ public final class SetModel {
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.SET), set, loc);
-		return analysis.assign(state, elements(deref, loc), element, pp).lub(state);
+		return analysis.assign(state, elements(deref, loc), element, context, pp).lub(state);
 	}
 
 	/**
@@ -206,6 +213,7 @@ public final class SetModel {
 	 * might be one of its elements.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param set      the set
 	 * @param pp       the program point modifying the set
@@ -216,11 +224,12 @@ public final class SetModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> invalidate(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression set,
 			ProgramPoint pp)
 			throws SemanticException {
-		return add(analysis, state, set, new PushAny(Untyped.INSTANCE, pp.getLocation()), pp);
+		return add(analysis, context, state, set, new PushAny(Untyped.INSTANCE, pp.getLocation()), pp);
 	}
 
 	private static AccessChild elements(

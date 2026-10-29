@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -50,6 +51,7 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Type dereferencedType = Untyped.INSTANCE;
 		Type firstAccessedType = Untyped.INSTANCE;
 		Type childType = Untyped.INSTANCE;
@@ -59,7 +61,7 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 			Type dfreftype = dftype.getReference();
-			Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);
+			Set<Type> rts = analysis.getRuntimeTypesOf(state, left, context, this);
 			if (rts.stream().anyMatch(t -> t.equals(dfreftype))) {
 				HeapDereference deref = new HeapDereference(dftype, left, getLocation());
 				it.unive.lisa.symbolic.value.TernaryExpression dfAccess = new it.unive.lisa.symbolic.value.TernaryExpression(
@@ -67,7 +69,7 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 						deref, middle, right,
 						new DataframeProjection(0),
 						getLocation());
-				state = analysis.smallStepSemantics(state, dfAccess, this);
+				state = analysis.smallStepSemantics(state, dfAccess, context, this);
 				dereferencedType = dftype;
 				firstAccessedType = dftype;
 				childType = dfreftype;
@@ -76,7 +78,7 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 
 		HeapDereference deref = new HeapDereference(dereferencedType, left, getLocation());
 		AccessChild firstAccess = new AccessChild(firstAccessedType, deref, middle, getLocation());
-		AnalysisState<A> tmp = analysis.smallStepSemantics(state, firstAccess, this);
+		AnalysisState<A> tmp = analysis.smallStepSemantics(state, firstAccess, context, this);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression accessed : tmp.getExecutionExpressions()) {
 			SymbolicExpression cont;
@@ -91,10 +93,10 @@ public class PyDoubleArrayAccess extends TernaryExpression {
 				Type inner = childType.asPointerType().getInnerType();
 				AccessChild access = new AccessChild(inner, deref, right, getLocation());
 				HeapReference ref = new HeapReference(childType, access, getLocation());
-				result = result.lub(analysis.smallStepSemantics(tmp, ref, this));
+				result = result.lub(analysis.smallStepSemantics(tmp, ref, context, this));
 			} else {
 				AccessChild access = new AccessChild(childType, deref, right, getLocation());
-				result = result.lub(analysis.smallStepSemantics(tmp, access, this));
+				result = result.lub(analysis.smallStepSemantics(tmp, access, context, this));
 			}
 		}
 		return result;

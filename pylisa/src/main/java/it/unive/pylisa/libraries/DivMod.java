@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -51,6 +52,7 @@ public class DivMod extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
@@ -61,9 +63,9 @@ public class DivMod extends PyNative {
 
 		BinaryExpression zero = new BinaryExpression(BoolType.INSTANCE, divisor,
 				new Constant(Int32Type.INSTANCE, 0, loc), ComparisonEq.INSTANCE, loc);
-		Satisfiability byZero = analysis.satisfies(state, zero, this);
+		Satisfiability byZero = analysis.satisfies(state, zero, context, this);
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (byZero != Satisfiability.SATISFIED) {
 			// the same quotient and remainder of // and %
@@ -71,7 +73,7 @@ public class DivMod extends PyNative {
 					FloorDivision.INSTANCE, loc);
 			BinaryExpression remainder = new BinaryExpression(Untyped.INSTANCE, dividend, divisor,
 					Modulo.INSTANCE, loc);
-			result = result.lub(TupleCreation.create(analysis, state, getOriginatingStatement(), loc,
+			result = result.lub(TupleCreation.create(analysis, context, state, getOriginatingStatement(), loc,
 					new ExpressionSet[] { new ExpressionSet(quotient), new ExpressionSet(remainder) },
 					getMetaVariables()));
 		}

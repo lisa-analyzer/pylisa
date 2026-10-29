@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.PushAny;
@@ -62,11 +63,12 @@ final class ListOperations {
 			Statement st)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		AnalysisState<A> result = analysis.smallStepSemantics(state,
-				new PushAny(Untyped.INSTANCE, st.getLocation()), st);
-		Set<Type> types = analysis.getRuntimeTypesOf(state, other, st);
+				new PushAny(Untyped.INSTANCE, st.getLocation()), context, st);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, other, context, st);
 		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st) || !types.stream().allMatch(accepted)) {
-			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 			raising.raise(state, st.getCFG(), st.getLocation(), st, LibrarySpecificationProvider.TYPE_ERROR);
 			return raising.moveFrom(result);
 		}

@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -62,6 +63,7 @@ public class StrSplit extends PyNative {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		// the new list, with strs at unknown indices: the state of the
 		// arguments is the one where it has been created, whose computed
@@ -75,7 +77,7 @@ public class StrSplit extends PyNative {
 		for (SymbolicExpression list : created.getExecutionExpressions()) {
 			AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 					new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
-			filled = filled.lub(analysis.assign(created, unknown, new PushAny(StringType.INSTANCE, loc), st)
+			filled = filled.lub(analysis.assign(created, unknown, new PushAny(StringType.INSTANCE, loc), context, st)
 					.withExecutionExpression(list));
 		}
 		return super.forwardSemanticsAux(interprocedural, filled, params, expressions);
@@ -84,22 +86,23 @@ public class StrSplit extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression sep = args[1], maxsplit = args[2];
-		Satisfiability typed = hasType(analysis, state, sep, STR.or(NONE));
+		Satisfiability typed = hasType(analysis, context, state, sep, STR.or(NONE));
 		if (!missing(maxsplit))
-			typed = typed.and(hasType(analysis, state, maxsplit, INT));
+			typed = typed.and(hasType(analysis, context, state, maxsplit, INT));
 
 		// an empty separator
-		Satisfiability empty = hasType(analysis, state, sep, STR) == Satisfiability.NOT_SATISFIED
+		Satisfiability empty = hasType(analysis, context, state, sep, STR) == Satisfiability.NOT_SATISFIED
 				? Satisfiability.NOT_SATISFIED
 				: analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, sep,
-						new Constant(StringType.INSTANCE, "", loc), ComparisonEq.INSTANCE, loc), st);
+						new Constant(StringType.INSTANCE, "", loc), ComparisonEq.INSTANCE, loc), context, st);
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (empty != Satisfiability.SATISFIED)
 			// the computed expressions of the state are the new list

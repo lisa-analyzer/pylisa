@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
@@ -70,6 +71,7 @@ public class Head extends BinaryExpression implements PluggableStatement {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
@@ -78,17 +80,17 @@ public class Head extends BinaryExpression implements PluggableStatement {
 		Constant start = new Constant(Int32Type.INSTANCE, 0, location);
 
 		// we allocate the copy that will have only the given rows
-		AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, state, derefLeft, st);
+		AnalysisState<A> copied = PandasSemantics.copyDataframe(analysis, context, state, derefLeft, st);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression id : copied.getExecutionExpressions()) {
 			// the new dataframe will have its rows projected
 			TernaryExpression projection = new TernaryExpression(dftype, id, start, right,
 					new RowProjection(0), location);
-			AnalysisState<A> tmp = analysis.smallStepSemantics(copied, projection, st);
+			AnalysisState<A> tmp = analysis.smallStepSemantics(copied, projection, context, st);
 
 			// we leave a reference to the fresh dataframe on the stack
 			HeapReference ref = new HeapReference(dfref, id, location);
-			result = result.lub(analysis.smallStepSemantics(tmp, ref, st));
+			result = result.lub(analysis.smallStepSemantics(tmp, ref, context, st));
 		}
 
 		return result;

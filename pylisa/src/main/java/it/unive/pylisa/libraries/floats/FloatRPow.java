@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
@@ -63,8 +64,9 @@ public class FloatRPow extends BinaryExpression implements PluggableStatement {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		// other ** self
-		return PowerSemantics.compute(interprocedural.getAnalysis(), state, right, left, false, getCFG(),
+		return PowerSemantics.compute(interprocedural.getAnalysis(), context, state, right, left, false, getCFG(),
 				getLocation(), st, st);
 	}
 }

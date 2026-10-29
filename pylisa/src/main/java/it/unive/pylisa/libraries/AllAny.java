@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -47,6 +48,7 @@ public abstract class AllAny extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
@@ -56,20 +58,21 @@ public abstract class AllAny extends PyNative {
 		Satisfiability decisive = all ? Satisfiability.NOT_SATISFIED : Satisfiability.SATISFIED;
 		Satisfiability neutral = all ? Satisfiability.SATISFIED : Satisfiability.NOT_SATISFIED;
 
-		List<SymbolicExpression> elements = ListModel.exactElements(analysis, state, iterable, this);
+		List<SymbolicExpression> elements = ListModel.exactElements(analysis, context, state, iterable, this);
 		if (elements != null) {
 			boolean decided = false, unknown = false;
 			for (SymbolicExpression e : elements) {
-				Satisfiability sat = PyNot.truth(analysis, state, e, this);
+				Satisfiability sat = PyNot.truth(analysis, context, state, e, this);
 				decided |= sat == decisive;
 				unknown |= sat != decisive && sat != neutral;
 			}
-			return result(analysis, state, !decided, decided || unknown);
+			return result(analysis, context, state, !decided, decided || unknown);
 		}
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<
-				A> any = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, st, getMetaVariables(),
+				A> any = Iteration.elements(analysis, context, state, getSubExpressions()[0], iterable, st,
+						getMetaVariables(),
 						raising);
 		// e.g. the TypeError raised by iterating an int
 		AnalysisState<A> result = any.bottomExecution();
@@ -78,18 +81,19 @@ public abstract class AllAny extends PyNative {
 		// no elements: the iterable is empty
 		boolean allDecisive = !any.getExecutionExpressions().isEmpty(), allNeutral = true;
 		for (SymbolicExpression e : any.getExecutionExpressions()) {
-			Satisfiability sat = PyNot.truth(analysis, any, e, this);
+			Satisfiability sat = PyNot.truth(analysis, context, any, e, this);
 			allDecisive &= sat == decisive;
 			allNeutral &= sat == neutral;
 		}
-		boolean nonEmpty = nonEmpty(analysis, state, iterable);
-		return raising.moveFrom(result.lub(result(analysis, state, !(allDecisive && nonEmpty), !allNeutral)));
+		boolean nonEmpty = nonEmpty(analysis, context, state, iterable);
+		return raising.moveFrom(result.lub(result(analysis, context, state, !(allDecisive && nonEmpty), !allNeutral)));
 	}
 
 	// the result: the value of all (or any) if no element decides it, its
 	// negation if some element does
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> result(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			boolean undecided,
 			boolean decided)
@@ -97,22 +101,23 @@ public abstract class AllAny extends PyNative {
 		CodeLocation loc = getLocation();
 		AnalysisState<A> result = state.bottomExecution();
 		if (undecided)
-			result = result.lub(compute(analysis, state, new Constant(BoolType.INSTANCE, all, loc)));
+			result = result.lub(compute(analysis, context, state, new Constant(BoolType.INSTANCE, all, loc)));
 		if (decided)
-			result = result.lub(compute(analysis, state, new Constant(BoolType.INSTANCE, !all, loc)));
+			result = result.lub(compute(analysis, context, state, new Constant(BoolType.INSTANCE, !all, loc)));
 		return result;
 	}
 
 	// whether the iterable is a list or tuple that surely has some elements
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean nonEmpty(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression iterable)
 			throws SemanticException {
-		if (!analysis.getRuntimeTypesOf(state, iterable, this).stream()
+		if (!analysis.getRuntimeTypesOf(state, iterable, context, this).stream()
 				.allMatch(t -> ListModel.isList(t) || Unpacking.isTuple(t)))
 			return false;
-		ListModel.Shape shape = ListModel.shape(analysis, state, iterable, this);
+		ListModel.Shape shape = ListModel.shape(analysis, context, state, iterable, this);
 		return shape.prefix() > 0 || (shape.length() != null && shape.length() > 0);
 	}
 }

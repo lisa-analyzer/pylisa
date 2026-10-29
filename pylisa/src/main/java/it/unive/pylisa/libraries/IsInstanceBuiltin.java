@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -43,11 +44,12 @@ public class IsInstanceBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		Set<Type> types = analysis.getRuntimeTypesOf(state, args[0], this);
-		Set<Type> hints = analysis.getRuntimeTypesOf(state, args[1], this);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, args[0], context, this);
+		Set<Type> hints = analysis.getRuntimeTypesOf(state, args[1], context, this);
 		boolean maybeTrue = false, maybeFalse = false, raises = false;
 		if (hints.isEmpty())
 			maybeTrue = maybeFalse = raises = true;
@@ -66,14 +68,14 @@ public class IsInstanceBuiltin extends PyNative {
 		}
 
 		CodeLocation loc = getLocation();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (maybeTrue && maybeFalse)
 			// the branches of a condition refine the types of obj
-			result = compute(analysis, state,
+			result = compute(analysis, context, state,
 					new BinaryExpression(BoolType.INSTANCE, args[0], args[1], IsInstance.INSTANCE, loc));
 		else if (maybeTrue || maybeFalse)
-			result = compute(analysis, state, new Constant(BoolType.INSTANCE, maybeTrue, loc));
+			result = compute(analysis, context, state, new Constant(BoolType.INSTANCE, maybeTrue, loc));
 		if (raises)
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);

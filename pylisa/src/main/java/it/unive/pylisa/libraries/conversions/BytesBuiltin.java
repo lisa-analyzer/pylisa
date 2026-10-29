@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -64,6 +65,7 @@ public class BytesBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
@@ -72,29 +74,32 @@ public class BytesBuiltin extends PyNative {
 		boolean noCodec = missing(encoding) && missing(errors);
 		if (missing(source))
 			// bytes() is empty, bytes(encoding=...) raises TypeError
-			return noCodec ? compute(analysis, state, new Constant(PyBytesType.INSTANCE, new PyBytes(new byte[0]), loc))
-					: raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR);
+			return noCodec
+					? compute(analysis, context, state,
+							new Constant(PyBytesType.INSTANCE, new PyBytes(new byte[0]), loc))
+					: raise(analysis, context, state, LibrarySpecificationProvider.TYPE_ERROR);
 
-		Satisfiability isStr = hasType(analysis, state, source, STR);
-		Satisfiability isInt = hasType(analysis, state, source, INT);
-		Satisfiability isBytes = hasType(analysis, state, source, BYTES);
-		Satisfiability isObject = hasType(analysis, state, source, t -> !PyBinaryDispatch.isBuiltinValueType(t)
+		Satisfiability isStr = hasType(analysis, context, state, source, STR);
+		Satisfiability isInt = hasType(analysis, context, state, source, INT);
+		Satisfiability isBytes = hasType(analysis, context, state, source, BYTES);
+		Satisfiability isObject = hasType(analysis, context, state, source, t -> !PyBinaryDispatch.isBuiltinValueType(t)
 				&& !t.isNullType());
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (isStr != Satisfiability.NOT_SATISFIED)
 			if (missing(encoding))
 				// a string argument without an encoding
 				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 			else
-				result = result.lub(CodecSemantics.semantics(this, analysis, state, Codec.ENCODE, source, encoding,
-						errors, raising));
+				result = result
+						.lub(CodecSemantics.semantics(this, analysis, context, state, Codec.ENCODE, source, encoding,
+								errors, raising));
 		if (isInt != Satisfiability.NOT_SATISFIED)
 			if (!noCodec)
 				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 			else
-				result = result.lub(ExceptionGuard.guardedCompute(analysis, state,
+				result = result.lub(ExceptionGuard.guardedCompute(analysis, context, state,
 						new BinaryExpression(BoolType.INSTANCE, source, new Constant(Int32Type.INSTANCE, 0, loc),
 								ComparisonLt.INSTANCE, loc),
 						LibrarySpecificationProvider.VALUE_ERROR,
@@ -104,10 +109,10 @@ public class BytesBuiltin extends PyNative {
 			if (!noCodec)
 				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 			else
-				result = result.lub(compute(analysis, state, source));
+				result = result.lub(compute(analysis, context, state, source));
 		if (isObject != Satisfiability.NOT_SATISFIED) {
 			// e.g. a list of integers, whose elements are not known
-			result = result.lub(unknown(analysis, state, PyBytesType.INSTANCE));
+			result = result.lub(unknown(analysis, context, state, PyBytesType.INSTANCE));
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 			raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
 		}

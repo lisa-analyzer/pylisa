@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -65,6 +66,7 @@ public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression 
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CompilationUnit superObj = ((CompilationUnit) ((Constant) left).getValue()).getImmediateAncestors().iterator()
 				.next();
 		PyClassType classTypeTo = PyClassType.lookup(superObj.getName());
@@ -78,6 +80,6 @@ public class Super extends it.unive.lisa.program.cfg.statement.BinaryExpression 
 				new Constant(tokenTypeTo, superObj, getLocation()),
 				TypeConv.INSTANCE,
 				getLocation());
-		return interprocedural.getAnalysis().smallStepSemantics(state, be, this);
+		return interprocedural.getAnalysis().smallStepSemantics(state, be, context, this);
 	}
 }

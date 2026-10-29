@@ -282,10 +282,10 @@ public class DataframeGraphDomain implements ValueLattice<DataframeGraphDomain> 
 		if (as.getField() != null)
 			// we remove the name of the field using only location name
 			if (as instanceof HeapAllocationSite)
-				as = new HeapAllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(),
+				as = new HeapAllocationSite(as.getStaticType(), as.getLocationName(), as.getContext(), as.isWeak(),
 						as.getCodeLocation());
 			else
-				as = new StackAllocationSite(as.getStaticType(), as.getLocationName(), as.isWeak(),
+				as = new StackAllocationSite(as.getStaticType(), as.getLocationName(), as.getContext(), as.isWeak(),
 						as.getCodeLocation());
 		return as;
 	}

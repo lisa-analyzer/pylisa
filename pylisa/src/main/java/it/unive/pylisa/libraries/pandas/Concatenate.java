@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -81,9 +82,10 @@ public class Concatenate extends it.unive.lisa.program.cfg.statement.UnaryExpres
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		UnaryExpression concat = new UnaryExpression(dftype, expr, new AxisConcatenation(0, axis), location);
-		return PandasSemantics.createAndInitDataframe(interprocedural.getAnalysis(), state, concat, st);
+		return PandasSemantics.createAndInitDataframe(interprocedural.getAnalysis(), context, state, concat, st);
 	}
 }

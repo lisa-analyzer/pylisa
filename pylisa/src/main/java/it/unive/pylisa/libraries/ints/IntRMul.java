@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
@@ -66,6 +67,7 @@ public class IntRMul extends BinaryExpression implements PluggableStatement {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		// the other operand is an int (e.g. 3 * "x" is computed by
 		// str.__rmul__, 3 * [1] by list.__rmul__)
 		return interprocedural.getAnalysis().smallStepSemantics(state,
@@ -75,6 +77,6 @@ public class IntRMul extends BinaryExpression implements PluggableStatement {
 						right,
 						NumericNonOverflowingMul.INSTANCE,
 						getLocation()),
-				st);
+				context, st);
 	}
 }

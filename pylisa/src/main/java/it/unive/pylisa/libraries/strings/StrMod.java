@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -74,6 +75,7 @@ public class StrMod extends BinaryExpression implements PluggableStatement {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 
 		// whether the formatting raises is decided by the domains that can
@@ -82,18 +84,18 @@ public class StrMod extends BinaryExpression implements PluggableStatement {
 				BoolType.INSTANCE, left, right, StringFormatRaises.TYPE_ERROR, loc);
 		it.unive.lisa.symbolic.value.BinaryExpression valueError = new it.unive.lisa.symbolic.value.BinaryExpression(
 				BoolType.INSTANCE, left, right, StringFormatRaises.VALUE_ERROR, loc);
-		Satisfiability raisesTypeError = analysis.satisfies(state, typeError, this);
-		Satisfiability raisesValueError = analysis.satisfies(state, valueError, this);
+		Satisfiability raisesTypeError = analysis.satisfies(state, typeError, context, this);
+		Satisfiability raisesValueError = analysis.satisfies(state, valueError, context, this);
 
 		// bytes formats produce bytes
-		Type type = analysis.getRuntimeTypesOf(state, left, this).stream()
+		Type type = analysis.getRuntimeTypesOf(state, left, context, this).stream()
 				.anyMatch(t -> t instanceof PyBytesType) ? PyBytesType.INSTANCE : StringType.INSTANCE;
 		AnalysisState<A> result = state.bottomExecution();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		if (raisesTypeError != Satisfiability.SATISFIED && raisesValueError != Satisfiability.SATISFIED)
 			result = result.lub(analysis.smallStepSemantics(state,
 					new it.unive.lisa.symbolic.value.BinaryExpression(type, left, right, StringFormat.INSTANCE, loc),
-					st));
+					context, st));
 		if (raisesTypeError != Satisfiability.NOT_SATISFIED)
 			raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
 		if (raisesValueError != Satisfiability.NOT_SATISFIED)

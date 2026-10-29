@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -103,6 +104,7 @@ public class StrGetItemNative extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
@@ -114,10 +116,12 @@ public class StrGetItemNative extends PyNative {
 
 		boolean literalSlice = index instanceof TernaryExpression
 				&& ((TernaryExpression) index).getOperator() == SliceCreation.INSTANCE;
-		Satisfiability integer = literalSlice ? Satisfiability.NOT_SATISFIED : hasType(analysis, state, index, INT);
-		Satisfiability slice = literalSlice ? Satisfiability.SATISFIED : hasType(analysis, state, index, isSlice);
+		Satisfiability integer = literalSlice ? Satisfiability.NOT_SATISFIED
+				: hasType(analysis, context, state, index, INT);
+		Satisfiability slice = literalSlice ? Satisfiability.SATISFIED
+				: hasType(analysis, context, state, index, isSlice);
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (integer != Satisfiability.NOT_SATISFIED) {
 			// IndexError if index >= len(s) or index < -len(s)
@@ -128,7 +132,7 @@ public class StrGetItemNative extends PyNative {
 					new BinaryExpression(BoolType.INSTANCE, index, len, ComparisonGe.INSTANCE, loc),
 					new BinaryExpression(BoolType.INSTANCE, index, minusLen, ComparisonLt.INSTANCE, loc),
 					LogicalOr.INSTANCE, loc);
-			result = result.lub(ExceptionGuard.guardedCompute(analysis, state, outOfRange,
+			result = result.lub(ExceptionGuard.guardedCompute(analysis, context, state, outOfRange,
 					LibrarySpecificationProvider.INDEX_ERROR,
 					new BinaryExpression(itemType, s, index, itemOp, loc),
 					getCFG(), loc, st, st, raising));
@@ -142,16 +146,16 @@ public class StrGetItemNative extends PyNative {
 				Satisfiability typed = Satisfiability.SATISFIED;
 				for (SymbolicExpression bound : new SymbolicExpression[] { sl.getLeft(), sl.getMiddle(),
 						sl.getRight() })
-					typed = typed.and(hasType(analysis, state, bound, INT.or(NONE)));
+					typed = typed.and(hasType(analysis, context, state, bound, INT.or(NONE)));
 				BinaryExpression zeroStep = new BinaryExpression(BoolType.INSTANCE, sl.getRight(),
 						new Constant(Int32Type.INSTANCE, 0, loc), ComparisonEq.INSTANCE, loc);
 				AnalysisState<A> ifTyped = typed == Satisfiability.NOT_SATISFIED ? state.bottomExecution()
-						: ExceptionGuard.guardedCompute(analysis, state, zeroStep,
+						: ExceptionGuard.guardedCompute(analysis, context, state, zeroStep,
 								LibrarySpecificationProvider.VALUE_ERROR, value, getCFG(), loc, st, st, raising);
 				result = result.lub(typeChecked(state, typed, ifTyped, raising));
 			} else {
 				// the step of a slice object is not known
-				result = result.lub(compute(analysis, state, value));
+				result = result.lub(compute(analysis, context, state, value));
 				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
 			}
 		}

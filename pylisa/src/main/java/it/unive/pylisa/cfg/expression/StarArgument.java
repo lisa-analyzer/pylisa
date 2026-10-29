@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -39,6 +40,7 @@ public class StarArgument extends StarExpression {
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		return interprocedural.getAnalysis().smallStepSemantics(state, expr, this);
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		return interprocedural.getAnalysis().smallStepSemantics(state, expr, context, this);
 	}
 }

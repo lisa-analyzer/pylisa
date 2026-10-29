@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -56,6 +57,7 @@ public class NondetDict extends NondetList {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		Set<Identifier> metas = new HashSet<>();
 
@@ -85,8 +87,9 @@ public class NondetDict extends NondetList {
 			for (SymbolicExpression dict : created.getExecutionExpressions())
 				for (Pair<SymbolicExpression, SymbolicExpression> entry : entries)
 					result = result.lub(analysis.smallStepSemantics(
-							DictModel.write(analysis, created, dict, entry.getLeft(), entry.getRight(), st), dict,
-							this));
+							DictModel.write(analysis, context, created, dict, entry.getLeft(), entry.getRight(), st),
+							dict,
+							context, this));
 		}
 		getMetaVariables().addAll(creation.getMetaVariables());
 		return result.forgetIdentifiers(metas, this);

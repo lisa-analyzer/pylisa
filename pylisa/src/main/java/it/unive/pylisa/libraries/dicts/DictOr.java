@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -68,10 +69,11 @@ public class DictOr extends BinaryExpression implements PluggableStatement {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS))
 			// dictionaries are symbolic values (see DictionaryCreation)
-			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this);
+			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, this);
 
 		DictionaryCreation creation = new DictionaryCreation(getCFG(), new DerivedLocation(loc, "or"));
 		AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, state, new ExpressionSet[0],
@@ -79,9 +81,9 @@ public class DictOr extends BinaryExpression implements PluggableStatement {
 		getMetaVariables().addAll(creation.getMetaVariables());
 		AnalysisState<A> result = created.bottomExecution();
 		for (SymbolicExpression dict : created.getExecutionExpressions()) {
-			AnalysisState<A> merged = DictModel.unpackInto(analysis, created, dict, left, st, true);
-			merged = DictModel.unpackInto(analysis, merged, dict, right, st, true);
-			result = result.lub(analysis.smallStepSemantics(merged, dict, this));
+			AnalysisState<A> merged = DictModel.unpackInto(analysis, context, created, dict, left, st, true);
+			merged = DictModel.unpackInto(analysis, context, merged, dict, right, st, true);
+			result = result.lub(analysis.smallStepSemantics(merged, dict, context, this));
 		}
 		return result;
 	}

@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.annotations.Annotation;
@@ -85,7 +86,8 @@ public class PyNameCall extends UnresolvedCall {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis());
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis(), context);
 		Binding status = ref == null ? null : ref.status(state);
 		if (status == null || status == Binding.BOTTOM || status == Binding.BOUND)
 			return raising.moveFrom(boundCall(interprocedural, state, params, expressions, raising));
@@ -111,10 +113,11 @@ public class PyNameCall extends UnresolvedCall {
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		if (!state.knowsIdentifier(callee))
 			return byName(interprocedural, state, params, expressions, raising);
 
-		CallTargets targets = CallTargets.of(analysis, state, Set.of(callee), false, this);
+		CallTargets targets = CallTargets.of(analysis, context, state, Set.of(callee), false, this);
 		if (!targets.callsSomething() && !targets.notCallable())
 			// not a variable holding functions (e.g. a library function, as
 			// in f = len, whose type is unknown)
@@ -122,7 +125,7 @@ public class PyNameCall extends UnresolvedCall {
 
 		// the callee is passed to closures, as their first argument
 		Expression calleeExpr = ref != null ? ref : new VariableRef(getCFG(), getLocation(), getTargetName());
-		expressions.put(calleeExpr, analysis.smallStepSemantics(state, callee, this));
+		expressions.put(calleeExpr, analysis.smallStepSemantics(state, callee, context, this));
 
 		AnalysisState<A> result = state.bottomExecution();
 		if (targets.notCallable())
@@ -148,12 +151,14 @@ public class PyNameCall extends UnresolvedCall {
 			StatementStore<A> expressions,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		AnalysisState<A> result = super.forwardSemanticsAux(interprocedural, state, params, expressions);
 		if (!decorated(getProgram(), getTargetName()))
 			return result;
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.EXCEPTION);
-		return result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()), this));
+		return result
+				.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()), context, this));
 	}
 
 	/**

@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
@@ -128,6 +129,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 					ExpressionSet[] parameters,
 					boolean assignFormals)
 					throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		ExpressionSet[] slots = new ExpressionSet[formals.length];
 		Set<Type>[] slotsTypes = new Set[formals.length];
 		Expression[] actuals = call.getParameters();
@@ -142,7 +144,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 				defaults[pos] = callState.getExecutionExpressions();
 				Set<Type> types = new HashSet<>();
 				for (SymbolicExpression e : defaults[pos])
-					types.addAll(interprocedural.getAnalysis().getRuntimeTypesOf(callState, e, call));
+					types.addAll(interprocedural.getAnalysis().getRuntimeTypesOf(callState, e, context, call));
 				defaultTypes[pos] = types;
 			}
 		}
@@ -150,8 +152,8 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		// the starred arguments (*xs): their elements are passed as positional
 		// arguments
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		Set<Type>[] actualTypes = call.parameterTypes(expressions, analysis);
-		Starred<A, D> starred = starred(analysis, callState, call, formals, actuals, parameters, actualTypes);
+		Set<Type>[] actualTypes = call.parameterTypes(expressions, analysis, context);
+		Starred<A, D> starred = starred(analysis, context, callState, call, formals, actuals, parameters, actualTypes);
 		actuals = starred.actuals();
 		parameters = starred.given();
 		actualTypes = starred.types();
@@ -176,7 +178,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		if (!matches)
 			// the arguments do not match the parameters of the callee: python
 			// raises TypeError
-			return Pair.of(PyExceptions.raise(interprocedural.getAnalysis(), callState, call.getCFG(),
+			return Pair.of(PyExceptions.raise(interprocedural.getAnalysis(), context, callState, call.getCFG(),
 					call.getLocation(), call, LibrarySpecificationProvider.TYPE_ERROR), parameters);
 
 		Set<Identifier> metas = new HashSet<>();
@@ -195,7 +197,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 							new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, call.getLocation()),
 							call.getLocation());
 					for (SymbolicExpression element : starred.unknown())
-						filled = filled.lub(analysis.assign(callState, unknown, element, call));
+						filled = filled.lub(analysis.assign(callState, unknown, element, context, call));
 				}
 				callState = filled.withExecutionExpressions(callState.getExecutionExpressions());
 			}
@@ -220,7 +222,8 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 				AnalysisState<A> temp = prepared.bottomExecution();
 				for (SymbolicExpression exp : slots[i])
 					temp = temp.lub(
-							interprocedural.getAnalysis().assign(prepared, formals[i].toSymbolicVariable(), exp, call));
+							interprocedural.getAnalysis().assign(prepared, formals[i].toSymbolicVariable(), exp,
+									context, call));
 				prepared = temp;
 			}
 			// the parameters are bound in the namespace of the callee
@@ -280,6 +283,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 	 */
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Starred<A, D> starred(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Call call,
 			Parameter[] formals,
@@ -288,7 +292,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			Set<Type>[] types)
 			throws SemanticException {
 		AnalysisState<A> errors = state.bottomExecution();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		if (Arrays.stream(actuals).noneMatch(StarExpression.class::isInstance))
 			return new Starred<>(actuals, given, types, null, errors, raising);
 
@@ -306,12 +310,12 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 				continue;
 			}
 			Expression iterable = ((StarExpression) actuals[i]).getSubExpression();
-			List<ExpressionSet> elements = exactElements(analysis, state, given[i], call);
+			List<ExpressionSet> elements = exactElements(analysis, context, state, given[i], call);
 			if (elements != null) {
 				for (ExpressionSet element : elements) {
 					acts.add(iterable);
 					values.add(element);
-					valueTypes.add(typesOf(analysis, state, element, call));
+					valueTypes.add(typesOf(analysis, context, state, element, call));
 				}
 				continue;
 			}
@@ -321,7 +325,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 							"starred arguments of unknown length are supported only as the last positional ones");
 			AnalysisState<A> iterated = state.bottomExecution();
 			for (SymbolicExpression value : given[i])
-				iterated = iterated.lub(Iteration.elements(analysis, state, iterable, value, call,
+				iterated = iterated.lub(Iteration.elements(analysis, context, state, iterable, value, call,
 						call.getMetaVariables(), raising));
 			errors = errors.lub(iterated.bottomExecution());
 			unknown = iterated.getExecutionExpressions();
@@ -338,7 +342,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 					named.add(((NamedParameterExpression) actual).getParameterName());
 			boolean varargs = Arrays.stream(formals).anyMatch(VarPositionalParameter.class::isInstance);
 			int filled = 0;
-			Set<Type> unknownTypes = typesOf(analysis, state, unknown, call);
+			Set<Type> unknownTypes = typesOf(analysis, context, state, unknown, call);
 			for (int f = unknownPos; f < formals.length && !(formals[f] instanceof VarPositionalParameter)
 					&& !(formals[f] instanceof VarKeywordParameter) && !named.contains(formals[f].getName()); f++) {
 				acts.add(unknownPos + filled, unknownIterable);
@@ -359,6 +363,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 	// the elements of the list or tuple, if its length is known
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> List<ExpressionSet> exactElements(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			ExpressionSet values,
 			Call call)
@@ -366,13 +371,13 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		if (values.size() != 1)
 			return null;
 		SymbolicExpression value = values.iterator().next();
-		Set<Type> types = analysis.getRuntimeTypesOf(state, value, call);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, value, context, call);
 		if (types.size() != 1)
 			return null;
 		Type type = types.iterator().next();
 		if (!ListModel.isList(type) && !Unpacking.isTuple(type))
 			return null;
-		Integer length = ListModel.shape(analysis, state, value, call).length();
+		Integer length = ListModel.shape(analysis, context, state, value, call).length();
 		if (length == null)
 			return null;
 		CodeLocation loc = call.getLocation();
@@ -380,20 +385,22 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		List<ExpressionSet> elements = new ArrayList<>();
 		for (int i = 0; i < length; i++)
 			elements.add(analysis.smallStepSemantics(state,
-					new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, i, loc), loc), call)
+					new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, i, loc), loc), context,
+					call)
 					.getExecutionExpressions());
 		return elements;
 	}
 
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Set<Type> typesOf(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			ExpressionSet values,
 			Call call)
 			throws SemanticException {
 		Set<Type> types = new HashSet<>();
 		for (SymbolicExpression value : values)
-			types.addAll(analysis.getRuntimeTypesOf(state, value, call));
+			types.addAll(analysis.getRuntimeTypesOf(state, value, context, call));
 		return types;
 	}
 

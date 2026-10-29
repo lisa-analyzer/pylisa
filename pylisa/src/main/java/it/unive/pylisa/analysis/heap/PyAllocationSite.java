@@ -1,5 +1,6 @@
 package it.unive.pylisa.analysis.heap;
 
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.heap.allocations.AllocationSite;
 import it.unive.lisa.lattices.heap.allocations.HeapAllocationSite;
 import it.unive.lisa.program.annotations.Annotation;
@@ -36,7 +37,7 @@ public class PyAllocationSite extends HeapAllocationSite {
 			String locationName,
 			boolean isWeak,
 			CodeLocation location) {
-		this(staticType, locationName, (String) null, isWeak, true, location);
+		this(staticType, locationName, (String) null, null, isWeak, true, location);
 	}
 
 	/**
@@ -45,6 +46,8 @@ public class PyAllocationSite extends HeapAllocationSite {
 	 * @param staticType   the static type of the site
 	 * @param locationName the name of the location of the site
 	 * @param field        the field, or {@code null}
+	 * @param context      the interprocedural context where the site has been
+	 *                         allocated, or {@code null}
 	 * @param isWeak       whether the site is weak
 	 * @param initialized  whether the field is surely initialized
 	 * @param location     the code location of the site
@@ -53,10 +56,11 @@ public class PyAllocationSite extends HeapAllocationSite {
 			Type staticType,
 			String locationName,
 			String field,
+			ScopeId<?> context,
 			boolean isWeak,
 			boolean initialized,
 			CodeLocation location) {
-		super(staticType, locationName, field, isWeak, location);
+		super(staticType, locationName, field, context, isWeak, location);
 		this.initialized = initialized;
 	}
 
@@ -73,7 +77,7 @@ public class PyAllocationSite extends HeapAllocationSite {
 			AllocationSite site,
 			boolean initialized) {
 		PyAllocationSite result = new PyAllocationSite(site.getStaticType(), site.getLocationName(), site.getField(),
-				site.isWeak(), initialized, site.getCodeLocation());
+				site.getContext(), site.isWeak(), initialized, site.getCodeLocation());
 		result.setAllocation(site.isAllocation());
 		for (Annotation ann : site.getAnnotations())
 			result.addAnnotation(ann);
@@ -117,6 +121,13 @@ public class PyAllocationSite extends HeapAllocationSite {
 	}
 
 	@Override
+	public PyAllocationSite withContext(
+			ScopeId<?> context) {
+		return new PyAllocationSite(getStaticType(), getLocationName(), getField(), context, isWeak(), initialized,
+				getCodeLocation());
+	}
+
+	@Override
 	public PyAllocationSite asNonAllocation() {
 		if (!isAllocation())
 			return this;
@@ -130,6 +141,6 @@ public class PyAllocationSite extends HeapAllocationSite {
 			boolean init) {
 		// as in HeapAllocationSite, the annotations and the allocation flag are
 		// not copied
-		return new PyAllocationSite(type, getLocationName(), field, weak, init, getCodeLocation());
+		return new PyAllocationSite(type, getLocationName(), field, getContext(), weak, init, getCodeLocation());
 	}
 }

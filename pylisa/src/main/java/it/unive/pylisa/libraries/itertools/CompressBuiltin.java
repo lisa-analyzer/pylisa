@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -37,12 +38,14 @@ public class CompressBuiltin extends ItertoolBuiltin {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		Satisfiability typed = Iteration.iterable(analysis, state, args[0], st)
-				.and(Iteration.iterable(analysis, state, args[1], st));
-		return checked(analysis, state, typed, ItertoolsModel.COMPRESS, new String[] { ItertoolsModel.ITERABLE },
+		Satisfiability typed = Iteration.iterable(analysis, context, state, args[0], st)
+				.and(Iteration.iterable(analysis, context, state, args[1], st));
+		return checked(analysis, context, state, typed, ItertoolsModel.COMPRESS,
+				new String[] { ItertoolsModel.ITERABLE },
 				new SymbolicExpression[] { args[0] });
 	}
 }

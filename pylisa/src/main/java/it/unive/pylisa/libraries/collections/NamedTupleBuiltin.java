@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -67,6 +68,7 @@ public class NamedTupleBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
@@ -76,16 +78,17 @@ public class NamedTupleBuiltin extends PyNative {
 		String name = subs.length > 0 && subs[0] instanceof StringLiteral ? ((StringLiteral) subs[0]).getValue()
 				: null;
 		List<String> fields = subs.length > 1 ? fields(subs[1]) : null;
-		boolean plain = (missing(rename) || analysis.satisfies(state, rename, st) == Satisfiability.NOT_SATISFIED)
-				&& (missing(defaults) || hasType(analysis, state, defaults, NONE) == Satisfiability.SATISFIED);
+		boolean plain = (missing(rename)
+				|| analysis.satisfies(state, rename, context, st) == Satisfiability.NOT_SATISFIED)
+				&& (missing(defaults) || hasType(analysis, context, state, defaults, NONE) == Satisfiability.SATISFIED);
 		if (name == null || !valid(name) || fields == null || !plain) {
 			// the class is not known
-			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 			raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
-			return raising.moveFrom(compute(analysis, state, new PushAny(Untyped.INSTANCE, loc)));
+			return raising.moveFrom(compute(analysis, context, state, new PushAny(Untyped.INSTANCE, loc)));
 		}
 		NamedTupleClassType type = new NamedTupleClassType(name, fields, loc);
-		return compute(analysis, state, new Constant(type, type, loc));
+		return compute(analysis, context, state, new Constant(type, type, loc));
 	}
 
 	// the names of the fields, if they are literals and valid, or null

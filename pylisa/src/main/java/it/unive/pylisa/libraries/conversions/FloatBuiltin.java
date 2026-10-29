@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -47,21 +48,23 @@ public class FloatBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression x = args[0];
 		if (missing(x))
-			return compute(analysis, state, new Constant(Float32Type.INSTANCE, 0f, loc));
+			return compute(analysis, context, state, new Constant(Float32Type.INSTANCE, 0f, loc));
 
-		Satisfiability typed = hasType(analysis, state, x, STR.or(INT.or(t -> t.isNumericType())));
+		Satisfiability typed = hasType(analysis, context, state, x, STR.or(INT.or(t -> t.isNumericType())));
 		UnaryExpression value = new UnaryExpression(Float32Type.INSTANCE, x, ToFloat.INSTANCE, loc);
 		BinaryExpression raises = new BinaryExpression(BoolType.INSTANCE, x, new PyNoneConstant(loc),
 				ConversionRaises.FLOAT, loc);
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> ifTyped = typed == Satisfiability.NOT_SATISFIED ? state.bottomExecution()
-				: ExceptionGuard.guardedCompute(analysis, state, raises, LibrarySpecificationProvider.VALUE_ERROR,
+				: ExceptionGuard.guardedCompute(analysis, context, state, raises,
+						LibrarySpecificationProvider.VALUE_ERROR,
 						value, getCFG(), loc, getOriginatingStatement(), getOriginatingStatement(), raising);
 		return raising.moveFrom(typeChecked(state, typed, ifTyped, raising));
 	}

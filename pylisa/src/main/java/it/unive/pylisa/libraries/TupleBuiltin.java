@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -51,35 +52,36 @@ public class TupleBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = new DerivedLocation(getLocation(), "tuple");
 		SymbolicExpression iterable = args[0];
 		if (missing(iterable))
-			return TupleCreation.create(analysis, state, st, loc, new ExpressionSet[0], getMetaVariables());
+			return TupleCreation.create(analysis, context, state, st, loc, new ExpressionSet[0], getMetaVariables());
 
-		Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, st);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, context, st);
 		if (!types.isEmpty() && types.stream().allMatch(Unpacking::isTuple))
 			// a tuple is not copied
-			return compute(analysis, state, iterable);
+			return compute(analysis, context, state, iterable);
 
-		Satisfiability it = Iteration.iterable(analysis, state, iterable, st);
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		Satisfiability it = Iteration.iterable(analysis, context, state, iterable, st);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (it != Satisfiability.NOT_SATISFIED) {
-			List<SymbolicExpression> elements = ListModel.exactElements(analysis, state, iterable, st);
+			List<SymbolicExpression> elements = ListModel.exactElements(analysis, context, state, iterable, st);
 			if (elements != null) {
 				ExpressionSet[] values = new ExpressionSet[elements.size()];
 				for (int i = 0; i < values.length; i++)
 					values[i] = new ExpressionSet(elements.get(i));
-				result = TupleCreation.create(analysis, state, st, loc, values, getMetaVariables());
+				result = TupleCreation.create(analysis, context, state, st, loc, values, getMetaVariables());
 			} else {
 				// a tuple whose length (and elements) are not known
-				AnalysisState<A> created = TupleCreation.create(analysis, state, st, loc, new ExpressionSet[0],
+				AnalysisState<A> created = TupleCreation.create(analysis, context, state, st, loc, new ExpressionSet[0],
 						getMetaVariables());
 				for (SymbolicExpression tuple : created.getExecutionExpressions())
-					result = result.lub(TupleCreation.unknownLength(analysis, created, tuple, st, loc));
+					result = result.lub(TupleCreation.unknownLength(analysis, context, created, tuple, st, loc));
 			}
 		}
 		if (it != Satisfiability.SATISFIED)

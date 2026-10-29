@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -45,14 +46,15 @@ public class BoolBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression x = args[0];
 		if (missing(x))
-			return compute(analysis, state, new Constant(BoolType.INSTANCE, false, loc));
-		Set<Type> types = analysis.getRuntimeTypesOf(state, x, st);
+			return compute(analysis, context, state, new Constant(BoolType.INSTANCE, false, loc));
+		Set<Type> types = analysis.getRuntimeTypesOf(state, x, context, st);
 		boolean bools = false, values = types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st),
 				truthy = false, unknown = false;
 		if (!values)
@@ -69,16 +71,16 @@ public class BoolBuiltin extends PyNative {
 
 		AnalysisState<A> result = state.bottomExecution();
 		if (bools)
-			result = result.lub(compute(analysis, state, x));
+			result = result.lub(compute(analysis, context, state, x));
 		if (values)
 			// not not x
-			result = result.lub(compute(analysis, state, new UnaryExpression(BoolType.INSTANCE,
+			result = result.lub(compute(analysis, context, state, new UnaryExpression(BoolType.INSTANCE,
 					new UnaryExpression(BoolType.INSTANCE, x, LogicalNot.INSTANCE, loc), LogicalNegation.INSTANCE,
 					loc)));
 		if (truthy)
-			result = result.lub(compute(analysis, state, new Constant(BoolType.INSTANCE, true, loc)));
+			result = result.lub(compute(analysis, context, state, new Constant(BoolType.INSTANCE, true, loc)));
 		if (unknown)
-			result = result.lub(compute(analysis, state, new PushAny(BoolType.INSTANCE, loc)));
+			result = result.lub(compute(analysis, context, state, new PushAny(BoolType.INSTANCE, loc)));
 		return result;
 	}
 }

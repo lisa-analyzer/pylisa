@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -56,6 +57,7 @@ public class PyTernaryOperator extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Expression[] sub = getSubExpressions();
 		Expression condition = sub[0];
 		Expression ifTrue = sub[1];
@@ -68,19 +70,19 @@ public class PyTernaryOperator extends NaryExpression {
 		AnalysisState<A> falseState = postCondition.bottomExecution();
 		boolean canBeTrue = false, canBeFalse = false;
 		for (SymbolicExpression cond : analysis.rewrite(postCondition, postCondition.getExecutionExpressions(),
-				this)) {
-			Satisfiability sat = analysis.satisfies(postCondition, cond, this);
+				context, this)) {
+			Satisfiability sat = analysis.satisfies(postCondition, cond, context, this);
 			if (sat == Satisfiability.BOTTOM)
 				continue;
 			if (sat != Satisfiability.NOT_SATISFIED) {
 				canBeTrue = true;
-				trueState = trueState.lub(analysis.assume(postCondition, cond, condition, ifTrue));
+				trueState = trueState.lub(analysis.assume(postCondition, cond, context, condition, ifTrue));
 			}
 			if (sat != Satisfiability.SATISFIED) {
 				canBeFalse = true;
 				UnaryExpression negated = new UnaryExpression(cond.getStaticType(), cond, LogicalNegation.INSTANCE,
 						cond.getCodeLocation());
-				falseState = falseState.lub(analysis.assume(postCondition, negated, condition, ifFalse));
+				falseState = falseState.lub(analysis.assume(postCondition, negated, context, condition, ifFalse));
 			}
 		}
 

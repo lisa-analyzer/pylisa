@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -68,25 +69,26 @@ public class Reduce extends PyNative {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Expression[] subs = getSubExpressions();
 		Expression iterableExpr = subs.length > 1 ? subs[1] : null;
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression iterable : params[1]) {
-			Satisfiability it = Iteration.iterable(analysis, state, iterable, st);
+			Satisfiability it = Iteration.iterable(analysis, context, state, iterable, st);
 			if (it != Satisfiability.SATISFIED)
 				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 			if (it == Satisfiability.NOT_SATISFIED)
 				continue;
 
-			Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, st);
+			Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, context, st);
 			boolean list = !types.isEmpty() && types.stream().allMatch(ListModel::isList);
-			Integer length = list ? ListModel.length(analysis, state, iterable, st) : null;
+			Integer length = list ? ListModel.length(analysis, context, state, iterable, st) : null;
 			// the number of elements that the iterable surely has
 			int surely = length != null ? length
 					: !list ? 0
-							: Math.max(ListModel.shape(analysis, state, iterable, st).prefix(),
-									ListModel.nonEmpty(analysis, state, iterable, st) ? 1 : 0);
+							: Math.max(ListModel.shape(analysis, context, state, iterable, st).prefix(),
+									ListModel.nonEmpty(analysis, context, state, iterable, st) ? 1 : 0);
 			for (SymbolicExpression initial : params[2]) {
 				boolean given = !missing(initial);
 				if (!given && surely == 0)
@@ -98,7 +100,8 @@ public class Reduce extends PyNative {
 
 				// the values of acc: initial, or the first element
 				AnalysisState<A> acc = given ? state.withExecutionExpressions(new ExpressionSet(initial))
-						: Iteration.elements(analysis, state, iterableExpr, iterable, st, getMetaVariables(), raising);
+						: Iteration.elements(analysis, context, state, iterableExpr, iterable, st, getMetaVariables(),
+								raising);
 				if (given || length == null || length != 1)
 					// function is surely called if the iterable surely has an
 					// element (two, without an initial value)
@@ -113,6 +116,7 @@ public class Reduce extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
@@ -134,11 +138,12 @@ public class Reduce extends PyNative {
 			boolean called)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		AnalysisState<A> acc = initial;
 		for (int calls = 1;; calls++) {
 			// the elements are read in the current state, that the calls
 			// might have changed
-			AnalysisState<A> elements = Iteration.elements(analysis, acc, iterableExpr, iterable, st,
+			AnalysisState<A> elements = Iteration.elements(analysis, context, acc, iterableExpr, iterable, st,
 					getMetaVariables());
 			AnalysisState<A> results = PyValueCall.call(interprocedural, elements, function,
 					new ExpressionSet[] { acc.getExecutionExpressions(), elements.getExecutionExpressions() }, st,

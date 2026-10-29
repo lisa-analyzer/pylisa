@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -60,11 +61,12 @@ public class ListBuiltin extends PyNative {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		ListCreation creation = new ListCreation(getCFG(), loc);
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		boolean empty = false, copy = false;
 		Satisfiability iterable = Satisfiability.BOTTOM;
@@ -73,7 +75,7 @@ public class ListBuiltin extends PyNative {
 				empty = true;
 			else {
 				copy = true;
-				iterable = iterable.lub(Iteration.iterable(analysis, state, arg, st));
+				iterable = iterable.lub(Iteration.iterable(analysis, context, state, arg, st));
 			}
 
 		if (empty)
@@ -88,12 +90,13 @@ public class ListBuiltin extends PyNative {
 			AnalysisState<A> elements = iterable == Satisfiability.SATISFIED && params[0].elements().size() == 1
 					? Iteration.elements(interprocedural, created, getSubExpressions()[0], params[0].iterator().next(),
 							st, getMetaVariables(), raising)
-					: analysis.smallStepSemantics(created, new PushAny(Untyped.INSTANCE, loc), st);
+					: analysis.smallStepSemantics(created, new PushAny(Untyped.INSTANCE, loc), context, st);
 			for (SymbolicExpression list : created.getExecutionExpressions()) {
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 				for (SymbolicExpression element : elements.getExecutionExpressions())
-					result = result.lub(analysis.assign(elements, unknown, element, st).withExecutionExpression(list));
+					result = result.lub(
+							analysis.assign(elements, unknown, element, context, st).withExecutionExpression(list));
 			}
 		}
 		if (copy && iterable != Satisfiability.SATISFIED)
@@ -105,6 +108,7 @@ public class ListBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {

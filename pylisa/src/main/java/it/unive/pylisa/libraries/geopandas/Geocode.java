@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -57,7 +58,9 @@ public class Geocode extends it.unive.lisa.program.cfg.statement.UnaryExpression
 			StatementStore<A> expressions)
 			throws SemanticException {
 
+		ScopeId<A> context = interprocedural.getCurrentContext();
+
 		UnaryReshape op = new UnaryReshape(0, UnaryReshapeKind.TO_GEOCODE);
-		return PandasSemantics.applyUnary(interprocedural.getAnalysis(), state, expr, st, op);
+		return PandasSemantics.applyUnary(interprocedural.getAnalysis(), context, state, expr, st, op);
 	}
 }

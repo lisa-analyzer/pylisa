@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -102,6 +103,7 @@ public class PyValueCall extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Expression[] subs = getSubExpressions();
 		// the callee is called without itself as argument
 		UnresolvedCall call = new UnresolvedCall(getCFG(), getLocation(), CallType.STATIC, null, "()",
@@ -110,9 +112,9 @@ public class PyValueCall extends NaryExpression {
 		// the value of the callee is consumed here
 		AnalysisState<A> consumed = state.forgetIdentifiers(subs[0].getMetaVariables(), this);
 
-		CallTargets targets = CallTargets.of(analysis, state, params[0], true, this);
+		CallTargets targets = CallTargets.of(analysis, context, state, params[0], true, this);
 		AnalysisState<A> result = state.bottomExecution();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		if (targets.notCallable())
 			raising.raise(consumed, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 		// closures receive the value of the callee as their first argument:
@@ -125,7 +127,7 @@ public class PyValueCall extends NaryExpression {
 		result = result.lub(called.forgetIdentifiers(calleeValues, this));
 		if (targets.unknown())
 			result = result.lub(analysis.smallStepSemantics(consumed, new PushAny(Untyped.INSTANCE, getLocation()),
-					this));
+					context, this));
 		return raising.moveFrom(result);
 	}
 
@@ -167,6 +169,7 @@ public class PyValueCall extends NaryExpression {
 			Collection<Identifier> metas)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CFG cfg = pp.getCFG();
 		CodeLocation loc = new DerivedLocation(pp.getLocation(), name);
 		// the callee and the arguments are not expressions of the program:
@@ -182,14 +185,14 @@ public class PyValueCall extends NaryExpression {
 				LeftToRightEvaluation.INSTANCE, actuals);
 		call.setParentStatement(pp);
 
-		CallTargets targets = CallTargets.of(analysis, state, callee, true, pp);
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		CallTargets targets = CallTargets.of(analysis, context, state, callee, true, pp);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = targets.call(interprocedural, state, state, pp, call, calleeExpr, args, expressions,
 				metas, raising);
 		if (targets.notCallable())
 			raising.raise(state, cfg, pp.getLocation(), pp, LibrarySpecificationProvider.TYPE_ERROR);
 		if (targets.unknown())
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp));
+			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp));
 		return raising.moveFrom(result);
 	}
 
@@ -200,6 +203,7 @@ public class PyValueCall extends NaryExpression {
 	 * @param <A>      the kind of the analysis state
 	 * @param <D>      the kind of the abstract domain
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the value has been computed
 	 * @param value    the value
 	 * @param pp       the program point using the value
@@ -210,10 +214,11 @@ public class PyValueCall extends NaryExpression {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability callable(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression value,
 			Statement pp)
 			throws SemanticException {
-		return CallTargets.callable(analysis.getRuntimeTypesOf(state, value, pp), pp);
+		return CallTargets.callable(analysis.getRuntimeTypesOf(state, value, context, pp), pp);
 	}
 }

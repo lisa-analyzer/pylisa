@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -85,13 +86,14 @@ public class SequenceContains extends BinaryExpression implements PluggableState
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
 		AnalysisState<A> result = state.bottomExecution();
 		boolean anyPointer = false;
-		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);
+		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, context, this);
 		for (Type t : rts) {
 			if (!t.isPointerType())
 				continue;
@@ -101,19 +103,21 @@ public class SequenceContains extends BinaryExpression implements PluggableState
 			if (inner.canBeAssignedTo(tupleType))
 				// since for tuple we track the length and the slots, we can be
 				// precise
-				result = result.lub(containsPrecise(analysis, state, inner, left, right, loc));
+				result = result.lub(containsPrecise(analysis, context, state, inner, left, right, loc));
 			else
-				result = result.lub(analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), st));
+				result = result
+						.lub(analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), context, st));
 		}
 
 		if (!anyPointer)
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), st));
+			result = result.lub(analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), context, st));
 
 		return result;
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> containsPrecise(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Type innerType,
 			SymbolicExpression self,
@@ -123,7 +127,7 @@ public class SequenceContains extends BinaryExpression implements PluggableState
 		HeapDereference deref = new HeapDereference(innerType, self, loc);
 		Variable lenKey = new Variable(Int32Type.INSTANCE, "length", loc);
 		AccessChild lenAccess = new AccessChild(Int32Type.INSTANCE, deref, lenKey, loc);
-		AnalysisState<A> lenState = analysis.smallStepSemantics(state, lenAccess, this);
+		AnalysisState<A> lenState = analysis.smallStepSemantics(state, lenAccess, context, this);
 
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression lenId : lenState.getExecutionExpressions()) {
@@ -134,15 +138,15 @@ public class SequenceContains extends BinaryExpression implements PluggableState
 				Constant idx = new Constant(Int32Type.INSTANCE, i, loc);
 				it.unive.lisa.symbolic.value.BinaryExpression inBounds = new it.unive.lisa.symbolic.value.BinaryExpression(
 						BoolType.INSTANCE, idx, lenId, ComparisonLt.INSTANCE, loc);
-				if (analysis.satisfies(loopState, inBounds, this) != Satisfiability.SATISFIED)
+				if (analysis.satisfies(loopState, inBounds, context, this) != Satisfiability.SATISFIED)
 					break;
 
 				AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, idx, loc);
-				AnalysisState<A> slotState = analysis.smallStepSemantics(loopState, slot, this);
+				AnalysisState<A> slotState = analysis.smallStepSemantics(loopState, slot, context, this);
 				for (SymbolicExpression slotId : slotState.getExecutionExpressions()) {
 					it.unive.lisa.symbolic.value.BinaryExpression eq = new it.unive.lisa.symbolic.value.BinaryExpression(
 							BoolType.INSTANCE, item, slotId, ComparisonEq.INSTANCE, loc);
-					overall = overall.or(analysis.satisfies(slotState, eq, this));
+					overall = overall.or(analysis.satisfies(slotState, eq, context, this));
 					loopState = slotState;
 				}
 			}
@@ -153,10 +157,11 @@ public class SequenceContains extends BinaryExpression implements PluggableState
 			else if (overall == Satisfiability.NOT_SATISFIED)
 				verdict = new Constant(BoolType.INSTANCE, false, loc);
 			else {
-				result = result.lub(analysis.smallStepSemantics(loopState, new PushAny(BoolType.INSTANCE, loc), st));
+				result = result
+						.lub(analysis.smallStepSemantics(loopState, new PushAny(BoolType.INSTANCE, loc), context, st));
 				continue;
 			}
-			result = result.lub(analysis.smallStepSemantics(loopState, verdict, st));
+			result = result.lub(analysis.smallStepSemantics(loopState, verdict, context, st));
 		}
 
 		return result;

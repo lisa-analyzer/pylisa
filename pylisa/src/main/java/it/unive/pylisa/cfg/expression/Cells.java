@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -121,6 +122,7 @@ public final class Cells {
 	 * @param <A>      the kind of {@link AbstractLattice} of the state
 	 * @param <D>      the kind of {@link AbstractDomain} of the analysis
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state
 	 * @param type     the type of the object
 	 * @param variable the name of the variable
@@ -133,6 +135,7 @@ public final class Cells {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> allocate(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			PyClassType type,
 			String variable,
@@ -141,7 +144,7 @@ public final class Cells {
 			throws SemanticException {
 		MemoryAllocation alloc = new MemoryAllocation(type, location, false);
 		HeapReference ref = new HeapReference(new ReferenceType(type), alloc, location);
-		return analysis.assign(Allocations.allocate(analysis, state, alloc, pp),
-				new Variable(Untyped.INSTANCE, variable, location), ref, pp);
+		return analysis.assign(Allocations.allocate(analysis, context, state, alloc, pp),
+				new Variable(Untyped.INSTANCE, variable, location), ref, context, pp);
 	}
 }

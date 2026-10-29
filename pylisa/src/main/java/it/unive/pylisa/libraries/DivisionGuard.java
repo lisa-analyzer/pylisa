@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Statement;
@@ -27,6 +28,7 @@ public final class DivisionGuard {
 
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> guardedCompute(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression divisor,
 			Constant zero,
@@ -37,7 +39,8 @@ public final class DivisionGuard {
 			Statement thrower)
 			throws SemanticException {
 		BinaryExpression isZero = new BinaryExpression(BoolType.INSTANCE, divisor, zero, ComparisonEq.INSTANCE, loc);
-		return ExceptionGuard.guardedCompute(analysis, state, isZero, LibrarySpecificationProvider.ZERO_DIVISION_ERROR,
+		return ExceptionGuard.guardedCompute(analysis, context, state, isZero,
+				LibrarySpecificationProvider.ZERO_DIVISION_ERROR,
 				operation, cfg, loc, dispatchTarget, thrower);
 	}
 }

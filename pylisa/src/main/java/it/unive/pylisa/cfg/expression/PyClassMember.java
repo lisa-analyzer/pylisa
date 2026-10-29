@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
@@ -81,6 +82,7 @@ public class PyClassMember extends UnresolvedCall {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		if (isWriteTarget())
 			// C.name = v: the attributes assigned through classes are not
 			// tracked (see PyClassAttributes)
@@ -90,7 +92,7 @@ public class PyClassMember extends UnresolvedCall {
 			return attribute(interprocedural, state);
 		CodeMember function = functions.iterator().next();
 		return interprocedural.getAnalysis().smallStepSemantics(state,
-				new Constant(new CodeMemberType(functions), function, getLocation()), this);
+				new Constant(new CodeMemberType(functions), function, getLocation()), context, this);
 	}
 
 	// the value of the attribute, when it is not a method (see the
@@ -100,8 +102,10 @@ public class PyClassMember extends UnresolvedCall {
 			AnalysisState<A> state)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
-		AnalysisState<A> unknown = analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this);
+		AnalysisState<
+				A> unknown = analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, this);
 		Unit unit = getProgram().getUnit(cls);
 		if (!ClassBases.isProgramClass(unit))
 			return unknown;
@@ -113,7 +117,7 @@ public class PyClassMember extends UnresolvedCall {
 				return unknown;
 			// the attribute might be assigned through the class (C.name = v),
 			// or defined by its metaclass
-			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 			raising.raise(state, getCFG(), loc, this, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			return raising.moveFrom(unknown);
 		}

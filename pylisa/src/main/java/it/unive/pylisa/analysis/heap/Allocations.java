@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
 
@@ -34,6 +35,7 @@ public final class Allocations {
 	 * @param <A>      the kind of lattice of the analysis
 	 * @param <D>      the kind of domain of the analysis
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the object is allocated
 	 * @param alloc    the allocation
 	 * @param pp       the program point allocating the object
@@ -44,10 +46,12 @@ public final class Allocations {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> allocate(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			MemoryAllocation alloc,
 			ProgramPoint pp)
 			throws SemanticException {
-		return analysis.smallStepSemantics(state, alloc, pp).withExecutionExpressions(state.getExecutionExpressions());
+		return analysis.smallStepSemantics(state, alloc, context, pp)
+				.withExecutionExpressions(state.getExecutionExpressions());
 	}
 }

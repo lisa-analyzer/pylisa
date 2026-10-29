@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -52,6 +53,7 @@ public class RangeValue extends TernaryExpression {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		Type type = PyClassType.lookup(LibrarySpecificationProvider.SLICE);
 		if (left instanceof Skip)
@@ -63,6 +65,6 @@ public class RangeValue extends TernaryExpression {
 		return interprocedural.getAnalysis().smallStepSemantics(state,
 				new it.unive.lisa.symbolic.value.TernaryExpression(
 						type, left, middle, right, SliceCreation.INSTANCE, loc),
-				this);
+				context, this);
 	}
 }

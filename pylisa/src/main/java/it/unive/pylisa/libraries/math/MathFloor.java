@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -58,12 +59,13 @@ public class MathFloor extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression x = args[0];
-		Set<Type> types = analysis.getRuntimeTypesOf(state, x, this);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, x, context, this);
 		boolean unknown = types.isEmpty() || types.stream().anyMatch(Type::isUntyped);
 		boolean integral = unknown || types.stream().anyMatch(INT);
 		boolean real = unknown || types.stream().anyMatch(t -> t.isNumericType() && !INT.test(t));
@@ -72,12 +74,12 @@ public class MathFloor extends PyNative {
 		boolean notNumber = unknown || types.stream().anyMatch(t -> !t.isNumericType() && !t.isBooleanType()
 				&& PyBinaryDispatch.isBuiltinValueType(t));
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		UnaryExpression value = new UnaryExpression(Int32Type.INSTANCE, x, Floor.INSTANCE, loc);
 		if (!real) {
 			if (integral)
-				result = result.lub(compute(analysis, state, value));
+				result = result.lub(compute(analysis, context, state, value));
 		} else {
 			// nan is the only value different from itself
 			BinaryExpression isNan = new BinaryExpression(BoolType.INSTANCE, x, x, ComparisonNe.INSTANCE, loc);
@@ -89,10 +91,10 @@ public class MathFloor extends PyNative {
 							new Constant(Float32Type.INSTANCE, Float.NEGATIVE_INFINITY, loc), ComparisonEq.INSTANCE,
 							loc),
 					LogicalOr.INSTANCE, loc);
-			Satisfiability nan = analysis.satisfies(state, isNan, this);
-			Satisfiability inf = analysis.satisfies(state, isInf, this);
+			Satisfiability nan = analysis.satisfies(state, isNan, context, this);
+			Satisfiability inf = analysis.satisfies(state, isInf, context, this);
 			if (nan != Satisfiability.SATISFIED && inf != Satisfiability.SATISFIED)
-				result = result.lub(compute(analysis, state, value));
+				result = result.lub(compute(analysis, context, state, value));
 			if (nan != Satisfiability.NOT_SATISFIED)
 				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
 			if (inf != Satisfiability.NOT_SATISFIED)
@@ -102,7 +104,7 @@ public class MathFloor extends PyNative {
 		if (notNumber)
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		if (object)
-			result = result.lub(unknown(analysis, state, Int32Type.INSTANCE));
+			result = result.lub(unknown(analysis, context, state, Int32Type.INSTANCE));
 		return raising.moveFrom(result);
 	}
 }

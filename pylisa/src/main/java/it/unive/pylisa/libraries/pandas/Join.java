@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -62,17 +63,19 @@ public class Join extends it.unive.lisa.program.cfg.statement.BinaryExpression i
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		AnalysisState<A> result = state.bottomExecution();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		Type dfref = ((PyClassType) dftype).getReference();
 
-		AnalysisState<A> copy = PandasSemantics.copyDataframe(analysis, state, left, st);
+		AnalysisState<A> copy = PandasSemantics.copyDataframe(analysis, context, state, left, st);
 		ExpressionSet recs = copy.getExecutionExpressions();
 		for (SymbolicExpression rec : recs) {
 			BinaryExpression cat = new BinaryExpression(dftype, rec, right, new JoinCols(0), loc);
 			HeapReference ref = new HeapReference(dfref, rec, loc);
-			result = result.lub(analysis.smallStepSemantics(analysis.smallStepSemantics(copy, cat, st), ref, st));
+			result = result.lub(
+					analysis.smallStepSemantics(analysis.smallStepSemantics(copy, cat, context, st), ref, context, st));
 		}
 
 		return result;

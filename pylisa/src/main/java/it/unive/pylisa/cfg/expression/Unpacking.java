@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -100,7 +101,8 @@ public final class Unpacking {
 			Statement pp,
 			Assigner<A> assigner)
 			throws SemanticException {
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis());
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis(), context);
 		AnalysisState<A> result = unpack(interprocedural, state, value, targets, star, pp, assigner, raising);
 		return raising.moveFrom(result);
 	}
@@ -135,31 +137,34 @@ public final class Unpacking {
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = pp.getLocation();
-		Set<Type> types = analysis.getRuntimeTypesOf(state, value, pp);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, value, context, pp);
 		AnalysisState<A> result = state.bottomExecution();
 		boolean valueError = false, typeError = false;
 
 		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, pp)) {
 			valueError = true;
 			result = result.lub(any(interprocedural, state,
-					analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp), targets, star, pp,
+					analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp), targets, star,
+					pp,
 					assigner));
 		} else
 			for (Type t : types)
 				if (ListModel.isList(t) || isTuple(t)) {
-					ListModel.Shape shape = ListModel.shape(analysis, state, value, pp);
+					ListModel.Shape shape = ListModel.shape(analysis, context, state, value, pp);
 					HeapDereference deref = new HeapDereference(t.asPointerType().getInnerType(), value, loc);
 					Integer n = shape.length();
 					if (n == null) {
 						valueError = true;
 						AnalysisState<A> elements = state.bottomExecution();
 						if (shape.elements() == null)
-							elements = analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp);
+							elements = analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context,
+									pp);
 						else
 							for (SymbolicExpression field : shape.elements())
 								elements = elements.lub(analysis.smallStepSemantics(state,
-										new AccessChild(Untyped.INSTANCE, deref, field, loc), pp));
+										new AccessChild(Untyped.INSTANCE, deref, field, loc), context, pp));
 						result = result.lub(any(interprocedural, state, elements, targets, star, pp, assigner));
 					} else if (star < 0 ? n != targets.length : n < targets.length - 1)
 						// too many or too few values
@@ -189,13 +194,14 @@ public final class Unpacking {
 					result = result.lub(unpacked.forgetIdentifiers(metas, pp));
 				} else if (DictModel.isDict(t)) {
 					valueError = true;
-					result = result.lub(any(interprocedural, state, DictModel.keys(analysis, state, value, pp),
+					result = result.lub(any(interprocedural, state, DictModel.keys(analysis, context, state, value, pp),
 							targets, star, pp, assigner));
 				} else if (t.isStringType() || t instanceof PyBytesType) {
 					valueError = true;
 					Type element = t.isStringType() ? StringType.INSTANCE : Int32Type.INSTANCE;
 					result = result.lub(any(interprocedural, state,
-							analysis.smallStepSemantics(state, new PushAny(element, loc), pp), targets, star, pp,
+							analysis.smallStepSemantics(state, new PushAny(element, loc), context, pp), targets, star,
+							pp,
 							assigner));
 				} else if (t.isCodeMemberType()
 						|| (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t)))
@@ -205,7 +211,8 @@ public final class Unpacking {
 					// e.g. an object whose class defines __iter__
 					valueError = true;
 					result = result.lub(any(interprocedural, state,
-							analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp), targets, star,
+							analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp),
+							targets, star,
 							pp, assigner));
 				}
 
@@ -244,6 +251,7 @@ public final class Unpacking {
 			Assigner<A> assigner)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = pp.getLocation();
 		AnalysisState<A> current = state;
 		int after = star < 0 ? 0 : targets.length - star - 1;
@@ -252,7 +260,7 @@ public final class Unpacking {
 				continue;
 			// the targets after the starred one take the last elements
 			int index = star >= 0 && i > star ? n - after + (i - star - 1) : i;
-			ExpressionSet elements = element(analysis, state, deref, index, pp);
+			ExpressionSet elements = element(analysis, context, state, deref, index, pp);
 			AnalysisState<A> next = current.bottomExecution();
 			for (SymbolicExpression element : elements)
 				next = next.lub(assigner.assign(current, targets[i], element));
@@ -263,7 +271,7 @@ public final class Unpacking {
 			int count = n - targets.length + 1;
 			ExpressionSet[] middle = new ExpressionSet[count];
 			for (int i = 0; i < count; i++)
-				middle[i] = element(analysis, state, deref, star + i, pp);
+				middle[i] = element(analysis, context, state, deref, star + i, pp);
 			ListCreation creation = new ListCreation(pp.getCFG(), new DerivedLocation(loc, "star"));
 			AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, current, middle,
 					new StatementStore<>(current));
@@ -283,10 +291,11 @@ public final class Unpacking {
 			Assigner<A> assigner)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = pp.getLocation();
 		if (elements.getExecutionExpressions().isEmpty() && !elements.getExecutionState().isBottom())
 			// no element is known
-			elements = analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp);
+			elements = analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp);
 		AnalysisState<A> current = state.lub(elements.bottomExecution());
 		for (int i = 0; i < targets.length; i++) {
 			if (i == star)
@@ -308,7 +317,7 @@ public final class Unpacking {
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 				for (SymbolicExpression element : elements.getExecutionExpressions())
 					// the list might also be empty
-					filled = filled.lub(analysis.assign(created, unknown, element, pp));
+					filled = filled.lub(analysis.assign(created, unknown, element, context, pp));
 			}
 			current = assignStarred(filled.withExecutionExpressions(created.getExecutionExpressions()),
 					targets[star], creation, assigner);
@@ -332,6 +341,7 @@ public final class Unpacking {
 
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> ExpressionSet element(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			HeapDereference deref,
 			int index,
@@ -339,7 +349,8 @@ public final class Unpacking {
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		return analysis.smallStepSemantics(state,
-				new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, index, loc), loc), pp)
+				new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, index, loc), loc), context,
+				pp)
 				.getExecutionExpressions();
 	}
 }

@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
@@ -88,10 +89,11 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 			Statement thrower)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		Set<Type> rts = analysis.getRuntimeTypesOf(state, expr, this);
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		Set<Type> rts = analysis.getRuntimeTypesOf(state, expr, context, this);
 		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type t : rts) {
 			if (PyBinaryDispatch.isBuiltinValueType(t)) {

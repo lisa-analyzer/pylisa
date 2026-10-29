@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
@@ -56,7 +57,8 @@ public class Apply extends BinaryExpression implements PluggableStatement {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		UnaryTransform op = new UnaryTransform(0, UnaryTransformKind.LAMBDA, Axis.ROWS, right);
-		return PandasSemantics.applyUnary(interprocedural.getAnalysis(), state, left, st, op);
+		return PandasSemantics.applyUnary(interprocedural.getAnalysis(), context, state, left, st, op);
 	}
 }

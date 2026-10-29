@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -42,11 +43,12 @@ public class CheckType extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		Set<Type> types = analysis.getRuntimeTypesOf(state, args[0], this);
-		Set<Type> hints = analysis.getRuntimeTypesOf(state, args[1], this);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, args[0], context, this);
+		Set<Type> hints = analysis.getRuntimeTypesOf(state, args[1], context, this);
 		boolean matches = false, fails = false;
 		if (types.isEmpty() || hints.isEmpty())
 			matches = fails = true;
@@ -57,10 +59,10 @@ public class CheckType extends PyNative {
 				fails |= sat != Satisfiability.SATISFIED;
 			}
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (matches)
-			result = result.lub(compute(analysis, state, new PyNoneConstant(getLocation())));
+			result = result.lub(compute(analysis, context, state, new PyNoneConstant(getLocation())));
 		if (fails)
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);

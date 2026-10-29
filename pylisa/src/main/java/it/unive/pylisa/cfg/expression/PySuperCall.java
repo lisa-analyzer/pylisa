@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.ClassUnit;
@@ -82,12 +83,13 @@ public class PySuperCall extends UnresolvedCall {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		Set<Type> selfTypes = new HashSet<>();
 		for (SymbolicExpression self : params[0])
-			selfTypes.addAll(analysis.getRuntimeTypesOf(state, self, this));
+			selfTypes.addAll(analysis.getRuntimeTypesOf(state, self, context, this));
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		boolean unknown = selfTypes.isEmpty();
 		Set<CompilationUnit> definers = new HashSet<>();
@@ -110,14 +112,14 @@ public class PySuperCall extends UnresolvedCall {
 			else if (getTargetName().equals("__init__"))
 				// object.__init__, that accepts no arguments
 				if (params.length == 1)
-					result = result.lub(analysis.smallStepSemantics(state, new PyNoneConstant(loc), this));
+					result = result.lub(analysis.smallStepSemantics(state, new PyNoneConstant(loc), context, this));
 				else
 					raising.raise(state, getCFG(), loc, this, LibrarySpecificationProvider.TYPE_ERROR);
 			else
 				raising.raise(state, getCFG(), loc, this, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 		}
 
-		Set<Type>[] types = parameterTypes(expressions, analysis);
+		Set<Type>[] types = parameterTypes(expressions, analysis, context);
 		for (CompilationUnit definer : definers) {
 			// the method of the class defining it, called on self
 			types[0] = Set.of(new ReferenceType(PyClassType.lookup(definer.getName())));
@@ -137,7 +139,7 @@ public class PySuperCall extends UnresolvedCall {
 			}
 		}
 		if (unknown)
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this));
+			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, this));
 		return raising.moveFrom(result);
 	}
 }

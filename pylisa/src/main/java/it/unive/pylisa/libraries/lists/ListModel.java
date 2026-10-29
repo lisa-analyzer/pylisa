@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.lattices.heap.allocations.AllocationSite;
@@ -101,6 +102,7 @@ public final class ListModel {
 	// the objects the list points to, or null if they are not known
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Set<AllocationSite> sites(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			ProgramPoint pp)
@@ -109,7 +111,7 @@ public final class ListModel {
 		if (heap == null || heap.isTop() || heap.isBottom())
 			return null;
 		Set<AllocationSite> sites = new HashSet<>();
-		for (SymbolicExpression rec : analysis.rewrite(state, list, pp))
+		for (SymbolicExpression rec : analysis.rewrite(state, list, context, pp))
 			if (rec instanceof MemoryPointer && ((MemoryPointer) rec).getReferencedLocation() instanceof AllocationSite)
 				sites.add((AllocationSite) ((MemoryPointer) rec).getReferencedLocation());
 			else if (rec instanceof Identifier && heap.knowsIdentifier((Identifier) rec)) {
@@ -128,6 +130,7 @@ public final class ListModel {
 	 * built by a list literal, whose elements are all at known indices.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param list     the list
 	 * @param pp       the program point using the length
@@ -138,11 +141,12 @@ public final class ListModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Integer length(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			ProgramPoint pp)
 			throws SemanticException {
-		Set<AllocationSite> sites = sites(analysis, state, list, pp);
+		Set<AllocationSite> sites = sites(analysis, context, state, list, pp);
 		if (sites == null)
 			return null;
 		HeapEnvWithFields heap = state.getExecutionState().getLatticeInstance(HeapEnvWithFields.class);
@@ -184,6 +188,7 @@ public final class ListModel {
 	 * {@link #SHRUNK}).
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param list     the list
 	 * @param pp       the program point modifying the list
@@ -194,6 +199,7 @@ public final class ListModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> invalidate(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			ProgramPoint pp)
@@ -202,17 +208,18 @@ public final class ListModel {
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		HeapDereference deref = new HeapDereference(listType, list, loc);
 		AnalysisState<A> result = state;
-		Set<AllocationSite> sites = sites(analysis, state, list, pp);
+		Set<AllocationSite> sites = sites(analysis, context, state, list, pp);
 		HeapEnvWithFields heap = state.getExecutionState().getLatticeInstance(HeapEnvWithFields.class);
 		if (sites != null && !heap.fields.isTop() && heap.fields.function != null)
 			for (AllocationSite site : sites)
 				for (SymbolicExpression field : heap.fields.getState(site))
 					if (field instanceof Constant)
 						result = analysis.assign(result, new AccessChild(Untyped.INSTANCE, deref, field, loc),
-								new PushAny(Untyped.INSTANCE, loc), pp);
+								new PushAny(Untyped.INSTANCE, loc), context, pp);
 		AccessChild unknown = new AccessChild(Untyped.INSTANCE, deref,
 				new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
-		return shrink(analysis, analysis.assign(result, unknown, new PushAny(Untyped.INSTANCE, loc), pp), list, pp);
+		return shrink(analysis, context,
+				analysis.assign(result, unknown, new PushAny(Untyped.INSTANCE, loc), context, pp), list, pp);
 	}
 
 	/**
@@ -230,6 +237,7 @@ public final class ListModel {
 	 * {@link #SHRUNK}).
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param list     the list
 	 * @param pp       the program point removing the elements
@@ -240,6 +248,7 @@ public final class ListModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> shrink(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			ProgramPoint pp)
@@ -249,9 +258,11 @@ public final class ListModel {
 		HeapDereference deref = new HeapDereference(listType, list, loc);
 		AccessChild shrunk = new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, SHRUNK, loc),
 				loc);
-		AnalysisState<A> result = analysis.assign(state, shrunk, new Constant(BoolType.INSTANCE, true, loc), pp);
+		AnalysisState<
+				A> result = analysis.assign(state, shrunk, new Constant(BoolType.INSTANCE, true, loc), context, pp);
 		// the list might have lost its last element
-		return setNonEmpty(analysis, result, list, false, pp).withExecutionExpressions(state.getExecutionExpressions());
+		return setNonEmpty(analysis, context, result, list, false, pp)
+				.withExecutionExpressions(state.getExecutionExpressions());
 	}
 
 	/**
@@ -270,6 +281,7 @@ public final class ListModel {
 	 * Records whether the list surely has an element (see {@link #NONEMPTY}).
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param list     the list
 	 * @param nonEmpty whether the list surely has an element
@@ -282,6 +294,7 @@ public final class ListModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> setNonEmpty(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			boolean nonEmpty,
@@ -291,7 +304,7 @@ public final class ListModel {
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		AccessChild child = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 				new Variable(Untyped.INSTANCE, NONEMPTY, loc), loc);
-		return analysis.assign(state, child, new Constant(BoolType.INSTANCE, nonEmpty, loc), pp)
+		return analysis.assign(state, child, new Constant(BoolType.INSTANCE, nonEmpty, loc), context, pp)
 				.withExecutionExpressions(state.getExecutionExpressions());
 	}
 
@@ -302,6 +315,7 @@ public final class ListModel {
 	 * whose child is surely {@code True}.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param list     the list
 	 * @param pp       the program point using the list
@@ -312,34 +326,36 @@ public final class ListModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean nonEmpty(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			ProgramPoint pp)
 			throws SemanticException {
-		Set<AllocationSite> sites = sites(analysis, state, list, pp);
+		Set<AllocationSite> sites = sites(analysis, context, state, list, pp);
 		if (sites == null || sites.stream().anyMatch(AllocationSite::isWeak))
 			return false;
 		CodeLocation loc = pp.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		AccessChild child = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 				new Variable(Untyped.INSTANCE, NONEMPTY, loc), loc);
-		return analysis.satisfies(state, child, pp) == Satisfiability.SATISFIED;
+		return analysis.satisfies(state, child, context, pp) == Satisfiability.SATISFIED;
 	}
 
 	// whether the value is surely the given int
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean surely(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression value,
 			int c,
 			ProgramPoint pp)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
-		Set<Type> types = analysis.getRuntimeTypesOf(state, value, pp);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, value, context, pp);
 		return !types.isEmpty() && types.stream().allMatch(ListOperations.INT)
 				&& analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, value,
 						new Constant(Int32Type.INSTANCE, c, loc), ComparisonEq.INSTANCE, loc),
-						pp) == Satisfiability.SATISFIED;
+						context, pp) == Satisfiability.SATISFIED;
 	}
 
 	/**
@@ -347,6 +363,7 @@ public final class ListModel {
 	 * each of them has a single value.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param iterable the list or tuple
 	 * @param pp       the program point using the elements
@@ -357,15 +374,16 @@ public final class ListModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> List<SymbolicExpression> exactElements(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression iterable,
 			ProgramPoint pp)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
-		Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, pp);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, context, pp);
 		if (types.size() != 1 || !(isList(types.iterator().next()) || Unpacking.isTuple(types.iterator().next())))
 			return null;
-		Shape shape = shape(analysis, state, iterable, pp);
+		Shape shape = shape(analysis, context, state, iterable, pp);
 		if (shape.length() == null)
 			return null;
 		HeapDereference deref = new HeapDereference(types.iterator().next().asPointerType().getInnerType(), iterable,
@@ -373,7 +391,8 @@ public final class ListModel {
 		List<SymbolicExpression> elements = new ArrayList<>();
 		for (int i = 0; i < shape.length(); i++) {
 			ExpressionSet element = analysis.smallStepSemantics(state,
-					new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, i, loc), loc), pp)
+					new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, i, loc), loc), context,
+					pp)
 					.getExecutionExpressions();
 			if (element.elements().size() != 1)
 				return null;
@@ -403,6 +422,7 @@ public final class ListModel {
 	 * Yields what is known about the elements of the list.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param list     the list
 	 * @param pp       the program point using the list
@@ -413,11 +433,12 @@ public final class ListModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Shape shape(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			ProgramPoint pp)
 			throws SemanticException {
-		Set<AllocationSite> sites = sites(analysis, state, list, pp);
+		Set<AllocationSite> sites = sites(analysis, context, state, list, pp);
 		HeapEnvWithFields heap = state.getExecutionState().getLatticeInstance(HeapEnvWithFields.class);
 		if (sites == null || heap.fields.isTop() || heap.fields.function == null)
 			return new Shape(null, 0, null);
@@ -449,7 +470,7 @@ public final class ListModel {
 			int surely = site.isWeak() || shrunk ? 0 : k;
 			prefix = prefix == null ? surely : Math.min(prefix, surely);
 		}
-		return new Shape(length(analysis, state, list, pp), prefix == null ? 0 : prefix, elements);
+		return new Shape(length(analysis, context, state, list, pp), prefix == null ? 0 : prefix, elements);
 	}
 
 	/**
@@ -461,6 +482,7 @@ public final class ListModel {
 	 * otherwise the result is any of the elements of the list.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the list and the index have been
 	 *                     evaluated
 	 * @param list     the list
@@ -475,6 +497,7 @@ public final class ListModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> read(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			SymbolicExpression index,
@@ -484,11 +507,11 @@ public final class ListModel {
 		CodeLocation loc = thrower.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		HeapDereference deref = new HeapDereference(listType, list, loc);
-		Shape shape = shape(analysis, state, list, thrower);
+		Shape shape = shape(analysis, context, state, list, thrower);
 
 		AnalysisState<A> result = state.bottomExecution();
 		boolean typeError = false, indexError = false, any = false;
-		Set<Type> types = analysis.getRuntimeTypesOf(state, index, thrower);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, index, context, thrower);
 		if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t)))
 			// e.g. a str, or an unknown value
 			typeError = true;
@@ -504,10 +527,10 @@ public final class ListModel {
 			for (int c = from; c < to && exact == null; c++)
 				if (analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, index,
 						new Constant(Int32Type.INSTANCE, c, loc), ComparisonEq.INSTANCE, loc),
-						thrower) == Satisfiability.SATISFIED)
+						context, thrower) == Satisfiability.SATISFIED)
 					exact = c;
 			if (exact != null)
-				result = result.lub(element(analysis, state, deref,
+				result = result.lub(element(analysis, context, state, deref,
 						exact < 0 ? shape.length() + exact : exact, thrower));
 			else if (shape.length() != null) {
 				// whether the index is in range
@@ -516,7 +539,7 @@ public final class ListModel {
 				Satisfiability in = analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE,
 						new BinaryExpression(BoolType.INSTANCE, index, low, ComparisonGe.INSTANCE, loc),
 						new BinaryExpression(BoolType.INSTANCE, index, high, ComparisonLt.INSTANCE, loc),
-						LogicalAnd.INSTANCE, loc), thrower);
+						LogicalAnd.INSTANCE, loc), context, thrower);
 				if (in != Satisfiability.NOT_SATISFIED)
 					any = true;
 				if (in != Satisfiability.SATISFIED)
@@ -525,18 +548,20 @@ public final class ListModel {
 				any = true;
 				// 0 and -1 are in range if the list surely has an element,
 				// that is any of its elements if its length is not known
-				indexError = !((shape.prefix() > 0 || nonEmpty(analysis, state, list, thrower))
-						&& (surely(analysis, state, index, 0, thrower) || surely(analysis, state, index, -1, thrower)));
+				indexError = !((shape.prefix() > 0 || nonEmpty(analysis, context, state, list, thrower))
+						&& (surely(analysis, context, state, index, 0, thrower)
+								|| surely(analysis, context, state, index, -1, thrower)));
 			}
 		}
 
 		if (any)
 			if (shape.elements() == null)
-				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), thrower));
+				result = result
+						.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, thrower));
 			else
 				for (SymbolicExpression field : shape.elements())
 					result = result.lub(analysis.smallStepSemantics(state,
-							new AccessChild(Untyped.INSTANCE, deref, field, loc), thrower));
+							new AccessChild(Untyped.INSTANCE, deref, field, loc), context, thrower));
 		if (indexError)
 			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
 		if (typeError)
@@ -546,6 +571,7 @@ public final class ListModel {
 
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> element(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			HeapDereference deref,
 			int index,
@@ -553,7 +579,8 @@ public final class ListModel {
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		return analysis.smallStepSemantics(state,
-				new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, index, loc), loc), pp);
+				new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, index, loc), loc), context,
+				pp);
 	}
 
 	/**
@@ -601,13 +628,14 @@ public final class ListModel {
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = owner.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		HeapDereference source = new HeapDereference(listType, list, loc);
-		Shape shape = shape(analysis, state, list, owner);
+		Shape shape = shape(analysis, context, state, list, owner);
 
-		boolean typeError = !boundsTyped(analysis, state, slice, owner);
-		Satisfiability zero = stepZero(analysis, state, slice, owner);
+		boolean typeError = !boundsTyped(analysis, context, state, slice, owner);
+		Satisfiability zero = stepZero(analysis, context, state, slice, owner);
 
 		// the slice is allocated at a location different from the one of the
 		// subscript (see DerivedLocation)
@@ -620,12 +648,13 @@ public final class ListModel {
 					new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 			AnalysisState<A> filled = created.bottomExecution();
 			if (shape.elements() == null)
-				filled = analysis.assign(created, unknown, new PushAny(Untyped.INSTANCE, loc), owner);
+				filled = analysis.assign(created, unknown, new PushAny(Untyped.INSTANCE, loc), context, owner);
 			else
 				for (SymbolicExpression field : shape.elements())
 					for (SymbolicExpression element : analysis.smallStepSemantics(created,
-							new AccessChild(Untyped.INSTANCE, source, field, loc), owner).getExecutionExpressions())
-						filled = filled.lub(analysis.assign(created, unknown, element, owner));
+							new AccessChild(Untyped.INSTANCE, source, field, loc), context, owner)
+							.getExecutionExpressions())
+						filled = filled.lub(analysis.assign(created, unknown, element, context, owner));
 			if (filled.getExecutionState().isBottom())
 				// the list is empty: so is the slice
 				filled = created;
@@ -657,6 +686,7 @@ public final class ListModel {
 	 * elements).
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the list, the slice and the value have
 	 *                     been evaluated
 	 * @param list     the list
@@ -675,6 +705,7 @@ public final class ListModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> assignSlice(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			SymbolicExpression slice,
@@ -684,18 +715,18 @@ public final class ListModel {
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		CodeLocation loc = thrower.getLocation();
-		boolean typed = boundsTyped(analysis, state, slice, thrower);
-		Satisfiability iterable = Iteration.iterable(analysis, state, value, thrower);
-		Satisfiability zero = stepZero(analysis, state, slice, thrower);
+		boolean typed = boundsTyped(analysis, context, state, slice, thrower);
+		Satisfiability iterable = Iteration.iterable(analysis, context, state, value, thrower);
+		Satisfiability zero = stepZero(analysis, context, state, slice, thrower);
 		// whether the step might be different from 1 (and from None)
 		boolean extended = false;
 		if (slice instanceof TernaryExpression) {
 			SymbolicExpression step = ((TernaryExpression) slice).getRight();
-			Set<Type> types = analysis.getRuntimeTypesOf(state, step, thrower);
+			Set<Type> types = analysis.getRuntimeTypesOf(state, step, context, thrower);
 			extended = !types.stream().allMatch(Type::isNullType)
 					&& analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, step,
 							new Constant(Int32Type.INSTANCE, 1, loc), ComparisonEq.INSTANCE, loc),
-							thrower) != Satisfiability.SATISFIED;
+							context, thrower) != Satisfiability.SATISFIED;
 		}
 
 		AnalysisState<A> result = state.bottomExecution();
@@ -704,14 +735,15 @@ public final class ListModel {
 			AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 					new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 			// the value might have no element (e.g. xs[0:2] = [])
-			AnalysisState<A> assigned = shrink(analysis, state, list, thrower);
-			AnalysisState<A> elements = Iteration.elements(analysis, state, null, value, thrower, metas, raising);
+			AnalysisState<A> assigned = shrink(analysis, context, state, list, thrower);
+			AnalysisState<
+					A> elements = Iteration.elements(analysis, context, state, null, value, thrower, metas, raising);
 			if (!elements.getExecutionState().isBottom()) {
-				AnalysisState<A> shrunk = shrink(analysis, elements, list, thrower);
+				AnalysisState<A> shrunk = shrink(analysis, context, elements, list, thrower);
 				// weak update: the new elements are joined with the previous
 				// ones, that might still be elements of the list
 				for (SymbolicExpression element : elements.getExecutionExpressions())
-					assigned = assigned.lub(analysis.assign(shrunk, unknown, element, thrower).lub(shrunk));
+					assigned = assigned.lub(analysis.assign(shrunk, unknown, element, context, thrower).lub(shrunk));
 			}
 			result = assigned;
 			if (extended)
@@ -729,6 +761,7 @@ public final class ListModel {
 	// whether the bounds of the slice are surely ints or None
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean boundsTyped(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression slice,
 			ProgramPoint pp)
@@ -738,7 +771,7 @@ public final class ListModel {
 		TernaryExpression bounds = (TernaryExpression) slice;
 		for (SymbolicExpression bound : new SymbolicExpression[] { bounds.getLeft(), bounds.getMiddle(),
 				bounds.getRight() }) {
-			Set<Type> types = analysis.getRuntimeTypesOf(state, bound, pp);
+			Set<Type> types = analysis.getRuntimeTypesOf(state, bound, context, pp);
 			if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t) && !t.isNullType()))
 				return false;
 		}
@@ -748,6 +781,7 @@ public final class ListModel {
 	// whether the step of the slice is 0 (that raises ValueError)
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability stepZero(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression slice,
 			ProgramPoint pp)
@@ -755,11 +789,12 @@ public final class ListModel {
 		if (!(slice instanceof TernaryExpression))
 			return Satisfiability.NOT_SATISFIED;
 		SymbolicExpression step = ((TernaryExpression) slice).getRight();
-		Set<Type> types = analysis.getRuntimeTypesOf(state, step, pp);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, step, context, pp);
 		if (!types.isEmpty() && types.stream().allMatch(Type::isNullType))
 			return Satisfiability.NOT_SATISFIED;
 		return analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, step,
-				new Constant(Int32Type.INSTANCE, 0, pp.getLocation()), ComparisonEq.INSTANCE, pp.getLocation()), pp);
+				new Constant(Int32Type.INSTANCE, 0, pp.getLocation()), ComparisonEq.INSTANCE, pp.getLocation()),
+				context, pp);
 	}
 
 	/**
@@ -771,6 +806,7 @@ public final class ListModel {
 	 * the elements might be written.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the list, the index and the value have
 	 *                     been evaluated
 	 * @param list     the list
@@ -786,6 +822,7 @@ public final class ListModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> write(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			SymbolicExpression index,
@@ -796,11 +833,11 @@ public final class ListModel {
 		CodeLocation loc = thrower.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		HeapDereference deref = new HeapDereference(listType, list, loc);
-		Shape shape = shape(analysis, state, list, thrower);
+		Shape shape = shape(analysis, context, state, list, thrower);
 
 		AnalysisState<A> result = state.bottomExecution();
 		boolean typeError = false, indexError = false, any = false;
-		Set<Type> types = analysis.getRuntimeTypesOf(state, index, thrower);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, index, context, thrower);
 		if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t)))
 			typeError = true;
 		// an unknown value (e.g. returned by an unknown function) might be an
@@ -812,12 +849,12 @@ public final class ListModel {
 			for (int c = from; c < to && exact == null; c++)
 				if (analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, index,
 						new Constant(Int32Type.INSTANCE, c, loc), ComparisonEq.INSTANCE, loc),
-						thrower) == Satisfiability.SATISFIED)
+						context, thrower) == Satisfiability.SATISFIED)
 					exact = c;
 			if (exact != null) {
 				int pos = exact < 0 ? shape.length() + exact : exact;
 				result = result.lub(analysis.assign(state, new AccessChild(Untyped.INSTANCE, deref,
-						new Constant(Int32Type.INSTANCE, pos, loc), loc), value, thrower));
+						new Constant(Int32Type.INSTANCE, pos, loc), loc), value, context, thrower));
 			} else {
 				Satisfiability in = Satisfiability.UNKNOWN;
 				if (shape.length() != null) {
@@ -826,7 +863,7 @@ public final class ListModel {
 					in = analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE,
 							new BinaryExpression(BoolType.INSTANCE, index, low, ComparisonGe.INSTANCE, loc),
 							new BinaryExpression(BoolType.INSTANCE, index, high, ComparisonLt.INSTANCE, loc),
-							LogicalAnd.INSTANCE, loc), thrower);
+							LogicalAnd.INSTANCE, loc), context, thrower);
 				}
 				any = in != Satisfiability.NOT_SATISFIED;
 				indexError = in != Satisfiability.SATISFIED;
@@ -839,7 +876,7 @@ public final class ListModel {
 			if (shape.elements() != null)
 				for (SymbolicExpression field : shape.elements())
 					written = analysis.assign(written, new AccessChild(Untyped.INSTANCE, deref, field, loc), value,
-							thrower).lub(written);
+							context, thrower).lub(written);
 			result = result.lub(written);
 		}
 		if (indexError)
@@ -854,6 +891,7 @@ public final class ListModel {
 	 * variable of a comprehension iterating over the list).
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param list     the list
 	 * @param pp       the program point reading the elements
@@ -864,19 +902,21 @@ public final class ListModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			ProgramPoint pp)
 			throws SemanticException {
-		return elements(analysis, state, list, PyClassType.lookup(LibrarySpecificationProvider.LIST), pp);
+		return elements(analysis, context, state, list, PyClassType.lookup(LibrarySpecificationProvider.LIST), pp);
 	}
 
 	/**
 	 * Yields any of the elements of the list or tuple, as
-	 * {@link #elements(Analysis, AnalysisState, SymbolicExpression, ProgramPoint)},
+	 * {@link #elements(Analysis, ScopeId, AnalysisState, SymbolicExpression, ProgramPoint)},
 	 * whose class is the given one.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param list     the list or tuple
 	 * @param type     the class of {@code list}
@@ -888,20 +928,22 @@ public final class ListModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression list,
 			Type type,
 			ProgramPoint pp)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
-		Shape shape = shape(analysis, state, list, pp);
+		Shape shape = shape(analysis, context, state, list, pp);
 		if (shape.elements() == null)
-			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp);
+			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp);
 		HeapDereference deref = new HeapDereference(type, list, loc);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression field : shape.elements())
 			result = result.lub(
-					analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref, field, loc), pp));
+					analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref, field, loc), context,
+							pp));
 		return result;
 	}
 }

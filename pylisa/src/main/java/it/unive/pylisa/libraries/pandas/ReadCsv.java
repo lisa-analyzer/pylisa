@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -54,9 +55,10 @@ public class ReadCsv extends it.unive.lisa.program.cfg.statement.UnaryExpression
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation location = getLocation();
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 		UnaryExpression read = new UnaryExpression(dftype, expr, new ReadDataframe(0), location);
-		return PandasSemantics.createAndInitDataframe(interprocedural.getAnalysis(), state, read, st);
+		return PandasSemantics.createAndInitDataframe(interprocedural.getAnalysis(), context, state, read, st);
 	}
 }

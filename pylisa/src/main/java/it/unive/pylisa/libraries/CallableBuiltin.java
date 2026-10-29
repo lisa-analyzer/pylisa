@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -39,14 +40,15 @@ public class CallableBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
-		Satisfiability callable = PyValueCall.callable(analysis, state, args[0], st);
+		Satisfiability callable = PyValueCall.callable(analysis, context, state, args[0], st);
 		if (callable == Satisfiability.SATISFIED || callable == Satisfiability.NOT_SATISFIED)
-			return compute(analysis, state,
+			return compute(analysis, context, state,
 					new Constant(BoolType.INSTANCE, callable == Satisfiability.SATISFIED, loc));
-		return compute(analysis, state, new PushAny(BoolType.INSTANCE, loc));
+		return compute(analysis, context, state, new PushAny(BoolType.INSTANCE, loc));
 	}
 }

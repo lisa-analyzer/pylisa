@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -54,8 +55,9 @@ public class Reshape extends NaryExpression implements PluggableStatement {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		PushAny push = new PushAny(PyClassType.lookup(LibrarySpecificationProvider.NUMPY_ARRAY).getReference(),
 				getLocation());
-		return interprocedural.getAnalysis().smallStepSemantics(state, push, st);
+		return interprocedural.getAnalysis().smallStepSemantics(state, push, context, st);
 	}
 }

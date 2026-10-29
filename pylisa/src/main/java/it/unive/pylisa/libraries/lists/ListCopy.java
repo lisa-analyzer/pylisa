@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -58,6 +59,7 @@ public class ListCopy extends PyNative {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		// the copy is allocated at a location different from the one of the
@@ -66,13 +68,13 @@ public class ListCopy extends PyNative {
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression self : params[0]) {
 			HeapDereference source = new HeapDereference(listType, self, loc);
-			ListModel.Shape shape = ListModel.shape(analysis, state, self, this);
+			ListModel.Shape shape = ListModel.shape(analysis, context, state, self, this);
 			if (shape.length() != null) {
 				// the elements at the same indices
 				ExpressionSet[] elements = new ExpressionSet[shape.length()];
 				for (int i = 0; i < elements.length; i++)
 					elements[i] = analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, source,
-							new Constant(Int32Type.INSTANCE, i, loc), loc), this).getExecutionExpressions();
+							new Constant(Int32Type.INSTANCE, i, loc), loc), context, this).getExecutionExpressions();
 				result = result.lub(creation.forwardSemanticsAux(interprocedural, state, elements, expressions));
 				continue;
 			}
@@ -85,12 +87,13 @@ public class ListCopy extends PyNative {
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 				AnalysisState<A> copied = created.bottomExecution();
 				if (shape.elements() == null)
-					copied = analysis.assign(created, unknown, new PushAny(Untyped.INSTANCE, loc), this);
+					copied = analysis.assign(created, unknown, new PushAny(Untyped.INSTANCE, loc), context, this);
 				else
 					for (SymbolicExpression field : shape.elements())
 						for (SymbolicExpression element : analysis.smallStepSemantics(created,
-								new AccessChild(Untyped.INSTANCE, source, field, loc), this).getExecutionExpressions())
-							copied = copied.lub(analysis.assign(created, unknown, element, this));
+								new AccessChild(Untyped.INSTANCE, source, field, loc), context, this)
+								.getExecutionExpressions())
+							copied = copied.lub(analysis.assign(created, unknown, element, context, this));
 				if (copied.getExecutionState().isBottom())
 					// the list is empty: so is the copy
 					copied = created;
@@ -104,6 +107,7 @@ public class ListCopy extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {

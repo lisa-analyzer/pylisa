@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -61,12 +62,13 @@ public class PyBitwiseOr extends BinaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		Set<Type> ltypes = analysis.getRuntimeTypesOf(state, left, this);
-		Set<Type> rtypes = analysis.getRuntimeTypesOf(state, right, this);
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		Set<Type> ltypes = analysis.getRuntimeTypesOf(state, left, context, this);
+		Set<Type> rtypes = analysis.getRuntimeTypesOf(state, right, context, this);
 		if (types(ltypes, true) && types(rtypes, true) && (types(ltypes, false) || types(rtypes, false)))
 			// a union of types (None | None is not one)
 			return analysis.smallStepSemantics(state,
-					new PushAny(new PyTypeTokenType(members(ltypes, rtypes)), getLocation()), this);
+					new PushAny(new PyTypeTokenType(members(ltypes, rtypes)), getLocation()), context, this);
 		return PyBinaryDispatch.dispatch(interprocedural, state, expressions, this, left, right,
 				"__or__", "__ror__", false, PyBinaryDispatch.Fallback.TYPE_ERROR);
 	}

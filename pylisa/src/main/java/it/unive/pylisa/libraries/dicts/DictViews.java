@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -72,6 +73,7 @@ public final class DictViews {
 	 * Creates a view of the dictionary.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the dictionary has been evaluated
 	 * @param dict     the dictionary
 	 * @param kind     the name of the class of the view
@@ -85,6 +87,7 @@ public final class DictViews {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> create(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			String kind,
@@ -96,17 +99,18 @@ public final class DictViews {
 		ReferenceType reftype = new ReferenceType(type);
 		InstrumentedReceiver view = new InstrumentedReceiver(reftype, false, loc);
 		MemoryAllocation alloc = new MemoryAllocation(type, loc, false);
-		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, alloc, pp), view,
-				new HeapReference(reftype, alloc, loc), pp);
-		current = analysis.assign(current, mapping(view, type, loc), dict, pp);
+		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, context, state, alloc, pp), view,
+				new HeapReference(reftype, alloc, loc), context, pp);
+		current = analysis.assign(current, mapping(view, type, loc), dict, context, pp);
 		metas.add(view);
-		return analysis.smallStepSemantics(current, view, pp);
+		return analysis.smallStepSemantics(current, view, context, pp);
 	}
 
 	/**
 	 * Yields the dictionaries of the view.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param view     the view
 	 * @param t        the type of the view
@@ -118,13 +122,14 @@ public final class DictViews {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> dictionaries(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression view,
 			Type t,
 			Statement pp)
 			throws SemanticException {
 		return analysis.smallStepSemantics(state, mapping(view, t.asPointerType().getInnerType(), pp.getLocation()),
-				pp);
+				context, pp);
 	}
 
 	/**
@@ -132,6 +137,7 @@ public final class DictViews {
 	 * values or the items of its dictionaries.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param view     the view
 	 * @param t        the type of the view
@@ -145,6 +151,7 @@ public final class DictViews {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression view,
 			Type t,
@@ -152,15 +159,15 @@ public final class DictViews {
 			Collection<Identifier> metas)
 			throws SemanticException {
 		String kind = kind(t);
-		AnalysisState<A> dicts = dictionaries(analysis, state, view, t, pp);
+		AnalysisState<A> dicts = dictionaries(analysis, context, state, view, t, pp);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression dict : dicts.getExecutionExpressions())
 			if (kind.equals(LibrarySpecificationProvider.DICT_KEYS))
-				result = result.lub(DictModel.keys(analysis, dicts, dict, pp));
+				result = result.lub(DictModel.keys(analysis, context, dicts, dict, pp));
 			else if (kind.equals(LibrarySpecificationProvider.DICT_VALUES))
-				result = result.lub(DictModel.values(analysis, dicts, dict, pp));
+				result = result.lub(DictModel.values(analysis, context, dicts, dict, pp));
 			else
-				result = result.lub(DictModel.items(analysis, dicts, dict, pp, metas));
+				result = result.lub(DictModel.items(analysis, context, dicts, dict, pp, metas));
 		return result;
 	}
 

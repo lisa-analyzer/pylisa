@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -65,6 +66,7 @@ public class ListCreation extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
@@ -73,8 +75,9 @@ public class ListCreation extends NaryExpression {
 		HeapReference ref = new HeapReference(reftype, created, loc);
 
 		InstrumentedReceiver list = new InstrumentedReceiver(reftype, true, loc);
-		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, created, this), list, ref,
-				this);
+		AnalysisState<
+				A> current = analysis.assign(Allocations.allocate(analysis, context, state, created, this), list, ref,
+						context, this);
 		HeapDereference deref = new HeapDereference(listType, list, loc);
 		// the heap tracks the fields accessed on each object, but until the
 		// first access to any field in the program, the fields are unknown
@@ -83,17 +86,17 @@ public class ListCreation extends NaryExpression {
 		// is empty
 		AccessChild cls = new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, "__class__", loc),
 				loc);
-		current = analysis.smallStepSemantics(current, cls, this).withExecutionExpressions(
+		current = analysis.smallStepSemantics(current, cls, context, this).withExecutionExpressions(
 				current.getExecutionExpressions());
 		// defined for all the lists (see ListModel#NONEMPTY): the elements of
 		// the list literal are known by their indices
-		current = ListModel.setNonEmpty(analysis, current, list, false, this);
+		current = ListModel.setNonEmpty(analysis, context, current, list, false, this);
 
 		for (int i = 0; i < params.length; i++) {
 			AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, i, loc), loc);
 			AnalysisState<A> next = state.bottomExecution();
 			for (SymbolicExpression element : params[i])
-				next = next.lub(analysis.assign(current, slot, element, this));
+				next = next.lub(analysis.assign(current, slot, element, context, this));
 			current = next;
 		}
 
@@ -101,6 +104,6 @@ public class ListCreation extends NaryExpression {
 		for (Expression element : getSubExpressions())
 			current = current.forgetIdentifiers(element.getMetaVariables(), this);
 		getMetaVariables().add(list);
-		return analysis.smallStepSemantics(current, list, this);
+		return analysis.smallStepSemantics(current, list, context, this);
 	}
 }

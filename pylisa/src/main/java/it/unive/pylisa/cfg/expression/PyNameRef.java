@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
@@ -302,6 +303,7 @@ public class PyNameRef extends VariableRef {
 	 * @param <A>      the kind of {@link AbstractLattice} of the state
 	 * @param <D>      the kind of {@link AbstractDomain} of the analysis
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state
 	 *
 	 * @return the state where the error has been raised
@@ -310,16 +312,18 @@ public class PyNameRef extends VariableRef {
 	 */
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unboundError(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state)
 			throws SemanticException {
-		return PyExceptions.raise(analysis, state, getCFG(), getLocation(), this, unboundErrorName());
+		return PyExceptions.raise(analysis, context, state, getCFG(), getLocation(), this, unboundErrorName());
 	}
 
 	/**
 	 * Raises the error of reading or deleting the name when it is not bound
-	 * (see {@link #unboundError(Analysis, AnalysisState)}) in the executions of
-	 * the given state, when only some executions raise it: the executions are
-	 * moved to the error channel by the given {@link PyExceptions.Raising}.
+	 * (see {@link #unboundError(Analysis, ScopeId, AnalysisState)}) in the
+	 * executions of the given state, when only some executions raise it: the
+	 * executions are moved to the error channel by the given
+	 * {@link PyExceptions.Raising}.
 	 *
 	 * @param <A>     the kind of {@link AbstractLattice} of the state
 	 * @param <D>     the kind of {@link AbstractDomain} of the analysis
@@ -390,6 +394,7 @@ public class PyNameRef extends VariableRef {
 			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		SymbolicExpression cell = cell();
 		if (target)
 			return cell == null ? super.forwardSemantics(entryState, interprocedural, expressions)
@@ -400,7 +405,7 @@ public class PyNameRef extends VariableRef {
 			return cell == null ? staticRead(entryState, interprocedural, expressions)
 					: cellRead(entryState, interprocedural, cell);
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis());
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis(), context);
 		AnalysisState<A> result = entryState.bottomExecution();
 		if (status == Binding.BOTTOM || status.mightBeBound())
 			result = result.lub(boundRead(entryState, interprocedural, expressions));
@@ -453,9 +458,10 @@ public class PyNameRef extends VariableRef {
 			SymbolicExpression cell)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		AnalysisState<A> read = analysis.smallStepSemantics(entryState, cell, this);
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		AnalysisState<A> read = analysis.smallStepSemantics(entryState, cell, context, this);
 		if (read.getExecutionState().isBottom() && !entryState.getExecutionState().isBottom())
-			return analysis.smallStepSemantics(entryState, new PushAny(Untyped.INSTANCE, getLocation()), this);
+			return analysis.smallStepSemantics(entryState, new PushAny(Untyped.INSTANCE, getLocation()), context, this);
 		return read;
 	}
 
@@ -468,7 +474,8 @@ public class PyNameRef extends VariableRef {
 			StatementStore<A> expressions,
 			SymbolicExpression cell)
 			throws SemanticException {
-		AnalysisState<A> target = interprocedural.getAnalysis().smallStepSemantics(entryState, cell, this);
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		AnalysisState<A> target = interprocedural.getAnalysis().smallStepSemantics(entryState, cell, context, this);
 		if (target.getExecutionState().isBottom() && !entryState.getExecutionState().isBottom())
 			return super.forwardSemantics(entryState, interprocedural, expressions);
 		return target;

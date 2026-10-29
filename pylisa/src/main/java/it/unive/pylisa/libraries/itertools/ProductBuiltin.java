@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -45,24 +46,25 @@ public class ProductBuiltin extends ItertoolBuiltin {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression repeat = missing(args[1]) ? new Constant(Int32Type.INSTANCE, 1, loc) : args[1];
-		Satisfiability typed = hasType(analysis, state, repeat, INT);
-		List<SymbolicExpression> iterables = ListModel.exactElements(analysis, state, args[0], st);
+		Satisfiability typed = hasType(analysis, context, state, repeat, INT);
+		List<SymbolicExpression> iterables = ListModel.exactElements(analysis, context, state, args[0], st);
 		if (iterables == null)
 			typed = typed.and(Satisfiability.UNKNOWN);
 		else
 			for (SymbolicExpression iterable : iterables)
-				typed = typed.and(Iteration.iterable(analysis, state, iterable, st));
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
-		AnalysisState<A> result = checked(analysis, state, typed, ItertoolsModel.PRODUCT,
+				typed = typed.and(Iteration.iterable(analysis, context, state, iterable, st));
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+		AnalysisState<A> result = checked(analysis, context, state, typed, ItertoolsModel.PRODUCT,
 				new String[] { ItertoolsModel.ITERABLES, ItertoolsModel.REPEATS },
 				new SymbolicExpression[] { args[0], repeat }, raising);
 		if (!missing(args[1]))
-			negative(analysis, raising, state, repeat);
+			negative(analysis, context, raising, state, repeat);
 		return raising.moveFrom(result);
 	}
 }

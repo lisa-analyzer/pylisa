@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -39,10 +40,12 @@ public class PyStringConstructor extends it.unive.lisa.program.cfg.statement.Una
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		Set<Type> rt = interprocedural.getAnalysis().getRuntimeTypesOf(state, expr, this);
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		Set<Type> rt = interprocedural.getAnalysis().getRuntimeTypesOf(state, expr, context, this);
 		if (rt.stream().anyMatch(Type::isStringType) || rt.stream().anyMatch(Type::isNumericType)) {
 			return interprocedural.getAnalysis().smallStepSemantics(state,
-					new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
+					new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), context,
+					this);
 		}
 		return null;
 	}

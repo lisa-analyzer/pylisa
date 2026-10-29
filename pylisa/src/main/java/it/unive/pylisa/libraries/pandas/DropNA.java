@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -101,6 +102,7 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation location = getLocation();
 		AnalysisState<A> base = state;
 		PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
@@ -110,7 +112,7 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 		ExpressionSet targets = new ExpressionSet(deref);
 
 		if (!inplace) {
-			base = PandasSemantics.copyDataframe(analysis, base, deref, st);
+			base = PandasSemantics.copyDataframe(analysis, context, base, deref, st);
 			targets = base.getExecutionExpressions();
 		}
 
@@ -122,7 +124,8 @@ public class DropNA extends it.unive.lisa.program.cfg.statement.UnaryExpression 
 					? ((HeapDereference) loc).getExpression()
 					: new HeapReference(dfref, loc, location);
 			filtered = filtered
-					.lub(analysis.smallStepSemantics(analysis.smallStepSemantics(base, filter, st), ref, st));
+					.lub(analysis.smallStepSemantics(analysis.smallStepSemantics(base, filter, context, st), ref,
+							context, st));
 		}
 
 		return filtered;

@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -56,25 +57,26 @@ public class Sum extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		SymbolicExpression iterable = args[0], start = args[1];
-		Set<Type> starts = analysis.getRuntimeTypesOf(state, start, this);
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		Set<Type> starts = analysis.getRuntimeTypesOf(state, start, context, this);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 
-		List<SymbolicExpression> exact = ListModel.exactElements(analysis, state, iterable, this);
+		List<SymbolicExpression> exact = ListModel.exactElements(analysis, context, state, iterable, this);
 		Set<Type> elements = new HashSet<>();
 		boolean empty, nonEmpty;
 		if (exact != null) {
 			// whether start and the elements so far are numbers
 			boolean numbers = !starts.isEmpty() && starts.stream().allMatch(Sum::number);
 			for (SymbolicExpression e : exact) {
-				Set<Type> types = analysis.getRuntimeTypesOf(state, e, this);
+				Set<Type> types = analysis.getRuntimeTypesOf(state, e, context, this);
 				if (numbers && !types.isEmpty() && types.stream().allMatch(Sum::notAddable))
 					// e.g. sum([1, "a"])
-					return raise(analysis, state, LibrarySpecificationProvider.TYPE_ERROR);
+					return raise(analysis, context, state, LibrarySpecificationProvider.TYPE_ERROR);
 				numbers &= !types.isEmpty() && types.stream().allMatch(Sum::number);
 				elements.addAll(types);
 			}
@@ -83,9 +85,9 @@ public class Sum extends PyNative {
 			if (!starts.isEmpty() && starts.stream().allMatch(Sum::exactNumber) && elements.stream()
 					.allMatch(Sum::exactNumber))
 				// the elements are added one by one
-				return compute(analysis, state, add(start, exact, starts, elements));
+				return compute(analysis, context, state, add(start, exact, starts, elements));
 		} else {
-			AnalysisState<A> any = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, st,
+			AnalysisState<A> any = Iteration.elements(analysis, context, state, getSubExpressions()[0], iterable, st,
 					getMetaVariables(),
 					raising);
 			// e.g. the TypeError raised by iterating an int
@@ -93,14 +95,14 @@ public class Sum extends PyNative {
 			if (any.getExecutionState().isBottom())
 				return raising.moveFrom(result);
 			for (SymbolicExpression e : any.getExecutionExpressions())
-				elements.addAll(analysis.getRuntimeTypesOf(any, e, this));
+				elements.addAll(analysis.getRuntimeTypesOf(any, e, context, this));
 			empty = any.getExecutionExpressions().isEmpty();
-			nonEmpty = nonEmpty(analysis, state, iterable);
+			nonEmpty = nonEmpty(analysis, context, state, iterable);
 		}
 
 		if (starts.isEmpty() || !starts.stream().allMatch(Sum::number)) {
 			// e.g. sum(lists, []): the additions are not executed
-			result = result.lub(unknown(analysis, state, Untyped.INSTANCE));
+			result = result.lub(unknown(analysis, context, state, Untyped.INSTANCE));
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 			if (starts.isEmpty() || starts.stream().anyMatch(Sum::object) || elements.stream().anyMatch(Sum::object))
 				raise(raising, state, LibrarySpecificationProvider.EXCEPTION);
@@ -109,7 +111,7 @@ public class Sum extends PyNative {
 
 		if (!nonEmpty)
 			// no elements: the result is start
-			result = result.lub(compute(analysis, state, start));
+			result = result.lub(compute(analysis, context, state, start));
 		if (empty)
 			return raising.moveFrom(result);
 		Set<Type> numbers = new HashSet<>();
@@ -124,15 +126,15 @@ public class Sum extends PyNative {
 			boolean floats = numbers.stream().allMatch(Sum::isFloat);
 			boolean someFloat = starts.stream().anyMatch(Sum::isFloat) || numbers.stream().anyMatch(Sum::isFloat);
 			if (floatStart || floats || someFloat)
-				result = result.lub(unknown(analysis, state, Float32Type.INSTANCE));
+				result = result.lub(unknown(analysis, context, state, Float32Type.INSTANCE));
 			if (!floatStart && !floats)
-				result = result.lub(unknown(analysis, state, Int32Type.INSTANCE));
+				result = result.lub(unknown(analysis, context, state, Int32Type.INSTANCE));
 		}
 		if (elements.stream().anyMatch(Sum::notAddable))
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		if (elements.isEmpty() || elements.stream().anyMatch(Sum::object)) {
 			// e.g. an object whose class defines __radd__
-			result = result.lub(unknown(analysis, state, Untyped.INSTANCE));
+			result = result.lub(unknown(analysis, context, state, Untyped.INSTANCE));
 			raise(raising, state, LibrarySpecificationProvider.EXCEPTION);
 		}
 		return raising.moveFrom(result);
@@ -156,13 +158,14 @@ public class Sum extends PyNative {
 	// whether the iterable is a list or tuple that surely has some elements
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean nonEmpty(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression iterable)
 			throws SemanticException {
-		if (!analysis.getRuntimeTypesOf(state, iterable, this).stream()
+		if (!analysis.getRuntimeTypesOf(state, iterable, context, this).stream()
 				.allMatch(t -> ListModel.isList(t) || Unpacking.isTuple(t)))
 			return false;
-		ListModel.Shape shape = ListModel.shape(analysis, state, iterable, this);
+		ListModel.Shape shape = ListModel.shape(analysis, context, state, iterable, this);
 		return shape.prefix() > 0 || (shape.length() != null && shape.length() > 0);
 	}
 

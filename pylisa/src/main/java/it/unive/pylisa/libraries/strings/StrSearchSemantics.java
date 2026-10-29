@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.type.BoolType;
@@ -56,6 +57,7 @@ final class StrSearchSemantics {
 	static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			PyNative n,
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args,
 			StrSearch search,
@@ -63,14 +65,15 @@ final class StrSearchSemantics {
 			boolean raiseIfMissing)
 			throws SemanticException {
 		AnalysisState<A> result = state.bottomExecution();
-		for (boolean bytes : n.textModes(analysis, state, args[0]))
-			result = result.lub(semantics(n, analysis, state, args, search, unbounded, raiseIfMissing, bytes));
+		for (boolean bytes : n.textModes(analysis, context, state, args[0]))
+			result = result.lub(semantics(n, analysis, context, state, args, search, unbounded, raiseIfMissing, bytes));
 		return result;
 	}
 
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			PyNative n,
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args,
 			StrSearch search,
@@ -85,13 +88,13 @@ final class StrSearchSemantics {
 
 		// str searches str, bytes search bytes or (except for prefixes) a
 		// single byte
-		Satisfiability isText = n.hasType(analysis, state, sub, bytes ? PyNative.BYTES : PyNative.STR);
-		Satisfiability isByte = bytes && !prefix ? n.hasType(analysis, state, sub, PyNative.INT)
+		Satisfiability isText = n.hasType(analysis, context, state, sub, bytes ? PyNative.BYTES : PyNative.STR);
+		Satisfiability isByte = bytes && !prefix ? n.hasType(analysis, context, state, sub, PyNative.INT)
 				: Satisfiability.NOT_SATISFIED;
-		Satisfiability isTuple = prefix ? n.hasType(analysis, state, sub, StrSearchSemantics::isTuple)
+		Satisfiability isTuple = prefix ? n.hasType(analysis, context, state, sub, StrSearchSemantics::isTuple)
 				: Satisfiability.NOT_SATISFIED;
-		Satisfiability bounds = n.hasType(analysis, state, start, PyNative.INT.or(PyNative.NONE))
-				.and(n.hasType(analysis, state, end, PyNative.INT.or(PyNative.NONE)));
+		Satisfiability bounds = n.hasType(analysis, context, state, start, PyNative.INT.or(PyNative.NONE))
+				.and(n.hasType(analysis, context, state, end, PyNative.INT.or(PyNative.NONE)));
 
 		SymbolicExpression value;
 		if (!bytes && unbounded != null && start instanceof PyNoneConstant && end instanceof PyNoneConstant)
@@ -103,12 +106,12 @@ final class StrSearchSemantics {
 			value = new TernaryExpression(type, s, sub, slice, search, loc);
 		}
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (isText != Satisfiability.NOT_SATISFIED)
 			result = result.lub(n.typeChecked(state, bounds, bounds == Satisfiability.NOT_SATISFIED
 					? state.bottomExecution()
-					: computed(n, analysis, state, value, raiseIfMissing, raising), raising));
+					: computed(n, analysis, context, state, value, raiseIfMissing, raising), raising));
 
 		if (isByte != Satisfiability.NOT_SATISFIED) {
 			// a single byte must be between 0 and 255
@@ -118,11 +121,11 @@ final class StrSearchSemantics {
 					new BinaryExpression(BoolType.INSTANCE, sub, new Constant(Int32Type.INSTANCE, 255, loc),
 							ComparisonGt.INSTANCE, loc),
 					LogicalOr.INSTANCE, loc);
-			Satisfiability out = analysis.satisfies(state, outOfRange, n);
+			Satisfiability out = analysis.satisfies(state, outOfRange, context, n);
 			AnalysisState<A> byteResult = state.bottomExecution();
 			if (bounds != Satisfiability.NOT_SATISFIED) {
 				if (out != Satisfiability.SATISFIED)
-					byteResult = byteResult.lub(computed(n, analysis, state, value, raiseIfMissing, raising));
+					byteResult = byteResult.lub(computed(n, analysis, context, state, value, raiseIfMissing, raising));
 				if (out != Satisfiability.NOT_SATISFIED)
 					n.raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
 			}
@@ -132,7 +135,7 @@ final class StrSearchSemantics {
 		if (isTuple != Satisfiability.NOT_SATISFIED) {
 			// the elements of the tuple are not known: they might also not have
 			// the right type
-			result = result.lub(n.unknown(analysis, state, BoolType.INSTANCE));
+			result = result.lub(n.unknown(analysis, context, state, BoolType.INSTANCE));
 			n.raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		}
 
@@ -146,17 +149,19 @@ final class StrSearchSemantics {
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> computed(
 			PyNative n,
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression value,
 			boolean raiseIfMissing,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		if (!raiseIfMissing)
-			return n.compute(analysis, state, value);
+			return n.compute(analysis, context, state, value);
 		CodeLocation loc = n.getLocation();
 		BinaryExpression missing = new BinaryExpression(BoolType.INSTANCE, value,
 				new Constant(Int32Type.INSTANCE, -1, loc), ComparisonEq.INSTANCE, loc);
-		return ExceptionGuard.guardedCompute(analysis, state, missing, LibrarySpecificationProvider.VALUE_ERROR,
+		return ExceptionGuard.guardedCompute(analysis, context, state, missing,
+				LibrarySpecificationProvider.VALUE_ERROR,
 				value, n.getCFG(), loc, n.getOriginatingStatement(), n.getOriginatingStatement(), raising);
 	}
 

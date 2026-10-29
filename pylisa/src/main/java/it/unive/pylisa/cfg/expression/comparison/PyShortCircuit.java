@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -71,6 +72,7 @@ public abstract class PyShortCircuit extends BinaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Expression left = getLeft();
 		Expression right = getRight();
 
@@ -82,14 +84,14 @@ public abstract class PyShortCircuit extends BinaryExpression {
 		AnalysisState<A> other = postLeft.bottomExecution();
 		boolean canDecide = false, canContinue = false;
 		for (SymbolicExpression value : postLeft.getExecutionExpressions())
-			for (SymbolicExpression cond : analysis.rewrite(postLeft, value, this)) {
-				Satisfiability sat = analysis.satisfies(postLeft, cond, this);
+			for (SymbolicExpression cond : analysis.rewrite(postLeft, value, context, this)) {
+				Satisfiability sat = analysis.satisfies(postLeft, cond, context, this);
 				if (sat == Satisfiability.BOTTOM)
 					continue;
 				if (sat == Satisfiability.UNKNOWN) {
 					// e.g. an object, that is true unless its class defines
 					// __bool__ or __len__
-					Set<Type> types = analysis.getRuntimeTypesOf(postLeft, cond, this);
+					Set<Type> types = analysis.getRuntimeTypesOf(postLeft, cond, context, this);
 					if (!types.isEmpty() && types.stream().allMatch(PyNot::alwaysTrue))
 						sat = Satisfiability.SATISFIED;
 				}
@@ -101,13 +103,15 @@ public abstract class PyShortCircuit extends BinaryExpression {
 				if (decidedByTrue() ? maybeTrue : maybeFalse) {
 					// the result is the left operand
 					canDecide = true;
-					AnalysisState<A> assumed = analysis.assume(postLeft, decidedByTrue() ? cond : negated, left, this);
+					AnalysisState<A> assumed = analysis.assume(postLeft, decidedByTrue() ? cond : negated, context,
+							left, this);
 					decided = decided.lub(assumed.withExecutionExpression(value));
 				}
 				if (decidedByTrue() ? maybeFalse : maybeTrue) {
 					// the right operand is evaluated
 					canContinue = true;
-					other = other.lub(analysis.assume(postLeft, decidedByTrue() ? negated : cond, left, right));
+					other = other
+							.lub(analysis.assume(postLeft, decidedByTrue() ? negated : cond, context, left, right));
 				}
 			}
 

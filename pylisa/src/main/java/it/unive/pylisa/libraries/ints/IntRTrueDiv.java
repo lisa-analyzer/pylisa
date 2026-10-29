@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
@@ -73,11 +74,12 @@ public class IntRTrueDiv extends BinaryExpression implements PluggableStatement 
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 
 		it.unive.lisa.symbolic.value.BinaryExpression div = new it.unive.lisa.symbolic.value.BinaryExpression(
 				Float32Type.INSTANCE, right, left, TrueDivision.INSTANCE, loc);
 		Constant zero = new Constant(Int32Type.INSTANCE, 0, loc);
-		return DivisionGuard.guardedCompute(analysis, state, left, zero, div, getCFG(), loc, st, st);
+		return DivisionGuard.guardedCompute(analysis, context, state, left, zero, div, getCFG(), loc, st, st);
 	}
 }

@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.SyntheticLocation;
@@ -45,6 +46,7 @@ public class ROSServiceCallback extends NaryExpression {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		for (SymbolicExpression expr : params[0]) {
 			if (expr instanceof AccessChild) {
 				AccessChild access = (AccessChild) expr;
@@ -54,7 +56,7 @@ public class ROSServiceCallback extends NaryExpression {
 					HeapDereference containerDeref = (HeapDereference) container;
 					HeapReference heapRef = new HeapReference(containerDeref.getStaticType(), containerDeref,
 							containerDeref.getCodeLocation());
-					ExpressionSet exprSet = interprocedural.getAnalysis().rewrite(state, heapRef, this);
+					ExpressionSet exprSet = interprocedural.getAnalysis().rewrite(state, heapRef, context, this);
 					VariableRef request = new VariableRef(this.getCFG(), this.getLocation(), "$request");
 					VariableRef response = new VariableRef(this.getCFG(), this.getLocation(), "$response");
 					VariableRef selfRef = new VariableRef(this.getCFG(), containerDeref.getCodeLocation(),

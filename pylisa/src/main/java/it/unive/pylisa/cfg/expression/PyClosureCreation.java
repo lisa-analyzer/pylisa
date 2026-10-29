@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -89,12 +90,13 @@ public class PyClosureCreation extends Expression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		// the closure is held by a meta variable, until it is consumed
 		String name = "$closure@" + loc;
 		Variable closure = new Variable(Untyped.INSTANCE, name, loc);
 		getMetaVariables().add(closure);
-		AnalysisState<A> state = Cells.allocate(analysis, entryState, type, name, loc, this);
+		AnalysisState<A> state = Cells.allocate(analysis, context, entryState, type, name, loc, this);
 		for (FreeVariable var : free) {
 			// the object holding the cell (note that copying $closure.x into
 			// the field of the new closure relies on the heap following the
@@ -102,16 +104,17 @@ public class PyClosureCreation extends Expression {
 			SymbolicExpression owner = var.cells() != null
 					? new Variable(Untyped.INSTANCE, var.cells(), loc)
 					: Cells.cell(Cells.CLOSURE, var.name(), loc);
-			AnalysisState<A> evaluated = analysis.smallStepSemantics(state, owner, this);
+			AnalysisState<A> evaluated = analysis.smallStepSemantics(state, owner, context, this);
 			if (evaluated.getExecutionState().isBottom() && !state.getExecutionState().isBottom())
 				// the object holding the cell is not known
-				evaluated = analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this);
+				evaluated = analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, this);
 			AnalysisState<A> assigned = state.bottomExecution();
 			for (SymbolicExpression value : evaluated.getExecutionExpressions())
-				assigned = assigned.lub(analysis.assign(evaluated, Cells.cell(name, var.name(), loc), value, this));
+				assigned = assigned
+						.lub(analysis.assign(evaluated, Cells.cell(name, var.name(), loc), value, context, this));
 			state = assigned;
 		}
-		return analysis.smallStepSemantics(state, closure, this);
+		return analysis.smallStepSemantics(state, closure, context, this);
 	}
 
 	@Override

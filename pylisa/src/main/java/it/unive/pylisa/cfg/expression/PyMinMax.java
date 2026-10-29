@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -99,16 +100,18 @@ public class PyMinMax extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		if (positional == 0 || (hasDefault && positional > 1))
 			// e.g. min(), or min(a, b, default=c)
 			return raising.moveFrom(raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR));
 		return raising.moveFrom(
-				combinations(analysis, raising, state, params, new SymbolicExpression[params.length], 0));
+				combinations(analysis, context, raising, state, params, new SymbolicExpression[params.length], 0));
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> combinations(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
@@ -116,12 +119,12 @@ public class PyMinMax extends NaryExpression {
 			int pos)
 			throws SemanticException {
 		if (pos == params.length)
-			return positional == 1 ? ofIterable(analysis, raising, state, args[0], hasDefault ? args[1] : null)
-					: ofValues(analysis, raising, state, List.of(args), true);
+			return positional == 1 ? ofIterable(analysis, context, raising, state, args[0], hasDefault ? args[1] : null)
+					: ofValues(analysis, context, raising, state, List.of(args), true);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression e : params[pos]) {
 			args[pos] = e;
-			result = result.lub(combinations(analysis, raising, state, params, args, pos + 1));
+			result = result.lub(combinations(analysis, context, raising, state, params, args, pos + 1));
 		}
 		return result;
 	}
@@ -131,34 +134,37 @@ public class PyMinMax extends NaryExpression {
 	// is any of the elements
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> ofIterable(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			SymbolicExpression iterable,
 			SymbolicExpression dflt)
 			throws SemanticException {
-		List<SymbolicExpression> elements = ListModel.exactElements(analysis, state, iterable, this);
+		List<SymbolicExpression> elements = ListModel.exactElements(analysis, context, state, iterable, this);
 		if (elements == null)
-			return any(analysis, raising, state, iterable, dflt);
+			return any(analysis, context, raising, state, iterable, dflt);
 		if (elements.isEmpty())
-			return empty(analysis, raising, state, dflt);
-		return ofValues(analysis, raising, state, elements, true);
+			return empty(analysis, context, raising, state, dflt);
+		return ofValues(analysis, context, raising, state, elements, true);
 	}
 
 	// min(iterable): any of the elements, that might be empty
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> any(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			SymbolicExpression iterable,
 			SymbolicExpression dflt)
 			throws SemanticException {
-		AnalysisState<A> elements = Iteration.elements(analysis, state, getSubExpressions()[0], iterable, this,
+		AnalysisState<A> elements = Iteration.elements(analysis, context, state, getSubExpressions()[0], iterable, this,
 				getMetaVariables(), raising);
 		// e.g. the TypeError raised by iterating an int
 		AnalysisState<A> result = elements.bottomExecution();
 		if (!elements.getExecutionExpressions().isEmpty())
-			result = result.lub(ofValues(analysis, raising, elements, list(elements.getExecutionExpressions()), false));
-		return result.lub(empty(analysis, raising, state, dflt));
+			result = result.lub(
+					ofValues(analysis, context, raising, elements, list(elements.getExecutionExpressions()), false));
+		return result.lub(empty(analysis, context, raising, state, dflt));
 	}
 
 	private static List<SymbolicExpression> list(
@@ -172,12 +178,13 @@ public class PyMinMax extends NaryExpression {
 	// the result of an empty iterable
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> empty(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			SymbolicExpression dflt)
 			throws SemanticException {
 		if (dflt != null)
-			return analysis.smallStepSemantics(state, dflt, this);
+			return analysis.smallStepSemantics(state, dflt, context, this);
 		return raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
 	}
 
@@ -189,6 +196,7 @@ public class PyMinMax extends NaryExpression {
 	 */
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> ofValues(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			List<SymbolicExpression> values,
@@ -197,7 +205,7 @@ public class PyMinMax extends NaryExpression {
 		CodeLocation loc = getLocation();
 		List<Set<Type>> types = new ArrayList<>();
 		for (SymbolicExpression v : values)
-			types.add(analysis.getRuntimeTypesOf(state, v, this));
+			types.add(analysis.getRuntimeTypesOf(state, v, context, this));
 
 		// python compares each value with the minimum so far: since values
 		// compared without errors are comparable to the first one, a value
@@ -228,10 +236,10 @@ public class PyMinMax extends NaryExpression {
 						SymbolicExpression smaller = max ? values.get(c) : values.get(d);
 						SymbolicExpression greater = max ? values.get(d) : values.get(c);
 						excluded = analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, smaller,
-								greater, ComparisonLt.INSTANCE, loc), this) == Satisfiability.SATISFIED;
+								greater, ComparisonLt.INSTANCE, loc), context, this) == Satisfiability.SATISFIED;
 					}
 			if (!excluded)
-				result = result.lub(analysis.smallStepSemantics(state, values.get(c), this));
+				result = result.lub(analysis.smallStepSemantics(state, values.get(c), context, this));
 		}
 		if (mightError)
 			result = result.lub(raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR));

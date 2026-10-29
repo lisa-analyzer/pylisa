@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -56,12 +57,13 @@ public class PyCellsInit extends Statement {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
-		AnalysisState<A> state = Cells.allocate(analysis, entryState, type, Cells.CELLS, loc, this);
+		AnalysisState<A> state = Cells.allocate(analysis, context, entryState, type, Cells.CELLS, loc, this);
 		for (String parameter : parameters)
 			state = analysis.assign(state, Cells.cell(Cells.CELLS, parameter, loc),
-					new Variable(Untyped.INSTANCE, parameter, loc), this);
-		return analysis.smallStepSemantics(state, new Skip(loc), this);
+					new Variable(Untyped.INSTANCE, parameter, loc), context, this);
+		return analysis.smallStepSemantics(state, new Skip(loc), context, this);
 	}
 
 	@Override

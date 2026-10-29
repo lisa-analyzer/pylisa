@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -58,6 +59,7 @@ public class ObjectBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
@@ -66,9 +68,9 @@ public class ObjectBuiltin extends PyNative {
 		ReferenceType reftype = new ReferenceType(type);
 		MemoryAllocation alloc = new MemoryAllocation(type, loc, false);
 		InstrumentedReceiver object = new InstrumentedReceiver(reftype, false, loc);
-		AnalysisState<A> created = analysis.assign(Allocations.allocate(analysis, state, alloc, st), object,
-				new HeapReference(reftype, alloc, loc), st);
+		AnalysisState<A> created = analysis.assign(Allocations.allocate(analysis, context, state, alloc, st), object,
+				new HeapReference(reftype, alloc, loc), context, st);
 		getMetaVariables().add(object);
-		return compute(analysis, created, object);
+		return compute(analysis, context, created, object);
 	}
 }

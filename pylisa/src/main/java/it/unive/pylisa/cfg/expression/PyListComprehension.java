@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -204,6 +205,7 @@ public class PyListComprehension extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 
 		// the first iterable is evaluated once, before the iterations
@@ -212,7 +214,7 @@ public class PyListComprehension extends NaryExpression {
 		expressions.put(first, start);
 		if (cells != null)
 			// the cells shared with the lambdas inside the comprehension
-			start = Cells.allocate(analysis, start, cellsType, cells, loc, this)
+			start = Cells.allocate(analysis, context, start, cellsType, cells, loc, this)
 					.withExecutionExpressions(start.getExecutionExpressions());
 
 		// the states before the iterations, up to a fixpoint
@@ -252,6 +254,7 @@ public class PyListComprehension extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		ListCreation creation = new ListCreation(getCFG(), new DerivedLocation(loc, "comprehension"));
 		AnalysisState<A> result = creation.forwardSemanticsAux(interprocedural, start, new ExpressionSet[0],
@@ -266,7 +269,8 @@ public class PyListComprehension extends NaryExpression {
 								loc),
 						loc);
 				for (SymbolicExpression value : body.getExecutionExpressions())
-					result = result.lub(analysis.assign(created, unknown, value, this).withExecutionExpression(list));
+					result = result
+							.lub(analysis.assign(created, unknown, value, context, this).withExecutionExpression(list));
 			}
 		} else
 			// the errors raised by the iterations
@@ -284,6 +288,7 @@ public class PyListComprehension extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		DictionaryCreation creation = new DictionaryCreation(getCFG(), new DerivedLocation(getLocation(),
 				"comprehension"));
 		AnalysisState<A> result = creation.forwardSemanticsAux(interprocedural, start, new ExpressionSet[0],
@@ -291,11 +296,12 @@ public class PyListComprehension extends NaryExpression {
 		if (!body.getExecutionState().isBottom()) {
 			AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, body, new ExpressionSet[0],
 					expressions);
-			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 			for (SymbolicExpression dict : created.getExecutionExpressions())
 				for (SymbolicExpression value : body.getExecutionExpressions())
-					result = result.lub(DictModel.write(analysis, created, dict, keyVariable, value, this, raising)
-							.withExecutionExpression(dict));
+					result = result
+							.lub(DictModel.write(analysis, context, created, dict, keyVariable, value, this, raising)
+									.withExecutionExpression(dict));
 			result = raising.moveFrom(result);
 		} else
 			// the errors raised by the iterations
@@ -325,6 +331,7 @@ public class PyListComprehension extends NaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Clause clause = clauses.get(i);
 
 		// the target is bound to any of the elements of the iterable; the
@@ -334,7 +341,7 @@ public class PyListComprehension extends NaryExpression {
 		// iteration would still be reachable, and their allocation sites
 		// would become weak)
 		AnalysisState<A> bound = state.bottomExecution();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		for (SymbolicExpression iterable : state.getExecutionExpressions()) {
 			Set<Identifier> metas = new HashSet<>();
 			AnalysisState<A> elements = Iteration.elements(interprocedural, state, clause.iterable(), iterable, this,
@@ -345,7 +352,7 @@ public class PyListComprehension extends NaryExpression {
 				// visible through their cells
 				for (Map.Entry<String, String> cell : clause.cells().entrySet())
 					assigned = analysis.assign(assigned, Cells.cell(cells, cell.getKey(), getLocation()),
-							new Variable(Untyped.INSTANCE, cell.getValue(), getLocation()), this);
+							new Variable(Untyped.INSTANCE, cell.getValue(), getLocation()), context, this);
 				bound = bound.lub(assigned.forgetIdentifiers(metas, this));
 			}
 			// e.g. the TypeError raised by iterating an int
@@ -361,7 +368,7 @@ public class PyListComprehension extends NaryExpression {
 			expressions.put(condition, evaluated);
 			AnalysisState<A> holds = evaluated.bottomExecution();
 			for (SymbolicExpression cond : evaluated.getExecutionExpressions())
-				holds = holds.lub(analysis.assume(evaluated, cond, condition, this));
+				holds = holds.lub(analysis.assume(evaluated, cond, context, condition, this));
 			bound = holds.forgetIdentifiers(condition.getMetaVariables(), this);
 		}
 		if (bound.getExecutionState().isBottom())
@@ -380,7 +387,7 @@ public class PyListComprehension extends NaryExpression {
 			expressions.put(key, evaluated);
 			AnalysisState<A> assigned = evaluated.bottomExecution();
 			for (SymbolicExpression k : evaluated.getExecutionExpressions())
-				assigned = assigned.lub(analysis.assign(evaluated, keyVariable, k, this));
+				assigned = assigned.lub(analysis.assign(evaluated, keyVariable, k, context, this));
 			bound = assigned.forgetIdentifiers(key.getMetaVariables(), this);
 		}
 		AnalysisState<A> computed = element.forwardSemantics(bound, interprocedural, expressions);
@@ -398,8 +405,10 @@ public class PyListComprehension extends NaryExpression {
 			SymbolicExpression value,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		if (target instanceof VariableRef)
-			return interprocedural.getAnalysis().assign(state, ((VariableRef) target).getIdentifier(), value, this);
+			return interprocedural.getAnalysis().assign(state, ((VariableRef) target).getIdentifier(), value, context,
+					this);
 		Expression[] targets = ((TupleCreation) target).getSubExpressions();
 		int star = -1;
 		for (int i = 0; i < targets.length; i++)

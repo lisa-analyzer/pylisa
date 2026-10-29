@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
@@ -65,10 +66,11 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		AnalysisState<A> result = state.bottomExecution();
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		for (SymbolicExpression v : params[0]) {
-			Set<Type> rts = analysis.getRuntimeTypesOf(state, v, this);
+			Set<Type> rts = analysis.getRuntimeTypesOf(state, v, context, this);
 			for (Type recType : rts)
 				if (recType.isPointerType()) {
 					Type inner = recType.asPointerType().getInnerType();
@@ -85,7 +87,7 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 					AccessChild access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					AnalysisState<A> tmp = state.bottomExecution();
 					for (SymbolicExpression t : params[1])
-						tmp = tmp.lub(analysis.assign(partial, access, t, this));
+						tmp = tmp.lub(analysis.assign(partial, access, t, context, this));
 					partial = tmp;
 
 					global = new Global(getLocation(), unit, "qos_profile", false, Untyped.INSTANCE);
@@ -93,7 +95,7 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 					access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					tmp = state.bottomExecution();
 					for (SymbolicExpression t : params[4])
-						tmp = tmp.lub(analysis.assign(partial, access, t, this));
+						tmp = tmp.lub(analysis.assign(partial, access, t, context, this));
 					partial = tmp;
 
 					global = new Global(getLocation(), unit, "srv_name", false, StringType.INSTANCE);
@@ -101,7 +103,7 @@ public class Init extends it.unive.lisa.program.cfg.statement.NaryExpression imp
 					access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					tmp = state.bottomExecution();
 					for (SymbolicExpression t : params[2])
-						tmp = tmp.lub(analysis.assign(partial, access, t, this));
+						tmp = tmp.lub(analysis.assign(partial, access, t, context, this));
 					partial = tmp;
 
 					result = result.lub(partial);

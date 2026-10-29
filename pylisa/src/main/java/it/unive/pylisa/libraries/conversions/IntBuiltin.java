@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -47,24 +48,26 @@ public class IntBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression x = args[0], base = args[1];
 		if (missing(x) && missing(base))
-			return compute(analysis, state, new Constant(Int32Type.INSTANCE, 0, loc));
+			return compute(analysis, context, state, new Constant(Int32Type.INSTANCE, 0, loc));
 
 		// int(base=b) raises TypeError, as x is not a str
 		boolean noBase = missing(base);
-		Satisfiability typed = noBase ? hasType(analysis, state, x, STR.or(INT.or(t -> t.isNumericType())))
-				: hasType(analysis, state, x, STR).and(hasType(analysis, state, base, INT));
+		Satisfiability typed = noBase ? hasType(analysis, context, state, x, STR.or(INT.or(t -> t.isNumericType())))
+				: hasType(analysis, context, state, x, STR).and(hasType(analysis, context, state, base, INT));
 		BinaryExpression value = new BinaryExpression(Int32Type.INSTANCE, x, orNone(base), ToInt.INSTANCE, loc);
 		BinaryExpression raises = new BinaryExpression(BoolType.INSTANCE, x, orNone(base), ConversionRaises.INT,
 				loc);
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> ifTyped = typed == Satisfiability.NOT_SATISFIED ? state.bottomExecution()
-				: ExceptionGuard.guardedCompute(analysis, state, raises, LibrarySpecificationProvider.VALUE_ERROR,
+				: ExceptionGuard.guardedCompute(analysis, context, state, raises,
+						LibrarySpecificationProvider.VALUE_ERROR,
 						value, getCFG(), loc, getOriginatingStatement(), getOriginatingStatement(), raising);
 		return raising.moveFrom(typeChecked(state, typed, ifTyped, raising));
 	}

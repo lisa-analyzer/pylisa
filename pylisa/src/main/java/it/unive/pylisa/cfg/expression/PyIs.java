@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
@@ -51,8 +52,9 @@ public class PyIs extends BinaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		Set<Type> ltypes = analysis.getRuntimeTypesOf(state, left, this);
-		Set<Type> rtypes = analysis.getRuntimeTypesOf(state, right, this);
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		Set<Type> ltypes = analysis.getRuntimeTypesOf(state, left, context, this);
+		Set<Type> rtypes = analysis.getRuntimeTypesOf(state, right, context, this);
 		boolean maybeTrue = false, maybeFalse = false;
 		if (ltypes.isEmpty() || rtypes.isEmpty() || PyBinaryDispatch.unknownTypes(ltypes, this)
 				|| PyBinaryDispatch.unknownTypes(rtypes, this))
@@ -71,7 +73,7 @@ public class PyIs extends BinaryExpression {
 			// in the true branch of x is None)
 			return analysis.smallStepSemantics(state,
 					new it.unive.lisa.symbolic.value.BinaryExpression(BoolType.INSTANCE, left, right, Is.INSTANCE, loc),
-					this);
-		return analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, maybeTrue, loc), this);
+					context, this);
+		return analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, maybeTrue, loc), context, this);
 	}
 }

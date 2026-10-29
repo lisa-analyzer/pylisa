@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -42,14 +43,15 @@ public class ListPop extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		SymbolicExpression list = args[0];
 		SymbolicExpression index = missing(args[1]) ? new Constant(Int32Type.INSTANCE, -1, getLocation()) : args[1];
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
-		AnalysisState<A> read = ListModel.read(analysis, state, list, index, st, raising);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+		AnalysisState<A> read = ListModel.read(analysis, context, state, list, index, st, raising);
 		// the list loses an element on the paths where it is read
-		return raising.moveFrom(ListModel.shrink(analysis, read, list, st));
+		return raising.moveFrom(ListModel.shrink(analysis, context, read, list, st));
 	}
 }

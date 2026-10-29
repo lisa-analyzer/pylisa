@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -40,14 +41,15 @@ public class Exec extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		// the executed code might bind or delete any global of the module,
 		// also when it raises an exception
-		AnalysisState<A> havocked = havocGlobals(analysis, state, args[1]);
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		AnalysisState<A> havocked = havocGlobals(analysis, context, state, args[1]);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		raise(raising, havocked, LibrarySpecificationProvider.EXCEPTION);
-		return raising.moveFrom(compute(analysis, havocked, new PyNoneConstant(getLocation())));
+		return raising.moveFrom(compute(analysis, context, havocked, new PyNoneConstant(getLocation())));
 	}
 }

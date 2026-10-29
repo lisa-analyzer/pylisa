@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
@@ -63,6 +64,7 @@ public class Init extends NaryExpression implements PluggableStatement {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		AnalysisState<A> result = state.bottomExecution();
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Expression node = getSubExpressions()[1] instanceof NamedParameterExpression
@@ -72,7 +74,7 @@ public class Init extends NaryExpression implements PluggableStatement {
 		ExpressionSet nameExpansion = SemanticsHelpers.nameExpansion(this, node,
 				params[3], interprocedural, state, expressions);
 		for (SymbolicExpression v : params[0]) {
-			Set<Type> rts = analysis.getRuntimeTypesOf(state, v, this);
+			Set<Type> rts = analysis.getRuntimeTypesOf(state, v, context, this);
 			for (Type recType : rts)
 				if (recType.isPointerType()) {
 					Type inner = recType.asPointerType().getInnerType();
@@ -92,14 +94,14 @@ public class Init extends NaryExpression implements PluggableStatement {
 					AccessChild access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					AnalysisState<A> tmp = state.bottomExecution();
 					for (SymbolicExpression t : params[2])
-						tmp = tmp.lub(analysis.assign(partial, access, t, this));
+						tmp = tmp.lub(analysis.assign(partial, access, t, context, this));
 					partial = tmp;
 					global = new Global(getLocation(), unit, "action_name", false, StringType.INSTANCE);
 					var = global.toSymbolicVariable(getLocation());
 					access = new AccessChild(var.getStaticType(), container, var, getLocation());
 					tmp = state.bottomExecution();
 					for (SymbolicExpression t : nameExpansion)
-						tmp = tmp.lub(analysis.assign(partial, access, t, this));
+						tmp = tmp.lub(analysis.assign(partial, access, t, context, this));
 					partial = tmp;
 					result = result.lub(partial);
 				}

@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
@@ -58,6 +59,7 @@ public class IntXor extends BinaryExpression implements PluggableStatement {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		return interprocedural.getAnalysis().smallStepSemantics(state,
 				new it.unive.lisa.symbolic.value.BinaryExpression(
 						getStaticType(),
@@ -65,6 +67,6 @@ public class IntXor extends BinaryExpression implements PluggableStatement {
 						right,
 						BitwiseXor.INSTANCE,
 						getLocation()),
-				st);
+				context, st);
 	}
 }

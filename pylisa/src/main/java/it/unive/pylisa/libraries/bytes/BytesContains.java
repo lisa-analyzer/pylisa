@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -49,16 +50,17 @@ public class BytesContains extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression self = args[0], item = args[1];
-		Satisfiability isInt = hasType(analysis, state, item, INT);
-		Satisfiability isBytes = hasType(analysis, state, item, t -> t instanceof PyBytesType);
+		Satisfiability isInt = hasType(analysis, context, state, item, INT);
+		Satisfiability isBytes = hasType(analysis, context, state, item, t -> t instanceof PyBytesType);
 		BinaryExpression contains = new BinaryExpression(BoolType.INSTANCE, self, item, BytesOperation.CONTAINS, loc);
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (isInt != Satisfiability.NOT_SATISFIED) {
 			BinaryExpression outOfRange = new BinaryExpression(BoolType.INSTANCE,
@@ -67,12 +69,12 @@ public class BytesContains extends PyNative {
 					new BinaryExpression(BoolType.INSTANCE, item, new Constant(Int32Type.INSTANCE, 255, loc),
 							ComparisonGt.INSTANCE, loc),
 					LogicalOr.INSTANCE, loc);
-			result = result.lub(ExceptionGuard.guardedCompute(analysis, state, outOfRange,
+			result = result.lub(ExceptionGuard.guardedCompute(analysis, context, state, outOfRange,
 					LibrarySpecificationProvider.VALUE_ERROR, contains, getCFG(), loc, getOriginatingStatement(),
 					getOriginatingStatement(), raising));
 		}
 		if (isBytes != Satisfiability.NOT_SATISFIED)
-			result = result.lub(compute(analysis, state, contains));
+			result = result.lub(compute(analysis, context, state, contains));
 		if (isInt != Satisfiability.SATISFIED && isBytes != Satisfiability.SATISFIED)
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);

@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -54,7 +55,8 @@ public class ToDatetime extends it.unive.lisa.program.cfg.statement.UnaryExpress
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		UnaryTransform op = new UnaryTransform(0, UnaryTransformKind.TO_DATETIME, Axis.ROWS, false);
-		return PandasSemantics.applyUnary(interprocedural.getAnalysis(), state, expr, st, op);
+		return PandasSemantics.applyUnary(interprocedural.getAnalysis(), context, state, expr, st, op);
 	}
 }

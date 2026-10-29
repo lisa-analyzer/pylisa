@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.edge.Edge;
@@ -61,10 +62,11 @@ public class PyDelName extends Statement {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		AnalysisState<A> state = entryState;
 		for (PyNameRef name : names) {
 			Binding status = name.status(state);
-			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 			AnalysisState<A> result = state.bottomExecution();
 			if (status == null || status == Binding.BOTTOM || status.mightBeBound())
 				result = result.lub(name.unbind(state.forgetIdentifier(name.getIdentifier(), this)));
@@ -72,7 +74,7 @@ public class PyDelName extends Statement {
 				name.unboundError(raising, state);
 			state = raising.moveFrom(result);
 		}
-		return analysis.smallStepSemantics(state, new Skip(getLocation()), this);
+		return analysis.smallStepSemantics(state, new Skip(getLocation()), context, this);
 	}
 
 	@Override

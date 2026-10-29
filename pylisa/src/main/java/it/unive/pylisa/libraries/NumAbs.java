@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -66,20 +67,21 @@ public class NumAbs extends UnaryExpression implements PluggableStatement {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		Constant zero = new Constant(Int32Type.INSTANCE, 0, loc);
 		AnalysisState<A> positive = analysis.assume(state,
-				new BinaryExpression(BoolType.INSTANCE, expr, zero, ComparisonGe.INSTANCE, loc), st, st);
+				new BinaryExpression(BoolType.INSTANCE, expr, zero, ComparisonGe.INSTANCE, loc), context, st, st);
 		AnalysisState<A> negative = analysis.assume(state,
-				new BinaryExpression(BoolType.INSTANCE, expr, zero, ComparisonLt.INSTANCE, loc), st, st);
+				new BinaryExpression(BoolType.INSTANCE, expr, zero, ComparisonLt.INSTANCE, loc), context, st, st);
 		AnalysisState<A> result = state.bottomExecution();
 		if (!positive.getExecutionState().isBottom())
-			result = result.lub(analysis.smallStepSemantics(positive, expr, st));
+			result = result.lub(analysis.smallStepSemantics(positive, expr, context, st));
 		if (!negative.getExecutionState().isBottom())
 			result = result.lub(analysis.smallStepSemantics(negative,
 					new it.unive.lisa.symbolic.value.UnaryExpression(getStaticType(), expr,
 							NumericNegation.INSTANCE, loc),
-					st));
+					context, st));
 		return result;
 	}
 }

@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.QualifierSymbol;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -145,8 +146,10 @@ public class Import extends Statement {
 			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		AnalysisState<
-				A> result = interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()), this);
+				A> result = interprocedural.getAnalysis().smallStepSemantics(entryState, new Skip(getLocation()),
+						context, this);
 
 		if (result.getExecutionInfo(SymbolAliasing.INFO_KEY) == null)
 			result = result.storeExecutionInfo(SymbolAliasing.INFO_KEY, new SymbolAliasing());

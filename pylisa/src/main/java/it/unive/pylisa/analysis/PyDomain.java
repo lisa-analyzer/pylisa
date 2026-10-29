@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.type.TypeDomain;
 import it.unive.lisa.analysis.type.TypeLattice;
 import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.analysis.value.ValueLattice;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.SimpleAbstractState;
 import it.unive.lisa.lattices.heap.allocations.AllocationSite;
 import it.unive.lisa.lattices.heap.allocations.AllocationSites;
@@ -64,37 +65,41 @@ public class PyDomain<H extends HeapLattice<H>, V extends ValueLattice<V>, T ext
 			SimpleAbstractState<H, V, T> state,
 			Identifier id,
 			SymbolicExpression expression,
+			ScopeId<?> context,
 			ProgramPoint pp)
 			throws SemanticException {
-		return normalize(super.assign(state, id, expression, pp));
+		return normalize(super.assign(state, id, expression, context, pp));
 	}
 
 	@Override
 	public SimpleAbstractState<H, V, T> smallStepSemantics(
 			SimpleAbstractState<H, V, T> state,
 			SymbolicExpression expression,
+			ScopeId<?> context,
 			ProgramPoint pp)
 			throws SemanticException {
-		return normalize(super.smallStepSemantics(state, expression, pp));
+		return normalize(super.smallStepSemantics(state, expression, context, pp));
 	}
 
 	@Override
 	public SimpleAbstractState<H, V, T> assume(
 			SimpleAbstractState<H, V, T> state,
 			SymbolicExpression expression,
+			ScopeId<?> context,
 			ProgramPoint src,
 			ProgramPoint dest)
 			throws SemanticException {
-		return truthy(normalize(super.assume(state, expression, src, dest)), expression, src);
+		return truthy(normalize(super.assume(state, expression, context, src, dest)), expression, context, src);
 	}
 
 	@Override
 	public SimpleAbstractState<H, V, T> onCallReturn(
 			SimpleAbstractState<H, V, T> entryState,
 			SimpleAbstractState<H, V, T> callres,
+			ScopeId<?> context,
 			ProgramPoint call)
 			throws SemanticException {
-		return normalize(super.onCallReturn(entryState, callres, call));
+		return normalize(super.onCallReturn(entryState, callres, context, call));
 	}
 
 	// the bottom state, if any component of the given one is bottom
@@ -115,11 +120,12 @@ public class PyDomain<H extends HeapLattice<H>, V extends ValueLattice<V>, T ext
 	private SimpleAbstractState<H, V, T> truthy(
 			SimpleAbstractState<H, V, T> state,
 			SymbolicExpression expression,
+			ScopeId<?> context,
 			ProgramPoint pp)
 			throws SemanticException {
 		if (state.isBottom() || !(expression instanceof Identifier))
 			return state;
-		Set<Type> types = makeOracle(state).getRuntimeTypesOf(expression, pp);
+		Set<Type> types = makeOracle(state, context).getRuntimeTypesOf(expression, pp);
 		if (types.isEmpty() || !types.stream().allMatch(ListModel::isList))
 			return state;
 		HeapEnvWithFields heap = state.getLatticeInstance(HeapEnvWithFields.class);
@@ -133,6 +139,6 @@ public class PyDomain<H extends HeapLattice<H>, V extends ValueLattice<V>, T ext
 			return state;
 		CodeLocation loc = pp.getLocation();
 		Identifier child = site.withField(new Variable(Untyped.INSTANCE, ListModel.NONEMPTY, loc));
-		return assign(state, child, new Constant(BoolType.INSTANCE, true, loc), pp);
+		return assign(state, child, new Constant(BoolType.INSTANCE, true, loc), context, pp);
 	}
 }

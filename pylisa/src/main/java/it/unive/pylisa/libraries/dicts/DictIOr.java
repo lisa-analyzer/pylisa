@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
@@ -69,23 +70,25 @@ public class DictIOr extends BinaryExpression implements PluggableStatement {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS))
 			// dictionaries are symbolic values (see DictionaryCreation)
-			return analysis.smallStepSemantics(state, left, this);
+			return analysis.smallStepSemantics(state, left, context, this);
 
-		Set<Type> types = analysis.getRuntimeTypesOf(state, right, this);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, right, context, this);
 		AnalysisState<A> result;
 		if (!types.isEmpty() && types.stream().allMatch(DictModel::isDict))
-			result = DictModel.unpackInto(analysis, state, left, right, st, false);
+			result = DictModel.unpackInto(analysis, context, state, left, right, st, false);
 		else {
 			// e.g. a list of pairs: any entry, or TypeError
-			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 			raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
-			result = raising.moveFrom(DictModel.anyEntry(analysis, state, left, new PushAny(Untyped.INSTANCE, loc),
-					new PushAny(Untyped.INSTANCE, loc), st));
+			result = raising
+					.moveFrom(DictModel.anyEntry(analysis, context, state, left, new PushAny(Untyped.INSTANCE, loc),
+							new PushAny(Untyped.INSTANCE, loc), st));
 		}
 		// the dictionary itself is the result
-		return analysis.smallStepSemantics(result, left, this);
+		return analysis.smallStepSemantics(result, left, context, this);
 	}
 }

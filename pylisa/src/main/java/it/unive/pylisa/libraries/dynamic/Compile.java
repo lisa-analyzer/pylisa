@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -39,12 +40,14 @@ public class Compile extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		Satisfiability source = hasType(analysis, state, args[0], STR.or(BYTES));
-		Satisfiability filename = hasType(analysis, state, args[1], STR.or(BYTES));
-		Satisfiability mode = hasType(analysis, state, args[2], STR);
-		return typeChecked(analysis, state, source.and(filename).and(mode), unknown(analysis, state, null));
+		Satisfiability source = hasType(analysis, context, state, args[0], STR.or(BYTES));
+		Satisfiability filename = hasType(analysis, context, state, args[1], STR.or(BYTES));
+		Satisfiability mode = hasType(analysis, context, state, args[2], STR);
+		return typeChecked(analysis, context, state, source.and(filename).and(mode),
+				unknown(analysis, context, state, null));
 	}
 }

@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
@@ -29,6 +30,8 @@ public class SemanticsHelpers {
 			StatementStore<A> expressions)
 			throws SemanticException {
 
+		ScopeId<A> context = interprocedural.getCurrentContext();
+
 		Set<SymbolicExpression> exprSet = new HashSet<>();
 		AccessInstanceGlobal aigNS = new AccessInstanceGlobal(st.getCFG(), st.getLocation(), node,
 				"namespace");
@@ -44,9 +47,9 @@ public class SemanticsHelpers {
 
 		for (SymbolicExpression s : exprs) {
 			for (SymbolicExpression eNS : aigSemanticsNS.getExecutionExpressions()) {
-				ExpressionSet vesNS = interprocedural.getAnalysis().rewrite(state, eNS, st);
+				ExpressionSet vesNS = interprocedural.getAnalysis().rewrite(state, eNS, context, st);
 				for (SymbolicExpression eNodeName : aigSemanticsNodeName.getExecutionExpressions()) {
-					ExpressionSet vesNodeName = interprocedural.getAnalysis().rewrite(state, eNodeName, st);
+					ExpressionSet vesNodeName = interprocedural.getAnalysis().rewrite(state, eNodeName, context, st);
 					for (SymbolicExpression veNS : vesNS) {
 						for (SymbolicExpression veNodeName : vesNodeName)
 							exprSet.add(new TernaryExpression(StringType.INSTANCE, s, veNS, veNodeName,

@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -49,6 +50,7 @@ public class ListAppend extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
@@ -57,9 +59,9 @@ public class ListAppend extends PyNative {
 		AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, args[0], loc),
 				new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 		// weak update: the new element is joined with the previous ones
-		AnalysisState<A> appended = analysis.assign(state, unknown, args[1], st).lub(state);
+		AnalysisState<A> appended = analysis.assign(state, unknown, args[1], context, st).lub(state);
 		// the list surely has an element
-		appended = ListModel.setNonEmpty(analysis, appended, args[0], true, st);
-		return compute(analysis, appended, new PyNoneConstant(loc));
+		appended = ListModel.setNonEmpty(analysis, context, appended, args[0], true, st);
+		return compute(analysis, context, appended, new PyNoneConstant(loc));
 	}
 }

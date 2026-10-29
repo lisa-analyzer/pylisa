@@ -58,6 +58,25 @@ import org.apache.commons.lang3.tuple.Pair;
 public class PyHeap extends FieldSensitivePointBasedHeap {
 
 	/**
+	 * Builds a context-insensitive heap domain.
+	 */
+	public PyHeap() {
+		super();
+	}
+
+	/**
+	 * Builds the heap domain.
+	 *
+	 * @param contextSensitive whether or not allocation sites should be
+	 *                             qualified by the interprocedural context
+	 *                             where the allocation happens
+	 */
+	public PyHeap(
+			boolean contextSensitive) {
+		super(contextSensitive);
+	}
+
+	/**
 	 * Assigns {@code rhs} to {@code id}. Reading a field holding objects (e.g.
 	 * {@code o.x} in {@code y = o.x}) yields the location of the field: the
 	 * identifier then points to the objects the field points to (otherwise it

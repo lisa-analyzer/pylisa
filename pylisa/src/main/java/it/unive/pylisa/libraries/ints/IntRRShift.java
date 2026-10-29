@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
@@ -69,13 +70,14 @@ public class IntRRShift extends BinaryExpression implements PluggableStatement {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		it.unive.lisa.symbolic.value.BinaryExpression shift = new it.unive.lisa.symbolic.value.BinaryExpression(
 				Int32Type.INSTANCE, right, left, BitwiseShiftRight.INSTANCE, loc);
 		// python raises ValueError for a negative shift count
 		it.unive.lisa.symbolic.value.BinaryExpression negativeCount = new it.unive.lisa.symbolic.value.BinaryExpression(
 				BoolType.INSTANCE, left, new Constant(Int32Type.INSTANCE, 0, loc), ComparisonLt.INSTANCE, loc);
-		return ExceptionGuard.guardedCompute(interprocedural.getAnalysis(), state, negativeCount,
+		return ExceptionGuard.guardedCompute(interprocedural.getAnalysis(), context, state, negativeCount,
 				LibrarySpecificationProvider.VALUE_ERROR, shift, getCFG(), loc, st, st);
 	}
 }

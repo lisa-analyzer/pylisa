@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -91,14 +92,15 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
 		AnalysisState<A> result = state.bottomExecution();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		boolean anyPointer = false;
-		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, this);
+		Set<Type> rts = analysis.getRuntimeTypesOf(state, left, context, this);
 		for (Type t : rts) {
 			if (!t.isPointerType())
 				continue;
@@ -107,34 +109,34 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			HeapDereference deref = new HeapDereference(inner, left, loc);
 
 			if (inner.canBeAssignedTo(tupleType)) {
-				Satisfiability integral = hasInt(analysis, state, right);
+				Satisfiability integral = hasInt(analysis, context, state, right);
 				if (integral != Satisfiability.NOT_SATISFIED)
-					result = result.lub(readWithBoundsCheck(analysis, state, deref, right, loc, raising));
+					result = result.lub(readWithBoundsCheck(analysis, context, state, deref, right, loc, raising));
 				if (integral != Satisfiability.SATISFIED)
 					// the index of a tuple must be an int
 					raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
 			} else if (ListModel.isList(t)) {
 				// the index might be both a slice and something else (e.g. if
 				// it is unknown)
-				Set<Type> indexTypes = analysis.getRuntimeTypesOf(state, right, this);
+				Set<Type> indexTypes = analysis.getRuntimeTypesOf(state, right, context, this);
 				if (indexTypes.stream().anyMatch(ListModel::isSlice))
 					// lst[start:stop:step]
 					result = result.lub(ListModel.slice(interprocedural, state, left, right, this, st, raising));
 				if (indexTypes.isEmpty() || !indexTypes.stream().allMatch(ListModel::isSlice))
 					// bounds and index checked on the elements of the list
-					result = result.lub(ListModel.read(analysis, state, left, right, st, raising));
+					result = result.lub(ListModel.read(analysis, context, state, left, right, st, raising));
 			} else if (DictModel.isDict(t))
 				// the entries of the dictionary
-				result = result.lub(DictModel.read(analysis, state, left, right, st, raising));
+				result = result.lub(DictModel.read(analysis, context, state, left, right, st, raising));
 			else {
 				AccessChild access = new AccessChild(Untyped.INSTANCE, deref, right, loc);
-				result = result.lub(analysis.smallStepSemantics(state, access, st));
+				result = result.lub(analysis.smallStepSemantics(state, access, context, st));
 			}
 		}
 		if (!anyPointer) {
 			HeapDereference deref = new HeapDereference(Untyped.INSTANCE, left, loc);
 			AccessChild access = new AccessChild(Untyped.INSTANCE, deref, right, loc);
-			result = result.lub(analysis.smallStepSemantics(state, access, st));
+			result = result.lub(analysis.smallStepSemantics(state, access, context, st));
 		}
 
 		return raising.moveFrom(result);
@@ -142,6 +144,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> readWithBoundsCheck(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			HeapDereference deref,
 			SymbolicExpression index,
@@ -153,7 +156,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		// the length field must be resolved via smallStepSemantics (like any
 		// other heap read) before it can be used as an operand of a further
 		// symbolic expression evaluated by satisfies(...)
-		AnalysisState<A> lenState = analysis.smallStepSemantics(state, lenAccess, this);
+		AnalysisState<A> lenState = analysis.smallStepSemantics(state, lenAccess, context, this);
 
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression lenId : lenState.getExecutionExpressions()) {
@@ -162,12 +165,12 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			it.unive.lisa.symbolic.value.BinaryExpression tooHigh = new it.unive.lisa.symbolic.value.BinaryExpression(
 					BoolType.INSTANCE, index, lenId, ComparisonGe.INSTANCE, loc);
 
-			Satisfiability sat = analysis.satisfies(lenState, tooLow, this)
-					.or(analysis.satisfies(lenState, tooHigh, this));
+			Satisfiability sat = analysis.satisfies(lenState, tooLow, context, this)
+					.or(analysis.satisfies(lenState, tooHigh, context, this));
 
 			if (sat != Satisfiability.SATISFIED) {
 				AccessChild access = new AccessChild(Untyped.INSTANCE, deref, index, loc);
-				result = result.lub(analysis.smallStepSemantics(lenState, access, st));
+				result = result.lub(analysis.smallStepSemantics(lenState, access, context, st));
 			}
 			if (sat != Satisfiability.NOT_SATISFIED)
 				raising.raise(lenState, getCFG(), loc, st, LibrarySpecificationProvider.INDEX_ERROR);
@@ -179,10 +182,11 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 	// whether the index is an int (or a bool)
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability hasInt(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression index)
 			throws SemanticException {
-		Set<Type> types = analysis.getRuntimeTypesOf(state, index, this);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, index, context, this);
 		if (types.isEmpty() || types.stream().anyMatch(Type::isUntyped))
 			return Satisfiability.UNKNOWN;
 		boolean ints = types.stream()

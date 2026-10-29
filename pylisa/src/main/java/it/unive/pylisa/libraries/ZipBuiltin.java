@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -83,19 +84,20 @@ public class ZipBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression iterables = args[0], strict = args[1];
 		// the iterables, if their number is known
-		List<SymbolicExpression> known = ListModel.exactElements(analysis, state, iterables, st);
+		List<SymbolicExpression> known = ListModel.exactElements(analysis, context, state, iterables, st);
 		Satisfiability typed = known == null ? Satisfiability.UNKNOWN : Satisfiability.SATISFIED;
 		if (known != null)
 			for (SymbolicExpression iterable : known)
-				typed = typed.and(Iteration.iterable(analysis, state, iterable, st));
+				typed = typed.and(Iteration.iterable(analysis, context, state, iterable, st));
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> created = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED) {
 			Type type = PyClassType.lookup(LibrarySpecificationProvider.ZIP);
@@ -105,13 +107,13 @@ public class ZipBuiltin extends PyNative {
 			CodeLocation zipLoc = new DerivedLocation(loc, "zip");
 			MemoryAllocation alloc = new MemoryAllocation(type, zipLoc, false);
 			InstrumentedReceiver zip = new InstrumentedReceiver(reftype, false, zipLoc);
-			created = analysis.assign(Allocations.allocate(analysis, state, alloc, st), zip,
-					new HeapReference(reftype, alloc, zipLoc), st);
+			created = analysis.assign(Allocations.allocate(analysis, context, state, alloc, st), zip,
+					new HeapReference(reftype, alloc, zipLoc), context, st);
 			created = analysis.assign(created, child(new HeapDereference(type, zip, zipLoc), zipLoc), iterables,
-					st);
+					context, st);
 			getMetaVariables().add(zip);
-			created = compute(analysis, created, zip);
-			if (analysis.satisfies(state, strict, st) != Satisfiability.NOT_SATISFIED)
+			created = compute(analysis, context, created, zip);
+			if (analysis.satisfies(state, strict, context, st) != Satisfiability.NOT_SATISFIED)
 				// strict, with iterables of different lengths
 				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
 		}
@@ -126,6 +128,7 @@ public class ZipBuiltin extends PyNative {
 	 * no iterables (as for {@code zip()}) or one of them has no element.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param zip      the zip object
 	 * @param pp       the program point iterating the object
@@ -137,6 +140,7 @@ public class ZipBuiltin extends PyNative {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression zip,
 			Statement pp,
@@ -145,12 +149,13 @@ public class ZipBuiltin extends PyNative {
 		CodeLocation loc = pp.getLocation();
 		Type type = PyClassType.lookup(LibrarySpecificationProvider.ZIP);
 		AnalysisState<A> lists = analysis.smallStepSemantics(state, child(new HeapDereference(type, zip, loc), loc),
-				pp);
+				context, pp);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression list : lists.getExecutionExpressions()) {
-			List<SymbolicExpression> iterables = ListModel.exactElements(analysis, lists, list, pp);
+			List<SymbolicExpression> iterables = ListModel.exactElements(analysis, context, lists, list, pp);
 			if (iterables == null) {
-				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp));
+				result = result
+						.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp));
 				continue;
 			}
 			if (iterables.isEmpty())
@@ -159,11 +164,12 @@ public class ZipBuiltin extends PyNative {
 			AnalysisState<A> current = lists;
 			ExpressionSet[] elements = new ExpressionSet[iterables.size()];
 			for (int i = 0; i < elements.length; i++) {
-				current = Iteration.elements(analysis, current, null, iterables.get(i), pp, metas);
+				current = Iteration.elements(analysis, context, current, null, iterables.get(i), pp, metas);
 				elements[i] = current.getExecutionExpressions();
 			}
 			result = result.lub(
-					TupleCreation.create(analysis, current, pp, new DerivedLocation(loc, "zip"), elements, metas));
+					TupleCreation.create(analysis, context, current, pp, new DerivedLocation(loc, "zip"), elements,
+							metas));
 		}
 		return result;
 	}

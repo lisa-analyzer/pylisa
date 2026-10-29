@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.ClassUnit;
@@ -90,6 +91,7 @@ public class PyMethodCall extends UnresolvedCall {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		if (state.getExecutionState().isBottom())
 			// unreachable: nothing is computed, and nothing is left on the
 			// stack
@@ -97,7 +99,7 @@ public class PyMethodCall extends UnresolvedCall {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Set<Type> receiverTypes = new HashSet<>();
 		for (SymbolicExpression receiver : params[0])
-			receiverTypes.addAll(analysis.getRuntimeTypesOf(state, receiver, this));
+			receiverTypes.addAll(analysis.getRuntimeTypesOf(state, receiver, context, this));
 
 		Set<Type> valueTypes = new HashSet<>();
 		Set<CFG> statics = new HashSet<>();
@@ -118,7 +120,7 @@ public class PyMethodCall extends UnresolvedCall {
 				objectTypes.add(t);
 			}
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (others) {
 			AnalysisState<A> resolving = state;
@@ -126,17 +128,17 @@ public class PyMethodCall extends UnresolvedCall {
 				// a method of lists that is not modeled (e.g. pop) might
 				// modify the list in any way
 				for (SymbolicExpression receiver : params[0])
-					resolving = ListModel.invalidate(analysis, resolving, receiver, this);
+					resolving = ListModel.invalidate(analysis, context, resolving, receiver, this);
 			if (receiverTypes.stream().anyMatch(SetModel::isSet) && SetModel.unmodeled(getTargetName()))
 				// a method of sets that is not modeled (e.g. update) might
 				// modify the set in any way
 				for (SymbolicExpression receiver : params[0])
-					resolving = SetModel.invalidate(analysis, resolving, receiver, this);
+					resolving = SetModel.invalidate(analysis, context, resolving, receiver, this);
 			if (receiverTypes.stream().anyMatch(DictModel::isDict) && DictModel.unmodeled(getTargetName()))
 				// a method of dictionaries that is not modeled (e.g. pop) might
 				// modify the dictionary in any way
 				for (SymbolicExpression receiver : params[0])
-					resolving = DictModel.invalidate(analysis, resolving, receiver, this);
+					resolving = DictModel.invalidate(analysis, context, resolving, receiver, this);
 			// methods of objects, or unknown receivers: regular call
 			// resolution
 			if (!objectTypes.isEmpty() && objectTypes.stream().allMatch(this::definedMethod)
@@ -162,7 +164,7 @@ public class PyMethodCall extends UnresolvedCall {
 		if (valueTypes.isEmpty())
 			return raising.moveFrom(result);
 
-		Set<Type>[] types = parameterTypes(expressions, analysis);
+		Set<Type>[] types = parameterTypes(expressions, analysis, context);
 		boolean known = !PyBinaryDispatch.unknownTypes(receiverTypes, this);
 		for (Type t : valueTypes) {
 			types[0] = Set.of(t);
@@ -177,7 +179,7 @@ public class PyMethodCall extends UnresolvedCall {
 			else if (resolved == null)
 				// the method is not modeled
 				result = result.lub(analysis.smallStepSemantics(state,
-						new PushAny(Untyped.INSTANCE, getLocation()), this));
+						new PushAny(Untyped.INSTANCE, getLocation()), context, this));
 			else {
 				result = result.lub(resolved.forwardSemanticsAux(interprocedural, state, params, expressions));
 				getMetaVariables().addAll(resolved.getMetaVariables());
@@ -209,6 +211,7 @@ public class PyMethodCall extends UnresolvedCall {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Call resolved = resolve(interprocedural, analysis, state, expressions);
 		if (!(resolved instanceof CFGCall) || ((CFGCall) resolved).getTargetedCFGs().size() < 2
 				|| params[0].size() != 1 || !(params[0].iterator().next() instanceof Identifier))
@@ -224,7 +227,8 @@ public class PyMethodCall extends UnresolvedCall {
 				Constant cls = new Constant(
 						new PyTypeTokenType(Collections.singleton(PyClassType.lookup(unit.getName()))), unit, loc);
 				receiving = analysis.assume(state,
-						new BinaryExpression(BoolType.INSTANCE, receiver, cls, IsInstance.INSTANCE, loc), this, this);
+						new BinaryExpression(BoolType.INSTANCE, receiver, cls, IsInstance.INSTANCE, loc), context, this,
+						this);
 			}
 			if (!receiving.getExecutionState().isBottom())
 				result = result.lub(call(CallSites.within(new CFGCall(this, Collections.singleton(target)), this),
@@ -240,8 +244,9 @@ public class PyMethodCall extends UnresolvedCall {
 			AnalysisState<A> state,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		try {
-			return interprocedural.resolve(this, parameterTypes(expressions, analysis),
+			return interprocedural.resolve(this, parameterTypes(expressions, analysis, context),
 					state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class));
 		} catch (CallResolutionException e) {
 			throw new SemanticException("Unable to resolve call " + this, e);
@@ -294,6 +299,7 @@ public class PyMethodCall extends UnresolvedCall {
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Expression[] parameters = getParameters();
 		PyAttributeAccess read = new PyAttributeAccess(getCFG(), getLocation(), parameters[0], getTargetName());
 		// the value of the attribute is called without the receiver
@@ -303,7 +309,7 @@ public class PyMethodCall extends UnresolvedCall {
 
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression receiver : params[0]) {
-			Set<Type> receiverTypes = analysis.getRuntimeTypesOf(state, receiver, this);
+			Set<Type> receiverTypes = analysis.getRuntimeTypesOf(state, receiver, context, this);
 			if (receiverTypes.stream().noneMatch(this::isAttribute))
 				// handled by the regular call resolution
 				continue;
@@ -314,7 +320,7 @@ public class PyMethodCall extends UnresolvedCall {
 				// its value is unknown, but reading it from them raises
 				// AttributeError if they cannot have it
 				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()),
-						this));
+						context, this));
 				result = result.lub(read.missingErrors(interprocedural, state, receiver, this, raising));
 				continue;
 			}
@@ -332,7 +338,7 @@ public class PyMethodCall extends UnresolvedCall {
 			Set<SymbolicExpression> bounds = new HashSet<>();
 			boolean unknown = false, notCallable = false;
 			for (SymbolicExpression value : attr.getExecutionExpressions()) {
-				Set<Type> types = analysis.getRuntimeTypesOf(attr, value, this);
+				Set<Type> types = analysis.getRuntimeTypesOf(attr, value, context, this);
 				if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this)) {
 					unknown = true;
 					continue;
@@ -374,7 +380,7 @@ public class PyMethodCall extends UnresolvedCall {
 			if (unknown)
 				// e.g. a class, or an object
 				result = result.lub(analysis.smallStepSemantics(attr, new PushAny(Untyped.INSTANCE, getLocation()),
-						this));
+						context, this));
 		}
 		return result;
 	}

@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -51,18 +52,19 @@ public class StrReplaceNative extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
-		for (boolean bytes : textModes(analysis, state, args[0])) {
+		for (boolean bytes : textModes(analysis, context, state, args[0])) {
 			Predicate<Type> text = bytes ? BYTES : STR;
 			Type type = bytes ? PyBytesType.INSTANCE : StringType.INSTANCE;
-			Satisfiability typed = hasType(analysis, state, args[1], text)
-					.and(hasType(analysis, state, args[2], text))
-					.and(missing(args[3]) ? Satisfiability.SATISFIED : hasType(analysis, state, args[3], INT));
+			Satisfiability typed = hasType(analysis, context, state, args[1], text)
+					.and(hasType(analysis, context, state, args[2], text))
+					.and(missing(args[3]) ? Satisfiability.SATISFIED : hasType(analysis, context, state, args[3], INT));
 			SymbolicExpression value;
 			if (!bytes && missing(args[3]))
 				value = new TernaryExpression(type, args[0], args[1], args[2], StringReplace.INSTANCE, loc);
@@ -75,7 +77,7 @@ public class StrReplaceNative extends PyNative {
 						new BinaryExpression(Untyped.INSTANCE, args[1], args[2], ArgPair.INSTANCE, loc),
 						count, StrReplaceCount.INSTANCE, loc);
 			}
-			result = result.lub(typeChecked(state, typed, compute(analysis, state, value), raising));
+			result = result.lub(typeChecked(state, typed, compute(analysis, context, state, value), raising));
 		}
 		return raising.moveFrom(result);
 	}

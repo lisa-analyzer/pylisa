@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
@@ -70,6 +71,7 @@ public class PyAssign extends Assignment {
 			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Expression lefthand = getLeft();
 		if (lefthand instanceof TupleCreation)
 			// a, b = ... (the targets are not evaluated)
@@ -106,9 +108,9 @@ public class PyAssign extends Assignment {
 
 		Set<Type> rtsValue = new HashSet<>();
 		for (SymbolicExpression valueSym : valueIds)
-			rtsValue.addAll(analysis.getRuntimeTypesOf(indexState, valueSym, this));
+			rtsValue.addAll(analysis.getRuntimeTypesOf(indexState, valueSym, context, this));
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = indexState.bottomExecution();
 		boolean resolved = false;
 		List<Call> setitems = new ArrayList<>();
@@ -116,11 +118,11 @@ public class PyAssign extends Assignment {
 		// evaluate them again (e.g., calling f twice in x[i] = f())
 		ExpressionSet[] args = { selfIds, indexIds, valueIds };
 		for (SymbolicExpression selfSym : selfIds) {
-			Set<Type> rtsSelf = analysis.getRuntimeTypesOf(indexState, selfSym, this);
+			Set<Type> rtsSelf = analysis.getRuntimeTypesOf(indexState, selfSym, context, this);
 			Set<Type> rtsIndex = indexIds.isEmpty() ? Set.of(Untyped.INSTANCE) : null;
 			for (SymbolicExpression indexSym : indexIds)
 				rtsIndex = rtsIndex == null
-						? analysis.getRuntimeTypesOf(indexState, indexSym, this)
+						? analysis.getRuntimeTypesOf(indexState, indexSym, context, this)
 						: rtsIndex;
 
 			for (Type tSelf : rtsSelf) {
@@ -173,7 +175,7 @@ public class PyAssign extends Assignment {
 		if (getRootStatement() == this)
 			// the value of the statement is not used: the meta variables are
 			// not needed anymore, and nothing is left on the stack
-			return analysis.smallStepSemantics(result, new Skip(loc), this).forgetIdentifiers(metas, this);
+			return analysis.smallStepSemantics(result, new Skip(loc), context, this).forgetIdentifiers(metas, this);
 
 		// __setitem__ has no useful return value in Python (None); leave the
 		// assigned value on the stack, matching plain scalar assignment, as it
@@ -181,7 +183,7 @@ public class PyAssign extends Assignment {
 		// will forget the meta variables
 		AnalysisState<A> finalResult = result.bottom();
 		for (SymbolicExpression valueSym : valueIds)
-			finalResult = finalResult.lub(analysis.smallStepSemantics(result, valueSym, this));
+			finalResult = finalResult.lub(analysis.smallStepSemantics(result, valueSym, context, this));
 		return finalResult;
 	}
 
@@ -223,12 +225,13 @@ public class PyAssign extends Assignment {
 			SymbolicExpression right,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		AnalysisState<A> result;
 		if (left instanceof Identifier && left.equals(right))
 			// x = x (e.g. x |= y, where __ior__ returns x itself) does not
 			// change anything, while assigning would lose what is known about
 			// the object x points to, as the heap drops it when x is unbound
-			result = interprocedural.getAnalysis().smallStepSemantics(state, left, this);
+			result = interprocedural.getAnalysis().smallStepSemantics(state, left, context, this);
 		else
 			// tuple targets are unpacked by unpackAssignment
 			result = super.fwdBinarySemantics(interprocedural, state, left, right, expressions);
@@ -249,12 +252,13 @@ public class PyAssign extends Assignment {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		Expression valueExpr = getRight();
 		AnalysisState<A> valueState = evalSub(valueExpr, entryState, interprocedural, expressions);
 
 		AnalysisState<A> result = valueState.bottomExecution();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		for (SymbolicExpression value : valueState.getExecutionExpressions())
 			result = result.lub(unpack(interprocedural, valueState, getLeft(), value, expressions, raising));
 		result = raising.moveFrom(result);
@@ -265,12 +269,12 @@ public class PyAssign extends Assignment {
 		valueExpr.getMetaVariables().clear();
 		if (getRootStatement() == this)
 			// nothing is left on the stack
-			return analysis.smallStepSemantics(result, new Skip(loc), this).forgetIdentifiers(metas, this);
+			return analysis.smallStepSemantics(result, new Skip(loc), context, this).forgetIdentifiers(metas, this);
 		// the value is used by the enclosing assignment (e.g., x = a, b = f()),
 		// that will forget the meta variables
 		AnalysisState<A> finalResult = result.bottomExecution();
 		for (SymbolicExpression value : valueState.getExecutionExpressions())
-			finalResult = finalResult.lub(analysis.smallStepSemantics(result, value, this));
+			finalResult = finalResult.lub(analysis.smallStepSemantics(result, value, context, this));
 		return finalResult;
 	}
 
@@ -285,8 +289,9 @@ public class PyAssign extends Assignment {
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		if (target instanceof VariableRef && !(target instanceof PyNameRef && ((PyNameRef) target).cell() != null))
-			return bind(target, analysis.assign(state, ((VariableRef) target).getIdentifier(), value, this));
+			return bind(target, analysis.assign(state, ((VariableRef) target).getIdentifier(), value, context, this));
 		if (target instanceof PyAttributeAccess || target instanceof PyNameRef) {
 			// o.x, or a name held in a cell, is evaluated as the target of the
 			// assignment
@@ -294,7 +299,7 @@ public class PyAssign extends Assignment {
 			expressions.put(target, evaluated);
 			AnalysisState<A> result = evaluated.bottomExecution();
 			for (SymbolicExpression id : evaluated.getExecutionExpressions())
-				result = result.lub(analysis.assign(evaluated, id, value, this));
+				result = result.lub(analysis.assign(evaluated, id, value, context, this));
 			return bind(target, result.forgetIdentifiers(target.getMetaVariables(), this));
 		}
 		if (!(target instanceof TupleCreation))

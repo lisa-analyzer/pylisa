@@ -98,7 +98,8 @@ public class ROSComputationGraphDumper
 			throws SemanticException {
 		SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
 				TypeEnvironment<TypeSet>> state = analysisState.getExecutionState();
-		SemanticOracle oracle = DOMAIN.makeOracle(state);
+		// no interprocedural context is available after the analysis
+		SemanticOracle oracle = DOMAIN.makeOracle(state, null);
 		return CP_DOMAIN.eval(state.valueState, expression, pp, oracle);
 	}
 
@@ -108,7 +109,8 @@ public class ROSComputationGraphDumper
 			AnalysisState<SimpleAbstractState<HeapEnvironment<AllocationSites>, ValueEnvironment<ConstantPropagation>,
 					TypeEnvironment<TypeSet>>> analysisState)
 			throws SemanticException {
-		SemanticOracle oracle = DOMAIN.makeOracle(analysisState.getExecutionState());
+		// no interprocedural context is available after the analysis
+		SemanticOracle oracle = DOMAIN.makeOracle(analysisState.getExecutionState(), null);
 		return oracle.rewrite(expression, pp);
 	}
 

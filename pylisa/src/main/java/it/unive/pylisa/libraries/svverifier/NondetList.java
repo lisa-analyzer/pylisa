@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -95,6 +96,7 @@ public class NondetList extends PyNative {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 
 		// the elements of the list
@@ -114,7 +116,8 @@ public class NondetList extends PyNative {
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 				for (SymbolicExpression element : elements.getExecutionExpressions())
-					result = result.lub(analysis.assign(created, unknown, element, st).withExecutionExpression(list));
+					result = result
+							.lub(analysis.assign(created, unknown, element, context, st).withExecutionExpression(list));
 			}
 		} else
 			// the errors raised by nondet_elem
@@ -152,16 +155,17 @@ public class NondetList extends PyNative {
 			Set<Identifier> metas)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		AnalysisState<A> elements = state.bottomExecution();
 		Type nondet = nondetType(gen);
 		if (nondet != null)
-			return analysis.smallStepSemantics(state, new PushAny(nondet, loc), st);
+			return analysis.smallStepSemantics(state, new PushAny(nondet, loc), context, st);
 		for (SymbolicExpression g : gens) {
 			Set<CFG> cfgs = new HashSet<>();
 			Set<NativeCFG> natives = new HashSet<>();
 			boolean unknown = false;
-			Set<Type> types = analysis.getRuntimeTypesOf(state, g, this);
+			Set<Type> types = analysis.getRuntimeTypesOf(state, g, context, this);
 			if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this))
 				unknown = true;
 			else
@@ -187,7 +191,8 @@ public class NondetList extends PyNative {
 						.lub(call(CallSites.within(new NativeCall(call, natives), this), interprocedural, state,
 								expressions, metas));
 			if (unknown)
-				elements = elements.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), st));
+				elements = elements
+						.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, st));
 		}
 		return elements;
 	}
@@ -222,6 +227,7 @@ public class NondetList extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {

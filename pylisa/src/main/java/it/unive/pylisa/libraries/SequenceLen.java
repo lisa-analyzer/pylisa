@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -74,13 +75,14 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
 
 		AnalysisState<A> result = state.bottomExecution();
 		boolean anyPointer = false;
-		Set<Type> rts = analysis.getRuntimeTypesOf(state, expr, this);
+		Set<Type> rts = analysis.getRuntimeTypesOf(state, expr, context, this);
 		for (Type t : rts) {
 			if (!t.isPointerType())
 				continue;
@@ -89,22 +91,23 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 
 			if (ListModel.isList(t) || DictModel.isDict(t)) {
 				// the length is computed from the elements (or entries)
-				Integer length = ListModel.isList(t) ? ListModel.length(analysis, state, expr, this)
-						: DictModel.length(analysis, state, expr, this);
+				Integer length = ListModel.isList(t) ? ListModel.length(analysis, context, state, expr, this)
+						: DictModel.length(analysis, context, state, expr, this);
 				result = result.lub(analysis.smallStepSemantics(state, length == null
 						? new PushAny(Int32Type.INSTANCE, loc)
-						: new Constant(Int32Type.INSTANCE, length, loc), st));
+						: new Constant(Int32Type.INSTANCE, length, loc), context, st));
 			} else if (inner.canBeAssignedTo(tupleType)) {
 				HeapDereference deref = new HeapDereference(inner, expr, loc);
 				Variable lenKey = new Variable(Int32Type.INSTANCE, "length", loc);
 				AccessChild lenAccess = new AccessChild(Int32Type.INSTANCE, deref, lenKey, loc);
-				result = result.lub(analysis.smallStepSemantics(state, lenAccess, st));
+				result = result.lub(analysis.smallStepSemantics(state, lenAccess, context, st));
 			} else
-				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), st));
+				result = result
+						.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), context, st));
 		}
 
 		if (!anyPointer)
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), st));
+			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), context, st));
 
 		return result;
 	}

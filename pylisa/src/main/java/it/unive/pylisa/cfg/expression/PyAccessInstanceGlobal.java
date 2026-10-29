@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.annotations.Annotations;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -41,10 +42,11 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS)) {
 			PyClassType dftype = PyClassType.lookup(LibrarySpecificationProvider.PANDAS_DF);
 			Type dfreftype = dftype.getReference();
-			Set<Type> rts = analysis.getRuntimeTypesOf(state, expr, this);
+			Set<Type> rts = analysis.getRuntimeTypesOf(state, expr, context, this);
 			if (rts.stream().anyMatch(t -> (t.equals(dfreftype))))
 				switch (getTarget()) {
 				case "loc":
@@ -52,7 +54,7 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 				case "style":
 					// for pandas dataframes we treat some properties as the
 					// dataframe itself
-					return analysis.smallStepSemantics(state, expr, this);
+					return analysis.smallStepSemantics(state, expr, context, this);
 				case "columns":
 					// we treat this as a call to keys()
 					Keys keys = new Keys(getCFG(), getLocation(), getSubExpression());
@@ -69,6 +71,6 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 		Variable var = new Variable(Untyped.INSTANCE, getTarget(), new Annotations(), getLocation());
 		HeapDereference container = new HeapDereference(Untyped.INSTANCE, expr, getLocation());
 		AccessChild access = new AccessChild(Untyped.INSTANCE, container, var, getLocation());
-		return analysis.smallStepSemantics(state, access, this);
+		return analysis.smallStepSemantics(state, access, context, this);
 	}
 }

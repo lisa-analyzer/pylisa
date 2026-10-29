@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.type.BoolType;
@@ -38,6 +39,7 @@ public final class CodecSemantics {
 	 *
 	 * @param n        the native performing the operation
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param codec    the operation
 	 * @param value    the value to encode or decode
@@ -51,24 +53,26 @@ public final class CodecSemantics {
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			PyNative n,
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Codec codec,
 			SymbolicExpression value,
 			SymbolicExpression encoding,
 			SymbolicExpression errors)
 			throws SemanticException {
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
-		return raising.moveFrom(semantics(n, analysis, state, codec, value, encoding, errors, raising));
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+		return raising.moveFrom(semantics(n, analysis, context, state, codec, value, encoding, errors, raising));
 	}
 
 	/**
 	 * Encodes or decodes {@code value}, as
-	 * {@link #semantics(PyNative, Analysis, AnalysisState, Codec, SymbolicExpression, SymbolicExpression, SymbolicExpression)},
+	 * {@link #semantics(PyNative, Analysis, ScopeId, AnalysisState, Codec, SymbolicExpression, SymbolicExpression, SymbolicExpression)},
 	 * but the raised exceptions are collected in {@code raising} instead of
 	 * being moved to the error channel.
 	 *
 	 * @param n        the native performing the operation
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param codec    the operation
 	 * @param value    the value to encode or decode
@@ -84,6 +88,7 @@ public final class CodecSemantics {
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			PyNative n,
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Codec codec,
 			SymbolicExpression value,
@@ -93,9 +98,9 @@ public final class CodecSemantics {
 			throws SemanticException {
 		CodeLocation loc = n.getLocation();
 		Satisfiability typed = (PyNative.missing(encoding) ? Satisfiability.SATISFIED
-				: n.hasType(analysis, state, encoding, PyNative.STR))
+				: n.hasType(analysis, context, state, encoding, PyNative.STR))
 						.and(PyNative.missing(errors) ? Satisfiability.SATISFIED
-								: n.hasType(analysis, state, errors, PyNative.STR));
+								: n.hasType(analysis, context, state, errors, PyNative.STR));
 		// the operators model a missing argument as None
 		encoding = PyNative.orNone(encoding);
 		errors = PyNative.orNone(errors);
@@ -103,15 +108,15 @@ public final class CodecSemantics {
 		String unicodeError = codec.isEncode() ? LibrarySpecificationProvider.UNICODE_ENCODE_ERROR
 				: LibrarySpecificationProvider.UNICODE_DECODE_ERROR;
 		Satisfiability failsUnicode = analysis.satisfies(state, new TernaryExpression(BoolType.INSTANCE, value,
-				encoding, errors, new CodecRaises(codec, unicodeError), loc), n);
+				encoding, errors, new CodecRaises(codec, unicodeError), loc), context, n);
 		Satisfiability failsLookup = analysis.satisfies(state, new TernaryExpression(BoolType.INSTANCE, value,
-				encoding, errors, new CodecRaises(codec, LibrarySpecificationProvider.LOOKUP_ERROR), loc), n);
+				encoding, errors, new CodecRaises(codec, LibrarySpecificationProvider.LOOKUP_ERROR), loc), context, n);
 
 		AnalysisState<A> result = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED) {
 			// the codec is applied only to well-typed arguments
 			if (failsUnicode != Satisfiability.SATISFIED && failsLookup != Satisfiability.SATISFIED)
-				result = result.lub(n.compute(analysis, state,
+				result = result.lub(n.compute(analysis, context, state,
 						new TernaryExpression(codec.isEncode() ? PyBytesType.INSTANCE : StringType.INSTANCE, value,
 								encoding, errors, codec, loc)));
 			if (failsUnicode != Satisfiability.NOT_SATISFIED)

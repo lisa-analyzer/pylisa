@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -38,14 +39,16 @@ public class CountBuiltin extends ItertoolBuiltin {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression start = missing(args[0]) ? new Constant(Int32Type.INSTANCE, 0, loc) : args[0];
 		SymbolicExpression step = missing(args[1]) ? new Constant(Int32Type.INSTANCE, 1, loc) : args[1];
-		Satisfiability typed = hasType(analysis, state, start, NUMBER).and(hasType(analysis, state, step, NUMBER));
-		return checked(analysis, state, typed, ItertoolsModel.COUNT,
+		Satisfiability typed = hasType(analysis, context, state, start, NUMBER)
+				.and(hasType(analysis, context, state, step, NUMBER));
+		return checked(analysis, context, state, typed, ItertoolsModel.COUNT,
 				new String[] { ItertoolsModel.START, ItertoolsModel.STEP }, new SymbolicExpression[] { start, step });
 	}
 }

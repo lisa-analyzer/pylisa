@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
@@ -70,11 +71,12 @@ public class PySingleArrayAccess extends BinaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		Set<Type> rtsContainer = analysis.getRuntimeTypesOf(state, left, this);
-		Set<Type> rtsIndex = analysis.getRuntimeTypesOf(state, right, this);
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		Set<Type> rtsContainer = analysis.getRuntimeTypesOf(state, left, context, this);
+		Set<Type> rtsIndex = analysis.getRuntimeTypesOf(state, right, context, this);
 		SymbolAliasing aliasing = state.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type tContainer : rtsContainer) {
 			for (Type tIndex : rtsIndex) {

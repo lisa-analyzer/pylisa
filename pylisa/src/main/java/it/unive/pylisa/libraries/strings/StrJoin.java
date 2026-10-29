@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -46,33 +47,34 @@ public class StrJoin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		SymbolicExpression iterable = args[1];
-		Satisfiability iterates = Iteration.iterable(analysis, state, iterable, st);
+		Satisfiability iterates = Iteration.iterable(analysis, context, state, iterable, st);
 
 		// the types of the elements: the state of the iteration is only used to
 		// read them, as the iteration itself does not happen here
 		boolean mightBeStr = false, mightNotBeStr = false;
 		if (iterates != Satisfiability.NOT_SATISFIED) {
 			Expression[] subs = getSubExpressions();
-			AnalysisState<A> elements = Iteration.elements(analysis, state, subs.length > 1 ? subs[1] : null,
+			AnalysisState<A> elements = Iteration.elements(analysis, context, state, subs.length > 1 ? subs[1] : null,
 					iterable, st, getMetaVariables());
 			for (SymbolicExpression element : elements.getExecutionExpressions()) {
-				Satisfiability str = hasType(analysis, elements, element, STR);
+				Satisfiability str = hasType(analysis, context, elements, element, STR);
 				mightBeStr |= str != Satisfiability.NOT_SATISFIED;
 				mightNotBeStr |= str != Satisfiability.SATISFIED;
 			}
 		}
 		// whether the iterable surely has an element
-		boolean nonEmpty = analysis.getRuntimeTypesOf(state, iterable, st).stream().allMatch(ListModel::isList)
-				&& ListModel.shape(analysis, state, iterable, st).prefix() > 0;
+		boolean nonEmpty = analysis.getRuntimeTypesOf(state, iterable, context, st).stream().allMatch(ListModel::isList)
+				&& ListModel.shape(analysis, context, state, iterable, st).prefix() > 0;
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (iterates != Satisfiability.NOT_SATISFIED && (mightBeStr || !nonEmpty))
-			result = result.lub(compute(analysis, state, new PushAny(StringType.INSTANCE, getLocation())));
+			result = result.lub(compute(analysis, context, state, new PushAny(StringType.INSTANCE, getLocation())));
 		if (iterates != Satisfiability.SATISFIED || mightNotBeStr)
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);

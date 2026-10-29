@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -50,16 +51,17 @@ public class ListExtend extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
-		Satisfiability iterable = Iteration.iterable(analysis, state, args[1], st);
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		Satisfiability iterable = Iteration.iterable(analysis, context, state, args[1], st);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (iterable != Satisfiability.NOT_SATISFIED) {
 			Expression[] subs = getSubExpressions();
-			AnalysisState<A> elements = Iteration.elements(analysis, state, subs.length > 1 ? subs[1] : null,
+			AnalysisState<A> elements = Iteration.elements(analysis, context, state, subs.length > 1 ? subs[1] : null,
 					args[1], st, getMetaVariables(), raising);
 			Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 			AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, args[0], loc),
@@ -68,8 +70,8 @@ public class ListExtend extends PyNative {
 			// (the iterable might also be empty)
 			AnalysisState<A> extended = state;
 			for (SymbolicExpression element : elements.getExecutionExpressions())
-				extended = extended.lub(analysis.assign(elements, unknown, element, st));
-			result = compute(analysis, extended, new PyNoneConstant(loc));
+				extended = extended.lub(analysis.assign(elements, unknown, element, context, st));
+			result = compute(analysis, context, extended, new PyNoneConstant(loc));
 		}
 		if (iterable != Satisfiability.SATISFIED)
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);

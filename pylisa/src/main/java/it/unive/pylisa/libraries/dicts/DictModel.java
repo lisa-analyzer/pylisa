@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.lattices.heap.allocations.AllocationSite;
@@ -157,6 +158,7 @@ public final class DictModel {
 	// the entries of the dictionary, or null if they are not known
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Entries entries(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			ProgramPoint pp)
@@ -165,7 +167,7 @@ public final class DictModel {
 		if (heap == null || heap.isTop() || heap.isBottom() || heap.fields.isTop() || heap.fields.function == null)
 			return null;
 		Set<AllocationSite> sites = new HashSet<>();
-		for (SymbolicExpression rec : analysis.rewrite(state, dict, pp))
+		for (SymbolicExpression rec : analysis.rewrite(state, dict, context, pp))
 			if (rec instanceof MemoryPointer && ((MemoryPointer) rec).getReferencedLocation() instanceof AllocationSite)
 				sites.add((AllocationSite) ((MemoryPointer) rec).getReferencedLocation());
 			else if (rec instanceof Identifier && heap.knowsIdentifier((Identifier) rec)) {
@@ -201,6 +203,7 @@ public final class DictModel {
 	// the tracked key the key is surely equal to, if any
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Object exactKey(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression key,
 			Set<Object> candidates,
@@ -213,7 +216,7 @@ public final class DictModel {
 		for (Object candidate : candidates)
 			if (analysis.satisfies(state,
 					new BinaryExpression(BoolType.INSTANCE, key, child(candidate, loc), ComparisonEq.INSTANCE, loc),
-					pp) == Satisfiability.SATISFIED)
+					context, pp) == Satisfiability.SATISFIED)
 				return candidate;
 		return null;
 	}
@@ -222,11 +225,12 @@ public final class DictModel {
 	// raising TypeError
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean unhashable(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression key,
 			ProgramPoint pp)
 			throws SemanticException {
-		Set<Type> types = analysis.getRuntimeTypesOf(state, key, pp);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, key, context, pp);
 		return types.isEmpty() || types.stream().anyMatch(t -> ListModel.isList(t) || isDict(t));
 	}
 
@@ -238,6 +242,7 @@ public final class DictModel {
 	 * has.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the dictionary and the key have been
 	 *                     evaluated
 	 * @param dict     the dictionary
@@ -252,6 +257,7 @@ public final class DictModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> read(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			SymbolicExpression key,
@@ -261,18 +267,18 @@ public final class DictModel {
 		CodeLocation loc = thrower.getLocation();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.DICT), dict, loc);
 		AnalysisState<A> result = state.bottomExecution();
-		if (unhashable(analysis, state, key, thrower))
+		if (unhashable(analysis, context, state, key, thrower))
 			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 
-		Entries entries = entries(analysis, state, dict, thrower);
+		Entries entries = entries(analysis, context, state, dict, thrower);
 		if (entries == null) {
 			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.KEY_ERROR);
-			return result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), thrower));
+			return result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, thrower));
 		}
 
 		Set<Object> all = new HashSet<>();
 		entries.keys().values().forEach(all::addAll);
-		Object exact = entries.weak() ? null : exactKey(analysis, state, key, all, thrower);
+		Object exact = entries.weak() ? null : exactKey(analysis, context, state, key, all, thrower);
 		boolean keyError = !entries.unknown().isEmpty();
 		Set<SymbolicExpression> read = new HashSet<>();
 		if (exact != null) {
@@ -301,7 +307,8 @@ public final class DictModel {
 
 		for (SymbolicExpression field : read)
 			result = result.lub(
-					analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref, field, loc), thrower));
+					analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref, field, loc), context,
+							thrower));
 		if (keyError)
 			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.KEY_ERROR);
 		return result;
@@ -316,6 +323,7 @@ public final class DictModel {
 	 * value.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the dictionary, the key and the value
 	 *                     have been evaluated
 	 * @param dict     the dictionary
@@ -329,23 +337,25 @@ public final class DictModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> write(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			SymbolicExpression key,
 			SymbolicExpression value,
 			Statement thrower)
 			throws SemanticException {
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
-		return raising.moveFrom(write(analysis, state, dict, key, value, thrower, raising));
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+		return raising.moveFrom(write(analysis, context, state, dict, key, value, thrower, raising));
 	}
 
 	/**
 	 * Writes the value of the given key of the dictionary as
-	 * {@link #write(Analysis, AnalysisState, SymbolicExpression, SymbolicExpression, SymbolicExpression, Statement)},
+	 * {@link #write(Analysis, ScopeId, AnalysisState, SymbolicExpression, SymbolicExpression, SymbolicExpression, Statement)},
 	 * collecting the exceptions it raises in {@code raising} instead of moving
 	 * them to the error channel.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the dictionary, the key and the value
 	 *                     have been evaluated
 	 * @param dict     the dictionary
@@ -361,6 +371,7 @@ public final class DictModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> write(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			SymbolicExpression key,
@@ -368,15 +379,16 @@ public final class DictModel {
 			Statement thrower,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
-		if (unhashable(analysis, state, key, thrower))
+		if (unhashable(analysis, context, state, key, thrower))
 			raising.raise(state, thrower.getCFG(), thrower.getLocation(), thrower,
 					LibrarySpecificationProvider.TYPE_ERROR);
-		return store(analysis, state, dict, key, value, thrower);
+		return store(analysis, context, state, dict, key, value, thrower);
 	}
 
 	// writes the value of the given key, that is hashable (see write)
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> store(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			SymbolicExpression key,
@@ -385,34 +397,34 @@ public final class DictModel {
 			throws SemanticException {
 		CodeLocation loc = thrower.getLocation();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.DICT), dict, loc);
-		Entries entries = entries(analysis, state, dict, thrower);
+		Entries entries = entries(analysis, context, state, dict, thrower);
 		if (entries == null)
 			// the entries of the dictionary are not known
 			return state;
 
 		Set<Object> all = new HashSet<>();
 		entries.keys().values().forEach(all::addAll);
-		Object exact = exactKey(analysis, state, key, all, thrower);
+		Object exact = exactKey(analysis, context, state, key, all, thrower);
 		AnalysisState<A> written = state;
 		if (exact != null && entries.keys().values().stream().allMatch(keys -> keys.contains(exact)))
 			// the value of a tracked key
 			written = analysis.assign(state, new AccessChild(Untyped.INSTANCE, deref, child(exact, loc), loc),
-					value, thrower);
+					value, context, thrower);
 		else {
 			if (exact == null)
 				// the key might be equal to any of the tracked ones
 				for (Object k : all)
 					written = analysis.assign(written, new AccessChild(Untyped.INSTANCE, deref, child(k, loc), loc),
-							value, thrower).lub(written);
+							value, context, thrower).lub(written);
 			else if (all.contains(exact))
 				// tracked only for some of the dictionaries
 				written = analysis.assign(written, new AccessChild(Untyped.INSTANCE, deref, child(exact, loc), loc),
-						value, thrower).lub(written);
+						value, context, thrower).lub(written);
 			// a key that is not tracked
 			written = analysis.assign(written,
 					new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc),
-					value, thrower).lub(written);
-			written = analysis.assign(written, untrackedKeys(deref, loc), key, thrower).lub(written);
+					value, context, thrower).lub(written);
+			written = analysis.assign(written, untrackedKeys(deref, loc), key, context, thrower).lub(written);
 		}
 		return written;
 	}
@@ -422,6 +434,7 @@ public final class DictModel {
 	 * object (and not the summary of many) whose keys are all tracked.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param dict     the dictionary
 	 * @param pp       the program point using the length
@@ -432,11 +445,12 @@ public final class DictModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Integer length(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			ProgramPoint pp)
 			throws SemanticException {
-		Entries entries = entries(analysis, state, dict, pp);
+		Entries entries = entries(analysis, context, state, dict, pp);
 		if (entries == null || entries.weak() || !entries.unknown().isEmpty())
 			return null;
 		Integer length = null;
@@ -454,6 +468,7 @@ public final class DictModel {
 	 * the values become unknown, and any key might be missing.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param dict     the dictionary
 	 * @param pp       the program point modifying the dictionary
@@ -464,6 +479,7 @@ public final class DictModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> invalidate(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			ProgramPoint pp)
@@ -471,17 +487,17 @@ public final class DictModel {
 		CodeLocation loc = pp.getLocation();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.DICT), dict, loc);
 		AnalysisState<A> result = state;
-		Entries entries = entries(analysis, state, dict, pp);
+		Entries entries = entries(analysis, context, state, dict, pp);
 		if (entries != null)
 			for (Set<Object> keys : entries.keys().values())
 				for (Object k : keys)
 					result = analysis.assign(result, new AccessChild(Untyped.INSTANCE, deref, child(k, loc), loc),
-							new PushAny(Untyped.INSTANCE, loc), pp);
+							new PushAny(Untyped.INSTANCE, loc), context, pp);
 		result = analysis.assign(result,
 				new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc),
-				new PushAny(Untyped.INSTANCE, loc), pp);
+				new PushAny(Untyped.INSTANCE, loc), context, pp);
 		// keys of any type might have been added
-		return analysis.assign(result, untrackedKeys(deref, loc), new PushAny(Untyped.INSTANCE, loc), pp);
+		return analysis.assign(result, untrackedKeys(deref, loc), new PushAny(Untyped.INSTANCE, loc), context, pp);
 	}
 
 	/**
@@ -498,6 +514,7 @@ public final class DictModel {
 	 * entries are then unknown.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the dictionary and the source have been
 	 *                     evaluated
 	 * @param dict     the dictionary
@@ -511,6 +528,7 @@ public final class DictModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unpackInto(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			SymbolicExpression source,
@@ -520,9 +538,9 @@ public final class DictModel {
 		CodeLocation loc = thrower.getLocation();
 		Type dictType = PyClassType.lookup(LibrarySpecificationProvider.DICT);
 		HeapDereference target = new HeapDereference(dictType, dict, loc);
-		Set<Type> types = analysis.getRuntimeTypesOf(state, source, thrower);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, source, context, thrower);
 		AnalysisState<A> result = state.bottomExecution();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 
 		if (types.isEmpty() || types.stream().anyMatch(t -> !isDict(t))) {
 			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
@@ -531,16 +549,17 @@ public final class DictModel {
 							|| ListModel.isList(t) || t.isCodeMemberType());
 			if (!notMappings)
 				// e.g. an object whose class defines keys and __getitem__
-				result = result.lub(anyEntry(analysis, state, dict, new PushAny(Untyped.INSTANCE, loc),
+				result = result.lub(anyEntry(analysis, context, state, dict, new PushAny(Untyped.INSTANCE, loc),
 						new PushAny(Untyped.INSTANCE, loc), thrower));
 		}
 		if (types.stream().noneMatch(DictModel::isDict))
 			return raising.moveFrom(result);
 
-		Entries entries = entries(analysis, state, source, thrower);
+		Entries entries = entries(analysis, context, state, source, thrower);
 		if (entries == null)
-			return raising.moveFrom(result.lub(anyEntry(analysis, state, dict, new PushAny(Untyped.INSTANCE, loc),
-					new PushAny(Untyped.INSTANCE, loc), thrower)));
+			return raising
+					.moveFrom(result.lub(anyEntry(analysis, context, state, dict, new PushAny(Untyped.INSTANCE, loc),
+							new PushAny(Untyped.INSTANCE, loc), thrower)));
 
 		HeapDereference from = new HeapDereference(dictType, source, loc);
 		Set<Object> all = new HashSet<>(), sure = null;
@@ -558,30 +577,30 @@ public final class DictModel {
 		AnalysisState<A> current = state;
 		for (Object k : all) {
 			AnalysisState<A> values = analysis.smallStepSemantics(current,
-					new AccessChild(Untyped.INSTANCE, from, child(k, loc), loc), thrower);
+					new AccessChild(Untyped.INSTANCE, from, child(k, loc), loc), context, thrower);
 			AnalysisState<A> next = current.bottomExecution();
 			for (SymbolicExpression value : values.getExecutionExpressions())
 				if (sure.contains(k) && creating)
 					next = next.lub(analysis.assign(values,
-							new AccessChild(Untyped.INSTANCE, target, child(k, loc), loc), value, thrower));
+							new AccessChild(Untyped.INSTANCE, target, child(k, loc), loc), value, context, thrower));
 				else if (sure.contains(k))
-					next = next.lub(write(analysis, values, dict, child(k, loc), value, thrower));
+					next = next.lub(write(analysis, context, values, dict, child(k, loc), value, thrower));
 				else
 					// the key might be missing: the value is weakly updated
-					next = next.lub(write(analysis, values, dict, child(k, loc), value, thrower).lub(current));
+					next = next.lub(write(analysis, context, values, dict, child(k, loc), value, thrower).lub(current));
 			current = next;
 		}
 		if (!entries.unknown().isEmpty()) {
 			// the untracked entries of source, whose keys and values are not
 			// paired
-			AnalysisState<A> keys = untrackedKey(analysis, current, source, entries, thrower);
+			AnalysisState<A> keys = untrackedKey(analysis, context, current, source, entries, thrower);
 			AnalysisState<A> next = current.bottomExecution();
 			for (SymbolicExpression key : keys.getExecutionExpressions()) {
 				AnalysisState<A> values = analysis.smallStepSemantics(keys,
 						new AccessChild(Untyped.INSTANCE, from, new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc),
-						thrower);
+						context, thrower);
 				for (SymbolicExpression value : values.getExecutionExpressions())
-					next = next.lub(anyEntry(analysis, values, dict, key, value, thrower));
+					next = next.lub(anyEntry(analysis, context, values, dict, key, value, thrower));
 			}
 			current = next;
 		}
@@ -594,6 +613,7 @@ public final class DictModel {
 	 * updated. The key comes from a mapping, so it is hashable.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param dict     the dictionary
 	 * @param key      the key of the entry (e.g. an unknown value)
@@ -606,6 +626,7 @@ public final class DictModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> anyEntry(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			SymbolicExpression key,
@@ -613,7 +634,7 @@ public final class DictModel {
 			Statement thrower)
 			throws SemanticException {
 		// the key comes from a mapping: it is hashable
-		return store(analysis, state, dict, key, value, thrower).lub(state);
+		return store(analysis, context, state, dict, key, value, thrower).lub(state);
 	}
 
 	// any of the keys that are not tracked: the ones recorded in the child
@@ -622,6 +643,7 @@ public final class DictModel {
 	// otherwise
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> untrackedKey(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			Entries entries,
@@ -630,9 +652,9 @@ public final class DictModel {
 		CodeLocation loc = pp.getLocation();
 		if (entries == null || entries.weak() || entries.unknown().isEmpty()
 				|| !entries.keyed().containsAll(entries.unknown()))
-			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp);
+			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp);
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.DICT), dict, loc);
-		return analysis.smallStepSemantics(state, untrackedKeys(deref, loc), pp);
+		return analysis.smallStepSemantics(state, untrackedKeys(deref, loc), context, pp);
 	}
 
 	private static AccessChild untrackedKeys(
@@ -647,6 +669,7 @@ public final class DictModel {
 	 * keys, and an unknown value if the dictionary might have other keys.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param dict     the dictionary
 	 * @param pp       the program point reading the keys
@@ -657,19 +680,20 @@ public final class DictModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> keys(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			ProgramPoint pp)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
-		Entries entries = entries(analysis, state, dict, pp);
+		Entries entries = entries(analysis, context, state, dict, pp);
 		AnalysisState<A> result = state.bottomExecution();
 		if (entries == null || entries.weak() || !entries.unknown().isEmpty())
-			result = result.lub(untrackedKey(analysis, state, dict, entries, pp));
+			result = result.lub(untrackedKey(analysis, context, state, dict, entries, pp));
 		if (entries != null)
 			for (Set<Object> keys : entries.keys().values())
 				for (Object k : keys)
-					result = result.lub(analysis.smallStepSemantics(state, child(k, loc), pp));
+					result = result.lub(analysis.smallStepSemantics(state, child(k, loc), context, pp));
 		return result;
 	}
 
@@ -679,6 +703,7 @@ public final class DictModel {
 	 * keys, and the ones of the other keys, if the dictionary might have them.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param dict     the dictionary
 	 * @param pp       the program point reading the values
@@ -689,22 +714,23 @@ public final class DictModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> values(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			ProgramPoint pp)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
-		Entries entries = entries(analysis, state, dict, pp);
+		Entries entries = entries(analysis, context, state, dict, pp);
 		if (entries == null)
-			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp);
+			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp);
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.DICT), dict, loc);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Object k : tracked(entries))
 			result = result.lub(analysis.smallStepSemantics(state,
-					new AccessChild(Untyped.INSTANCE, deref, child(k, loc), loc), pp));
+					new AccessChild(Untyped.INSTANCE, deref, child(k, loc), loc), context, pp));
 		if (!entries.unknown().isEmpty())
 			result = result.lub(analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref,
-					new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc), pp));
+					new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc), context, pp));
 		return result;
 	}
 
@@ -717,6 +743,7 @@ public final class DictModel {
 	 * from the one of {@code pp}.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param dict     the dictionary
 	 * @param pp       the statement reading the items
@@ -730,30 +757,32 @@ public final class DictModel {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> items(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			Statement pp,
 			Collection<Identifier> metas)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
-		Entries entries = entries(analysis, state, dict, pp);
+		Entries entries = entries(analysis, context, state, dict, pp);
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.DICT), dict, loc);
 		AnalysisState<A> result = state.bottomExecution();
 		if (entries != null)
 			for (Object k : tracked(entries)) {
 				AnalysisState<A> value = analysis.smallStepSemantics(state,
-						new AccessChild(Untyped.INSTANCE, deref, child(k, loc), loc), pp);
-				result = result.lub(TupleCreation.create(analysis, value, pp, new DerivedLocation(loc, "item " + k),
+						new AccessChild(Untyped.INSTANCE, deref, child(k, loc), loc), context, pp);
+				result = result.lub(TupleCreation.create(analysis, context, value, pp,
+						new DerivedLocation(loc, "item " + k),
 						new ExpressionSet[] { new ExpressionSet(child(k, loc)), value.getExecutionExpressions() },
 						metas));
 			}
 		if (entries == null || !entries.unknown().isEmpty()) {
 			AnalysisState<A> value = entries == null
-					? analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp)
+					? analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp)
 					: analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref,
-							new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc), pp);
-			AnalysisState<A> key = untrackedKey(analysis, value, dict, entries, pp);
-			result = result.lub(TupleCreation.create(analysis, key, pp, new DerivedLocation(loc, "item"),
+							new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc), loc), context, pp);
+			AnalysisState<A> key = untrackedKey(analysis, context, value, dict, entries, pp);
+			result = result.lub(TupleCreation.create(analysis, context, key, pp, new DerivedLocation(loc, "item"),
 					new ExpressionSet[] { key.getExecutionExpressions(), value.getExecutionExpressions() },
 					metas));
 		}

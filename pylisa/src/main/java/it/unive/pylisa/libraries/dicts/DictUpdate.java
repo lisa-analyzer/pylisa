@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -52,6 +53,7 @@ public class DictUpdate extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
@@ -59,20 +61,20 @@ public class DictUpdate extends PyNative {
 		SymbolicExpression dict = args[0], other = args[1], kwargs = args[2];
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS))
 			// dictionaries are symbolic values (see DictionaryCreation)
-			return compute(analysis, state, new PyNoneConstant(loc));
+			return compute(analysis, context, state, new PyNoneConstant(loc));
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> updated = state;
 		if (!missing(other)) {
-			Set<Type> types = analysis.getRuntimeTypesOf(state, other, st);
+			Set<Type> types = analysis.getRuntimeTypesOf(state, other, context, st);
 			if (!types.isEmpty() && types.stream().allMatch(DictModel::isDict))
-				updated = DictModel.unpackInto(analysis, state, dict, other, st, false);
+				updated = DictModel.unpackInto(analysis, context, state, dict, other, st, false);
 			else {
-				Satisfiability iterable = Iteration.iterable(analysis, state, other, st);
+				Satisfiability iterable = Iteration.iterable(analysis, context, state, other, st);
 				updated = state.bottomExecution();
 				if (iterable != Satisfiability.NOT_SATISFIED) {
 					// an iterable of pairs, whose entries are not known
-					updated = DictModel.anyEntry(analysis, state, dict, new PushAny(Untyped.INSTANCE, loc),
+					updated = DictModel.anyEntry(analysis, context, state, dict, new PushAny(Untyped.INSTANCE, loc),
 							new PushAny(Untyped.INSTANCE, loc), st);
 					raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 					raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
@@ -81,7 +83,7 @@ public class DictUpdate extends PyNative {
 			}
 		}
 		if (!missing(kwargs))
-			updated = DictModel.unpackInto(analysis, updated, dict, kwargs, st, false);
-		return raising.moveFrom(compute(analysis, updated, new PyNoneConstant(loc)));
+			updated = DictModel.unpackInto(analysis, context, updated, dict, kwargs, st, false);
+		return raising.moveFrom(compute(analysis, context, updated, new PyNoneConstant(loc)));
 	}
 }

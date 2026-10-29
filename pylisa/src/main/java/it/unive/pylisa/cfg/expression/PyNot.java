@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
@@ -60,8 +61,9 @@ public class PyNot extends UnaryExpression {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
-		Set<Type> types = analysis.getRuntimeTypesOf(state, expr, this);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, expr, context, this);
 		boolean bools = false, values = types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this),
 				truthy = false, unknown = false;
 		if (!values)
@@ -81,16 +83,17 @@ public class PyNot extends UnaryExpression {
 			result = result.lub(analysis.smallStepSemantics(state,
 					new it.unive.lisa.symbolic.value.UnaryExpression(BoolType.INSTANCE, expr,
 							LogicalNegation.INSTANCE, loc),
-					this));
+					context, this));
 		if (values)
 			result = result.lub(analysis.smallStepSemantics(state,
 					new it.unive.lisa.symbolic.value.UnaryExpression(BoolType.INSTANCE, expr, LogicalNot.INSTANCE,
 							loc),
-					this));
+					context, this));
 		if (truthy)
-			result = result.lub(analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, false, loc), this));
+			result = result.lub(
+					analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, false, loc), context, this));
 		if (unknown)
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), this));
+			result = result.lub(analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), context, this));
 		return result;
 	}
 
@@ -102,6 +105,7 @@ public class PyNot extends UnaryExpression {
 	 * @param <A>      the kind of the analysis state
 	 * @param <D>      the kind of the abstract domain
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param value    the value
 	 * @param pp       the program point using the truth value
@@ -112,18 +116,19 @@ public class PyNot extends UnaryExpression {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability truth(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression value,
 			Statement pp)
 			throws SemanticException {
-		Set<Type> types = analysis.getRuntimeTypesOf(state, value, pp);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, value, context, pp);
 		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, pp))
 			return Satisfiability.UNKNOWN;
 		if (types.stream().allMatch(PyNot::alwaysTrue))
 			return Satisfiability.SATISFIED;
 		if (types.stream().anyMatch(t -> t.isPointerType() || alwaysTrue(t)))
 			return Satisfiability.UNKNOWN;
-		Satisfiability sat = analysis.satisfies(state, value, pp);
+		Satisfiability sat = analysis.satisfies(state, value, context, pp);
 		return sat == Satisfiability.BOTTOM ? Satisfiability.UNKNOWN : sat;
 	}
 

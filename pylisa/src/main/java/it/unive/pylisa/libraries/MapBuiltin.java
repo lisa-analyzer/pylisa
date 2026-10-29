@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -95,18 +96,19 @@ public class MapBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
 		SymbolicExpression function = args[0], iterables = args[1];
 		// the iterables, if their number is known
-		List<SymbolicExpression> known = ListModel.exactElements(analysis, state, iterables, st);
+		List<SymbolicExpression> known = ListModel.exactElements(analysis, context, state, iterables, st);
 		Satisfiability typed = known == null ? Satisfiability.UNKNOWN
 				: known.isEmpty() ? Satisfiability.NOT_SATISFIED : Satisfiability.SATISFIED;
 		if (known != null)
 			for (SymbolicExpression iterable : known)
-				typed = typed.and(Iteration.iterable(analysis, state, iterable, st));
+				typed = typed.and(Iteration.iterable(analysis, context, state, iterable, st));
 
 		AnalysisState<A> created = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED) {
@@ -117,15 +119,15 @@ public class MapBuiltin extends PyNative {
 			CodeLocation mapLoc = new DerivedLocation(loc, "map");
 			MemoryAllocation alloc = new MemoryAllocation(type, mapLoc, false);
 			InstrumentedReceiver map = new InstrumentedReceiver(reftype, false, mapLoc);
-			created = analysis.assign(Allocations.allocate(analysis, state, alloc, st), map,
-					new HeapReference(reftype, alloc, mapLoc), st);
+			created = analysis.assign(Allocations.allocate(analysis, context, state, alloc, st), map,
+					new HeapReference(reftype, alloc, mapLoc), context, st);
 			HeapDereference deref = new HeapDereference(type, map, mapLoc);
-			created = analysis.assign(created, child(deref, FUNCTION, mapLoc), function, st);
-			created = analysis.assign(created, child(deref, ITERABLES, mapLoc), iterables, st);
+			created = analysis.assign(created, child(deref, FUNCTION, mapLoc), function, context, st);
+			created = analysis.assign(created, child(deref, ITERABLES, mapLoc), iterables, context, st);
 			getMetaVariables().add(map);
-			created = compute(analysis, created, map);
+			created = compute(analysis, context, created, map);
 		}
-		return typeChecked(analysis, state, typed, created);
+		return typeChecked(analysis, context, state, typed, created);
 	}
 
 	/**
@@ -153,16 +155,17 @@ public class MapBuiltin extends PyNative {
 			Collection<Identifier> metas)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = pp.getLocation();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.MAP), map, loc);
-		ExpressionSet functions = analysis.smallStepSemantics(state, child(deref, FUNCTION, loc), pp)
+		ExpressionSet functions = analysis.smallStepSemantics(state, child(deref, FUNCTION, loc), context, pp)
 				.getExecutionExpressions();
-		AnalysisState<A> lists = analysis.smallStepSemantics(state, child(deref, ITERABLES, loc), pp);
+		AnalysisState<A> lists = analysis.smallStepSemantics(state, child(deref, ITERABLES, loc), context, pp);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression list : lists.getExecutionExpressions()) {
-			List<SymbolicExpression> iterables = ListModel.exactElements(analysis, lists, list, pp);
+			List<SymbolicExpression> iterables = ListModel.exactElements(analysis, context, lists, list, pp);
 			if (iterables == null) {
-				result = result.lub(uncalled(analysis, state, pp));
+				result = result.lub(uncalled(analysis, context, state, pp));
 				continue;
 			}
 			AnalysisState<A> current = lists;
@@ -201,23 +204,24 @@ public class MapBuiltin extends PyNative {
 			Collection<Identifier> metas)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = pp.getLocation();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.MAP), map, loc);
-		ExpressionSet functions = analysis.smallStepSemantics(state, child(deref, FUNCTION, loc), pp)
+		ExpressionSet functions = analysis.smallStepSemantics(state, child(deref, FUNCTION, loc), context, pp)
 				.getExecutionExpressions();
-		AnalysisState<A> lists = analysis.smallStepSemantics(state, child(deref, ITERABLES, loc), pp);
+		AnalysisState<A> lists = analysis.smallStepSemantics(state, child(deref, ITERABLES, loc), context, pp);
 		if (lists.getExecutionExpressions().size() != 1)
 			return null;
-		List<SymbolicExpression> iterables = ListModel.exactElements(analysis, lists,
+		List<SymbolicExpression> iterables = ListModel.exactElements(analysis, context, lists,
 				lists.getExecutionExpressions().iterator().next(), pp);
 		if (iterables == null || iterables.size() != 1)
 			return null;
 		SymbolicExpression iterable = iterables.get(0);
-		Set<Type> types = analysis.getRuntimeTypesOf(lists, iterable, pp);
+		Set<Type> types = analysis.getRuntimeTypesOf(lists, iterable, context, pp);
 		Type type = types.size() == 1 ? types.iterator().next() : null;
 		if (type == null || !(ListModel.isList(type) || Unpacking.isTuple(type)))
 			return null;
-		Integer length = ListModel.length(analysis, lists, iterable, pp);
+		Integer length = ListModel.length(analysis, context, lists, iterable, pp);
 		if (length == null)
 			return null;
 
@@ -226,7 +230,8 @@ public class MapBuiltin extends PyNative {
 		List<ExpressionSet> values = new ArrayList<>();
 		for (int i = 0; i < length; i++) {
 			ExpressionSet element = analysis.smallStepSemantics(current,
-					new AccessChild(Untyped.INSTANCE, source, new Constant(Int32Type.INSTANCE, i, loc), loc), pp)
+					new AccessChild(Untyped.INSTANCE, source, new Constant(Int32Type.INSTANCE, i, loc), loc), context,
+					pp)
 					.getExecutionExpressions();
 			// each call has a location of its own, so that its result is not
 			// overwritten by the next ones
@@ -256,6 +261,7 @@ public class MapBuiltin extends PyNative {
 	 * raised by the function.
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param pp       the program point iterating the object
 	 *
@@ -265,13 +271,14 @@ public class MapBuiltin extends PyNative {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> uncalled(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Statement pp)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		raising.raise(state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.EXCEPTION);
-		return raising.moveFrom(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp));
+		return raising.moveFrom(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp));
 	}
 
 	private static AccessChild child(

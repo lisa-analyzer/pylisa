@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -58,9 +59,11 @@ public class Str extends it.unive.lisa.program.cfg.statement.UnaryExpression imp
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		// str() of any value is a string, computed precisely by the domains
 		// for the values they track
 		return interprocedural.getAnalysis().smallStepSemantics(state,
-				new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), this);
+				new UnaryExpression(StringType.INSTANCE, expr, StringConstructor.INSTANCE, getLocation()), context,
+				this);
 	}
 }

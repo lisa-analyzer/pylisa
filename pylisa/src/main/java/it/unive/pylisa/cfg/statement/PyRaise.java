@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
@@ -83,13 +84,14 @@ public class PyRaise extends NaryStatement {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		CompilationUnit base = PyClassType.lookup(LibrarySpecificationProvider.BASE_EXCEPTION).getUnit();
 
 		AnalysisState<A> result = state.bottomExecution();
 		boolean typeError = false;
 		for (SymbolicExpression e : params[0]) {
-			Set<Type> types = analysis.getRuntimeTypesOf(state, e, this);
+			Set<Type> types = analysis.getRuntimeTypesOf(state, e, context, this);
 			for (Type t : types) {
 				Type exception = exceptionType(t, base);
 				if (exception == null) {
@@ -98,18 +100,18 @@ public class PyRaise extends NaryStatement {
 				}
 
 				CFGThrow thrown = new CFGThrow(getCFG(), exception, loc);
-				AnalysisState<A> sem = analysis.assign(state, thrown, e, this);
+				AnalysisState<A> sem = analysis.assign(state, thrown, e, context, this);
 				// the meta variables are forgotten before moving to the error,
 				// as forgetting them later only affects the normal execution
 				sem = forgetMetas(sem);
 				result = result.lub(analysis.moveExecutionToError(sem.withExecutionExpression(thrown),
-						new AnalysisState.Error(exception, this), this));
+						new AnalysisState.Error(exception, this), context, this));
 			}
 		}
 
 		if (typeError)
 			// TypeError: exceptions must derive from BaseException
-			result = result.lub(PyExceptions.raise(analysis, forgetMetas(state), getCFG(), loc, this,
+			result = result.lub(PyExceptions.raise(analysis, context, forgetMetas(state), getCFG(), loc, this,
 					LibrarySpecificationProvider.TYPE_ERROR));
 		return result;
 	}

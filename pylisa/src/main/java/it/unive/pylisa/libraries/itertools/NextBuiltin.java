@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
@@ -93,13 +94,14 @@ public class NextBuiltin extends PyNative {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression it : params[0]) {
-			Set<Type> types = analysis.getRuntimeTypesOf(state, it, st);
+			Set<Type> types = analysis.getRuntimeTypesOf(state, it, context, st);
 			if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st)) {
-				result = result.lub(compute(analysis, state, new PushAny(Untyped.INSTANCE, loc)));
+				result = result.lub(compute(analysis, context, state, new PushAny(Untyped.INSTANCE, loc)));
 				raise(raising, state, LibrarySpecificationProvider.EXCEPTION);
 				continue;
 			}
@@ -107,7 +109,8 @@ public class NextBuiltin extends PyNative {
 			for (Type t : types)
 				if (iterator(t)) {
 					iterators = true;
-					finite |= !ItertoolsModel.isIterator(t) || !ItertoolsModel.infinite(analysis, state, it, st);
+					finite |= !ItertoolsModel.isIterator(t)
+							|| !ItertoolsModel.infinite(analysis, context, state, it, st);
 				} else if (notIterator(t))
 					notIterators = true;
 				else
@@ -118,7 +121,7 @@ public class NextBuiltin extends PyNative {
 				result = result.lub(
 						Iteration.elements(interprocedural, state, null, it, st, getMetaVariables(), raising));
 			if (unknown) {
-				result = result.lub(compute(analysis, state, new PushAny(Untyped.INSTANCE, loc)));
+				result = result.lub(compute(analysis, context, state, new PushAny(Untyped.INSTANCE, loc)));
 				raise(raising, state, LibrarySpecificationProvider.EXCEPTION);
 			}
 			if (notIterators)
@@ -129,7 +132,7 @@ public class NextBuiltin extends PyNative {
 					if (missing(def))
 						raise(raising, state, LibrarySpecificationProvider.STOP_ITERATION);
 					else
-						result = result.lub(compute(analysis, state, def));
+						result = result.lub(compute(analysis, context, state, def));
 		}
 		return raising.moveFrom(result);
 	}
@@ -137,6 +140,7 @@ public class NextBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {

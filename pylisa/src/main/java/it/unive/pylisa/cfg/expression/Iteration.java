@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -54,6 +55,8 @@ public final class Iteration {
 	 * are unknown.
 	 *
 	 * @param analysis   the analysis
+	 * @param context    the interprocedural context where the computation
+	 *                       happens
 	 * @param state      the state where the iterable has been evaluated
 	 * @param expression the expression computing the iterable
 	 * @param iterable   the iterable
@@ -69,23 +72,25 @@ public final class Iteration {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Expression expression,
 			SymbolicExpression iterable,
 			Statement pp,
 			Collection<Identifier> metas)
 			throws SemanticException {
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
-		return raising.moveFrom(elements(analysis, null, state, expression, iterable, pp, metas, raising));
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+		return raising.moveFrom(elements(analysis, context, null, state, expression, iterable, pp, metas, raising));
 	}
 
 	/**
 	 * Yields any of the elements of the iterable, as
-	 * {@link #elements(Analysis, AnalysisState, Expression, SymbolicExpression, Statement, Collection)},
+	 * {@link #elements(Analysis, ScopeId, AnalysisState, Expression, SymbolicExpression, Statement, Collection)},
 	 * where the exceptions raised by the iteration are collected by the given
 	 * {@link PyExceptions.Raising} instead of being moved to the error channel.
 	 *
 	 * @param analysis   the analysis
+	 * @param context    the interprocedural context where the iteration happens
 	 * @param state      the state where the iterable has been evaluated
 	 * @param expression the expression computing the iterable
 	 * @param iterable   the iterable
@@ -101,6 +106,7 @@ public final class Iteration {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			Expression expression,
 			SymbolicExpression iterable,
@@ -108,12 +114,12 @@ public final class Iteration {
 			Collection<Identifier> metas,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
-		return elements(analysis, null, state, expression, iterable, pp, metas, raising);
+		return elements(analysis, context, null, state, expression, iterable, pp, metas, raising);
 	}
 
 	/**
 	 * Yields any of the elements of the iterable, as
-	 * {@link #elements(Analysis, AnalysisState, Expression, SymbolicExpression, Statement, Collection)},
+	 * {@link #elements(Analysis, ScopeId, AnalysisState, Expression, SymbolicExpression, Statement, Collection)},
 	 * where the elements of a map object are the results of calling its
 	 * function (see {@link MapBuiltin#elements}), that are unknown otherwise
 	 * (see {@link MapBuiltin#uncalled}).
@@ -138,9 +144,11 @@ public final class Iteration {
 			Statement pp,
 			Collection<Identifier> metas)
 			throws SemanticException {
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis());
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis(), context);
 		return raising.moveFrom(
-				elements(interprocedural.getAnalysis(), interprocedural, state, expression, iterable, pp, metas,
+				elements(interprocedural.getAnalysis(), context, interprocedural, state, expression, iterable, pp,
+						metas,
 						raising));
 	}
 
@@ -173,12 +181,13 @@ public final class Iteration {
 			Collection<Identifier> metas,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
-		return elements(interprocedural.getAnalysis(), interprocedural, state, expression, iterable, pp, metas,
-				raising);
+		return elements(interprocedural.getAnalysis(), interprocedural.getCurrentContext(), interprocedural, state,
+				expression, iterable, pp, metas, raising);
 	}
 
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> elements(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			Expression expression,
@@ -190,41 +199,46 @@ public final class Iteration {
 		CodeLocation loc = pp.getLocation();
 		if (isRange(expression))
 			// range(...), whose elements are ints
-			return analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), pp);
+			return analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), context, pp);
 
-		Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, pp);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, context, pp);
 		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, pp))
-			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp);
+			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp);
 		AnalysisState<A> result = state.bottomExecution();
 		boolean notIterable = false, unknown = false;
 		for (Type t : types)
 			if (ListModel.isList(t))
-				result = result.lub(ListModel.elements(analysis, state, iterable, pp));
+				result = result.lub(ListModel.elements(analysis, context, state, iterable, pp));
 			else if (Unpacking.isTuple(t))
-				result = result.lub(ListModel.elements(analysis, state, iterable, t.asPointerType().getInnerType(),
-						pp));
+				result = result
+						.lub(ListModel.elements(analysis, context, state, iterable, t.asPointerType().getInnerType(),
+								pp));
 			else if (DictModel.isDict(t))
-				result = result.lub(DictModel.keys(analysis, state, iterable, pp));
+				result = result.lub(DictModel.keys(analysis, context, state, iterable, pp));
 			else if (t.isStringType())
-				result = result.lub(analysis.smallStepSemantics(state, new PushAny(StringType.INSTANCE, loc), pp));
+				result = result
+						.lub(analysis.smallStepSemantics(state, new PushAny(StringType.INSTANCE, loc), context, pp));
 			else if (DictViews.isView(t))
-				result = result.lub(DictViews.elements(analysis, state, iterable, t, pp, metas));
+				result = result.lub(DictViews.elements(analysis, context, state, iterable, t, pp, metas));
 			else if (ZipBuiltin.isZip(t))
-				result = result.lub(ZipBuiltin.elements(analysis, state, iterable, pp, metas));
+				result = result.lub(ZipBuiltin.elements(analysis, context, state, iterable, pp, metas));
 			else if (EnumerateBuiltin.isEnumerate(t))
-				result = result.lub(EnumerateBuiltin.elements(analysis, state, iterable, pp, metas));
+				result = result.lub(EnumerateBuiltin.elements(analysis, context, state, iterable, pp, metas));
 			else if (SetModel.isSet(t))
-				result = result.lub(SetModel.elements(analysis, state, iterable, pp));
+				result = result.lub(SetModel.elements(analysis, context, state, iterable, pp));
 			else if (ItertoolsModel.isIterator(t))
-				result = result.lub(ItertoolsModel.elements(analysis, interprocedural, state, iterable, pp, metas));
+				result = result
+						.lub(ItertoolsModel.elements(analysis, context, interprocedural, state, iterable, pp, metas));
 			else if (MapBuiltin.isMap(t))
 				result = result.lub(interprocedural != null
 						? MapBuiltin.elements(interprocedural, state, iterable, pp, metas)
-						: MapBuiltin.uncalled(analysis, state, pp));
+						: MapBuiltin.uncalled(analysis, context, state, pp));
 			else if (RangeBuiltin.isRange(t))
-				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), pp));
+				result = result
+						.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), context, pp));
 			else if (t instanceof PyBytesType)
-				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), pp));
+				result = result
+						.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), context, pp));
 			else if (t.isCodeMemberType() || (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t)))
 				// e.g. an int, or a function
 				notIterable = true;
@@ -232,7 +246,7 @@ public final class Iteration {
 				// e.g. an object whose class defines __iter__
 				unknown = true;
 		if (unknown)
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), pp));
+			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp));
 		if (notIterable)
 			raising.raise(state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
@@ -250,6 +264,7 @@ public final class Iteration {
 	 * {@code __iter__}).
 	 *
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the current state
 	 * @param value    the value
 	 * @param pp       the program point using the value
@@ -260,11 +275,12 @@ public final class Iteration {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability iterable(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression value,
 			Statement pp)
 			throws SemanticException {
-		Set<Type> types = analysis.getRuntimeTypesOf(state, value, pp);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, value, context, pp);
 		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, pp))
 			return Satisfiability.UNKNOWN;
 		boolean iterable = false, notIterable = false;

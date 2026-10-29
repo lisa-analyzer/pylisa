@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
@@ -70,10 +71,11 @@ public class DictBuiltin extends PyNative {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS))
 			// dictionaries are symbolic values (see DictionaryCreation)
 			return interprocedural.getAnalysis().smallStepSemantics(state,
-					new PushAny(Untyped.INSTANCE, getLocation()), st);
+					new PushAny(Untyped.INSTANCE, getLocation()), context, st);
 		// the new dictionary: the state of the arguments is the one where it
 		// has been created, whose computed expressions are the dictionary (see
 		// semantics)
@@ -87,26 +89,27 @@ public class DictBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		SymbolicExpression iterable = args[0], kwargs = args[1];
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression dict : state.getExecutionExpressions()) {
 			AnalysisState<A> filled = state;
 			if (!missing(iterable)) {
-				Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, st);
+				Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, context, st);
 				if (!types.isEmpty() && types.stream().allMatch(DictModel::isDict))
-					filled = DictModel.unpackInto(analysis, state, dict, iterable, st, true);
+					filled = DictModel.unpackInto(analysis, context, state, dict, iterable, st, true);
 				else {
-					Satisfiability it = Iteration.iterable(analysis, state, iterable, st);
+					Satisfiability it = Iteration.iterable(analysis, context, state, iterable, st);
 					filled = state.bottomExecution();
 					if (it != Satisfiability.NOT_SATISFIED)
-						filled = pairs(analysis, state, dict, iterable, raising);
+						filled = pairs(analysis, context, state, dict, iterable, raising);
 					if (types.stream().anyMatch(DictModel::isDict))
 						// a dictionary, or another iterable
-						filled = filled.lub(DictModel.unpackInto(analysis, state, dict, iterable, st, true));
+						filled = filled.lub(DictModel.unpackInto(analysis, context, state, dict, iterable, st, true));
 					if (it != Satisfiability.SATISFIED)
 						raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 				}
@@ -114,8 +117,8 @@ public class DictBuiltin extends PyNative {
 			if (!missing(kwargs))
 				// the keyword arguments override the entries of iterable: the
 				// keys they surely have are tracked, as for a new dictionary
-				filled = DictModel.unpackInto(analysis, filled, dict, kwargs, st, true);
-			result = result.lub(compute(analysis, filled, dict));
+				filled = DictModel.unpackInto(analysis, context, filled, dict, kwargs, st, true);
+			result = result.lub(compute(analysis, context, filled, dict));
 		}
 		return raising.moveFrom(result);
 	}
@@ -124,6 +127,7 @@ public class DictBuiltin extends PyNative {
 	// of times
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> pairs(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression dict,
 			SymbolicExpression iterable,
@@ -133,33 +137,37 @@ public class DictBuiltin extends PyNative {
 		Expression[] subs = getSubExpressions();
 		// the elements are computed in the state where the dictionary has
 		// been created, as they might be new objects (e.g. the tuples of zip)
-		AnalysisState<A> elements = Iteration.elements(analysis, state, subs.length > 0 ? subs[0] : null, iterable,
-				st, getMetaVariables(), raising);
+		AnalysisState<
+				A> elements = Iteration.elements(analysis, context, state, subs.length > 0 ? subs[0] : null, iterable,
+						st, getMetaVariables(), raising);
 		// no element
 		AnalysisState<A> current = elements;
 		boolean unknown = false, wrongLength = false;
 		for (SymbolicExpression pair : elements.getExecutionExpressions()) {
-			Set<Type> types = analysis.getRuntimeTypesOf(elements, pair, st);
+			Set<Type> types = analysis.getRuntimeTypesOf(elements, pair, context, st);
 			Type type = types.size() == 1 ? types.iterator().next() : null;
 			Integer length = type != null && (Unpacking.isTuple(type) || ListModel.isList(type))
-					? ListModel.length(analysis, elements, pair, st)
+					? ListModel.length(analysis, context, elements, pair, st)
 					: null;
 			if (length == null) {
 				unknown = true;
-				current = current.lub(DictModel.anyEntry(analysis, current, dict, new PushAny(Untyped.INSTANCE, loc),
-						new PushAny(Untyped.INSTANCE, loc), st));
+				current = current
+						.lub(DictModel.anyEntry(analysis, context, current, dict, new PushAny(Untyped.INSTANCE, loc),
+								new PushAny(Untyped.INSTANCE, loc), st));
 			} else if (length != 2)
 				wrongLength = true;
 			else {
 				HeapDereference deref = new HeapDereference(type.asPointerType().getInnerType(), pair, loc);
 				AnalysisState<A> keys = analysis.smallStepSemantics(current,
-						new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, 0, loc), loc), st);
+						new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, 0, loc), loc),
+						context, st);
 				AnalysisState<A> values = analysis.smallStepSemantics(current,
-						new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, 1, loc), loc), st);
+						new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, 1, loc), loc),
+						context, st);
 				AnalysisState<A> next = current;
 				for (SymbolicExpression key : keys.getExecutionExpressions())
 					for (SymbolicExpression value : values.getExecutionExpressions())
-						next = next.lub(DictModel.write(analysis, current, dict, key, value, st));
+						next = next.lub(DictModel.write(analysis, context, current, dict, key, value, st));
 				current = next;
 			}
 		}

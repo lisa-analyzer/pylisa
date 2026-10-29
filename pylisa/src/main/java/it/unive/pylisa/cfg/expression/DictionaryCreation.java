@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -96,6 +97,7 @@ public class DictionaryCreation extends NaryExpression {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS))
 			return symbolic(interprocedural, state, params, expressions);
 
@@ -106,8 +108,9 @@ public class DictionaryCreation extends NaryExpression {
 		MemoryAllocation alloc = new MemoryAllocation(dictType, loc, false);
 		HeapReference ref = new HeapReference(reftype, alloc, loc);
 		InstrumentedReceiver dict = new InstrumentedReceiver(reftype, false, loc);
-		AnalysisState<A> current = analysis.assign(Allocations.allocate(analysis, state, alloc, this), dict, ref,
-				this);
+		AnalysisState<
+				A> current = analysis.assign(Allocations.allocate(analysis, context, state, alloc, this), dict, ref,
+						context, this);
 		HeapDereference deref = new HeapDereference(dictType, dict, loc);
 		// the heap tracks the fields accessed on each object, but until the
 		// first access to any field in the program, the fields are unknown
@@ -116,7 +119,7 @@ public class DictionaryCreation extends NaryExpression {
 		// when it is empty
 		AccessChild cls = new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, "__class__", loc),
 				loc);
-		current = analysis.smallStepSemantics(current, cls, this)
+		current = analysis.smallStepSemantics(current, cls, context, this)
 				.withExecutionExpressions(current.getExecutionExpressions());
 
 		for (int e = 0, i = 0; e < unpacked.length; e++) {
@@ -124,20 +127,20 @@ public class DictionaryCreation extends NaryExpression {
 			if (unpacked[e]) {
 				// **m
 				for (SymbolicExpression source : params[i])
-					next = next.lub(DictModel.unpackInto(analysis, current, dict, source, this, true));
+					next = next.lub(DictModel.unpackInto(analysis, context, current, dict, source, this, true));
 				current = next;
 				i++;
 				continue;
 			}
-			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 			for (SymbolicExpression key : params[i])
 				for (SymbolicExpression value : params[i + 1])
 					if (params[i].size() == 1 && DictModel.trackedKey(key) != null)
 						// an entry whose key is tracked
 						next = next.lub(analysis.assign(current, new AccessChild(Untyped.INSTANCE, deref,
-								DictModel.child(DictModel.trackedKey(key), loc), loc), value, this));
+								DictModel.child(DictModel.trackedKey(key), loc), loc), value, context, this));
 					else
-						next = next.lub(DictModel.write(analysis, current, dict, key, value, this, raising));
+						next = next.lub(DictModel.write(analysis, context, current, dict, key, value, this, raising));
 			current = raising.moveFrom(next);
 			i += 2;
 		}
@@ -146,7 +149,7 @@ public class DictionaryCreation extends NaryExpression {
 		for (Expression sub : getSubExpressions())
 			current = current.forgetIdentifiers(sub.getMetaVariables(), this);
 		getMetaVariables().add(dict);
-		return analysis.smallStepSemantics(current, dict, this);
+		return analysis.smallStepSemantics(current, dict, context, this);
 	}
 
 	// the dictionaries used by the dataframe analyses (see
@@ -157,16 +160,17 @@ public class DictionaryCreation extends NaryExpression {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		for (boolean u : unpacked)
 			if (u)
 				// the entries of the unpacked mappings are not known
 				return interprocedural.getAnalysis().smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc),
-						this);
+						context, this);
 		DictConstant dict = new DictConstant(loc);
 
 		if (params.length == 0)
-			return interprocedural.getAnalysis().smallStepSemantics(state, dict, this);
+			return interprocedural.getAnalysis().smallStepSemantics(state, dict, context, this);
 
 		Type dicttype = PyClassType.lookup(LibrarySpecificationProvider.DICT);
 		TernaryOperator append = DictPut.INSTANCE;
@@ -191,7 +195,7 @@ public class DictionaryCreation extends NaryExpression {
 
 		AnalysisState<A> result = state.bottomExecution();
 		for (TernaryExpression completedict : ws)
-			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state, completedict, this));
+			result = result.lub(interprocedural.getAnalysis().smallStepSemantics(state, completedict, context, this));
 
 		return result;
 	}

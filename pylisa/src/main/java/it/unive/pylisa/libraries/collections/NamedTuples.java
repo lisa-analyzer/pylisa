@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -66,6 +67,7 @@ public final class NamedTuples {
 	 * @param <A>      the kind of the analysis state
 	 * @param <D>      the kind of the abstract domain
 	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
 	 * @param state    the state where the arguments have been evaluated
 	 * @param cls      the class
 	 * @param actuals  the expressions of the arguments
@@ -79,6 +81,7 @@ public final class NamedTuples {
 	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> create(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			NamedTupleClassType cls,
 			Expression[] actuals,
@@ -117,7 +120,7 @@ public final class NamedTuples {
 			typeError |= value == null;
 		if (starred || !typeError) {
 			Type type = PyClassType.lookup(LibrarySpecificationProvider.NAMED_TUPLE);
-			AnalysisState<A> created = TupleCreation.create(analysis, state, pp, loc, type, values, metas);
+			AnalysisState<A> created = TupleCreation.create(analysis, context, state, pp, loc, type, values, metas);
 			for (SymbolicExpression tuple : created.getExecutionExpressions()) {
 				// the elements are also the attributes
 				AnalysisState<A> current = created;
@@ -127,14 +130,14 @@ public final class NamedTuples {
 							new Variable(Untyped.INSTANCE, fields.get(i), loc), loc);
 					AnalysisState<A> next = current.bottomExecution();
 					for (SymbolicExpression value : values[i])
-						next = next.lub(analysis.assign(current, attribute, value, pp));
+						next = next.lub(analysis.assign(current, attribute, value, context, pp));
 					current = next;
 				}
-				result = result.lub(analysis.smallStepSemantics(current, tuple, pp));
+				result = result.lub(analysis.smallStepSemantics(current, tuple, context, pp));
 			}
 		}
 		if (typeError) {
-			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 			raising.raise(state, pp.getCFG(), pp.getLocation(), pp, LibrarySpecificationProvider.TYPE_ERROR);
 			return raising.moveFrom(result);
 		}

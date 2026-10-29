@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.heap.allocations.AllocationSite;
 import it.unive.lisa.lattices.heap.allocations.AllocationSites;
@@ -117,7 +118,8 @@ public class PyAttributeAccess extends UnaryExpression {
 			SymbolicExpression expr,
 			Statement thrower)
 			throws SemanticException {
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis());
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(interprocedural.getAnalysis(),
+				interprocedural.getCurrentContext());
 		AnalysisState<A> result = read(interprocedural, state, expr, thrower, raising);
 		return raising.moveFrom(result);
 	}
@@ -148,6 +150,7 @@ public class PyAttributeAccess extends UnaryExpression {
 			Statement thrower,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		if (state.getExecutionState().isBottom())
 			// unreachable: nothing is computed, and nothing is left on the
 			// stack
@@ -157,7 +160,7 @@ public class PyAttributeAccess extends UnaryExpression {
 
 		Set<Type> objects = new HashSet<>();
 		boolean others = false;
-		Set<Type> types = analysis.getRuntimeTypesOf(state, expr, this);
+		Set<Type> types = analysis.getRuntimeTypesOf(state, expr, context, this);
 		if (types.isEmpty())
 			others = true;
 		for (Type t : types)
@@ -178,15 +181,15 @@ public class PyAttributeAccess extends UnaryExpression {
 				onlyMethods &= !m.isEmpty();
 			}
 		if (!methods.isEmpty())
-			result = result.lub(BoundMethods.create(analysis, state, expr, methods, this, getMetaVariables()));
-		if (onlyMethods && !mightBeAssigned(analysis, state, expr))
+			result = result.lub(BoundMethods.create(analysis, context, state, expr, methods, this, getMetaVariables()));
+		if (onlyMethods && !mightBeAssigned(analysis, context, state, expr))
 			// no instance attribute shadows the method
 			objects.clear();
 		if (isWriteTarget() && objects.removeIf(PyAttributeAccess::noAttributes))
 			// e.g. the attributes of a list cannot be assigned
 			raising.raise(state, getCFG(), loc, thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 		if (!objects.isEmpty()) {
-			Missing missing = isWriteTarget() ? null : missing(analysis, state, expr, objects, false);
+			Missing missing = isWriteTarget() ? null : missing(analysis, context, state, expr, objects, false);
 			if (missing == null || missing.assigned()) {
 				// python objects have no declared fields: the attribute is a
 				// field created by its first assignment
@@ -194,7 +197,7 @@ public class PyAttributeAccess extends UnaryExpression {
 						expr, loc);
 				Variable field = new Variable(Untyped.INSTANCE, name, new Annotations(), loc);
 				result = result.lub(analysis.smallStepSemantics(state,
-						new AccessChild(Untyped.INSTANCE, container, field, loc), this));
+						new AccessChild(Untyped.INSTANCE, container, field, loc), context, this));
 			}
 			if (missing != null)
 				// the objects without the attribute: the attribute is looked
@@ -227,9 +230,11 @@ public class PyAttributeAccess extends UnaryExpression {
 				raising.raise(state, getCFG(), loc, thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			if (!valueMethods.isEmpty())
 				result = result
-						.lub(BoundMethods.create(analysis, state, expr, valueMethods, this, getMetaVariables()));
+						.lub(BoundMethods.create(analysis, context, state, expr, valueMethods, this,
+								getMetaVariables()));
 			if (unknown)
-				result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), this));
+				result = result
+						.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, this));
 		}
 		return result;
 	}
@@ -266,11 +271,12 @@ public class PyAttributeAccess extends UnaryExpression {
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Set<Type> objects = new HashSet<>();
-		for (Type t : analysis.getRuntimeTypesOf(state, expr, this))
+		for (Type t : analysis.getRuntimeTypesOf(state, expr, context, this))
 			if (t.isPointerType() && t.asPointerType().getInnerType().isUnitType())
 				objects.add(t.asPointerType().getInnerType());
-		Missing missing = objects.isEmpty() ? null : missing(analysis, state, expr, objects, true);
+		Missing missing = objects.isEmpty() ? null : missing(analysis, context, state, expr, objects, true);
 		AnalysisState<A> result = state.bottomExecution();
 		if (missing != null)
 			for (ClassUnit cls : missing.classes())
@@ -341,6 +347,7 @@ public class PyAttributeAccess extends UnaryExpression {
 	 */
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Missing missing(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression expr,
 			Set<Type> objects,
@@ -372,7 +379,7 @@ public class PyAttributeAccess extends UnaryExpression {
 
 		boolean assigned = false;
 		Set<ClassUnit> missing = new HashSet<>();
-		for (SymbolicExpression rec : analysis.rewrite(state, expr, this)) {
+		for (SymbolicExpression rec : analysis.rewrite(state, expr, context, this)) {
 			// the objects the receiver points to
 			Set<AllocationSite> sites;
 			if (rec instanceof MemoryPointer && ((MemoryPointer) rec).getReferencedLocation() instanceof AllocationSite)
@@ -428,13 +435,14 @@ public class PyAttributeAccess extends UnaryExpression {
 	// (that is, it is assigned on them, or the objects are not known)
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean mightBeAssigned(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression expr)
 			throws SemanticException {
 		HeapEnvWithFields heap = state.getExecutionState().getLatticeInstance(HeapEnvWithFields.class);
 		if (heap == null || heap.isTop() || heap.fields.isTop() || heap.fields.function == null)
 			return true;
-		for (SymbolicExpression rec : analysis.rewrite(state, expr, this)) {
+		for (SymbolicExpression rec : analysis.rewrite(state, expr, context, this)) {
 			Set<AllocationSite> sites;
 			if (rec instanceof MemoryPointer && ((MemoryPointer) rec).getReferencedLocation() instanceof AllocationSite)
 				sites = Set.of((AllocationSite) ((MemoryPointer) rec).getReferencedLocation());
@@ -466,13 +474,14 @@ public class PyAttributeAccess extends UnaryExpression {
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		ClassAttribute attribute = PyClassAttributes.attribute(cls, name);
 		if (attribute == null) {
 			raising.raise(state, getCFG(), getLocation(), thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			return state.bottomExecution();
 		}
 		if (attribute.value() == null)
-			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()), this);
+			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()), context, this);
 		// the body of the class is not executed: its constant value is
 		// computed here
 		Expression value = attribute.value();

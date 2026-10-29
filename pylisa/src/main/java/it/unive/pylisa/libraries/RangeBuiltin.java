@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -62,27 +63,29 @@ public class RangeBuiltin extends PyNative {
 	@Override
 	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> semantics(
 			Analysis<A, D> analysis,
+			ScopeId<?> context,
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
-		Satisfiability typed = hasType(analysis, state, args[0], INT);
+		Satisfiability typed = hasType(analysis, context, state, args[0], INT);
 		for (int i = 1; i < args.length; i++)
 			if (!missing(args[i]))
-				typed = typed.and(hasType(analysis, state, args[i], INT));
+				typed = typed.and(hasType(analysis, context, state, args[i], INT));
 		SymbolicExpression step = args[2];
 		Satisfiability zero = missing(step) ? Satisfiability.NOT_SATISFIED
 				: analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, step,
-						new Constant(Int32Type.INSTANCE, 0, loc), ComparisonEq.INSTANCE, loc), this);
+						new Constant(Int32Type.INSTANCE, 0, loc), ComparisonEq.INSTANCE, loc), context, this);
 
-		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis);
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED) {
 			if (zero != Satisfiability.SATISFIED) {
 				Type range = PyClassType.lookup(LibrarySpecificationProvider.RANGE);
 				MemoryAllocation alloc = new MemoryAllocation(range, loc, false);
-				result = result.lub(compute(analysis, Allocations.allocate(analysis, state, alloc, st),
-						new HeapReference(new ReferenceType(range), alloc, loc)));
+				result = result
+						.lub(compute(analysis, context, Allocations.allocate(analysis, context, state, alloc, st),
+								new HeapReference(new ReferenceType(range), alloc, loc)));
 			}
 			if (zero != Satisfiability.NOT_SATISFIED)
 				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
