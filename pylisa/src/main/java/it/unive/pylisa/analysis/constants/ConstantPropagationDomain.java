@@ -311,7 +311,7 @@ public class ConstantPropagationDomain
 				c = sub(left, right, pp);
 			else
 				return ConstantPropagation.TOP;
-			return new ConstantPropagation(c);
+			return c == null ? ConstantPropagation.TOP : new ConstantPropagation(c);
 		} else if (operator instanceof Power)
 			return power(left, right, operator instanceof FloatPower, pp);
 		else if (operator instanceof FloorDivision) {
@@ -603,7 +603,7 @@ public class ConstantPropagationDomain
 
 	// whether the identifiers in expression only hold values of the types
 	// accepted by this domain
-	private static boolean onlyAccepted(
+	static boolean onlyAccepted(
 			SymbolicExpression expression,
 			ProgramPoint pp,
 			SemanticOracle oracle)
@@ -1175,8 +1175,14 @@ public class ConstantPropagationDomain
 			ProgramPoint pp) {
 		Constant c;
 		if (left.is(Integer.class) && right.is(Integer.class))
-			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) + right.as(Integer.class),
-					pp.getLocation());
+			try {
+				c = new Constant(Int32Type.INSTANCE, Math.addExact(left.as(Integer.class), right.as(Integer.class)),
+						pp.getLocation());
+			} catch (ArithmeticException e) {
+				// python's ints are unbounded, while they are tracked as
+				// 32-bit integers
+				return null;
+			}
 		else if (left.is(Float.class) && right.is(Integer.class))
 			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) + right.as(Integer.class),
 					pp.getLocation());
@@ -1195,8 +1201,15 @@ public class ConstantPropagationDomain
 			ProgramPoint pp) {
 		Constant c;
 		if (left.is(Integer.class) && right.is(Integer.class))
-			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) - right.as(Integer.class),
-					pp.getLocation());
+			try {
+				c = new Constant(Int32Type.INSTANCE,
+						Math.subtractExact(left.as(Integer.class), right.as(Integer.class)),
+						pp.getLocation());
+			} catch (ArithmeticException e) {
+				// python's ints are unbounded, while they are tracked as
+				// 32-bit integers
+				return null;
+			}
 		else if (left.is(Float.class) && right.is(Integer.class))
 			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) - right.as(Integer.class),
 					pp.getLocation());
@@ -1215,8 +1228,15 @@ public class ConstantPropagationDomain
 			ProgramPoint pp) {
 		Constant c;
 		if (left.is(Integer.class) && right.is(Integer.class))
-			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) * right.as(Integer.class),
-					pp.getLocation());
+			try {
+				c = new Constant(Int32Type.INSTANCE,
+						Math.multiplyExact(left.as(Integer.class), right.as(Integer.class)),
+						pp.getLocation());
+			} catch (ArithmeticException e) {
+				// python's ints are unbounded, while they are tracked as
+				// 32-bit integers
+				return null;
+			}
 		else if (left.is(Float.class) && right.is(Integer.class))
 			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) * right.as(Integer.class),
 					pp.getLocation());

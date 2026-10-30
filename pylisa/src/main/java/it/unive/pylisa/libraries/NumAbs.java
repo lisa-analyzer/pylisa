@@ -19,9 +19,11 @@ import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonGe;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
+import it.unive.lisa.type.Untyped;
 
 /**
  * Native implementation of {@code int.__abs__(self)} and
@@ -74,14 +76,21 @@ public class NumAbs extends UnaryExpression implements PluggableStatement {
 				new BinaryExpression(BoolType.INSTANCE, expr, zero, ComparisonGe.INSTANCE, loc), context, st, st);
 		AnalysisState<A> negative = analysis.assume(state,
 				new BinaryExpression(BoolType.INSTANCE, expr, zero, ComparisonLt.INSTANCE, loc), context, st, st);
+		// the result is bound in each branch, where the value of expr is
+		// known to be positive or negative: computing it from expr after the
+		// branches are joined would lose that
+		Variable abs = new Variable(Untyped.INSTANCE, "$abs@" + loc.getCodeLocation(), loc);
 		AnalysisState<A> result = state.bottomExecution();
 		if (!positive.getExecutionState().isBottom())
-			result = result.lub(analysis.smallStepSemantics(positive, expr, context, st));
+			result = result.lub(analysis.assign(positive, abs, expr, context, st));
 		if (!negative.getExecutionState().isBottom())
-			result = result.lub(analysis.smallStepSemantics(negative,
+			result = result.lub(analysis.assign(negative, abs,
 					new it.unive.lisa.symbolic.value.UnaryExpression(getStaticType(), expr,
 							NumericNegation.INSTANCE, loc),
 					context, st));
-		return result;
+		if (result.getExecutionState().isBottom())
+			return result;
+		getMetaVariables().add(abs);
+		return result.withExecutionExpression(abs);
 	}
 }

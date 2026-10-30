@@ -12,15 +12,25 @@ import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.call.Call;
+import it.unive.lisa.program.cfg.statement.literal.Literal;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.lisa.symbolic.value.operator.binary.LogicalAnd;
+import it.unive.lisa.symbolic.value.operator.binary.LogicalOr;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.expression.PyNameRef;
 import it.unive.pylisa.cfg.expression.PyNot;
 import it.unive.pylisa.symbolic.operators.LogicalNot;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -29,7 +39,12 @@ import java.util.Set;
  * result (i.e., it is false for {@code and}, true for {@code or}), the result
  * is the left operand itself, and the right one is not evaluated; otherwise,
  * the result is the right operand. As in python, the result is one of the
- * operands, of any type (e.g. {@code 0 or "x"} is {@code "x"}).
+ * operands, of any type (e.g. {@code 0 or "x"} is {@code "x"}). When both
+ * operands are booleans computed without side effects (e.g.
+ * {@code 0 <= i and i < n}), the result is their logical conjunction (or
+ * disjunction): the assumptions made on it (e.g. by the branches of an
+ * {@code if}) then refine the values compared by both operands, that would
+ * otherwise be assumed separately on the join of the two paths.
  */
 public abstract class PyShortCircuit extends BinaryExpression {
 
@@ -116,6 +131,7 @@ public abstract class PyShortCircuit extends BinaryExpression {
 			}
 
 		AnalysisState<A> result = postLeft.bottomExecution();
+		AnalysisState<A> postRight = null;
 		if (canDecide && !decided.getExecutionState().isBottom()) {
 			// the value of the left operand is the value of this expression:
 			// its meta variables are forgotten by the statement that consumes
@@ -125,7 +141,7 @@ public abstract class PyShortCircuit extends BinaryExpression {
 		}
 		if (canContinue) {
 			// the value of the left operand is consumed here
-			AnalysisState<A> postRight = right.forwardSemantics(
+			postRight = right.forwardSemantics(
 					other.forgetIdentifiers(left.getMetaVariables(), this), interprocedural, expressions);
 			expressions.put(right, postRight);
 			if (postRight.getExecutionState().isBottom())
@@ -138,7 +154,94 @@ public abstract class PyShortCircuit extends BinaryExpression {
 				getMetaVariables().addAll(right.getMetaVariables());
 			}
 		}
+		if (canDecide && postRight != null && !decided.getExecutionState().isBottom()
+				&& !postRight.getExecutionState().isBottom()) {
+			ExpressionSet combined = combine(analysis, postLeft, postRight, context);
+			if (combined != null)
+				result = result.withExecutionExpressions(combined);
+		}
 		return result;
+	}
+
+	// the conjunction (or disjunction) of the values of the operands, if they
+	// are booleans computed without side effects, that can be evaluated
+	// after the right operand: the operands contain no calls nor
+	// assignments, and their values only read the names they contain (a call
+	// performed by an operator, e.g. a __lt__ of the program, leaves its
+	// result in a variable that is not one of them)
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> ExpressionSet combine(
+			Analysis<A, D> analysis,
+			AnalysisState<A> postLeft,
+			AnalysisState<A> postRight,
+			ScopeId<A> context)
+			throws SemanticException {
+		Set<Identifier> names = new HashSet<>();
+		if (!pure(getLeft(), names) || !pure(getRight(), names))
+			return null;
+		if (!booleans(analysis, postLeft, names, context) || !booleans(analysis, postRight, names, context))
+			return null;
+		Set<SymbolicExpression> combined = new HashSet<>();
+		for (SymbolicExpression l : postLeft.getExecutionExpressions())
+			for (SymbolicExpression r : postRight.getExecutionExpressions())
+				combined.add(new it.unive.lisa.symbolic.value.BinaryExpression(BoolType.INSTANCE, l, r,
+						decidedByTrue() ? LogicalOr.INSTANCE : LogicalAnd.INSTANCE, getLocation()));
+		return new ExpressionSet(combined);
+	}
+
+	// whether the expression contains no calls nor assignments, collecting the
+	// identifiers of the names it contains
+	private static boolean pure(
+			Expression expression,
+			Set<Identifier> names) {
+		if (expression instanceof Call || expression instanceof Assignment)
+			return false;
+		if (expression instanceof PyNameRef) {
+			names.add(((PyNameRef) expression).getIdentifier());
+			return true;
+		}
+		if (expression instanceof NaryExpression) {
+			for (Expression sub : ((NaryExpression) expression).getSubExpressions())
+				if (!pure(sub, names))
+					return false;
+			return true;
+		}
+		return expression instanceof Literal;
+	}
+
+	// whether the values computed in the state are booleans that only read the
+	// given names
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean booleans(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			Set<Identifier> names,
+			ScopeId<A> context)
+			throws SemanticException {
+		for (SymbolicExpression value : state.getExecutionExpressions()) {
+			if (!reads(value, names))
+				return false;
+			Set<Type> types = analysis.getRuntimeTypesOf(state, value, context, this);
+			if (types.isEmpty() || !types.stream().allMatch(Type::isBooleanType))
+				return false;
+		}
+		return true;
+	}
+
+	// whether the symbolic expression is built from constants and the given
+	// identifiers only
+	private static boolean reads(
+			SymbolicExpression expression,
+			Set<Identifier> names) {
+		if (expression instanceof Constant)
+			return true;
+		if (expression instanceof Identifier)
+			return names.contains(expression);
+		if (expression instanceof UnaryExpression)
+			return reads(((UnaryExpression) expression).getExpression(), names);
+		if (expression instanceof it.unive.lisa.symbolic.value.BinaryExpression) {
+			it.unive.lisa.symbolic.value.BinaryExpression binary = (it.unive.lisa.symbolic.value.BinaryExpression) expression;
+			return reads(binary.getLeft(), names) && reads(binary.getRight(), names);
+		}
+		return false;
 	}
 
 	@Override

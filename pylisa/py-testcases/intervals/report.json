@@ -1,0 +1,44 @@
+{
+  "warnings" : [ {
+    "message" : "['py-testcases/intervals/intervals.py':51:4] on 'untyped py-testcases/intervals/intervals::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/intervals/intervals.py':51:4"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_intervals_intervals.$main().graph.json", "untyped_py-testcases_intervals_intervals.guarded(untyped_a,_untyped_b)_f5a9a83884d09800738fde5623b06309.graph.json" ],
+  "info" : {
+    "cfgs" : "3",
+    "duration" : "193ms",
+    "end" : "2026-10-31T00:22:13.718+01:00",
+    "expressions" : "85",
+    "files" : "2",
+    "globals" : "0",
+    "members" : "194",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-10-31T00:22:13.525+01:00",
+    "statements" : "32",
+    "units" : "44",
+    "version" : "1.0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/intervals"
+  }
+}

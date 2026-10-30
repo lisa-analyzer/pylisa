@@ -20,7 +20,7 @@ import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.outputs.messages.Message;
 import it.unive.lisa.program.Program;
 import it.unive.pylisa.analysis.PyDomain;
-import it.unive.pylisa.analysis.constants.ConstantPropagationDomain;
+import it.unive.pylisa.analysis.constants.PyValueDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphValueDomain;
 import it.unive.pylisa.analysis.heap.PyHeap;
@@ -88,7 +88,7 @@ public class PyLiSA {
 		Option numericalDomainOption = Option.builder("n")
 				.longOpt("numericalDomain")
 				.hasArg()
-				.desc("Numerical domain: (ConstantPropagation)")
+				.desc("Numerical domain: (ConstantPropagation [the same as ConstantPropagationWithIntervals], ConstantPropagationWithIntervals)")
 				.required(false)
 				.build();
 
@@ -384,10 +384,11 @@ public class PyLiSA {
 		ValueDomain<?> domain;
 		switch (numericalDomain) {
 		case "ConstantPropagation":
+		case "ConstantPropagationWithIntervals":
 			// the constant propagation of pylisa, that evaluates the
-			// operators of python (e.g. the conversions to int), as in the
-			// tests (see TestHelper)
-			domain = new ConstantPropagationDomain();
+			// operators of python (e.g. the conversions to int), with the
+			// intervals of integers, as in the tests (see TestHelper)
+			domain = new PyValueDomain();
 			break;
 		default:
 			throw new ParseException("Invalid numerical domain name: " + numericalDomain);

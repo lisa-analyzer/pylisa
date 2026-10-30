@@ -11,8 +11,8 @@ import it.unive.lisa.outputs.HtmlInputs;
 import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.program.cfg.fixpoints.optforward.OptimizedForwardAscendingFixpoint;
 import it.unive.pylisa.analysis.PyDomain;
-import it.unive.pylisa.analysis.constants.ConstantPropagation;
-import it.unive.pylisa.analysis.constants.ConstantPropagationDomain;
+import it.unive.pylisa.analysis.constants.PyValue;
+import it.unive.pylisa.analysis.constants.PyValueDomain;
 import it.unive.pylisa.analysis.heap.PyHeap;
 import it.unive.pylisa.analysis.types.PyInferredTypes;
 import it.unive.pylisa.checks.ExceptionChecker;
@@ -52,8 +52,8 @@ public class TestHelper {
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 
 		// as in the command line interface (see PyLiSA), and in JLiSA
-		conf.analysis = new PyDomain<HeapEnvWithFields, ValueEnvironment<ConstantPropagation>,
-				TypeEnvironment<TypeSet>>(new PyHeap(), new ConstantPropagationDomain(), new PyInferredTypes());
+		conf.analysis = new PyDomain<HeapEnvWithFields, ValueEnvironment<PyValue>, TypeEnvironment<TypeSet>>(
+				new PyHeap(), new PyValueDomain(), new PyInferredTypes());
 
 		return conf;
 	}
