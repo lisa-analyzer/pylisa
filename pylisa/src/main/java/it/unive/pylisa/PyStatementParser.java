@@ -1899,50 +1899,93 @@ public class PyStatementParser
 			return visitComparison(ctx.comparison());
 	}
 
+	/**
+	 * Translates a comparison: a chain {@code a op1 b op2 c} is
+	 * {@code a op1 b and b op2 c}, where {@code b} is evaluated once (as a name
+	 * or a literal, it is read again; otherwise, its value is kept in a fresh
+	 * variable).
+	 */
 	@Override
 	public Expression visitComparison(
 			ComparisonContext ctx) {
-		Expression result = visitBitwise_or(ctx.bitwise_or());
-		for (Compare_op_bitwise_or_pairContext pair : ctx.compare_op_bitwise_or_pair())
-			result = visitCompare_op_bitwise_or_pair(pair, result);
+		Expression left = visitBitwise_or(ctx.bitwise_or());
+		List<Compare_op_bitwise_or_pairContext> pairs = ctx.compare_op_bitwise_or_pair();
+		Expression result = left;
+		for (int i = 0; i < pairs.size(); i++) {
+			Compare_op_bitwise_or_pairContext pair = pairs.get(i);
+			Bitwise_orContext operand = rightOperand(pair);
+			Expression right = visitBitwise_or(operand);
+			Expression next = null;
+			if (i < pairs.size() - 1)
+				if (right instanceof PyNameRef)
+					// read again, as a distinct node of the cfg
+					next = ((PyNameRef) right).at(new DerivedLocation(right.getLocation(), "chain-read"));
+				else {
+					SourceCodeLocation loc = getLocation(filePath, operand);
+					String tmp = "$chain@" + loc.getLine() + ":" + loc.getCol();
+					right = new PyAssign(currentCFG, new DerivedLocation(loc, "chain"),
+							new VariableRef(currentCFG, new DerivedLocation(loc, "chain-target"), tmp), right);
+					next = new VariableRef(currentCFG, new DerivedLocation(loc, "chain-read"), tmp);
+				}
+			Expression comparison = visitCompare_op_bitwise_or_pair(pair, left, right);
+			result = i == 0 ? comparison : new PyAnd(currentCFG, getLocation(filePath, pair), result, comparison);
+			left = next;
+		}
 		return result;
+	}
+
+	// the right operand of the comparison
+	private static Bitwise_orContext rightOperand(
+			Compare_op_bitwise_or_pairContext ctx) {
+		if (ctx.eq_bitwise_or() != null)
+			return ctx.eq_bitwise_or().bitwise_or();
+		if (ctx.noteq_bitwise_or() != null)
+			return ctx.noteq_bitwise_or().bitwise_or();
+		if (ctx.lte_bitwise_or() != null)
+			return ctx.lte_bitwise_or().bitwise_or();
+		if (ctx.lt_bitwise_or() != null)
+			return ctx.lt_bitwise_or().bitwise_or();
+		if (ctx.gte_bitwise_or() != null)
+			return ctx.gte_bitwise_or().bitwise_or();
+		if (ctx.gt_bitwise_or() != null)
+			return ctx.gt_bitwise_or().bitwise_or();
+		if (ctx.notin_bitwise_or() != null)
+			return ctx.notin_bitwise_or().bitwise_or();
+		if (ctx.in_bitwise_or() != null)
+			return ctx.in_bitwise_or().bitwise_or();
+		if (ctx.isnot_bitwise_or() != null)
+			return ctx.isnot_bitwise_or().bitwise_or();
+		if (ctx.is_bitwise_or() != null)
+			return ctx.is_bitwise_or().bitwise_or();
+		throw new UnsupportedStatementException();
 	}
 
 	private Expression visitCompare_op_bitwise_or_pair(
 			Compare_op_bitwise_or_pairContext ctx,
-			Expression left) {
+			Expression left,
+			Expression right) {
 		if (ctx.eq_bitwise_or() != null)
-			return new PyEquals(currentCFG, getLocation(filePath, ctx), left,
-					visitBitwise_or(ctx.eq_bitwise_or().bitwise_or()));
+			return new PyEquals(currentCFG, getLocation(filePath, ctx), left, right);
 		else if (ctx.noteq_bitwise_or() != null)
-			return new PyNotEqual(currentCFG, getLocation(filePath, ctx), left,
-					visitBitwise_or(ctx.noteq_bitwise_or().bitwise_or()));
+			return new PyNotEqual(currentCFG, getLocation(filePath, ctx), left, right);
 		else if (ctx.lte_bitwise_or() != null)
-			return new PyLessOrEqual(currentCFG, getLocation(filePath, ctx), left,
-					visitBitwise_or(ctx.lte_bitwise_or().bitwise_or()));
+			return new PyLessOrEqual(currentCFG, getLocation(filePath, ctx), left, right);
 		else if (ctx.lt_bitwise_or() != null)
-			return new PyLessThan(currentCFG, getLocation(filePath, ctx), left,
-					visitBitwise_or(ctx.lt_bitwise_or().bitwise_or()));
+			return new PyLessThan(currentCFG, getLocation(filePath, ctx), left, right);
 		else if (ctx.gte_bitwise_or() != null)
-			return new PyGreaterOrEqual(currentCFG, getLocation(filePath, ctx), left,
-					visitBitwise_or(ctx.gte_bitwise_or().bitwise_or()));
+			return new PyGreaterOrEqual(currentCFG, getLocation(filePath, ctx), left, right);
 		else if (ctx.gt_bitwise_or() != null)
-			return new PyGreaterThan(currentCFG, getLocation(filePath, ctx), left,
-					visitBitwise_or(ctx.gt_bitwise_or().bitwise_or()));
+			return new PyGreaterThan(currentCFG, getLocation(filePath, ctx), left, right);
 		else if (ctx.notin_bitwise_or() != null)
 			return new PyNot(currentCFG, getLocation(filePath, ctx),
-					new PyIn(currentCFG, getLocation(filePath, ctx), left,
-							visitBitwise_or(ctx.notin_bitwise_or().bitwise_or())));
+					new PyIn(currentCFG, getLocation(filePath, ctx), left, right));
 		else if (ctx.in_bitwise_or() != null)
-			return new PyIn(currentCFG, getLocation(filePath, ctx), left,
-					visitBitwise_or(ctx.in_bitwise_or().bitwise_or()));
+			return new PyIn(currentCFG, getLocation(filePath, ctx), left, right);
 		else if (ctx.isnot_bitwise_or() != null)
 			return new PyNot(currentCFG, getLocation(filePath, ctx),
-					new PyIs(currentCFG, getLocation(filePath, ctx), left,
-							visitBitwise_or(ctx.isnot_bitwise_or().bitwise_or())));
+					new PyIs(currentCFG, getLocation(filePath, ctx), left, right));
 		else if (ctx.is_bitwise_or() != null)
-			return new PyIs(currentCFG, getLocation(filePath, ctx), left,
-					visitBitwise_or(ctx.is_bitwise_or().bitwise_or()));
+			return new PyIs(currentCFG, getLocation(filePath, ctx), left, right);
 		throw new UnsupportedStatementException();
 	}
 

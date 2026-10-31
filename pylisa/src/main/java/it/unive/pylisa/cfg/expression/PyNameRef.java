@@ -196,6 +196,19 @@ public class PyNameRef extends VariableRef {
 		this.text = text;
 	}
 
+	/**
+	 * Yields a copy of this reference at another location (e.g. to read a name
+	 * twice in an expression, as distinct nodes of the cfg).
+	 *
+	 * @param location the location of the copy
+	 *
+	 * @return the copy
+	 */
+	public PyNameRef at(
+			CodeLocation location) {
+		return new PyNameRef(getCFG(), location, getName(), kind, module, unit, imported, target, checked, text);
+	}
+
 	@Override
 	public String toString() {
 		return text;
