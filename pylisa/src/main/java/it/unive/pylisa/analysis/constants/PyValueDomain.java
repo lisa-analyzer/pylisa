@@ -267,9 +267,8 @@ public class PyValueDomain implements BaseNonRelationalValueDomain<PyValue> {
 				interval = l.plus(r);
 			else if (operator instanceof SubtractionOperator)
 				interval = l.diff(r);
-			else if (operator instanceof MultiplicationOperator && l.isFinite() && r.isFinite())
-				// an infinite bound might be multiplied by 0
-				interval = l.mul(r);
+			else if (operator instanceof MultiplicationOperator)
+				interval = mul(l, r);
 			else if (operator == FloorDivision.INSTANCE)
 				interval = floorDiv(l, r);
 			else if (operator == Modulo.INSTANCE)
@@ -291,6 +290,31 @@ public class PyValueDomain implements BaseNonRelationalValueDomain<PyValue> {
 			return PyValue.BOTTOM;
 		return reduce(constants.evalTernaryExpression(expression, left.getConstant(), middle.getConstant(),
 				right.getConstant(), pp, oracle), IntInterval.TOP, expression, pp, oracle);
+	}
+
+	// x * y: the bounds are the products of the bounds, where an infinite
+	// bound stands for arbitrarily large integers, whose product by 0 is 0
+	private static IntInterval mul(
+			IntInterval x,
+			IntInterval y) {
+		MathNumber[] products = { times(x.getLow(), y.getLow()), times(x.getLow(), y.getHigh()),
+				times(x.getHigh(), y.getLow()), times(x.getHigh(), y.getHigh()) };
+		MathNumber low = products[0], high = products[0];
+		for (MathNumber p : products) {
+			if (p.isNaN())
+				return IntInterval.TOP;
+			low = low.min(p);
+			high = high.max(p);
+		}
+		return new IntInterval(low, high);
+	}
+
+	private static MathNumber times(
+			MathNumber a,
+			MathNumber b) {
+		if (a.isZero() || b.isZero())
+			return MathNumber.ZERO;
+		return a.multiply(b);
 	}
 
 	// x // y, rounding towards minus infinity: the result is computed on the

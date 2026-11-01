@@ -197,13 +197,11 @@ public final class Iteration {
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
-		if (isRange(expression))
-			// range(...), whose elements are ints
-			return analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), context, pp);
-
 		Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, context, pp);
 		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, pp))
-			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp);
+			// range(...) has int elements, even if the range is not known
+			return analysis.smallStepSemantics(state,
+					new PushAny(isRange(expression) ? Int32Type.INSTANCE : Untyped.INSTANCE, loc), context, pp);
 		AnalysisState<A> result = state.bottomExecution();
 		boolean notIterable = false, unknown = false;
 		for (Type t : types)
@@ -234,8 +232,7 @@ public final class Iteration {
 						? MapBuiltin.elements(interprocedural, state, iterable, pp, metas)
 						: MapBuiltin.uncalled(analysis, context, state, pp));
 			else if (RangeBuiltin.isRange(t))
-				result = result
-						.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), context, pp));
+				result = result.lub(RangeBuiltin.elements(analysis, context, state, iterable, pp, metas));
 			else if (t instanceof PyBytesType)
 				result = result
 						.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), context, pp));

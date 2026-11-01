@@ -15,20 +15,24 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Skip;
+import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.expression.PyNot;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.symbolic.operators.LogicalNot;
 import java.util.Set;
 
 /**
  * The {@code assert condition} statement (also {@code assert condition, msg}).
  * If the condition is false (as in python, it can be a value of any type, see
  * {@link PyNot}), the statement raises {@code AssertionError}; otherwise, the
- * execution continues. As in JLiSA, the message is always evaluated, and then
- * discarded.
+ * execution continues, where the condition is assumed to hold (e.g. after
+ * {@code assert 0 <= i}, {@code i} is not negative). As in JLiSA, the message
+ * is always evaluated, and then discarded.
  */
 public class PyAssert extends NaryStatement {
 
@@ -89,11 +93,10 @@ public class PyAssert extends NaryStatement {
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		ScopeId<A> context = interprocedural.getCurrentContext();
-		// the values of the sub-expressions are consumed here
-		AnalysisState<A> consumed = state;
-		for (Expression sub : getSubExpressions())
-			consumed = consumed.forgetIdentifiers(sub.getMetaVariables(), this);
-
+		// the condition holds after the statement, and it does not hold where
+		// the statement raises
+		AnalysisState<A> holding = state.bottomExecution();
+		AnalysisState<A> failing = state.bottomExecution();
 		boolean holds = false, fails = false;
 		for (SymbolicExpression condition : params[0])
 			for (SymbolicExpression cond : analysis.rewrite(state, condition, context, this)) {
@@ -107,16 +110,29 @@ public class PyAssert extends NaryStatement {
 					if (!types.isEmpty() && types.stream().allMatch(PyNot::alwaysTrue))
 						sat = Satisfiability.SATISFIED;
 				}
-				holds |= sat != Satisfiability.NOT_SATISFIED;
-				fails |= sat != Satisfiability.SATISFIED;
+				if (sat != Satisfiability.NOT_SATISFIED) {
+					holds = true;
+					holding = holding.lub(analysis.assume(state, cond, context, this, this));
+				}
+				if (sat != Satisfiability.SATISFIED) {
+					fails = true;
+					// not cond, for values of any type (see LogicalNot)
+					failing = failing.lub(analysis.assume(state, new UnaryExpression(BoolType.INSTANCE, cond,
+							LogicalNot.INSTANCE, cond.getCodeLocation()), context, this, this));
+				}
 			}
 
+		// the values of the sub-expressions are consumed here
+		for (Expression sub : getSubExpressions()) {
+			holding = holding.forgetIdentifiers(sub.getMetaVariables(), this);
+			failing = failing.forgetIdentifiers(sub.getMetaVariables(), this);
+		}
 		AnalysisState<A> result = state.bottomExecution();
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		if (holds)
-			result = result.lub(analysis.smallStepSemantics(consumed, new Skip(getLocation()), context, this));
-		if (fails)
-			raising.raise(consumed, getCFG(), getLocation(), this, LibrarySpecificationProvider.ASSERTION_ERROR);
+		if (holds && !holding.getExecutionState().isBottom())
+			result = result.lub(analysis.smallStepSemantics(holding, new Skip(getLocation()), context, this));
+		if (fails && !failing.getExecutionState().isBottom())
+			raising.raise(failing, getCFG(), getLocation(), this, LibrarySpecificationProvider.ASSERTION_ERROR);
 		return raising.moveFrom(result);
 	}
 }
