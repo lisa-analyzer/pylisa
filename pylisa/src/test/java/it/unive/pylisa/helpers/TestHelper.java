@@ -10,6 +10,7 @@ import it.unive.lisa.lattices.types.TypeSet;
 import it.unive.lisa.outputs.HtmlInputs;
 import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.program.cfg.fixpoints.optforward.OptimizedForwardAscendingFixpoint;
+import it.unive.lisa.triage.reachability.ReachabilityVerifier;
 import it.unive.pylisa.analysis.PyDomain;
 import it.unive.pylisa.analysis.constants.PyValue;
 import it.unive.pylisa.analysis.constants.PyValueDomain;
@@ -61,11 +62,18 @@ public class TestHelper {
 	/**
 	 * Builds the configuration of {@link #constantPropagationConfig()}, also
 	 * checking the properties of the SV-COMP benchmarks (see
-	 * {@link ExceptionChecker}).
+	 * {@link ExceptionChecker}) and verifying the warnings through
+	 * reachability, as in the command line interface (see PyLiSA).
 	 */
 	public static CronConfiguration svcompConfig() {
 		CronConfiguration conf = constantPropagationConfig();
 		conf.semanticChecks.add(new ExceptionChecker<>());
+		conf.warningVerifier = new ReachabilityVerifier<>();
+		// the verification of warnings queries the post-states of the
+		// statements, that the results of optimized fixpoints do not keep:
+		// without them, the statements would be deemed unreachable, refuting
+		// their warnings
+		conf.compareWithOptimization = false;
 		return conf;
 	}
 }

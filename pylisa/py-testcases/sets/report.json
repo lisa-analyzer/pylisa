@@ -1,36 +1,81 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/sets/sets.py':14:8] on 'untyped py-testcases/sets/sets::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sets/sets.py':14:8"
+    "location" : "'py-testcases/sets/sets.py':14:8",
+    "cfg" : "untyped py-testcases/sets/sets::$main()",
+    "text" : "+(y, 1)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sets/sets.py':14:8",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sets/sets.py':22:8] on 'untyped py-testcases/sets/sets::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sets/sets.py':22:8"
+    "location" : "'py-testcases/sets/sets.py':22:8",
+    "cfg" : "untyped py-testcases/sets/sets::$main()",
+    "text" : "+(w, 1)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sets/sets.py':22:8",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sets/sets.py':29:8] on 'untyped py-testcases/sets/sets::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sets/sets.py':29:8"
+    "location" : "'py-testcases/sets/sets.py':29:8",
+    "cfg" : "untyped py-testcases/sets/sets::$main()",
+    "text" : "+(q, 1)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sets/sets.py':29:8",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sets/sets.py':33:4] on 'untyped py-testcases/sets/sets::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sets/sets.py':33:4"
+    "location" : "'py-testcases/sets/sets.py':33:4",
+    "cfg" : "untyped py-testcases/sets/sets::$main()",
+    "text" : "set(5)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sets/sets.py':33:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sets/sets.py':36:4] on 'untyped py-testcases/sets/sets::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/sets/sets.py':36:4"
+    "location" : "'py-testcases/sets/sets.py':36:4",
+    "cfg" : "untyped py-testcases/sets/sets::$main()",
+    "text" : "remove(s, 3)",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/sets/sets.py':36:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sets/sets.py':39:4] on 'untyped py-testcases/sets/sets::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/sets/sets.py':39:4"
+    "location" : "'py-testcases/sets/sets.py':39:0",
+    "cfg" : "untyped py-testcases/sets/sets::$main()",
+    "text" : "k = pop(s) if nondet_bool() else 0",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/sets/sets.py':39:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sets/sets.py':44:8] on 'untyped py-testcases/sets/sets::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sets/sets.py':44:8"
+    "location" : "'py-testcases/sets/sets.py':44:8",
+    "cfg" : "untyped py-testcases/sets/sets::$main()",
+    "text" : "+(e, 1)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sets/sets.py':44:8",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sets/sets.py':48:4] on 'untyped py-testcases/sets/sets::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sets/sets.py':48:4"
+    "location" : "'py-testcases/sets/sets.py':48:4",
+    "cfg" : "untyped py-testcases/sets/sets::$main()",
+    "text" : "update(s, 5)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sets/sets.py':48:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sets/sets.py':51:4] on 'untyped py-testcases/sets/sets::$main()': [EXPRESSION] TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/sets/sets.py':51:4"
+    "location" : "'py-testcases/sets/sets.py':51:4",
+    "cfg" : "untyped py-testcases/sets/sets::$main()",
+    "text" : "s.x = 1",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/sets/sets.py':51:4",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_sets_sets.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "29ms",
-    "end" : "2026-10-31T00:22:58.069+01:00",
+    "duration" : "117ms",
+    "end" : "2026-11-06T12:01:21.507+01:00",
     "expressions" : "145",
     "files" : "1",
     "globals" : "0",
     "members" : "193",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-31T00:22:58.040+01:00",
+    "start" : "2026-11-06T12:01:21.390+01:00",
     "statements" : "64",
     "units" : "44",
     "version" : "1.0",

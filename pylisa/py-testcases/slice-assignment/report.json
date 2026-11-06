@@ -1,26 +1,46 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/slice-assignment/slice-assignment.py':13:8] on 'untyped py-testcases/slice-assignment/slice-assignment::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/slice-assignment/slice-assignment.py':13:8"
+    "location" : "'py-testcases/slice-assignment/slice-assignment.py':13:8",
+    "cfg" : "untyped py-testcases/slice-assignment/slice-assignment::$main()",
+    "text" : "+(y, 1)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/slice-assignment/slice-assignment.py':13:8",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/slice-assignment/slice-assignment.py':18:8] on 'untyped py-testcases/slice-assignment/slice-assignment::$main()': [EXPRESSION] LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/slice-assignment/slice-assignment.py':18:8"
+    "location" : "'py-testcases/slice-assignment/slice-assignment.py':18:4",
+    "cfg" : "untyped py-testcases/slice-assignment/slice-assignment::$main()",
+    "text" : "v = ys[0]",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/slice-assignment/slice-assignment.py':18:8",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/slice-assignment/slice-assignment.py':21:4] on 'untyped py-testcases/slice-assignment/slice-assignment::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/slice-assignment/slice-assignment.py':21:4"
+    "location" : "'py-testcases/slice-assignment/slice-assignment.py':21:4",
+    "cfg" : "untyped py-testcases/slice-assignment/slice-assignment::$main()",
+    "text" : "ys[0 : 1 : <empty>] = 5",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/slice-assignment/slice-assignment.py':21:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/slice-assignment/slice-assignment.py':24:4] on 'untyped py-testcases/slice-assignment/slice-assignment::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/slice-assignment/slice-assignment.py':24:4"
+    "location" : "'py-testcases/slice-assignment/slice-assignment.py':24:4",
+    "cfg" : "untyped py-testcases/slice-assignment/slice-assignment::$main()",
+    "text" : "ys[\"a\" : <empty> : <empty>] = list()",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/slice-assignment/slice-assignment.py':24:4",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_slice-assignment_slice-assignment.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "15ms",
-    "end" : "2026-10-31T00:22:58.799+01:00",
+    "duration" : "48ms",
+    "end" : "2026-11-06T12:01:22.914+01:00",
     "expressions" : "88",
     "files" : "1",
     "globals" : "0",
     "members" : "193",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-31T00:22:58.784+01:00",
+    "start" : "2026-11-06T12:01:22.866+01:00",
     "statements" : "30",
     "units" : "44",
     "version" : "1.0",

@@ -1,22 +1,32 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/one-element-tuples/one-element-tuples.py':11:4] on 'untyped py-testcases/one-element-tuples/one-element-tuples::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/one-element-tuples/one-element-tuples.py':11:4"
+    "location" : "'py-testcases/one-element-tuples/one-element-tuples.py':11:4",
+    "cfg" : "untyped py-testcases/one-element-tuples/one-element-tuples::$main()",
+    "text" : "check_type(t, int)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/one-element-tuples/one-element-tuples.py':11:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/one-element-tuples/one-element-tuples.py':14:4] on 'untyped py-testcases/one-element-tuples/one-element-tuples::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/one-element-tuples/one-element-tuples.py':14:4"
+    "location" : "'py-testcases/one-element-tuples/one-element-tuples.py':14:4",
+    "cfg" : "untyped py-testcases/one-element-tuples/one-element-tuples::$main()",
+    "text" : "check_type(u, int)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/one-element-tuples/one-element-tuples.py':14:4",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_one-element-tuples_one-element-tuples.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "9ms",
-    "end" : "2026-10-31T00:22:53.449+01:00",
+    "duration" : "49ms",
+    "end" : "2026-11-06T12:01:13.719+01:00",
     "expressions" : "73",
     "files" : "1",
     "globals" : "0",
     "members" : "193",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-31T00:22:53.440+01:00",
+    "start" : "2026-11-06T12:01:13.670+01:00",
     "statements" : "29",
     "units" : "44",
     "version" : "1.0",

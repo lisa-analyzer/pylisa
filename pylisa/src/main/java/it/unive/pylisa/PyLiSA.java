@@ -19,6 +19,8 @@ import it.unive.lisa.outputs.JSONReportDumper;
 import it.unive.lisa.outputs.JSONResults;
 import it.unive.lisa.outputs.messages.Message;
 import it.unive.lisa.program.Program;
+import it.unive.lisa.triage.reachability.ReachabilityVerifier;
+import it.unive.lisa.triage.smt.SmtLibProcessSolver;
 import it.unive.pylisa.analysis.PyDomain;
 import it.unive.pylisa.analysis.constants.PyValueDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
@@ -28,6 +30,7 @@ import it.unive.pylisa.analysis.types.PyInferredTypes;
 import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
 import it.unive.pylisa.checks.ExceptionChecker;
+import it.unive.pylisa.checks.SVCOMPVerifier;
 import it.unive.ros.application.PythonROSNodeBuilder;
 import it.unive.ros.application.ROSApplication;
 import it.unive.ros.application.RosApplicationBuilder;
@@ -92,6 +95,21 @@ public class PyLiSA {
 				.required(false)
 				.build();
 
+		Option verifierOption = Option.builder("t")
+				.longOpt("verifier")
+				.hasArg()
+				.desc("Verifier of the warnings: (Reachability [DEFAULT], verifying them through the results of "
+						+ "the analysis; Combined, the SV-COMP verifier, falling back to model checking with z3)")
+				.required(false)
+				.build();
+
+		Option z3Path = Option.builder()
+				.longOpt("z3")
+				.hasArg()
+				.desc("Path to the z3 executable used to verify warnings (by default, z3 is searched in the PATH; without it, warnings that cannot be verified through the results of the analysis stay possible)")
+				.required(false)
+				.build();
+
 		Option mode = Option.builder("m")
 				.longOpt("mode")
 				.hasArg()
@@ -131,6 +149,8 @@ public class PyLiSA {
 		options.addOption(logLevel);
 		options.addOption(checker);
 		options.addOption(numericalDomainOption);
+		options.addOption(verifierOption);
+		options.addOption(z3Path);
 		options.addOption(mode);
 		options.addOption(version);
 		options.addOption(noHtmlOutput);
@@ -141,7 +161,7 @@ public class PyLiSA {
 		HelpFormatter formatter = new HelpFormatter();
 		String[] sources = new String[0];
 		String outdir = "";
-		String checkerName = "", numericalDomain = "", executionMode = "Debug";
+		String checkerName = "", numericalDomain = "", verifierName = "Reachability", executionMode = "Debug";
 		boolean htmlOutput = true;
 		boolean dumpExceptions = false;
 		boolean debug = false;
@@ -194,6 +214,12 @@ public class PyLiSA {
 
 			checkerName = cmd.getOptionValue("c", "Assert");
 			numericalDomain = cmd.getOptionValue("n");
+			verifierName = cmd.getOptionValue("t", "Reachability");
+			if (!verifierName.equals("Reachability") && !verifierName.equals("Combined"))
+				throw new ParseException("Invalid verifier name: " + verifierName);
+
+			if (cmd.hasOption("z3"))
+				SmtLibProcessSolver.setZ3Path(cmd.getOptionValue("z3"));
 
 			sources = cmd.getOptionValues("s");
 			outdir = cmd.getOptionValue("o");
@@ -220,10 +246,11 @@ public class PyLiSA {
 		String[] copy = Arrays.copyOfRange(args, 1, args.length);
 		switch (executionMode) {
 		case "Debug":
-			runDebug(sources, outdir, checkerName, numericalDomain, htmlOutput, debug);
+			runDebug(sources, outdir, checkerName, numericalDomain, verifierName, htmlOutput, debug);
 			break;
 		case "Statistics":
-			runStatistics(sources, outdir, checkerName, numericalDomain, htmlOutput, dumpExceptions, debug);
+			runStatistics(sources, outdir, checkerName, numericalDomain, verifierName, htmlOutput, dumpExceptions,
+					debug);
 			break;
 		case "Dataframes":
 			dataframes(copy);
@@ -300,13 +327,14 @@ public class PyLiSA {
 			String outdir,
 			String checkerName,
 			String numericalDomain,
+			String verifierName,
 			boolean htmlOutput,
 			boolean debug)
 			throws IOException,
 			ParseException,
 			ParsingException {
 		PyFrontend frontend = runFrontend(sources);
-		runAnalysis(outdir, checkerName, numericalDomain, frontend, htmlOutput, debug);
+		runAnalysis(outdir, checkerName, numericalDomain, verifierName, frontend, htmlOutput, debug);
 	}
 
 	private static void runStatistics(
@@ -314,6 +342,7 @@ public class PyLiSA {
 			String outdir,
 			String checkerName,
 			String numericalDomain,
+			String verifierName,
 			boolean htmlOutput,
 			boolean dumpExceptions,
 			boolean debug) {
@@ -332,7 +361,7 @@ public class PyLiSA {
 			System.exit(1);
 		}
 		try {
-			runAnalysis(outdir, checkerName, numericalDomain, frontend, htmlOutput, debug);
+			runAnalysis(outdir, checkerName, numericalDomain, verifierName, frontend, htmlOutput, debug);
 		} catch (Throwable e) {
 			Throwable root = e;
 			while (root.getCause() != null)
@@ -359,6 +388,7 @@ public class PyLiSA {
 			String outdir,
 			String checkerName,
 			String numericalDomain,
+			String verifierName,
 			PyFrontend frontend,
 			boolean htmlOutput,
 			boolean debug)
@@ -371,6 +401,19 @@ public class PyLiSA {
 		conf.interproceduralAnalysis = new InliningAnalysis<>(150, false);
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
+		// warnings are verified after the checks
+		switch (verifierName) {
+		case "Reachability":
+			conf.warningVerifier = new ReachabilityVerifier<>();
+			break;
+		case "Combined":
+			// stopping at the first warning that is confirmed for each
+			// property
+			conf.warningVerifier = new SVCOMPVerifier<>();
+			break;
+		default:
+			throw new ParseException("Invalid verifier name: " + verifierName);
+		}
 		switch (checkerName) {
 		case "Assert":
 			// the properties of the SV-COMP benchmarks

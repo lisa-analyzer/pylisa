@@ -1,24 +1,39 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/tuple-builtin/tuple-builtin.py':20:4] on 'untyped py-testcases/tuple-builtin/tuple-builtin::$main()': [EXPRESSION] LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/tuple-builtin/tuple-builtin.py':20:4"
+    "location" : "'py-testcases/tuple-builtin/tuple-builtin.py':20:4",
+    "cfg" : "untyped py-testcases/tuple-builtin/tuple-builtin::$main()",
+    "text" : "f[0]",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/tuple-builtin/tuple-builtin.py':20:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/tuple-builtin/tuple-builtin.py':23:4] on 'untyped py-testcases/tuple-builtin/tuple-builtin::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/tuple-builtin/tuple-builtin.py':23:4"
+    "location" : "'py-testcases/tuple-builtin/tuple-builtin.py':23:4",
+    "cfg" : "untyped py-testcases/tuple-builtin/tuple-builtin::$main()",
+    "text" : "tuple(5)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/tuple-builtin/tuple-builtin.py':23:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/tuple-builtin/tuple-builtin.py':26:4] on 'untyped py-testcases/tuple-builtin/tuple-builtin::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/tuple-builtin/tuple-builtin.py':26:4"
+    "location" : "'py-testcases/tuple-builtin/tuple-builtin.py':26:4",
+    "cfg" : "untyped py-testcases/tuple-builtin/tuple-builtin::$main()",
+    "text" : "check_type(list(1), tuple)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/tuple-builtin/tuple-builtin.py':26:4",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_tuple-builtin_tuple-builtin.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "5ms",
-    "end" : "2026-10-28T11:41:21.835+01:00",
+    "duration" : "40ms",
+    "end" : "2026-11-06T12:01:30.776+01:00",
     "expressions" : "51",
     "files" : "1",
     "globals" : "0",
     "members" : "193",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-28T11:41:21.830+01:00",
+    "start" : "2026-11-06T12:01:30.736+01:00",
     "statements" : "23",
     "units" : "44",
     "version" : "1.0",

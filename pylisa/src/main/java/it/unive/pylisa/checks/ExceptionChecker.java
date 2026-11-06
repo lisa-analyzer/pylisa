@@ -6,10 +6,9 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.OptimizedAnalyzedCFG;
 import it.unive.lisa.analysis.ProgramState;
-import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.analysis.reachability.ReachabilityStatus;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.checks.semantic.SemanticTool;
+import it.unive.lisa.checks.verification.Violation;
 import it.unive.lisa.conf.FixpointConfiguration;
 import it.unive.lisa.lattices.GenericSetLattice;
 import it.unive.lisa.program.CompilationUnit;
@@ -43,16 +42,22 @@ import java.util.Set;
  * raised on each statement that might raise one of the exceptions above (e.g.
  * the {@code assert} raising {@code AssertionError}, also inside a function
  * called by the main module): the violation is definite if every execution
- * raises that exception at that statement, possible otherwise. With
- * reachability (see {@link SemanticTool#getReachability}), as in JLiSA, the
- * violation at a statement of the main module is also definite if the statement
- * is definitely reachable, and every execution reaching it raises there only
- * that exception (the exceptions raised before reaching it are not considered).
- * An exception of an ancestor of the classes above (e.g. {@code Exception},
- * raised by code that is not known, such as the one run by {@code exec}) might
- * be any of their subclasses: it is a possible violation of every property. The
- * warnings start with the category of the violated property, and the possible
- * ones contain {@code might} or {@code possible} (see {@link #message}).
+ * raises that exception at that statement, possible otherwise. As in JLiSA, the
+ * warnings also report the violation they refer to (an
+ * {@link it.unive.lisa.checks.verification.ErrorViolation} of the exception):
+ * the verification of warnings performed after the checks, if a verifier has
+ * been selected (see
+ * {@link it.unive.lisa.conf.LiSAConfiguration#warningVerifier}), can then
+ * confirm or refute them (e.g., the violation at a statement is confirmed if
+ * the statement is definitely reachable, and every execution reaching it raises
+ * there only that exception). An exception of an ancestor of the classes above
+ * (e.g. {@code Exception}, raised by code that is not known, such as the one
+ * run by {@code exec}) might be any of their subclasses: it is a possible
+ * violation of every property, and its warnings report no violation to verify.
+ * The warnings start with the category of the violated property (see
+ * {@link #category(String)}), and the possible ones contain {@code might} or
+ * {@code possible} (see {@link #message}): their text does not reflect the
+ * outcome of their verification.
  */
 public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDomain<A>>
 		implements
@@ -140,18 +145,27 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 					// 1 + "a", raising it on all the other ones)
 					boolean definite = !terminates && only
 							&& (throwers.size() == 1 || alwaysRaises(tool, result, thrower));
-					// it is also definite if the statement is definitely
-					// reachable (see Reachability), and every execution
-					// reaching it raises the exception there (as in JLiSA)
-					definite |= matching.contains(thrower) && reachable(tool, result, thrower)
-							&& onlyRaises(tool, result, thrower, cls);
-					String message = message(exception, definite, !matching.contains(thrower),
+					boolean unknown = !matching.contains(thrower);
+					String message = message(exception, definite, unknown,
 							thrower == null ? graph.getDescriptor().getLocation()
 									: DerivedLocation.source(thrower.getLocation()));
 					if (thrower == null)
 						tool.warnOn(graph, message);
-					else
+					else if (unknown)
+						// raising an ancestor of the exception neither
+						// confirms nor refutes the violation
 						tool.warnOn(thrower, message);
+					else
+						// the verification of warnings (see
+						// LiSAConfiguration#warningVerifier) might confirm
+						// or refute the violation, e.g. if the statement is
+						// definitely reachable and every execution reaching
+						// it raises the exception there. The warning is on
+						// the node containing the statement: the post-states
+						// of sub-expressions (e.g. the call of x = f()) do not
+						// contain the errors they raise, and the verification
+						// would refute the violation
+						tool.warnOn(node(thrower), Violation.error(cls), message);
 				}
 			}
 		}
@@ -172,47 +186,11 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 		return after.getExecutionState().isBottom() && after.getHalt().isBottom();
 	}
 
-	// whether the statement of the cfg containing the given one is definitely
-	// reachable from the entry of the program (see
-	// SemanticTool#getReachability)
-	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean reachable(
-			SemanticTool<A, D> tool,
-			AnalyzedCFG<A> result,
-			Statement thrower) {
-		Statement root = root(result, thrower);
-		if (root == null)
-			return false;
-		try {
-			return tool.getReachability(result, root) == ReachabilityStatus.REACHABLE;
-		} catch (SemanticException e) {
-			throw new IllegalStateException("Unable to retrieve the reachability of " + root, e);
-		}
-	}
-
-	// whether every execution reaching the statement of the cfg containing the
-	// given one raises an exception there (see alwaysRaises), and all the
-	// exceptions raised there are of the given class
-	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean onlyRaises(
-			SemanticTool<A, D> tool,
-			AnalyzedCFG<A> result,
-			Statement thrower,
-			PyClassType cls) {
-		if (!alwaysRaises(tool, result, thrower))
-			return false;
-		Statement root = root(result, thrower);
-		AnalysisState<A> after = stateAfter(tool, result, root);
-		if (!after.getErrors().isBottom() && !after.getErrors().isTop() && after.getErrors().function != null)
-			for (Map.Entry<AnalysisState.Error, ProgramState<A>> error : after.getErrors())
-				if (!error.getValue().isBottom() && root(result, error.getKey().getThrower()) == root
-						&& !isInstance(error.getKey().getType(), cls))
-					return false;
-		if (!after.getSmashedErrors().isBottom() && !after.getSmashedErrors().isTop()
-				&& after.getSmashedErrors().function != null)
-			for (Map.Entry<Type, GenericSetLattice<Statement>> error : after.getSmashedErrors())
-				for (Statement st : error.getValue().elements())
-					if (root(result, st) == root && !isInstance(error.getKey(), cls))
-						return false;
-		return true;
+	// the node of the cfg containing the given statement
+	private static Statement node(
+			Statement st) {
+		Statement root = st instanceof Expression ? ((Expression) st).getRootStatement() : st;
+		return root != null && st.getCFG().containsNode(root) ? root : st;
 	}
 
 	// the state after the given statement: the results of an optimized
@@ -240,20 +218,11 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 		return root != null && result.getNodes().contains(root) ? root : null;
 	}
 
-	// whether the exceptions of the given type are instances of the given
-	// class
-	private static boolean isInstance(
-			Type type,
-			PyClassType cls) {
-		CompilationUnit unit = classOf(type);
-		return unit != null && unit.isInstanceOf(cls.getUnit());
-	}
-
 	/**
 	 * The warning raised for an exception of a property. It starts with the
-	 * category of the property ({@code ASSERTIONS}, {@code TYPING},
-	 * {@code ARITHMETIC} or {@code LOOKUP}), and a possible violation contains
-	 * {@code might} or {@code possible}, while a definite one contains neither.
+	 * category of the property (see {@link #category(String)}), and a possible
+	 * violation contains {@code might} or {@code possible}, while a definite
+	 * one contains neither.
 	 *
 	 * @param exception the exception
 	 * @param definite  whether the violation is definite
@@ -269,42 +238,62 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 			boolean definite,
 			boolean unknown,
 			CodeLocation location) {
-		String category, text;
+		String text;
 		switch (exception) {
 		case LibrarySpecificationProvider.ASSERTION_ERROR:
-			category = "ASSERTIONS";
 			text = definite ? "the assertion fails" : "the assertion might fail";
 			break;
 		case LibrarySpecificationProvider.TYPE_ERROR:
-			category = "TYPING";
 			text = definite ? "a value of the wrong type is used" : "a value of the wrong type might be used";
 			break;
 		case LibrarySpecificationProvider.ATTRIBUTE_ERROR:
-			category = "TYPING";
 			text = definite ? "an attribute that is not defined is accessed"
 					: "an attribute that might not be defined is accessed";
 			break;
 		case LibrarySpecificationProvider.ZERO_DIVISION_ERROR:
-			category = "ARITHMETIC";
 			text = definite ? "division by zero" : "possible division by zero";
 			break;
 		case LibrarySpecificationProvider.FLOATING_POINT_ERROR:
-			category = "ARITHMETIC";
 			text = definite ? "floating-point error" : "possible floating-point error";
 			break;
 		case LibrarySpecificationProvider.KEY_ERROR:
-			category = "LOOKUP";
 			text = definite ? "the key is not in the mapping" : "the key might not be in the mapping";
 			break;
 		default:
-			category = "LOOKUP";
 			text = definite ? "the index is out of range" : "the index might be out of range";
 			break;
 		}
 		if (unknown)
 			// never definite
 			text = "code that is not known might raise " + exception;
-		return category + ": " + text + " (uncaught " + exception + ") at " + location;
+		return category(exception) + ": " + text + " (uncaught " + exception + ") at " + location;
+	}
+
+	/**
+	 * The category of the property violated by an exception: {@code ASSERTIONS}
+	 * for {@code AssertionError}, {@code TYPING} for {@code TypeError} and
+	 * {@code AttributeError}, {@code ARITHMETIC} for {@code ZeroDivisionError}
+	 * and {@code FloatingPointError}, {@code LOOKUP} for {@code KeyError} and
+	 * {@code IndexError}.
+	 *
+	 * @param exception the exception, one of {@link #PROPERTY_EXCEPTIONS}
+	 *
+	 * @return the category
+	 */
+	public static String category(
+			String exception) {
+		switch (exception) {
+		case LibrarySpecificationProvider.ASSERTION_ERROR:
+			return "ASSERTIONS";
+		case LibrarySpecificationProvider.TYPE_ERROR:
+		case LibrarySpecificationProvider.ATTRIBUTE_ERROR:
+			return "TYPING";
+		case LibrarySpecificationProvider.ZERO_DIVISION_ERROR:
+		case LibrarySpecificationProvider.FLOATING_POINT_ERROR:
+			return "ARITHMETIC";
+		default:
+			return "LOOKUP";
+		}
 	}
 
 	// the class of the exceptions of the given type, or null if they are not

@@ -1,24 +1,39 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/dict-views/dict-views.py':35:8] on 'untyped py-testcases/dict-views/dict-views::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-views/dict-views.py':35:8"
+    "location" : "'py-testcases/dict-views/dict-views.py':35:4",
+    "cfg" : "untyped py-testcases/dict-views/dict-views::$main()",
+    "text" : "b = +(n[k], 1)",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-views/dict-views.py':35:8",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/dict-views/dict-views.py':38:8] on 'untyped py-testcases/dict-views/dict-views::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-views/dict-views.py':38:8"
+    "location" : "'py-testcases/dict-views/dict-views.py':38:4",
+    "cfg" : "untyped py-testcases/dict-views/dict-views::$main()",
+    "text" : "e = m2[k]",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-views/dict-views.py':38:8",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/dict-views/dict-views.py':50:8] on 'untyped py-testcases/dict-views/dict-views::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-views/dict-views.py':50:8"
+    "location" : "'py-testcases/dict-views/dict-views.py':50:4",
+    "cfg" : "untyped py-testcases/dict-views/dict-views::$main()",
+    "text" : "h = l[k]",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-views/dict-views.py':50:8",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_dict-views_dict-views.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "87ms",
-    "end" : "2026-10-31T00:22:40.235+01:00",
+    "duration" : "562ms",
+    "end" : "2026-11-06T12:00:38.543+01:00",
     "expressions" : "290",
     "files" : "1",
     "globals" : "0",
     "members" : "193",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-31T00:22:40.148+01:00",
+    "start" : "2026-11-06T12:00:37.981+01:00",
     "statements" : "83",
     "units" : "44",
     "version" : "1.0",

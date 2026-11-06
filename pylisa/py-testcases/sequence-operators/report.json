@@ -1,28 +1,53 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/sequence-operators/sequence-operators.py':11:8] on 'untyped py-testcases/sequence-operators/sequence-operators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':11:8"
+    "location" : "'py-testcases/sequence-operators/sequence-operators.py':11:4",
+    "cfg" : "untyped py-testcases/sequence-operators/sequence-operators::$main()",
+    "text" : "b = +(1, list(1))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':11:8",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sequence-operators/sequence-operators.py':14:8] on 'untyped py-testcases/sequence-operators/sequence-operators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':14:8"
+    "location" : "'py-testcases/sequence-operators/sequence-operators.py':14:4",
+    "cfg" : "untyped py-testcases/sequence-operators/sequence-operators::$main()",
+    "text" : "c = -((1,), (2,))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':14:8",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sequence-operators/sequence-operators.py':17:8] on 'untyped py-testcases/sequence-operators/sequence-operators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':17:8"
+    "location" : "'py-testcases/sequence-operators/sequence-operators.py':17:4",
+    "cfg" : "untyped py-testcases/sequence-operators/sequence-operators::$main()",
+    "text" : "d = -(list(1))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':17:8",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sequence-operators/sequence-operators.py':20:8] on 'untyped py-testcases/sequence-operators/sequence-operators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':20:8"
+    "location" : "'py-testcases/sequence-operators/sequence-operators.py':20:4",
+    "cfg" : "untyped py-testcases/sequence-operators/sequence-operators::$main()",
+    "text" : "e = |(null, (1,))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':20:8",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sequence-operators/sequence-operators.py':8:8] on 'untyped py-testcases/sequence-operators/sequence-operators::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':8:8"
+    "location" : "'py-testcases/sequence-operators/sequence-operators.py':8:4",
+    "cfg" : "untyped py-testcases/sequence-operators/sequence-operators::$main()",
+    "text" : "a = +(list(1), (2,))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':8:8",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_sequence-operators_sequence-operators.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "5ms",
-    "end" : "2026-10-28T11:41:16.969+01:00",
+    "duration" : "14ms",
+    "end" : "2026-11-06T12:01:20.958+01:00",
     "expressions" : "52",
     "files" : "1",
     "globals" : "0",
     "members" : "193",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-28T11:41:16.964+01:00",
+    "start" : "2026-11-06T12:01:20.944+01:00",
     "statements" : "19",
     "units" : "44",
     "version" : "1.0",

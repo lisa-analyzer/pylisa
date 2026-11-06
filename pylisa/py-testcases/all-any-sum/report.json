@@ -1,44 +1,109 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':21:0] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/all-any-sum/all-any-sum.py':21:0"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':21:0",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "assert ==(all(list(e, true)), !=(e, 0))",
+    "targetKind" : "STATEMENT",
+    "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/all-any-sum/all-any-sum.py':21:0",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':30:0] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/all-any-sum/all-any-sum.py':30:0"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':30:0",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "assert all([==(i$comp@30:10, 1) for i$comp@30:10 in extra])",
+    "targetKind" : "STATEMENT",
+    "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/all-any-sum/all-any-sum.py':30:0",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':34:4] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/all-any-sum/all-any-sum.py':34:4"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':34:4",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "sum(list(1, \"a\"))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/all-any-sum/all-any-sum.py':34:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':37:4] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/all-any-sum/all-any-sum.py':37:4"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':37:4",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "sum(strs)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/all-any-sum/all-any-sum.py':37:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':39:4] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/all-any-sum/all-any-sum.py':39:4"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':39:4",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "all(3)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/all-any-sum/all-any-sum.py':39:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':43:4] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/all-any-sum/all-any-sum.py':43:4"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':43:4",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "sum(list(__init__()))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/all-any-sum/all-any-sum.py':43:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':52:4] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise FloatingPointError (uncaught FloatingPointError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "sum(list(__init__()))",
+    "targetKind" : "EXPRESSION",
+    "message" : "ARITHMETIC: code that is not known might raise FloatingPointError (uncaught FloatingPointError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':52:4] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [EXPRESSION] ARITHMETIC: code that is not known might raise ZeroDivisionError (uncaught ZeroDivisionError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "sum(list(__init__()))",
+    "targetKind" : "EXPRESSION",
+    "message" : "ARITHMETIC: code that is not known might raise ZeroDivisionError (uncaught ZeroDivisionError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':52:4] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [EXPRESSION] ASSERTIONS: code that is not known might raise AssertionError (uncaught AssertionError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "sum(list(__init__()))",
+    "targetKind" : "EXPRESSION",
+    "message" : "ASSERTIONS: code that is not known might raise AssertionError (uncaught AssertionError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':52:4] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [EXPRESSION] LOOKUP: code that is not known might raise IndexError (uncaught IndexError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "sum(list(__init__()))",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: code that is not known might raise IndexError (uncaught IndexError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':52:4] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [EXPRESSION] LOOKUP: code that is not known might raise KeyError (uncaught KeyError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "sum(list(__init__()))",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: code that is not known might raise KeyError (uncaught KeyError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':52:4] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [EXPRESSION] TYPING: code that is not known might raise AttributeError (uncaught AttributeError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "sum(list(__init__()))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: code that is not known might raise AttributeError (uncaught AttributeError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/all-any-sum/all-any-sum.py':52:4] on 'untyped py-testcases/all-any-sum/all-any-sum::$main()': [EXPRESSION] TYPING: code that is not known might raise TypeError (uncaught TypeError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4"
+    "location" : "'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "cfg" : "untyped py-testcases/all-any-sum/all-any-sum::$main()",
+    "text" : "sum(list(__init__()))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: code that is not known might raise TypeError (uncaught TypeError) at 'py-testcases/all-any-sum/all-any-sum.py':52:4",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_all-any-sum_all-any-sum.$main().graph.json" ],
   "info" : {
     "cfgs" : "5",
-    "duration" : "202ms",
-    "end" : "2026-10-31T14:28:27.329+01:00",
+    "duration" : "1s 306ms",
+    "end" : "2026-11-06T11:59:40.641+01:00",
     "expressions" : "133",
     "files" : "1",
     "globals" : "0",
     "members" : "196",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-31T14:28:27.127+01:00",
+    "start" : "2026-11-06T11:59:39.335+01:00",
     "statements" : "39",
     "units" : "46",
     "version" : "1.0",

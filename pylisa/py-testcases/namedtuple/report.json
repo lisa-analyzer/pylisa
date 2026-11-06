@@ -1,26 +1,46 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/namedtuple/namedtuple.py':22:4] on 'untyped py-testcases/namedtuple/namedtuple::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/namedtuple/namedtuple.py':22:4"
+    "location" : "'py-testcases/namedtuple/namedtuple.py':22:4",
+    "cfg" : "untyped py-testcases/namedtuple/namedtuple::$main()",
+    "text" : "Point(1)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/namedtuple/namedtuple.py':22:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/namedtuple/namedtuple.py':25:4] on 'untyped py-testcases/namedtuple/namedtuple::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/namedtuple/namedtuple.py':25:4"
+    "location" : "'py-testcases/namedtuple/namedtuple.py':25:4",
+    "cfg" : "untyped py-testcases/namedtuple/namedtuple::$main()",
+    "text" : "Point(1, 2, z=(3))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/namedtuple/namedtuple.py':25:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/namedtuple/namedtuple.py':28:4] on 'untyped py-testcases/namedtuple/namedtuple::$main()': [EXPRESSION] LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/namedtuple/namedtuple.py':28:4"
+    "location" : "'py-testcases/namedtuple/namedtuple.py':28:4",
+    "cfg" : "untyped py-testcases/namedtuple/namedtuple::$main()",
+    "text" : "p[2]",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/namedtuple/namedtuple.py':28:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/namedtuple/namedtuple.py':31:4] on 'untyped py-testcases/namedtuple/namedtuple::$main()': [EXPRESSION] TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/namedtuple/namedtuple.py':31:4"
+    "location" : "'py-testcases/namedtuple/namedtuple.py':31:4",
+    "cfg" : "untyped py-testcases/namedtuple/namedtuple::$main()",
+    "text" : "p.x = 2",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/namedtuple/namedtuple.py':31:4",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_namedtuple_namedtuple.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "6ms",
-    "end" : "2026-10-28T11:41:09.827+01:00",
+    "duration" : "17ms",
+    "end" : "2026-11-06T12:01:07.052+01:00",
     "expressions" : "62",
     "files" : "1",
     "globals" : "0",
     "members" : "194",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-28T11:41:09.821+01:00",
+    "start" : "2026-11-06T12:01:07.035+01:00",
     "statements" : "27",
     "units" : "45",
     "version" : "1.0",

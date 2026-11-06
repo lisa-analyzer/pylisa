@@ -1,22 +1,32 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/star-args/star-args.py':12:0] on 'untyped py-testcases/star-args/star-args::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/star-args/star-args.py':12:0"
+    "location" : "'py-testcases/star-args/star-args.py':12:0",
+    "cfg" : "untyped py-testcases/star-args/star-args::$main()",
+    "text" : "assert ==(total(1, *(list(2, 3))), 6)",
+    "targetKind" : "STATEMENT",
+    "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/star-args/star-args.py':12:0",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/star-args/star-args.py':16:4] on 'untyped py-testcases/star-args/star-args::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/star-args/star-args.py':16:4"
+    "location" : "'py-testcases/star-args/star-args.py':16:0",
+    "cfg" : "untyped py-testcases/star-args/star-args::$main()",
+    "text" : "r = add(*(list(1, 2, 3, 4)))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/star-args/star-args.py':16:4",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_star-args_star-args.$main().graph.json", "untyped_py-testcases_star-args_star-args.add(untyped_a,_untyped_b,_untyped_c)_4f994e27c4034b4067b40c5440153e5f.graph.json", "untyped_py-testcases_star-args_star-args.add(untyped_a,_untyped_b,_untyped_c)_667db08ba0938eed720a5b4050de86da.graph.json", "untyped_py-testcases_star-args_star-args.add(untyped_a,_untyped_b,_untyped_c)_dbd81a4fbfa9be416bffc207282bf8e1.graph.json", "untyped_py-testcases_star-args_star-args.total(untyped_a,_untyped_rest)_3b5b68d0f0a1a3f04f8012618d0dc903.graph.json", "untyped_py-testcases_star-args_star-args.total(untyped_a,_untyped_rest)_539264e44ba9bbd88f3a3e7554d707ef.graph.json" ],
   "info" : {
     "cfgs" : "4",
-    "duration" : "8ms",
-    "end" : "2026-10-31T00:23:00.040+01:00",
+    "duration" : "34ms",
+    "end" : "2026-11-06T12:01:24.697+01:00",
     "expressions" : "72",
     "files" : "6",
     "globals" : "0",
     "members" : "187",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-31T00:23:00.032+01:00",
+    "start" : "2026-11-06T12:01:24.663+01:00",
     "statements" : "21",
     "units" : "43",
     "version" : "1.0",

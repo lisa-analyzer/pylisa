@@ -1,24 +1,39 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/enumerate/enumerate.py':21:12] on 'untyped py-testcases/enumerate/enumerate::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/enumerate/enumerate.py':21:12"
+    "location" : "'py-testcases/enumerate/enumerate.py':21:8",
+    "cfg" : "untyped py-testcases/enumerate/enumerate::$main()",
+    "text" : "y = +(x, 1)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/enumerate/enumerate.py':21:12",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/enumerate/enumerate.py':24:10] on 'untyped py-testcases/enumerate/enumerate::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/enumerate/enumerate.py':24:10"
+    "location" : "'py-testcases/enumerate/enumerate.py':24:4",
+    "cfg" : "untyped py-testcases/enumerate/enumerate::$main()",
+    "text" : "bad = enumerate(5)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/enumerate/enumerate.py':24:10",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/enumerate/enumerate.py':27:10] on 'untyped py-testcases/enumerate/enumerate::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/enumerate/enumerate.py':27:10"
+    "location" : "'py-testcases/enumerate/enumerate.py':27:4",
+    "cfg" : "untyped py-testcases/enumerate/enumerate::$main()",
+    "text" : "bad = enumerate(names, \"x\")",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/enumerate/enumerate.py':27:10",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_enumerate_enumerate.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "21ms",
-    "end" : "2026-10-31T00:22:41.257+01:00",
+    "duration" : "126ms",
+    "end" : "2026-11-06T12:00:43.452+01:00",
     "expressions" : "87",
     "files" : "1",
     "globals" : "0",
     "members" : "193",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-31T00:22:41.236+01:00",
+    "start" : "2026-11-06T12:00:43.326+01:00",
     "statements" : "35",
     "units" : "44",
     "version" : "1.0",

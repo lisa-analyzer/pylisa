@@ -1,24 +1,39 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/reachability/after-structures/main.py':19:4] on 'untyped py-testcases/reachability/after-structures/main::$main()': [STATEMENT] ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/reachability/after-structures/main.py':19:4"
+    "location" : "'py-testcases/reachability/after-structures/main.py':19:4",
+    "cfg" : "untyped py-testcases/reachability/after-structures/main::$main()",
+    "text" : "assert ==(z, 3)",
+    "targetKind" : "STATEMENT",
+    "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/reachability/after-structures/main.py':19:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/reachability/after-structures/main.py':22:4] on 'untyped py-testcases/reachability/after-structures/main::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reachability/after-structures/main.py':22:4"
+    "location" : "'py-testcases/reachability/after-structures/main.py':22:0",
+    "cfg" : "untyped py-testcases/reachability/after-structures/main::$main()",
+    "text" : "w = |(dict(\"x\", 1), 1)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reachability/after-structures/main.py':22:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/reachability/after-structures/main.py':7:8] on 'untyped py-testcases/reachability/after-structures/main::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reachability/after-structures/main.py':7:8"
+    "location" : "'py-testcases/reachability/after-structures/main.py':7:4",
+    "cfg" : "untyped py-testcases/reachability/after-structures/main::$main()",
+    "text" : "y = +(1, \"a\")",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reachability/after-structures/main.py':7:8",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_reachability_after-structures_main.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "4ms",
-    "end" : "2026-10-31T14:28:53.242+01:00",
+    "duration" : "18ms",
+    "end" : "2026-11-06T12:01:17.010+01:00",
     "expressions" : "46",
     "files" : "1",
     "globals" : "0",
     "members" : "193",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-31T14:28:53.238+01:00",
+    "start" : "2026-11-06T12:01:16.992+01:00",
     "statements" : "22",
     "units" : "44",
     "version" : "1.0",

@@ -1,26 +1,46 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/range/range.py':17:4] on 'untyped py-testcases/range/range::$main()': [EXPRESSION] LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/range/range.py':17:4"
+    "location" : "'py-testcases/range/range.py':17:0",
+    "cfg" : "untyped py-testcases/range/range::$main()",
+    "text" : "e = list(range(n))[0]",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/range/range.py':17:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/range/range.py':21:4] on 'untyped py-testcases/range/range::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/range/range.py':21:4"
+    "location" : "'py-testcases/range/range.py':21:4",
+    "cfg" : "untyped py-testcases/range/range::$main()",
+    "text" : "range(\"a\")",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/range/range.py':21:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/range/range.py':23:4] on 'untyped py-testcases/range/range::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/range/range.py':23:4"
+    "location" : "'py-testcases/range/range.py':23:4",
+    "cfg" : "untyped py-testcases/range/range::$main()",
+    "text" : "range(1, 2.5)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/range/range.py':23:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/range/range.py':25:4] on 'untyped py-testcases/range/range::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/range/range.py':25:4"
+    "location" : "'py-testcases/range/range.py':25:0",
+    "cfg" : "untyped py-testcases/range/range::$main()",
+    "text" : "f = range(s)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/range/range.py':25:4",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_range_range.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "10ms",
-    "end" : "2026-10-31T14:28:52.698+01:00",
+    "duration" : "49ms",
+    "end" : "2026-11-06T12:01:16.249+01:00",
     "expressions" : "78",
     "files" : "1",
     "globals" : "0",
     "members" : "193",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-31T14:28:52.688+01:00",
+    "start" : "2026-11-06T12:01:16.200+01:00",
     "statements" : "27",
     "units" : "44",
     "version" : "1.0",

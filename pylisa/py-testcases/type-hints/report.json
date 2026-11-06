@@ -1,26 +1,46 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/type-hints/type-hints.py':30:4] on 'untyped py-testcases/type-hints/type-hints::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':30:4"
+    "location" : "'py-testcases/type-hints/type-hints.py':30:4",
+    "cfg" : "untyped py-testcases/type-hints/type-hints::$main()",
+    "text" : "check_type(1, bool)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':30:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/type-hints/type-hints.py':33:4] on 'untyped py-testcases/type-hints/type-hints::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':33:4"
+    "location" : "'py-testcases/type-hints/type-hints.py':33:4",
+    "cfg" : "untyped py-testcases/type-hints/type-hints::$main()",
+    "text" : "check_type(len, type)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':33:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/type-hints/type-hints.py':36:4] on 'untyped py-testcases/type-hints/type-hints::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':36:4"
+    "location" : "'py-testcases/type-hints/type-hints.py':36:4",
+    "cfg" : "untyped py-testcases/type-hints/type-hints::$main()",
+    "text" : "check_type(__init__(), type)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':36:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/type-hints/type-hints.py':39:4] on 'untyped py-testcases/type-hints/type-hints::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':39:4"
+    "location" : "'py-testcases/type-hints/type-hints.py':39:4",
+    "cfg" : "untyped py-testcases/type-hints/type-hints::$main()",
+    "text" : "check_type(1, type(null))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':39:4",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_type-hints_type-hints.$main().graph.json" ],
   "info" : {
     "cfgs" : "4",
-    "duration" : "5ms",
-    "end" : "2026-10-28T11:41:22.861+01:00",
+    "duration" : "44ms",
+    "end" : "2026-11-06T12:01:34.490+01:00",
     "expressions" : "61",
     "files" : "1",
     "globals" : "0",
     "members" : "195",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-28T11:41:22.856+01:00",
+    "start" : "2026-11-06T12:01:34.446+01:00",
     "statements" : "30",
     "units" : "46",
     "version" : "1.0",

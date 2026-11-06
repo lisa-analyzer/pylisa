@@ -1,24 +1,39 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/split-join/split-join.py':14:10] on 'untyped py-testcases/split-join/split-join::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/split-join/split-join.py':14:10"
+    "location" : "'py-testcases/split-join/split-join.py':14:4",
+    "cfg" : "untyped py-testcases/split-join/split-join::$main()",
+    "text" : "bad = split(s, 1)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/split-join/split-join.py':14:10",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/split-join/split-join.py':25:10] on 'untyped py-testcases/split-join/split-join::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/split-join/split-join.py':25:10"
+    "location" : "'py-testcases/split-join/split-join.py':25:4",
+    "cfg" : "untyped py-testcases/split-join/split-join::$main()",
+    "text" : "bad = join(\"\", list(1, 2))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/split-join/split-join.py':25:10",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/split-join/split-join.py':28:10] on 'untyped py-testcases/split-join/split-join::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/split-join/split-join.py':28:10"
+    "location" : "'py-testcases/split-join/split-join.py':28:4",
+    "cfg" : "untyped py-testcases/split-join/split-join::$main()",
+    "text" : "bad = join(\"\", 5)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/split-join/split-join.py':28:10",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_split-join_split-join.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "8ms",
-    "end" : "2026-10-31T00:22:59.745+01:00",
+    "duration" : "31ms",
+    "end" : "2026-11-06T12:01:24.122+01:00",
     "expressions" : "69",
     "files" : "1",
     "globals" : "0",
     "members" : "193",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-31T00:22:59.737+01:00",
+    "start" : "2026-11-06T12:01:24.091+01:00",
     "statements" : "29",
     "units" : "44",
     "version" : "1.0",

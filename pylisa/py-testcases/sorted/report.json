@@ -1,22 +1,32 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/sorted/sorted.py':14:10] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted/sorted.py':14:10"
+    "location" : "'py-testcases/sorted/sorted.py':14:4",
+    "cfg" : "untyped py-testcases/sorted/sorted::$main()",
+    "text" : "bad = sorted(list(1, \"a\"))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted/sorted.py':14:10",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/sorted/sorted.py':17:10] on 'untyped py-testcases/sorted/sorted::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted/sorted.py':17:10"
+    "location" : "'py-testcases/sorted/sorted.py':17:4",
+    "cfg" : "untyped py-testcases/sorted/sorted::$main()",
+    "text" : "bad = sorted(5)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted/sorted.py':17:10",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_sorted_sorted.$lambda@20_23(untyped_v)_4e4b3a8d0c8ee76d77f017fda68d5a20.graph.json", "untyped_py-testcases_sorted_sorted.$main().graph.json" ],
   "info" : {
     "cfgs" : "3",
-    "duration" : "10ms",
-    "end" : "2026-10-31T00:22:59.456+01:00",
+    "duration" : "34ms",
+    "end" : "2026-11-06T12:01:23.751+01:00",
     "expressions" : "65",
     "files" : "2",
     "globals" : "0",
     "members" : "194",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-31T00:22:59.446+01:00",
+    "start" : "2026-11-06T12:01:23.717+01:00",
     "statements" : "27",
     "units" : "44",
     "version" : "1.0",

@@ -1,26 +1,46 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/reduce/reduce.py':27:4] on 'untyped py-testcases/reduce/reduce::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':27:4"
+    "location" : "'py-testcases/reduce/reduce.py':27:4",
+    "cfg" : "untyped py-testcases/reduce/reduce::$main()",
+    "text" : "reduce(mul, xs)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':27:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/reduce/reduce.py':30:4] on 'untyped py-testcases/reduce/reduce::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':30:4"
+    "location" : "'py-testcases/reduce/reduce.py':30:4",
+    "cfg" : "untyped py-testcases/reduce/reduce::$main()",
+    "text" : "reduce(mul, list())",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':30:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/reduce/reduce.py':33:4] on 'untyped py-testcases/reduce/reduce::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':33:4"
+    "location" : "'py-testcases/reduce/reduce.py':33:4",
+    "cfg" : "untyped py-testcases/reduce/reduce::$main()",
+    "text" : "reduce(5, list(1, 2))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':33:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/reduce/reduce.py':36:4#reduce] on 'untyped py-testcases/reduce/reduce::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':36:4"
+    "location" : "'py-testcases/reduce/reduce.py':36:4",
+    "cfg" : "untyped py-testcases/reduce/reduce::$main()",
+    "text" : "reduce(mul, list(1, \"a\"), 1)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':36:4",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_reduce_reduce.$lambda@17_11(untyped_acc,_untyped_s)_ea13129c3b201eebdfe0330e01aa0d57.graph.json", "untyped_py-testcases_reduce_reduce.$main().graph.json", "untyped_py-testcases_reduce_reduce.mul(untyped_x,_untyped_y)_16e4d41d8c9cb04bf4e9060882d2d6ee.graph.json", "untyped_py-testcases_reduce_reduce.mul(untyped_x,_untyped_y)_452018128d0a2ba880b3dc043b378235.graph.json", "untyped_py-testcases_reduce_reduce.mul(untyped_x,_untyped_y)_55e6a61246e21e5221b21bafcdf3b549.graph.json", "untyped_py-testcases_reduce_reduce.mul(untyped_x,_untyped_y)_860356e2320fe964d1b05d71b75c3ab2.graph.json", "untyped_py-testcases_reduce_reduce.mul(untyped_x,_untyped_y)_d7509e757d61aa7a3c4fedeeb2920bc7.graph.json" ],
   "info" : {
     "cfgs" : "4",
-    "duration" : "11ms",
-    "end" : "2026-10-31T14:28:53.731+01:00",
+    "duration" : "67ms",
+    "end" : "2026-11-06T12:01:17.708+01:00",
     "expressions" : "68",
     "files" : "7",
     "globals" : "0",
     "members" : "196",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-31T14:28:53.720+01:00",
+    "start" : "2026-11-06T12:01:17.641+01:00",
     "statements" : "27",
     "units" : "45",
     "version" : "1.0",

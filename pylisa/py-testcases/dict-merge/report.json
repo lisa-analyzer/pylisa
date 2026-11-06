@@ -1,24 +1,39 @@
 {
   "warnings" : [ {
-    "message" : "['py-testcases/dict-merge/dict-merge.py':18:0] on 'untyped py-testcases/dict-merge/dict-merge::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/dict-merge/dict-merge.py':18:0"
+    "location" : "'py-testcases/dict-merge/dict-merge.py':18:0",
+    "cfg" : "untyped py-testcases/dict-merge/dict-merge::$main()",
+    "text" : "e = |=(e, list(tuple(\"y\", 2)))",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/dict-merge/dict-merge.py':18:0",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/dict-merge/dict-merge.py':24:4] on 'untyped py-testcases/dict-merge/dict-merge::$main()': [EXPRESSION] LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-merge/dict-merge.py':24:4"
+    "location" : "'py-testcases/dict-merge/dict-merge.py':24:0",
+    "cfg" : "untyped py-testcases/dict-merge/dict-merge::$main()",
+    "text" : "w = n[\"a\"]",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-merge/dict-merge.py':24:4",
+    "definite" : false
   }, {
-    "message" : "['py-testcases/dict-merge/dict-merge.py':27:6] on 'untyped py-testcases/dict-merge/dict-merge::$main()': [EXPRESSION] TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/dict-merge/dict-merge.py':27:6"
+    "location" : "'py-testcases/dict-merge/dict-merge.py':27:0",
+    "cfg" : "untyped py-testcases/dict-merge/dict-merge::$main()",
+    "text" : "bad = |(dict(\"x\", 1), 1)",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/dict-merge/dict-merge.py':27:6",
+    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_dict-merge_dict-merge.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "7ms",
-    "end" : "2026-10-28T11:40:58.687+01:00",
+    "duration" : "43ms",
+    "end" : "2026-11-06T12:00:35.678+01:00",
     "expressions" : "97",
     "files" : "1",
     "globals" : "0",
     "members" : "193",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-10-28T11:40:58.680+01:00",
+    "start" : "2026-11-06T12:00:35.635+01:00",
     "statements" : "23",
     "units" : "44",
     "version" : "1.0",
