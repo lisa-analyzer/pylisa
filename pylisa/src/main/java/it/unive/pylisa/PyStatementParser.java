@@ -235,10 +235,12 @@ import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibraryConstants;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.svverifier.NondetInt;
 import it.unive.pylisa.scoping.NameKind;
 import it.unive.pylisa.scoping.PyScope;
 import it.unive.pylisa.scoping.Symtable;
 import it.unive.pylisa.symbolic.PyBytes;
+import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -246,6 +248,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -534,13 +537,10 @@ public class PyStatementParser
 				read = readAttribute(readBase, name, new DerivedLocation(loc, "read"));
 			} else {
 				List<Expression> indexes = extractExpressionsFromSlices(access.slices());
-				if (indexes.size() != 1)
-					throw new UnsupportedStatementException(
-							"augmented assignments to subscripts with many indexes are not supported");
 				String index = "$augindex@" + tag;
 				prelude.add(new PyAssign(currentCFG, new DerivedLocation(loc, "index"),
 						new VariableRef(currentCFG, new DerivedLocation(loc, "index-target"), index),
-						indexes.get(0)));
+						index(new DerivedLocation(loc, "index-tuple"), indexes)));
 				write = new PySingleArrayAccess(currentCFG, new DerivedLocation(loc, "write"), Untyped.INSTANCE,
 						writeBase, new VariableRef(currentCFG, new DerivedLocation(loc, "index-write"), index));
 				read = new PySingleArrayAccess(currentCFG, new DerivedLocation(loc, "read"), Untyped.INSTANCE,
@@ -672,15 +672,7 @@ public class PyStatementParser
 		if (ctx.DOT() != null)
 			return attribute(base, ctx.name().getText(), getLocation(filePath, ctx));
 
-		List<Expression> indexes = extractExpressionsFromSlices(ctx.slices());
-		if (indexes.size() == 1)
-			return new PySingleArrayAccess(currentCFG, getLocation(filePath, ctx), Untyped.INSTANCE, base,
-					indexes.get(0));
-		else if (indexes.size() == 2)
-			return new PyDoubleArrayAccess(currentCFG, getLocation(filePath, ctx), Untyped.INSTANCE, base,
-					indexes.get(0),
-					indexes.get(1));
-		throw new UnsupportedStatementException("Only array accesses with up to 2 indexes are supported");
+		return subscript(getLocation(filePath, ctx), base, extractExpressionsFromSlices(ctx.slices()));
 	}
 
 	private Expression visitStarAtom(
@@ -710,14 +702,7 @@ public class PyStatementParser
 		if (ctx.DOT() != null)
 			return readAttribute(base, ctx.name().getText(), getLocation(filePath, ctx));
 		else if (ctx.LSQB() != null) {
-			List<Expression> indexes = extractExpressionsFromSlices(ctx.slices());
-			if (indexes.size() == 1)
-				return new PySingleArrayAccess(currentCFG, getLocation(filePath, ctx), Untyped.INSTANCE, base,
-						indexes.get(0));
-			else if (indexes.size() == 2)
-				return new PyDoubleArrayAccess(currentCFG, getLocation(filePath, ctx), Untyped.INSTANCE, base,
-						indexes.get(0), indexes.get(1));
-			throw new UnsupportedStatementException("Only array accesses with up to 2 indexes are supported");
+			return subscript(getLocation(filePath, ctx), base, extractExpressionsFromSlices(ctx.slices()));
 		} else
 			throw new UnsupportedStatementException(
 					"Call/generator expressions are not supported as assignment targets");
@@ -1410,6 +1395,27 @@ public class PyStatementParser
 		throw new UnsupportedStatementException("sequence, mapping and class patterns are not supported");
 	}
 
+	// base[i]; with many indexes, base[i, j] subscripts base with the tuple
+	// (i, j), but for the dataframes of pandas (see PyDoubleArrayAccess)
+	private Expression subscript(
+			CodeLocation loc,
+			Expression base,
+			List<Expression> indexes) {
+		if (indexes.size() == 2 && LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS))
+			return new PyDoubleArrayAccess(currentCFG, loc, Untyped.INSTANCE, base, indexes.get(0), indexes.get(1));
+		return new PySingleArrayAccess(currentCFG, loc, Untyped.INSTANCE, base,
+				index(new DerivedLocation(loc, "index"), indexes));
+	}
+
+	// the index of a subscript: the tuple of its indexes, if many
+	private Expression index(
+			CodeLocation loc,
+			List<Expression> indexes) {
+		if (indexes.size() == 1)
+			return indexes.get(0);
+		return new TupleCreation(currentCFG, loc, indexes.toArray(Expression[]::new));
+	}
+
 	// parses the body of a loop
 	private ParsedBlock visitLoopBody(
 			BlockContext block) {
@@ -1419,6 +1425,26 @@ public class PyStatementParser
 		} finally {
 			loops--;
 		}
+	}
+
+	// connects the breaks and continues of the loop made of the given block;
+	// the ones of the enclosing loops, that precede this loop in their
+	// bodies, are left to them
+	private void endLoop(
+			NodeList<CFG, Statement, Edge> block,
+			Statement condition,
+			Statement breakTarget,
+			Statement continueTarget) {
+		List<Pair<Statement, String>> enclosing = new LinkedList<>();
+		for (Iterator<Pair<Statement, String>> it = control.getModifiers().iterator(); it.hasNext();) {
+			Pair<Statement, String> modifier = it.next();
+			if (!block.containsNode(modifier.getLeft())) {
+				enclosing.add(modifier);
+				it.remove();
+			}
+		}
+		control.endControlFlowOf(block, condition, breakTarget, continueTarget, null);
+		control.getModifiers().addAll(enclosing);
 	}
 
 	@Override
@@ -1452,7 +1478,7 @@ public class PyStatementParser
 			firstFollower = whileExitNode;
 		}
 
-		control.endControlFlowOf(block, condition, whileExitNode, condition, null);
+		endLoop(block, condition, whileExitNode, condition);
 
 		currentCFG.getDescriptor().addControlFlowStructure(new Loop(
 				currentCFG.getNodeList(),
@@ -1556,7 +1582,7 @@ public class PyStatementParser
 		nodes.add(element_assignment);
 		nodes.add(counter_increment);
 
-		control.endControlFlowOf(block, condition, exit, counter_increment, null);
+		endLoop(block, condition, exit, counter_increment);
 		currentCFG.getDescriptor().addControlFlowStructure(new Loop(
 				currentCFG.getNodeList(),
 				condition,
@@ -1624,7 +1650,7 @@ public class PyStatementParser
 			CatchBlock catchBlock = new CatchBlock(variable,
 					new ProtectedBlock(handler.getBegin(), handler.getEnd(), handler.getBody().getNodes()), types);
 			catches.add(catchBlock);
-			if (body.canBeContinued())
+			if (reachesEnd(body))
 				block.addEdge(new ErrorEdge(body.getEnd(), handler.getBegin(), variable, tryBlock, types));
 			for (Statement st : body.getBody().getNodes())
 				if (st.stopsExecution())
@@ -1652,6 +1678,14 @@ public class PyStatementParser
 		currentCFG.getDescriptor().addProtectionBlock(
 				new ProtectionBlock(tryBlock, catches, elseBlock, finallyBlock, closing));
 		return new ParsedBlock(body.getBegin(), block, closing);
+	}
+
+	// whether the execution of the block can reach its end: not if the end is
+	// the exit of an if statement whose branches all leave the block
+	private static boolean reachesEnd(
+			ParsedBlock block) {
+		return block.canBeContinued()
+				&& (block.getEnd() == block.getBegin() || !block.getBody().getIngoingEdges(block.getEnd()).isEmpty());
 	}
 
 	// the classes of the exceptions an except block catches: a class, or a
@@ -2391,24 +2425,7 @@ public class PyStatementParser
 				previous_access = access;
 				last_name = null;
 				attribute = false;
-				List<Expression> indexes = extractExpressionsFromSlices(frame.slices());
-				if (indexes.size() == 1)
-					access = new PySingleArrayAccess(
-							currentCFG,
-							getLocation(filePath, frame),
-							Untyped.INSTANCE,
-							access,
-							indexes.get(0));
-				else if (indexes.size() == 2)
-					access = new PyDoubleArrayAccess(
-							currentCFG,
-							getLocation(filePath, frame),
-							Untyped.INSTANCE,
-							access,
-							indexes.get(0),
-							indexes.get(1));
-				else
-					throw new UnsupportedStatementException("subscripts with more than two indexes are not supported");
+				access = subscript(getLocation(filePath, frame), access, extractExpressionsFromSlices(frame.slices()));
 			} else
 				throw new UnsupportedStatementException();
 		}
@@ -2981,14 +2998,19 @@ public class PyStatementParser
 			return new Float32Literal(currentCFG, getLocation(filePath, ctx), Float.parseFloat(text));
 
 		// integer
+		BigInteger value;
 		if (text.startsWith("0x"))
-			return new Int32Literal(currentCFG, getLocation(filePath, ctx),
-					Integer.parseInt(text.substring(2), 16));
-		if (text.startsWith("0o"))
-			return new Int32Literal(currentCFG, getLocation(filePath, ctx), Integer.parseInt(text.substring(2), 8));
-		if (text.startsWith("0b"))
-			return new Int32Literal(currentCFG, getLocation(filePath, ctx), Integer.parseInt(text.substring(2), 2));
-		return new Int32Literal(currentCFG, getLocation(filePath, ctx), Integer.parseInt(text));
+			value = new BigInteger(text.substring(2), 16);
+		else if (text.startsWith("0o"))
+			value = new BigInteger(text.substring(2), 8);
+		else if (text.startsWith("0b"))
+			value = new BigInteger(text.substring(2), 2);
+		else
+			value = new BigInteger(text);
+		if (value.bitLength() < Integer.SIZE)
+			return new Int32Literal(currentCFG, getLocation(filePath, ctx), value.intValue());
+		// the integers that do not fit in 32 bits are abstracted to any integer
+		return NondetInt.build(currentCFG, getLocation(filePath, ctx), new Expression[0]);
 	}
 
 	// the literal of the (adjacent) strings, at the location of ctx
