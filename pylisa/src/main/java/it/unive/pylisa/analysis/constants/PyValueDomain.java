@@ -38,11 +38,13 @@ import it.unive.lisa.util.numeric.MathNumberConversionException;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
 import it.unive.pylisa.symbolic.operators.LogicalNot;
 import it.unive.pylisa.symbolic.operators.Modulo;
+import it.unive.pylisa.symbolic.operators.bytes.BytesLength;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonGe;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonGt;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonLe;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonLt;
 import it.unive.pylisa.symbolic.operators.conversions.BoolToInt;
+import it.unive.pylisa.symbolic.operators.value.StringLength;
 import java.math.RoundingMode;
 import java.util.Set;
 
@@ -234,7 +236,10 @@ public class PyValueDomain implements BaseNonRelationalValueDomain<PyValue> {
 						i.getLow().multiply(MathNumber.MINUS_ONE));
 			else if (expression.getOperator() == BoolToInt.INSTANCE)
 				interval = i;
-		}
+		} else if (expression.getOperator() == StringLength.INSTANCE
+				|| expression.getOperator() == BytesLength.INSTANCE)
+			// lengths are non-negative
+			interval = new IntInterval(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
 		return reduce(c, interval, expression, pp, oracle);
 	}
 

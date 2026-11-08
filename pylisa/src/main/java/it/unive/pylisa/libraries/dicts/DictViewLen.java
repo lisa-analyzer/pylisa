@@ -14,6 +14,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.PyNative;
+import it.unive.pylisa.libraries.UnknownLength;
 
 /**
  * Native implementation of {@code __len__(self)} of the views of a dictionary
@@ -50,7 +51,8 @@ public class DictViewLen extends PyNative {
 			AnalysisState<A> dicts = DictViews.dictionaries(analysis, context, state, args[0], t, st);
 			for (SymbolicExpression dict : dicts.getExecutionExpressions()) {
 				Integer length = DictModel.length(analysis, context, dicts, dict, st);
-				result = result.lub(length == null ? unknown(analysis, context, dicts, Int32Type.INSTANCE)
+				result = result.lub(length == null
+						? UnknownLength.of(analysis, context, dicts, this, getMetaVariables())
 						: compute(analysis, context, dicts, new Constant(Int32Type.INSTANCE, length, getLocation())));
 			}
 		}

@@ -16,11 +16,16 @@ import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonGe;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.symbolic.value.operator.binary.LogicalAnd;
+import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.symbolic.operators.FloatPower;
 import it.unive.pylisa.symbolic.operators.Power;
+import java.util.Set;
 
 /**
  * Shared semantics of {@code __pow__}/{@code __rpow__} for {@code int} and
@@ -81,9 +86,33 @@ public final class PowerSemantics {
 		BinaryExpression floatPower = new BinaryExpression(Float32Type.INSTANCE, base, exponent,
 				FloatPower.INSTANCE, loc);
 
-		if (!intOperands)
-			return ExceptionGuard.guardedCompute(analysis, context, state, zeroDivision,
-					LibrarySpecificationProvider.ZERO_DIVISION_ERROR, floatPower, cfg, loc, dispatchTarget, thrower);
+		if (!intOperands) {
+			BinaryExpression negativeBase = new BinaryExpression(BoolType.INSTANCE, base, zero, ComparisonLt.INSTANCE,
+					loc);
+			Set<Type> exponentTypes = analysis.getRuntimeTypesOf(state, exponent, context, thrower);
+			boolean integralExponent = !exponentTypes.isEmpty() && exponentTypes.stream().allMatch(PyNative.INT);
+			if (integralExponent
+					|| analysis.satisfies(state, negativeBase, context, thrower) == Satisfiability.NOT_SATISFIED)
+				return ExceptionGuard.guardedCompute(analysis, context, state, zeroDivision,
+						LibrarySpecificationProvider.ZERO_DIVISION_ERROR, floatPower, cfg, loc, dispatchTarget,
+						thrower);
+			// a negative number raised to a fractional power is a complex,
+			// that is not modeled: the result is any value
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+			AnalysisState<A> result = state.bottomExecution();
+			AnalysisState<A> nonNegative = analysis.assume(state,
+					new BinaryExpression(BoolType.INSTANCE, base, zero, ComparisonGe.INSTANCE, loc), context, thrower,
+					thrower);
+			if (!nonNegative.getExecutionState().isBottom())
+				result = ExceptionGuard.guardedCompute(analysis, context, nonNegative, zeroDivision,
+						LibrarySpecificationProvider.ZERO_DIVISION_ERROR, floatPower, cfg, loc, dispatchTarget, thrower,
+						raising);
+			AnalysisState<A> negative = analysis.assume(state, negativeBase, context, thrower, thrower);
+			if (!negative.getExecutionState().isBottom())
+				result = result.lub(analysis.smallStepSemantics(negative, new PushAny(Untyped.INSTANCE, loc), context,
+						dispatchTarget));
+			return raising.moveFrom(result);
+		}
 
 		Satisfiability negative = analysis.satisfies(state, negativeExponent, context, thrower);
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);

@@ -9,7 +9,6 @@ import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 
 /**
@@ -40,6 +39,6 @@ public class RangeLen extends PyNative {
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		return unknown(analysis, context, state, Int32Type.INSTANCE);
+		return UnknownLength.of(analysis, context, state, this, getMetaVariables());
 	}
 }

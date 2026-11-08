@@ -19,7 +19,6 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -93,21 +92,21 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 				// the length is computed from the elements (or entries)
 				Integer length = ListModel.isList(t) ? ListModel.length(analysis, context, state, expr, this)
 						: DictModel.length(analysis, context, state, expr, this);
-				result = result.lub(analysis.smallStepSemantics(state, length == null
-						? new PushAny(Int32Type.INSTANCE, loc)
-						: new Constant(Int32Type.INSTANCE, length, loc), context, st));
+				result = result
+						.lub(length == null ? UnknownLength.of(analysis, context, state, this, getMetaVariables())
+								: analysis.smallStepSemantics(state, new Constant(Int32Type.INSTANCE, length, loc),
+										context, st));
 			} else if (inner.canBeAssignedTo(tupleType)) {
 				HeapDereference deref = new HeapDereference(inner, expr, loc);
 				Variable lenKey = new Variable(Int32Type.INSTANCE, "length", loc);
 				AccessChild lenAccess = new AccessChild(Int32Type.INSTANCE, deref, lenKey, loc);
 				result = result.lub(analysis.smallStepSemantics(state, lenAccess, context, st));
 			} else
-				result = result
-						.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), context, st));
+				result = result.lub(UnknownLength.of(analysis, context, state, this, getMetaVariables()));
 		}
 
 		if (!anyPointer)
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), context, st));
+			result = result.lub(UnknownLength.of(analysis, context, state, this, getMetaVariables()));
 
 		return result;
 	}
