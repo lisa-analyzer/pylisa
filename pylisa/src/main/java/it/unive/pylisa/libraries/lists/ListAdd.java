@@ -15,16 +15,12 @@ import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
-import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -37,9 +33,9 @@ import java.util.Set;
  * Native implementation of {@code list.__add__(self, other)}: list
  * concatenation ({@code [1] + [2]}), that yields a new list (allocated at a
  * location different from the one of the expression, see
- * {@link DerivedLocation}). If the length of {@code self} is known (see
- * {@link ListModel#length}), its elements are copied at their indices, and so
- * are the ones of {@code other}, after them, if its length is also known;
+ * {@link ListOperations#allocation}). If the length of {@code self} is known
+ * (see {@link ListModel#length}), its elements are copied at their indices, and
+ * so are the ones of {@code other}, after them, if its length is also known;
  * otherwise, the elements that cannot be placed are elements at unknown indices
  * of the new list (see {@link ListCreation#UNKNOWN_INDEX}), that surely has an
  * element if one of the operands surely has one (see
@@ -119,7 +115,7 @@ public class ListAdd extends BinaryExpression implements PluggableStatement {
 		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
-		ListCreation creation = new ListCreation(getCFG(), new DerivedLocation(loc, "concat"));
+		ListCreation creation = new ListCreation(getCFG(), ListOperations.allocation(st, "concat"));
 		AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, state, new ExpressionSet[0],
 				expressions);
 		getMetaVariables().addAll(creation.getMetaVariables());
@@ -127,7 +123,8 @@ public class ListAdd extends BinaryExpression implements PluggableStatement {
 		// their allocation site weak (e.g. xs = xs + ys in a loop)
 		Integer leftLength = ListModel.length(analysis, context, created, left, st);
 		Integer rightLength = leftLength == null ? null : ListModel.length(analysis, context, created, right, st);
-		boolean nonEmpty = nonEmpty(analysis, context, created, left) || nonEmpty(analysis, context, created, right);
+		boolean nonEmpty = ListOperations.nonEmpty(analysis, context, created, left, st)
+				|| ListOperations.nonEmpty(analysis, context, created, right, st);
 
 		AnalysisState<A> result = created.bottomExecution();
 		for (SymbolicExpression list : created.getExecutionExpressions()) {
@@ -137,17 +134,17 @@ public class ListAdd extends BinaryExpression implements PluggableStatement {
 			int index = 0;
 			if (leftLength != null)
 				for (int i = 0; i < leftLength; i++, index++)
-					filled = copy(analysis, context, filled, created, left, i, target, index);
+					filled = ListOperations.copy(analysis, context, filled, created, left, i, target, index, st);
 			if (rightLength != null)
 				for (int i = 0; i < rightLength; i++, index++)
-					filled = copy(analysis, context, filled, created, right, i, target, index);
+					filled = ListOperations.copy(analysis, context, filled, created, right, i, target, index, st);
 
 			// the elements at unknown indices
 			Set<SymbolicExpression> elements = new HashSet<>();
 			if (leftLength == null)
-				elements.addAll(elements(analysis, context, created, left));
+				elements.addAll(ListOperations.elements(analysis, context, created, left, st));
 			if (rightLength == null)
-				elements.addAll(elements(analysis, context, created, right));
+				elements.addAll(ListOperations.elements(analysis, context, created, right, st));
 			if (!elements.isEmpty()) {
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, target,
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
@@ -161,61 +158,5 @@ public class ListAdd extends BinaryExpression implements PluggableStatement {
 			result = result.lub(filled.withExecutionExpression(list));
 		}
 		return result;
-	}
-
-	// copies the element at index i of the list from into the element at
-	// index index of the new list
-	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> copy(
-			Analysis<A, D> analysis,
-			ScopeId<?> context,
-			AnalysisState<A> current,
-			AnalysisState<A> operands,
-			SymbolicExpression from,
-			int i,
-			HeapDereference target,
-			int index)
-			throws SemanticException {
-		CodeLocation loc = getLocation();
-		HeapDereference source = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.LIST), from,
-				loc);
-		AccessChild slot = new AccessChild(Untyped.INSTANCE, target, new Constant(Int32Type.INSTANCE, index, loc),
-				loc);
-		AnalysisState<A> result = current.bottomExecution();
-		for (SymbolicExpression element : analysis.smallStepSemantics(operands,
-				new AccessChild(Untyped.INSTANCE, source, new Constant(Int32Type.INSTANCE, i, loc), loc), context, st)
-				.getExecutionExpressions())
-			result = result.lub(analysis.assign(current, slot, element, context, st));
-		return result;
-	}
-
-	// any of the elements of the list, or an unknown value if the operand
-	// might not be a list whose elements are known
-	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Set<SymbolicExpression> elements(
-			Analysis<A, D> analysis,
-			ScopeId<?> context,
-			AnalysisState<A> state,
-			SymbolicExpression list)
-			throws SemanticException {
-		Set<SymbolicExpression> elements = new HashSet<>();
-		Set<Type> types = analysis.getRuntimeTypesOf(state, list, context, st);
-		if (!types.isEmpty() && types.stream().allMatch(ListModel::isList))
-			elements.addAll(
-					ListModel.elements(analysis, context, state, list, st).getExecutionExpressions().elements());
-		else
-			elements.add(new PushAny(Untyped.INSTANCE, getLocation()));
-		return elements;
-	}
-
-	// whether the list surely has an element
-	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean nonEmpty(
-			Analysis<A, D> analysis,
-			ScopeId<?> context,
-			AnalysisState<A> state,
-			SymbolicExpression list)
-			throws SemanticException {
-		Set<Type> types = analysis.getRuntimeTypesOf(state, list, context, st);
-		return !types.isEmpty() && types.stream().allMatch(ListModel::isList)
-				&& (ListModel.shape(analysis, context, state, list, st).prefix() > 0
-						|| ListModel.nonEmpty(analysis, context, state, list, st));
 	}
 }
