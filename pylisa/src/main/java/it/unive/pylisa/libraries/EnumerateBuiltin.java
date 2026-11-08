@@ -12,16 +12,20 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.InstrumentedReceiver;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonGe;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -37,10 +41,11 @@ import java.util.Collection;
  * of the class {@code Enumerate}, whose child {@value #ITERABLE} is the
  * iterable. As enumerate objects are lazy, the elements of the iterable are
  * read when the object is iterated (see {@link #elements}): each element is a
- * tuple with an {@code int} (whose value is not tracked) and an element of the
- * iterable, and the number of elements is not tracked. {@code TypeError} is
- * raised if the iterable might not be iterable (see
- * {@link Iteration#iterable}), or if {@code start} might not be an {@code int}.
+ * tuple with an {@code int} (at least {@code start}, stored in the child
+ * {@value #START}) and an element of the iterable, and the number of elements
+ * is not tracked. {@code TypeError} is raised if the iterable might not be
+ * iterable (see {@link Iteration#iterable}), or if {@code start} might not be
+ * an {@code int}.
  */
 public class EnumerateBuiltin extends PyNative {
 
@@ -48,6 +53,11 @@ public class EnumerateBuiltin extends PyNative {
 	 * The child of enumerate objects holding the iterable.
 	 */
 	public static final String ITERABLE = "$iterable";
+
+	/**
+	 * The child of enumerate objects holding the first index.
+	 */
+	public static final String START = "$start";
 
 	protected EnumerateBuiltin(
 			CFG cfg,
@@ -100,6 +110,8 @@ public class EnumerateBuiltin extends PyNative {
 					new HeapReference(reftype, alloc, loc), context, st);
 			created = analysis.assign(created, child(new HeapDereference(type, enumerate, loc), loc), iterable, context,
 					st);
+			created = analysis.assign(created, start(new HeapDereference(type, enumerate, loc), loc),
+					missing(start) ? new Constant(Int32Type.INSTANCE, 0, loc) : start, context, st);
 			getMetaVariables().add(enumerate);
 			created = compute(analysis, context, created, enumerate);
 		}
@@ -136,9 +148,15 @@ public class EnumerateBuiltin extends PyNative {
 		AnalysisState<A> iterables = analysis.smallStepSemantics(state,
 				child(new HeapDereference(type, enumerate, loc), loc), context, pp);
 		AnalysisState<A> result = state.bottomExecution();
+		// the index is at least the first one
+		Variable index = new Variable(Int32Type.INSTANCE, "$enumerate@" + loc.getCodeLocation(), loc);
+		AnalysisState<A> indexed = analysis.assign(iterables, index, new PushAny(Int32Type.INSTANCE, loc), context,
+				pp);
+		indexed = analysis.assume(indexed, new BinaryExpression(BoolType.INSTANCE, index,
+				start(new HeapDereference(type, enumerate, loc), loc), ComparisonGe.INSTANCE, loc), context, pp, pp);
+		metas.add(index);
 		for (SymbolicExpression iterable : iterables.getExecutionExpressions()) {
-			AnalysisState<A> count = analysis.smallStepSemantics(iterables, new PushAny(Int32Type.INSTANCE, loc),
-					context, pp);
+			AnalysisState<A> count = indexed.withExecutionExpression(index);
 			AnalysisState<A> element = Iteration.elements(analysis, context, count, null, iterable, pp, metas);
 			ExpressionSet[] values = { count.getExecutionExpressions(), element.getExecutionExpressions() };
 			result = result
@@ -152,5 +170,11 @@ public class EnumerateBuiltin extends PyNative {
 			HeapDereference enumerate,
 			CodeLocation loc) {
 		return new AccessChild(Untyped.INSTANCE, enumerate, new Variable(Untyped.INSTANCE, ITERABLE, loc), loc);
+	}
+
+	private static AccessChild start(
+			HeapDereference enumerate,
+			CodeLocation loc) {
+		return new AccessChild(Int32Type.INSTANCE, enumerate, new Variable(Int32Type.INSTANCE, START, loc), loc);
 	}
 }

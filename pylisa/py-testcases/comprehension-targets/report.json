@@ -6,31 +6,24 @@
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/comprehension-targets/comprehension-targets.py':15:10",
     "definite" : false
-  }, {
-    "location" : "'py-testcases/comprehension-targets/comprehension-targets.py':8:0",
-    "cfg" : "untyped py-testcases/comprehension-targets/comprehension-targets::$main()",
-    "text" : "assert ==(c, list(3))",
-    "targetKind" : "STATEMENT",
-    "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/comprehension-targets/comprehension-targets.py':8:0",
-    "definite" : false
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_comprehension-targets_comprehension-targets.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "77ms",
-    "end" : "2026-11-06T12:00:29.012+01:00",
+    "duration" : "31ms",
+    "end" : "2026-11-08T20:33:07.320+01:00",
     "expressions" : "112",
     "files" : "1",
     "globals" : "0",
     "members" : "193",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-06T12:00:28.935+01:00",
+    "start" : "2026-11-08T20:33:07.289+01:00",
     "statements" : "17",
     "units" : "44",
     "version" : "1.0",
-    "warnings" : "2"
+    "warnings" : "1"
   },
   "configuration" : {
     "asynchronousListeners" : "",

@@ -30,6 +30,8 @@ import it.unive.lisa.symbolic.value.operator.binary.BitwiseOr;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftLeft;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftRight;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseXor;
+import it.unive.lisa.symbolic.value.operator.binary.LogicalAnd;
+import it.unive.lisa.symbolic.value.operator.binary.LogicalOr;
 import it.unive.lisa.symbolic.value.operator.binary.StringContains;
 import it.unive.lisa.symbolic.value.operator.binary.StringEndsWith;
 import it.unive.lisa.symbolic.value.operator.binary.StringIndexOf;
@@ -349,6 +351,17 @@ public class ConstantPropagationDomain
 			return bitwiseLeftShift(left, right, pp);
 		else if (operator instanceof BitwiseShiftRight)
 			return bitwiseRightShift(left, right, pp);
+		if (operator == LogicalAnd.INSTANCE || operator == LogicalOr.INSTANCE) {
+			// a false operand decides a conjunction, a true one a disjunction
+			boolean and = operator == LogicalAnd.INSTANCE;
+			Boolean l = left.isTop() || !left.is(Boolean.class) ? null : left.as(Boolean.class);
+			Boolean r = right.isTop() || !right.is(Boolean.class) ? null : right.as(Boolean.class);
+			if (Boolean.valueOf(!and).equals(l) || Boolean.valueOf(!and).equals(r))
+				return new ConstantPropagation(new Constant(BoolType.INSTANCE, !and, pp.getLocation()));
+			if (l != null && r != null)
+				return new ConstantPropagation(new Constant(BoolType.INSTANCE, and, pp.getLocation()));
+			return ConstantPropagation.TOP;
+		}
 		if (operator instanceof BoolBitwise) {
 			if (left.isTop() || right.isTop() || !left.is(Boolean.class) || !right.is(Boolean.class))
 				return ConstantPropagation.TOP;

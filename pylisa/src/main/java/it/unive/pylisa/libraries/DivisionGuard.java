@@ -10,10 +10,13 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
+import it.unive.lisa.type.Type;
+import java.util.Set;
 
 /**
  * Shared helper for {@code __truediv__}/{@code __floordiv__}/{@code __mod__}
@@ -38,6 +41,11 @@ public final class DivisionGuard {
 			Statement dispatchTarget,
 			Statement thrower)
 			throws SemanticException {
+		Set<Type> types = analysis.getRuntimeTypesOf(state, divisor, context, thrower);
+		if (!types.isEmpty() && types.stream().allMatch(PyNative.INT))
+			// an integer divisor (e.g. of a float, as in 1.0 / n) is compared
+			// with the integer 0, so that its interval decides the comparison
+			zero = new Constant(Int32Type.INSTANCE, 0, zero.getCodeLocation());
 		BinaryExpression isZero = new BinaryExpression(BoolType.INSTANCE, divisor, zero, ComparisonEq.INSTANCE, loc);
 		return ExceptionGuard.guardedCompute(analysis, context, state, isZero,
 				LibrarySpecificationProvider.ZERO_DIVISION_ERROR,

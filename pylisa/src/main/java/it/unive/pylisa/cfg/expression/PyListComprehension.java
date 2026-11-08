@@ -15,9 +15,11 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
@@ -26,7 +28,9 @@ import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.libraries.RangeBuiltin;
 import it.unive.pylisa.libraries.dicts.DictModel;
+import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -41,9 +45,11 @@ import java.util.Set;
  * bound to any of the elements of {@code iterable}, and the effects of the
  * iterations are computed up to a fixpoint. The result is either an empty list
  * (when there are no iterations), or a list whose elements are the computed
- * values, at unknown indices (as the number of iterations is not known). The
- * variables of the comprehension are local to it (they are renamed by the
- * parser).
+ * values, at unknown indices (as the number of iterations is not known). With a
+ * single clause and no conditions, iterating a list, a tuple or a range whose
+ * length is known, the list has that length instead, and each element is any of
+ * the computed values. The variables of the comprehension are local to it (they
+ * are renamed by the parser).
  * <p>
  * A dict comprehension {@code {key: element for x in iterable ...}} is
  * evaluated in the same way: at each iteration, {@code key} is computed before
@@ -55,6 +61,9 @@ public class PyListComprehension extends NaryExpression {
 
 	// the number of iterations after which the widening is used
 	private static final int WIDENING_THRESHOLD = 3;
+
+	// the most elements of a list placed at their indices (see list)
+	private static final int MAX_EXACT = 32;
 
 	/**
 	 * A {@code for x in iterable if c1 if c2 ...} clause.
@@ -257,6 +266,28 @@ public class PyListComprehension extends NaryExpression {
 		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		ListCreation creation = new ListCreation(getCFG(), new DerivedLocation(loc, "comprehension"));
+		Integer length = iterations(analysis, context, start, body);
+		if (length != null && length > 0 && !body.getExecutionState().isBottom()) {
+			// as many elements as the iterations, each one any of the values
+			Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
+			AnalysisState<A> created = creation.forwardSemanticsAux(interprocedural, body, new ExpressionSet[0],
+					expressions);
+			AnalysisState<A> result = created.bottomExecution();
+			for (SymbolicExpression list : created.getExecutionExpressions()) {
+				AnalysisState<A> filled = created;
+				for (int i = 0; i < length; i++) {
+					AccessChild slot = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
+							new Constant(Int32Type.INSTANCE, i, loc), loc);
+					AnalysisState<A> next = filled.bottomExecution();
+					for (SymbolicExpression value : body.getExecutionExpressions())
+						next = next.lub(analysis.assign(filled, slot, value, context, this));
+					filled = next;
+				}
+				result = result.lub(filled.withExecutionExpression(list));
+			}
+			getMetaVariables().addAll(creation.getMetaVariables());
+			return result;
+		}
 		AnalysisState<A> result = creation.forwardSemanticsAux(interprocedural, start, new ExpressionSet[0],
 				expressions);
 		if (!body.getExecutionState().isBottom()) {
@@ -276,6 +307,42 @@ public class PyListComprehension extends NaryExpression {
 			// the errors raised by the iterations
 			result = result.lub(body);
 		getMetaVariables().addAll(creation.getMetaVariables());
+		return result;
+	}
+
+	// the number of iterations, if it is known: with a single clause without
+	// conditions, iterating lists, tuples or ranges of the same known length (a
+	// list also after the iterations, that might modify it: iterating a list
+	// stops at its current length)
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Integer iterations(
+			Analysis<A, D> analysis,
+			ScopeId<A> context,
+			AnalysisState<A> start,
+			AnalysisState<A> body)
+			throws SemanticException {
+		if (clauses.size() != 1 || !clauses.get(0).conditions().isEmpty())
+			return null;
+		Integer result = null;
+		for (SymbolicExpression iterable : start.getExecutionExpressions()) {
+			Set<Type> types = analysis.getRuntimeTypesOf(start, iterable, context, this);
+			if (types.size() != 1)
+				return null;
+			Type type = types.iterator().next();
+			Integer length;
+			if (Unpacking.isTuple(type))
+				length = ListModel.length(analysis, context, start, iterable, this);
+			else if (ListModel.isList(type)) {
+				length = ListModel.length(analysis, context, start, iterable, this);
+				if (length != null && !length.equals(ListModel.length(analysis, context, body, iterable, this)))
+					return null;
+			} else if (RangeBuiltin.isRange(type))
+				length = RangeBuiltin.length(analysis, context, start, iterable, this, MAX_EXACT);
+			else
+				return null;
+			if (length == null || length > MAX_EXACT || (result != null && !result.equals(length)))
+				return null;
+			result = length;
+		}
 		return result;
 	}
 

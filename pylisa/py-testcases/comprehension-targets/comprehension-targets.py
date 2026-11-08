@@ -4,7 +4,7 @@ pairs = [(1, "a"), (2, "b")]
 a = [k + 1 for k, v in pairs]
 b = [v + "x" for k, v in pairs]
 c = [x + y for (x, y) in [(1, 2)]]
-# the length of a comprehension is not tracked
+# the length of a comprehension over a list of known length is tracked
 assert c == [3]
 d = [h + 1 for h, *t in [[1, 2, 3]]]
 e = [t for h, *t in [[1, 2, 3]]]

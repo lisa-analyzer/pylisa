@@ -9,7 +9,9 @@ import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.Constant;
 
 /**
  * Native implementation of {@code Range.__len__(self)} (see
@@ -39,6 +41,12 @@ public class RangeLen extends PyNative {
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
+		// the length of a range of a known number of elements (the largest
+		// length looked for is the one of the lists placed exactly, see
+		// ListMul)
+		Integer length = RangeBuiltin.length(analysis, context, state, args[0], this, 32);
+		if (length != null)
+			return compute(analysis, context, state, new Constant(Int32Type.INSTANCE, length, getLocation()));
 		return UnknownLength.of(analysis, context, state, this, getMetaVariables());
 	}
 }

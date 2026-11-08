@@ -27,8 +27,11 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.operator.binary.LogicalAnd;
 import it.unive.lisa.symbolic.value.operator.binary.LogicalOr;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.PyCFG;
 import it.unive.pylisa.cfg.expression.PyNameRef;
 import it.unive.pylisa.cfg.expression.PyNot;
+import it.unive.pylisa.scoping.NameKind;
+import it.unive.pylisa.scoping.PyScope;
 import it.unive.pylisa.symbolic.operators.LogicalNot;
 import java.util.HashSet;
 import java.util.Set;
@@ -44,7 +47,10 @@ import java.util.Set;
  * {@code 0 <= i and i < n}), the result is their logical conjunction (or
  * disjunction): the assumptions made on it (e.g. by the branches of an
  * {@code if}) then refine the values compared by both operands, that would
- * otherwise be assumed separately on the join of the two paths.
+ * otherwise be assumed separately on the join of the two paths. This also holds
+ * when the right operand has side effects (e.g. {@code i < n and
+ * xs[i] == 0}, where the subscript is a call), if the left one only reads local
+ * variables of a function, that the right one cannot rebind.
  */
 public abstract class PyShortCircuit extends BinaryExpression {
 
@@ -154,8 +160,10 @@ public abstract class PyShortCircuit extends BinaryExpression {
 				getMetaVariables().addAll(right.getMetaVariables());
 			}
 		}
-		if (canDecide && postRight != null && !decided.getExecutionState().isBottom()
-				&& !postRight.getExecutionState().isBottom()) {
+		// also when the left operand never decides the result, where the
+		// combination is equivalent to the right operand: the expressions of
+		// this operator are then the same in all the iterations of a loop
+		if (postRight != null && !postRight.getExecutionState().isBottom()) {
 			ExpressionSet combined = combine(analysis, postLeft, postRight, context);
 			if (combined != null)
 				result = result.withExecutionExpressions(combined);
@@ -176,9 +184,12 @@ public abstract class PyShortCircuit extends BinaryExpression {
 			ScopeId<A> context)
 			throws SemanticException {
 		Set<Identifier> names = new HashSet<>();
-		if (!pure(getLeft(), names) || !pure(getRight(), names))
+		if (!pure(getLeft(), names) || !booleans(analysis, postLeft, names, context))
 			return null;
-		if (!booleans(analysis, postLeft, names, context) || !booleans(analysis, postRight, names, context))
+		if (!(pure(getRight(), names) && booleans(analysis, postRight, names, context))
+				&& (!locals(getLeft()) || assigns(getRight()) || !booleans(analysis, postRight, null, context)))
+			// the values of the left operand might not hold after the side
+			// effects of the right one (e.g. a call, or the reads of the heap)
 			return null;
 		Set<SymbolicExpression> combined = new HashSet<>();
 		for (SymbolicExpression l : postLeft.getExecutionExpressions())
@@ -208,8 +219,38 @@ public abstract class PyShortCircuit extends BinaryExpression {
 		return expression instanceof Literal;
 	}
 
+	// whether the names contained in the expression are local variables of a
+	// function (not shared with nested functions): the calls cannot rebind
+	// them
+	private boolean locals(
+			Expression expression) {
+		if (!(getCFG() instanceof PyCFG)
+				|| ((PyCFG) getCFG()).getScope().getKind() != PyScope.ScopeKind.FUNCTION)
+			return false;
+		if (expression instanceof PyNameRef)
+			return ((PyNameRef) expression).getKind() == NameKind.LOCAL;
+		if (expression instanceof NaryExpression) {
+			for (Expression sub : ((NaryExpression) expression).getSubExpressions())
+				if (!locals(sub))
+					return false;
+		}
+		return true;
+	}
+
+	// whether the expression contains an assignment (e.g. i := i + 1)
+	private static boolean assigns(
+			Expression expression) {
+		if (expression instanceof Assignment)
+			return true;
+		if (expression instanceof NaryExpression)
+			for (Expression sub : ((NaryExpression) expression).getSubExpressions())
+				if (assigns(sub))
+					return true;
+		return false;
+	}
+
 	// whether the values computed in the state are booleans that only read the
-	// given names
+	// given names (any name, if names is null)
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean booleans(
 			Analysis<A, D> analysis,
 			AnalysisState<A> state,
@@ -217,7 +258,7 @@ public abstract class PyShortCircuit extends BinaryExpression {
 			ScopeId<A> context)
 			throws SemanticException {
 		for (SymbolicExpression value : state.getExecutionExpressions()) {
-			if (!reads(value, names))
+			if (names != null && !reads(value, names))
 				return false;
 			Set<Type> types = analysis.getRuntimeTypesOf(state, value, context, this);
 			if (types.isEmpty() || !types.stream().allMatch(Type::isBooleanType))

@@ -28,6 +28,7 @@ import it.unive.lisa.symbolic.value.operator.binary.ComparisonGt;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLe;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.symbolic.value.operator.binary.LogicalAnd;
+import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingSub;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -83,6 +84,56 @@ public class RangeBuiltin extends PyNative {
 		return new AccessChild(Int32Type.INSTANCE,
 				new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.RANGE), range, loc),
 				new Variable(Untyped.INSTANCE, name, loc), loc);
+	}
+
+	/**
+	 * Yields the number of elements of the range, if it is known: when its step
+	 * is surely {@code 1} and its stop minus its start is surely a constant (at
+	 * most {@code max}), or when it is surely empty.
+	 *
+	 * @param <A>      the kind of {@link AbstractLattice} of the state
+	 * @param <D>      the kind of {@link AbstractDomain} of the analysis
+	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
+	 * @param state    the current state
+	 * @param range    the range
+	 * @param pp       the program point using the range
+	 * @param max      the largest length looked for
+	 *
+	 * @return the number of elements, or {@code null} if it is not known
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Integer length(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression range,
+			ProgramPoint pp,
+			int max)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		AccessChild start = field(range, FIELDS[0], loc), stop = field(range, FIELDS[1], loc),
+				step = field(range, FIELDS[2], loc);
+		Constant zero = new Constant(Int32Type.INSTANCE, 0, loc);
+		if (analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, step, zero, ComparisonGt.INSTANCE, loc),
+				context, pp) == Satisfiability.SATISFIED
+				&& analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, stop, start,
+						ComparisonLe.INSTANCE, loc), context, pp) == Satisfiability.SATISFIED)
+			// surely empty
+			return 0;
+		if (analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, step,
+				new Constant(Int32Type.INSTANCE, 1, loc), ComparisonEq.INSTANCE, loc), context,
+				pp) != Satisfiability.SATISFIED)
+			return null;
+		BinaryExpression size = new BinaryExpression(Int32Type.INSTANCE, stop, start,
+				NumericNonOverflowingSub.INSTANCE, loc);
+		for (int n = 1; n <= max; n++)
+			if (analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, size,
+					new Constant(Int32Type.INSTANCE, n, loc), ComparisonEq.INSTANCE, loc), context,
+					pp) == Satisfiability.SATISFIED)
+				return n;
+		return null;
 	}
 
 	/**

@@ -9,9 +9,11 @@ import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -21,6 +23,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
@@ -155,6 +158,11 @@ public final class Unpacking {
 					ListModel.Shape shape = ListModel.shape(analysis, context, state, value, pp);
 					HeapDereference deref = new HeapDereference(t.asPointerType().getInnerType(), value, loc);
 					Integer n = shape.length();
+					if (n == null && isTuple(t) && sameLength(analysis, context, state, deref, shape, targets.length,
+							pp))
+						// the summary of tuples (e.g. created in a loop), that
+						// are immutable: each element is the one of all of them
+						n = targets.length;
 					if (n == null) {
 						valueError = true;
 						AnalysisState<A> elements = state.bottomExecution();
@@ -237,6 +245,28 @@ public final class Unpacking {
 			return false;
 		String name = t.asPointerType().getInnerType().asUnitType().getUnit().getName();
 		return name.equals(LibrarySpecificationProvider.TUPLE) || name.equals(LibrarySpecificationProvider.NAMED_TUPLE);
+	}
+
+	// whether the tuples have surely the given length (see TupleCreation), and
+	// their elements are at known indices
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean sameLength(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			HeapDereference tuples,
+			ListModel.Shape shape,
+			int length,
+			Statement pp)
+			throws SemanticException {
+		if (shape.elements() == null || shape.elements().stream().anyMatch(
+				field -> field instanceof Variable && ((Variable) field).getName().equals(ListCreation.UNKNOWN_INDEX)))
+			return false;
+		CodeLocation loc = pp.getLocation();
+		AccessChild field = new AccessChild(Int32Type.INSTANCE, tuples,
+				new Variable(Int32Type.INSTANCE, "length", loc), loc);
+		return analysis.satisfies(state, new it.unive.lisa.symbolic.value.BinaryExpression(BoolType.INSTANCE, field,
+				new Constant(Int32Type.INSTANCE, length, loc), ComparisonEq.INSTANCE, loc), context,
+				pp) == Satisfiability.SATISFIED;
 	}
 
 	// the elements of a sequence of known length n, matching the targets
