@@ -5,6 +5,8 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.literal.Float32Literal;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
+import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
+import java.util.Map;
 
 /**
  * The constants of the modules of the standard library that are modeled, with
@@ -16,7 +18,9 @@ import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
  * python, they are members of {@code re.RegexFlag}, a subclass of {@code int}
  * whose operations are the ones of {@code int} (e.g.
  * {@code re.IGNORECASE | re.UNICODE}); here, they are {@code int}s (so that
- * only their exact type, e.g. as returned by {@code type}, differs).</li>
+ * only their exact type, e.g. as returned by {@code type}, differs);</li>
+ * <li>the strings of the {@code string} module ({@code string.digits},
+ * {@code string.ascii_letters}, ...).</li>
  * </ul>
  */
 public final class LibraryConstants {
@@ -48,7 +52,30 @@ public final class LibraryConstants {
 		case "re.UNICODE":
 			return new Int32Literal(cfg, location, 32);
 		default:
-			return null;
+			String value = STRINGS.get(module + "." + name);
+			return value == null ? null : new PyStringLiteral(cfg, location, value, "'");
 		}
 	}
+
+	private static final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
+
+	private static final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+	private static final String DIGITS = "0123456789";
+
+	private static final String PUNCTUATION = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+
+	private static final String WHITESPACE = " \t\n\r\013\014";
+
+	// the constants of the string module
+	private static final Map<String, String> STRINGS = Map.of(
+			"string.ascii_lowercase", LOWERCASE,
+			"string.ascii_uppercase", UPPERCASE,
+			"string.ascii_letters", LOWERCASE + UPPERCASE,
+			"string.digits", DIGITS,
+			"string.hexdigits", DIGITS + "abcdef" + "ABCDEF",
+			"string.octdigits", "01234567",
+			"string.punctuation", PUNCTUATION,
+			"string.whitespace", WHITESPACE,
+			"string.printable", DIGITS + LOWERCASE + UPPERCASE + PUNCTUATION + WHITESPACE);
 }

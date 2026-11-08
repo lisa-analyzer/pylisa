@@ -291,6 +291,14 @@ public class PyStatementParser
 	private final Map<String, String> importedModules = new HashMap<>();
 
 	/**
+	 * The names bound to modules by the import statements at the top level of
+	 * the file (see {@link #importedModules}), that the global names of the
+	 * nested scopes refer to (e.g. {@code string} in a function, after
+	 * {@code import string}).
+	 */
+	private Map<String, String> moduleImports = Map.of();
+
+	/**
 	 * The variables of the comprehensions being parsed (innermost first),
 	 * mapped to their names local to the comprehension (see
 	 * {@link PyListComprehension}).
@@ -1807,7 +1815,7 @@ public class PyStatementParser
 		Collection<Statement> entrypoints = new HashSet<>();
 		PyCFG lambda = new PyCFG(descriptor, entrypoints, list, scope);
 		PyStatementParser parser = new PyStatementParser(program, filePath, currentUnit, lambda,
-				new ControlFlowTracker(), localImports, symtable);
+				new ControlFlowTracker(), localImports, symtable).withModuleImports(moduleImports());
 		// the default values are parsed in the cfg of the lambda, as for
 		// functions (see PyCodeMemberParser)
 		for (Pair<PyParameter, Default_assignmentContext> def : defaults)
@@ -2453,13 +2461,47 @@ public class PyStatementParser
 	 * module by an import (and not to a local module), and the attribute
 	 * otherwise (see {@link #attribute}).
 	 */
+	/**
+	 * Sets the names bound to modules by the import statements at the top level
+	 * of the file, when this parser parses a nested scope.
+	 *
+	 * @param imports the names, mapped to the (dotted) names of the modules
+	 *
+	 * @return this parser
+	 */
+	PyStatementParser withModuleImports(
+			Map<String, String> imports) {
+		this.moduleImports = imports;
+		return this;
+	}
+
+	/**
+	 * Yields the names bound to modules by the import statements at the top
+	 * level of the file, for the parsers of the scopes nested in this one.
+	 *
+	 * @return the names, mapped to the (dotted) names of the modules
+	 */
+	Map<String, String> moduleImports() {
+		return currentCFG.getScope().getKind() == PyScope.ScopeKind.MODULE ? importedModules : moduleImports;
+	}
+
+	// the module bound to the name by an import of this scope, or, if the name
+	// is global, by an import at the top level of the file
+	private String importedModule(
+			VariableRef ref) {
+		String module = importedModules.get(ref.getName());
+		if (module == null && ref instanceof PyNameRef && ((PyNameRef) ref).getKind().isGlobal())
+			module = moduleImports.get(ref.getName());
+		return module;
+	}
+
 	private Expression readAttribute(
 			Expression receiver,
 			String name,
 			CodeLocation location) {
 		if (receiver instanceof VariableRef && isNamespace(receiver)
 				&& localImports.module(((VariableRef) receiver).getName()) == null) {
-			String module = importedModules.get(((VariableRef) receiver).getName());
+			String module = importedModule((VariableRef) receiver);
 			Expression constant = module == null ? null
 					: LibraryConstants.constant(currentCFG, location, module, name);
 			if (constant != null)
@@ -2559,7 +2601,7 @@ public class PyStatementParser
 		if (expr instanceof VariableRef) {
 			String name = ((VariableRef) expr).getName();
 			return namespaces.contains(name) || program.getUnit(name) != null || BUILTIN_CLASSES.containsKey(name)
-					|| localImports.module(name) != null;
+					|| localImports.module(name) != null || importedModule((VariableRef) expr) != null;
 		}
 		if (expr instanceof UnresolvedCall) {
 			UnresolvedCall call = (UnresolvedCall) expr;
@@ -3131,7 +3173,7 @@ public class PyStatementParser
 			Class_defContext ctx) {
 		if (ctx.decorators() != null)
 			throw new UnsupportedStatementException("decorators are not supported");
-		PyClassParser parser = new PyClassParser(program, filePath, localImports, symtable);
+		PyClassParser parser = new PyClassParser(program, filePath, localImports, symtable, moduleImports());
 		return parser.visitClass_def_raw(ctx.class_def_raw());
 	}
 
@@ -3161,7 +3203,8 @@ public class PyStatementParser
 		String name = ctx.function_def_raw().name().getText();
 		SourceCodeLocation loc = getLocation(filePath, ctx);
 		PyCodeMemberParser parser = new PyCodeMemberParser(filePath, program, currentUnit, localImports, symtable,
-				staticMethod, decorated ? name + "$decorated@" + loc.getLine() + ":" + loc.getCol() : null);
+				staticMethod, decorated ? name + "$decorated@" + loc.getLine() + ":" + loc.getCol() : null,
+				moduleImports());
 		PyCFG cfg = parser.visitFunction_def_raw(ctx.function_def_raw());
 		if (abstractMethod)
 			// not propagated by LiSA to the methods overriding it

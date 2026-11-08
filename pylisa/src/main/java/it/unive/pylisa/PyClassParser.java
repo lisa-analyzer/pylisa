@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -69,15 +70,21 @@ public class PyClassParser
 	// the symbol table of the file
 	private final Symtable symtable;
 
+	// the names bound to modules by the imports at the top level of the file
+	// (see PyStatementParser#withModuleImports)
+	private final Map<String, String> moduleImports;
+
 	public PyClassParser(
 			Program program,
 			String filePath,
 			LocalImports imports,
-			Symtable symtable) {
+			Symtable symtable,
+			Map<String, String> moduleImports) {
 		this.program = program;
 		this.filePath = filePath;
 		this.imports = imports;
 		this.symtable = symtable;
+		this.moduleImports = moduleImports;
 	}
 
 	@Override
@@ -114,7 +121,8 @@ public class PyClassParser
 		// side effects on entrypoints and matrix will affect the cfg
 		PyCFG cfg = new PyCFG(descriptor, entrypoints, list, symtable.getScope(ctx));
 		ControlFlowTracker control = new ControlFlowTracker();
-		PyStatementParser parser = new PyStatementParser(program, filePath, signature, cfg, control, imports, symtable);
+		PyStatementParser parser = new PyStatementParser(program, filePath, signature, cfg, control, imports, symtable)
+				.withModuleImports(moduleImports);
 		ParsedBlock r = parser.visitBlock(ctx.block());
 		list.mergeWith(r.getBody());
 		entrypoints.add(r.getBegin());

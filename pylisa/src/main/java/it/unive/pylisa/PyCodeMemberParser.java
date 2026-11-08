@@ -46,6 +46,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -86,13 +87,17 @@ public class PyCodeMemberParser
 	// decorated function, see PyStatementParser#visitFunction_def)
 	private final String name;
 
+	// the names bound to modules by the imports at the top level of the file
+	// (see PyStatementParser#withModuleImports)
+	private final Map<String, String> moduleImports;
+
 	public PyCodeMemberParser(
 			String filePath,
 			Program program,
 			Unit unit,
 			LocalImports imports,
 			Symtable symtable) {
-		this(filePath, program, unit, imports, symtable, false, null);
+		this(filePath, program, unit, imports, symtable, false, null, Map.of());
 	}
 
 	public PyCodeMemberParser(
@@ -102,7 +107,8 @@ public class PyCodeMemberParser
 			LocalImports imports,
 			Symtable symtable,
 			boolean staticMethod,
-			String name) {
+			String name,
+			Map<String, String> moduleImports) {
 		this.filePath = filePath;
 		this.program = program;
 		this.unit = unit;
@@ -110,6 +116,7 @@ public class PyCodeMemberParser
 		this.symtable = symtable;
 		this.staticMethod = staticMethod;
 		this.name = name;
+		this.moduleImports = moduleImports;
 	}
 
 	@Override
@@ -128,7 +135,8 @@ public class PyCodeMemberParser
 		PyCFG cfg = new PyCFG(descriptor, entrypoints, list, symtable.getScope(ctx));
 		fillDefaultsAndHints(ctx, cfg, descriptor);
 		ControlFlowTracker control = new ControlFlowTracker();
-		PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, control, imports, symtable);
+		PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, control, imports, symtable)
+				.withModuleImports(moduleImports);
 		ParsedBlock r = parser.visitBlock(ctx.block());
 		list.mergeWith(r.getBody());
 		// the cells shared with nested functions are allocated first
@@ -278,7 +286,7 @@ public class PyCodeMemberParser
 					// passing null for tracker and control since no new locals
 					// and no control flow should be created here
 					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null, imports,
-							symtable);
+							symtable).withModuleImports(moduleImports);
 					String typeHint = parser.visitExpression(param.annotation().expression()).toString();
 					((PyParameter) p).setTypeHint(typeHint);
 				}
@@ -286,7 +294,7 @@ public class PyCodeMemberParser
 					// passing null for tracker and control since no new locals
 					// and no control flow should be created here
 					PyStatementParser parser = new PyStatementParser(program, filePath, unit, cfg, null, imports,
-							symtable);
+							symtable).withModuleImports(moduleImports);
 					Expression defaultValue = parser.visitExpression(def.expression());
 					((PyParameter) p).setDefaultValue(defaultValue);
 				}
