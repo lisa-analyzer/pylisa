@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.lattices.Satisfiability;
+import it.unive.lisa.lattices.heap.allocations.AllocationSite;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -35,6 +36,8 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.lisa.util.numeric.MathNumberConversionException;
+import it.unive.pylisa.cfg.expression.ListCreation;
+import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
 import it.unive.pylisa.symbolic.operators.LogicalNot;
 import it.unive.pylisa.symbolic.operators.Modulo;
@@ -470,8 +473,10 @@ public class PyValueDomain implements BaseNonRelationalValueDomain<PyValue> {
 		Satisfiability compared = compare(expression.getOperator(), left.getInterval(), right.getInterval());
 		if (compared != Satisfiability.UNKNOWN)
 			return compared;
-		if (expression.getLeft() instanceof Identifier && expression.getLeft().equals(expression.getRight()))
-			// an integer compared with itself
+		if (expression.getLeft() instanceof Identifier && expression.getLeft().equals(expression.getRight())
+				&& single((Identifier) expression.getLeft()))
+			// an integer compared with itself (not two of the values of a
+			// summary, e.g. xs[i] < xs[i + 1])
 			return compare(expression.getOperator(), IntInterval.ZERO, IntInterval.ZERO);
 		return sat;
 	}
@@ -575,7 +580,9 @@ public class PyValueDomain implements BaseNonRelationalValueDomain<PyValue> {
 		for (Identifier id : assumed.getKeys()) {
 			ConstantPropagation c = assumed.getState(id);
 			PyValue old = refined.getState(id);
-			if (c.equals(old.getConstant()))
+			if (c.equals(old.getConstant()) || !single(id))
+				// the summaries of many values are not refined: the
+				// assumption holds for one of them
 				continue;
 			PyValue updated = reduce(c, old.getInterval(), id, src, oracle);
 			if (updated.isBottom())
@@ -583,6 +590,30 @@ public class PyValueDomain implements BaseNonRelationalValueDomain<PyValue> {
 			result = result.putState(id, updated);
 		}
 		return result;
+	}
+
+	/**
+	 * Yields whether the variable holds a single value, that the assumptions
+	 * can refine: it is not the summary of many values, as the fields of weak
+	 * allocation sites and the children of the objects holding many of their
+	 * elements (e.g. the elements of a list at unknown indices, see
+	 * {@link ListCreation#UNKNOWN_INDEX}), for which an assumption holds for
+	 * one of the values only (e.g. xs[i] < xs[i + 1] reads two elements, from
+	 * the same summary).
+	 *
+	 * @param id the variable
+	 *
+	 * @return whether the variable holds a single value
+	 */
+	public static boolean single(
+			Identifier id) {
+		if (id.isWeak())
+			return false;
+		if (id instanceof AllocationSite) {
+			String field = ((AllocationSite) id).getField();
+			return !ListCreation.UNKNOWN_INDEX.equals(field) && !DictModel.UNTRACKED_KEYS.equals(field);
+		}
+		return true;
 	}
 
 	// the environment of the constants
@@ -628,9 +659,9 @@ public class PyValueDomain implements BaseNonRelationalValueDomain<PyValue> {
 		IntInterval l = eval(environment, left, pp, oracle).getInterval();
 		IntInterval r = eval(environment, right, pp, oracle).getInterval();
 		ValueEnvironment<PyValue> result = environment;
-		if (left instanceof Identifier && ((Identifier) left).canBeAssigned())
+		if (left instanceof Identifier && ((Identifier) left).canBeAssigned() && single((Identifier) left))
 			result = narrow(result, (Identifier) left, l.glb(bound(operator, l, r)), pp, oracle);
-		if (right instanceof Identifier && ((Identifier) right).canBeAssigned())
+		if (right instanceof Identifier && ((Identifier) right).canBeAssigned() && single((Identifier) right))
 			result = narrow(result, (Identifier) right, r.glb(bound(swap(operator), r, l)), pp, oracle);
 		return result;
 	}

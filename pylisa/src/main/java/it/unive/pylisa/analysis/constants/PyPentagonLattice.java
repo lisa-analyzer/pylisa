@@ -465,7 +465,9 @@ public class PyPentagonLattice
 		PyPentagonLattice cleaned = without(target::equals);
 		// the summaries of many values (e.g. the fields of weak allocation
 		// sites) have no relations
-		PyPentagonLattice copied = target.isWeak() || source.isWeak() ? cleaned : cleaned.copy(target, source);
+		PyPentagonLattice copied = PyValueDomain.single(target) && PyValueDomain.single(source)
+				? cleaned.copy(target, source)
+				: cleaned;
 		return new PyPentagonLattice(first.store(target, source), copied.second, copied.copies);
 	}
 

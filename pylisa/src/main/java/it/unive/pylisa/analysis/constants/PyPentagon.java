@@ -71,13 +71,14 @@ public class PyPentagon implements ValueDomain<PyPentagonLattice> {
 		return state.with(values.smallStepSemantics(state.first, expression, pp, oracle), state.second);
 	}
 
-	// whether the expression is a variable that can have relations
+	// whether the expression is a variable that can have relations: an
+	// integer holding a single value (see PyValueDomain#single)
 	private static boolean tracked(
 			ValueExpression expression,
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
-		return expression instanceof Identifier && !((Identifier) expression).isWeak()
+		return expression instanceof Identifier && PyValueDomain.single((Identifier) expression)
 				&& PyValueDomain.integral(expression, pp, oracle);
 	}
 

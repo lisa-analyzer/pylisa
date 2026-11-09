@@ -121,6 +121,7 @@ import it.unive.pylisa.antlr.PythonParser.PowerContext;
 import it.unive.pylisa.antlr.PythonParser.PrimaryContext;
 import it.unive.pylisa.antlr.PythonParser.Raise_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Return_stmtContext;
+import it.unive.pylisa.antlr.PythonParser.SetcompContext;
 import it.unive.pylisa.antlr.PythonParser.Shift_exprContext;
 import it.unive.pylisa.antlr.PythonParser.Simple_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.Simple_stmtsContext;
@@ -495,8 +496,35 @@ public class PyStatementParser
 	@Override
 	public Statement visitAssignment(
 			AssignmentContext ctx) {
-		if (ctx.COLON() != null)
-			throw new UnsupportedStatementException("annotated assignments are not supported");
+		if (ctx.COLON() != null) {
+			// x: T = v assigns v to x (the annotation is not evaluated, as in
+			// functions), and x: T binds nothing
+			SourceCodeLocation loc = getLocation(filePath, ctx);
+			if (ctx.annotated_rhs() == null)
+				return new NoOp(currentCFG, loc);
+			Expression target;
+			if (ctx.name() != null)
+				target = nameRef(ctx.name(), getLocation(filePath, ctx.name()), true);
+			else {
+				Single_targetContext single = ctx.single_target();
+				while (single != null && single.single_target() != null)
+					// (x): T = v
+					single = single.single_target();
+				if (single != null && single.name() != null)
+					target = nameRef(single.name(), getLocation(filePath, single), true);
+				else {
+					Single_subscript_attribute_targetContext access = single != null
+							? single.single_subscript_attribute_target()
+							: ctx.single_subscript_attribute_target();
+					Expression base = visitTPrimary(access.t_primary());
+					target = access.DOT() != null
+							? attribute(base, access.name().getText(), getLocation(filePath, access))
+							: subscript(getLocation(filePath, access), base,
+									extractExpressionsFromSlices(access.slices()));
+				}
+			}
+			return new PyAssign(currentCFG, loc, target, visitAnnotated_rhs(ctx.annotated_rhs()));
+		}
 		if (ctx.augassign() != null)
 			// see augmentedAssignment
 			throw new IllegalStateException("augmented assignments are translated by augmentedAssignment");
@@ -2803,10 +2831,10 @@ public class PyStatementParser
 	 * Whether a generator expression passed to {@code name} can be translated
 	 * as a list comprehension (see
 	 * {@link #visitGenexpArgument(GenexpContext)}): this holds for the builtins
-	 * consuming iterables (e.g. {@code sum}), and for {@code str.join}, unless
-	 * the program defines a function with the same name. Other functions might
-	 * use the generator as such (e.g. {@code next}, or {@code len}, that raises
-	 * {@code TypeError} on generators).
+	 * consuming iterables (e.g. {@code sum}), and for {@code str.join} and
+	 * {@code list.extend}, unless the program defines a function with the same
+	 * name. Other functions might use the generator as such (e.g. {@code next},
+	 * or {@code len}, that raises {@code TypeError} on generators).
 	 */
 	// whether name is the builtin function, that is, the program does not
 	// define a function with that name
@@ -2843,7 +2871,10 @@ public class PyStatementParser
 		if (name == null)
 			return false;
 		if (method)
-			return name.equals("join");
+			// str.join and list.extend consume the iterable entirely, in order
+			// (a class of the program defining extend would receive a list
+			// rather than a generator)
+			return name.equals("join") || name.equals("extend");
 		return GENERATOR_CONSUMERS.contains(name) && program.getCodeMembersByName(name).stream()
 				.allMatch(NativeCFG.class::isInstance);
 	}
@@ -3132,9 +3163,15 @@ public class PyStatementParser
 			return comprehension(ctx.dictcomp(), ctx.dictcomp().for_if_clauses(),
 					() -> visitExpression(ctx.dictcomp().kvpair().expression(0)),
 					() -> visitExpression(ctx.dictcomp().kvpair().expression(1)));
-		else if (ctx.setcomp() != null)
-			throw new UnsupportedStatementException("set comprehensions are not supported");
-		else if (ctx.ELLIPSIS() != null)
+		else if (ctx.setcomp() != null) {
+			// {e for x in xs} is set([e for x in xs]): the set of the elements
+			// computed by the list comprehension
+			SetcompContext setcomp = ctx.setcomp();
+			Expression elements = comprehension(setcomp, setcomp.for_if_clauses(),
+					() -> visitNamed_expression(setcomp.named_expression()));
+			return new UnresolvedCall(currentCFG, getLocation(filePath, ctx), CallType.STATIC, Program.PROGRAM_NAME,
+					"set", LeftToRightEvaluation.INSTANCE, elements);
+		} else if (ctx.ELLIPSIS() != null)
 			throw new UnsupportedStatementException();
 		throw new UnsupportedStatementException();
 	}

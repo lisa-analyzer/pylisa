@@ -101,7 +101,50 @@ public class PyAssign extends Assignment {
 		ExpressionSet valueIds = valueState.getExecutionExpressions();
 		ExpressionSet selfIds = selfState.getExecutionExpressions();
 		ExpressionSet indexIds = indexState.getExecutionExpressions();
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		CodeLocation loc = getLocation();
+		AnalysisState<A> result = setItem(interprocedural, indexState, selfExpr, indexExpr, valueExpr, selfIds,
+				indexIds, valueIds, expressions);
 
+		// as sub-expressions are evaluated here, their meta variables (e.g.,
+		// the return value of a call) are propagated to this assignment, as
+		// done by NaryExpression
+		Collection<Identifier> metas = getMetaVariables();
+		for (Expression sub : List.of(valueExpr, selfExpr, indexExpr)) {
+			metas.addAll(sub.getMetaVariables());
+			sub.getMetaVariables().clear();
+		}
+
+		if (getRootStatement() == this)
+			// the value of the statement is not used: the meta variables are
+			// not needed anymore, and nothing is left on the stack
+			return analysis.smallStepSemantics(result, new Skip(loc), context, this).forgetIdentifiers(metas, this);
+
+		// __setitem__ has no useful return value in Python (None); leave the
+		// assigned value on the stack, matching plain scalar assignment, as it
+		// is used by the enclosing assignment (e.g., a = x[i] = f()), that
+		// will forget the meta variables
+		AnalysisState<A> finalResult = result.bottom();
+		for (SymbolicExpression valueSym : valueIds)
+			finalResult = finalResult.lub(analysis.smallStepSemantics(result, valueSym, context, this));
+		return finalResult;
+	}
+
+	// x[i] = v, where x, i and v have been evaluated (to the given values) in
+	// state: x.__setitem__(i, v), whose meta variables are added to the ones
+	// of this assignment
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> setItem(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> indexState,
+			Expression selfExpr,
+			Expression indexExpr,
+			Expression valueExpr,
+			ExpressionSet selfIds,
+			ExpressionSet indexIds,
+			ExpressionSet valueIds,
+			StatementStore<A> expressions)
+			throws SemanticException {
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation loc = getLocation();
 		SymbolAliasing aliasing = indexState.getExecutionInfo(SymbolAliasing.INFO_KEY, SymbolAliasing.class);
@@ -160,31 +203,9 @@ public class PyAssign extends Assignment {
 			// the call cannot be resolved for any type of the receiver
 			throw new UnsupportedStatementException(this);
 		result = raising.moveFrom(result);
-
-		// as sub-expressions are evaluated here, their meta variables (e.g.,
-		// the return value of a call) are propagated to this assignment, as
-		// done by NaryExpression
-		Collection<Identifier> metas = getMetaVariables();
-		for (Expression sub : List.of(valueExpr, selfExpr, indexExpr)) {
-			metas.addAll(sub.getMetaVariables());
-			sub.getMetaVariables().clear();
-		}
 		for (Call setitem : setitems)
-			metas.addAll(setitem.getMetaVariables());
-
-		if (getRootStatement() == this)
-			// the value of the statement is not used: the meta variables are
-			// not needed anymore, and nothing is left on the stack
-			return analysis.smallStepSemantics(result, new Skip(loc), context, this).forgetIdentifiers(metas, this);
-
-		// __setitem__ has no useful return value in Python (None); leave the
-		// assigned value on the stack, matching plain scalar assignment, as it
-		// is used by the enclosing assignment (e.g., a = x[i] = f()), that
-		// will forget the meta variables
-		AnalysisState<A> finalResult = result.bottom();
-		for (SymbolicExpression valueSym : valueIds)
-			finalResult = finalResult.lub(analysis.smallStepSemantics(result, valueSym, context, this));
-		return finalResult;
+			getMetaVariables().addAll(setitem.getMetaVariables());
+		return result;
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> evalSub(
@@ -301,6 +322,23 @@ public class PyAssign extends Assignment {
 			for (SymbolicExpression id : evaluated.getExecutionExpressions())
 				result = result.lub(analysis.assign(evaluated, id, value, context, this));
 			return bind(target, result.forgetIdentifiers(target.getMetaVariables(), this));
+		}
+		if (target instanceof PySingleArrayAccess) {
+			// x[i]: x and i are evaluated, then x.__setitem__(i, value)
+			PySingleArrayAccess access = (PySingleArrayAccess) target;
+			AnalysisState<A> selfState = evalSub(access.getLeft(), state, interprocedural, expressions);
+			AnalysisState<A> indexState = evalSub(access.getRight(), selfState, interprocedural, expressions);
+			if (indexState.getExecutionState().isBottom())
+				return indexState;
+			AnalysisState<A> result = setItem(interprocedural, indexState, access.getLeft(), access.getRight(),
+					getRight(), selfState.getExecutionExpressions(), indexState.getExecutionExpressions(),
+					new ExpressionSet(value), expressions);
+			// the values of the receiver and of the index are consumed here
+			for (Expression sub : List.of(access.getLeft(), access.getRight())) {
+				getMetaVariables().addAll(sub.getMetaVariables());
+				sub.getMetaVariables().clear();
+			}
+			return result;
 		}
 		if (!(target instanceof TupleCreation))
 			throw new UnsupportedStatementException("Unpacking into " + target + " is not supported");
