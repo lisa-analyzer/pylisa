@@ -46,6 +46,7 @@ import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -838,7 +839,7 @@ public final class ListModel {
 		if (slice instanceof TernaryExpression) {
 			SymbolicExpression step = ((TernaryExpression) slice).getRight();
 			Set<Type> types = analysis.getRuntimeTypesOf(state, step, context, thrower);
-			extended = !types.stream().allMatch(Type::isNullType)
+			extended = !omitted(step) && !types.stream().allMatch(Type::isNullType)
 					&& analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, step,
 							new Constant(Int32Type.INSTANCE, 1, loc), ComparisonEq.INSTANCE, loc),
 							context, thrower) != Satisfiability.SATISFIED;
@@ -894,6 +895,13 @@ public final class ListModel {
 		return true;
 	}
 
+	// whether the step of the slice was omitted (see RangeValue), that is, it
+	// is 1
+	private static boolean omitted(
+			SymbolicExpression step) {
+		return step instanceof Constant && ((Constant) step).getValue() instanceof RangeBound;
+	}
+
 	// whether the step of the slice is 0 (that raises ValueError)
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability stepZero(
 			Analysis<A, D> analysis,
@@ -905,6 +913,8 @@ public final class ListModel {
 		if (!(slice instanceof TernaryExpression))
 			return Satisfiability.NOT_SATISFIED;
 		SymbolicExpression step = ((TernaryExpression) slice).getRight();
+		if (omitted(step))
+			return Satisfiability.NOT_SATISFIED;
 		Set<Type> types = analysis.getRuntimeTypesOf(state, step, context, pp);
 		if (!types.isEmpty() && types.stream().allMatch(Type::isNullType))
 			return Satisfiability.NOT_SATISFIED;

@@ -300,6 +300,22 @@ public final class Iteration {
 		return iterable ? Satisfiability.SATISFIED : Satisfiability.NOT_SATISFIED;
 	}
 
+	/**
+	 * Whether the given type is the type of the lazy iterators: zip, enumerate
+	 * and map objects, and the iterators of itertools (see
+	 * {@link ItertoolsModel}), that have no length and cannot be indexed or
+	 * assigned (raising {@code TypeError}).
+	 *
+	 * @param type the type
+	 *
+	 * @return whether the type is the type of a lazy iterator
+	 */
+	public static boolean lazyIterator(
+			Type type) {
+		return ZipBuiltin.isZip(type) || EnumerateBuiltin.isEnumerate(type) || MapBuiltin.isMap(type)
+				|| ItertoolsModel.isIterator(type);
+	}
+
 	private static boolean isRange(
 			Expression expression) {
 		return expression instanceof UnresolvedCall && ((UnresolvedCall) expression).getTargetName().equals("range")

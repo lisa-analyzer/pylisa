@@ -169,6 +169,12 @@ public class PyAssign extends Assignment {
 						: rtsIndex;
 
 			for (Type tSelf : rtsSelf) {
+				if (Iteration.lazyIterator(tSelf)) {
+					// e.g. zip(xs, ys)[0] = v
+					resolved = true;
+					raising.raise(indexState, getCFG(), loc, this, LibrarySpecificationProvider.TYPE_ERROR);
+					continue;
+				}
 				// the methods of the classes of the program are instance
 				// methods, looked up in the method resolution order of the
 				// class (see PyMro), while the natives of the library classes

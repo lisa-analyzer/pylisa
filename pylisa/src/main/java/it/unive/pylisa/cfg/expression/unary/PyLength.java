@@ -22,6 +22,7 @@ import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.expression.CallSites;
+import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
@@ -96,6 +97,11 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type t : rts) {
+			if (Iteration.lazyIterator(t)) {
+				// e.g. len(zip(xs, ys))
+				raising.raise(state, getCFG(), getLocation(), thrower, LibrarySpecificationProvider.TYPE_ERROR);
+				continue;
+			}
 			if (PyBinaryDispatch.isBuiltinValueType(t)) {
 				// str, bytes, int, ...: __len__ is looked up in their class
 				Set<Type>[] types = new Set[] { Collections.singleton(t) };

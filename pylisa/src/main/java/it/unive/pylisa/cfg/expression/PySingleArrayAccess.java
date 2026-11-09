@@ -80,6 +80,11 @@ public class PySingleArrayAccess extends BinaryExpression {
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type tContainer : rtsContainer) {
 			for (Type tIndex : rtsIndex) {
+				if (Iteration.lazyIterator(tContainer)) {
+					// e.g. zip(xs, ys)[0]: the iterator is not subscriptable
+					raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
+					continue;
+				}
 				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {
 					// str, int, ...: __getitem__ is looked up in their class
 					Set<Type>[] types = new Set[] { Collections.singleton(tContainer), Collections.singleton(tIndex) };

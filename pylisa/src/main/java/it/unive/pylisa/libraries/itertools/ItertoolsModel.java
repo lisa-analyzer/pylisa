@@ -56,8 +56,8 @@ import java.util.Set;
  * <li>{@code count(start, step)}: numbers, {@code int}s if {@code start} and
  * {@code step} are, {@code float}s otherwise;</li>
  * <li>{@code cycle(iterable)}, {@code compress(data, selectors)} (the elements
- * of {@code data}) and the groups of {@code groupby}: the elements of the
- * iterable;</li>
+ * of {@code data}), the builtin {@code reversed(seq)} and the groups of
+ * {@code groupby}: the elements of the iterable;</li>
  * <li>{@code repeat(object, times)}: {@code object};</li>
  * <li>{@code chain(*iterables)}: the elements of the iterables;</li>
  * <li>{@code permutations(iterable, r)} and {@code combinations(iterable, r)}:
@@ -89,10 +89,10 @@ public final class ItertoolsModel {
 	// the kinds of the iterators
 	static final String COUNT = "count", CYCLE = "cycle", REPEAT = "repeat", CHAIN = "chain",
 			COMPRESS = "compress", PERMUTATIONS = "permutations", COMBINATIONS = "combinations",
-			PRODUCT = "product", GROUPBY = "groupby", GROUPER = "grouper";
+			PRODUCT = "product", GROUPBY = "groupby", GROUPER = "grouper", REVERSED = "reversed";
 
 	private static final List<String> KINDS = List.of(COUNT, CYCLE, REPEAT, CHAIN, COMPRESS, PERMUTATIONS,
-			COMBINATIONS, PRODUCT, GROUPBY, GROUPER);
+			COMBINATIONS, PRODUCT, GROUPBY, GROUPER, REVERSED);
 
 	// the children of the iterators holding the arguments
 	static final String START = "$start", STEP = "$step", ITERABLE = "$iterable", OBJECT = "$object",
@@ -247,6 +247,7 @@ public final class ItertoolsModel {
 			case CYCLE:
 			case COMPRESS:
 			case GROUPER:
+			case REVERSED:
 				result = result.lub(of(analysis, context, interprocedural, state, deref, ITERABLE, pp, metas));
 				break;
 			case REPEAT:
