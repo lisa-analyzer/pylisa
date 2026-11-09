@@ -89,7 +89,7 @@ public class SortedBuiltin extends PyNative {
 				continue;
 			if (PyValueCall.callable(analysis, context, created, key, st) == Satisfiability.UNKNOWN)
 				// the code of key is not known
-				raise(raising, created, LibrarySpecificationProvider.EXCEPTION);
+				raise(raising, created, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 			for (SymbolicExpression iterable : params[0]) {
 				if (Iteration.iterable(analysis, context, created, iterable, st) == Satisfiability.NOT_SATISFIED)
 					continue;

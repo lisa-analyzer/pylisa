@@ -59,6 +59,14 @@ public class LibrarySpecificationProvider {
 	public static final String NONE_TYPE = "NoneType";
 	public static final String BASE_EXCEPTION = "BaseException";
 	public static final String EXCEPTION = "Exception";
+
+	/**
+	 * The class of the exceptions raised by code that is not known (e.g. the
+	 * code evaluated by {@code eval}), that might be of any subclass of
+	 * {@value #EXCEPTION}, while an exception of class {@value #EXCEPTION} is
+	 * exactly of that class (e.g. {@code raise Exception("...")}).
+	 */
+	public static final String UNKNOWN_EXCEPTION = "$UnknownException";
 	public static final String TYPE_ERROR = "TypeError";
 	public static final String INDEX_ERROR = "IndexError";
 	public static final String ZERO_DIVISION_ERROR = "ZeroDivisionError";

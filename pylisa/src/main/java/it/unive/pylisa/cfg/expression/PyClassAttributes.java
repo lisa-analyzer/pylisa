@@ -58,6 +58,10 @@ public final class PyClassAttributes {
 	// (as "Cls.name"), or through an unknown class (as "*.name")
 	private static final Map<Program, Set<String>> WRITTEN = Collections.synchronizedMap(new WeakHashMap<>());
 
+	// the prefix of the attributes assigned through a name that was not known
+	// to be a class when parsing (see classWrite)
+	private static final String UNPARSED = "?";
+
 	private PyClassAttributes() {
 	}
 
@@ -131,6 +135,40 @@ public final class PyClassAttributes {
 	}
 
 	/**
+	 * Yields the class through which the attribute {@code name} of the given
+	 * class is assigned, if the attribute is tracked as a variable (see
+	 * {@link PyClassMember}): no class in the method resolution order of the
+	 * given class defines {@code name} (in its body, or as a method), exactly
+	 * one of them is the receiver of assignments of {@code name} (as in
+	 * {@code C.name = v}), and {@code name} is never assigned through an
+	 * unknown class (e.g. {@code type(o).name = v}), through a class not known
+	 * to be one when parsing, nor deleted or set by {@code setattr}.
+	 *
+	 * @param unit the class
+	 * @param name the name of the attribute
+	 *
+	 * @return the class through which the attribute is assigned, or
+	 *             {@code null} if it is not tracked
+	 */
+	public static ClassUnit tracked(
+			ClassUnit unit,
+			String name) {
+		if (PyMro.definer(unit, name, null) != null)
+			return null;
+		Set<String> written = WRITTEN.computeIfAbsent(unit.getProgram(), PyClassAttributes::written);
+		if (written.contains("*." + name) || written.contains("*.*"))
+			return null;
+		ClassUnit tracker = null;
+		for (CompilationUnit cu : PyMro.of(unit))
+			if (cu instanceof ClassUnit && written.contains(cu.getName() + "." + name)) {
+				if (tracker != null || written.contains(UNPARSED + cu.getName() + "." + name))
+					return null;
+				tracker = (ClassUnit) cu;
+			}
+		return tracker;
+	}
+
+	/**
 	 * Yields the class attribute {@code name} assigned in the body of the given
 	 * class (not of its bases).
 	 *
@@ -181,6 +219,8 @@ public final class PyClassAttributes {
 					if (inner instanceof Assignment)
 						for (Expression target : targets(((Assignment) inner).getLeft()))
 							classWrite(target, written);
+					else if (inner instanceof UnresolvedCall)
+						removal((UnresolvedCall) inner, written);
 		return written;
 	}
 
@@ -204,9 +244,41 @@ public final class PyClassAttributes {
 					|| receiver instanceof UnresolvedCall && ((UnresolvedCall) receiver).getTargetName().equals("type");
 			if (cls)
 				written.add("*." + ((PyAttributeAccess) target).getName());
-			else if (receiver instanceof VariableRef)
+			else if (receiver instanceof VariableRef) {
 				// Cls.name, if Cls was not known to be a class when parsing
-				written.add(((VariableRef) receiver).getName() + "." + ((PyAttributeAccess) target).getName());
+				String attribute = ((VariableRef) receiver).getName() + "." + ((PyAttributeAccess) target).getName();
+				written.add(attribute);
+				written.add(UNPARSED + attribute);
+			}
+		}
+	}
+
+	// records the attributes that del (del Cls.name), setattr and delattr
+	// might set or delete, as assigned through an unknown class
+	private static void removal(
+			UnresolvedCall call,
+			Set<String> written) {
+		Expression[] params = call.getParameters();
+		switch (call.getTargetName()) {
+		case "del":
+			for (Expression target : params)
+				if (target instanceof UnresolvedCall
+						&& ((UnresolvedCall) target).getTargetName().equals("__getattribute__")
+						&& ((UnresolvedCall) target).getParameters().length == 2
+						&& ((UnresolvedCall) target).getParameters()[1] instanceof PyStringLiteral)
+					written.add("*." + ((PyStringLiteral) ((UnresolvedCall) target).getParameters()[1]).getValue());
+				else if (target instanceof PyAttributeAccess)
+					written.add("*." + ((PyAttributeAccess) target).getName());
+			break;
+		case "setattr":
+		case "delattr":
+			if (params.length >= 2 && params[1] instanceof PyStringLiteral)
+				written.add("*." + ((PyStringLiteral) params[1]).getValue());
+			else
+				written.add("*.*");
+			break;
+		default:
+			break;
 		}
 	}
 

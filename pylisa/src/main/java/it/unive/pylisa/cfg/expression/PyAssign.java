@@ -269,6 +269,9 @@ public class PyAssign extends Assignment {
 	private static <A extends AbstractLattice<A>> AnalysisState<A> bind(
 			Expression target,
 			AnalysisState<A> state) {
+		if (target instanceof PyClassMember)
+			// an attribute assigned through its class (C.name = v)
+			return ((PyClassMember) target).bind(state);
 		return target instanceof PyNameRef ? ((PyNameRef) target).bind(state) : state;
 	}
 
@@ -319,7 +322,7 @@ public class PyAssign extends Assignment {
 		ScopeId<A> context = interprocedural.getCurrentContext();
 		if (target instanceof VariableRef && !(target instanceof PyNameRef && ((PyNameRef) target).cell() != null))
 			return bind(target, analysis.assign(state, ((VariableRef) target).getIdentifier(), value, context, this));
-		if (target instanceof PyAttributeAccess || target instanceof PyNameRef) {
+		if (target instanceof PyAttributeAccess || target instanceof PyNameRef || target instanceof PyClassMember) {
 			// o.x, or a name held in a cell, is evaluated as the target of the
 			// assignment
 			AnalysisState<A> evaluated = target.forwardSemantics(state, interprocedural, expressions);

@@ -100,6 +100,7 @@ import it.unive.pylisa.antlr.PythonParser.Import_from_targetsContext;
 import it.unive.pylisa.antlr.PythonParser.Import_nameContext;
 import it.unive.pylisa.antlr.PythonParser.Import_stmtContext;
 import it.unive.pylisa.antlr.PythonParser.InversionContext;
+import it.unive.pylisa.antlr.PythonParser.Kwarg_or_double_starredContext;
 import it.unive.pylisa.antlr.PythonParser.Kwarg_or_starredContext;
 import it.unive.pylisa.antlr.PythonParser.KwargsContext;
 import it.unive.pylisa.antlr.PythonParser.Lambda_paramContext;
@@ -163,6 +164,7 @@ import it.unive.pylisa.cfg.expression.Break;
 import it.unive.pylisa.cfg.expression.Cells;
 import it.unive.pylisa.cfg.expression.Continue;
 import it.unive.pylisa.cfg.expression.DictionaryCreation;
+import it.unive.pylisa.cfg.expression.DoubleStarArgument;
 import it.unive.pylisa.cfg.expression.Empty;
 import it.unive.pylisa.cfg.expression.LambdaExpression;
 import it.unive.pylisa.cfg.expression.ListCreation;
@@ -2631,7 +2633,9 @@ public class PyStatementParser
 			return namespaces.contains(name) || program.getUnit(name) != null || BUILTIN_CLASSES.containsKey(name)
 					|| localImports.module(name) != null || importedModule((VariableRef) expr) != null;
 		}
-		if (expr instanceof UnresolvedCall) {
+		if (expr instanceof UnresolvedCall && !(expr instanceof PyClassMember)) {
+			// an attribute of a namespace (an attribute of a class of the
+			// program is a value, e.g. C.v in C.v.x)
 			UnresolvedCall call = (UnresolvedCall) expr;
 			if (call.getTargetName().equals("__getattribute__") && call.getParameters().length == 2)
 				return isNamespace(call.getParameters()[0]);
@@ -2675,8 +2679,19 @@ public class PyStatementParser
 			List<Expression> result) {
 		for (Kwarg_or_starredContext k : ctx.kwarg_or_starred())
 			result.add(visitKwarg_or_starred(k));
-		if (!ctx.kwarg_or_double_starred().isEmpty())
-			throw new UnsupportedStatementException("** kwargs unpacking is not supported");
+		for (Kwarg_or_double_starredContext k : ctx.kwarg_or_double_starred())
+			result.add(visitKwarg_or_double_starred(k));
+	}
+
+	@Override
+	public Expression visitKwarg_or_double_starred(
+			Kwarg_or_double_starredContext ctx) {
+		if (ctx.name() != null)
+			return new PyAssign(currentCFG, getLocation(filePath, ctx),
+					new VariableRef(currentCFG, getLocation(filePath, ctx.name()), ctx.name().getText()),
+					visitExpression(ctx.expression()));
+		// **d as an argument of a call
+		return new DoubleStarArgument(currentCFG, getLocation(filePath, ctx), visitExpression(ctx.expression()));
 	}
 
 	@Override

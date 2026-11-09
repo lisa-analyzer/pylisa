@@ -102,7 +102,7 @@ public class NextBuiltin extends PyNative {
 			Set<Type> types = analysis.getRuntimeTypesOf(state, it, context, st);
 			if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st)) {
 				result = result.lub(compute(analysis, context, state, new PushAny(Untyped.INSTANCE, loc)));
-				raise(raising, state, LibrarySpecificationProvider.EXCEPTION);
+				raise(raising, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 				continue;
 			}
 			boolean iterators = false, finite = false, notIterators = false, unknown = false;
@@ -122,7 +122,7 @@ public class NextBuiltin extends PyNative {
 						Iteration.elements(interprocedural, state, null, it, st, getMetaVariables(), raising));
 			if (unknown) {
 				result = result.lub(compute(analysis, context, state, new PushAny(Untyped.INSTANCE, loc)));
-				raise(raising, state, LibrarySpecificationProvider.EXCEPTION);
+				raise(raising, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 			}
 			if (notIterators)
 				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);

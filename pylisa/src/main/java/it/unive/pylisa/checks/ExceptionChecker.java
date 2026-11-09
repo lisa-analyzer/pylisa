@@ -50,11 +50,13 @@ import java.util.Set;
  * {@link it.unive.lisa.conf.LiSAConfiguration#warningVerifier}), can then
  * confirm or refute them (e.g., the violation at a statement is confirmed if
  * the statement is definitely reachable, and every execution reaching it raises
- * there only that exception). An exception of an ancestor of the classes above
- * (e.g. {@code Exception}, raised by code that is not known, such as the one
- * run by {@code exec}) might be any of their subclasses: it is a possible
- * violation of every property, and its warnings report no violation to verify.
- * The warnings start with the category of the violated property (see
+ * there only that exception). An exception raised by code that is not known
+ * (such as the one run by {@code exec}, see
+ * {@link LibrarySpecificationProvider#UNKNOWN_EXCEPTION}) might be of any
+ * subclass of {@code Exception}: it is a possible violation of every property,
+ * and its warnings report no violation to verify. An exception of an ancestor
+ * of the classes above (e.g. {@code raise Exception("...")}) is not a
+ * violation. The warnings start with the category of the violated property (see
  * {@link #category(String)}), and the possible ones contain {@code might} or
  * {@code possible} (see {@link #message}): their text does not reflect the
  * outcome of their verification.
@@ -127,10 +129,14 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 						matching.addAll(error.getValue());
 					else {
 						only = false;
-						if (raisedCls != null && cls.getUnit().isInstanceOf(raisedCls))
-							// an ancestor of the exception (e.g. Exception,
-							// raised by unknown code), that might be any of its
-							// subclasses
+						if (raisedCls != null
+								&& raisedCls.getName().equals(LibrarySpecificationProvider.UNKNOWN_EXCEPTION)
+								&& cls.getUnit().isInstanceOf(
+										PyClassType.lookup(LibrarySpecificationProvider.EXCEPTION).getUnit()))
+							// raised by unknown code, that might be of any
+							// subclass of Exception (an exception of an
+							// ancestor class, as raise Exception("..."), is of
+							// that class)
 							maybe.addAll(error.getValue());
 					}
 				}

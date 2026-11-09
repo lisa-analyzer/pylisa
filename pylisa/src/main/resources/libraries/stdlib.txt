@@ -178,6 +178,11 @@ class BaseException
 
 class Exception extends BaseException
 
+# the class of the exceptions raised by code that is not known (e.g. eval(s)),
+# that might be of any subclass of Exception (see ExceptionChecker): its name is
+# not a python identifier, so that programs cannot refer to it
+class $UnknownException extends Exception
+
 class TypeError extends Exception
 
 class LookupError extends Exception

@@ -105,7 +105,7 @@ public class Sum extends PyNative {
 			result = result.lub(unknown(analysis, context, state, Untyped.INSTANCE));
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 			if (starts.isEmpty() || starts.stream().anyMatch(Sum::object) || elements.stream().anyMatch(Sum::object))
-				raise(raising, state, LibrarySpecificationProvider.EXCEPTION);
+				raise(raising, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 			return raising.moveFrom(result);
 		}
 
@@ -135,7 +135,7 @@ public class Sum extends PyNative {
 		if (elements.isEmpty() || elements.stream().anyMatch(Sum::object)) {
 			// e.g. an object whose class defines __radd__
 			result = result.lub(unknown(analysis, context, state, Untyped.INSTANCE));
-			raise(raising, state, LibrarySpecificationProvider.EXCEPTION);
+			raise(raising, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 		}
 		return raising.moveFrom(result);
 	}

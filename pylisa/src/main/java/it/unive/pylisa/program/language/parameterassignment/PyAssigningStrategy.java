@@ -34,6 +34,7 @@ import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.VarKeywordParameter;
 import it.unive.pylisa.cfg.VarPositionalParameter;
 import it.unive.pylisa.cfg.expression.DictionaryCreation;
+import it.unive.pylisa.cfg.expression.DoubleStarArgument;
 import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.StarExpression;
@@ -41,9 +42,11 @@ import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -153,6 +156,12 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 		// arguments
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		Set<Type>[] actualTypes = call.parameterTypes(expressions, analysis, context);
+		Starred<A, D> doubleStarred = doubleStarred(analysis, context, callState, call, actuals, parameters,
+				actualTypes);
+		actuals = doubleStarred.actuals();
+		parameters = doubleStarred.given();
+		actualTypes = doubleStarred.types();
+		callState = doubleStarred.raising().moveFrom(callState);
 		Starred<A, D> starred = starred(analysis, context, callState, call, formals, actuals, parameters, actualTypes);
 		actuals = starred.actuals();
 		parameters = starred.given();
@@ -273,6 +282,79 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			ExpressionSet unknown,
 			AnalysisState<A> errors,
 			PyExceptions.Raising<A, D> raising) {
+	}
+
+	/**
+	 * Replaces the double-starred arguments ({@code **d}) with the entries of
+	 * the dictionaries, passed as keyword arguments. The keys of the
+	 * dictionaries must be known (see {@link DictModel#exactKeys}).
+	 * {@code TypeError} might be raised if the value might not be a dictionary,
+	 * or if a key might not be a {@code str}.
+	 */
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Starred<A, D> doubleStarred(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			Call call,
+			Expression[] actuals,
+			ExpressionSet[] given,
+			Set<Type>[] types)
+			throws SemanticException {
+		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+		if (Arrays.stream(actuals).noneMatch(DoubleStarArgument.class::isInstance))
+			return new Starred<>(actuals, given, types, null, state.bottomExecution(), raising);
+
+		Type dictType = PyClassType.lookup(LibrarySpecificationProvider.DICT);
+		List<Expression> acts = new ArrayList<>();
+		List<ExpressionSet> values = new ArrayList<>();
+		List<Set<Type>> valueTypes = new ArrayList<>();
+		for (int i = 0; i < actuals.length; i++) {
+			if (!(actuals[i] instanceof DoubleStarArgument)) {
+				acts.add(actuals[i]);
+				values.add(given[i]);
+				valueTypes.add(types[i]);
+				continue;
+			}
+			DoubleStarArgument arg = (DoubleStarArgument) actuals[i];
+			CodeLocation loc = arg.getLocation();
+			if (types[i].isEmpty() || types[i].stream().anyMatch(t -> !DictModel.isDict(t)))
+				// e.g. f(**5)
+				raising.raise(state, call.getCFG(), loc, call, LibrarySpecificationProvider.TYPE_ERROR);
+			if (types[i].stream().noneMatch(DictModel::isDict))
+				continue;
+			Set<Object> keys = null;
+			for (SymbolicExpression dict : given[i]) {
+				Set<Object> exact = DictModel.exactKeys(analysis, context, state, dict, call);
+				if (exact == null || (keys != null && !keys.equals(exact)))
+					throw new UnsupportedStatementException(
+							"double-starred arguments whose keys are not known are not supported");
+				keys = exact;
+			}
+			if (keys == null)
+				continue;
+			List<String> names = new ArrayList<>();
+			for (Object key : keys)
+				if (key instanceof String)
+					names.add((String) key);
+				else
+					// keywords must be strings
+					raising.raise(state, call.getCFG(), loc, call, LibrarySpecificationProvider.TYPE_ERROR);
+			Collections.sort(names);
+			for (String name : names) {
+				ExpressionSet value = new ExpressionSet();
+				for (SymbolicExpression dict : given[i]) {
+					AccessChild entry = new AccessChild(Untyped.INSTANCE, new HeapDereference(dictType, dict, loc),
+							DictModel.child(name, loc), loc);
+					value = value.lub(analysis.smallStepSemantics(state, entry, context, call)
+							.getExecutionExpressions());
+				}
+				acts.add(new NamedParameterExpression(call.getCFG(), loc, name, arg.getSubExpression()));
+				values.add(value);
+				valueTypes.add(typesOf(analysis, context, state, value, call));
+			}
+		}
+		return new Starred<>(acts.toArray(Expression[]::new), values.toArray(ExpressionSet[]::new),
+				valueTypes.toArray(Set[]::new), null, state.bottomExecution(), raising);
 	}
 
 	/**

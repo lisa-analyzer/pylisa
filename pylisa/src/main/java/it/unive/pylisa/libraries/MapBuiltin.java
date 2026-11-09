@@ -277,7 +277,7 @@ public class MapBuiltin extends PyNative {
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		raising.raise(state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.EXCEPTION);
+		raising.raise(state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 		return raising.moveFrom(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp));
 	}
 

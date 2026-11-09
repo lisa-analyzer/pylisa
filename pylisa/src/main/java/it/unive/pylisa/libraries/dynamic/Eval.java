@@ -17,8 +17,8 @@ import it.unive.pylisa.libraries.PyNative;
 /**
  * Native implementation of {@code eval(source, globals, locals)}, that
  * evaluates the expression in {@code source}. The evaluated code is unknown:
- * the result is unknown, and any exception might be raised (as an
- * {@code Exception}, that might be any of its subclasses).
+ * the result is unknown, and any exception might be raised (see
+ * {@link LibrarySpecificationProvider#UNKNOWN_EXCEPTION}).
  */
 public class Eval extends PyNative {
 
@@ -47,7 +47,7 @@ public class Eval extends PyNative {
 		// through an assignment expression), also when it raises an exception
 		AnalysisState<A> havocked = havocGlobals(analysis, context, state, args[1]);
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		raise(raising, havocked, LibrarySpecificationProvider.EXCEPTION);
+		raise(raising, havocked, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 		return raising.moveFrom(unknown(analysis, context, havocked, null));
 	}
 }

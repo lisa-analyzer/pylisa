@@ -209,9 +209,18 @@ public class PyAttributeAccess extends UnaryExpression {
 			// the methods of builtin values, read without calling them (e.g.
 			// "a".upper): bound methods
 			Set<CodeMember> valueMethods = new HashSet<>();
-			boolean unknown = types.isEmpty() || isWriteTarget(), missingAttribute = false;
+			boolean unknown = types.isEmpty(), missingAttribute = false;
 			boolean known = !PyBinaryDispatch.unknownTypes(types, this);
-			if (!unknown)
+			if (!unknown && isWriteTarget())
+				for (Type t : types)
+					if (!t.isPointerType() || !t.asPointerType().getInnerType().isUnitType())
+						if (known && PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
+							// the attributes of the values of the builtin
+							// classes cannot be assigned (e.g. None.x = 1)
+							missingAttribute = true;
+						else
+							unknown = true;
+			if (!unknown && !isWriteTarget())
 				for (Type t : types)
 					if (!t.isPointerType() || !t.asPointerType().getInnerType().isUnitType()) {
 						if (known && PyBinaryDispatch.isBuiltinValueType(t)

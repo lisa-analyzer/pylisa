@@ -69,7 +69,7 @@ public class PyModuleCall extends UnresolvedCall {
 		if (resolved instanceof OpenCall) {
 			// not a function of the module: unknown code
 			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-			raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.EXCEPTION);
+			raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 			return raising.moveFrom(result);
 		}
 		return result;

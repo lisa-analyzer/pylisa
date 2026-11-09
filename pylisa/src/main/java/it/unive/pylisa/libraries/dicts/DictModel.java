@@ -264,6 +264,55 @@ public final class DictModel {
 			Statement thrower,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
+		return lookup(analysis, context, state, dict, key, null, thrower, raising);
+	}
+
+	/**
+	 * Reads the value of the given key of the dictionary, or the default value
+	 * if the key is missing ({@code dict.get(key, default)}), as done by
+	 * {@link #read}: the default value is yielded where {@link #read} would
+	 * raise {@code KeyError}.
+	 *
+	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
+	 * @param state    the state where the dictionary, the key and the default
+	 *                     value have been evaluated
+	 * @param dict     the dictionary
+	 * @param key      the key
+	 * @param dflt     the default value
+	 * @param thrower  the statement reading the value
+	 * @param raising  where the exceptions raised by the read are collected
+	 *
+	 * @return the state after the read, where the executions raising exceptions
+	 *             have not been moved yet
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> get(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression dict,
+			SymbolicExpression key,
+			SymbolicExpression dflt,
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
+		return lookup(analysis, context, state, dict, key, dflt, thrower, raising);
+	}
+
+	// reads the value of the key, raising KeyError if it might be missing and
+	// there is no default value (null)
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> lookup(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression dict,
+			SymbolicExpression key,
+			SymbolicExpression dflt,
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
 		CodeLocation loc = thrower.getLocation();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.DICT), dict, loc);
 		AnalysisState<A> result = state.bottomExecution();
@@ -272,7 +321,10 @@ public final class DictModel {
 
 		Entries entries = entries(analysis, context, state, dict, thrower);
 		if (entries == null) {
-			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.KEY_ERROR);
+			if (dflt == null)
+				raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.KEY_ERROR);
+			else
+				result = result.lub(analysis.smallStepSemantics(state, dflt, context, thrower));
 			return result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, thrower));
 		}
 
@@ -309,8 +361,11 @@ public final class DictModel {
 			result = result.lub(
 					analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref, field, loc), context,
 							thrower));
-		if (keyError)
+		if (keyError && dflt == null)
 			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.KEY_ERROR);
+		else if (keyError)
+			// the key might be missing
+			result = result.lub(analysis.smallStepSemantics(state, dflt, context, thrower));
 		return result;
 	}
 
@@ -460,6 +515,40 @@ public final class DictModel {
 			else if (length != keys.size())
 				return null;
 		return length;
+	}
+
+	/**
+	 * The keys of the dictionary, that are known if the dictionary is a single
+	 * object (and not the summary of many) whose keys are all tracked (see
+	 * {@link #length}).
+	 *
+	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
+	 * @param state    the current state
+	 * @param dict     the dictionary
+	 * @param pp       the program point using the keys
+	 *
+	 * @return the keys, or {@code null} if they are not known
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Set<Object> exactKeys(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression dict,
+			ProgramPoint pp)
+			throws SemanticException {
+		Entries entries = entries(analysis, context, state, dict, pp);
+		if (entries == null || entries.weak() || !entries.unknown().isEmpty())
+			return null;
+		Set<Object> keys = null;
+		for (Set<Object> site : entries.keys().values())
+			if (keys == null)
+				keys = site;
+			else if (!keys.equals(site))
+				return null;
+		return keys;
 	}
 
 	/**

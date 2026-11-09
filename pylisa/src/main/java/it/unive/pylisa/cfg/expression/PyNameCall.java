@@ -156,7 +156,7 @@ public class PyNameCall extends UnresolvedCall {
 		if (!decorated(getProgram(), getTargetName()))
 			return result;
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.EXCEPTION);
+		raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 		return result
 				.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()), context, this));
 	}

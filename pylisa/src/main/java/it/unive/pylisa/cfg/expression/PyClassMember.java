@@ -19,10 +19,13 @@ import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.CodeMemberType;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.PyClassParser;
+import it.unive.pylisa.analysis.namespaces.Binding;
+import it.unive.pylisa.analysis.namespaces.Namespaces;
 import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.cfg.PyMro;
 import it.unive.pylisa.cfg.expression.PyClassAttributes.ClassAttribute;
@@ -40,13 +43,18 @@ import java.util.Set;
  * (e.g. {@code f = C.m}, then {@code f(o)}). Otherwise, its value is the one
  * assigned in the body of that class, if it is a known constant (see
  * {@link PyClassAttributes#attribute}), and unknown if it is not, or if that
- * class is a library one. If no class in the order defines {@code name}, its
- * value is unknown: for {@code mro} and the names of special attributes (e.g.
- * {@code __name__}, {@code __mro__}), that all classes have, and otherwise also
- * {@code AttributeError} might be raised (the attribute might be assigned
- * through the class, as in {@code C.name = v}, or defined by its metaclass). As
- * the target of an assignment ({@code C.name = v}), it is an attribute of a
- * namespace, whose assignment is not tracked (see {@link PyClassAttributes}).
+ * class is a library one. If no class in the order defines {@code name}, and it
+ * is assigned through one of them (as in {@code C.name = v}, see
+ * {@link PyClassAttributes#tracked}), the attribute is a variable, assigned by
+ * the assignments through the class (where this is their target), and whose
+ * binding status is tracked as the one of a global (see {@link Namespaces}):
+ * reading it raises {@code AttributeError} if it might not have been assigned
+ * yet. Otherwise, its value is unknown: for {@code mro} and the names of
+ * special attributes (e.g. {@code __name__}, {@code __mro__}), that all classes
+ * have, and otherwise also {@code AttributeError} might be raised (the
+ * attribute might be assigned through the class, or defined by its metaclass).
+ * As the target of an assignment of an attribute that is not tracked, it is an
+ * attribute of a namespace, whose assignment is not tracked.
  */
 public class PyClassMember extends UnresolvedCall {
 
@@ -83,9 +91,16 @@ public class PyClassMember extends UnresolvedCall {
 			StatementStore<A> expressions)
 			throws SemanticException {
 		ScopeId<A> context = interprocedural.getCurrentContext();
+		ClassUnit tracker = tracker();
+		if (tracker != null && isWriteTarget())
+			// C.name = v: the variable holding the attribute is assigned, and
+			// bound by the assignment (see bind)
+			return interprocedural.getAnalysis().smallStepSemantics(state, variable(tracker), context, this);
+		if (tracker != null)
+			return tracked(interprocedural.getAnalysis(), context, state, tracker);
 		if (isWriteTarget())
-			// C.name = v: the attributes assigned through classes are not
-			// tracked (see PyClassAttributes)
+			// C.name = v: the other attributes assigned through classes are
+			// not tracked (see PyClassAttributes)
 			return super.forwardSemanticsAux(interprocedural, state, params, expressions);
 		Set<CodeMember> functions = functions();
 		if (functions.isEmpty())
@@ -134,6 +149,69 @@ public class PyClassMember extends UnresolvedCall {
 		// e.g. the return value of the call computing -1: they are forgotten
 		// by the statement using this attribute
 		getMetaVariables().addAll(value.getMetaVariables());
+		return result;
+	}
+
+	/**
+	 * Yields a copy of the given state where the attribute is bound, if it is
+	 * tracked as a variable and this is the target of an assignment.
+	 *
+	 * @param <A>   the kind of {@link AbstractLattice} of the state
+	 * @param state the state after the assignment
+	 *
+	 * @return the updated state
+	 */
+	public <A extends AbstractLattice<A>> AnalysisState<A> bind(
+			AnalysisState<A> state) {
+		ClassUnit tracker = tracker();
+		Namespaces namespaces = Namespaces.of(state);
+		if (tracker == null || namespaces == null || state.getExecutionState().isBottom())
+			return state;
+		return Namespaces.store(state, namespaces.bind(namespace(tracker), name, true));
+	}
+
+	// the class through which the attribute is assigned, if it is tracked as
+	// a variable (see PyClassAttributes#tracked)
+	private ClassUnit tracker() {
+		Unit unit = getProgram().getUnit(cls);
+		if (!ClassBases.isProgramClass(unit))
+			return null;
+		return PyClassAttributes.tracked((ClassUnit) unit, name);
+	}
+
+	// the variable holding the attribute assigned through the given class:
+	// its name is not a python identifier, so that it is not a global of a
+	// module
+	private GlobalVariable variable(
+			ClassUnit tracker) {
+		return new GlobalVariable(Untyped.INSTANCE, namespace(tracker) + "." + name, getLocation());
+	}
+
+	// the namespace holding the binding status of the attributes assigned
+	// through the given class (see Namespaces), that is not a module
+	private static String namespace(
+			ClassUnit tracker) {
+		return "$class:" + tracker.getName();
+	}
+
+	// the value of a tracked attribute: AttributeError is raised if it might
+	// not have been assigned yet
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> tracked(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			ClassUnit tracker)
+			throws SemanticException {
+		Namespaces namespaces = Namespaces.of(state);
+		Binding status = namespaces == null ? Binding.MAYBE : namespaces.status(namespace(tracker), name, true);
+		AnalysisState<A> result = state.bottomExecution();
+		if (status.mightBeBound())
+			result = analysis.smallStepSemantics(state, variable(tracker), context, this);
+		if (status.mightBeUnbound()) {
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+			raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+			result = raising.moveFrom(result);
+		}
 		return result;
 	}
 

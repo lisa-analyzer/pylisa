@@ -18,9 +18,9 @@ import it.unive.pylisa.symbolic.PyNoneConstant;
 /**
  * Native implementation of {@code exec(source, globals, locals)}, that executes
  * the code in {@code source}. The executed code is unknown: the result is
- * {@code None}, and any exception might be raised (as an {@code Exception},
- * that might be any of its subclasses). The variables that the code might
- * assign are not tracked.
+ * {@code None}, and any exception might be raised (see
+ * {@link LibrarySpecificationProvider#UNKNOWN_EXCEPTION}). The variables that
+ * the code might assign are not tracked.
  */
 public class Exec extends PyNative {
 
@@ -49,7 +49,7 @@ public class Exec extends PyNative {
 		// also when it raises an exception
 		AnalysisState<A> havocked = havocGlobals(analysis, context, state, args[1]);
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		raise(raising, havocked, LibrarySpecificationProvider.EXCEPTION);
+		raise(raising, havocked, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 		return raising.moveFrom(compute(analysis, context, havocked, new PyNoneConstant(getLocation())));
 	}
 }
