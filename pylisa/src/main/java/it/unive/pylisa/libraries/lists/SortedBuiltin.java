@@ -26,6 +26,7 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -155,6 +156,13 @@ public class SortedBuiltin extends PyNative {
 							.withExecutionExpression(list));
 			}
 			result = filled;
+			// the length of a sorted list, or any
+			Set<Type> sourceTypes = analysis.getRuntimeTypesOf(state, iterable, context, st);
+			boolean sameLength = !sourceTypes.isEmpty() && sourceTypes.stream().allMatch(ListModel::isList);
+			for (SymbolicExpression list : state.getExecutionExpressions())
+				result = sameLength
+						? ListModel.setLength(analysis, context, result, list, ListModel.lengthOf(iterable, loc), st)
+						: ListModel.unknownLength(analysis, context, result, list, st);
 			if (hasType(analysis, context, state, key, NONE) != Satisfiability.NOT_SATISFIED
 					&& !comparable(analysis, context, elements, elements.getExecutionExpressions()))
 				// without key, the elements are compared (with key, its results

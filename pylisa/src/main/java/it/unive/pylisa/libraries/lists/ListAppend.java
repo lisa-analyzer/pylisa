@@ -9,10 +9,14 @@ import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingAdd;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.ListCreation;
@@ -62,6 +66,11 @@ public class ListAppend extends PyNative {
 		AnalysisState<A> appended = analysis.assign(state, unknown, args[1], context, st).lub(state);
 		// the list surely has an element
 		appended = ListModel.setNonEmpty(analysis, context, appended, args[0], true, st);
+		// and one more element
+		appended = ListModel.setLength(analysis, context, appended, args[0],
+				new BinaryExpression(Int32Type.INSTANCE, ListModel.lengthOf(args[0], loc),
+						new Constant(Int32Type.INSTANCE, 1, loc), NumericNonOverflowingAdd.INSTANCE, loc),
+				st);
 		return compute(analysis, context, appended, new PyNoneConstant(loc));
 	}
 }

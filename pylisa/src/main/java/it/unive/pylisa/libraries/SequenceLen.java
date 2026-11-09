@@ -89,13 +89,18 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 			Type inner = t.asPointerType().getInnerType();
 
 			if (ListModel.isList(t) || DictModel.isDict(t)) {
-				// the length is computed from the elements (or entries)
+				// the length computed from the elements (or entries)
 				Integer length = ListModel.isList(t) ? ListModel.length(analysis, context, state, expr, this)
 						: DictModel.length(analysis, context, state, expr, this);
-				result = result
-						.lub(length == null ? UnknownLength.of(analysis, context, state, this, getMetaVariables())
-								: analysis.smallStepSemantics(state, new Constant(Int32Type.INSTANCE, length, loc),
-										context, st));
+				result = result.lub(length != null
+						? analysis.smallStepSemantics(state, new Constant(Int32Type.INSTANCE, length, loc), context,
+								st)
+						// the number of elements of the list (see
+						// ListModel#LENGTH),
+						// that the relational domains relate to other variables
+						: ListModel.isList(t)
+								? analysis.smallStepSemantics(state, ListModel.lengthOf(expr, loc), context, st)
+								: UnknownLength.of(analysis, context, state, this, getMetaVariables()));
 			} else if (inner.canBeAssignedTo(tupleType)) {
 				HeapDereference deref = new HeapDereference(inner, expr, loc);
 				Variable lenKey = new Variable(Int32Type.INSTANCE, "length", loc);

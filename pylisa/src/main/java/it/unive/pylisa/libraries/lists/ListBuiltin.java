@@ -26,6 +26,7 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
+import java.util.Set;
 
 /**
  * Native implementation of {@code list([iterable])}: {@code list()} is a new
@@ -91,12 +92,20 @@ public class ListBuiltin extends PyNative {
 					? Iteration.elements(interprocedural, created, getSubExpressions()[0], params[0].iterator().next(),
 							st, getMetaVariables(), raising)
 					: analysis.smallStepSemantics(created, new PushAny(Untyped.INSTANCE, loc), context, st);
+			// the length of a copied list, or any
+			SymbolicExpression source = params[0].elements().size() == 1 ? params[0].iterator().next() : null;
+			Set<Type> sourceTypes = source == null ? Set.of() : analysis.getRuntimeTypesOf(state, source, context, st);
+			boolean sameLength = !sourceTypes.isEmpty() && sourceTypes.stream().allMatch(ListModel::isList);
 			for (SymbolicExpression list : created.getExecutionExpressions()) {
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
+				AnalysisState<A> filled = elements.bottomExecution();
 				for (SymbolicExpression element : elements.getExecutionExpressions())
-					result = result.lub(
-							analysis.assign(elements, unknown, element, context, st).withExecutionExpression(list));
+					filled = filled.lub(analysis.assign(elements, unknown, element, context, st));
+				filled = sameLength
+						? ListModel.setLength(analysis, context, filled, list, ListModel.lengthOf(source, loc), st)
+						: ListModel.unknownLength(analysis, context, filled, list, st);
+				result = result.lub(filled.withExecutionExpression(list));
 			}
 		}
 		if (copy && iterable != Satisfiability.SATISFIED)

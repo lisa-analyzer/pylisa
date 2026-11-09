@@ -97,6 +97,9 @@ public class ListCopy extends PyNative {
 				if (copied.getExecutionState().isBottom())
 					// the list is empty: so is the copy
 					copied = created;
+				else
+					// as many elements as the list
+					copied = ListModel.setLength(analysis, context, copied, copy, ListModel.lengthOf(self, loc), this);
 				result = result.lub(copied.withExecutionExpression(copy));
 			}
 		}

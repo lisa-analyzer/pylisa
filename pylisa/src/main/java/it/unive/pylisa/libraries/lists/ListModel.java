@@ -30,11 +30,13 @@ import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.TernaryExpression;
+import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonGe;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.symbolic.value.operator.binary.LogicalAnd;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
@@ -218,8 +220,9 @@ public final class ListModel {
 								new PushAny(Untyped.INSTANCE, loc), context, pp);
 		AccessChild unknown = new AccessChild(Untyped.INSTANCE, deref,
 				new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
-		return shrink(analysis, context,
-				analysis.assign(result, unknown, new PushAny(Untyped.INSTANCE, loc), context, pp), list, pp);
+		return unknownLength(analysis, context, shrink(analysis, context,
+				analysis.assign(result, unknown, new PushAny(Untyped.INSTANCE, loc), context, pp), list, pp), list,
+				pp);
 	}
 
 	/**
@@ -263,6 +266,92 @@ public final class ListModel {
 		// the list might have lost its last element
 		return setNonEmpty(analysis, context, result, list, false, pp)
 				.withExecutionExpressions(state.getExecutionExpressions());
+	}
+
+	/**
+	 * The child of the lists holding their number of elements: it is set when
+	 * the list is created (see {@link ListCreation}) and by the operations
+	 * changing the number of elements, exactly when they know it (e.g.
+	 * {@code append} adds one) and to any non-negative integer otherwise (see
+	 * {@link #unknownLength}). Unlike the length computed from the elements
+	 * (see {@link #length}), it is an integer variable of the list, that the
+	 * relational value domains can relate to other variables (e.g. {@code i}
+	 * after {@code if i < len(xs):}).
+	 */
+	public static final String LENGTH = "$length";
+
+	/**
+	 * Yields the child of the list holding its number of elements (see
+	 * {@link #LENGTH}).
+	 *
+	 * @param list the list
+	 * @param loc  the location of the access
+	 *
+	 * @return the child
+	 */
+	public static AccessChild lengthOf(
+			SymbolicExpression list,
+			CodeLocation loc) {
+		return new AccessChild(Int32Type.INSTANCE,
+				new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.LIST), list, loc),
+				new Variable(Int32Type.INSTANCE, LENGTH, loc), loc);
+	}
+
+	/**
+	 * Records the number of elements of the list (see {@link #LENGTH}).
+	 *
+	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
+	 * @param state    the current state
+	 * @param list     the list
+	 * @param length   the number of elements, evaluated in {@code state}
+	 * @param pp       the program point
+	 *
+	 * @return the updated state, whose computed expressions are the ones of
+	 *             {@code state}
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> setLength(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			SymbolicExpression length,
+			ProgramPoint pp)
+			throws SemanticException {
+		return analysis.assign(state, lengthOf(list, pp.getLocation()), length, context, pp)
+				.withExecutionExpressions(state.getExecutionExpressions());
+	}
+
+	/**
+	 * Records that the number of elements of the list is not known: it is any
+	 * non-negative integer (see {@link #LENGTH}).
+	 *
+	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
+	 * @param state    the current state
+	 * @param list     the list
+	 * @param pp       the program point
+	 *
+	 * @return the updated state, whose computed expressions are the ones of
+	 *             {@code state}
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unknownLength(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			ProgramPoint pp)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		AccessChild length = lengthOf(list, loc);
+		AnalysisState<A> result = analysis.assign(state, length, new PushAny(Int32Type.INSTANCE, loc), context, pp);
+		result = analysis.assume(result, new BinaryExpression(BoolType.INSTANCE, length,
+				new Constant(Int32Type.INSTANCE, 0, loc), ComparisonGe.INSTANCE, loc), context, pp, pp);
+		return result.withExecutionExpressions(state.getExecutionExpressions());
 	}
 
 	/**
@@ -339,6 +428,26 @@ public final class ListModel {
 		AccessChild child = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 				new Variable(Untyped.INSTANCE, NONEMPTY, loc), loc);
 		return analysis.satisfies(state, child, context, pp) == Satisfiability.SATISFIED;
+	}
+
+	// whether -len(list) <= index < len(list), from the number of elements of
+	// the list (see LENGTH)
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability inRange(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			SymbolicExpression index,
+			ProgramPoint pp)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		AccessChild length = lengthOf(list, loc);
+		return analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE,
+				new BinaryExpression(BoolType.INSTANCE, index,
+						new UnaryExpression(Int32Type.INSTANCE, length, NumericNegation.INSTANCE, loc),
+						ComparisonGe.INSTANCE, loc),
+				new BinaryExpression(BoolType.INSTANCE, index, length, ComparisonLt.INSTANCE, loc),
+				LogicalAnd.INSTANCE, loc), context, pp);
 	}
 
 	// whether the value is surely the given int
@@ -547,10 +656,14 @@ public final class ListModel {
 			} else {
 				any = true;
 				// 0 and -1 are in range if the list surely has an element,
-				// that is any of its elements if its length is not known
+				// that is any of its elements if its length is not known; the
+				// other indices are in range if they are less than the number
+				// of
+				// elements of the list (see LENGTH)
 				indexError = !((shape.prefix() > 0 || nonEmpty(analysis, context, state, list, thrower))
 						&& (surely(analysis, context, state, index, 0, thrower)
-								|| surely(analysis, context, state, index, -1, thrower)));
+								|| surely(analysis, context, state, index, -1, thrower)))
+						&& inRange(analysis, context, state, list, index, thrower) != Satisfiability.SATISFIED;
 			}
 		}
 
@@ -658,6 +771,8 @@ public final class ListModel {
 			if (filled.getExecutionState().isBottom())
 				// the list is empty: so is the slice
 				filled = created;
+			else
+				filled = unknownLength(analysis, context, filled, copy, owner);
 			result = result.lub(filled.withExecutionExpression(copy));
 		}
 		owner.getMetaVariables().addAll(creation.getMetaVariables());
@@ -745,7 +860,8 @@ public final class ListModel {
 				for (SymbolicExpression element : elements.getExecutionExpressions())
 					assigned = assigned.lub(analysis.assign(shrunk, unknown, element, context, thrower).lub(shrunk));
 			}
-			result = assigned;
+			// the number of elements is not known
+			result = unknownLength(analysis, context, assigned, list, thrower);
 			if (extended)
 				// an extended slice, whose length might not be the one of the
 				// value
@@ -856,7 +972,8 @@ public final class ListModel {
 				result = result.lub(analysis.assign(state, new AccessChild(Untyped.INSTANCE, deref,
 						new Constant(Int32Type.INSTANCE, pos, loc), loc), value, context, thrower));
 			} else {
-				Satisfiability in = Satisfiability.UNKNOWN;
+				// from the number of elements of the list (see LENGTH)
+				Satisfiability in = inRange(analysis, context, state, list, index, thrower);
 				if (shape.length() != null) {
 					Constant low = new Constant(Int32Type.INSTANCE, -shape.length(), loc);
 					Constant high = new Constant(Int32Type.INSTANCE, shape.length(), loc);

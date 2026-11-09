@@ -22,6 +22,7 @@ import it.unive.lisa.program.Program;
 import it.unive.lisa.triage.reachability.ReachabilityVerifier;
 import it.unive.lisa.triage.smt.SmtLibProcessSolver;
 import it.unive.pylisa.analysis.PyDomain;
+import it.unive.pylisa.analysis.constants.PyPentagon;
 import it.unive.pylisa.analysis.constants.PyValueDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphDomain;
 import it.unive.pylisa.analysis.dataframes.DataframeGraphValueDomain;
@@ -91,7 +92,7 @@ public class PyLiSA {
 		Option numericalDomainOption = Option.builder("n")
 				.longOpt("numericalDomain")
 				.hasArg()
-				.desc("Numerical domain: (ConstantPropagation [the same as ConstantPropagationWithIntervals], ConstantPropagationWithIntervals)")
+				.desc("Numerical domain: (ConstantPropagation [the same as ConstantPropagationWithPentagons], ConstantPropagationWithPentagons, ConstantPropagationWithIntervals)")
 				.required(false)
 				.build();
 
@@ -398,7 +399,7 @@ public class PyLiSA {
 		conf.workdir = outdir;
 		conf.outputs.add(new JSONResults<>());
 		conf.outputs.add(new JSONReportDumper());
-		conf.interproceduralAnalysis = new InliningAnalysis<>(150, false);
+		conf.interproceduralAnalysis = new InliningAnalysis<>(200, false);
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 		// warnings are verified after the checks
@@ -426,12 +427,17 @@ public class PyLiSA {
 		}
 		ValueDomain<?> domain;
 		switch (numericalDomain) {
-		case "ConstantPropagation":
 		case "ConstantPropagationWithIntervals":
 			// the constant propagation of pylisa, that evaluates the
 			// operators of python (e.g. the conversions to int), with the
 			// intervals of integers, as in the tests (see TestHelper)
 			domain = new PyValueDomain();
+			break;
+		case "ConstantPropagation":
+		case "ConstantPropagationWithPentagons":
+			// the same, with the strict upper bounds of pentagons (the default,
+			// as the sv-comp wrapper asks for ConstantPropagation)
+			domain = new PyPentagon();
 			break;
 		default:
 			throw new ParseException("Invalid numerical domain name: " + numericalDomain);

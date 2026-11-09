@@ -10,10 +10,13 @@ import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingAdd;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.Iteration;
@@ -23,6 +26,7 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.PyNoneConstant;
+import java.util.Set;
 
 /**
  * Native implementation of {@code list.extend(self, iterable)}, that adds the
@@ -71,6 +75,16 @@ public class ListExtend extends PyNative {
 			AnalysisState<A> extended = state;
 			for (SymbolicExpression element : elements.getExecutionExpressions())
 				extended = extended.lub(analysis.assign(elements, unknown, element, context, st));
+			// the number of elements grows by the one of the iterable, if it is
+			// a list
+			Set<Type> types = analysis.getRuntimeTypesOf(state, args[1], context, st);
+			if (!types.isEmpty() && types.stream().allMatch(ListModel::isList))
+				extended = ListModel.setLength(analysis, context, extended, args[0],
+						new BinaryExpression(Int32Type.INSTANCE, ListModel.lengthOf(args[0], loc),
+								ListModel.lengthOf(args[1], loc), NumericNonOverflowingAdd.INSTANCE, loc),
+						st);
+			else
+				extended = ListModel.unknownLength(analysis, context, extended, args[0], st);
 			result = compute(analysis, context, extended, new PyNoneConstant(loc));
 		}
 		if (iterable != Satisfiability.SATISFIED)

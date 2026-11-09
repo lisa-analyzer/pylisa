@@ -15,10 +15,12 @@ import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingAdd;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.ListCreation;
@@ -155,6 +157,16 @@ public class ListAdd extends BinaryExpression implements PluggableStatement {
 				if (nonEmpty)
 					filled = ListModel.setNonEmpty(analysis, context, filled, list, true, st);
 			}
+			// the number of elements is the sum of the ones of the operands
+			Set<Type> types = analysis.getRuntimeTypesOf(created, right, context, st);
+			if (!types.isEmpty() && types.stream().allMatch(ListModel::isList))
+				filled = ListModel.setLength(analysis, context, filled, list,
+						new it.unive.lisa.symbolic.value.BinaryExpression(Int32Type.INSTANCE,
+								ListModel.lengthOf(left, loc), ListModel.lengthOf(right, loc),
+								NumericNonOverflowingAdd.INSTANCE, loc),
+						st);
+			else
+				filled = ListModel.unknownLength(analysis, context, filled, list, st);
 			result = result.lub(filled.withExecutionExpression(list));
 		}
 		return result;

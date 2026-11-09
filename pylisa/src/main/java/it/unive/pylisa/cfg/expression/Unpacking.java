@@ -348,6 +348,8 @@ public final class Unpacking {
 				for (SymbolicExpression element : elements.getExecutionExpressions())
 					// the list might also be empty
 					filled = filled.lub(analysis.assign(created, unknown, element, context, pp));
+				// with any number of elements
+				filled = ListModel.unknownLength(analysis, context, filled, list, pp);
 			}
 			current = assignStarred(filled.withExecutionExpressions(created.getExecutionExpressions()),
 					targets[star], creation, assigner);

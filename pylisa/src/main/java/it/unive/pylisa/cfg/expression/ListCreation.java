@@ -30,6 +30,7 @@ import it.unive.pylisa.analysis.heap.Allocations;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.lists.ListModel;
+import java.util.Arrays;
 
 /**
  * A list literal {@code [e0, ..., en]}: a new object is allocated, and the
@@ -91,6 +92,14 @@ public class ListCreation extends NaryExpression {
 		// defined for all the lists (see ListModel#NONEMPTY): the elements of
 		// the list literal are known by their indices
 		current = ListModel.setNonEmpty(analysis, context, current, list, false, this);
+		// the number of elements of the literal (the operations creating lists
+		// with other elements set it, see ListModel#LENGTH), unless an element
+		// is unpacked (e.g. [*xs, 1])
+		if (Arrays.stream(getSubExpressions()).anyMatch(StarExpression.class::isInstance))
+			current = ListModel.unknownLength(analysis, context, current, list, this);
+		else
+			current = ListModel.setLength(analysis, context, current, list,
+					new Constant(Int32Type.INSTANCE, params.length, loc), this);
 
 		for (int i = 0; i < params.length; i++) {
 			AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, new Constant(Int32Type.INSTANCE, i, loc), loc);

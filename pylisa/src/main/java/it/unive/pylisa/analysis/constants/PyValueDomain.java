@@ -482,22 +482,22 @@ public class PyValueDomain implements BaseNonRelationalValueDomain<PyValue> {
 				|| operator == ComparisonNe.INSTANCE;
 	}
 
-	private static boolean lt(
+	static boolean lt(
 			BinaryOperator operator) {
 		return operator == PyComparisonLt.INSTANCE || operator == ComparisonLt.INSTANCE;
 	}
 
-	private static boolean le(
+	static boolean le(
 			BinaryOperator operator) {
 		return operator == PyComparisonLe.INSTANCE || operator == ComparisonLe.INSTANCE;
 	}
 
-	private static boolean gt(
+	static boolean gt(
 			BinaryOperator operator) {
 		return operator == PyComparisonGt.INSTANCE || operator == ComparisonGt.INSTANCE;
 	}
 
-	private static boolean ge(
+	static boolean ge(
 			BinaryOperator operator) {
 		return operator == PyComparisonGe.INSTANCE || operator == ComparisonGe.INSTANCE;
 	}
@@ -698,7 +698,7 @@ public class PyValueDomain implements BaseNonRelationalValueDomain<PyValue> {
 
 	// the negation of the expression, if it is a comparison or a combination
 	// of comparisons (on integers, not (x < y) is x >= y)
-	private static ValueExpression negate(
+	static ValueExpression negate(
 			ValueExpression expression) {
 		if (expression instanceof UnaryExpression) {
 			UnaryExpression unary = (UnaryExpression) expression;

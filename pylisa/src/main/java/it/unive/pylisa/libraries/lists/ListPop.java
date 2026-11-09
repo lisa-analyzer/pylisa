@@ -11,7 +11,9 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingSub;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 
@@ -52,6 +54,13 @@ public class ListPop extends PyNative {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> read = ListModel.read(analysis, context, state, list, index, st, raising);
 		// the list loses an element on the paths where it is read
-		return raising.moveFrom(ListModel.shrink(analysis, context, read, list, st));
+		AnalysisState<A> shrunk = ListModel.shrink(analysis, context, read, list, st);
+		// and one element less (shrink does not change the number of elements)
+		CodeLocation loc = getLocation();
+		shrunk = ListModel.setLength(analysis, context, shrunk, list,
+				new BinaryExpression(Int32Type.INSTANCE, ListModel.lengthOf(list, loc),
+						new Constant(Int32Type.INSTANCE, 1, loc), NumericNonOverflowingSub.INSTANCE, loc),
+				st);
+		return raising.moveFrom(shrunk);
 	}
 }

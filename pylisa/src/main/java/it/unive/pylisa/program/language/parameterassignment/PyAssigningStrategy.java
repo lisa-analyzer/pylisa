@@ -198,6 +198,8 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 							call.getLocation());
 					for (SymbolicExpression element : starred.unknown())
 						filled = filled.lub(analysis.assign(callState, unknown, element, context, call));
+					// with any number of elements
+					filled = ListModel.unknownLength(analysis, context, filled, created, call);
 				}
 				callState = filled.withExecutionExpressions(callState.getExecutionExpressions());
 			}

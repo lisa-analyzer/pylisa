@@ -28,6 +28,7 @@ import it.unive.lisa.symbolic.value.operator.binary.ComparisonGt;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLe;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.symbolic.value.operator.binary.LogicalAnd;
+import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingAdd;
 import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingSub;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
@@ -151,6 +152,12 @@ public class RangeBuiltin extends PyNative {
 	 * @param pp       the program point iterating over the range
 	 * @param metas    where the variable holding the element is added, that
 	 *                     {@code pp} must forget
+	 * @param relate   whether the element is related to the bounds of the range
+	 *                     (when it is the variable of a loop, whose body runs
+	 *                     only if the range has an element): otherwise, the
+	 *                     bounds are not refined by assuming that the element
+	 *                     exists (e.g. in {@code list(range(n))}, that might be
+	 *                     empty)
 	 *
 	 * @return the state whose computed expression is the element
 	 *
@@ -162,15 +169,19 @@ public class RangeBuiltin extends PyNative {
 			AnalysisState<A> state,
 			SymbolicExpression range,
 			ProgramPoint pp,
-			Collection<Identifier> metas)
+			Collection<Identifier> metas,
+			boolean relate)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
 		Variable element = new Variable(Int32Type.INSTANCE, "$range@" + loc.getCodeLocation(), loc);
 		AnalysisState<A> result = analysis.assign(state, element, new PushAny(Int32Type.INSTANCE, loc), context,
 				pp);
-		AccessChild start = field(range, FIELDS[0], loc), stop = field(range, FIELDS[1], loc),
-				step = field(range, FIELDS[2], loc);
 		Constant zero = new Constant(Int32Type.INSTANCE, 0, loc);
+		AccessChild step = field(range, FIELDS[2], loc);
+		// the bounds themselves, related to the element, or their values only
+		// (so that assuming that the element exists does not refine them)
+		SymbolicExpression start = bound(field(range, FIELDS[0], loc), relate, loc),
+				stop = bound(field(range, FIELDS[1], loc), relate, loc);
 		if (analysis.satisfies(result, new BinaryExpression(BoolType.INSTANCE, step, zero, ComparisonGt.INSTANCE,
 				loc), context, pp) == Satisfiability.SATISFIED)
 			// start <= element < stop
@@ -190,6 +201,17 @@ public class RangeBuiltin extends PyNative {
 			return state.bottomExecution();
 		metas.add(element);
 		return result.withExecutionExpression(element);
+	}
+
+	// the bound of a range, or its value (bound + 0), that the assumptions on
+	// the elements do not refine
+	private static SymbolicExpression bound(
+			AccessChild bound,
+			boolean relate,
+			CodeLocation loc) {
+		return relate ? bound
+				: new BinaryExpression(Int32Type.INSTANCE, bound, new Constant(Int32Type.INSTANCE, 0, loc),
+						NumericNonOverflowingAdd.INSTANCE, loc);
 	}
 
 	@Override

@@ -40,6 +40,7 @@ import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyNative;
+import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -115,9 +116,12 @@ public class NondetList extends PyNative {
 			for (SymbolicExpression list : created.getExecutionExpressions()) {
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
+				AnalysisState<A> filled = created.bottomExecution();
 				for (SymbolicExpression element : elements.getExecutionExpressions())
-					result = result
-							.lub(analysis.assign(created, unknown, element, context, st).withExecutionExpression(list));
+					filled = filled.lub(analysis.assign(created, unknown, element, context, st));
+				// any number of elements
+				result = result.lub(ListModel.unknownLength(analysis, context, filled, list, st)
+						.withExecutionExpression(list));
 			}
 		} else
 			// the errors raised by nondet_elem

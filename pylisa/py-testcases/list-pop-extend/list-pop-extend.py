@@ -5,12 +5,12 @@ import _sv_verifier
 l = [1, 2, 3]
 x = l.pop()
 assert x == 3
-# l might have lost any element: its length is not known anymore
+# l has two elements left (its number of elements is tracked)
 y = l.pop(0)
 m = [1, 2]
 m.pop()
-# after the first pop, m is not known to have an element: IndexError might be
-# raised
+# after the first pop, m has an element left: the second pop raises no
+# IndexError
 m.pop()
 if _sv_verifier.nondet_bool():
     # IndexError: m is empty

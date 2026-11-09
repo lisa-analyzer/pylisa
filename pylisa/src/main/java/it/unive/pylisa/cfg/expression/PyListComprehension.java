@@ -283,6 +283,8 @@ public class PyListComprehension extends NaryExpression {
 						next = next.lub(analysis.assign(filled, slot, value, context, this));
 					filled = next;
 				}
+				filled = ListModel.setLength(analysis, context, filled, list,
+						new Constant(Int32Type.INSTANCE, length, loc), this);
 				result = result.lub(filled.withExecutionExpression(list));
 			}
 			getMetaVariables().addAll(creation.getMetaVariables());
@@ -299,9 +301,12 @@ public class PyListComprehension extends NaryExpression {
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX,
 								loc),
 						loc);
+				AnalysisState<A> filled = created.bottomExecution();
 				for (SymbolicExpression value : body.getExecutionExpressions())
-					result = result
-							.lub(analysis.assign(created, unknown, value, context, this).withExecutionExpression(list));
+					filled = filled.lub(analysis.assign(created, unknown, value, context, this));
+				// with any number of elements
+				result = result.lub(ListModel.unknownLength(analysis, context, filled, list, this)
+						.withExecutionExpression(list));
 			}
 		} else
 			// the errors raised by the iterations

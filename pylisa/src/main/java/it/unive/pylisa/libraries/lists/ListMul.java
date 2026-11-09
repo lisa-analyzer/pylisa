@@ -25,6 +25,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonGe;
+import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingMul;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.expression.ListCreation;
@@ -175,6 +176,10 @@ public class ListMul extends BinaryExpression implements PluggableStatement {
 						context,
 						st) == Satisfiability.SATISFIED)
 					count = c;
+		Satisfiability nonNegative = analysis.satisfies(created,
+				new it.unive.lisa.symbolic.value.BinaryExpression(BoolType.INSTANCE, times,
+						new Constant(Int32Type.INSTANCE, 0, loc), ComparisonGe.INSTANCE, loc),
+				context, st);
 		boolean nonEmpty = positive == Satisfiability.SATISFIED
 				&& ListOperations.nonEmpty(analysis, context, created, list, st);
 
@@ -191,6 +196,8 @@ public class ListMul extends BinaryExpression implements PluggableStatement {
 					for (int i = 0; i < length; i++)
 						filled = ListOperations.copy(analysis, context, filled, created, list, i, target,
 								r * length + i, st);
+				filled = ListModel.setLength(analysis, context, filled, repeated,
+						new Constant(Int32Type.INSTANCE, count * length, loc), st);
 			} else {
 				// the elements at unknown indices
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, target,
@@ -202,6 +209,18 @@ public class ListMul extends BinaryExpression implements PluggableStatement {
 					filled = unknowns;
 				if (nonEmpty)
 					filled = ListModel.setNonEmpty(analysis, context, filled, repeated, true, st);
+				// len(list) * times elements, if times is not negative (for a
+				// list of one element, the number of repetitions itself, e.g.
+				// [0] * n has n elements)
+				if (nonNegative == Satisfiability.SATISFIED)
+					filled = ListModel.setLength(analysis, context, filled, repeated,
+							length != null && length == 1 ? times
+									: new it.unive.lisa.symbolic.value.BinaryExpression(Int32Type.INSTANCE,
+											ListModel.lengthOf(list, loc), times,
+											NumericNonOverflowingMul.INSTANCE, loc),
+							st);
+				else
+					filled = ListModel.unknownLength(analysis, context, filled, repeated, st);
 			}
 			result = result.lub(filled.withExecutionExpression(repeated));
 		}

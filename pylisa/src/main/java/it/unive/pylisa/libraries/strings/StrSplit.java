@@ -30,6 +30,7 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
+import it.unive.pylisa.libraries.lists.ListModel;
 
 /**
  * Native implementation of {@code str.split(sep=None, maxsplit=-1)}: a new list
@@ -77,7 +78,10 @@ public class StrSplit extends PyNative {
 		for (SymbolicExpression list : created.getExecutionExpressions()) {
 			AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
 					new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
-			filled = filled.lub(analysis.assign(created, unknown, new PushAny(StringType.INSTANCE, loc), context, st)
+			AnalysisState<A> split = analysis.assign(created, unknown, new PushAny(StringType.INSTANCE, loc), context,
+					st);
+			// the number of parts is not known
+			filled = filled.lub(ListModel.unknownLength(analysis, context, split, list, st)
 					.withExecutionExpression(list));
 		}
 		return super.forwardSemanticsAux(interprocedural, filled, params, expressions);

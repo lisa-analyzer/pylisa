@@ -232,7 +232,10 @@ public final class Iteration {
 						? MapBuiltin.elements(interprocedural, state, iterable, pp, metas)
 						: MapBuiltin.uncalled(analysis, context, state, pp));
 			else if (RangeBuiltin.isRange(t))
-				result = result.lub(RangeBuiltin.elements(analysis, context, state, iterable, pp, metas));
+				// the loops (and comprehensions) iterate only if the range has
+				// an element
+				result = result.lub(RangeBuiltin.elements(analysis, context, state, iterable, pp, metas,
+						pp instanceof PyIteratedElement || pp instanceof PyListComprehension));
 			else if (t instanceof PyBytesType)
 				result = result
 						.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), context, pp));

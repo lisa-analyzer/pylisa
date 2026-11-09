@@ -7,7 +7,7 @@ xs.pop()
 if xs:
     y = xs.pop()
 else:
-    # xs is empty: IndexError
+    # unreachable: xs has an element left
     z = xs.pop()
 s = _sv_verifier.nondet_str()
 words = s.split()
