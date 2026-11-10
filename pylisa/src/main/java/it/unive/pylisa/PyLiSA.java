@@ -32,6 +32,7 @@ import it.unive.pylisa.checks.DataframeDumper;
 import it.unive.pylisa.checks.DataframeStructureConstructor;
 import it.unive.pylisa.checks.ExceptionChecker;
 import it.unive.pylisa.checks.SVCOMPVerifier;
+import it.unive.pylisa.interprocedural.PyEntryStateContextBasedAnalysis;
 import it.unive.ros.application.PythonROSNodeBuilder;
 import it.unive.ros.application.ROSApplication;
 import it.unive.ros.application.RosApplicationBuilder;
@@ -53,6 +54,13 @@ import org.graphstream.util.parser.ParseException;
 public class PyLiSA {
 
 	private static Logger LOG = org.apache.logging.log4j.LogManager.getLogger(PyLiSA.class);
+
+	// the default bound of the unrollings of a recursive call (see
+	// PyEntryStateContextBasedAnalysis)
+	private static final int ENTRY_STATE_BOUND = 128;
+
+	// the interprocedural analysis: Inlining, or EntryState[:bound]
+	private static String interprocedural = "EntryState";
 
 	public static void main(
 			String[] args)
@@ -111,6 +119,15 @@ public class PyLiSA {
 				.required(false)
 				.build();
 
+		Option interproceduralOption = Option.builder("i")
+				.longOpt("interprocedural")
+				.hasArg()
+				.desc("Interprocedural analysis: (EntryState[:bound] [DEFAULT], unrolling recursive calls while their "
+						+ "entry state is new, up to bound times [DEFAULT " + ENTRY_STATE_BOUND + "], and solving them "
+						+ "with a fixpoint otherwise; Inlining, inlining calls up to a depth of 200)")
+				.required(false)
+				.build();
+
 		Option mode = Option.builder("m")
 				.longOpt("mode")
 				.hasArg()
@@ -151,6 +168,7 @@ public class PyLiSA {
 		options.addOption(checker);
 		options.addOption(numericalDomainOption);
 		options.addOption(verifierOption);
+		options.addOption(interproceduralOption);
 		options.addOption(z3Path);
 		options.addOption(mode);
 		options.addOption(version);
@@ -221,6 +239,10 @@ public class PyLiSA {
 
 			if (cmd.hasOption("z3"))
 				SmtLibProcessSolver.setZ3Path(cmd.getOptionValue("z3"));
+
+			interprocedural = cmd.getOptionValue("i", "EntryState");
+			if (!interprocedural.equals("Inlining") && !interprocedural.matches("EntryState(:[1-9][0-9]*)?"))
+				throw new ParseException("Invalid interprocedural analysis: " + interprocedural);
 
 			sources = cmd.getOptionValues("s");
 			outdir = cmd.getOptionValue("o");
@@ -399,7 +421,12 @@ public class PyLiSA {
 		conf.workdir = outdir;
 		conf.outputs.add(new JSONResults<>());
 		conf.outputs.add(new JSONReportDumper());
-		conf.interproceduralAnalysis = new InliningAnalysis<>(200, false);
+		if (interprocedural.startsWith("EntryState"))
+			conf.interproceduralAnalysis = new PyEntryStateContextBasedAnalysis<>(interprocedural.contains(":")
+					? Integer.parseInt(interprocedural.substring(interprocedural.indexOf(':') + 1))
+					: ENTRY_STATE_BOUND);
+		else
+			conf.interproceduralAnalysis = new InliningAnalysis<>(200, false);
 		conf.callGraph = new RTACallGraph();
 		conf.openCallPolicy = ReturnTopPolicy.INSTANCE;
 		// warnings are verified after the checks
