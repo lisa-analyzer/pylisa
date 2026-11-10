@@ -40,12 +40,8 @@ import java.util.List;
  * are lazy, the elements of the iterables are read when the object is iterated
  * (see {@link #elements}): each element is a tuple with an element of each
  * iterable, and the number of elements is not tracked (so that iterating the
- * same object again, that yields no element in python, is also covered). When
- * the iterables are known, each of them is also stored in a child of the object
- * (see {@link #ITERABLE}), with their number (see {@link #COUNT}): the children
- * of the objects created by the same call in a loop are then the ones of all of
- * them, while the list of the iterables is not known exactly. {@code TypeError}
- * is raised if an iterable might not be iterable (see
+ * same object again, that yields no element in python, is also covered).
+ * {@code TypeError} is raised if an iterable might not be iterable (see
  * {@link Iteration#iterable}), and {@code ValueError} might be raised if
  * {@code strict} might hold (when the lengths of the iterables differ): here,
  * when the object is created rather than while iterating it.

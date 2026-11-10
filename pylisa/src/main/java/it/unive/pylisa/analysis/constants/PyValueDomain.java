@@ -598,8 +598,8 @@ public class PyValueDomain implements BaseNonRelationalValueDomain<PyValue> {
 	 * allocation sites and the children of the objects holding many of their
 	 * elements (e.g. the elements of a list at unknown indices, see
 	 * {@link ListCreation#UNKNOWN_INDEX}), for which an assumption holds for
-	 * one of the values only (e.g. xs[i] < xs[i + 1] reads two elements, from
-	 * the same summary).
+	 * one of the values only (e.g. {@code xs[i] < xs[i + 1]} reads two
+	 * elements, from the same summary).
 	 *
 	 * @param id the variable
 	 *
