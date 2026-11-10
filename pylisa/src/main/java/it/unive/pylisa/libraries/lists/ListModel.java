@@ -37,6 +37,7 @@ import it.unive.lisa.symbolic.value.operator.binary.ComparisonGe;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.symbolic.value.operator.binary.LogicalAnd;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
+import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
@@ -553,6 +554,7 @@ public final class ListModel {
 		if (sites == null || heap.fields.isTop() || heap.fields.function == null)
 			return new Shape(null, 0, null);
 		Integer prefix = null;
+		Integer lower = null;
 		Set<SymbolicExpression> elements = new HashSet<>();
 		for (AllocationSite site : sites) {
 			ExpressionSet fields = heap.fields.getState(site);
@@ -573,14 +575,92 @@ public final class ListModel {
 			int k = 0;
 			while (indexes.contains(k))
 				k++;
-			// the summary of many lists, whose elements at known indices might
-			// be the ones of some of them only
-			// (and, after elements are removed, the elements at known indices
-			// might be at other indices, or removed)
-			int surely = site.isWeak() || shrunk ? 0 : k;
+			// after elements are removed, the elements at known indices might
+			// be at other indices, or removed; the summary of many lists has
+			// elements at known indices that might be the ones of some of them
+			// only, while all of them have the elements at the indices below
+			// their least length (see LENGTH)
+			int surely;
+			if (shrunk)
+				surely = 0;
+			else if (site.isWeak()) {
+				if (lower == null)
+					lower = leastLength(analysis, context, state, list, k, pp);
+				surely = Math.min(k, lower);
+			} else
+				surely = k;
 			prefix = prefix == null ? surely : Math.min(prefix, surely);
 		}
 		return new Shape(length(analysis, context, state, list, pp), prefix == null ? 0 : prefix, elements);
+	}
+
+	/**
+	 * Yields the expressions reading the elements of the list or tuple (see
+	 * {@link Shape#elements()}): an element that all the objects {@code list}
+	 * might point to have is read through {@code list}, while one that only
+	 * some of them have is read from those objects only (the other ones do not
+	 * contribute to it, instead of contributing an unknown value).
+	 *
+	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
+	 * @param state    the current state
+	 * @param list     the list or tuple
+	 * @param type     the class of {@code list}
+	 * @param pp       the program point reading the elements
+	 *
+	 * @return the expressions reading the elements, or {@code null} if the
+	 *             elements are not known
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Set<SymbolicExpression> elementsOf(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			Type type,
+			ProgramPoint pp)
+			throws SemanticException {
+		Shape shape = shape(analysis, context, state, list, pp);
+		if (shape.elements() == null)
+			return null;
+		CodeLocation loc = pp.getLocation();
+		Set<AllocationSite> sites = sites(analysis, context, state, list, pp);
+		HeapEnvWithFields heap = state.getExecutionState().getLatticeInstance(HeapEnvWithFields.class);
+		Set<SymbolicExpression> reads = new HashSet<>();
+		for (SymbolicExpression field : shape.elements()) {
+			Set<AllocationSite> having = new HashSet<>();
+			for (AllocationSite site : sites)
+				if (heap.fields.getState(site).contains(field))
+					having.add(site);
+			if (having.size() == sites.size())
+				reads.add(new AccessChild(Untyped.INSTANCE, new HeapDereference(type, list, loc), field, loc));
+			else
+				for (AllocationSite site : having)
+					reads.add(new AccessChild(Untyped.INSTANCE,
+							new HeapDereference(type, new MemoryPointer(new ReferenceType(type), site, loc), loc),
+							field, loc));
+		}
+		return reads;
+	}
+
+	// the greatest number, up to max, of elements that the list surely has,
+	// according to its length (see LENGTH)
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> int leastLength(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression list,
+			int max,
+			ProgramPoint pp)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		for (int c = max; c > 0; c--)
+			if (analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, lengthOf(list, loc),
+					new Constant(Int32Type.INSTANCE, c, loc), ComparisonGe.INSTANCE, loc), context,
+					pp) == Satisfiability.SATISFIED)
+				return c;
+		return 0;
 	}
 
 	/**
@@ -668,14 +748,15 @@ public final class ListModel {
 			}
 		}
 
-		if (any)
-			if (shape.elements() == null)
+		if (any) {
+			Set<SymbolicExpression> elements = elementsOf(analysis, context, state, list, listType, thrower);
+			if (elements == null)
 				result = result
 						.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, thrower));
 			else
-				for (SymbolicExpression field : shape.elements())
-					result = result.lub(analysis.smallStepSemantics(state,
-							new AccessChild(Untyped.INSTANCE, deref, field, loc), context, thrower));
+				for (SymbolicExpression element : elements)
+					result = result.lub(analysis.smallStepSemantics(state, element, context, thrower));
+		}
 		if (indexError)
 			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
 		if (typeError)
@@ -761,12 +842,12 @@ public final class ListModel {
 			AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, copy, loc),
 					new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 			AnalysisState<A> filled = created.bottomExecution();
-			if (shape.elements() == null)
+			Set<SymbolicExpression> elements = elementsOf(analysis, context, state, list, listType, owner);
+			if (elements == null)
 				filled = analysis.assign(created, unknown, new PushAny(Untyped.INSTANCE, loc), context, owner);
 			else
-				for (SymbolicExpression field : shape.elements())
-					for (SymbolicExpression element : analysis.smallStepSemantics(created,
-							new AccessChild(Untyped.INSTANCE, source, field, loc), context, owner)
+				for (SymbolicExpression read : elements)
+					for (SymbolicExpression element : analysis.smallStepSemantics(created, read, context, owner)
 							.getExecutionExpressions())
 						filled = filled.lub(analysis.assign(created, unknown, element, context, owner));
 			if (filled.getExecutionState().isBottom())
@@ -1062,15 +1143,12 @@ public final class ListModel {
 			ProgramPoint pp)
 			throws SemanticException {
 		CodeLocation loc = pp.getLocation();
-		Shape shape = shape(analysis, context, state, list, pp);
-		if (shape.elements() == null)
+		Set<SymbolicExpression> elements = elementsOf(analysis, context, state, list, type, pp);
+		if (elements == null)
 			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp);
-		HeapDereference deref = new HeapDereference(type, list, loc);
 		AnalysisState<A> result = state.bottomExecution();
-		for (SymbolicExpression field : shape.elements())
-			result = result.lub(
-					analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref, field, loc), context,
-							pp));
+		for (SymbolicExpression element : elements)
+			result = result.lub(analysis.smallStepSemantics(state, element, context, pp));
 		return result;
 	}
 }

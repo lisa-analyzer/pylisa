@@ -26,6 +26,7 @@ import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyNative;
+import java.util.Set;
 
 /**
  * Native implementation of {@code list.copy(self)}, that returns a new list
@@ -86,12 +87,12 @@ public class ListCopy extends PyNative {
 				AccessChild unknown = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, copy, loc),
 						new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, loc), loc);
 				AnalysisState<A> copied = created.bottomExecution();
-				if (shape.elements() == null)
+				Set<SymbolicExpression> elements = ListModel.elementsOf(analysis, context, state, self, listType, this);
+				if (elements == null)
 					copied = analysis.assign(created, unknown, new PushAny(Untyped.INSTANCE, loc), context, this);
 				else
-					for (SymbolicExpression field : shape.elements())
-						for (SymbolicExpression element : analysis.smallStepSemantics(created,
-								new AccessChild(Untyped.INSTANCE, source, field, loc), context, this)
+					for (SymbolicExpression read : elements)
+						for (SymbolicExpression element : analysis.smallStepSemantics(created, read, context, this)
 								.getExecutionExpressions())
 							copied = copied.lub(analysis.assign(created, unknown, element, context, this));
 				if (copied.getExecutionState().isBottom())

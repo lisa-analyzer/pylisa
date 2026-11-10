@@ -147,11 +147,15 @@ public class PyRecursionSolver<A extends AbstractLattice<A>,
 				ScopeToken scope = new ScopeToken(call);
 				AnalysisState<A> entry = prepareEntryState(call, entryState, parameters, expressions, scope, target)
 						.getLeft();
-				// we are interested in lub/widen only the call parameters: the
-				// errors and the halting state of the caller are not part of
-				// the entry of the recursion head, and they would otherwise be
-				// injected again at each iteration, one scope deeper
-				AnalysisState<A> params = entry.forgetIdentifiersIf(i -> !(i instanceof Variable), call);
+				// we are interested in lub/widen only the call parameters, and
+				// the heap they might point to (the identifiers that cannot be
+				// scoped, e.g. the elements of a list passed as argument, whose
+				// types would be lost otherwise): the errors and the halting
+				// state of the caller are not part of the entry of the
+				// recursion head, and they would otherwise be injected again
+				// at each iteration, one scope deeper
+				AnalysisState<A> params = entry
+						.forgetIdentifiersIf(i -> !(i instanceof Variable) && i.canBeScoped(), call);
 				recursiveEntry = recursiveEntry.lub(params.bottom().withExecution(params.getExecution()));
 			}
 
@@ -237,7 +241,13 @@ public class PyRecursionSolver<A extends AbstractLattice<A>,
 
 		recursiveApprox = new GenericMapLattice<CFGCall, AnalysisState<A>>(entryState.postState);
 		recursiveEntry = entryState.postState.bottom();
-		base = baseCases.find();
+		// the base cases are found with top values (see PyBaseCasesFinder):
+		// only their normal execution approximates the results of the back
+		// calls, while the errors and halts they raise with values that the
+		// recursion might not have are dropped (the ones the recursion raises
+		// are collected by the iterations below, from its actual entry state)
+		AnalysisState<A> found = baseCases.find();
+		base = found.bottom().withExecution(found.getExecution());
 
 		Expression[] actuals = start.getParameters();
 		ExpressionSet[] params = new ExpressionSet[actuals.length];
