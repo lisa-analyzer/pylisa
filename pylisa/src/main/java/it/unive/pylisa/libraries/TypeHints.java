@@ -169,6 +169,21 @@ public final class TypeHints {
 		return function.getDescriptor().getName();
 	}
 
+	/**
+	 * Whether the values of the given type are surely the builtin function of
+	 * the given name (e.g. {@code int}, given as a value).
+	 *
+	 * @param t    the type
+	 * @param name the name of the builtin function
+	 *
+	 * @return whether the values are that builtin function
+	 */
+	public static boolean isBuiltin(
+			Type t,
+			String name) {
+		return name.equals(builtin(t));
+	}
+
 	// whether the values of type t are objects of cls, or of one of its
 	// subclasses: an object of a class whose bases are not known (see
 	// PyClassParser) might be an instance of any class

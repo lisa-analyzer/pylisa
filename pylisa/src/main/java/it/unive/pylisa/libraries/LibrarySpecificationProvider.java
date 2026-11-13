@@ -38,6 +38,8 @@ public class LibrarySpecificationProvider {
 
 	public static final String SET = "Set";
 	public static final String DICT = "Dict";
+	public static final String DEFAULT_INT_DICT = "$DefaultIntDict";
+	public static final String COUNTER = "$Counter";
 	public static final String LIST = "List";
 	public static final String TUPLE = "Tuple";
 	public static final String SLICE = "Slice";

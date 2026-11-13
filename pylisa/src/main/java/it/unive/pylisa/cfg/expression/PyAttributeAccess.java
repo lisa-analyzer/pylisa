@@ -309,7 +309,8 @@ public class PyAttributeAccess extends UnaryExpression {
 	// the builtin classes whose objects have no instance attributes, that
 	// cannot be assigned (raising AttributeError)
 	private static final Set<String> WITHOUT_ATTRIBUTES = Set.of(LibrarySpecificationProvider.LIST,
-			LibrarySpecificationProvider.DICT, LibrarySpecificationProvider.TUPLE,
+			LibrarySpecificationProvider.DICT, LibrarySpecificationProvider.DEFAULT_INT_DICT,
+			LibrarySpecificationProvider.COUNTER, LibrarySpecificationProvider.TUPLE,
 			LibrarySpecificationProvider.NAMED_TUPLE, LibrarySpecificationProvider.SET,
 			LibrarySpecificationProvider.RANGE, LibrarySpecificationProvider.ZIP,
 			LibrarySpecificationProvider.ENUMERATE, LibrarySpecificationProvider.MAP,

@@ -125,7 +125,11 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 				if (indexTypes.isEmpty() || !indexTypes.stream().allMatch(ListModel::isSlice))
 					// bounds and index checked on the elements of the list
 					result = result.lub(ListModel.read(analysis, context, state, left, right, st, raising));
-			} else if (DictModel.isDict(t))
+			} else if (DictModel.isDefaultDict(t))
+				// the entries of the dictionary, where a missing key reads 0
+				result = result.lub(DictModel.readDefault(analysis, context, state, left, right,
+						DictModel.isDefaultIntDict(t), st, raising));
+			else if (DictModel.isDict(t))
 				// the entries of the dictionary
 				result = result.lub(DictModel.read(analysis, context, state, left, right, st, raising));
 			else {
