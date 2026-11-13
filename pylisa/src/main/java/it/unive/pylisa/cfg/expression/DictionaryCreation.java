@@ -54,6 +54,10 @@ public class DictionaryCreation extends NaryExpression {
 	// for each entry, whether it is **m (with no key)
 	private final boolean[] unpacked;
 
+	// the name of the class of the new dictionary (Dict, or one of its
+	// subclasses, see DictModel#isDefaultDict)
+	private final String dictClass;
+
 	/**
 	 * Builds the literal.
 	 *
@@ -67,7 +71,27 @@ public class DictionaryCreation extends NaryExpression {
 			CFG cfg,
 			CodeLocation loc,
 			Pair<Expression, Expression>... values) {
+		this(cfg, loc, LibrarySpecificationProvider.DICT, values);
+	}
+
+	/**
+	 * Builds the creation of a dictionary of the given class (that is
+	 * {@code Dict} or one of its subclasses).
+	 *
+	 * @param cfg       the cfg where the creation is
+	 * @param loc       the location of the creation
+	 * @param dictClass the name of the class of the dictionary
+	 * @param values    the entries: the key and the value, or {@code null} and
+	 *                      the unpacked mapping for {@code **m}
+	 */
+	@SafeVarargs
+	public DictionaryCreation(
+			CFG cfg,
+			CodeLocation loc,
+			String dictClass,
+			Pair<Expression, Expression>... values) {
 		super(cfg, loc, "dict", toFlatArray(values));
+		this.dictClass = dictClass;
 		this.unpacked = new boolean[values.length];
 		for (int i = 0; i < values.length; i++)
 			unpacked[i] = values[i].getLeft() == null;
@@ -76,7 +100,8 @@ public class DictionaryCreation extends NaryExpression {
 	@Override
 	protected int compareSameClassAndParams(
 			Statement o) {
-		return Arrays.compare(unpacked, ((DictionaryCreation) o).unpacked);
+		int cmp = dictClass.compareTo(((DictionaryCreation) o).dictClass);
+		return cmp != 0 ? cmp : Arrays.compare(unpacked, ((DictionaryCreation) o).unpacked);
 	}
 
 	private static Expression[] toFlatArray(
@@ -103,7 +128,7 @@ public class DictionaryCreation extends NaryExpression {
 
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation loc = getLocation();
-		Type dictType = PyClassType.lookup(LibrarySpecificationProvider.DICT);
+		Type dictType = PyClassType.lookup(dictClass);
 		ReferenceType reftype = new ReferenceType(dictType);
 		MemoryAllocation alloc = new MemoryAllocation(dictType, loc, false);
 		HeapReference ref = new HeapReference(reftype, alloc, loc);

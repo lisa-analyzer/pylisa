@@ -86,9 +86,42 @@ public final class DictModel {
 	 */
 	public static boolean isDict(
 			Type t) {
-		return t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
-				&& t.asPointerType().getInnerType().asUnitType().getUnit().getName()
-						.equals(LibrarySpecificationProvider.DICT);
+		if (!t.isPointerType() || !t.asPointerType().getInnerType().isUnitType())
+			return false;
+		String name = t.asPointerType().getInnerType().asUnitType().getUnit().getName();
+		return name.equals(LibrarySpecificationProvider.DICT)
+				|| name.equals(LibrarySpecificationProvider.DEFAULT_INT_DICT)
+				|| name.equals(LibrarySpecificationProvider.COUNTER);
+	}
+
+	/**
+	 * Whether the values of the given type are dictionaries whose missing keys
+	 * read {@code 0}: the ones of {@code collections.defaultdict(int)} and of
+	 * {@code collections.Counter()} (see {@link #readDefault}).
+	 *
+	 * @param t the type
+	 *
+	 * @return whether the values are such dictionaries
+	 */
+	public static boolean isDefaultDict(
+			Type t) {
+		return isDict(t) && !t.asPointerType().getInnerType().asUnitType().getUnit().getName()
+				.equals(LibrarySpecificationProvider.DICT);
+	}
+
+	/**
+	 * Whether the values of the given type are dictionaries of
+	 * {@code collections.defaultdict(int)}, where reading a missing key also
+	 * adds it.
+	 *
+	 * @param t the type
+	 *
+	 * @return whether the values are such dictionaries
+	 */
+	public static boolean isDefaultIntDict(
+			Type t) {
+		return isDict(t) && t.asPointerType().getInnerType().asUnitType().getUnit().getName()
+				.equals(LibrarySpecificationProvider.DEFAULT_INT_DICT);
 	}
 
 	/**
@@ -101,7 +134,31 @@ public final class DictModel {
 	 */
 	public static boolean unmodeled(
 			String name) {
-		PyClassType dict = PyClassType.lookup(LibrarySpecificationProvider.DICT);
+		return unmodeled(LibrarySpecificationProvider.DICT, name);
+	}
+
+	/**
+	 * Whether the dictionaries of the given type (a dictionary, see
+	 * {@link #isDict}) do not define the given method (that is, it is not
+	 * modeled for their class, e.g. {@code update} of
+	 * {@code collections.Counter}).
+	 *
+	 * @param t    the type
+	 * @param name the name of the method
+	 *
+	 * @return whether the method is not modeled
+	 */
+	public static boolean unmodeled(
+			Type t,
+			String name) {
+		return unmodeled(t.asPointerType().getInnerType().asUnitType().getUnit().getName(), name);
+	}
+
+	// whether the dictionaries of the given class do not define the method
+	private static boolean unmodeled(
+			String cls,
+			String name) {
+		PyClassType dict = PyClassType.lookup(cls);
 		if (dict == null)
 			return false;
 		Set<Unit> units = new HashSet<>();
@@ -265,6 +322,51 @@ public final class DictModel {
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		return lookup(analysis, context, state, dict, key, null, thrower, raising);
+	}
+
+	/**
+	 * Reads the value of the given key of a dictionary whose missing keys read
+	 * {@code 0} (see {@link #isDefaultDict}) as {@link #get} with the default
+	 * value {@code 0}: {@code KeyError} is not raised. With {@code insert}, as
+	 * for {@code collections.defaultdict(int)} (whose {@code __missing__}
+	 * stores the value it returns), the key is then written with the value
+	 * read, so that it is surely in the dictionary; for
+	 * {@code collections.Counter()}, a missing key is not added.
+	 *
+	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
+	 * @param state    the state where the dictionary and the key have been
+	 *                     evaluated
+	 * @param dict     the dictionary
+	 * @param key      the key
+	 * @param insert   whether a missing key is added
+	 * @param thrower  the statement reading the value
+	 * @param raising  where the exceptions raised by the read are collected
+	 *
+	 * @return the state after the read, where the executions raising exceptions
+	 *             have not been moved yet
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> readDefault(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression dict,
+			SymbolicExpression key,
+			boolean insert,
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
+		Constant zero = new Constant(Int32Type.INSTANCE, 0, thrower.getLocation());
+		AnalysisState<A> read = lookup(analysis, context, state, dict, key, zero, thrower, raising);
+		if (!insert || read.getExecutionState().isBottom())
+			return read;
+		// the key is written with the value read (the one it had, or 0)
+		AnalysisState<A> written = read.bottomExecution();
+		for (SymbolicExpression value : read.getExecutionExpressions())
+			written = written.lub(store(analysis, context, read, dict, key, value, thrower));
+		return written.withExecutionExpressions(read.getExecutionExpressions());
 	}
 
 	/**

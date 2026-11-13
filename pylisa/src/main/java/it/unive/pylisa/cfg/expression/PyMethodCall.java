@@ -134,7 +134,8 @@ public class PyMethodCall extends UnresolvedCall {
 				// modify the set in any way
 				for (SymbolicExpression receiver : params[0])
 					resolving = SetModel.invalidate(analysis, context, resolving, receiver, this);
-			if (receiverTypes.stream().anyMatch(DictModel::isDict) && DictModel.unmodeled(getTargetName()))
+			if (receiverTypes.stream()
+					.anyMatch(t -> DictModel.isDict(t) && DictModel.unmodeled(t, getTargetName())))
 				// a method of dictionaries that is not modeled (e.g. pop) might
 				// modify the dictionary in any way
 				for (SymbolicExpression receiver : params[0])
