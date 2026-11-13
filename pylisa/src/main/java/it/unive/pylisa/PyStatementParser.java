@@ -1500,23 +1500,31 @@ public class PyStatementParser
 
 		block.mergeWith(trueBlock.getBody());
 		block.addEdge(new TrueEdge(condition, trueBlock.getBegin()));
-		block.addEdge(new SequentialEdge(trueBlock.getEnd(), condition));
+		// a body ending with return, raise, break or continue does not go
+		// back to the condition (breaks and continues are connected by
+		// endLoop)
+		if (trueBlock.canBeContinued())
+			block.addEdge(new SequentialEdge(trueBlock.getEnd(), condition));
 
-		// check if there's an else condition for the while
+		// the breaks and continues of the body (the ones of the else block
+		// belong to the enclosing loops, so it is added after)
+		endLoop(block, condition, whileExitNode, condition);
+
+		// check if there's an else condition for the while: it runs when the
+		// condition is false, not after a break
 		Statement firstFollower;
 		if (ctx.else_block() != null) {
 			ParsedBlock falseBlock = visitBlock(
 					ctx.else_block().block());
 			block.mergeWith(falseBlock.getBody());
 			block.addEdge(new FalseEdge(condition, falseBlock.getBegin()));
-			block.addEdge(new SequentialEdge(falseBlock.getEnd(), whileExitNode));
+			if (falseBlock.canBeContinued())
+				block.addEdge(new SequentialEdge(falseBlock.getEnd(), whileExitNode));
 			firstFollower = falseBlock.getBegin();
 		} else {
 			block.addEdge(new FalseEdge(condition, whileExitNode));
 			firstFollower = whileExitNode;
 		}
-
-		endLoop(block, condition, whileExitNode, condition);
 
 		currentCFG.getDescriptor().addControlFlowStructure(new Loop(
 				currentCFG.getNodeList(),
@@ -1612,19 +1620,36 @@ public class PyStatementParser
 		block.addEdge(new SequentialEdge(counter_init, condition));
 		block.addEdge(new TrueEdge(condition, element_assignment));
 		block.addEdge(new SequentialEdge(element_assignment, body.getBegin()));
-		block.addEdge(new SequentialEdge(body.getEnd(), counter_increment));
+		// a body ending with return, raise, break or continue does not go to
+		// the next element (breaks and continues are connected by endLoop)
+		if (body.canBeContinued())
+			block.addEdge(new SequentialEdge(body.getEnd(), counter_increment));
 		block.addEdge(new SequentialEdge(counter_increment, condition));
-		block.addEdge(new FalseEdge(condition, exit));
 
 		Collection<Statement> nodes = new HashSet<>(body.getBody().getNodes());
 		nodes.add(element_assignment);
 		nodes.add(counter_increment);
 
+		// the breaks and continues of the body (the ones of the else block
+		// belong to the enclosing loops, so it is added after)
 		endLoop(block, condition, exit, counter_increment);
+
+		// the else block runs when the elements are over, not after a break
+		Statement firstFollower = exit;
+		if (ctx.else_block() != null) {
+			ParsedBlock orElse = visitBlock(ctx.else_block().block());
+			block.mergeWith(orElse.getBody());
+			block.addEdge(new FalseEdge(condition, orElse.getBegin()));
+			if (orElse.canBeContinued())
+				block.addEdge(new SequentialEdge(orElse.getEnd(), exit));
+			firstFollower = orElse.getBegin();
+		} else
+			block.addEdge(new FalseEdge(condition, exit));
+
 		currentCFG.getDescriptor().addControlFlowStructure(new Loop(
 				currentCFG.getNodeList(),
 				condition,
-				exit,
+				firstFollower,
 				nodes));
 		return new ParsedBlock(iterable_init, block, exit);
 	}
