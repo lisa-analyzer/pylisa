@@ -101,6 +101,15 @@ public class Import extends Statement {
 		return visitor.visit(tool, getCFG(), this);
 	}
 
+	/**
+	 * Yields the names bound by this statement, in order.
+	 *
+	 * @return the names
+	 */
+	public List<PyNameRef> getBound() {
+		return bound;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder("import ");

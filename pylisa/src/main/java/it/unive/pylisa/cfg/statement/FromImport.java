@@ -110,6 +110,24 @@ public class FromImport extends Statement {
 		return visitor.visit(tool, getCFG(), this);
 	}
 
+	/**
+	 * Yields the names bound by this statement, in order.
+	 *
+	 * @return the names
+	 */
+	public List<PyNameRef> getBound() {
+		return bound;
+	}
+
+	/**
+	 * Yields whether this is a star import ({@code from lib import *}).
+	 *
+	 * @return whether this is a star import
+	 */
+	public boolean isStar() {
+		return components.containsKey("*");
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder("from ").append(lib).append(" import ");
