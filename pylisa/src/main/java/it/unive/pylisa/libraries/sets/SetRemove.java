@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.interprocedural.ScopeId;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -47,11 +48,14 @@ public class SetRemove extends PyNative {
 			SymbolicExpression[] args)
 			throws SemanticException {
 		AnalysisState<A> result = state.bottomExecution();
-		if (!SetModel.elements(analysis, context, state, args[0], st).getExecutionState().isBottom())
+		boolean empty = SetModel.elements(analysis, context, state, args[0], st).getExecutionState().isBottom();
+		if (!empty)
 			result = compute(analysis, context, state, new PyNoneConstant(getLocation()));
-		// KeyError if the element might not be in the set
+		// KeyError if the element is not in the set: surely if the set has no
+		// elements, and under an unknown condition otherwise
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		raise(raising, state, LibrarySpecificationProvider.KEY_ERROR);
+		raise(raising, empty ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN, state,
+				LibrarySpecificationProvider.KEY_ERROR);
 		return raising.moveFrom(result);
 	}
 }

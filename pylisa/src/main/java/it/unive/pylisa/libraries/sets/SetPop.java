@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.interprocedural.ScopeId;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -44,9 +45,13 @@ public class SetPop extends PyNative {
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		// KeyError if the set is empty
+		// KeyError if the set is empty: surely if it has no elements, and
+		// under an unknown condition otherwise, as the size of the set is
+		// not known
+		AnalysisState<A> elements = SetModel.elements(analysis, context, state, args[0], st);
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		raise(raising, state, LibrarySpecificationProvider.KEY_ERROR);
-		return raising.moveFrom(SetModel.elements(analysis, context, state, args[0], st));
+		raise(raising, elements.getExecutionState().isBottom() ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN,
+				state, LibrarySpecificationProvider.KEY_ERROR);
+		return raising.moveFrom(elements);
 	}
 }
