@@ -3,6 +3,8 @@
     "location" : "'py-testcases/object-init/object-init.py':15:4",
     "cfg" : "untyped py-testcases/object-init/object-init::$main()",
     "text" : "c = __init__(1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/object-init/object-init.py':15:8",
     "definite" : false

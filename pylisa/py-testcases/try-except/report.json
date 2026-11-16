@@ -3,6 +3,8 @@
     "location" : "'py-testcases/try-except/try-except.py':62:8",
     "cfg" : "untyped py-testcases/try-except/try-except::$main()",
     "text" : "raise __init__()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/try-except/try-except.py':62:8",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/try-except/try-except.py':69:8",
     "cfg" : "untyped py-testcases/try-except/try-except::$main()",
     "text" : "raise $exc@68:4",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/try-except/try-except.py':69:8",
     "definite" : false

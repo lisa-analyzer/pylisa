@@ -3,6 +3,8 @@
     "location" : "'py-testcases/class-calls/class-calls.py':16:0",
     "cfg" : "untyped py-testcases/class-calls/class-calls::$main()",
     "text" : "e = n()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type is used (uncaught TypeError) at 'py-testcases/class-calls/class-calls.py':16:4",
     "definite" : true

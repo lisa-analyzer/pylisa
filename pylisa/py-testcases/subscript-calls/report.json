@@ -3,6 +3,8 @@
     "location" : "'py-testcases/subscript-calls/subscript-calls.py':38:4",
     "cfg" : "untyped py-testcases/subscript-calls/subscript-calls::$main()",
     "text" : "assert ==(calls[0], 2)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/subscript-calls/subscript-calls.py':38:4",
     "definite" : false

@@ -3,6 +3,8 @@
     "location" : "'py-testcases/list-concatenation/list-concatenation.py':11:4",
     "cfg" : "untyped py-testcases/list-concatenation/list-concatenation::$main()",
     "text" : "a[3]",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/list-concatenation/list-concatenation.py':11:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/list-concatenation/list-concatenation.py':25:8",
     "cfg" : "untyped py-testcases/list-concatenation/list-concatenation::$main()",
     "text" : "+(y, 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/list-concatenation/list-concatenation.py':25:8",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/list-concatenation/list-concatenation.py':31:4",
     "cfg" : "untyped py-testcases/list-concatenation/list-concatenation::$main()",
     "text" : "e[0]",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/list-concatenation/list-concatenation.py':31:4",
     "definite" : false

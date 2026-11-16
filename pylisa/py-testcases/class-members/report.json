@@ -3,6 +3,8 @@
     "location" : "'py-testcases/class-members/class-members.py':18:4",
     "cfg" : "untyped py-testcases/class-members/class-members::$main()",
     "text" : "c = +(b, 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/class-members/class-members.py':18:8",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/class-members/class-members.py':23:4",
     "cfg" : "untyped py-testcases/class-members/class-members::$main()",
     "text" : "m = __getattribute__(K, 'nope')",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/class-members/class-members.py':23:8",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/class-members/class-members.py':39:4",
     "cfg" : "untyped py-testcases/class-members/class-members::$main()",
     "text" : "assert ==(__getattribute__(S, 'x'), 0)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/class-members/class-members.py':39:4",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/class-members/class-members.py':41:4",
     "cfg" : "untyped py-testcases/class-members/class-members::$main()",
     "text" : "assert ==(__init__().x, 0)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/class-members/class-members.py':41:4",
     "definite" : false

@@ -3,6 +3,8 @@
     "location" : "'py-testcases/svcomp/assignments_augmented/main.py':23:0",
     "cfg" : "untyped py-testcases/svcomp/assignments_augmented/main::$main()",
     "text" : "assert ==(b, *(2, +(n, 3)))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_augmented/main.py':23:0",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/svcomp/assignments_augmented/main.py':24:0",
     "cfg" : "untyped py-testcases/svcomp/assignments_augmented/main::$main()",
     "text" : "assert ==(%(b, 2), 0)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_augmented/main.py':24:0",
     "definite" : false

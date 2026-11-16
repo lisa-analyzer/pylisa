@@ -3,6 +3,8 @@
     "location" : "'py-testcases/svcomp/assignments_chained/main.py':32:0",
     "cfg" : "untyped py-testcases/svcomp/assignments_chained/main::$main()",
     "text" : "assert is(a, b)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_chained/main.py':32:0",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/svcomp/assignments_chained/main.py':34:0",
     "cfg" : "untyped py-testcases/svcomp/assignments_chained/main::$main()",
     "text" : "assert ==(d, b())",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_chained/main.py':34:0",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/svcomp/assignments_chained/main.py':36:4",
     "cfg" : "untyped py-testcases/svcomp/assignments_chained/main::$main()",
     "text" : "assert ==(d, 42)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_chained/main.py':36:4",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/svcomp/assignments_chained/main.py':38:4",
     "cfg" : "untyped py-testcases/svcomp/assignments_chained/main::$main()",
     "text" : "assert ==(d, \"Hello from func1\")",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_chained/main.py':38:4",
     "definite" : false

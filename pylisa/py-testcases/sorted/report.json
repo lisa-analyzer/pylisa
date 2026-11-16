@@ -3,6 +3,8 @@
     "location" : "'py-testcases/sorted/sorted.py':14:4",
     "cfg" : "untyped py-testcases/sorted/sorted::$main()",
     "text" : "bad = sorted(list(1, \"a\"))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted/sorted.py':14:10",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/sorted/sorted.py':17:4",
     "cfg" : "untyped py-testcases/sorted/sorted::$main()",
     "text" : "bad = sorted(5)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted/sorted.py':17:10",
     "definite" : false

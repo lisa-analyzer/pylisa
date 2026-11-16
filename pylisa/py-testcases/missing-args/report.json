@@ -3,6 +3,8 @@
     "location" : "'py-testcases/missing-args/missing-args.py':23:4",
     "cfg" : "untyped py-testcases/missing-args/missing-args::$main()",
     "text" : "int(null)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/missing-args/missing-args.py':23:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/missing-args/missing-args.py':25:4",
     "cfg" : "untyped py-testcases/missing-args/missing-args::$main()",
     "text" : "int(\"1\", null)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/missing-args/missing-args.py':25:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/missing-args/missing-args.py':27:4",
     "cfg" : "untyped py-testcases/missing-args/missing-args::$main()",
     "text" : "float(null)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/missing-args/missing-args.py':27:4",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/missing-args/missing-args.py':29:4",
     "cfg" : "untyped py-testcases/missing-args/missing-args::$main()",
     "text" : "list(null)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/missing-args/missing-args.py':29:4",
     "definite" : false
@@ -31,6 +39,8 @@
     "location" : "'py-testcases/missing-args/missing-args.py':31:4",
     "cfg" : "untyped py-testcases/missing-args/missing-args::$main()",
     "text" : "bytes(null)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/missing-args/missing-args.py':31:4",
     "definite" : false
@@ -38,6 +48,8 @@
     "location" : "'py-testcases/missing-args/missing-args.py':33:4",
     "cfg" : "untyped py-testcases/missing-args/missing-args::$main()",
     "text" : "bytes(\"a\", null)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/missing-args/missing-args.py':33:4",
     "definite" : false
@@ -45,6 +57,8 @@
     "location" : "'py-testcases/missing-args/missing-args.py':35:4",
     "cfg" : "untyped py-testcases/missing-args/missing-args::$main()",
     "text" : "range(3, null)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/missing-args/missing-args.py':35:4",
     "definite" : false
@@ -52,6 +66,8 @@
     "location" : "'py-testcases/missing-args/missing-args.py':37:4",
     "cfg" : "untyped py-testcases/missing-args/missing-args::$main()",
     "text" : "replace(\"a\", \"a\", \"b\", null)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/missing-args/missing-args.py':37:4",
     "definite" : false
@@ -59,6 +75,8 @@
     "location" : "'py-testcases/missing-args/missing-args.py':39:4",
     "cfg" : "untyped py-testcases/missing-args/missing-args::$main()",
     "text" : "encode(\"a\", null)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/missing-args/missing-args.py':39:4",
     "definite" : false
@@ -66,6 +84,8 @@
     "location" : "'py-testcases/missing-args/missing-args.py':41:4",
     "cfg" : "untyped py-testcases/missing-args/missing-args::$main()",
     "text" : "decode(b'a', null)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/missing-args/missing-args.py':41:4",
     "definite" : false
@@ -73,6 +93,8 @@
     "location" : "'py-testcases/missing-args/missing-args.py':43:4",
     "cfg" : "untyped py-testcases/missing-args/missing-args::$main()",
     "text" : "int(base=(10))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/missing-args/missing-args.py':43:4",
     "definite" : false

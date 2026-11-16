@@ -3,6 +3,8 @@
     "location" : "'py-testcases/bound-methods/bound-methods.py':39:4",
     "cfg" : "untyped py-testcases/bound-methods/bound-methods::$main()",
     "text" : "f(1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/bound-methods/bound-methods.py':39:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/bound-methods/bound-methods.py':88:4",
     "cfg" : "untyped py-testcases/bound-methods/bound-methods::$main()",
     "text" : "fn()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/bound-methods/bound-methods.py':88:4",
     "definite" : false

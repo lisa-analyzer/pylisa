@@ -3,6 +3,8 @@
     "location" : "'py-testcases/one-element-tuples/one-element-tuples.py':11:4",
     "cfg" : "untyped py-testcases/one-element-tuples/one-element-tuples::$main()",
     "text" : "check_type(t, int)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/one-element-tuples/one-element-tuples.py':11:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/one-element-tuples/one-element-tuples.py':14:4",
     "cfg" : "untyped py-testcases/one-element-tuples/one-element-tuples::$main()",
     "text" : "check_type(u, int)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/one-element-tuples/one-element-tuples.py':14:4",
     "definite" : false

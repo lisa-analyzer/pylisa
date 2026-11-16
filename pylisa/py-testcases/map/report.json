@@ -3,6 +3,8 @@
     "location" : "'py-testcases/map/map.py':34:4",
     "cfg" : "untyped py-testcases/map/map::$main()",
     "text" : "t = element($iter@34:4)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/map/map.py':34:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/map/map.py':38:4",
     "cfg" : "untyped py-testcases/map/map::$main()",
     "text" : "map(inc, 5)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/map/map.py':38:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/map/map.py':41:4",
     "cfg" : "untyped py-testcases/map/map::$main()",
     "text" : "map(inc)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/map/map.py':41:4",
     "definite" : false

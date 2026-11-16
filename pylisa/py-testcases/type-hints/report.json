@@ -3,6 +3,8 @@
     "location" : "'py-testcases/type-hints/type-hints.py':30:4",
     "cfg" : "untyped py-testcases/type-hints/type-hints::$main()",
     "text" : "check_type(1, bool)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':30:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/type-hints/type-hints.py':33:4",
     "cfg" : "untyped py-testcases/type-hints/type-hints::$main()",
     "text" : "check_type(len, type)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':33:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/type-hints/type-hints.py':36:4",
     "cfg" : "untyped py-testcases/type-hints/type-hints::$main()",
     "text" : "check_type(__init__(), type)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':36:4",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/type-hints/type-hints.py':39:4",
     "cfg" : "untyped py-testcases/type-hints/type-hints::$main()",
     "text" : "check_type(1, type(null))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':39:4",
     "definite" : false

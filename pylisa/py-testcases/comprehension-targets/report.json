@@ -3,6 +3,8 @@
     "location" : "'py-testcases/comprehension-targets/comprehension-targets.py':15:4",
     "cfg" : "untyped py-testcases/comprehension-targets/comprehension-targets::$main()",
     "text" : "bad = [k$comp@15:10 for tuple(k$comp@15:10, v$comp@15:10) in list(1, 2)]",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/comprehension-targets/comprehension-targets.py':15:10",
     "definite" : false

@@ -3,6 +3,8 @@
     "location" : "'py-testcases/reachability/adjacent-structures/main.py':12:0",
     "cfg" : "untyped py-testcases/reachability/adjacent-structures/main::$main()",
     "text" : "u = |(dict(\"x\", 1), 2)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reachability/adjacent-structures/main.py':12:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/reachability/adjacent-structures/main.py':6:4",
     "cfg" : "untyped py-testcases/reachability/adjacent-structures/main::$main()",
     "text" : "y = //(1, 0)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "ARITHMETIC: possible division by zero (uncaught ZeroDivisionError) at 'py-testcases/reachability/adjacent-structures/main.py':6:8",
     "definite" : false

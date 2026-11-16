@@ -3,6 +3,8 @@
     "location" : "'py-testcases/reachability/function/main.py':12:4",
     "cfg" : "untyped py-testcases/reachability/function/main::$main()",
     "text" : "y = //(1, 0)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "ARITHMETIC: possible division by zero (uncaught ZeroDivisionError) at 'py-testcases/reachability/function/main.py':12:8",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/reachability/function/main.py':13:0",
     "cfg" : "untyped py-testcases/reachability/function/main::$main()",
     "text" : "f()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/reachability/function/main.py':13:0",
     "definite" : false

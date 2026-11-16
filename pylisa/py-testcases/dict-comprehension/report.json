@@ -3,6 +3,8 @@
     "location" : "'py-testcases/dict-comprehension/dict-comprehension.py':16:4",
     "cfg" : "untyped py-testcases/dict-comprehension/dict-comprehension::$main()",
     "text" : "g = {list(1): 2 for _$comp@16:8 in range(2)}",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/dict-comprehension/dict-comprehension.py':16:8",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/dict-comprehension/dict-comprehension.py':6:0",
     "cfg" : "untyped py-testcases/dict-comprehension/dict-comprehension::$main()",
     "text" : "x = +(d[\"a\"], 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-comprehension/dict-comprehension.py':6:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/dict-comprehension/dict-comprehension.py':8:0",
     "cfg" : "untyped py-testcases/dict-comprehension/dict-comprehension::$main()",
     "text" : "y = +(e[1], \"s\")",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-comprehension/dict-comprehension.py':8:4",
     "definite" : false

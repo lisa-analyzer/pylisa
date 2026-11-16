@@ -3,6 +3,8 @@
     "location" : "'py-testcases/type-builtin/type-builtin.py':30:0",
     "cfg" : "untyped py-testcases/type-builtin/type-builtin::$main()",
     "text" : "assert is(type(y), str)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/type-builtin/type-builtin.py':30:0",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/type-builtin/type-builtin.py':34:0",
     "cfg" : "untyped py-testcases/type-builtin/type-builtin::$main()",
     "text" : "assert is(type(true), int)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion fails (uncaught AssertionError) at 'py-testcases/type-builtin/type-builtin.py':34:0",
     "definite" : false

@@ -3,6 +3,8 @@
     "location" : "'py-testcases/inheritance/inheritance.py':101:0",
     "cfg" : "untyped py-testcases/inheritance/inheritance::$main()",
     "text" : "x = o.v",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/inheritance/inheritance.py':101:4",
     "definite" : false

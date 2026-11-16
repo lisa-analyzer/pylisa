@@ -3,6 +3,8 @@
     "location" : "'py-testcases/range/range.py':17:0",
     "cfg" : "untyped py-testcases/range/range::$main()",
     "text" : "e = list(range(n))[0]",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/range/range.py':17:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/range/range.py':21:4",
     "cfg" : "untyped py-testcases/range/range::$main()",
     "text" : "range(\"a\")",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/range/range.py':21:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/range/range.py':23:4",
     "cfg" : "untyped py-testcases/range/range::$main()",
     "text" : "range(1, 2.5)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/range/range.py':23:4",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/range/range.py':25:0",
     "cfg" : "untyped py-testcases/range/range::$main()",
     "text" : "f = range(s)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/range/range.py':25:4",
     "definite" : false

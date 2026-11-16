@@ -3,6 +3,8 @@
     "location" : "'py-testcases/method-dispatch/method-dispatch.py':48:4",
     "cfg" : "untyped py-testcases/method-dispatch/method-dispatch::$main()",
     "text" : "func(e)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/method-dispatch/method-dispatch.py':48:4",
     "definite" : false

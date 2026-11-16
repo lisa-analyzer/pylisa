@@ -3,6 +3,8 @@
     "location" : "'py-testcases/item-assignment/item-assignment.py':17:4",
     "cfg" : "untyped py-testcases/item-assignment/item-assignment::$main()",
     "text" : "x[0] = 1",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/item-assignment/item-assignment.py':17:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/item-assignment/item-assignment.py':20:4",
     "cfg" : "untyped py-testcases/item-assignment/item-assignment::$main()",
     "text" : "s[0] = \"c\"",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/item-assignment/item-assignment.py':20:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/item-assignment/item-assignment.py':23:4",
     "cfg" : "untyped py-testcases/item-assignment/item-assignment::$main()",
     "text" : "n[0] = 3",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/item-assignment/item-assignment.py':23:4",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/item-assignment/item-assignment.py':26:4",
     "cfg" : "untyped py-testcases/item-assignment/item-assignment::$main()",
     "text" : "a[0] = 1",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/item-assignment/item-assignment.py':26:4",
     "definite" : false
@@ -31,6 +39,8 @@
     "location" : "'py-testcases/item-assignment/item-assignment.py':33:0",
     "cfg" : "untyped py-testcases/item-assignment/item-assignment::$main()",
     "text" : "y[0] = 2",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/item-assignment/item-assignment.py':33:0",
     "definite" : false

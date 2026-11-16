@@ -3,6 +3,8 @@
     "location" : "'py-testcases/slice-assignment/slice-assignment.py':13:8",
     "cfg" : "untyped py-testcases/slice-assignment/slice-assignment::$main()",
     "text" : "+(y, 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/slice-assignment/slice-assignment.py':13:8",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/slice-assignment/slice-assignment.py':18:4",
     "cfg" : "untyped py-testcases/slice-assignment/slice-assignment::$main()",
     "text" : "v = ys[0]",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/slice-assignment/slice-assignment.py':18:8",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/slice-assignment/slice-assignment.py':21:4",
     "cfg" : "untyped py-testcases/slice-assignment/slice-assignment::$main()",
     "text" : "ys[0 : 1 : <empty>] = 5",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/slice-assignment/slice-assignment.py':21:4",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/slice-assignment/slice-assignment.py':24:4",
     "cfg" : "untyped py-testcases/slice-assignment/slice-assignment::$main()",
     "text" : "ys[\"a\" : <empty> : <empty>] = list()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/slice-assignment/slice-assignment.py':24:4",
     "definite" : false

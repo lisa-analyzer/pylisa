@@ -3,6 +3,8 @@
     "location" : "'py-testcases/namedtuple/namedtuple.py':22:4",
     "cfg" : "untyped py-testcases/namedtuple/namedtuple::$main()",
     "text" : "Point(1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/namedtuple/namedtuple.py':22:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/namedtuple/namedtuple.py':25:4",
     "cfg" : "untyped py-testcases/namedtuple/namedtuple::$main()",
     "text" : "Point(1, 2, z=(3))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/namedtuple/namedtuple.py':25:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/namedtuple/namedtuple.py':28:4",
     "cfg" : "untyped py-testcases/namedtuple/namedtuple::$main()",
     "text" : "p[2]",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/namedtuple/namedtuple.py':28:4",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/namedtuple/namedtuple.py':31:4",
     "cfg" : "untyped py-testcases/namedtuple/namedtuple::$main()",
     "text" : "p.x = 2",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/namedtuple/namedtuple.py':31:4",
     "definite" : false

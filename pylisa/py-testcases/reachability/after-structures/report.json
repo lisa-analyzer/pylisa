@@ -3,6 +3,8 @@
     "location" : "'py-testcases/reachability/after-structures/main.py':19:4",
     "cfg" : "untyped py-testcases/reachability/after-structures/main::$main()",
     "text" : "assert ==(z, 3)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/reachability/after-structures/main.py':19:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/reachability/after-structures/main.py':22:0",
     "cfg" : "untyped py-testcases/reachability/after-structures/main::$main()",
     "text" : "w = |(dict(\"x\", 1), 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reachability/after-structures/main.py':22:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/reachability/after-structures/main.py':7:4",
     "cfg" : "untyped py-testcases/reachability/after-structures/main::$main()",
     "text" : "y = +(1, \"a\")",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reachability/after-structures/main.py':7:8",
     "definite" : false

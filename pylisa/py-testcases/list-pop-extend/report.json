@@ -3,6 +3,8 @@
     "location" : "'py-testcases/list-pop-extend/list-pop-extend.py':17:4",
     "cfg" : "untyped py-testcases/list-pop-extend/list-pop-extend::$main()",
     "text" : "z = m[1]",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/list-pop-extend/list-pop-extend.py':17:8",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/list-pop-extend/list-pop-extend.py':21:4",
     "cfg" : "untyped py-testcases/list-pop-extend/list-pop-extend::$main()",
     "text" : "w = pop(e)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/list-pop-extend/list-pop-extend.py':21:8",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/list-pop-extend/list-pop-extend.py':27:8",
     "cfg" : "untyped py-testcases/list-pop-extend/list-pop-extend::$main()",
     "text" : "+(v, 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/list-pop-extend/list-pop-extend.py':27:8",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/list-pop-extend/list-pop-extend.py':30:4",
     "cfg" : "untyped py-testcases/list-pop-extend/list-pop-extend::$main()",
     "text" : "extend(n, 5)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/list-pop-extend/list-pop-extend.py':30:4",
     "definite" : false

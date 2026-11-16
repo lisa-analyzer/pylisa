@@ -170,8 +170,10 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 						// the node containing the statement: the post-states
 						// of sub-expressions (e.g. the call of x = f()) do not
 						// contain the errors they raise, and the verification
-						// would refute the violation
-						tool.warnOn(node(thrower), Violation.error(cls), message);
+						// would refute the violation. The warning reports
+						// the context of the result, so that it is verified
+						// on that result only
+						tool.warnOn(node(thrower), result.getId(), Violation.error(cls), message);
 				}
 			}
 		}

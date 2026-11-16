@@ -3,6 +3,8 @@
     "location" : "'py-testcases/itertools/itertools-functions.py':32:4",
     "cfg" : "untyped py-testcases/itertools/itertools-functions::$main()",
     "text" : "next(list(1))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/itertools/itertools-functions.py':32:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/itertools/itertools-functions.py':35:4",
     "cfg" : "untyped py-testcases/itertools/itertools-functions::$main()",
     "text" : "cycle(5)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/itertools/itertools-functions.py':35:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/itertools/itertools-functions.py':38:4",
     "cfg" : "untyped py-testcases/itertools/itertools-functions::$main()",
     "text" : "combinations(list(1), \"a\")",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/itertools/itertools-functions.py':38:4",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/itertools/itertools-functions.py':41:4",
     "cfg" : "untyped py-testcases/itertools/itertools-functions::$main()",
     "text" : "tuple(k2, g2) = element($iter@41:4)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/itertools/itertools-functions.py':41:4",
     "definite" : false

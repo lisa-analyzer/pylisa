@@ -3,6 +3,8 @@
     "location" : "'py-testcases/sorted-key/sorted-key.py':15:4",
     "cfg" : "untyped py-testcases/sorted-key/sorted-key::$main()",
     "text" : "sorted(list(1, \"a\"), key=(<function $lambda@15:25>))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted-key/sorted-key.py':15:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/sorted-key/sorted-key.py':18:4",
     "cfg" : "untyped py-testcases/sorted-key/sorted-key::$main()",
     "text" : "sorted(data, key=(<function $lambda@18:21>))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/sorted-key/sorted-key.py':18:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/sorted-key/sorted-key.py':18:4",
     "cfg" : "untyped py-testcases/sorted-key/sorted-key::$main()",
     "text" : "sorted(data, key=(<function $lambda@18:21>))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted-key/sorted-key.py':18:4",
     "definite" : false

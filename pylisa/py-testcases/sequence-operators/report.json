@@ -3,6 +3,8 @@
     "location" : "'py-testcases/sequence-operators/sequence-operators.py':11:4",
     "cfg" : "untyped py-testcases/sequence-operators/sequence-operators::$main()",
     "text" : "b = +(1, list(1))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':11:8",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/sequence-operators/sequence-operators.py':14:4",
     "cfg" : "untyped py-testcases/sequence-operators/sequence-operators::$main()",
     "text" : "c = -((1,), (2,))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':14:8",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/sequence-operators/sequence-operators.py':17:4",
     "cfg" : "untyped py-testcases/sequence-operators/sequence-operators::$main()",
     "text" : "d = -(list(1))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':17:8",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/sequence-operators/sequence-operators.py':20:4",
     "cfg" : "untyped py-testcases/sequence-operators/sequence-operators::$main()",
     "text" : "e = |(null, (1,))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':20:8",
     "definite" : false
@@ -31,6 +39,8 @@
     "location" : "'py-testcases/sequence-operators/sequence-operators.py':8:4",
     "cfg" : "untyped py-testcases/sequence-operators/sequence-operators::$main()",
     "text" : "a = +(list(1), (2,))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sequence-operators/sequence-operators.py':8:8",
     "definite" : false

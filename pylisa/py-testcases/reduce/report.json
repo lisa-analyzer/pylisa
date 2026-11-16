@@ -3,6 +3,8 @@
     "location" : "'py-testcases/reduce/reduce.py':27:4",
     "cfg" : "untyped py-testcases/reduce/reduce::$main()",
     "text" : "reduce(mul, xs)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':27:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/reduce/reduce.py':30:4",
     "cfg" : "untyped py-testcases/reduce/reduce::$main()",
     "text" : "reduce(mul, list())",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':30:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/reduce/reduce.py':33:4",
     "cfg" : "untyped py-testcases/reduce/reduce::$main()",
     "text" : "reduce(5, list(1, 2))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':33:4",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/reduce/reduce.py':36:4",
     "cfg" : "untyped py-testcases/reduce/reduce::$main()",
     "text" : "reduce(mul, list(1, \"a\"), 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/reduce/reduce.py':36:4",
     "definite" : false

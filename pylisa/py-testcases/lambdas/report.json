@@ -3,6 +3,8 @@
     "location" : "'py-testcases/lambdas/lambdas.py':39:0",
     "cfg" : "untyped py-testcases/lambdas/lambdas::$main()",
     "text" : "r = inc(1, 2)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type is used (uncaught TypeError) at 'py-testcases/lambdas/lambdas.py':39:4",
     "definite" : true

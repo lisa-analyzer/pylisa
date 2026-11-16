@@ -3,6 +3,8 @@
     "location" : "'py-testcases/decorators/decorators.py':113:0",
     "cfg" : "untyped py-testcases/decorators/decorators::$main()",
     "text" : "y = u()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/decorators/decorators.py':113:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/decorators/decorators.py':98:4",
     "cfg" : "untyped py-testcases/decorators/decorators::$main()",
     "text" : "t()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "ARITHMETIC: possible division by zero (uncaught ZeroDivisionError) at 'py-testcases/decorators/decorators.py':98:4",
     "definite" : false

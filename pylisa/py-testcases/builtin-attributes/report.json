@@ -3,6 +3,8 @@
     "location" : "'py-testcases/builtin-attributes/builtin-attributes.py':12:4",
     "cfg" : "untyped py-testcases/builtin-attributes/builtin-attributes::$main()",
     "text" : "nothere(z)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/builtin-attributes/builtin-attributes.py':12:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/builtin-attributes/builtin-attributes.py':15:4",
     "cfg" : "untyped py-testcases/builtin-attributes/builtin-attributes::$main()",
     "text" : "append(w, 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/builtin-attributes/builtin-attributes.py':15:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/builtin-attributes/builtin-attributes.py':21:4",
     "cfg" : "untyped py-testcases/builtin-attributes/builtin-attributes::$main()",
     "text" : "q = x.nope",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/builtin-attributes/builtin-attributes.py':21:8",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/builtin-attributes/builtin-attributes.py':6:4",
     "cfg" : "untyped py-testcases/builtin-attributes/builtin-attributes::$main()",
     "text" : "strip(x)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/builtin-attributes/builtin-attributes.py':6:4",
     "definite" : false
@@ -31,6 +39,8 @@
     "location" : "'py-testcases/builtin-attributes/builtin-attributes.py':9:4",
     "cfg" : "untyped py-testcases/builtin-attributes/builtin-attributes::$main()",
     "text" : "foo(y)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/builtin-attributes/builtin-attributes.py':9:4",
     "definite" : false

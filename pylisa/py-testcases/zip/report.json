@@ -3,6 +3,8 @@
     "location" : "'py-testcases/zip/zip.py':22:8",
     "cfg" : "untyped py-testcases/zip/zip::$main()",
     "text" : "y = +(x, 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/zip/zip.py':22:12",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/zip/zip.py':25:4",
     "cfg" : "untyped py-testcases/zip/zip::$main()",
     "text" : "bad = zip(names, 5)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/zip/zip.py':25:10",
     "definite" : false

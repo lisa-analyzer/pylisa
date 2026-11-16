@@ -3,6 +3,8 @@
     "location" : "'py-testcases/dict-merge/dict-merge.py':18:0",
     "cfg" : "untyped py-testcases/dict-merge/dict-merge::$main()",
     "text" : "e = |=(e, list(tuple(\"y\", 2)))",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/dict-merge/dict-merge.py':18:0",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/dict-merge/dict-merge.py':24:0",
     "cfg" : "untyped py-testcases/dict-merge/dict-merge::$main()",
     "text" : "w = n[\"a\"]",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-merge/dict-merge.py':24:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/dict-merge/dict-merge.py':27:0",
     "cfg" : "untyped py-testcases/dict-merge/dict-merge::$main()",
     "text" : "bad = |(dict(\"x\", 1), 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/dict-merge/dict-merge.py':27:6",
     "definite" : false

@@ -3,6 +3,8 @@
     "location" : "'py-testcases/match/match.py':35:0",
     "cfg" : "untyped py-testcases/match/match::$main()",
     "text" : "x = h(0)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "ARITHMETIC: division by zero (uncaught ZeroDivisionError) at 'py-testcases/match/match.py':35:4",
     "definite" : true

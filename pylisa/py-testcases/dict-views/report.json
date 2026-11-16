@@ -3,6 +3,8 @@
     "location" : "'py-testcases/dict-views/dict-views.py':35:4",
     "cfg" : "untyped py-testcases/dict-views/dict-views::$main()",
     "text" : "b = +(n[k], 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-views/dict-views.py':35:8",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/dict-views/dict-views.py':38:4",
     "cfg" : "untyped py-testcases/dict-views/dict-views::$main()",
     "text" : "e = m2[k]",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-views/dict-views.py':38:8",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/dict-views/dict-views.py':50:4",
     "cfg" : "untyped py-testcases/dict-views/dict-views::$main()",
     "text" : "h = l[k]",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-views/dict-views.py':50:8",
     "definite" : false

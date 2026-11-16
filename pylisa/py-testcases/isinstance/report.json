@@ -3,6 +3,8 @@
     "location" : "'py-testcases/isinstance/isinstance.py':45:4",
     "cfg" : "untyped py-testcases/isinstance/isinstance::$main()",
     "text" : "q = +(y, 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/isinstance/isinstance.py':45:8",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/isinstance/isinstance.py':49:4",
     "cfg" : "untyped py-testcases/isinstance/isinstance::$main()",
     "text" : "isinstance(x, len)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/isinstance/isinstance.py':49:4",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/isinstance/isinstance.py':51:4",
     "cfg" : "untyped py-testcases/isinstance/isinstance::$main()",
     "text" : "isinstance(x, g)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/isinstance/isinstance.py':51:4",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/isinstance/isinstance.py':53:4",
     "cfg" : "untyped py-testcases/isinstance/isinstance::$main()",
     "text" : "isinstance(x, null)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/isinstance/isinstance.py':53:4",
     "definite" : false
@@ -31,6 +39,8 @@
     "location" : "'py-testcases/isinstance/isinstance.py':55:4",
     "cfg" : "untyped py-testcases/isinstance/isinstance::$main()",
     "text" : "isinstance(x, 3)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/isinstance/isinstance.py':55:4",
     "definite" : false

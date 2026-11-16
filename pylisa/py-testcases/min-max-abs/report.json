@@ -3,6 +3,8 @@
     "location" : "'py-testcases/min-max-abs/min-max-abs.py':19:0",
     "cfg" : "untyped py-testcases/min-max-abs/min-max-abs::$main()",
     "text" : "x = min(1, \"a\")",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type is used (uncaught TypeError) at 'py-testcases/min-max-abs/min-max-abs.py':19:4",
     "definite" : true

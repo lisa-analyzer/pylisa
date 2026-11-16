@@ -3,6 +3,8 @@
     "location" : "'py-testcases/list-truthiness/list-truthiness.py':20:0",
     "cfg" : "untyped py-testcases/list-truthiness/list-truthiness::$main()",
     "text" : "b = pop(st)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/list-truthiness/list-truthiness.py':20:4",
     "definite" : false

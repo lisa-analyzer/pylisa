@@ -3,6 +3,8 @@
     "location" : "'py-testcases/intervals/intervals.py':51:4",
     "cfg" : "untyped py-testcases/intervals/intervals::$main()",
     "text" : "assert ==(i, 3)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/intervals/intervals.py':51:4",
     "definite" : false

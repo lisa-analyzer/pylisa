@@ -3,6 +3,8 @@
     "location" : "'py-testcases/enumerate/enumerate.py':21:8",
     "cfg" : "untyped py-testcases/enumerate/enumerate::$main()",
     "text" : "y = +(x, 1)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/enumerate/enumerate.py':21:12",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/enumerate/enumerate.py':24:4",
     "cfg" : "untyped py-testcases/enumerate/enumerate::$main()",
     "text" : "bad = enumerate(5)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/enumerate/enumerate.py':24:10",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/enumerate/enumerate.py':27:4",
     "cfg" : "untyped py-testcases/enumerate/enumerate::$main()",
     "text" : "bad = enumerate(names, \"x\")",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/enumerate/enumerate.py':27:10",
     "definite" : false

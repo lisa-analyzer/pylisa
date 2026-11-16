@@ -3,6 +3,8 @@
     "location" : "'py-testcases/svcomp/direct_calls_return_call_unsafe/main.py':40:0",
     "cfg" : "untyped py-testcases/svcomp/direct_calls_return_call_unsafe/main::$main()",
     "text" : "b = func()()()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/svcomp/direct_calls_return_call_unsafe/main.py':40:4",
     "definite" : false
@@ -10,6 +12,8 @@
     "location" : "'py-testcases/svcomp/direct_calls_return_call_unsafe/main.py':41:0",
     "cfg" : "untyped py-testcases/svcomp/direct_calls_return_call_unsafe/main::$main()",
     "text" : "assert callable(a)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/direct_calls_return_call_unsafe/main.py':41:0",
     "definite" : false
@@ -17,6 +21,8 @@
     "location" : "'py-testcases/svcomp/direct_calls_return_call_unsafe/main.py':42:0",
     "cfg" : "untyped py-testcases/svcomp/direct_calls_return_call_unsafe/main::$main()",
     "text" : "assert ==(isinstance(b, str), FLAG)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/direct_calls_return_call_unsafe/main.py':42:0",
     "definite" : false
@@ -24,6 +30,8 @@
     "location" : "'py-testcases/svcomp/direct_calls_return_call_unsafe/main.py':46:4",
     "cfg" : "untyped py-testcases/svcomp/direct_calls_return_call_unsafe/main::$main()",
     "text" : "assert ==(b, 42)",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/direct_calls_return_call_unsafe/main.py':46:4",
     "definite" : false
