@@ -39,6 +39,10 @@ import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
 import it.unive.pylisa.symbolic.operators.conversions.BoolToInt;
+import it.unive.lisa.lattices.Satisfiability;
+import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.lisa.symbolic.value.operator.binary.TypeCheck;
+import it.unive.lisa.type.TypeTokenType;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -199,29 +203,40 @@ public final class PyBinaryDispatch {
 
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
-		for (Type tl : rtsl)
+		for (Type tl : rtsl) {
+			// each pair of types is dispatched in the executions where the
+			// operands have those types, so that, e.g., the TypeError of a
+			// str operand is not raised in the executions where it is an int
+			AnalysisState<A> leftTyped = ofType(analysis, context, state, left, tl, rtsl, operator);
+			if (leftTyped.getExecutionState().isBottom())
+				continue;
 			for (Type tr : rtsr) {
+				AnalysisState<A> typed = ofType(analysis, context, leftTyped, right, tr, rtsr, operator);
+				if (typed.getExecutionState().isBottom())
+					continue;
 				String cl = classOf(tl);
 				String cr = classOf(tr);
 
 				AnalysisState<A> res = null;
 				if (iop != null)
 					// x op= y tries the in-place method first
-					res = tryCall(interprocedural, state, expressions, operator, cl, iop, operator.getLeft(),
+					res = tryCall(interprocedural, typed, expressions, operator, cl, iop, operator.getLeft(),
 							operator.getRight(), leftSet, rightSet, tl, tr);
 				if (res == null)
-					res = tryCall(interprocedural, state, expressions, operator, cl, op,
+					res = tryCall(interprocedural, typed, expressions, operator, cl, op,
 							operator.getLeft(), operator.getRight(), leftSet, rightSet, tl, tr);
 				if (res == null && (comparison || !Objects.equals(cl, cr)))
-					res = tryCall(interprocedural, state, expressions, operator, cr, rop,
+					res = tryCall(interprocedural, typed, expressions, operator, cr, rop,
 							operator.getRight(), operator.getLeft(), rightSet, leftSet, tr, tl);
 				if (res == null)
 					res = operatorsKnown(tl, iop, op) && operatorsKnown(tr, rop)
-							? fallback(analysis, context, raising, state, operator, fallback, tl, tr)
-							: analysis.smallStepSemantics(state,
+							? fallback(analysis, context, raising, typed, operator, fallback, tl, tr,
+									checkable(tl, rtsl) && checkable(tr, rtsr))
+							: analysis.smallStepSemantics(typed,
 									new PushAny(Untyped.INSTANCE, operator.getLocation()), context, operator);
 				result = result.lub(res);
 			}
+		}
 
 		return raising.moveFrom(result);
 	}
@@ -463,28 +478,33 @@ public final class PyBinaryDispatch {
 		Expression[] params = { operator.getSubExpression() };
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
-		for (Type t : analysis.getRuntimeTypesOf(state, arg, context, operator)) {
+		Set<Type> types = analysis.getRuntimeTypesOf(state, arg, context, operator);
+		for (Type t : types) {
+			// the executions where the operand has this type (see dispatch)
+			AnalysisState<A> typed = ofType(analysis, context, state, arg, t, types, operator);
+			if (typed.getExecutionState().isBottom())
+				continue;
 			Type type = t;
 			ExpressionSet value = new ExpressionSet(arg);
-			Call resolved = resolveInClass(interprocedural, state, operator, classOf(type), name, params,
+			Call resolved = resolveInClass(interprocedural, typed, operator, classOf(type), name, params,
 					new Set[] { Collections.singleton(type) });
 			if (resolved == null && t.isBooleanType()) {
 				// bool inherits the methods of int
 				type = Int32Type.INSTANCE;
 				value = asInt(value, t, operator);
-				resolved = resolveInClass(interprocedural, state, operator, classOf(type), name, params,
+				resolved = resolveInClass(interprocedural, typed, operator, classOf(type), name, params,
 						new Set[] { Collections.singleton(type) });
 			}
 
 			if (resolved != null) {
-				result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
+				result = result.lub(resolved.forwardSemanticsAux(interprocedural, typed,
 						new ExpressionSet[] { value }, expressions));
 				operator.getMetaVariables().addAll(resolved.getMetaVariables());
 			} else if (operatorsKnown(t, name))
-				raising.raise(state, operator.getCFG(), operator.getLocation(), operator,
-						LibrarySpecificationProvider.TYPE_ERROR);
+				raising.raise(checkable(t, types) ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN, typed,
+						operator.getCFG(), operator.getLocation(), operator, LibrarySpecificationProvider.TYPE_ERROR);
 			else
-				result = result.lub(analysis.smallStepSemantics(state,
+				result = result.lub(analysis.smallStepSemantics(typed,
 						new PushAny(Untyped.INSTANCE, operator.getLocation()), context, operator));
 		}
 		return raising.moveFrom(result);
@@ -760,7 +780,8 @@ public final class PyBinaryDispatch {
 			Expression operator,
 			Fallback fallback,
 			Type left,
-			Type right)
+			Type right,
+			boolean typed)
 			throws SemanticException {
 		CodeLocation loc = operator.getLocation();
 		if (fallback != Fallback.TYPE_ERROR && left.isNullType() && right.isNullType())
@@ -782,8 +803,68 @@ public final class PyBinaryDispatch {
 			return analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, true, loc), context, operator);
 		case TYPE_ERROR:
 		default:
-			raising.raise(state, operator.getCFG(), loc, operator, LibrarySpecificationProvider.TYPE_ERROR);
+			// the state holds exactly the executions where the operands have
+			// these types, unless their types could not be checked
+			raising.raise(typed ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN, state, operator.getCFG(), loc,
+					operator, LibrarySpecificationProvider.TYPE_ERROR);
 			return state.bottomExecution();
 		}
+	}
+
+	/**
+	 * Yields the executions of the given state where the operand has the
+	 * given runtime type, assuming {@code operand is type} (a
+	 * {@link TypeCheck} with a {@link TypeTokenType} of {@code type}) if the
+	 * operand might have other types too. The state is returned as it is if
+	 * the type is the only one, or if it cannot be checked (see
+	 * {@link #checkable(Type, Set)}).
+	 *
+	 * @param <A>      the kind of {@link AbstractLattice} of the states
+	 * @param <D>      the kind of {@link AbstractDomain} of the analysis
+	 * @param analysis the analysis
+	 * @param context  the interprocedural context
+	 * @param state    the state where the operand has been evaluated
+	 * @param operand  the operand
+	 * @param type     the runtime type
+	 * @param types    all the runtime types of the operand
+	 * @param pp       the program point where the operand is checked
+	 *
+	 * @return the executions where the operand has the given type
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> ofType(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression operand,
+			Type type,
+			Set<Type> types,
+			Statement pp)
+			throws SemanticException {
+		if (types.size() <= 1 || type.isUntyped())
+			return state;
+		CodeLocation loc = pp.getLocation();
+		Constant token = new Constant(new TypeTokenType(Collections.singleton(type)), type, loc);
+		return analysis.assume(state,
+				new BinaryExpression(BoolType.INSTANCE, operand, token, TypeCheck.INSTANCE, loc),
+				context, pp, pp);
+	}
+
+	/**
+	 * Yields whether {@link #ofType} yields exactly the executions where an
+	 * operand with the given runtime types has the given one: it does unless
+	 * the type is {@link Untyped} (i.e., unknown) and the operand might have
+	 * others.
+	 *
+	 * @param type  the runtime type
+	 * @param types all the runtime types of the operand
+	 *
+	 * @return whether the executions with the given type are known
+	 */
+	public static boolean checkable(
+			Type type,
+			Set<Type> types) {
+		return types.size() <= 1 || !type.isUntyped();
 	}
 }
