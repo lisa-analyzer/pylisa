@@ -10,6 +10,7 @@ import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.UserInput;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
@@ -22,7 +23,9 @@ import it.unive.pylisa.libraries.PyNative;
  * infinite), if {@code a} and {@code b} are numbers ({@code int}, {@code bool}
  * or {@code float}); {@code TypeError} is raised otherwise.
  */
-public class NondetFloatRange extends PyNative {
+public class NondetFloatRange extends PyNative
+		implements
+		UserInput {
 
 	protected NondetFloatRange(
 			CFG cfg,

@@ -9,6 +9,7 @@ import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.UserInput;
 import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.libraries.PyNative;
@@ -17,7 +18,9 @@ import it.unive.pylisa.libraries.PyNative;
  * Native implementation of {@code _sv_verifier.nondet_float()}: the result is
  * any {@code float}, also infinite or {@code nan}.
  */
-public class NondetFloat extends PyNative {
+public class NondetFloat extends PyNative
+		implements
+		UserInput {
 
 	protected NondetFloat(
 			CFG cfg,

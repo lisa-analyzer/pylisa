@@ -124,10 +124,21 @@ final class StrSearchSemantics {
 			Satisfiability out = analysis.satisfies(state, outOfRange, context, n);
 			AnalysisState<A> byteResult = state.bottomExecution();
 			if (bounds != Satisfiability.NOT_SATISFIED) {
-				if (out != Satisfiability.SATISFIED)
-					byteResult = byteResult.lub(computed(n, analysis, context, state, value, raiseIfMissing, raising));
-				if (out != Satisfiability.NOT_SATISFIED)
-					n.raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+				if (out != Satisfiability.SATISFIED) {
+					AnalysisState<A> inRange = out == Satisfiability.UNKNOWN
+							? ExceptionGuard.unless(analysis, context, state, outOfRange, n)
+							: state;
+					if (!inRange.getExecutionState().isBottom())
+						byteResult = byteResult
+								.lub(computed(n, analysis, context, inRange, value, raiseIfMissing, raising));
+				}
+				if (out != Satisfiability.NOT_SATISFIED) {
+					AnalysisState<A> failing = out == Satisfiability.UNKNOWN
+							? ExceptionGuard.when(analysis, context, state, outOfRange, n)
+							: state;
+					if (!failing.getExecutionState().isBottom())
+						n.raise(raising, failing, LibrarySpecificationProvider.VALUE_ERROR);
+				}
 			}
 			result = result.lub(n.typeChecked(state, bounds, byteResult, raising));
 		}
@@ -136,12 +147,11 @@ final class StrSearchSemantics {
 			// the elements of the tuple are not known: they might also not have
 			// the right type
 			result = result.lub(n.unknown(analysis, context, state, BoolType.INSTANCE));
-			n.raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			n.raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		}
 
-		if (isText != Satisfiability.SATISFIED && isByte != Satisfiability.SATISFIED
-				&& isTuple != Satisfiability.SATISFIED)
-			n.raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		// the argument has none of the accepted types
+		n.raise(raising, isText.or(isByte).or(isTuple).negate(), state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 

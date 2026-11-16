@@ -45,6 +45,7 @@ import it.unive.pylisa.cfg.expression.Iteration;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.symbolic.SliceConstant.RangeBound;
@@ -452,6 +453,21 @@ public final class ListModel {
 				LogicalAnd.INSTANCE, loc), context, pp);
 	}
 
+	// the condition -len(list) <= index < len(list), from the number of
+	// elements of the list (see LENGTH)
+	private static SymbolicExpression rangeCondition(
+			SymbolicExpression list,
+			SymbolicExpression index,
+			CodeLocation loc) {
+		AccessChild length = lengthOf(list, loc);
+		return new BinaryExpression(BoolType.INSTANCE,
+				new BinaryExpression(BoolType.INSTANCE, index,
+						new UnaryExpression(Int32Type.INSTANCE, length, NumericNegation.INSTANCE, loc),
+						ComparisonGe.INSTANCE, loc),
+				new BinaryExpression(BoolType.INSTANCE, index, length, ComparisonLt.INSTANCE, loc),
+				LogicalAnd.INSTANCE, loc);
+	}
+
 	// whether the value is surely the given int
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean surely(
 			Analysis<A, D> analysis,
@@ -701,6 +717,8 @@ public final class ListModel {
 
 		AnalysisState<A> result = state.bottomExecution();
 		boolean typeError = false, indexError = false, any = false;
+		// the condition of the indices in range, when it is not decided
+		SymbolicExpression range = null;
 		Set<Type> types = analysis.getRuntimeTypesOf(state, index, context, thrower);
 		if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t)))
 			// e.g. a str, or an unknown value
@@ -726,14 +744,17 @@ public final class ListModel {
 				// whether the index is in range
 				Constant low = new Constant(Int32Type.INSTANCE, -shape.length(), loc);
 				Constant high = new Constant(Int32Type.INSTANCE, shape.length(), loc);
-				Satisfiability in = analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE,
+				SymbolicExpression inBounds = new BinaryExpression(BoolType.INSTANCE,
 						new BinaryExpression(BoolType.INSTANCE, index, low, ComparisonGe.INSTANCE, loc),
 						new BinaryExpression(BoolType.INSTANCE, index, high, ComparisonLt.INSTANCE, loc),
-						LogicalAnd.INSTANCE, loc), context, thrower);
+						LogicalAnd.INSTANCE, loc);
+				Satisfiability in = analysis.satisfies(state, inBounds, context, thrower);
 				if (in != Satisfiability.NOT_SATISFIED)
 					any = true;
 				if (in != Satisfiability.SATISFIED)
 					indexError = true;
+				if (in == Satisfiability.UNKNOWN)
+					range = inBounds;
 			} else {
 				any = true;
 				// 0 and -1 are in range if the list surely has an element,
@@ -745,22 +766,36 @@ public final class ListModel {
 						&& (surely(analysis, context, state, index, 0, thrower)
 								|| surely(analysis, context, state, index, -1, thrower)))
 						&& inRange(analysis, context, state, list, index, thrower) != Satisfiability.SATISFIED;
+				if (indexError)
+					range = rangeCondition(list, index, loc);
 			}
 		}
+		// the elements are read where the index is in range, and the
+		// exceptions are raised where it is not (or where it is not an int)
+		AnalysisState<A> reading = range == null ? state
+				: ExceptionGuard.when(analysis, context, state, range, thrower);
+		boolean surelyNotInt = !types.isEmpty()
+				&& types.stream().noneMatch(t -> ListOperations.INT.test(t) || t.isUntyped());
 
-		if (any) {
-			Set<SymbolicExpression> elements = elementsOf(analysis, context, state, list, listType, thrower);
+		if (any && !reading.getExecutionState().isBottom()) {
+			Set<SymbolicExpression> elements = elementsOf(analysis, context, reading, list, listType, thrower);
 			if (elements == null)
 				result = result
-						.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, thrower));
+						.lub(analysis.smallStepSemantics(reading, new PushAny(Untyped.INSTANCE, loc), context,
+								thrower));
 			else
 				for (SymbolicExpression element : elements)
-					result = result.lub(analysis.smallStepSemantics(state, element, context, thrower));
+					result = result.lub(analysis.smallStepSemantics(reading, element, context, thrower));
 		}
-		if (indexError)
-			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
+		if (indexError) {
+			AnalysisState<A> failing = range == null ? state
+					: ExceptionGuard.unless(analysis, context, state, range, thrower);
+			if (!failing.getExecutionState().isBottom())
+				raising.raise(failing, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
+		}
 		if (typeError)
-			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
+			raising.raise(surelyNotInt ? state : ExceptionGuard.maybe(analysis, context, state, thrower),
+					thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 
@@ -860,11 +895,12 @@ public final class ListModel {
 		owner.getMetaVariables().addAll(creation.getMetaVariables());
 		if (zero == Satisfiability.SATISFIED)
 			result = result.bottomExecution();
-		if (zero != Satisfiability.NOT_SATISFIED)
-			// a step of 0
-			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.VALUE_ERROR);
+		// a step of 0
+		raising.raise(zero, state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.VALUE_ERROR);
 		if (typeError)
-			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
+			// the bounds might not be ints
+			raising.raise(Satisfiability.UNKNOWN, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 
@@ -947,12 +983,14 @@ public final class ListModel {
 			if (extended)
 				// an extended slice, whose length might not be the one of the
 				// value
-				raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.VALUE_ERROR);
+				raising.raise(Satisfiability.UNKNOWN, state, thrower.getCFG(), loc, thrower,
+						LibrarySpecificationProvider.VALUE_ERROR);
 		}
-		if (zero != Satisfiability.NOT_SATISFIED)
-			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.VALUE_ERROR);
+		raising.raise(zero, state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.VALUE_ERROR);
 		if (!typed || iterable != Satisfiability.SATISFIED)
-			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
+			// surely raised only if the value is surely not iterable
+			raising.raise(typed ? iterable.negate() : Satisfiability.UNKNOWN, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 
@@ -1044,6 +1082,8 @@ public final class ListModel {
 
 		AnalysisState<A> result = state.bottomExecution();
 		boolean typeError = false, indexError = false, any = false;
+		// the condition of the index in range, when it is not decided
+		SymbolicExpression range = null;
 		Set<Type> types = analysis.getRuntimeTypesOf(state, index, context, thrower);
 		if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t)))
 			typeError = true;
@@ -1065,32 +1105,48 @@ public final class ListModel {
 			} else {
 				// from the number of elements of the list (see LENGTH)
 				Satisfiability in = inRange(analysis, context, state, list, index, thrower);
+				SymbolicExpression inBounds = rangeCondition(list, index, loc);
 				if (shape.length() != null) {
 					Constant low = new Constant(Int32Type.INSTANCE, -shape.length(), loc);
 					Constant high = new Constant(Int32Type.INSTANCE, shape.length(), loc);
-					in = analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE,
+					inBounds = new BinaryExpression(BoolType.INSTANCE,
 							new BinaryExpression(BoolType.INSTANCE, index, low, ComparisonGe.INSTANCE, loc),
 							new BinaryExpression(BoolType.INSTANCE, index, high, ComparisonLt.INSTANCE, loc),
-							LogicalAnd.INSTANCE, loc), context, thrower);
+							LogicalAnd.INSTANCE, loc);
+					in = analysis.satisfies(state, inBounds, context, thrower);
 				}
 				any = in != Satisfiability.NOT_SATISFIED;
 				indexError = in != Satisfiability.SATISFIED;
+				if (in == Satisfiability.UNKNOWN)
+					range = inBounds;
 			}
 		}
 
-		if (any) {
+		// the elements are written where the index is in range, and the
+		// exceptions are raised where it is not (or where it is not an int)
+		AnalysisState<A> writing = range == null ? state
+				: ExceptionGuard.when(analysis, context, state, range, thrower);
+		if (any && !writing.getExecutionState().isBottom()) {
 			// any of the elements might be written
-			AnalysisState<A> written = state;
+			AnalysisState<A> written = writing;
 			if (shape.elements() != null)
 				for (SymbolicExpression field : shape.elements())
 					written = analysis.assign(written, new AccessChild(Untyped.INSTANCE, deref, field, loc), value,
 							context, thrower).lub(written);
 			result = result.lub(written);
 		}
-		if (indexError)
-			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
+		if (indexError) {
+			AnalysisState<A> failing = range == null ? state
+					: ExceptionGuard.unless(analysis, context, state, range, thrower);
+			if (!failing.getExecutionState().isBottom())
+				raising.raise(failing, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
+		}
 		if (typeError)
-			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
+			raising.raise(!types.isEmpty()
+					&& types.stream().noneMatch(t -> ListOperations.INT.test(t) || t.isUntyped())
+							? Satisfiability.SATISFIED
+							: Satisfiability.UNKNOWN,
+					state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 

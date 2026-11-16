@@ -234,6 +234,23 @@ public final class DictModel {
 		return types.isEmpty() || types.stream().anyMatch(t -> ListModel.isList(t) || isDict(t));
 	}
 
+	// whether the key is surely (SATISFIED), maybe (UNKNOWN) or surely not
+	// (NOT_SATISFIED) unhashable
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability unhashability(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression key,
+			ProgramPoint pp)
+			throws SemanticException {
+		if (!unhashable(analysis, context, state, key, pp))
+			return Satisfiability.NOT_SATISFIED;
+		Set<Type> types = analysis.getRuntimeTypesOf(state, key, context, pp);
+		return !types.isEmpty() && types.stream().allMatch(t -> ListModel.isList(t) || isDict(t))
+				? Satisfiability.SATISFIED
+				: Satisfiability.UNKNOWN;
+	}
+
 	/**
 	 * Reads the value of the given key of the dictionary ({@code dict[key]}),
 	 * raising {@code KeyError} if the key might be missing, and
@@ -316,13 +333,15 @@ public final class DictModel {
 		CodeLocation loc = thrower.getLocation();
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.DICT), dict, loc);
 		AnalysisState<A> result = state.bottomExecution();
-		if (unhashable(analysis, context, state, key, thrower))
-			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
+		raising.raise(unhashability(analysis, context, state, key, thrower), state, thrower.getCFG(), loc, thrower,
+				LibrarySpecificationProvider.TYPE_ERROR);
 
 		Entries entries = entries(analysis, context, state, dict, thrower);
 		if (entries == null) {
 			if (dflt == null)
-				raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.KEY_ERROR);
+				// the key might be missing
+				raising.raise(Satisfiability.UNKNOWN, state, thrower.getCFG(), loc, thrower,
+						LibrarySpecificationProvider.KEY_ERROR);
 			else
 				result = result.lub(analysis.smallStepSemantics(state, dflt, context, thrower));
 			return result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, thrower));
@@ -332,6 +351,8 @@ public final class DictModel {
 		entries.keys().values().forEach(all::addAll);
 		Object exact = entries.weak() ? null : exactKey(analysis, context, state, key, all, thrower);
 		boolean keyError = !entries.unknown().isEmpty();
+		// whether the key is surely missing
+		boolean missing = false;
 		Set<SymbolicExpression> read = new HashSet<>();
 		if (exact != null) {
 			boolean present = false, absent = false;
@@ -345,6 +366,7 @@ public final class DictModel {
 			if (absent) {
 				// the key might be one of the untracked ones
 				keyError = true;
+				missing = !present && entries.unknown().isEmpty();
 				if (!entries.unknown().isEmpty())
 					read.add(new Variable(Untyped.INSTANCE, UNKNOWN_KEY, loc));
 			}
@@ -362,7 +384,8 @@ public final class DictModel {
 					analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref, field, loc), context,
 							thrower));
 		if (keyError && dflt == null)
-			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.KEY_ERROR);
+			raising.raise(missing ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN, state, thrower.getCFG(), loc,
+					thrower, LibrarySpecificationProvider.KEY_ERROR);
 		else if (keyError)
 			// the key might be missing
 			result = result.lub(analysis.smallStepSemantics(state, dflt, context, thrower));
@@ -434,9 +457,8 @@ public final class DictModel {
 			Statement thrower,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
-		if (unhashable(analysis, context, state, key, thrower))
-			raising.raise(state, thrower.getCFG(), thrower.getLocation(), thrower,
-					LibrarySpecificationProvider.TYPE_ERROR);
+		raising.raise(unhashability(analysis, context, state, key, thrower), state, thrower.getCFG(),
+				thrower.getLocation(), thrower, LibrarySpecificationProvider.TYPE_ERROR);
 		return store(analysis, context, state, dict, key, value, thrower);
 	}
 
@@ -632,7 +654,10 @@ public final class DictModel {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 
 		if (types.isEmpty() || types.stream().anyMatch(t -> !isDict(t))) {
-			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
+			// a TypeError is surely raised only for values that are surely not
+			// dictionaries, and might not be raised by other mappings
+			raising.raise(Satisfiability.UNKNOWN, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.TYPE_ERROR);
 			boolean notMappings = !types.isEmpty() && types.stream().filter(t -> !isDict(t))
 					.allMatch(t -> (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
 							|| ListModel.isList(t) || t.isCodeMemberType());

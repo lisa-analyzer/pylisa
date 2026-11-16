@@ -224,10 +224,15 @@ public final class Unpacking {
 							pp, assigner));
 				}
 
+		// an exception is surely raised only if it is the only outcome of the
+		// unpacking, otherwise it is raised under an unknown condition
+		boolean normal = !result.getExecutionState().isBottom();
 		if (valueError)
-			raising.raise(state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.VALUE_ERROR);
+			raising.raise(normal || typeError ? Satisfiability.UNKNOWN : Satisfiability.SATISFIED, state,
+					pp.getCFG(), loc, pp, LibrarySpecificationProvider.VALUE_ERROR);
 		if (typeError)
-			raising.raise(state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.TYPE_ERROR);
+			raising.raise(normal || valueError ? Satisfiability.UNKNOWN : Satisfiability.SATISFIED, state,
+					pp.getCFG(), loc, pp, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 

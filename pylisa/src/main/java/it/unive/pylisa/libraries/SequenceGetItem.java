@@ -24,6 +24,9 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonGe;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
+import it.unive.lisa.symbolic.value.operator.binary.LogicalOr;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
+import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -113,8 +116,12 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 				if (integral != Satisfiability.NOT_SATISFIED)
 					result = result.lub(readWithBoundsCheck(analysis, context, state, deref, right, loc, raising));
 				if (integral != Satisfiability.SATISFIED)
-					// the index of a tuple must be an int
-					raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
+					// the index of a tuple must be an int (when its type is
+					// not known, the error is raised under an unknown
+					// condition)
+					raising.raise(integral == Satisfiability.NOT_SATISFIED ? state
+							: ExceptionGuard.maybe(analysis, context, state, this),
+							getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
 			} else if (ListModel.isList(t)) {
 				// the index might be both a slice and something else (e.g. if
 				// it is unknown)
@@ -160,20 +167,35 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression lenId : lenState.getExecutionExpressions()) {
+			// negative indexes count from the end: the index is out of range
+			// if it is below -len or not below len
 			it.unive.lisa.symbolic.value.BinaryExpression tooLow = new it.unive.lisa.symbolic.value.BinaryExpression(
-					BoolType.INSTANCE, index, new Constant(Int32Type.INSTANCE, 0, loc), ComparisonLt.INSTANCE, loc);
+					BoolType.INSTANCE, index,
+					new UnaryExpression(Int32Type.INSTANCE, lenId, NumericNegation.INSTANCE, loc),
+					ComparisonLt.INSTANCE, loc);
 			it.unive.lisa.symbolic.value.BinaryExpression tooHigh = new it.unive.lisa.symbolic.value.BinaryExpression(
 					BoolType.INSTANCE, index, lenId, ComparisonGe.INSTANCE, loc);
+			it.unive.lisa.symbolic.value.BinaryExpression outOfRange = new it.unive.lisa.symbolic.value.BinaryExpression(
+					BoolType.INSTANCE, tooLow, tooHigh, LogicalOr.INSTANCE, loc);
 
-			Satisfiability sat = analysis.satisfies(lenState, tooLow, context, this)
-					.or(analysis.satisfies(lenState, tooHigh, context, this));
+			Satisfiability sat = analysis.satisfies(lenState, outOfRange, context, this);
 
 			if (sat != Satisfiability.SATISFIED) {
-				AccessChild access = new AccessChild(Untyped.INSTANCE, deref, index, loc);
-				result = result.lub(analysis.smallStepSemantics(lenState, access, context, st));
+				AnalysisState<A> reading = sat == Satisfiability.UNKNOWN
+						? ExceptionGuard.unless(analysis, context, lenState, outOfRange, this)
+						: lenState;
+				if (!reading.getExecutionState().isBottom()) {
+					AccessChild access = new AccessChild(Untyped.INSTANCE, deref, index, loc);
+					result = result.lub(analysis.smallStepSemantics(reading, access, context, st));
+				}
 			}
-			if (sat != Satisfiability.NOT_SATISFIED)
-				raising.raise(lenState, getCFG(), loc, st, LibrarySpecificationProvider.INDEX_ERROR);
+			if (sat != Satisfiability.NOT_SATISFIED) {
+				AnalysisState<A> failing = sat == Satisfiability.UNKNOWN
+						? ExceptionGuard.when(analysis, context, lenState, outOfRange, this)
+						: lenState;
+				if (!failing.getExecutionState().isBottom())
+					raising.raise(failing, getCFG(), loc, st, LibrarySpecificationProvider.INDEX_ERROR);
+			}
 		}
 
 		return result;

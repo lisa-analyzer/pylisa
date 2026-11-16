@@ -144,7 +144,7 @@ public class PyMinMax extends NaryExpression {
 		if (elements == null)
 			return any(analysis, context, raising, state, iterable, dflt);
 		if (elements.isEmpty())
-			return empty(analysis, context, raising, state, dflt);
+			return empty(analysis, context, raising, state, dflt, Satisfiability.SATISFIED);
 		return ofValues(analysis, context, raising, state, elements, true);
 	}
 
@@ -164,7 +164,8 @@ public class PyMinMax extends NaryExpression {
 		if (!elements.getExecutionExpressions().isEmpty())
 			result = result.lub(
 					ofValues(analysis, context, raising, elements, list(elements.getExecutionExpressions()), false));
-		return result.lub(empty(analysis, context, raising, state, dflt));
+		// the iterable might be empty
+		return result.lub(empty(analysis, context, raising, state, dflt, Satisfiability.UNKNOWN));
 	}
 
 	private static List<SymbolicExpression> list(
@@ -181,11 +182,12 @@ public class PyMinMax extends NaryExpression {
 			ScopeId<?> context,
 			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
-			SymbolicExpression dflt)
+			SymbolicExpression dflt,
+			Satisfiability isEmpty)
 			throws SemanticException {
 		if (dflt != null)
 			return analysis.smallStepSemantics(state, dflt, context, this);
-		return raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+		return raise(raising, isEmpty, state, LibrarySpecificationProvider.VALUE_ERROR);
 	}
 
 	/**
@@ -242,7 +244,7 @@ public class PyMinMax extends NaryExpression {
 				result = result.lub(analysis.smallStepSemantics(state, values.get(c), context, this));
 		}
 		if (mightError)
-			result = result.lub(raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR));
+			result = result.lub(raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR));
 		return result;
 	}
 
@@ -312,7 +314,18 @@ public class PyMinMax extends NaryExpression {
 			AnalysisState<A> state,
 			String exception)
 			throws SemanticException {
-		raising.raise(state, getCFG(), getLocation(), this, exception);
+		return raise(raising, Satisfiability.SATISFIED, state, exception);
+	}
+
+	// raises the exception in the executions of the given state where it is
+	// raised according to raises (see PyExceptions.Raising)
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> raise(
+			PyExceptions.Raising<A, D> raising,
+			Satisfiability raises,
+			AnalysisState<A> state,
+			String exception)
+			throws SemanticException {
+		raising.raise(raises, state, getCFG(), getLocation(), this, exception);
 		return state.bottomExecution();
 	}
 }

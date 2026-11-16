@@ -20,6 +20,7 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyBytesType;
+import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.symbolic.operators.value.StringFormat;
@@ -92,14 +93,28 @@ public class StrMod extends BinaryExpression implements PluggableStatement {
 				.anyMatch(t -> t instanceof PyBytesType) ? PyBytesType.INSTANCE : StringType.INSTANCE;
 		AnalysisState<A> result = state.bottomExecution();
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		if (raisesTypeError != Satisfiability.SATISFIED && raisesValueError != Satisfiability.SATISFIED)
-			result = result.lub(analysis.smallStepSemantics(state,
-					new it.unive.lisa.symbolic.value.BinaryExpression(type, left, right, StringFormat.INSTANCE, loc),
-					context, st));
+		// the formatting succeeds where neither exception is raised, and each
+		// exception is raised exactly where its condition holds
+		if (raisesTypeError != Satisfiability.SATISFIED && raisesValueError != Satisfiability.SATISFIED) {
+			AnalysisState<A> formatting = state;
+			if (raisesTypeError == Satisfiability.UNKNOWN)
+				formatting = ExceptionGuard.unless(analysis, context, formatting, typeError, this);
+			if (raisesValueError == Satisfiability.UNKNOWN)
+				formatting = ExceptionGuard.unless(analysis, context, formatting, valueError, this);
+			if (!formatting.getExecutionState().isBottom())
+				result = result.lub(analysis.smallStepSemantics(formatting,
+						new it.unive.lisa.symbolic.value.BinaryExpression(type, left, right, StringFormat.INSTANCE,
+								loc),
+						context, st));
+		}
 		if (raisesTypeError != Satisfiability.NOT_SATISFIED)
-			raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
+			raising.raise(raisesTypeError == Satisfiability.SATISFIED ? state
+					: ExceptionGuard.when(analysis, context, state, typeError, this),
+					getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
 		if (raisesValueError != Satisfiability.NOT_SATISFIED)
-			raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.VALUE_ERROR);
+			raising.raise(raisesValueError == Satisfiability.SATISFIED ? state
+					: ExceptionGuard.when(analysis, context, state, valueError, this),
+					getCFG(), loc, st, LibrarySpecificationProvider.VALUE_ERROR);
 		return raising.moveFrom(result);
 	}
 }

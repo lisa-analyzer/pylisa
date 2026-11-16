@@ -288,8 +288,7 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 		AnalysisState<A> result = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED)
 			result = result.lub(ifTyped);
-		if (typed != Satisfiability.SATISFIED)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+		raise(raising, typed.negate(), state, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 
@@ -373,6 +372,29 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 			String exception)
 			throws SemanticException {
 		raising.raise(state, getCFG(), getLocation(), st, exception);
+	}
+
+	/**
+	 * Raises the given exception in the executions of the given state where
+	 * it is raised according to {@code raises} (see
+	 * {@link PyExceptions.Raising#raise(Satisfiability, AnalysisState, CFG, CodeLocation, Statement, String)}),
+	 * collecting it in {@code raising}.
+	 *
+	 * @param raising   where the raised exception is collected
+	 * @param raises    whether the exception is raised
+	 * @param state     the state of the executions that might raise the
+	 *                      exception
+	 * @param exception the name of the exception
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> void raise(
+			PyExceptions.Raising<A, D> raising,
+			Satisfiability raises,
+			AnalysisState<A> state,
+			String exception)
+			throws SemanticException {
+		raising.raise(raises, state, getCFG(), getLocation(), st, exception);
 	}
 
 	/**

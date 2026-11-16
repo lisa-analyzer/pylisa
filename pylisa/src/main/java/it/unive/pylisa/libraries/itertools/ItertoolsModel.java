@@ -452,7 +452,8 @@ public final class ItertoolsModel {
 				else if (interprocedural == null) {
 					// the key is not called: any exception might be raised
 					PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-					raising.raise(elements, pp.getCFG(), loc, pp, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+					raising.raise(Satisfiability.UNKNOWN, elements, pp.getCFG(), loc, pp,
+							LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 					keys = keys.lub(raising.moveFrom(
 							analysis.smallStepSemantics(elements, new PushAny(Untyped.INSTANCE, loc), context, pp)));
 				} else

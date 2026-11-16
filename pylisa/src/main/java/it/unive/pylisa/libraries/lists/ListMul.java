@@ -137,7 +137,10 @@ public class ListMul extends BinaryExpression implements PluggableStatement {
 		if (unknown || types.stream().anyMatch(ListOperations.INT))
 			result = repetition(interprocedural, state, list, times, owner, st, expressions);
 		if (unknown || !types.stream().allMatch(ListOperations.INT))
-			raising.raise(state, st.getCFG(), owner.getLocation(), st, LibrarySpecificationProvider.TYPE_ERROR);
+			// surely raised only if the count is surely not an int
+			raising.raise(!unknown && types.stream().noneMatch(ListOperations.INT) ? Satisfiability.SATISFIED
+					: Satisfiability.UNKNOWN, state, st.getCFG(), owner.getLocation(), st,
+					LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 

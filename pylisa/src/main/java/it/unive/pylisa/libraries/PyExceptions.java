@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.interprocedural.ScopeId;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
@@ -184,6 +185,42 @@ public final class PyExceptions {
 			AnalysisState<A> previous = raised.get(raising.getLeft());
 			raised.put(raising.getLeft(),
 					previous == null ? raising.getRight() : previous.lub(raising.getRight()));
+		}
+
+		/**
+		 * Raises the given exception in the executions of the given state where
+		 * it is raised, according to {@code raises}: in none of them if it is
+		 * {@link Satisfiability#NOT_SATISFIED}, in all of them if it is
+		 * {@link Satisfiability#SATISFIED}, and under an unknown condition
+		 * otherwise (see {@link ExceptionGuard#maybe}), so that the executions
+		 * raising it are not taken as all the executions of the state when the
+		 * condition raising it is not known (e.g. when the warnings are
+		 * verified).
+		 *
+		 * @param raises             whether the exception is raised
+		 * @param state              the state of the executions that might
+		 *                               raise the exception
+		 * @param cfg                the cfg where the exception is raised
+		 * @param loc                the location where the exception is raised
+		 * @param thrower            the statement raising the exception
+		 * @param exceptionClassName the name of the class of the exception
+		 *
+		 * @throws SemanticException if the analysis fails
+		 */
+		public void raise(
+				Satisfiability raises,
+				AnalysisState<A> state,
+				CFG cfg,
+				CodeLocation loc,
+				Statement thrower,
+				String exceptionClassName)
+				throws SemanticException {
+			if (raises == Satisfiability.NOT_SATISFIED || raises == Satisfiability.BOTTOM)
+				return;
+			AnalysisState<A> raising = raises == Satisfiability.SATISFIED ? state
+					: ExceptionGuard.maybe(analysis, context, state, thrower);
+			if (!raising.getExecutionState().isBottom())
+				raise(raising, cfg, loc, thrower, exceptionClassName);
 		}
 
 		/**
