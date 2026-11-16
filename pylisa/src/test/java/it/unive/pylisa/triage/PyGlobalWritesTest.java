@@ -113,6 +113,20 @@ public class PyGlobalWritesTest {
 	}
 
 	@Test
+	public void globalsOfTheProgram() throws Exception {
+		Program program = parse();
+		Set<String> globals = new PyGlobalWrites().globalsOf(program);
+		Set<String> simple = globals.stream().map(n -> n.substring(n.lastIndexOf('.') + 1))
+				.collect(Collectors.toSet());
+		// the names of the module, also the ones that are only read, and the
+		// attributes assigned through classes
+		assertTrue(simple.toString(), simple.containsAll(Set.of("count", "math", "math2", "i", "C", "inc", "attr")));
+		assertTrue(globals.toString(), globals.stream().anyMatch(n -> n.endsWith("globals.count")));
+		// the local variables of the functions are not global
+		assertEquals(1, globals.stream().filter(n -> n.endsWith(".count")).count());
+	}
+
+	@Test
 	public void starImportsWriteUnknownGlobals() throws Exception {
 		// the names bound by star imports are not all known
 		Program program = parse("starred.py", "from math import *\nx = 1\n");

@@ -1,5 +1,6 @@
 package it.unive.pylisa.triage;
 
+import it.unive.lisa.program.Program;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.NativeCFG;
@@ -19,6 +20,8 @@ import it.unive.pylisa.libraries.dynamic.Exec;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +62,8 @@ public class PyGlobalWrites
 
 	private final Map<CodeMember, Set<String>> cache = new HashMap<>();
 
+	private final Map<Program, Set<String>> globals = new IdentityHashMap<>();
+
 	@Override
 	public synchronized Set<String> writtenBy(
 			CodeMember member) {
@@ -67,6 +72,44 @@ public class PyGlobalWrites
 		Set<String> written = compute(member);
 		cache.put(member, written);
 		return written;
+	}
+
+	/**
+	 * {@inheritDoc}<br>
+	 * <br>
+	 * The global variables of a Python program are not declared: they are
+	 * the global names (and the attributes assigned through classes) that its
+	 * code reads, binds or deletes.
+	 */
+	@Override
+	public synchronized Set<String> globalsOf(
+			Program program) {
+		return globals.computeIfAbsent(program, PyGlobalWrites::used);
+	}
+
+	private static Set<String> used(
+			Program program) {
+		Set<String> used = new LinkedHashSet<>();
+		for (CFG cfg : program.getAllCFGs())
+			cfg.accept(new GraphVisitor<CFG, Statement, Edge, Void>() {
+
+				@Override
+				public boolean visit(
+						Void tool,
+						CFG graph,
+						Statement node) {
+					if (node instanceof PyNameRef)
+						add((PyNameRef) node, used);
+					else if (node instanceof PyClassMember) {
+						String variable = ((PyClassMember) node).trackedVariable();
+						if (variable != null)
+							used.add(variable);
+					} else
+						collect(node, used);
+					return true;
+				}
+			}, null);
+		return Collections.unmodifiableSet(used);
 	}
 
 	private static Set<String> compute(

@@ -244,8 +244,17 @@ public class PyClassMember extends UnresolvedCall {
 	 * @return the name of the variable, or {@code null}
 	 */
 	public String writtenVariable() {
-		if (!isWriteTarget())
-			return null;
+		return isWriteTarget() ? trackedVariable() : null;
+	}
+
+	/**
+	 * Yields the name of the variable holding the attribute that this reads
+	 * or assigns, if it is an attribute assigned through a class (see
+	 * {@link PyClassAttributes#tracked}), or {@code null} otherwise.
+	 *
+	 * @return the name of the variable, or {@code null}
+	 */
+	public String trackedVariable() {
 		ClassUnit tracker = tracker();
 		return tracker == null ? null : namespace(tracker) + "." + name;
 	}
