@@ -236,10 +236,10 @@ public class PyClassMember extends UnresolvedCall {
 
 	// whether this read is the target of an assignment (C.name = ...)
 	/**
-	 * Yields the name of the variable holding the attribute that this
-	 * assigns, if this is the target of an assignment of an attribute
-	 * assigned through a class (as in {@code C.name = v}, see
-	 * {@link PyClassAttributes#tracked}), or {@code null} otherwise.
+	 * Yields the name of the variable holding the attribute that this assigns,
+	 * if this is the target of an assignment of an attribute assigned through a
+	 * class (as in {@code C.name = v}, see {@link PyClassAttributes#tracked}),
+	 * or {@code null} otherwise.
 	 *
 	 * @return the name of the variable, or {@code null}
 	 */
@@ -248,8 +248,8 @@ public class PyClassMember extends UnresolvedCall {
 	}
 
 	/**
-	 * Yields the name of the variable holding the attribute that this reads
-	 * or assigns, if it is an attribute assigned through a class (see
+	 * Yields the name of the variable holding the attribute that this reads or
+	 * assigns, if it is an attribute assigned through a class (see
 	 * {@link PyClassAttributes#tracked}), or {@code null} otherwise.
 	 *
 	 * @return the name of the variable, or {@code null}

@@ -11,6 +11,7 @@ import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
@@ -26,10 +27,13 @@ import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.UnaryExpression;
+import it.unive.lisa.symbolic.value.operator.binary.TypeCheck;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.TypeTokenType;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -39,10 +43,6 @@ import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
 import it.unive.pylisa.symbolic.operators.conversions.BoolToInt;
-import it.unive.lisa.lattices.Satisfiability;
-import it.unive.lisa.symbolic.value.BinaryExpression;
-import it.unive.lisa.symbolic.value.operator.binary.TypeCheck;
-import it.unive.lisa.type.TypeTokenType;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -813,12 +813,11 @@ public final class PyBinaryDispatch {
 	}
 
 	/**
-	 * Yields the executions of the given state where the operand has the
-	 * given runtime type, assuming {@code operand is type} (a
-	 * {@link TypeCheck} with a {@link TypeTokenType} of {@code type}) if the
-	 * operand might have other types too. The state is returned as it is if
-	 * the type is the only one, or if it cannot be checked (see
-	 * {@link #checkable(Type, Set)}).
+	 * Yields the executions of the given state where the operand has the given
+	 * runtime type, assuming {@code operand is type} (a {@link TypeCheck} with
+	 * a {@link TypeTokenType} of {@code type}) if the operand might have other
+	 * types too. The state is returned as it is if the type is the only one, or
+	 * if it cannot be checked (see {@link #checkable(Type, Set)}).
 	 *
 	 * @param <A>      the kind of {@link AbstractLattice} of the states
 	 * @param <D>      the kind of {@link AbstractDomain} of the analysis

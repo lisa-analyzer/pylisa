@@ -241,8 +241,8 @@ public class PyExpressionEncoderTest {
 
 	/**
 	 * Checks the encoding of the given operation over the given operands,
-	 * yielding whether the encoding is precise for them. If {@code values},
-	 * the operands are identifiers of unknown kind, holding the given values.
+	 * yielding whether the encoding is precise for them. If {@code values}, the
+	 * operands are identifiers of unknown kind, holding the given values.
 	 */
 	private static boolean check(
 			String op,

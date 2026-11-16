@@ -93,7 +93,8 @@ public class PySingleArrayAccess extends BinaryExpression {
 							PyBinaryDispatch.classOf(tContainer), "__getitem__",
 							new Expression[] { getLeft(), getRight() }, types);
 					if (resolved == null)
-						// e.g. 5[0]: the object is not subscriptable, raised where
+						// e.g. 5[0]: the object is not subscriptable, raised
+						// where
 						// the container and the index have these types
 						raising.raiseOfTypes(
 								PyBinaryDispatch.ofType(analysis, context, state, left, tContainer, rtsContainer, this),

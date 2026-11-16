@@ -240,18 +240,18 @@ final class CallTargets {
 
 	/**
 	 * Raises {@code TypeError} where the callee is a value that cannot be
-	 * called, that is, where it has one of the types that cannot be called
-	 * (see {@link PyExceptions.Raising#raiseOfTypes}).
+	 * called, that is, where it has one of the types that cannot be called (see
+	 * {@link PyExceptions.Raising#raiseOfTypes}).
 	 *
-	 * @param <A>     the kind of {@link AbstractLattice} of the state
-	 * @param <D>     the kind of {@link AbstractDomain} of the analysis
-	 * @param raising the collector of the executions raising errors
+	 * @param <A>      the kind of {@link AbstractLattice} of the state
+	 * @param <D>      the kind of {@link AbstractDomain} of the analysis
+	 * @param raising  the collector of the executions raising errors
 	 * @param state    the state where the callee is called
 	 * @param consumed the identifiers holding the callee, forgotten in the
 	 *                     executions raising the error
-	 * @param cfg     the cfg of the call
-	 * @param loc     the location of the call
-	 * @param pp      the call
+	 * @param cfg      the cfg of the call
+	 * @param loc      the location of the call
+	 * @param pp       the call
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */

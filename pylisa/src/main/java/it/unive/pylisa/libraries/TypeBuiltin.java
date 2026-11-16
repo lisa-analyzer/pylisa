@@ -15,6 +15,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.type.CodeMemberType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.expression.PyNameRef;
 import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyBytesType;
@@ -25,7 +26,6 @@ import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
 import it.unive.pylisa.libraries.sets.SetModel;
 import java.util.Collections;
-import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import java.util.Set;
 
 /**

@@ -24,7 +24,6 @@ import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Arrays;
 import java.util.Collection;

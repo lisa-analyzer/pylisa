@@ -10,11 +10,11 @@ import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.operator.unary.LogicalNegation;
-import it.unive.lisa.program.type.BoolType;
 
 /**
  * Shared helper for operations that raise a Python exception under some
@@ -175,10 +175,10 @@ public final class ExceptionGuard {
 	 * Restricts the given state to the executions of a branch whose condition
 	 * is not expressed (e.g., an exception raised when an operand might have an
 	 * unsupported type, or when a complex condition on the operands might
-	 * hold): the branch happens under an unknown condition. The analysis is
-	 * not affected (the condition is any boolean), while the verification of
-	 * the warnings sees that the branch might not happen, and never takes it
-	 * for granted (the unknown value does not model an input of the program).
+	 * hold): the branch happens under an unknown condition. The analysis is not
+	 * affected (the condition is any boolean), while the verification of the
+	 * warnings sees that the branch might not happen, and never takes it for
+	 * granted (the unknown value does not model an input of the program).
 	 *
 	 * @param <A>      the kind of {@link AbstractLattice} of the state
 	 * @param <D>      the kind of {@link AbstractDomain} of the analysis

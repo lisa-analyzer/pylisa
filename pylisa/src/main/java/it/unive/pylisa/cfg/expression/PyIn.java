@@ -85,10 +85,12 @@ public class PyIn extends BinaryExpression {
 							PyBinaryDispatch.classOf(tContainer), "__contains__",
 							new Expression[] { getRight(), getLeft() }, types);
 					if (resolved == null)
-						// e.g. 1 in 5: the container is not iterable, raised where
+						// e.g. 1 in 5: the container is not iterable, raised
+						// where
 						// the container and the needle have these types
 						raising.raiseOfTypes(
-								PyBinaryDispatch.ofType(analysis, context, state, right, tContainer, rtsContainer, this),
+								PyBinaryDispatch.ofType(analysis, context, state, right, tContainer, rtsContainer,
+										this),
 								left, Set.of(tNeedle), rtsNeedle, PyBinaryDispatch.checkable(tContainer, rtsContainer),
 								getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 					else {

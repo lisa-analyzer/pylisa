@@ -75,9 +75,8 @@ public class PyHeapWrites
 	private static final Set<Class<?>> UNKNOWN_CODE = Set.of(Exec.class, Eval.class);
 
 	/**
-	 * The fields of the models of builtin objects whose names might be the
-	 * ones of attributes: they are always written (e.g., when creating
-	 * objects).
+	 * The fields of the models of builtin objects whose names might be the ones
+	 * of attributes: they are always written (e.g., when creating objects).
 	 */
 	private static final Set<String> INTERNAL = Set.of("length", "__class__", "__self__", "__func__", "mapping",
 			"start", "stop", "step");
