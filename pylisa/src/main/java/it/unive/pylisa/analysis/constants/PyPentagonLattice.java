@@ -199,14 +199,6 @@ public class PyPentagonLattice
 		return ix.isSingleton() && ix.equals(iy);
 	}
 
-	// whether the relation between x and y is vacuous in this state, as one of
-	// them has no value (e.g. it is bound only on the other path of a join)
-	private boolean absent(
-			Identifier x,
-			Identifier y) {
-		return !first.knowsIdentifier(x) || !first.knowsIdentifier(y);
-	}
-
 	// whether the intervals of the values imply x < y
 	private static boolean implied(
 			ValueEnvironment<PyValue> values,
@@ -237,11 +229,11 @@ public class PyPentagonLattice
 			return false;
 		for (Identifier x : other.second.getKeys())
 			for (Identifier y : other.bounds(x))
-				if (!below(x, y) && !absent(x, y))
+				if (!below(x, y))
 					return false;
 		for (Identifier x : other.copies.getKeys())
 			for (Identifier y : of(other.copies, x))
-				if (!same(x, y) && !absent(x, y))
+				if (!same(x, y))
 					return false;
 		return true;
 	}
@@ -257,10 +249,10 @@ public class PyPentagonLattice
 		for (Identifier x : keys) {
 			Set<Identifier> common = new HashSet<>();
 			for (Identifier y : bounds(x))
-				if (other.below(x, y) || other.absent(x, y))
+				if (other.below(x, y))
 					common.add(y);
 			for (Identifier y : other.bounds(x))
-				if (below(x, y) || absent(x, y))
+				if (below(x, y))
 					common.add(y);
 			bounds.put(x, common);
 		}
@@ -268,14 +260,14 @@ public class PyPentagonLattice
 		for (Identifier x : copies.getKeys()) {
 			Set<Identifier> common = new HashSet<>();
 			for (Identifier y : of(copies, x))
-				if (other.same(x, y) || other.absent(x, y))
+				if (other.same(x, y))
 					common.add(y);
 			equal.put(x, common);
 		}
 		for (Identifier x : other.copies.getKeys()) {
 			Set<Identifier> common = equal.computeIfAbsent(x, k -> new HashSet<>());
 			for (Identifier y : of(other.copies, x))
-				if (same(x, y) || absent(x, y))
+				if (same(x, y))
 					common.add(y);
 		}
 		return new PyPentagonLattice(first.lub(other.first), environment(second.lattice, bounds),
@@ -310,7 +302,7 @@ public class PyPentagonLattice
 		for (Identifier x : second.getKeys()) {
 			Set<Identifier> kept = new HashSet<>();
 			for (Identifier y : bounds(x))
-				if (other.below(x, y) || other.absent(x, y))
+				if (other.below(x, y))
 					kept.add(y);
 			bounds.put(x, kept);
 		}
@@ -318,7 +310,7 @@ public class PyPentagonLattice
 		for (Identifier x : copies.getKeys()) {
 			Set<Identifier> kept = new HashSet<>();
 			for (Identifier y : of(copies, x))
-				if (of(other.copies, x).contains(y) || other.absent(x, y))
+				if (of(other.copies, x).contains(y))
 					kept.add(y);
 			equal.put(x, kept);
 		}

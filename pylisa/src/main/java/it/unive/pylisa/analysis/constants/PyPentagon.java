@@ -345,6 +345,12 @@ public class PyPentagon implements ValueDomain<PyPentagonLattice> {
 			if (!Collections.disjoint(entry.getValue(), state.equal(x)))
 				return state.bottom();
 			for (Identifier y : entry.getValue()) {
+				// a summary of many values (see PyValueDomain#single) is not
+				// refined, and it does not refine the other variable either:
+				// the relation holds for all its values, also when there are
+				// none (e.g. the elements of an empty list)
+				if (!PyValueDomain.single(x) || !PyValueDomain.single(y))
+					continue;
 				refined = values.assume(refined, new BinaryExpression(BoolType.INSTANCE, x, y,
 						ComparisonLt.INSTANCE, src.getLocation()), src, dest, oracle);
 				if (refined.isBottom())
