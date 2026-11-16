@@ -64,6 +64,18 @@ sealed class List extends Sequence:
 		param self libtype List*
 		param index type it.unive.lisa.type.Untyped::INSTANCE default missing
 
+	instance method count: it.unive.pylisa.libraries.lists.ListCount
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype List*
+		param x type it.unive.lisa.type.Untyped::INSTANCE
+
+	instance method index: it.unive.pylisa.libraries.lists.ListIndex
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype List*
+		param x type it.unive.lisa.type.Untyped::INSTANCE
+		param start type it.unive.lisa.type.Untyped::INSTANCE default missing
+		param stop type it.unive.lisa.type.Untyped::INSTANCE default missing
+
 sealed class Set extends Sequence:
 	method __sub__: it.unive.pylisa.libraries.sets.SetDifference
 		libtype Set*
