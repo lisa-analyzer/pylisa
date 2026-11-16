@@ -283,6 +283,18 @@ public class PyListComprehension extends NaryExpression {
 						next = next.lub(analysis.assign(filled, slot, value, context, this));
 					filled = next;
 				}
+				// each element is any of the values, so the elements are not
+				// related to each other (as they would be, all being copies
+				// of the same value): assigning a value to itself drops its
+				// relations (the objects are not reassigned, as the heap
+				// would lose what they point to)
+				for (int i = 0; i < length; i++) {
+					AccessChild slot = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
+							new Constant(Int32Type.INSTANCE, i, loc), loc);
+					Set<Type> types = analysis.getRuntimeTypesOf(filled, slot, context, this);
+					if (!types.isEmpty() && types.stream().noneMatch(t -> t.isPointerType() || t.isUntyped()))
+						filled = analysis.assign(filled, slot, slot, context, this);
+				}
 				filled = ListModel.setLength(analysis, context, filled, list,
 						new Constant(Int32Type.INSTANCE, length, loc), this);
 				result = result.lub(filled.withExecutionExpression(list));

@@ -21,6 +21,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.operator.unary.LogicalNegation;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.libraries.lists.ListModel;
 import it.unive.pylisa.symbolic.operators.LogicalNot;
 import java.util.Set;
 
@@ -84,6 +85,10 @@ public class PyNot extends UnaryExpression {
 			else if (alwaysTrue(t))
 				result = result.lub(
 						analysis.smallStepSemantics(typed, new Constant(BoolType.INSTANCE, false, loc), context, this));
+			else if (ListModel.isList(t))
+				// not xs is unknown, but kept symbolic so that assuming that it
+				// does not hold refines xs (see PyDomain)
+				result = result.lub(analysis.smallStepSemantics(typed, not, context, this));
 			else if (t.isPointerType())
 				// e.g. an object whose class defines __bool__
 				result = result.lub(

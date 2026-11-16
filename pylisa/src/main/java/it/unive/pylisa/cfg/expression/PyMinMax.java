@@ -16,8 +16,13 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
+import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.lisa.symbolic.value.PushAny;
+import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonLe;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonLe;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonLt;
@@ -26,6 +31,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyBytesType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.ArrayList;
@@ -38,7 +44,9 @@ import java.util.Set;
  * ({@code min(a, b, ...)}) or on the elements of an iterable
  * ({@code min(iterable)}, or {@code min(iterable, default=d)}). The result is
  * one of the values: a value is excluded if another one is surely smaller (or
- * greater, for {@code max}). Values are compared with {@code <}:
+ * greater, for {@code max}), and when the values are {@code int}s, each of them
+ * is the result only where it is not greater (or smaller) than the others (e.g.
+ * {@code max(x, 0)} is not negative). Values are compared with {@code <}:
  * {@code TypeError} is raised if they cannot be compared (e.g. an {@code int}
  * and a {@code str}), and an empty iterable raises {@code ValueError}, unless a
  * default is given. The comparisons of objects of the classes of the program
@@ -230,6 +238,11 @@ public class PyMinMax extends NaryExpression {
 		if (error)
 			return raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
 
+		// the result is the value that is not smaller (or greater) than the
+		// others: this refines it when the values are ints (comparisons with
+		// a float nan never hold, while nan might be the result)
+		boolean ints = exact && types.stream().allMatch(t -> !t.isEmpty() && t.stream().allMatch(PyNative.INT))
+				&& values.stream().noneMatch(v -> v instanceof PushAny);
 		AnalysisState<A> result = state.bottomExecution();
 		for (int c = 0; c < values.size(); c++) {
 			boolean excluded = false;
@@ -247,21 +260,38 @@ public class PyMinMax extends NaryExpression {
 			// the value is the result where it is the minimum (maximum): no
 			// value before it is lower than or equal to it (greater than or
 			// equal), and no value after it is lower (greater), as the first
-			// minimal (maximal) value is the result
+			// minimal (maximal) value is the result; ints are compared with
+			// the comparisons that the value domains refine
 			AnalysisState<A> chosen = state;
 			if (exact)
 				for (int d = 0; d < values.size() && !chosen.getExecutionState().isBottom(); d++)
 					if (d != c) {
 						SymbolicExpression first = max ? values.get(d) : values.get(c);
 						SymbolicExpression second = max ? values.get(c) : values.get(d);
-						BinaryExpression condition = new BinaryExpression(BoolType.INSTANCE, first, second,
-								d < c ? PyComparisonLt.INSTANCE : PyComparisonLe.INSTANCE, loc);
+						BinaryOperator op = ints ? (d < c ? ComparisonLt.INSTANCE : ComparisonLe.INSTANCE)
+								: (d < c ? PyComparisonLt.INSTANCE : PyComparisonLe.INSTANCE);
+						BinaryExpression condition = new BinaryExpression(BoolType.INSTANCE, first, second, op, loc);
 						if (analysis.satisfies(chosen, condition, context, this) != Satisfiability.SATISFIED)
 							chosen = analysis.assume(chosen, condition, context, this, this);
 					}
-			if (!chosen.getExecutionState().isBottom())
+			if (chosen.getExecutionState().isBottom())
+				continue;
+			if (ints) {
+				// the value is held by a variable, as the assumptions on it
+				// are lost when the states of the values are joined
+				Variable chosenValue = new Variable(Int32Type.INSTANCE, "$" + (max ? "max" : "min") + "@"
+						+ loc.getCodeLocation(), loc);
+				getMetaVariables().add(chosenValue);
+				result = result.lub(analysis.assign(chosen, chosenValue, values.get(c), context, this)
+						.withExecutionExpression(chosenValue));
+			} else
 				result = result.lub(analysis.smallStepSemantics(chosen, values.get(c), context, this));
 		}
+		if (ints && result.getExecutionState().isBottom() && !state.getExecutionState().isBottom())
+			// the assumptions left no value (they should not): the values
+			// are not refined
+			for (SymbolicExpression v : values)
+				result = result.lub(analysis.smallStepSemantics(state, v, context, this));
 		if (mightError)
 			result = result.lub(raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR));
 		return result;
@@ -314,7 +344,7 @@ public class PyMinMax extends NaryExpression {
 			return STRING;
 		if (t instanceof PyBytesType)
 			return BYTES;
-		if (t.isNullType() || t.isCodeMemberType() || DictModel.isDict(t))
+		if (t.isNullType() || t.isCodeMemberType() || DictModel.isExactDict(t))
 			return UNORDERED;
 		// lists (or tuples) are comparable only to lists (or tuples), element
 		// by element

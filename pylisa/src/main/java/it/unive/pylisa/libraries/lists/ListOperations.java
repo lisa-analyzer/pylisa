@@ -32,7 +32,7 @@ import java.util.function.Predicate;
  * The shared parts of the operations on lists that build a new list
  * (concatenation, see {@link ListAdd}, and repetition, see {@link ListMul}).
  */
-final class ListOperations {
+public final class ListOperations {
 
 	/**
 	 * A list.
@@ -51,17 +51,17 @@ final class ListOperations {
 	}
 
 	/**
-	 * Yields the location where the list built by an operation is allocated.
-	 * Nested operations start at the same location (e.g. the two additions of
-	 * {@code a + b + c}), so that the location derives from the one of the
-	 * right operand, that differs.
+	 * Yields the location where the list (or the set) built by an operation is
+	 * allocated. Nested operations start at the same location (e.g. the two
+	 * additions of {@code a + b + c}), so that the location derives from the
+	 * one of the right operand, that differs.
 	 *
 	 * @param st  the statement performing the operation
 	 * @param tag the tag of the operation
 	 *
 	 * @return the location of the allocation
 	 */
-	static CodeLocation allocation(
+	public static CodeLocation allocation(
 			Statement st,
 			String tag) {
 		// the operation is a binary expression, or the call of the method
