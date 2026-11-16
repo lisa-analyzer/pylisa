@@ -196,8 +196,19 @@ public class PyAttributeAccess extends UnaryExpression {
 				HeapDereference container = new HeapDereference(Type.commonSupertype(objects, Untyped.INSTANCE),
 						expr, loc);
 				Variable field = new Variable(Untyped.INSTANCE, name, new Annotations(), loc);
-				result = result.lub(analysis.smallStepSemantics(state,
-						new AccessChild(Untyped.INSTANCE, container, field, loc), context, this));
+				AccessChild access = new AccessChild(Untyped.INSTANCE, container, field, loc);
+				if (!isWriteTarget() && analysis.rewrite(state, access, context, this).size() > MANY_LOCATIONS
+						&& values(analysis.getRuntimeTypesOf(state, access, context, this))) {
+					// the value read from many objects, if it is not an
+					// object itself, is held by a variable: the expressions
+					// using it would otherwise be rewritten into all the
+					// combinations of the locations they read (e.g. a.x - b.x
+					// + a.y - b.y)
+					Variable read = new Variable(Untyped.INSTANCE, "$attr@" + loc.getCodeLocation(), loc);
+					getMetaVariables().add(read);
+					result = result.lub(analysis.assign(state, read, access, context, this));
+				} else
+					result = result.lub(analysis.smallStepSemantics(state, access, context, this));
 			}
 			if (missing != null)
 				// the objects without the attribute: the attribute is looked
@@ -304,6 +315,18 @@ public class PyAttributeAccess extends UnaryExpression {
 	private record Missing(
 			boolean assigned,
 			Set<ClassUnit> classes) {
+	}
+
+	// the number of heap locations read by an attribute access above which
+	// the value read is held by a variable (see read)
+	private static final int MANY_LOCATIONS = 4;
+
+	// whether the values of the types are known, and they are not objects
+	// (e.g. numbers), so that a variable holding them keeps all that is known
+	// about them
+	private static boolean values(
+			Set<Type> types) {
+		return !types.isEmpty() && types.stream().noneMatch(t -> t.isPointerType() || t.isUntyped());
 	}
 
 	// the builtin classes whose objects have no instance attributes, that

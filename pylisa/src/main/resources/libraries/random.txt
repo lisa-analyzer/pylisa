@@ -3,3 +3,13 @@ library random:
     method choice: it.unive.pylisa.libraries.random.RandomChoice
         type it.unive.lisa.type.Untyped::INSTANCE
         param seq type it.unive.lisa.type.Untyped::INSTANCE
+    method randrange: it.unive.pylisa.libraries.random.RandomRandrange
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param start type it.unive.lisa.type.Untyped::INSTANCE
+        param stop type it.unive.lisa.type.Untyped::INSTANCE default missing
+        param step type it.unive.lisa.type.Untyped::INSTANCE default missing
+    method random: it.unive.pylisa.libraries.random.RandomRandom
+        type it.unive.lisa.type.Untyped::INSTANCE
+    method seed: it.unive.pylisa.libraries.random.RandomSeed
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param a type it.unive.lisa.type.Untyped::INSTANCE default none
