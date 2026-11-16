@@ -64,36 +64,33 @@ public class PyNot extends UnaryExpression {
 		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		Set<Type> types = analysis.getRuntimeTypesOf(state, expr, context, this);
-		boolean bools = false, values = types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this),
-				truthy = false, unknown = false;
-		if (!values)
-			for (Type t : types)
-				if (t.isBooleanType())
-					bools = true;
-				else if (alwaysTrue(t))
-					truthy = true;
-				else if (t.isPointerType())
-					// e.g. an object whose class defines __bool__
-					unknown = true;
-				else
-					values = true;
+		it.unive.lisa.symbolic.value.UnaryExpression not = new it.unive.lisa.symbolic.value.UnaryExpression(
+				BoolType.INSTANCE, expr, LogicalNot.INSTANCE, loc);
+		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this))
+			return analysis.smallStepSemantics(state, not, context, this);
 
+		// the negated truth value for each type of the operand, in the
+		// executions where it has that type (see PyBinaryDispatch#ofType)
 		AnalysisState<A> result = state.bottomExecution();
-		if (bools)
-			result = result.lub(analysis.smallStepSemantics(state,
-					new it.unive.lisa.symbolic.value.UnaryExpression(BoolType.INSTANCE, expr,
-							LogicalNegation.INSTANCE, loc),
-					context, this));
-		if (values)
-			result = result.lub(analysis.smallStepSemantics(state,
-					new it.unive.lisa.symbolic.value.UnaryExpression(BoolType.INSTANCE, expr, LogicalNot.INSTANCE,
-							loc),
-					context, this));
-		if (truthy)
-			result = result.lub(
-					analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, false, loc), context, this));
-		if (unknown)
-			result = result.lub(analysis.smallStepSemantics(state, new PushAny(BoolType.INSTANCE, loc), context, this));
+		for (Type t : types) {
+			AnalysisState<A> typed = PyBinaryDispatch.ofType(analysis, context, state, expr, t, types, this);
+			if (typed.getExecutionState().isBottom())
+				continue;
+			if (t.isBooleanType())
+				result = result.lub(analysis.smallStepSemantics(typed,
+						new it.unive.lisa.symbolic.value.UnaryExpression(BoolType.INSTANCE, expr,
+								LogicalNegation.INSTANCE, loc),
+						context, this));
+			else if (alwaysTrue(t))
+				result = result.lub(
+						analysis.smallStepSemantics(typed, new Constant(BoolType.INSTANCE, false, loc), context, this));
+			else if (t.isPointerType())
+				// e.g. an object whose class defines __bool__
+				result = result.lub(
+						analysis.smallStepSemantics(typed, new PushAny(BoolType.INSTANCE, loc), context, this));
+			else
+				result = result.lub(analysis.smallStepSemantics(typed, not, context, this));
+		}
 		return result;
 	}
 

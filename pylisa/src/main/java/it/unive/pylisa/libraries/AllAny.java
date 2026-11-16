@@ -99,6 +99,10 @@ public abstract class AllAny extends PyNative {
 			boolean decided)
 			throws SemanticException {
 		CodeLocation loc = getLocation();
+		if (undecided && decided)
+			// the result depends on the elements, that are not tracked: it is
+			// an unknown boolean (not either constant in any execution)
+			return unknown(analysis, context, state, BoolType.INSTANCE);
 		AnalysisState<A> result = state.bottomExecution();
 		if (undecided)
 			result = result.lub(compute(analysis, context, state, new Constant(BoolType.INSTANCE, all, loc)));

@@ -55,32 +55,30 @@ public class BoolBuiltin extends PyNative {
 		if (missing(x))
 			return compute(analysis, context, state, new Constant(BoolType.INSTANCE, false, loc));
 		Set<Type> types = analysis.getRuntimeTypesOf(state, x, context, st);
-		boolean bools = false, values = types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st),
-				truthy = false, unknown = false;
-		if (!values)
-			for (Type t : types)
-				if (t.isBooleanType())
-					bools = true;
-				else if (PyNot.alwaysTrue(t))
-					truthy = true;
-				else if (t.isPointerType())
-					// e.g. an object whose class defines __bool__
-					unknown = true;
-				else
-					values = true;
-
-		AnalysisState<A> result = state.bottomExecution();
-		if (bools)
-			result = result.lub(compute(analysis, context, state, x));
-		if (values)
+		UnaryExpression notNot = new UnaryExpression(BoolType.INSTANCE,
+				new UnaryExpression(BoolType.INSTANCE, x, LogicalNot.INSTANCE, loc), LogicalNegation.INSTANCE, loc);
+		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st))
 			// not not x
-			result = result.lub(compute(analysis, context, state, new UnaryExpression(BoolType.INSTANCE,
-					new UnaryExpression(BoolType.INSTANCE, x, LogicalNot.INSTANCE, loc), LogicalNegation.INSTANCE,
-					loc)));
-		if (truthy)
-			result = result.lub(compute(analysis, context, state, new Constant(BoolType.INSTANCE, true, loc)));
-		if (unknown)
-			result = result.lub(compute(analysis, context, state, new PushAny(BoolType.INSTANCE, loc)));
+			return compute(analysis, context, state, notNot);
+
+		// the truth value for each type of x, in the executions where x has
+		// that type (see PyBinaryDispatch#ofType)
+		AnalysisState<A> result = state.bottomExecution();
+		for (Type t : types) {
+			AnalysisState<A> typed = PyBinaryDispatch.ofType(analysis, context, state, x, t, types, st);
+			if (typed.getExecutionState().isBottom())
+				continue;
+			if (t.isBooleanType())
+				result = result.lub(compute(analysis, context, typed, x));
+			else if (PyNot.alwaysTrue(t))
+				result = result.lub(compute(analysis, context, typed, new Constant(BoolType.INSTANCE, true, loc)));
+			else if (t.isPointerType())
+				// e.g. an object whose class defines __bool__
+				result = result.lub(compute(analysis, context, typed, new PushAny(BoolType.INSTANCE, loc)));
+			else
+				// not not x
+				result = result.lub(compute(analysis, context, typed, notNot));
+		}
 		return result;
 	}
 }

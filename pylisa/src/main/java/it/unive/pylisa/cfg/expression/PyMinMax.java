@@ -19,6 +19,8 @@ import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
+import it.unive.pylisa.symbolic.operators.compare.PyComparisonLe;
+import it.unive.pylisa.symbolic.operators.compare.PyComparisonLt;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyBytesType;
@@ -240,8 +242,25 @@ public class PyMinMax extends NaryExpression {
 						excluded = analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, smaller,
 								greater, ComparisonLt.INSTANCE, loc), context, this) == Satisfiability.SATISFIED;
 					}
-			if (!excluded)
-				result = result.lub(analysis.smallStepSemantics(state, values.get(c), context, this));
+			if (excluded)
+				continue;
+			// the value is the result where it is the minimum (maximum): no
+			// value before it is lower than or equal to it (greater than or
+			// equal), and no value after it is lower (greater), as the first
+			// minimal (maximal) value is the result
+			AnalysisState<A> chosen = state;
+			if (exact)
+				for (int d = 0; d < values.size() && !chosen.getExecutionState().isBottom(); d++)
+					if (d != c) {
+						SymbolicExpression first = max ? values.get(d) : values.get(c);
+						SymbolicExpression second = max ? values.get(c) : values.get(d);
+						BinaryExpression condition = new BinaryExpression(BoolType.INSTANCE, first, second,
+								d < c ? PyComparisonLt.INSTANCE : PyComparisonLe.INSTANCE, loc);
+						if (analysis.satisfies(chosen, condition, context, this) != Satisfiability.SATISFIED)
+							chosen = analysis.assume(chosen, condition, context, this, this);
+					}
+			if (!chosen.getExecutionState().isBottom())
+				result = result.lub(analysis.smallStepSemantics(chosen, values.get(c), context, this));
 		}
 		if (mightError)
 			result = result.lub(raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR));

@@ -16,6 +16,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.operator.unary.LogicalNegation;
 
@@ -115,7 +116,18 @@ public class PyTernaryOperator extends NaryExpression {
 		// variables (e.g., the return value of a call) are forgotten by the
 		// statement that consumes it
 		getMetaVariables().addAll(branch.getMetaVariables());
-		return result;
+		// the values of the branch are re-computed here, in the state of the
+		// branch: this ties each value to the cases that select this branch,
+		// so that the consumers of this expression can tell them apart
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		AnalysisState<A> tied = result.bottomExecution();
+		for (SymbolicExpression value : result.getExecutionExpressions())
+			if (value instanceof PushAny)
+				tied = tied.lub(result.withExecutionExpression(value));
+			else
+				tied = tied.lub(analysis.smallStepSemantics(result, value, context, this));
+		return tied;
 	}
 
 	@Override
