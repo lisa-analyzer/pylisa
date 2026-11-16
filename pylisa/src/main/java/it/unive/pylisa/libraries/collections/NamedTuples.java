@@ -14,9 +14,9 @@ import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
@@ -127,7 +127,7 @@ public final class NamedTuples {
 				HeapDereference deref = new HeapDereference(type, tuple, loc);
 				for (int i = 0; i < values.length; i++) {
 					AccessChild attribute = new AccessChild(Untyped.INSTANCE, deref,
-							new Variable(Untyped.INSTANCE, fields.get(i), loc), loc);
+							new GlobalVariable(Untyped.INSTANCE, fields.get(i), loc), loc);
 					AnalysisState<A> next = current.bottomExecution();
 					for (SymbolicExpression value : values[i])
 						next = next.lub(analysis.assign(current, attribute, value, context, pp));

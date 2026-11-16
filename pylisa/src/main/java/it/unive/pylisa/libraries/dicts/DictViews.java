@@ -13,9 +13,9 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.InstrumentedReceiver;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -176,6 +176,6 @@ public final class DictViews {
 			Type type,
 			CodeLocation loc) {
 		return new AccessChild(Untyped.INSTANCE, new HeapDereference(type, view, loc),
-				new Variable(Untyped.INSTANCE, MAPPING, loc), loc);
+				new GlobalVariable(Untyped.INSTANCE, MAPPING, loc), loc);
 	}
 }

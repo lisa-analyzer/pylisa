@@ -30,9 +30,9 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.Skip;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -128,7 +128,7 @@ public class PyNewObj extends NaryExpression {
 			// accessing __class__, that all objects have, makes the fields
 			// of the new object known
 			AccessChild cls = new AccessChild(Untyped.INSTANCE, new HeapDereference(type, v, getLocation()),
-					new Variable(Untyped.INSTANCE, "__class__", getLocation()), getLocation());
+					new GlobalVariable(Untyped.INSTANCE, "__class__", getLocation()), getLocation());
 			tmp = tmp.lub(analysis.smallStepSemantics(assigned, cls, context, paramThis)
 					.withExecutionExpressions(assigned.getExecutionExpressions()));
 		}

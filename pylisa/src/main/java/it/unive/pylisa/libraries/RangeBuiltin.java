@@ -18,6 +18,7 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
@@ -84,7 +85,7 @@ public class RangeBuiltin extends PyNative {
 			CodeLocation loc) {
 		return new AccessChild(Int32Type.INSTANCE,
 				new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.RANGE), range, loc),
-				new Variable(Untyped.INSTANCE, name, loc), loc);
+				new GlobalVariable(Untyped.INSTANCE, name, loc), loc);
 	}
 
 	/**

@@ -20,9 +20,9 @@ import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.type.Type;
@@ -125,7 +125,7 @@ public class SequenceContains extends BinaryExpression implements PluggableState
 			CodeLocation loc)
 			throws SemanticException {
 		HeapDereference deref = new HeapDereference(innerType, self, loc);
-		Variable lenKey = new Variable(Int32Type.INSTANCE, "length", loc);
+		GlobalVariable lenKey = new GlobalVariable(Int32Type.INSTANCE, "length", loc);
 		AccessChild lenAccess = new AccessChild(Int32Type.INSTANCE, deref, lenKey, loc);
 		AnalysisState<A> lenState = analysis.smallStepSemantics(state, lenAccess, context, this);
 

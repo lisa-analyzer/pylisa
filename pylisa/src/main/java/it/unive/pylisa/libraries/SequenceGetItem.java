@@ -20,8 +20,8 @@ import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonGe;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.symbolic.value.operator.binary.LogicalOr;
@@ -158,7 +158,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			CodeLocation loc,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
-		Variable lenKey = new Variable(Int32Type.INSTANCE, "length", loc);
+		GlobalVariable lenKey = new GlobalVariable(Int32Type.INSTANCE, "length", loc);
 		AccessChild lenAccess = new AccessChild(Int32Type.INSTANCE, deref, lenKey, loc);
 		// the length field must be resolved via smallStepSemantics (like any
 		// other heap read) before it can be used as an operand of a further

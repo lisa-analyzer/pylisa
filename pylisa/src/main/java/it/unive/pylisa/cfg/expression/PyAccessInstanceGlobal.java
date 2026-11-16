@@ -16,7 +16,7 @@ import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
-import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -68,7 +68,7 @@ public class PyAccessInstanceGlobal extends AccessInstanceGlobal {
 		if (!sup.isBottom())
 			return sup;
 
-		Variable var = new Variable(Untyped.INSTANCE, getTarget(), new Annotations(), getLocation());
+		GlobalVariable var = new GlobalVariable(Untyped.INSTANCE, getTarget(), new Annotations(), getLocation());
 		HeapDereference container = new HeapDereference(Untyped.INSTANCE, expr, getLocation());
 		AccessChild access = new AccessChild(Untyped.INSTANCE, container, var, getLocation());
 		return analysis.smallStepSemantics(state, access, context, this);

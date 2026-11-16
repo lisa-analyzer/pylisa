@@ -17,9 +17,9 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.lists.ListModel;
@@ -138,7 +138,7 @@ public class PyDomain<H extends HeapLattice<H>, V extends ValueLattice<V>, T ext
 		if (site.isWeak())
 			return state;
 		CodeLocation loc = pp.getLocation();
-		Identifier child = site.withField(new Variable(Untyped.INSTANCE, ListModel.NONEMPTY, loc));
+		Identifier child = site.withField(new GlobalVariable(Untyped.INSTANCE, ListModel.NONEMPTY, loc));
 		return assign(state, child, new Constant(BoolType.INSTANCE, true, loc), context, pp);
 	}
 }

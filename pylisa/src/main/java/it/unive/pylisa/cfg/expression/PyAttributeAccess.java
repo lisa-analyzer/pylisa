@@ -25,10 +25,10 @@ import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -195,7 +195,7 @@ public class PyAttributeAccess extends UnaryExpression {
 				// field created by its first assignment
 				HeapDereference container = new HeapDereference(Type.commonSupertype(objects, Untyped.INSTANCE),
 						expr, loc);
-				Variable field = new Variable(Untyped.INSTANCE, name, new Annotations(), loc);
+				GlobalVariable field = new GlobalVariable(Untyped.INSTANCE, name, new Annotations(), loc);
 				result = result.lub(analysis.smallStepSemantics(state,
 						new AccessChild(Untyped.INSTANCE, container, field, loc), context, this));
 			}
@@ -420,7 +420,7 @@ public class PyAttributeAccess extends UnaryExpression {
 				if (fields.isTop())
 					return null;
 				boolean has = fields.elements().stream()
-						.anyMatch(f -> f instanceof Variable && ((Variable) f).getName().equals(name));
+						.anyMatch(f -> f instanceof Identifier && ((Identifier) f).getName().equals(name));
 				if (has)
 					assigned = true;
 				if (!has || !PyHeap.surelyInitialized(heap, site, name)) {
@@ -465,7 +465,7 @@ public class PyAttributeAccess extends UnaryExpression {
 			for (AllocationSite site : sites) {
 				ExpressionSet fields = heap.fields.getState(site);
 				if (fields.isTop() || fields.elements().stream()
-						.anyMatch(f -> f instanceof Variable && ((Variable) f).getName().equals(name)))
+						.anyMatch(f -> f instanceof Identifier && ((Identifier) f).getName().equals(name)))
 					return true;
 			}
 		}

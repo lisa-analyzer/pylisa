@@ -20,11 +20,11 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.InstrumentedReceiver;
 import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -285,6 +285,6 @@ public class MapBuiltin extends PyNative {
 			HeapDereference map,
 			String name,
 			CodeLocation loc) {
-		return new AccessChild(Untyped.INSTANCE, map, new Variable(Untyped.INSTANCE, name, loc), loc);
+		return new AccessChild(Untyped.INSTANCE, map, new GlobalVariable(Untyped.INSTANCE, name, loc), loc);
 	}
 }

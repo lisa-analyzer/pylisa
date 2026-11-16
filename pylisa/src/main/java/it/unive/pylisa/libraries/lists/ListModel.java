@@ -24,6 +24,7 @@ import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
@@ -168,8 +169,8 @@ public final class ListModel {
 				return null;
 			Set<Integer> indexes = new TreeSet<>();
 			for (SymbolicExpression field : fields)
-				if (field instanceof Variable && (((Variable) field).getName().equals(ListCreation.UNKNOWN_INDEX)
-						|| ((Variable) field).getName().equals(SHRUNK)))
+				if (field instanceof Identifier && (((Identifier) field).getName().equals(ListCreation.UNKNOWN_INDEX)
+						|| ((Identifier) field).getName().equals(SHRUNK)))
 					// elements at unknown indices, or removed
 					return null;
 				else if (field instanceof Constant && ((Constant) field).getValue() instanceof Integer)
@@ -262,7 +263,7 @@ public final class ListModel {
 		CodeLocation loc = pp.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		HeapDereference deref = new HeapDereference(listType, list, loc);
-		AccessChild shrunk = new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, SHRUNK, loc),
+		AccessChild shrunk = new AccessChild(Untyped.INSTANCE, deref, new GlobalVariable(Untyped.INSTANCE, SHRUNK, loc),
 				loc);
 		AnalysisState<
 				A> result = analysis.assign(state, shrunk, new Constant(BoolType.INSTANCE, true, loc), context, pp);
@@ -297,7 +298,7 @@ public final class ListModel {
 			CodeLocation loc) {
 		return new AccessChild(Int32Type.INSTANCE,
 				new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.LIST), list, loc),
-				new Variable(Int32Type.INSTANCE, LENGTH, loc), loc);
+				new GlobalVariable(Int32Type.INSTANCE, LENGTH, loc), loc);
 	}
 
 	/**
@@ -395,7 +396,7 @@ public final class ListModel {
 		CodeLocation loc = pp.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		AccessChild child = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
-				new Variable(Untyped.INSTANCE, NONEMPTY, loc), loc);
+				new GlobalVariable(Untyped.INSTANCE, NONEMPTY, loc), loc);
 		return analysis.assign(state, child, new Constant(BoolType.INSTANCE, nonEmpty, loc), context, pp)
 				.withExecutionExpressions(state.getExecutionExpressions());
 	}
@@ -429,7 +430,7 @@ public final class ListModel {
 		CodeLocation loc = pp.getLocation();
 		Type listType = PyClassType.lookup(LibrarySpecificationProvider.LIST);
 		AccessChild child = new AccessChild(Untyped.INSTANCE, new HeapDereference(listType, list, loc),
-				new Variable(Untyped.INSTANCE, NONEMPTY, loc), loc);
+				new GlobalVariable(Untyped.INSTANCE, NONEMPTY, loc), loc);
 		return analysis.satisfies(state, child, context, pp) == Satisfiability.SATISFIED;
 	}
 
@@ -579,7 +580,7 @@ public final class ListModel {
 			Set<Integer> indexes = new HashSet<>();
 			boolean shrunk = false;
 			for (SymbolicExpression field : fields)
-				if (field instanceof Variable && ((Variable) field).getName().equals(SHRUNK))
+				if (field instanceof Identifier && ((Identifier) field).getName().equals(SHRUNK))
 					shrunk = true;
 				else if (field instanceof Variable
 						&& ((Variable) field).getName().equals(ListCreation.UNKNOWN_INDEX))

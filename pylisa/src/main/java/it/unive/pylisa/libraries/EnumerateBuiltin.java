@@ -19,6 +19,7 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
@@ -169,12 +170,12 @@ public class EnumerateBuiltin extends PyNative {
 	private static AccessChild child(
 			HeapDereference enumerate,
 			CodeLocation loc) {
-		return new AccessChild(Untyped.INSTANCE, enumerate, new Variable(Untyped.INSTANCE, ITERABLE, loc), loc);
+		return new AccessChild(Untyped.INSTANCE, enumerate, new GlobalVariable(Untyped.INSTANCE, ITERABLE, loc), loc);
 	}
 
 	private static AccessChild start(
 			HeapDereference enumerate,
 			CodeLocation loc) {
-		return new AccessChild(Int32Type.INSTANCE, enumerate, new Variable(Int32Type.INSTANCE, START, loc), loc);
+		return new AccessChild(Int32Type.INSTANCE, enumerate, new GlobalVariable(Int32Type.INSTANCE, START, loc), loc);
 	}
 }

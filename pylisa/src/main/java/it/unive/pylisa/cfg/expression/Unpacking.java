@@ -19,6 +19,7 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.PushAny;
@@ -268,7 +269,7 @@ public final class Unpacking {
 			return false;
 		CodeLocation loc = pp.getLocation();
 		AccessChild field = new AccessChild(Int32Type.INSTANCE, tuples,
-				new Variable(Int32Type.INSTANCE, "length", loc), loc);
+				new GlobalVariable(Int32Type.INSTANCE, "length", loc), loc);
 		return analysis.satisfies(state, new it.unive.lisa.symbolic.value.BinaryExpression(BoolType.INSTANCE, field,
 				new Constant(Int32Type.INSTANCE, length, loc), ComparisonEq.INSTANCE, loc), context,
 				pp) == Satisfiability.SATISFIED;

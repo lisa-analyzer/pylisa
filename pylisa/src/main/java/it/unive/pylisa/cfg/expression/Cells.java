@@ -15,6 +15,7 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Untyped;
@@ -80,7 +81,7 @@ public final class Cells {
 			String name,
 			CodeLocation location) {
 		return new AccessChild(Untyped.INSTANCE, new HeapDereference(Untyped.INSTANCE, object, location),
-				new Variable(Untyped.INSTANCE, name, location), location);
+				new GlobalVariable(Untyped.INSTANCE, name, location), location);
 	}
 
 	/**

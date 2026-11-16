@@ -18,8 +18,8 @@ import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.dicts.DictModel;
@@ -103,7 +103,7 @@ public class SequenceLen extends UnaryExpression implements PluggableStatement {
 								: UnknownLength.of(analysis, context, state, this, getMetaVariables()));
 			} else if (inner.canBeAssignedTo(tupleType)) {
 				HeapDereference deref = new HeapDereference(inner, expr, loc);
-				Variable lenKey = new Variable(Int32Type.INSTANCE, "length", loc);
+				GlobalVariable lenKey = new GlobalVariable(Int32Type.INSTANCE, "length", loc);
 				AccessChild lenAccess = new AccessChild(Int32Type.INSTANCE, deref, lenKey, loc);
 				result = result.lub(analysis.smallStepSemantics(state, lenAccess, context, st));
 			} else

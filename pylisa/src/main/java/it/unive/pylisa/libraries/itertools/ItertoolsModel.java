@@ -21,12 +21,12 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.InstrumentedReceiver;
 import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
@@ -494,6 +494,6 @@ public final class ItertoolsModel {
 			HeapDereference deref,
 			String name,
 			CodeLocation loc) {
-		return new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, name, loc), loc);
+		return new AccessChild(Untyped.INSTANCE, deref, new GlobalVariable(Untyped.INSTANCE, name, loc), loc);
 	}
 }

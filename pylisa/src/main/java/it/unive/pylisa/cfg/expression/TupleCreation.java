@@ -20,6 +20,7 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.InstrumentedReceiver;
@@ -177,7 +178,7 @@ public class TupleCreation extends NaryExpression {
 		// never becomes stale: it is tracked as a "length" field so that
 		// SequenceGetItem can raise IndexError on out-of-bounds accesses
 		AccessChild length = new AccessChild(Untyped.INSTANCE, deref,
-				new Variable(Int32Type.INSTANCE, "length", location), location);
+				new GlobalVariable(Int32Type.INSTANCE, "length", location), location);
 		current = analysis.assign(current, length, new Constant(Int32Type.INSTANCE, params.length, location), context,
 				pp);
 
@@ -216,7 +217,7 @@ public class TupleCreation extends NaryExpression {
 		HeapDereference deref = new HeapDereference(PyClassType.lookup(LibrarySpecificationProvider.TUPLE), tuple,
 				location);
 		AnalysisState<A> result = analysis.assign(state, new AccessChild(Int32Type.INSTANCE, deref,
-				new Variable(Int32Type.INSTANCE, "length", location), location),
+				new GlobalVariable(Int32Type.INSTANCE, "length", location), location),
 				new PushAny(Int32Type.INSTANCE, location), context, pp);
 		result = analysis.assign(result, new AccessChild(Untyped.INSTANCE, deref,
 				new Variable(Untyped.INSTANCE, ListCreation.UNKNOWN_INDEX, location), location),

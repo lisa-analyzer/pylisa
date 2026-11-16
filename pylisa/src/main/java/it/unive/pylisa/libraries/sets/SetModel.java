@@ -16,6 +16,7 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.InstrumentedReceiver;
 import it.unive.lisa.symbolic.value.PushAny;
@@ -127,7 +128,7 @@ public final class SetModel {
 		// objects have, makes the elements of the new set known also when it
 		// is empty
 		AccessChild cls = new AccessChild(Untyped.INSTANCE, deref,
-				new Variable(Untyped.INSTANCE, "__class__", location),
+				new GlobalVariable(Untyped.INSTANCE, "__class__", location),
 				location);
 		current = analysis.smallStepSemantics(current, cls, context, pp).withExecutionExpressions(
 				current.getExecutionExpressions());

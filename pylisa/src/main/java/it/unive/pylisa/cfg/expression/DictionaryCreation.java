@@ -19,10 +19,10 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.heap.HeapReference;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.InstrumentedReceiver;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.TernaryExpression;
-import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
@@ -117,7 +117,7 @@ public class DictionaryCreation extends NaryExpression {
 		// for all objects (see PyNewObj): accessing __class__, that all
 		// objects have, makes the entries of the new dictionary known also
 		// when it is empty
-		AccessChild cls = new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, "__class__", loc),
+		AccessChild cls = new AccessChild(Untyped.INSTANCE, deref, new GlobalVariable(Untyped.INSTANCE, "__class__", loc),
 				loc);
 		current = analysis.smallStepSemantics(current, cls, context, this)
 				.withExecutionExpressions(current.getExecutionExpressions());
