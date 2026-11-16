@@ -25,6 +25,7 @@ import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
 import it.unive.pylisa.libraries.sets.SetModel;
 import java.util.Collections;
+import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import java.util.Set;
 
 /**
@@ -67,9 +68,14 @@ public class TypeBuiltin extends PyNative {
 			return unknown(analysis, context, state, Untyped.INSTANCE);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type t : types) {
+			// the class of the values of each type, in the executions where
+			// the value has that type (see PyBinaryDispatch#ofType)
+			AnalysisState<A> typed = PyBinaryDispatch.ofType(analysis, context, state, args[0], t, types, this);
+			if (typed.getExecutionState().isBottom())
+				continue;
 			Constant cls = classOf(t);
-			result = result.lub(cls == null ? unknown(analysis, context, state, Untyped.INSTANCE)
-					: compute(analysis, context, state, cls));
+			result = result.lub(cls == null ? unknown(analysis, context, typed, Untyped.INSTANCE)
+					: compute(analysis, context, typed, cls));
 		}
 		return result;
 	}

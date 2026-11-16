@@ -9,6 +9,7 @@ import it.unive.lisa.analysis.ProgramState;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.checks.semantic.SemanticTool;
 import it.unive.lisa.checks.verification.Violation;
+import it.unive.lisa.triage.reachability.Reachability;
 import it.unive.lisa.conf.FixpointConfiguration;
 import it.unive.lisa.lattices.GenericSetLattice;
 import it.unive.lisa.program.CompilationUnit;
@@ -196,7 +197,9 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 
 	// the node of the cfg containing the given statement
 	private static Statement node(
-			Statement st) {
+			Statement thrower) {
+		// calls resolved from calls of the cfg are not part of it
+		Statement st = Reachability.sourceOf(thrower);
 		Statement root = st instanceof Expression ? ((Expression) st).getRootStatement() : st;
 		return root != null && st.getCFG().containsNode(root) ? root : st;
 	}
