@@ -20,7 +20,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.DictionaryCreation;
@@ -152,7 +152,7 @@ public class DefaultDictBuiltin extends PyNative {
 			if (missing != null)
 				created = analysis.assign(state,
 						new AccessChild(Untyped.INSTANCE, new HeapDereference(PyClassType.lookup(type), dict, loc),
-								new Variable(Untyped.INSTANCE, DictModel.MISSING, loc), loc),
+								new GlobalVariable(Untyped.INSTANCE, DictModel.MISSING, loc), loc),
 						missing, context, st);
 			result = result.lub(compute(analysis, context, created, dict));
 		}

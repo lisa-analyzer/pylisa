@@ -27,6 +27,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.MemoryPointer;
 import it.unive.lisa.symbolic.value.PushAny;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.type.Type;
@@ -246,7 +247,7 @@ public final class DictModel {
 					unknown.add(site);
 				else if (field instanceof Variable && ((Variable) field).getName().equals(UNTRACKED_KEYS))
 					keyed.add(site);
-				else if (field instanceof Variable && ((Variable) field).getName().equals(MISSING))
+				else if (field instanceof GlobalVariable && ((GlobalVariable) field).getName().equals(MISSING))
 					defaulted.add(site);
 				else if (field instanceof Constant && trackedKey(field) != null)
 					siteKeys.add(trackedKey(field));
@@ -442,7 +443,7 @@ public final class DictModel {
 			// the value of a missing key of a defaultdict or of a Counter,
 			// that a defaultdict also adds (see MISSING)
 			AnalysisState<A> defaulted = analysis.smallStepSemantics(state,
-					new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, MISSING, loc), loc),
+					new AccessChild(Untyped.INSTANCE, deref, new GlobalVariable(Untyped.INSTANCE, MISSING, loc), loc),
 					context, thrower);
 			result = result.lub(defaulted);
 			if (analysis.getRuntimeTypesOf(state, dict, context, thrower).stream().anyMatch(DictModel::isDefaultDict))
