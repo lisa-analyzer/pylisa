@@ -9,8 +9,13 @@ import it.unive.lisa.checks.verification.VerificationResult;
 import it.unive.lisa.checks.verification.WarningVerifier;
 import it.unive.lisa.outputs.messages.StatementMessage;
 import it.unive.lisa.triage.FirstViolationVerifier;
+import it.unive.lisa.triage.pdr.PdrVerifier;
+import it.unive.lisa.triage.reachability.ReachabilityVerifier;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.triage.PyExpressionEncoder;
+import it.unive.pylisa.triage.PyGlobalWrites;
+import it.unive.pylisa.triage.PyHeapWrites;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -38,11 +43,31 @@ public class SVCOMPVerifier<A extends AbstractLattice<A>, D extends AbstractDoma
 	private final WarningVerifier<A, D> verifier;
 
 	/**
-	 * Builds the verifier, verifying the warnings of each property with a
-	 * {@link FirstViolationVerifier} with default parameters.
+	 * Builds the verifier, verifying the warnings of each property with the
+	 * verifier of {@link #firstViolation()}.
 	 */
 	public SVCOMPVerifier() {
-		this(new FirstViolationVerifier<>());
+		this(firstViolation());
+	}
+
+	/**
+	 * Yields a {@link FirstViolationVerifier} with default parameters, whose
+	 * {@link PdrVerifier} encodes the values and the operators of Python
+	 * ({@link PyExpressionEncoder#FACTORY}), and knows the global variables and
+	 * the contents of the heap written by the code of the program
+	 * ({@link PyGlobalWrites} and {@link PyHeapWrites}).
+	 *
+	 * @param <A> the kind of {@link AbstractLattice} produced by the domain
+	 *                {@code D}
+	 * @param <D> the kind of {@link AbstractDomain} ran during the analysis
+	 *
+	 * @return the verifier
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> FirstViolationVerifier<A,
+			D> firstViolation() {
+		return new FirstViolationVerifier<>(new ReachabilityVerifier<>(),
+				new PdrVerifier<A, D>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY)
+						.withGlobalWrites(new PyGlobalWrites()).withHeapWrites(new PyHeapWrites()));
 	}
 
 	/**

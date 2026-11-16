@@ -45,6 +45,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
+import java.lang.management.ManagementFactory;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.logging.log4j.Level;
@@ -61,6 +62,23 @@ public class PyLiSA {
 
 	// the interprocedural analysis: Inlining, or EntryState[:bound]
 	private static String interprocedural = "EntryState";
+
+	/**
+	 * The time by which the verification of the warnings must end (as
+	 * {@link System#currentTimeMillis()} gives it), when a time limit is given
+	 * ({@code --time-limit}), or {@code 0}.
+	 */
+	private static long verificationDeadline = 0;
+
+	/**
+	 * The time left, out of the time limit, for writing the results after the
+	 * verification of the warnings, in milliseconds: the fraction
+	 * {@value #RESULTS_FRACTION} of the limit, at most
+	 * {@value #MAX_RESULTS_MILLIS} (as in JLiSA).
+	 */
+	private static final long MAX_RESULTS_MILLIS = 30_000;
+
+	private static final double RESULTS_FRACTION = 0.1;
 
 	public static void main(
 			String[] args)
@@ -119,6 +137,15 @@ public class PyLiSA {
 				.required(false)
 				.build();
 
+		Option timeLimit = Option.builder()
+				.longOpt("time-limit")
+				.hasArg()
+				.argName("SECONDS")
+				.desc("Time limit of the whole run, in seconds: the verification of the warnings ends in time to "
+						+ "write the results (warnings not verified by then stay possible). No limit by default")
+				.required(false)
+				.build();
+
 		Option interproceduralOption = Option.builder("i")
 				.longOpt("interprocedural")
 				.hasArg()
@@ -170,6 +197,7 @@ public class PyLiSA {
 		options.addOption(verifierOption);
 		options.addOption(interproceduralOption);
 		options.addOption(z3Path);
+		options.addOption(timeLimit);
 		options.addOption(mode);
 		options.addOption(version);
 		options.addOption(noHtmlOutput);
@@ -239,6 +267,21 @@ public class PyLiSA {
 
 			if (cmd.hasOption("z3"))
 				SmtLibProcessSolver.setZ3Path(cmd.getOptionValue("z3"));
+
+			if (cmd.hasOption("time-limit")) {
+				long limit;
+				try {
+					limit = Long.parseLong(cmd.getOptionValue("time-limit")) * 1000;
+				} catch (NumberFormatException e) {
+					throw new ParseException("Invalid time limit: " + cmd.getOptionValue("time-limit"));
+				}
+				if (limit <= 0)
+					throw new ParseException("Invalid time limit: " + cmd.getOptionValue("time-limit"));
+				// the limit counts from the start of the virtual machine
+				long start = ManagementFactory.getRuntimeMXBean().getStartTime();
+				verificationDeadline = start + limit
+						- Math.min(MAX_RESULTS_MILLIS, (long) (limit * RESULTS_FRACTION));
+			}
 
 			interprocedural = cmd.getOptionValue("i", "EntryState");
 			if (!interprocedural.equals("Inlining") && !interprocedural.matches("EntryState(:[1-9][0-9]*)?"))
@@ -437,7 +480,8 @@ public class PyLiSA {
 		case "Combined":
 			// stopping at the first warning that is confirmed for each
 			// property
-			conf.warningVerifier = new SVCOMPVerifier<>();
+			conf.warningVerifier = new SVCOMPVerifier<>(
+					SVCOMPVerifier.firstViolation().withDeadline(verificationDeadline));
 			break;
 		default:
 			throw new ParseException("Invalid verifier name: " + verifierName);
