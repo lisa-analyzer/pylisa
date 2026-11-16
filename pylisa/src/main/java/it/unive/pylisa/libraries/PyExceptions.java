@@ -15,12 +15,17 @@ import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.symbolic.CFGThrow;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.CallSites;
+import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.type.PyClassType;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
@@ -160,12 +165,17 @@ public final class PyExceptions {
 		}
 
 		/**
-		 * Raises the given exception in the executions of the given state, that
-		 * will be moved to the error channel by
-		 * {@link #moveFrom(AnalysisState)}.
+		 * Raises the given exception in some of the executions of the given
+		 * state, that will be moved to the error channel by
+		 * {@link #moveFrom(AnalysisState)}: the executions raising it are not
+		 * known, so the exception is raised under an unknown condition (see
+		 * {@link #raise(Satisfiability, AnalysisState, CFG, CodeLocation, Statement, String)}
+		 * with {@link Satisfiability#UNKNOWN}). Executions that surely raise it
+		 * (e.g. a state restricted to the ones raising it) are raised with
+		 * {@link Satisfiability#SATISFIED}.
 		 *
-		 * @param state              the state of the executions raising the
-		 *                               exception
+		 * @param state              the state of the executions that might
+		 *                               raise the exception
 		 * @param cfg                the cfg where the exception is raised
 		 * @param loc                the location where the exception is raised
 		 * @param thrower            the statement raising the exception
@@ -174,6 +184,117 @@ public final class PyExceptions {
 		 * @throws SemanticException if the analysis fails
 		 */
 		public void raise(
+				AnalysisState<A> state,
+				CFG cfg,
+				CodeLocation loc,
+				Statement thrower,
+				String exceptionClassName)
+				throws SemanticException {
+			raise(Satisfiability.UNKNOWN, state, cfg, loc, thrower, exceptionClassName);
+		}
+
+		/**
+		 * Raises the given exception in the executions of the given state
+		 * where {@code operand} has one of the {@code failing} types, among
+		 * its runtime types {@code types}: in all of them if all its types
+		 * fail, in the ones where it has the failing types otherwise (see
+		 * {@link PyBinaryDispatch#ofType}), under an unknown condition if they
+		 * cannot be told apart from the other ones (see
+		 * {@link PyBinaryDispatch#checkable}) or if {@code surely} does not
+		 * hold.
+		 *
+		 * @param state              the state of the executions that might
+		 *                               raise the exception
+		 * @param operand            the value whose type raises the exception
+		 * @param failing            the types of the operand raising the
+		 *                               exception
+		 * @param types              all the runtime types of the operand
+		 * @param surely             whether the values of the failing types
+		 *                               surely raise the exception
+		 * @param cfg                the cfg where the exception is raised
+		 * @param loc                the location where the exception is raised
+		 * @param thrower            the statement raising the exception
+		 * @param exceptionClassName the name of the class of the exception
+		 *
+		 * @throws SemanticException if the analysis fails
+		 */
+		public void raiseOfTypes(
+				AnalysisState<A> state,
+				SymbolicExpression operand,
+				Set<Type> failing,
+				Set<Type> types,
+				boolean surely,
+				CFG cfg,
+				CodeLocation loc,
+				Statement thrower,
+				String exceptionClassName)
+				throws SemanticException {
+			raiseOfTypes(state, operand, failing, types, surely, Collections.emptySet(), cfg, loc, thrower,
+					exceptionClassName);
+		}
+
+		/**
+		 * As
+		 * {@link #raiseOfTypes(AnalysisState, SymbolicExpression, Set, Set, boolean, CFG, CodeLocation, Statement, String)},
+		 * forgetting the given identifiers (e.g. the meta variables holding the
+		 * operand, consumed by the statement) in the executions raising the
+		 * exception, after they are restricted to the ones where the operand
+		 * has the failing types.
+		 *
+		 * @param state              the state of the executions that might
+		 *                               raise the exception
+		 * @param operand            the value whose type raises the exception
+		 * @param failing            the types of the operand raising the
+		 *                               exception
+		 * @param types              all the runtime types of the operand
+		 * @param surely             whether the values of the failing types
+		 *                               surely raise the exception
+		 * @param consumed           the identifiers to forget
+		 * @param cfg                the cfg where the exception is raised
+		 * @param loc                the location where the exception is raised
+		 * @param thrower            the statement raising the exception
+		 * @param exceptionClassName the name of the class of the exception
+		 *
+		 * @throws SemanticException if the analysis fails
+		 */
+		public void raiseOfTypes(
+				AnalysisState<A> state,
+				SymbolicExpression operand,
+				Set<Type> failing,
+				Set<Type> types,
+				boolean surely,
+				Collection<Identifier> consumed,
+				CFG cfg,
+				CodeLocation loc,
+				Statement thrower,
+				String exceptionClassName)
+				throws SemanticException {
+			if (failing.isEmpty())
+				return;
+			Satisfiability raises;
+			AnalysisState<A> typed;
+			if (types.isEmpty() || failing.stream().anyMatch(Type::isUntyped)) {
+				raises = Satisfiability.UNKNOWN;
+				typed = state;
+			} else if (failing.containsAll(types)) {
+				raises = surely ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN;
+				typed = state;
+			} else {
+				boolean checkable = surely;
+				typed = state.bottomExecution();
+				for (Type t : failing) {
+					checkable &= PyBinaryDispatch.checkable(t, types);
+					typed = typed.lub(PyBinaryDispatch.ofType(analysis, context, state, operand, t, types, thrower));
+				}
+				raises = checkable ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN;
+			}
+			if (!consumed.isEmpty())
+				typed = typed.forgetIdentifiers(consumed, thrower);
+			raise(raises, typed, cfg, loc, thrower, exceptionClassName);
+		}
+
+		// raises the exception in all the executions of the state
+		private void collect(
 				AnalysisState<A> state,
 				CFG cfg,
 				CodeLocation loc,
@@ -220,7 +341,7 @@ public final class PyExceptions {
 			AnalysisState<A> raising = raises == Satisfiability.SATISFIED ? state
 					: ExceptionGuard.maybe(analysis, context, state, thrower);
 			if (!raising.getExecutionState().isBottom())
-				raise(raising, cfg, loc, thrower, exceptionClassName);
+				collect(raising, cfg, loc, thrower, exceptionClassName);
 		}
 
 		/**

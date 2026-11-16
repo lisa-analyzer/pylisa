@@ -21,6 +21,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.type.PyClassType;
+import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Set;
@@ -89,18 +90,27 @@ public class PyRaise extends NaryStatement {
 		CompilationUnit base = PyClassType.lookup(LibrarySpecificationProvider.BASE_EXCEPTION).getUnit();
 
 		AnalysisState<A> result = state.bottomExecution();
-		boolean typeError = false;
 		for (SymbolicExpression e : params[0]) {
 			Set<Type> types = analysis.getRuntimeTypesOf(state, e, context, this);
 			for (Type t : types) {
+				// the executions where the raised value has the type (see
+				// PyBinaryDispatch#ofType), under an unknown condition if they
+				// cannot be told apart from the ones of the other types
+				AnalysisState<A> typed = PyBinaryDispatch.ofType(analysis, context, state, e, t, types, this);
+				if (!PyBinaryDispatch.checkable(t, types))
+					typed = ExceptionGuard.maybe(analysis, context, typed, this);
+				if (typed.getExecutionState().isBottom())
+					continue;
 				Type exception = exceptionType(t, base);
 				if (exception == null) {
-					typeError = true;
+					// TypeError: exceptions must derive from BaseException
+					result = result.lub(PyExceptions.raise(analysis, context, forgetMetas(typed), getCFG(), loc, this,
+							LibrarySpecificationProvider.TYPE_ERROR));
 					continue;
 				}
 
 				CFGThrow thrown = new CFGThrow(getCFG(), exception, loc);
-				AnalysisState<A> sem = analysis.assign(state, thrown, e, context, this);
+				AnalysisState<A> sem = analysis.assign(typed, thrown, e, context, this);
 				// the meta variables are forgotten before moving to the error,
 				// as forgetting them later only affects the normal execution
 				sem = forgetMetas(sem);
@@ -108,11 +118,6 @@ public class PyRaise extends NaryStatement {
 						new AnalysisState.Error(exception, this), context, this));
 			}
 		}
-
-		if (typeError)
-			// TypeError: exceptions must derive from BaseException
-			result = result.lub(PyExceptions.raise(analysis, context, forgetMetas(state), getCFG(), loc, this,
-					LibrarySpecificationProvider.TYPE_ERROR));
 		return result;
 	}
 

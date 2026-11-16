@@ -356,9 +356,11 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	}
 
 	/**
-	 * Raises the given exception in the executions of the given state,
-	 * collecting it in {@code raising} (see {@link PyExceptions.Raising}), for
-	 * natives where only some executions raise it.
+	 * Raises the given exception in some of the executions of the given state,
+	 * which are not known, collecting it in {@code raising} (see
+	 * {@link PyExceptions.Raising#raise(AnalysisState, CFG, CodeLocation, Statement, String)}):
+	 * executions that surely raise it are raised with
+	 * {@link #raise(PyExceptions.Raising, Satisfiability, AnalysisState, String)}.
 	 *
 	 * @param raising   where the raised exception is collected
 	 * @param state     the state of the executions raising the exception

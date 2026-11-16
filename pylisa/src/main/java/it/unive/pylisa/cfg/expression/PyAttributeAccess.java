@@ -215,13 +215,15 @@ public class PyAttributeAccess extends UnaryExpression {
 				// the objects without the attribute: the attribute is looked
 				// up in their class
 				for (ClassUnit cls : missing.classes())
-					result = result.lub(classAttribute(interprocedural, state, cls, thrower, raising));
+					result = result
+							.lub(classAttribute(interprocedural, state, expr, types, cls, missing, thrower, raising));
 		}
 		if (others) {
 			// the methods of builtin values, read without calling them (e.g.
 			// "a".upper): bound methods
 			Set<CodeMember> valueMethods = new HashSet<>();
-			boolean unknown = types.isEmpty(), missingAttribute = false;
+			boolean unknown = types.isEmpty();
+			Set<Type> missingAttribute = new HashSet<>();
 			boolean known = !PyBinaryDispatch.unknownTypes(types, this);
 			if (!unknown && isWriteTarget())
 				for (Type t : types)
@@ -229,7 +231,7 @@ public class PyAttributeAccess extends UnaryExpression {
 						if (known && PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
 							// the attributes of the values of the builtin
 							// classes cannot be assigned (e.g. None.x = 1)
-							missingAttribute = true;
+							missingAttribute.add(t);
 						else
 							unknown = true;
 			if (!unknown && !isWriteTarget())
@@ -240,15 +242,15 @@ public class PyAttributeAccess extends UnaryExpression {
 							// the values of the class have no such attribute
 							// (e.g. (5).strip), if the value is known to be
 							// of that class (not just any value)
-							missingAttribute = true;
+							missingAttribute.add(t);
 							continue;
 						}
 						Set<CodeMember> m = BoundMethods.methods(getProgram(), t, name);
 						valueMethods.addAll(m);
 						unknown |= m.isEmpty();
 					}
-			if (missingAttribute)
-				raising.raise(state, getCFG(), loc, thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+			raising.raiseOfTypes(state, expr, missingAttribute, types, true, getCFG(), loc, thrower,
+					LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			if (!valueMethods.isEmpty())
 				result = result
 						.lub(BoundMethods.create(analysis, context, state, expr, valueMethods, this,
@@ -294,7 +296,8 @@ public class PyAttributeAccess extends UnaryExpression {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		ScopeId<A> context = interprocedural.getCurrentContext();
 		Set<Type> objects = new HashSet<>();
-		for (Type t : analysis.getRuntimeTypesOf(state, expr, context, this))
+		Set<Type> types = analysis.getRuntimeTypesOf(state, expr, context, this);
+		for (Type t : types)
 			if (t.isPointerType() && t.asPointerType().getInnerType().isUnitType())
 				objects.add(t.asPointerType().getInnerType());
 		Missing missing = objects.isEmpty() ? null : missing(analysis, context, state, expr, objects, true);
@@ -302,7 +305,8 @@ public class PyAttributeAccess extends UnaryExpression {
 		if (missing != null)
 			for (ClassUnit cls : missing.classes())
 				// only the errors: the value of the attribute is not known
-				result = result.lub(classAttribute(interprocedural, state, cls, thrower, raising).bottomExecution());
+				result = result.lub(classAttribute(interprocedural, state, expr, types, cls, missing, thrower, raising)
+						.bottomExecution());
 		return result;
 	}
 
@@ -315,7 +319,14 @@ public class PyAttributeAccess extends UnaryExpression {
 	 */
 	private record Missing(
 			boolean assigned,
-			Set<ClassUnit> classes) {
+			Set<ClassUnit> classes,
+			Set<ClassUnit> maybeAssigned) {
+
+		// whether the objects of the class surely do not have the attribute
+		boolean surely(
+				ClassUnit cls) {
+			return !maybeAssigned.contains(cls);
+		}
 	}
 
 	// the number of heap locations read by an attribute access above which
@@ -412,6 +423,8 @@ public class PyAttributeAccess extends UnaryExpression {
 
 		boolean assigned = false;
 		Set<ClassUnit> missing = new HashSet<>();
+		// the classes of the objects that might have the attribute
+		Set<ClassUnit> maybeAssigned = new HashSet<>();
 		for (SymbolicExpression rec : analysis.rewrite(state, expr, context, this)) {
 			// the objects the receiver points to
 			Set<AllocationSite> sites;
@@ -434,8 +447,10 @@ public class PyAttributeAccess extends UnaryExpression {
 						if (site.getStaticType().isUnitType()
 								&& units.contains(site.getStaticType().asUnitType().getUnit()))
 							sites.add(site);
-				if (sites.isEmpty())
+				if (sites.isEmpty()) {
 					missing.addAll(units);
+					maybeAssigned.addAll(units);
+				}
 			} else
 				return null;
 
@@ -445,23 +460,30 @@ public class PyAttributeAccess extends UnaryExpression {
 					return null;
 				boolean has = fields.elements().stream()
 						.anyMatch(f -> f instanceof Identifier && ((Identifier) f).getName().equals(name));
-				if (has)
+				Type type = site.getStaticType();
+				if (has) {
 					assigned = true;
+					if (type.isUnitType() && units.contains(type.asUnitType().getUnit()))
+						maybeAssigned.add((ClassUnit) type.asUnitType().getUnit());
+					else if (!type.isUnitType())
+						maybeAssigned.addAll(units);
+				}
 				if (!has || !PyHeap.surelyInitialized(heap, site, name)) {
 					// the attribute might not be assigned on the object
 					// the class of the object, if known
-					Type type = site.getStaticType();
 					if (type.isUnitType() && units.contains(type.asUnitType().getUnit()))
 						missing.add((ClassUnit) type.asUnitType().getUnit());
-					else if (!type.isUnitType())
+					else if (!type.isUnitType()) {
 						missing.addAll(units);
+						maybeAssigned.addAll(units);
+					}
 					// otherwise, an object of a class defining the method, or
 					// of a class that the types of the receiver exclude (e.g.
 					// after isinstance(x, C)), that x cannot point to
 				}
 			}
 		}
-		return missing.isEmpty() ? null : new Missing(assigned, missing);
+		return missing.isEmpty() ? null : new Missing(assigned, missing, maybeAssigned);
 	}
 
 	// whether some of the objects expr points to might have the attribute
@@ -502,7 +524,10 @@ public class PyAttributeAccess extends UnaryExpression {
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> classAttribute(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
+			SymbolicExpression expr,
+			Set<Type> types,
 			ClassUnit cls,
+			Missing missing,
 			Statement thrower,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
@@ -510,7 +535,18 @@ public class PyAttributeAccess extends UnaryExpression {
 		ScopeId<A> context = interprocedural.getCurrentContext();
 		ClassAttribute attribute = PyClassAttributes.attribute(cls, name);
 		if (attribute == null) {
-			raising.raise(state, getCFG(), getLocation(), thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+			// raised by the objects of the class, surely if the attribute is
+			// never assigned on the objects of the class expr points to
+			Set<Type> ofClass = new HashSet<>();
+			for (Type t : types)
+				if (t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
+						&& t.asPointerType().getInnerType().asUnitType().getUnit() == cls)
+					ofClass.add(t);
+			if (ofClass.isEmpty())
+				raising.raise(state, getCFG(), getLocation(), thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+			else
+				raising.raiseOfTypes(state, expr, ofClass, types, missing.surely(cls), getCFG(), getLocation(), thrower,
+						LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			return state.bottomExecution();
 		}
 		if (attribute.value() == null)

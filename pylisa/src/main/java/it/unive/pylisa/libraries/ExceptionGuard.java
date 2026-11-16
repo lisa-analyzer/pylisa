@@ -107,7 +107,7 @@ public final class ExceptionGuard {
 			AnalysisState<A> raisingState = sat == Satisfiability.SATISFIED ? state
 					: analysis.assume(state, raiseCondition, context, thrower, thrower);
 			if (!raisingState.getExecutionState().isBottom())
-				raising.raise(raisingState, cfg, loc, thrower, exception);
+				raising.raise(Satisfiability.SATISFIED, raisingState, cfg, loc, thrower, exception);
 		}
 
 		return result;

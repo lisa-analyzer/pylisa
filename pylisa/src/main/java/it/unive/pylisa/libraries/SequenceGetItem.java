@@ -194,7 +194,8 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 						? ExceptionGuard.when(analysis, context, lenState, outOfRange, this)
 						: lenState;
 				if (!failing.getExecutionState().isBottom())
-					raising.raise(failing, getCFG(), loc, st, LibrarySpecificationProvider.INDEX_ERROR);
+					raising.raise(Satisfiability.SATISFIED, failing, getCFG(), loc, st,
+							LibrarySpecificationProvider.INDEX_ERROR);
 			}
 		}
 

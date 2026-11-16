@@ -159,7 +159,8 @@ public class PyNewObj extends NaryExpression {
 				// there is no __init__ and object.__init__ takes no
 				// arguments (unless they are consumed by __new__)
 				expressions.forget(paramThis);
-				raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
+				raising.raise(Satisfiability.SATISFIED, state, getCFG(), getLocation(), this,
+						LibrarySpecificationProvider.TYPE_ERROR);
 				return state.bottomExecution();
 			}
 			// no class defines __init__: object.__init__ is called, that does
@@ -181,8 +182,8 @@ public class PyNewObj extends NaryExpression {
 		if (!call.getMetaVariables().isEmpty())
 			sem = sem.forgetIdentifiers(call.getMetaVariables(), this);
 
-		if (none != Satisfiability.SATISFIED)
-			raising.raise(sem, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
+		// surely raised only if __init__ surely returns something else
+		raising.raise(none.negate(), sem, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 
 		// the result is the instrumented receiver, pointing to the object
 		// allocated above: the allocation is not evaluated again, as it would

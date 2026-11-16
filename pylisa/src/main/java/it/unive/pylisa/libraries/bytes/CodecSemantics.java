@@ -154,6 +154,6 @@ public final class CodecSemantics {
 		AnalysisState<A> failing = fails == Satisfiability.SATISFIED ? state
 				: ExceptionGuard.when(analysis, context, state, failure, n);
 		if (!failing.getExecutionState().isBottom())
-			n.raise(raising, failing, exception);
+			n.raise(raising, Satisfiability.SATISFIED, failing, exception);
 	}
 }

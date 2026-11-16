@@ -792,10 +792,13 @@ public final class ListModel {
 			AnalysisState<A> failing = range == null ? state
 					: ExceptionGuard.unless(analysis, context, state, range, thrower);
 			if (!failing.getExecutionState().isBottom())
-				raising.raise(failing, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
+				// surely raised where the index is out of range, unless it
+				// might also not be an int
+				raising.raise(typeError ? Satisfiability.UNKNOWN : Satisfiability.SATISFIED, failing,
+						thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
 		}
 		if (typeError)
-			raising.raise(surelyNotInt ? state : ExceptionGuard.maybe(analysis, context, state, thrower),
+			raising.raise(surelyNotInt ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN, state,
 					thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
@@ -1192,7 +1195,10 @@ public final class ListModel {
 			AnalysisState<A> failing = range == null ? state
 					: ExceptionGuard.unless(analysis, context, state, range, thrower);
 			if (!failing.getExecutionState().isBottom())
-				raising.raise(failing, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
+				// surely raised where the index is out of range, unless it
+				// might also not be an int
+				raising.raise(typeError ? Satisfiability.UNKNOWN : Satisfiability.SATISFIED, failing,
+						thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
 		}
 		if (typeError)
 			raising.raise(!types.isEmpty()

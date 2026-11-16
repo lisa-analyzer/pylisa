@@ -28,6 +28,7 @@ import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -115,8 +116,7 @@ public class PyValueCall extends NaryExpression {
 		CallTargets targets = CallTargets.of(analysis, context, state, params[0], true, this);
 		AnalysisState<A> result = state.bottomExecution();
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		if (targets.notCallable())
-			raising.raise(consumed, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
+		targets.raiseNotCallable(raising, state, subs[0].getMetaVariables(), getCFG(), getLocation(), this);
 		// closures receive the value of the callee as their first argument:
 		// it is consumed after the call (unless it is also the result of this
 		// call, e.g. in f()() where the two calls have the same location)
@@ -189,8 +189,7 @@ public class PyValueCall extends NaryExpression {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = targets.call(interprocedural, state, state, pp, call, calleeExpr, args, expressions,
 				metas, raising);
-		if (targets.notCallable())
-			raising.raise(state, cfg, pp.getLocation(), pp, LibrarySpecificationProvider.TYPE_ERROR);
+		targets.raiseNotCallable(raising, state, Collections.emptySet(), cfg, pp.getLocation(), pp);
 		if (targets.unknown())
 			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp));
 		return raising.moveFrom(result);

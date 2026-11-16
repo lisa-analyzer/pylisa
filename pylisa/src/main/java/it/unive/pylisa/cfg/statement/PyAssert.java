@@ -132,7 +132,8 @@ public class PyAssert extends NaryStatement {
 		if (holds && !holding.getExecutionState().isBottom())
 			result = result.lub(analysis.smallStepSemantics(holding, new Skip(getLocation()), context, this));
 		if (fails && !failing.getExecutionState().isBottom())
-			raising.raise(failing, getCFG(), getLocation(), this, LibrarySpecificationProvider.ASSERTION_ERROR);
+			raising.raise(Satisfiability.SATISFIED, failing, getCFG(), getLocation(), this,
+					LibrarySpecificationProvider.ASSERTION_ERROR);
 		return raising.moveFrom(result);
 	}
 }

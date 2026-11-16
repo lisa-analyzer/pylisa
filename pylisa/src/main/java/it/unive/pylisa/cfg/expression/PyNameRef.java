@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
@@ -336,20 +337,25 @@ public class PyNameRef extends VariableRef {
 	 * (see {@link #unboundError(Analysis, ScopeId, AnalysisState)}) in the
 	 * executions of the given state, when only some executions raise it: the
 	 * executions are moved to the error channel by the given
-	 * {@link PyExceptions.Raising}.
+	 * {@link PyExceptions.Raising}. The error is surely raised if the name is
+	 * surely not bound, and under an unknown condition if it might be bound
+	 * (the executions where it is not are not known).
 	 *
 	 * @param <A>     the kind of {@link AbstractLattice} of the state
 	 * @param <D>     the kind of {@link AbstractDomain} of the analysis
 	 * @param raising the collector of the executions raising errors
+	 * @param status  the binding status of the name
 	 * @param state   the state of the executions raising the error
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> void unboundError(
 			PyExceptions.Raising<A, D> raising,
+			Binding status,
 			AnalysisState<A> state)
 			throws SemanticException {
-		raising.raise(state, getCFG(), getLocation(), this, unboundErrorName());
+		raising.raise(status == Binding.UNBOUND ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN, state, getCFG(),
+				getLocation(), this, unboundErrorName());
 	}
 
 	private String unboundErrorName() {
@@ -423,7 +429,7 @@ public class PyNameRef extends VariableRef {
 		if (status == Binding.BOTTOM || status.mightBeBound())
 			result = result.lub(boundRead(entryState, interprocedural, expressions));
 		if (status.mightBeUnbound())
-			result = result.lub(unboundRead(entryState, interprocedural, expressions, raising));
+			result = result.lub(unboundRead(entryState, interprocedural, expressions, status, raising));
 		return raising.moveFrom(result);
 	}
 
@@ -499,6 +505,7 @@ public class PyNameRef extends VariableRef {
 			AnalysisState<A> entryState,
 			InterproceduralAnalysis<A, D> interprocedural,
 			StatementStore<A> expressions,
+			Binding status,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		if (kind.isGlobal()) {
@@ -514,7 +521,7 @@ public class PyNameRef extends VariableRef {
 				// a builtin that is not modeled: its value is unknown
 				return super.forwardSemantics(entryState, interprocedural, expressions);
 		}
-		unboundError(raising, entryState);
+		unboundError(raising, status, entryState);
 		return entryState.bottomExecution();
 	}
 

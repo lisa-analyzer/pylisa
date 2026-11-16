@@ -172,7 +172,8 @@ public class PyAssign extends Assignment {
 				if (Iteration.lazyIterator(tSelf)) {
 					// e.g. zip(xs, ys)[0] = v
 					resolved = true;
-					raising.raise(indexState, getCFG(), loc, this, LibrarySpecificationProvider.TYPE_ERROR);
+					raising.raiseOfTypes(indexState, selfSym, Set.of(tSelf), rtsSelf, true, getCFG(), loc, this,
+							LibrarySpecificationProvider.TYPE_ERROR);
 					continue;
 				}
 				// the methods of the classes of the program are instance
@@ -192,8 +193,10 @@ public class PyAssign extends Assignment {
 					if (call instanceof OpenCall && PyBinaryDispatch.fullyKnown(tSelf)) {
 						// all the methods of the class of the receiver are
 						// known, and none is a __setitem__ accepting the
-						// arguments (e.g. an int, a str, or None)
-						raising.raise(indexState, getCFG(), loc, this, LibrarySpecificationProvider.TYPE_ERROR);
+						// arguments (e.g. an int, a str, or None): raised where the
+						// receiver has the type
+						raising.raiseOfTypes(indexState, selfSym, Set.of(tSelf), rtsSelf, true, getCFG(), loc, this,
+								LibrarySpecificationProvider.TYPE_ERROR);
 						continue;
 					}
 					result = result.lub(call.forwardSemanticsAux(interprocedural, indexState, args, expressions));

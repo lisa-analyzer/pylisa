@@ -99,7 +99,8 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 		for (Type t : rts) {
 			if (Iteration.lazyIterator(t)) {
 				// e.g. len(zip(xs, ys))
-				raising.raise(state, getCFG(), getLocation(), thrower, LibrarySpecificationProvider.TYPE_ERROR);
+				raising.raiseOfTypes(state, expr, Set.of(t), rts, true, getCFG(), getLocation(), thrower,
+						LibrarySpecificationProvider.TYPE_ERROR);
 				continue;
 			}
 			if (PyBinaryDispatch.isBuiltinValueType(t)) {
@@ -109,7 +110,8 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 						PyBinaryDispatch.classOf(t), "__len__", new Expression[] { getSubExpression() }, types);
 				if (resolved == null)
 					// e.g. len(5)
-					raising.raise(state, getCFG(), getLocation(), thrower, LibrarySpecificationProvider.TYPE_ERROR);
+					raising.raiseOfTypes(state, expr, Set.of(t), rts, true, getCFG(), getLocation(), thrower,
+							LibrarySpecificationProvider.TYPE_ERROR);
 				else {
 					result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
 							new ExpressionSet[] { new ExpressionSet(expr) }, expressions));

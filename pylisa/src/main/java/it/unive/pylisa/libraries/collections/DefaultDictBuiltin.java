@@ -27,6 +27,7 @@ import it.unive.pylisa.cfg.expression.DictionaryCreation;
 import it.unive.pylisa.cfg.expression.PyNameRef;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.libraries.dicts.DictModel;
 
@@ -142,8 +143,10 @@ public class DefaultDictBuiltin extends PyNative {
 				|| Integer.valueOf(0).equals(DictModel.length(analysis, context, state, kwargs, st));
 		if (LibrarySpecificationProvider.isLibraryLoaded(LibrarySpecificationProvider.PANDAS) || !known
 				|| !missing(iterable) || !noKwargs) {
-			AnalysisState<A> result = unknown(analysis, context, state, null);
-			return result.lub(raise(analysis, context, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION));
+			// unknown code might raise any exception
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+			raise(raising, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+			return raising.moveFrom(unknown(analysis, context, state, null));
 		}
 		CodeLocation loc = getLocation();
 		AnalysisState<A> result = state.bottomExecution();

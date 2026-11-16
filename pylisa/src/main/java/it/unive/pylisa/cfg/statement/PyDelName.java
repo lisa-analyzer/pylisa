@@ -71,7 +71,7 @@ public class PyDelName extends Statement {
 			if (status == null || status == Binding.BOTTOM || status.mightBeBound())
 				result = result.lub(name.unbind(state.forgetIdentifier(name.getIdentifier(), this)));
 			if (status != null && status.mightBeUnbound())
-				name.unboundError(raising, state);
+				name.unboundError(raising, status, state);
 			state = raising.moveFrom(result);
 		}
 		return analysis.smallStepSemantics(state, new Skip(getLocation()), context, this);

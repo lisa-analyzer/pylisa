@@ -25,6 +25,7 @@ import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.analysis.namespaces.Binding;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -98,7 +99,7 @@ public class PyNameCall extends UnresolvedCall {
 		if (ref.isBuiltin())
 			result = result.lub(super.forwardSemanticsAux(interprocedural, state, params, expressions));
 		else
-			ref.unboundError(raising, state);
+			ref.unboundError(raising, status, state);
 		return raising.moveFrom(result);
 	}
 
@@ -128,8 +129,7 @@ public class PyNameCall extends UnresolvedCall {
 		expressions.put(calleeExpr, analysis.smallStepSemantics(state, callee, context, this));
 
 		AnalysisState<A> result = state.bottomExecution();
-		if (targets.notCallable())
-			raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
+		targets.raiseNotCallable(raising, state, Collections.emptySet(), getCFG(), getLocation(), this);
 		result = result.lub(
 				targets.call(interprocedural, state, state, this, this, calleeExpr, params, expressions,
 						getMetaVariables(), raising));

@@ -82,7 +82,8 @@ public class PySingleArrayAccess extends BinaryExpression {
 			for (Type tIndex : rtsIndex) {
 				if (Iteration.lazyIterator(tContainer)) {
 					// e.g. zip(xs, ys)[0]: the iterator is not subscriptable
-					raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
+					raising.raiseOfTypes(state, left, Set.of(tContainer), rtsContainer, true, getCFG(), getLocation(),
+							this, LibrarySpecificationProvider.TYPE_ERROR);
 					continue;
 				}
 				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {
@@ -92,8 +93,12 @@ public class PySingleArrayAccess extends BinaryExpression {
 							PyBinaryDispatch.classOf(tContainer), "__getitem__",
 							new Expression[] { getLeft(), getRight() }, types);
 					if (resolved == null)
-						// e.g. 5[0]: the object is not subscriptable
-						raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
+						// e.g. 5[0]: the object is not subscriptable, raised where
+						// the container and the index have these types
+						raising.raiseOfTypes(
+								PyBinaryDispatch.ofType(analysis, context, state, left, tContainer, rtsContainer, this),
+								right, Set.of(tIndex), rtsIndex, PyBinaryDispatch.checkable(tContainer, rtsContainer),
+								getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 					else {
 						result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
 								new ExpressionSet[] { new ExpressionSet(left), new ExpressionSet(right) },

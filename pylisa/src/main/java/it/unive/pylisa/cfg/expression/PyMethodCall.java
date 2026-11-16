@@ -145,8 +145,15 @@ public class PyMethodCall extends UnresolvedCall {
 					&& resolve(interprocedural, analysis, resolving, expressions) instanceof OpenCall)
 				// the classes of the receivers, whose methods are all known,
 				// define the method, but it does not accept the arguments (e.g.
-				// a method without self)
-				raising.raise(resolving, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
+				// a method without self): raised where the receiver is one of
+				// these objects
+				for (SymbolicExpression receiver : params[0]) {
+					Set<Type> rts = analysis.getRuntimeTypesOf(resolving, receiver, context, this);
+					Set<Type> failing = new HashSet<>(rts);
+					failing.retainAll(objectTypes);
+					raising.raiseOfTypes(resolving, receiver, failing, rts, true, getCFG(), getLocation(), this,
+							LibrarySpecificationProvider.TYPE_ERROR);
+				}
 			else
 				result = result.lub(dispatch(interprocedural, resolving, params, expressions));
 		}
@@ -174,8 +181,13 @@ public class PyMethodCall extends UnresolvedCall {
 					&& BuiltinAttributes.missing(PyBinaryDispatch.classOf(t), getTargetName()))
 				// the values of the class have no such attribute (e.g.
 				// (5).strip()), if the receiver is known to be of that class
-				// (not just any value)
-				raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+				// (not just any value): raised where the receiver has the type
+				for (SymbolicExpression receiver : params[0]) {
+					Set<Type> rts = analysis.getRuntimeTypesOf(state, receiver, context, this);
+					if (rts.contains(t))
+						raising.raiseOfTypes(state, receiver, Set.of(t), rts, true, getCFG(), getLocation(), this,
+								LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+				}
 			else if (resolved == null)
 				// the method is not modeled
 				result = result.lub(analysis.smallStepSemantics(state,
@@ -336,22 +348,25 @@ public class PyMethodCall extends UnresolvedCall {
 			Set<CFG> cfgs = new HashSet<>();
 			Set<NativeCFG> natives = new HashSet<>();
 			Set<SymbolicExpression> bounds = new HashSet<>();
-			boolean unknown = false, notCallable = false;
+			boolean unknown = false;
 			for (SymbolicExpression value : attr.getExecutionExpressions()) {
 				Set<Type> types = analysis.getRuntimeTypesOf(attr, value, context, this);
 				if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this)) {
 					unknown = true;
 					continue;
 				}
+				// the types of the value that cannot be called: TypeError is
+				// raised where the value has them
+				Set<Type> notCallable = new HashSet<>();
 				for (Type t : types)
 					if (BoundMethods.isBoundMethod(t))
 						bounds.add(value);
 					else if (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
 						// e.g. an int, that cannot be called
-						notCallable = true;
+						notCallable.add(t);
 					else if (isAttribute(t) && !callable(t))
 						// an object whose class does not define __call__
-						notCallable = true;
+						notCallable.add(t);
 					else if (t.isCodeMemberType())
 						for (CodeMember member : t.asCodeMemberType().getMembers())
 							if (member instanceof CFG)
@@ -362,10 +377,10 @@ public class PyMethodCall extends UnresolvedCall {
 								unknown = true;
 					else
 						unknown = true;
+				raising.raiseOfTypes(attr, value, notCallable, types, true, getCFG(), getLocation(), this,
+						LibrarySpecificationProvider.TYPE_ERROR);
 			}
 
-			if (notCallable)
-				raising.raise(attr, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 			if (!cfgs.isEmpty())
 				result = result.lub(call(CallSites.within(new CFGCall(call, cfgs), this), interprocedural, attr, args,
 						expressions));

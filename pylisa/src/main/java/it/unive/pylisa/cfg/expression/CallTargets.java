@@ -15,6 +15,7 @@ import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -32,16 +33,19 @@ import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.NamedTupleClassType;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.cfg.type.PyClosureUnit;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.collections.NamedTuples;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * The targets of a call whose callee is a value (e.g. a variable holding a
@@ -80,6 +84,10 @@ final class CallTargets {
 
 	// whether the callee might be a value that cannot be called
 	private boolean notCallable = false;
+
+	// the values of the callee that might not be callable, with their
+	// runtime types and the ones that cannot be called
+	private final Map<SymbolicExpression, Pair<Set<Type>, Set<Type>>> notCallableTypes = new HashMap<>();
 
 	// whether the callee might be a value whose callability is unknown
 	private boolean unknown = false;
@@ -134,7 +142,7 @@ final class CallTargets {
 					targets.closures.computeIfAbsent(key, k -> new HashSet<>()).add(value);
 				} else if (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t))
 					// e.g. an int, that cannot be called
-					targets.notCallable = true;
+					targets.notCallable(value, types, t);
 				else if (isObject(t) && callable(t))
 					// an object whose class defines __call__
 					targets.callableObjects.add(value);
@@ -150,7 +158,7 @@ final class CallTargets {
 							targets.unknown = true;
 				else if (objectsNotCallable && isObject(t) && PyBinaryDispatch.fullyKnown(t) && !callable(t))
 					// an object whose class does not define __call__
-					targets.notCallable = true;
+					targets.notCallable(value, types, t);
 				else if (t.isCodeMemberType())
 					for (CodeMember member : t.asCodeMemberType().getMembers())
 						if (member instanceof CFG)
@@ -220,6 +228,44 @@ final class CallTargets {
 	 */
 	boolean notCallable() {
 		return notCallable;
+	}
+
+	private void notCallable(
+			SymbolicExpression value,
+			Set<Type> types,
+			Type type) {
+		notCallable = true;
+		notCallableTypes.computeIfAbsent(value, v -> Pair.of(types, new HashSet<>())).getRight().add(type);
+	}
+
+	/**
+	 * Raises {@code TypeError} where the callee is a value that cannot be
+	 * called, that is, where it has one of the types that cannot be called
+	 * (see {@link PyExceptions.Raising#raiseOfTypes}).
+	 *
+	 * @param <A>     the kind of {@link AbstractLattice} of the state
+	 * @param <D>     the kind of {@link AbstractDomain} of the analysis
+	 * @param raising the collector of the executions raising errors
+	 * @param state    the state where the callee is called
+	 * @param consumed the identifiers holding the callee, forgotten in the
+	 *                     executions raising the error
+	 * @param cfg     the cfg of the call
+	 * @param loc     the location of the call
+	 * @param pp      the call
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	<A extends AbstractLattice<A>, D extends AbstractDomain<A>> void raiseNotCallable(
+			PyExceptions.Raising<A, D> raising,
+			AnalysisState<A> state,
+			Collection<Identifier> consumed,
+			CFG cfg,
+			CodeLocation loc,
+			Statement pp)
+			throws SemanticException {
+		for (Map.Entry<SymbolicExpression, Pair<Set<Type>, Set<Type>>> e : notCallableTypes.entrySet())
+			raising.raiseOfTypes(state, e.getKey(), e.getValue().getRight(), e.getValue().getLeft(), true, consumed,
+					cfg, loc, pp, LibrarySpecificationProvider.TYPE_ERROR);
 	}
 
 	/**

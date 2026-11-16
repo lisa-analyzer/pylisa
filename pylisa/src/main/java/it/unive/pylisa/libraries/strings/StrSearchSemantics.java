@@ -137,7 +137,7 @@ final class StrSearchSemantics {
 							? ExceptionGuard.when(analysis, context, state, outOfRange, n)
 							: state;
 					if (!failing.getExecutionState().isBottom())
-						n.raise(raising, failing, LibrarySpecificationProvider.VALUE_ERROR);
+						n.raise(raising, Satisfiability.SATISFIED, failing, LibrarySpecificationProvider.VALUE_ERROR);
 				}
 			}
 			result = result.lub(n.typeChecked(state, bounds, byteResult, raising));

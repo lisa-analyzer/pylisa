@@ -32,6 +32,7 @@ import it.unive.pylisa.libraries.itertools.ItertoolsModel;
 import it.unive.pylisa.libraries.lists.ListModel;
 import it.unive.pylisa.libraries.sets.SetModel;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -203,7 +204,8 @@ public final class Iteration {
 			return analysis.smallStepSemantics(state,
 					new PushAny(isRange(expression) ? Int32Type.INSTANCE : Untyped.INSTANCE, loc), context, pp);
 		AnalysisState<A> result = state.bottomExecution();
-		boolean notIterable = false, unknown = false;
+		boolean unknown = false;
+		Set<Type> notIterable = new HashSet<>();
 		for (Type t : types)
 			if (ListModel.isList(t))
 				result = result.lub(ListModel.elements(analysis, context, state, iterable, pp));
@@ -241,14 +243,15 @@ public final class Iteration {
 						.lub(analysis.smallStepSemantics(state, new PushAny(Int32Type.INSTANCE, loc), context, pp));
 			else if (t.isCodeMemberType() || (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t)))
 				// e.g. an int, or a function
-				notIterable = true;
+				notIterable.add(t);
 			else
 				// e.g. an object whose class defines __iter__
 				unknown = true;
 		if (unknown)
 			result = result.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp));
-		if (notIterable)
-			raising.raise(state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.TYPE_ERROR);
+		// raised where the iterable has the types that cannot be iterated
+		raising.raiseOfTypes(state, iterable, notIterable, types, true, pp.getCFG(), loc, pp,
+				LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 
