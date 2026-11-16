@@ -850,9 +850,14 @@ public final class ListModel {
 					for (SymbolicExpression element : analysis.smallStepSemantics(created, read, context, owner)
 							.getExecutionExpressions())
 						filled = filled.lub(analysis.assign(created, unknown, element, context, owner));
+			Integer length = length(analysis, context, state, list, owner);
+			Integer sliced = length == null ? null : sliceLength(length, slice);
 			if (filled.getExecutionState().isBottom())
 				// the list is empty: so is the slice
 				filled = created;
+			else if (sliced != null)
+				filled = setLength(analysis, context, filled, copy, new Constant(Int32Type.INSTANCE, sliced, loc),
+						owner);
 			else
 				filled = unknownLength(analysis, context, filled, copy, owner);
 			result = result.lub(filled.withExecutionExpression(copy));
@@ -981,6 +986,53 @@ public final class ListModel {
 	private static boolean omitted(
 			SymbolicExpression step) {
 		return step instanceof Constant && ((Constant) step).getValue() instanceof RangeBound;
+	}
+
+	// the length of the slice of a list of the given length (as computed by
+	// slice.indices in python), if the bounds of the slice are int constants,
+	// None or omitted
+	private static Integer sliceLength(
+			int length,
+			SymbolicExpression slice) {
+		if (!(slice instanceof TernaryExpression))
+			return null;
+		TernaryExpression bounds = (TernaryExpression) slice;
+		Integer start = boundValue(bounds.getLeft()), stop = boundValue(bounds.getMiddle()),
+				step = boundValue(bounds.getRight());
+		if ((start == null && !absent(bounds.getLeft())) || (stop == null && !absent(bounds.getMiddle()))
+				|| (step == null && !absent(bounds.getRight())))
+			return null;
+		int s = step == null ? 1 : step;
+		if (s == 0)
+			return null;
+		int lower = s > 0 ? 0 : -1, upper = s > 0 ? length : length - 1;
+		int from = start == null ? (s > 0 ? lower : upper)
+				: start < 0 ? Math.max(start + length, lower) : Math.min(start, upper);
+		int to = stop == null ? (s > 0 ? upper : lower)
+				: stop < 0 ? Math.max(stop + length, lower) : Math.min(stop, upper);
+		if (s > 0)
+			return to > from ? (to - from - 1) / s + 1 : 0;
+		return from > to ? (from - to - 1) / -s + 1 : 0;
+	}
+
+	// whether the bound of a slice is omitted, or None
+	private static boolean absent(
+			SymbolicExpression bound) {
+		return omitted(bound) || (bound instanceof Constant && bound.getStaticType().isNullType());
+	}
+
+	// the value of the bound of a slice, if it is an int constant (or its
+	// negation, e.g. -1)
+	private static Integer boundValue(
+			SymbolicExpression bound) {
+		if (bound instanceof UnaryExpression
+				&& ((UnaryExpression) bound).getOperator() == NumericNegation.INSTANCE) {
+			Integer negated = boundValue(((UnaryExpression) bound).getExpression());
+			return negated == null || negated == Integer.MIN_VALUE ? null : -negated;
+		}
+		return !absent(bound) && bound instanceof Constant && ((Constant) bound).getValue() instanceof Integer
+				? (Integer) ((Constant) bound).getValue()
+				: null;
 	}
 
 	// whether the step of the slice is 0 (that raises ValueError)

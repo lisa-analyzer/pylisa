@@ -21,6 +21,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.operator.unary.LogicalNegation;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.libraries.lists.ListModel;
 import it.unive.pylisa.symbolic.operators.LogicalNot;
 import java.util.Set;
 
@@ -65,13 +66,17 @@ public class PyNot extends UnaryExpression {
 		CodeLocation loc = getLocation();
 		Set<Type> types = analysis.getRuntimeTypesOf(state, expr, context, this);
 		boolean bools = false, values = types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this),
-				truthy = false, unknown = false;
+				truthy = false, unknown = false, lists = false;
 		if (!values)
 			for (Type t : types)
 				if (t.isBooleanType())
 					bools = true;
 				else if (alwaysTrue(t))
 					truthy = true;
+				else if (ListModel.isList(t))
+					// not xs is unknown, but kept symbolic so that assuming
+					// that it does not hold refines xs (see PyDomain)
+					lists = true;
 				else if (t.isPointerType())
 					// e.g. an object whose class defines __bool__
 					unknown = true;
@@ -84,7 +89,7 @@ public class PyNot extends UnaryExpression {
 					new it.unive.lisa.symbolic.value.UnaryExpression(BoolType.INSTANCE, expr,
 							LogicalNegation.INSTANCE, loc),
 					context, this));
-		if (values)
+		if (values || lists)
 			result = result.lub(analysis.smallStepSemantics(state,
 					new it.unive.lisa.symbolic.value.UnaryExpression(BoolType.INSTANCE, expr, LogicalNot.INSTANCE,
 							loc),

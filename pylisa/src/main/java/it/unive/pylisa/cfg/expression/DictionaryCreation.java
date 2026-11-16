@@ -54,6 +54,9 @@ public class DictionaryCreation extends NaryExpression {
 	// for each entry, whether it is **m (with no key)
 	private final boolean[] unpacked;
 
+	// the name of the class of the dictionary (see DictModel#isDict)
+	private final String type;
+
 	/**
 	 * Builds the literal.
 	 *
@@ -71,12 +74,31 @@ public class DictionaryCreation extends NaryExpression {
 		this.unpacked = new boolean[values.length];
 		for (int i = 0; i < values.length; i++)
 			unpacked[i] = values[i].getLeft() == null;
+		this.type = LibrarySpecificationProvider.DICT;
+	}
+
+	/**
+	 * Builds the creation of an empty dictionary of the given class, that is
+	 * {@code dict} or one of its subclasses (see {@link DictModel#isDict}).
+	 *
+	 * @param cfg  the cfg where the dictionary is created
+	 * @param loc  the location of the creation
+	 * @param type the name of the class of the dictionary
+	 */
+	public DictionaryCreation(
+			CFG cfg,
+			CodeLocation loc,
+			String type) {
+		super(cfg, loc, "dict");
+		this.unpacked = new boolean[0];
+		this.type = type;
 	}
 
 	@Override
 	protected int compareSameClassAndParams(
 			Statement o) {
-		return Arrays.compare(unpacked, ((DictionaryCreation) o).unpacked);
+		int cmp = type.compareTo(((DictionaryCreation) o).type);
+		return cmp != 0 ? cmp : Arrays.compare(unpacked, ((DictionaryCreation) o).unpacked);
 	}
 
 	private static Expression[] toFlatArray(
@@ -103,7 +125,7 @@ public class DictionaryCreation extends NaryExpression {
 
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		CodeLocation loc = getLocation();
-		Type dictType = PyClassType.lookup(LibrarySpecificationProvider.DICT);
+		Type dictType = PyClassType.lookup(type);
 		ReferenceType reftype = new ReferenceType(dictType);
 		MemoryAllocation alloc = new MemoryAllocation(dictType, loc, false);
 		HeapReference ref = new HeapReference(reftype, alloc, loc);

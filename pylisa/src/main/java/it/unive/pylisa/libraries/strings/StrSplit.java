@@ -38,7 +38,8 @@ import it.unive.pylisa.libraries.lists.ListModel;
  * unknown indices, see {@link ListCreation#UNKNOWN_INDEX}). {@code sep} must be
  * a {@code str} or {@code None}, and {@code maxsplit} an {@code int}
  * ({@code TypeError} is raised otherwise); an empty separator raises
- * {@code ValueError}.
+ * {@code ValueError}. With a separator, the list surely has an element (see
+ * {@link ListModel#NONEMPTY}), as {@code "".split(sep)} is {@code [""]}.
  */
 public class StrSplit extends PyNative {
 
@@ -108,9 +109,16 @@ public class StrSplit extends PyNative {
 
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
-		if (empty != Satisfiability.SATISFIED)
+		if (empty != Satisfiability.SATISFIED) {
 			// the computed expressions of the state are the new list
-			result = result.lub(state);
+			AnalysisState<A> split = state;
+			if (hasType(analysis, context, state, sep, STR) == Satisfiability.SATISFIED)
+				// with a separator, there is at least one part (e.g. "" for
+				// an empty string)
+				for (SymbolicExpression list : state.getExecutionExpressions())
+					split = ListModel.setNonEmpty(analysis, context, split, list, true, st);
+			result = result.lub(split);
+		}
 		if (empty != Satisfiability.NOT_SATISFIED)
 			raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
 		return raising.moveFrom(typeChecked(state, typed, result, raising));

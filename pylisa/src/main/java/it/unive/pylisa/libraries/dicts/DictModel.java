@@ -78,7 +78,20 @@ public final class DictModel {
 	}
 
 	/**
-	 * Whether the values of the given type are dictionaries.
+	 * The child of a {@code collections.defaultdict} or of a
+	 * {@code collections.Counter} holding the value of the keys it does not
+	 * have (that is, the value computed by {@code __missing__}): a
+	 * {@code Counter} yields {@code 0}, and a {@code defaultdict} the value of
+	 * its {@code default_factory}, which it also adds as the value of the key.
+	 * As {@value #UNKNOWN_KEY}, it is not a valid python identifier.
+	 */
+	public static final String MISSING = "$missing";
+
+	/**
+	 * Whether the values of the given type are dictionaries: the objects of
+	 * {@code dict}, and of its subclasses {@code collections.defaultdict} and
+	 * {@code collections.Counter}, whose entries are modeled as the ones of
+	 * dictionaries (see {@link #MISSING}).
 	 *
 	 * @param t the type
 	 *
@@ -86,22 +99,60 @@ public final class DictModel {
 	 */
 	public static boolean isDict(
 			Type t) {
-		return t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
-				&& t.asPointerType().getInnerType().asUnitType().getUnit().getName()
-						.equals(LibrarySpecificationProvider.DICT);
+		String name = className(t);
+		return LibrarySpecificationProvider.DICT.equals(name)
+				|| LibrarySpecificationProvider.DEFAULT_DICT.equals(name)
+				|| LibrarySpecificationProvider.COUNTER.equals(name);
 	}
 
 	/**
-	 * Whether the dictionaries do not define the given method (that is, it is
-	 * not modeled).
+	 * Whether the values of the given type are objects of {@code dict}, and not
+	 * of one of its subclasses (see {@link #isDict(Type)}).
 	 *
+	 * @param t the type
+	 *
+	 * @return whether the values are objects of {@code dict}
+	 */
+	public static boolean isExactDict(
+			Type t) {
+		return LibrarySpecificationProvider.DICT.equals(className(t));
+	}
+
+	/**
+	 * Whether the values of the given type are objects of
+	 * {@code collections.defaultdict}.
+	 *
+	 * @param t the type
+	 *
+	 * @return whether the values are objects of {@code defaultdict}
+	 */
+	public static boolean isDefaultDict(
+			Type t) {
+		return LibrarySpecificationProvider.DEFAULT_DICT.equals(className(t));
+	}
+
+	// the name of the class of the objects of the given type, if they are
+	// objects
+	private static String className(
+			Type t) {
+		return t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
+				? t.asPointerType().getInnerType().asUnitType().getUnit().getName()
+				: null;
+	}
+
+	/**
+	 * Whether the class of the dictionaries of the given type does not define
+	 * the given method (that is, it is not modeled).
+	 *
+	 * @param t    the type of the dictionaries (see {@link #isDict(Type)})
 	 * @param name the name of the method
 	 *
 	 * @return whether the method is not modeled
 	 */
 	public static boolean unmodeled(
+			Type t,
 			String name) {
-		PyClassType dict = PyClassType.lookup(LibrarySpecificationProvider.DICT);
+		PyClassType dict = PyClassType.lookup(className(t));
 		if (dict == null)
 			return false;
 		Set<Unit> units = new HashSet<>();
@@ -147,11 +198,13 @@ public final class DictModel {
 				: new Constant(Int32Type.INSTANCE, key, loc);
 	}
 
-	// what is known about the entries of the objects a dictionary points to
+	// what is known about the entries of the objects a dictionary points to:
+	// the objects with the child MISSING are the defaulted ones
 	private record Entries(
 			Map<AllocationSite, Set<Object>> keys,
 			Set<AllocationSite> unknown,
 			Set<AllocationSite> keyed,
+			Set<AllocationSite> defaulted,
 			boolean weak) {
 	}
 
@@ -180,7 +233,7 @@ public final class DictModel {
 		if (sites.isEmpty())
 			return null;
 		Map<AllocationSite, Set<Object>> keys = new HashMap<>();
-		Set<AllocationSite> unknown = new HashSet<>(), keyed = new HashSet<>();
+		Set<AllocationSite> unknown = new HashSet<>(), keyed = new HashSet<>(), defaulted = new HashSet<>();
 		boolean weak = false;
 		for (AllocationSite site : sites) {
 			ExpressionSet fields = heap.fields.getState(site);
@@ -193,11 +246,13 @@ public final class DictModel {
 					unknown.add(site);
 				else if (field instanceof Variable && ((Variable) field).getName().equals(UNTRACKED_KEYS))
 					keyed.add(site);
+				else if (field instanceof Variable && ((Variable) field).getName().equals(MISSING))
+					defaulted.add(site);
 				else if (field instanceof Constant && trackedKey(field) != null)
 					siteKeys.add(trackedKey(field));
 			keys.put(site, siteKeys);
 		}
-		return new Entries(keys, unknown, keyed, weak);
+		return new Entries(keys, unknown, keyed, defaulted, weak);
 	}
 
 	// the tracked key the key is surely equal to, if any
@@ -361,7 +416,21 @@ public final class DictModel {
 			result = result.lub(
 					analysis.smallStepSemantics(state, new AccessChild(Untyped.INSTANCE, deref, field, loc), context,
 							thrower));
-		if (keyError && dflt == null)
+		if (keyError && dflt == null && !entries.defaulted().isEmpty()) {
+			// the value of a missing key of a defaultdict or of a Counter,
+			// that a defaultdict also adds (see MISSING)
+			AnalysisState<A> missing = analysis.smallStepSemantics(state,
+					new AccessChild(Untyped.INSTANCE, deref, new Variable(Untyped.INSTANCE, MISSING, loc), loc),
+					context, thrower);
+			result = result.lub(missing);
+			if (analysis.getRuntimeTypesOf(state, dict, context, thrower).stream().anyMatch(DictModel::isDefaultDict))
+				for (SymbolicExpression value : missing.getExecutionExpressions())
+					result = result.lub(store(analysis, context, missing, dict, key, value, thrower)
+							.withExecutionExpressions(missing.getExecutionExpressions()));
+			if (entries.defaulted().size() < entries.keys().size())
+				// some of the objects are dictionaries
+				raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.KEY_ERROR);
+		} else if (keyError && dflt == null)
 			raising.raise(state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.KEY_ERROR);
 		else if (keyError)
 			// the key might be missing

@@ -19,10 +19,13 @@ import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.unary.LogicalNegation;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.lists.ListModel;
+import it.unive.pylisa.symbolic.operators.LogicalNot;
 import java.util.Set;
 
 /**
@@ -114,15 +117,22 @@ public class PyDomain<H extends HeapLattice<H>, V extends ValueLattice<V>, T ext
 	}
 
 	// after assuming that a list is truthy (e.g. xs in if xs:, while xs:, or
-	// xs and ...), it surely has an element (see ListModel#NONEMPTY): this
-	// holds for a variable pointing to a single list, that is not the summary
-	// of many
+	// xs and ..., and the negation of not xs, in the else branch of if not
+	// xs:), it surely has an element (see ListModel#NONEMPTY): this holds for a
+	// variable pointing to a single list, that is not the summary of many
 	private SimpleAbstractState<H, V, T> truthy(
 			SimpleAbstractState<H, V, T> state,
 			SymbolicExpression expression,
 			ScopeId<?> context,
 			ProgramPoint pp)
 			throws SemanticException {
+		if (expression instanceof UnaryExpression
+				&& ((UnaryExpression) expression).getOperator() == LogicalNegation.INSTANCE
+				&& ((UnaryExpression) expression).getExpression() instanceof UnaryExpression) {
+			UnaryExpression not = (UnaryExpression) ((UnaryExpression) expression).getExpression();
+			if (not.getOperator() == LogicalNot.INSTANCE)
+				expression = not.getExpression();
+		}
 		if (state.isBottom() || !(expression instanceof Identifier))
 			return state;
 		Set<Type> types = makeOracle(state, context).getRuntimeTypesOf(expression, pp);

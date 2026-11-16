@@ -10,8 +10,8 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.libraries.PyNative;
+import it.unive.pylisa.libraries.lists.ListOperations;
 import java.util.List;
 
 /**
@@ -20,7 +20,7 @@ import java.util.List;
  * {@code self & other} for two sets: a new set whose elements are some of the
  * ones of {@code self} (which ones is not tracked, see {@link SetModel}),
  * allocated at a location different from the one of the operation (see
- * {@link DerivedLocation}).
+ * {@link ListOperations#allocation}).
  */
 public class SetDifference extends PyNative {
 
@@ -46,7 +46,7 @@ public class SetDifference extends PyNative {
 			SymbolicExpression[] args)
 			throws SemanticException {
 		AnalysisState<A> elements = SetModel.elements(analysis, context, state, args[0], st);
-		return SetModel.create(analysis, context, state, st, new DerivedLocation(getLocation(), "set"),
+		return SetModel.create(analysis, context, state, st, ListOperations.allocation(st, "set"),
 				elements.getExecutionState().isBottom() ? List.of() : List.of(elements), getMetaVariables());
 	}
 }

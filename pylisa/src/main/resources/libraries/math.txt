@@ -3,3 +3,12 @@ library math:
     method floor: it.unive.pylisa.libraries.math.MathFloor
         type it.unive.lisa.program.type.Int32Type::INSTANCE
         param x type it.unive.lisa.type.Untyped::INSTANCE
+    method sqrt: it.unive.pylisa.libraries.math.MathSqrt
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param x type it.unive.lisa.type.Untyped::INSTANCE
+    method sin: it.unive.pylisa.libraries.math.MathSin
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param x type it.unive.lisa.type.Untyped::INSTANCE
+    method cos: it.unive.pylisa.libraries.math.MathCos
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param x type it.unive.lisa.type.Untyped::INSTANCE

@@ -64,6 +64,18 @@ sealed class List extends Sequence:
 		param self libtype List*
 		param index type it.unive.lisa.type.Untyped::INSTANCE default missing
 
+	instance method count: it.unive.pylisa.libraries.lists.ListCount
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype List*
+		param x type it.unive.lisa.type.Untyped::INSTANCE
+
+	instance method index: it.unive.pylisa.libraries.lists.ListIndex
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype List*
+		param x type it.unive.lisa.type.Untyped::INSTANCE
+		param start type it.unive.lisa.type.Untyped::INSTANCE default missing
+		param stop type it.unive.lisa.type.Untyped::INSTANCE default missing
+
 sealed class Set extends Sequence:
 	method __sub__: it.unive.pylisa.libraries.sets.SetDifference
 		libtype Set*
@@ -151,6 +163,55 @@ sealed class Dict extends Sequence:
 	instance method items: it.unive.pylisa.libraries.dicts.DictItemsMethod
 		libtype DictItems*
 		param self libtype Dict*
+
+# collections.defaultdict and collections.Counter, subclasses of dict whose
+# entries are modeled as the ones of dictionaries (see DictModel#MISSING): only
+# the methods they inherit from dict are defined, while the operators and the
+# methods they define differently (e.g. Counter.update, that counts) are not
+# modeled
+sealed class DefaultDict extends Sequence:
+	instance method get: it.unive.pylisa.libraries.dicts.DictGet
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype DefaultDict*
+		param key type it.unive.lisa.type.Untyped::INSTANCE
+		param fallback type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+	instance method keys: it.unive.pylisa.libraries.dicts.DictKeysMethod
+		libtype DictKeys*
+		param self libtype DefaultDict*
+
+	instance method values: it.unive.pylisa.libraries.dicts.DictValuesMethod
+		libtype DictValues*
+		param self libtype DefaultDict*
+
+	instance method items: it.unive.pylisa.libraries.dicts.DictItemsMethod
+		libtype DictItems*
+		param self libtype DefaultDict*
+
+	instance method update: it.unive.pylisa.libraries.dicts.DictUpdate
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype DefaultDict*
+		param other type it.unive.lisa.type.Untyped::INSTANCE default missing
+		param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+
+sealed class CounterDict extends Sequence:
+	instance method get: it.unive.pylisa.libraries.dicts.DictGet
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype CounterDict*
+		param key type it.unive.lisa.type.Untyped::INSTANCE
+		param fallback type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+	instance method keys: it.unive.pylisa.libraries.dicts.DictKeysMethod
+		libtype DictKeys*
+		param self libtype CounterDict*
+
+	instance method values: it.unive.pylisa.libraries.dicts.DictValuesMethod
+		libtype DictValues*
+		param self libtype CounterDict*
+
+	instance method items: it.unive.pylisa.libraries.dicts.DictItemsMethod
+		libtype DictItems*
+		param self libtype CounterDict*
 
 # the views of the keys, values and items of a dictionary (see DictViews)
 sealed class DictKeys:

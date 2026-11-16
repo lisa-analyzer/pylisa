@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
@@ -16,14 +17,18 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.type.PyBytesType;
+import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.symbolic.operators.compare.Is;
 import java.util.Set;
 
 /**
  * The identity test {@code left is right} (see
- * {@link PyBinaryDispatch#identical(Type, Type)}). When identity cannot be
- * decided for some pair of runtime types of the operands, the result is the
+ * {@link PyBinaryDispatch#identical(Type, Type)}), that is surely false for
+ * ints, strs and bytes whose values are surely different. When identity cannot
+ * be decided for some pair of runtime types of the operands, the result is the
  * {@link Is} test, whose branches refine the operands (e.g., {@code x} is
  * {@code None} in the true branch of {@code x is None}).
  */
@@ -63,6 +68,12 @@ public class PyIs extends BinaryExpression {
 			for (Type l : ltypes)
 				for (Type r : rtypes) {
 					Boolean identical = PyBinaryDispatch.identical(l, r);
+					if (identical == null && immutable(l) && immutable(r)
+							&& analysis.satisfies(state, new it.unive.lisa.symbolic.value.BinaryExpression(
+									BoolType.INSTANCE, left, right, ComparisonEq.INSTANCE, getLocation()), context,
+									this) == Satisfiability.NOT_SATISFIED)
+						// different values are different objects
+						identical = false;
 					maybeTrue |= identical == null || identical;
 					maybeFalse |= identical == null || !identical;
 				}
@@ -75,5 +86,13 @@ public class PyIs extends BinaryExpression {
 					new it.unive.lisa.symbolic.value.BinaryExpression(BoolType.INSTANCE, left, right, Is.INSTANCE, loc),
 					context, this);
 		return analysis.smallStepSemantics(state, new Constant(BoolType.INSTANCE, maybeTrue, loc), context, this);
+	}
+
+	// whether the values of the type are ints (or bools), strs or bytes, whose
+	// identity implies their equality (unlike floats, as nan is nan, but it is
+	// not equal to itself)
+	private static boolean immutable(
+			Type t) {
+		return PyNative.INT.test(t) || t.isStringType() || t instanceof PyBytesType;
 	}
 }
