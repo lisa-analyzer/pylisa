@@ -47,6 +47,14 @@ public class PyPentagonLattice
 	public final ValueEnvironment<DefiniteIdSet> copies;
 
 	/**
+	 * The relations with an offset between the variables: {@code x <= y + c}
+	 * for a constant {@code c} (see {@link OffsetBounds}), e.g. for counters
+	 * that are incremented together. Python integers do not overflow, so the
+	 * relations hold on the values of the program.
+	 */
+	public final OffsetBounds offsets;
+
+	/**
 	 * Builds the lattice, without copies.
 	 *
 	 * @param values the values of the variables
@@ -69,8 +77,37 @@ public class PyPentagonLattice
 			ValueEnvironment<PyValue> values,
 			ValueEnvironment<DefiniteIdSet> bounds,
 			ValueEnvironment<DefiniteIdSet> copies) {
+		this(values, bounds, copies, OffsetBounds.EMPTY);
+	}
+
+	/**
+	 * Builds the lattice.
+	 *
+	 * @param values  the values of the variables
+	 * @param bounds  the strict upper bounds of the variables
+	 * @param copies  the copies of the variables
+	 * @param offsets the relations with an offset between the variables
+	 */
+	public PyPentagonLattice(
+			ValueEnvironment<PyValue> values,
+			ValueEnvironment<DefiniteIdSet> bounds,
+			ValueEnvironment<DefiniteIdSet> copies,
+			OffsetBounds offsets) {
 		super(values, bounds);
 		this.copies = copies;
+		this.offsets = offsets;
+	}
+
+	/**
+	 * Yields this lattice with the given relations with an offset.
+	 *
+	 * @param offsets the relations with an offset
+	 *
+	 * @return the lattice
+	 */
+	public PyPentagonLattice withOffsets(
+			OffsetBounds offsets) {
+		return new PyPentagonLattice(first, second, copies, offsets);
 	}
 
 	/**
@@ -111,7 +148,7 @@ public class PyPentagonLattice
 	public PyPentagonLattice with(
 			ValueEnvironment<PyValue> values,
 			ValueEnvironment<DefiniteIdSet> bounds) {
-		return new PyPentagonLattice(values, bounds, copies);
+		return new PyPentagonLattice(values, bounds, copies, offsets);
 	}
 
 	// the relations of x in the environment
@@ -199,14 +236,6 @@ public class PyPentagonLattice
 		return ix.isSingleton() && ix.equals(iy);
 	}
 
-	// whether the relation between x and y is vacuous in this state, as one of
-	// them has no value (e.g. it is bound only on the other path of a join)
-	private boolean absent(
-			Identifier x,
-			Identifier y) {
-		return !first.knowsIdentifier(x) || !first.knowsIdentifier(y);
-	}
-
 	// whether the intervals of the values imply x < y
 	private static boolean implied(
 			ValueEnvironment<PyValue> values,
@@ -226,7 +255,7 @@ public class PyPentagonLattice
 		// the top element has no copies: otherwise, it would be returned as
 		// the least upper bound of states where they do not hold
 		return first.isTop() && map(second).values().stream().allMatch(Set::isEmpty)
-				&& map(copies).values().stream().allMatch(Set::isEmpty);
+				&& map(copies).values().stream().allMatch(Set::isEmpty) && offsets.isEmpty();
 	}
 
 	@Override
@@ -237,13 +266,15 @@ public class PyPentagonLattice
 			return false;
 		for (Identifier x : other.second.getKeys())
 			for (Identifier y : other.bounds(x))
-				if (!below(x, y) && !absent(x, y))
+				if (!below(x, y))
 					return false;
 		for (Identifier x : other.copies.getKeys())
 			for (Identifier y : of(other.copies, x))
-				if (!same(x, y) && !absent(x, y))
+				if (!same(x, y))
 					return false;
-		return true;
+		// the relations with an offset are compared too, so that the
+		// fixpoint does not stop while they still change
+		return offsets.lessOrEqual(other.offsets);
 	}
 
 	@Override
@@ -257,10 +288,10 @@ public class PyPentagonLattice
 		for (Identifier x : keys) {
 			Set<Identifier> common = new HashSet<>();
 			for (Identifier y : bounds(x))
-				if (other.below(x, y) || other.absent(x, y))
+				if (other.below(x, y))
 					common.add(y);
 			for (Identifier y : other.bounds(x))
-				if (below(x, y) || absent(x, y))
+				if (below(x, y))
 					common.add(y);
 			bounds.put(x, common);
 		}
@@ -268,18 +299,18 @@ public class PyPentagonLattice
 		for (Identifier x : copies.getKeys()) {
 			Set<Identifier> common = new HashSet<>();
 			for (Identifier y : of(copies, x))
-				if (other.same(x, y) || other.absent(x, y))
+				if (other.same(x, y))
 					common.add(y);
 			equal.put(x, common);
 		}
 		for (Identifier x : other.copies.getKeys()) {
 			Set<Identifier> common = equal.computeIfAbsent(x, k -> new HashSet<>());
 			for (Identifier y : of(other.copies, x))
-				if (same(x, y) || absent(x, y))
+				if (same(x, y))
 					common.add(y);
 		}
 		return new PyPentagonLattice(first.lub(other.first), environment(second.lattice, bounds),
-				environment(copies.lattice, equal));
+				environment(copies.lattice, equal), offsets.lub(other.offsets));
 	}
 
 	@Override
@@ -289,7 +320,7 @@ public class PyPentagonLattice
 		// the join of the fixpoint before widening: the relations holding in
 		// both states, as for the least upper bound
 		PyPentagonLattice lub = lubAux(other);
-		return new PyPentagonLattice(first.upchain(other.first), lub.second, lub.copies);
+		return new PyPentagonLattice(first.upchain(other.first), lub.second, lub.copies, lub.offsets);
 	}
 
 	@Override
@@ -297,7 +328,7 @@ public class PyPentagonLattice
 			PyPentagonLattice other)
 			throws SemanticException {
 		PyPentagonLattice glb = glbAux(other);
-		return new PyPentagonLattice(first.downchain(other.first), glb.second, glb.copies);
+		return new PyPentagonLattice(first.downchain(other.first), glb.second, glb.copies, glb.offsets);
 	}
 
 	@Override
@@ -310,7 +341,7 @@ public class PyPentagonLattice
 		for (Identifier x : second.getKeys()) {
 			Set<Identifier> kept = new HashSet<>();
 			for (Identifier y : bounds(x))
-				if (other.below(x, y) || other.absent(x, y))
+				if (other.below(x, y))
 					kept.add(y);
 			bounds.put(x, kept);
 		}
@@ -318,19 +349,19 @@ public class PyPentagonLattice
 		for (Identifier x : copies.getKeys()) {
 			Set<Identifier> kept = new HashSet<>();
 			for (Identifier y : of(copies, x))
-				if (of(other.copies, x).contains(y) || other.absent(x, y))
+				if (of(other.copies, x).contains(y))
 					kept.add(y);
 			equal.put(x, kept);
 		}
 		return new PyPentagonLattice(first.widening(other.first), environment(second.lattice, bounds),
-				environment(copies.lattice, equal));
+				environment(copies.lattice, equal), offsets.widening(other.offsets));
 	}
 
 	@Override
 	public PyPentagonLattice narrowingAux(
 			PyPentagonLattice other)
 			throws SemanticException {
-		return new PyPentagonLattice(first.narrowing(other.first), second, copies);
+		return new PyPentagonLattice(first.narrowing(other.first), second, copies, offsets);
 	}
 
 	@Override
@@ -347,7 +378,7 @@ public class PyPentagonLattice
 				x,
 				ys) -> equal.computeIfAbsent(x, k -> new HashSet<>()).addAll(ys));
 		return new PyPentagonLattice(first.glb(other.first), environment(second.lattice, bounds),
-				environment(copies.lattice, equal));
+				environment(copies.lattice, equal), offsets.glb(other.offsets));
 	}
 
 	/**
@@ -362,7 +393,21 @@ public class PyPentagonLattice
 	PyPentagonLattice without(
 			Predicate<Identifier> removed) {
 		Function<Identifier, Identifier> renaming = id -> removed.test(id) ? null : id;
-		return new PyPentagonLattice(first, rename(second, renaming), rename(copies, renaming));
+		return new PyPentagonLattice(first, rename(second, renaming), rename(copies, renaming),
+				renameOffsets(offsets, renaming));
+	}
+
+	// the relations with an offset where each variable is renamed (or
+	// removed, if renamed to null)
+	private static OffsetBounds renameOffsets(
+			OffsetBounds offsets,
+			Function<Identifier, Identifier> renaming) {
+		try {
+			return offsets.renameAll(renaming::apply);
+		} catch (SemanticException e) {
+			// the renaming does not throw
+			throw new IllegalStateException(e);
+		}
 	}
 
 	// the environment where each variable is renamed (or removed, if renamed
@@ -394,7 +439,8 @@ public class PyPentagonLattice
 			ProgramPoint pp)
 			throws SemanticException {
 		PyPentagonLattice relations = without(id::equals);
-		return new PyPentagonLattice(first.forgetIdentifier(id, pp), relations.second, relations.copies);
+		return new PyPentagonLattice(first.forgetIdentifier(id, pp), relations.second, relations.copies,
+				relations.offsets);
 	}
 
 	@Override
@@ -405,7 +451,8 @@ public class PyPentagonLattice
 		Set<Identifier> removed = new HashSet<>();
 		ids.forEach(removed::add);
 		PyPentagonLattice relations = without(removed::contains);
-		return new PyPentagonLattice(first.forgetIdentifiers(removed, pp), relations.second, relations.copies);
+		return new PyPentagonLattice(first.forgetIdentifiers(removed, pp), relations.second, relations.copies,
+				relations.offsets);
 	}
 
 	@Override
@@ -414,7 +461,8 @@ public class PyPentagonLattice
 			ProgramPoint pp)
 			throws SemanticException {
 		PyPentagonLattice relations = without(test);
-		return new PyPentagonLattice(first.forgetIdentifiersIf(test, pp), relations.second, relations.copies);
+		return new PyPentagonLattice(first.forgetIdentifiersIf(test, pp), relations.second, relations.copies,
+				relations.offsets);
 	}
 
 	@Override
@@ -434,7 +482,12 @@ public class PyPentagonLattice
 		ValueEnvironment<DefiniteIdSet> bounds = rename(second, renaming), equal = rename(copies, renaming);
 		if (error[0] != null)
 			throw error[0];
-		return new PyPentagonLattice(first.pushScope(token, pp), bounds, equal);
+		// the relations between the variables of the caller and the ones of
+		// the callee are dropped (see OffsetBounds#withoutMixed)
+		OffsetBounds off = renameOffsets(offsets, renaming).withoutMixed();
+		if (error[0] != null)
+			throw error[0];
+		return new PyPentagonLattice(first.pushScope(token, pp), bounds, equal, off);
 	}
 
 	@Override
@@ -454,7 +507,10 @@ public class PyPentagonLattice
 		ValueEnvironment<DefiniteIdSet> bounds = rename(second, renaming), equal = rename(copies, renaming);
 		if (error[0] != null)
 			throw error[0];
-		return new PyPentagonLattice(first.popScope(token, pp), bounds, equal);
+		OffsetBounds off = renameOffsets(offsets, renaming);
+		if (error[0] != null)
+			throw error[0];
+		return new PyPentagonLattice(first.popScope(token, pp), bounds, equal, off);
 	}
 
 	@Override
@@ -468,7 +524,7 @@ public class PyPentagonLattice
 		PyPentagonLattice copied = PyValueDomain.single(target) && PyValueDomain.single(source)
 				? cleaned.copy(target, source)
 				: cleaned;
-		return new PyPentagonLattice(first.store(target, source), copied.second, copied.copies);
+		return new PyPentagonLattice(first.store(target, source), copied.second, copied.copies, cleaned.offsets);
 	}
 
 	/**
@@ -495,18 +551,20 @@ public class PyPentagonLattice
 		for (Identifier s : sources)
 			equal.computeIfAbsent(s, k -> new HashSet<>()).add(target);
 		equal.put(target, sources);
-		return new PyPentagonLattice(first, environment(second.lattice, bounds), environment(copies.lattice, equal));
+		return new PyPentagonLattice(first, environment(second.lattice, bounds), environment(copies.lattice, equal),
+				offsets);
 	}
 
 	@Override
 	public int hashCode() {
-		return 31 * super.hashCode() + Objects.hashCode(copies);
+		return 31 * (31 * super.hashCode() + Objects.hashCode(copies)) + Objects.hashCode(offsets);
 	}
 
 	@Override
 	public boolean equals(
 			Object obj) {
-		return super.equals(obj) && Objects.equals(copies, ((PyPentagonLattice) obj).copies);
+		return super.equals(obj) && Objects.equals(copies, ((PyPentagonLattice) obj).copies)
+				&& Objects.equals(offsets, ((PyPentagonLattice) obj).offsets);
 	}
 
 	@Override
@@ -517,7 +575,7 @@ public class PyPentagonLattice
 			return Lattice.bottomRepresentation();
 		boolean noBounds = second.isTop() || second.getKeys().isEmpty();
 		boolean noCopies = copies.isTop() || copies.getKeys().isEmpty();
-		if (noBounds && noCopies)
+		if (noBounds && noCopies && offsets.isEmpty())
 			return first.representation();
 		Map<StructuredRepresentation, StructuredRepresentation> mapping = new HashMap<>();
 		mapping.put(new StringRepresentation("values"), first.representation());
@@ -525,6 +583,8 @@ public class PyPentagonLattice
 			mapping.put(new StringRepresentation("bounds"), relations(second));
 		if (!noCopies)
 			mapping.put(new StringRepresentation("copies"), relations(copies));
+		if (!offsets.isEmpty())
+			mapping.put(new StringRepresentation("offsets"), offsets.representation());
 		return new MapRepresentation(mapping);
 	}
 
