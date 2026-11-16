@@ -293,7 +293,7 @@ public class PyMinMax extends NaryExpression {
 			return STRING;
 		if (t instanceof PyBytesType)
 			return BYTES;
-		if (t.isNullType() || t.isCodeMemberType() || DictModel.isDict(t))
+		if (t.isNullType() || t.isCodeMemberType() || DictModel.isExactDict(t))
 			return UNORDERED;
 		// lists (or tuples) are comparable only to lists (or tuples), element
 		// by element

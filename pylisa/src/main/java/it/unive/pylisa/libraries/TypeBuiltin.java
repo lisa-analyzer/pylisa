@@ -96,8 +96,11 @@ public class TypeBuiltin extends PyNative {
 			builtin = "tuple";
 		else if (SetModel.isSet(t))
 			builtin = "set";
-		else if (DictModel.isDict(t))
+		else if (DictModel.isExactDict(t))
 			builtin = "dict";
+		else if (DictModel.isDict(t))
+			// the classes of collections, that are not known here
+			return null;
 		else if (RangeBuiltin.isRange(t))
 			builtin = "range";
 		else if (ZipBuiltin.isZip(t))

@@ -152,6 +152,55 @@ sealed class Dict extends Sequence:
 		libtype DictItems*
 		param self libtype Dict*
 
+# collections.defaultdict and collections.Counter, subclasses of dict whose
+# entries are modeled as the ones of dictionaries (see DictModel#MISSING): only
+# the methods they inherit from dict are defined, while the operators and the
+# methods they define differently (e.g. Counter.update, that counts) are not
+# modeled
+sealed class DefaultDict extends Sequence:
+	instance method get: it.unive.pylisa.libraries.dicts.DictGet
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype DefaultDict*
+		param key type it.unive.lisa.type.Untyped::INSTANCE
+		param fallback type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+	instance method keys: it.unive.pylisa.libraries.dicts.DictKeysMethod
+		libtype DictKeys*
+		param self libtype DefaultDict*
+
+	instance method values: it.unive.pylisa.libraries.dicts.DictValuesMethod
+		libtype DictValues*
+		param self libtype DefaultDict*
+
+	instance method items: it.unive.pylisa.libraries.dicts.DictItemsMethod
+		libtype DictItems*
+		param self libtype DefaultDict*
+
+	instance method update: it.unive.pylisa.libraries.dicts.DictUpdate
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype DefaultDict*
+		param other type it.unive.lisa.type.Untyped::INSTANCE default missing
+		param **kwargs type it.unive.lisa.type.Untyped::INSTANCE
+
+sealed class CounterDict extends Sequence:
+	instance method get: it.unive.pylisa.libraries.dicts.DictGet
+		type it.unive.lisa.type.Untyped::INSTANCE
+		param self libtype CounterDict*
+		param key type it.unive.lisa.type.Untyped::INSTANCE
+		param fallback type it.unive.lisa.type.Untyped::INSTANCE default missing
+
+	instance method keys: it.unive.pylisa.libraries.dicts.DictKeysMethod
+		libtype DictKeys*
+		param self libtype CounterDict*
+
+	instance method values: it.unive.pylisa.libraries.dicts.DictValuesMethod
+		libtype DictValues*
+		param self libtype CounterDict*
+
+	instance method items: it.unive.pylisa.libraries.dicts.DictItemsMethod
+		libtype DictItems*
+		param self libtype CounterDict*
+
 # the views of the keys, values and items of a dictionary (see DictViews)
 sealed class DictKeys:
 	method __len__: it.unive.pylisa.libraries.dicts.DictViewLen

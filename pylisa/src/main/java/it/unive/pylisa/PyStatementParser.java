@@ -233,6 +233,7 @@ import it.unive.pylisa.cfg.statement.Import;
 import it.unive.pylisa.cfg.statement.PyAssert;
 import it.unive.pylisa.cfg.statement.PyCellsInit;
 import it.unive.pylisa.cfg.statement.PyDelName;
+import it.unive.pylisa.cfg.statement.PyIterableInit;
 import it.unive.pylisa.cfg.statement.PyRaise;
 import it.unive.pylisa.cfg.statement.SimpleSuperUnresolvedCall;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -1549,7 +1550,7 @@ public class PyStatementParser
 		// has a single parent, with a distinct location, as the results of
 		// the analysis are stored for equal nodes together
 		String iterable = "$iter@" + loc.getLine() + ":" + loc.getCol();
-		Assignment iterable_init = new Assignment(currentCFG, loc,
+		Assignment iterable_init = new PyIterableInit(currentCFG, loc,
 				new VariableRef(currentCFG, new DerivedLocation(loc, "iter"), iterable),
 				collection);
 		block.addNode(iterable_init);

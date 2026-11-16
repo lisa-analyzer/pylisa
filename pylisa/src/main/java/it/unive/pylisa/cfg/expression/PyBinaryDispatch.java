@@ -279,7 +279,8 @@ public final class PyBinaryDispatch {
 	 * (see {@link #fullyKnown(Type)}), and for dictionaries, whose operators
 	 * are modeled ({@code |} and {@code |=}, while {@code ==} and {@code !=}
 	 * compare them as objects), although their other methods are not (e.g.
-	 * {@code items}).
+	 * {@code items}). This does not hold for the subclasses of {@code dict} of
+	 * {@code collections} (e.g. {@code Counter} defines {@code +}).
 	 *
 	 * @param type the runtime type
 	 *
@@ -287,7 +288,7 @@ public final class PyBinaryDispatch {
 	 */
 	public static boolean operatorsKnown(
 			Type type) {
-		return fullyKnown(type) || DictModel.isDict(type);
+		return fullyKnown(type) || DictModel.isExactDict(type);
 	}
 
 	// the operator methods that neither lists nor tuples define
