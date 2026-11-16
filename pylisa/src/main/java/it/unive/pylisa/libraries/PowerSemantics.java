@@ -17,10 +17,14 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.PushAny;
+import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonGe;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.symbolic.value.operator.binary.LogicalAnd;
+import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingAdd;
+import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingMul;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.symbolic.operators.FloatPower;
@@ -39,7 +43,9 @@ import java.util.Set;
  * </ul>
  * Raising a negative number to a fractional power yields a {@code complex} in
  * Python, which is not modeled: the domains are expected to return an unknown
- * value for it.
+ * value for it. A base that is a square of a variable ({@code x * x}), or a sum
+ * or product of squares and non-negative constants, is not negative (or it is
+ * {@code nan}).
  */
 public final class PowerSemantics {
 
@@ -91,7 +97,7 @@ public final class PowerSemantics {
 					loc);
 			Set<Type> exponentTypes = analysis.getRuntimeTypesOf(state, exponent, context, thrower);
 			boolean integralExponent = !exponentTypes.isEmpty() && exponentTypes.stream().allMatch(PyNative.INT);
-			if (integralExponent
+			if (integralExponent || nonNegative(base)
 					|| analysis.satisfies(state, negativeBase, context, thrower) == Satisfiability.NOT_SATISFIED)
 				return ExceptionGuard.guardedCompute(analysis, context, state, zeroDivision,
 						LibrarySpecificationProvider.ZERO_DIVISION_ERROR, floatPower, cfg, loc, dispatchTarget,
@@ -126,5 +132,25 @@ public final class PowerSemantics {
 					LibrarySpecificationProvider.ZERO_DIVISION_ERROR, floatPower, cfg, loc, dispatchTarget, thrower,
 					raising));
 		return raising.moveFrom(result);
+	}
+
+	// whether the value of the expression is surely not negative (or nan): a
+	// non-negative constant, a square of a variable (whose two operands are the
+	// same value, unlike two reads of a summary of many objects), or a sum or
+	// product of such values
+	private static boolean nonNegative(
+			SymbolicExpression e) {
+		if (e instanceof Constant)
+			return ((Constant) e).getValue() instanceof Number
+					&& ((Number) ((Constant) e).getValue()).doubleValue() >= 0;
+		if (!(e instanceof BinaryExpression))
+			return false;
+		BinaryExpression binary = (BinaryExpression) e;
+		BinaryOperator operator = binary.getOperator();
+		if (operator == NumericNonOverflowingMul.INSTANCE && binary.getLeft() instanceof Variable
+				&& binary.getLeft().equals(binary.getRight()))
+			return true;
+		return (operator == NumericNonOverflowingAdd.INSTANCE || operator == NumericNonOverflowingMul.INSTANCE)
+				&& nonNegative(binary.getLeft()) && nonNegative(binary.getRight());
 	}
 }
