@@ -1,0 +1,5 @@
+library random:
+    location random
+    method choice: it.unive.pylisa.libraries.random.RandomChoice
+        type it.unive.lisa.type.Untyped::INSTANCE
+        param seq type it.unive.lisa.type.Untyped::INSTANCE
