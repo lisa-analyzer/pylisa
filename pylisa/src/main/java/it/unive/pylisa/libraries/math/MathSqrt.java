@@ -37,9 +37,8 @@ import java.util.Set;
  * converted to a {@code float} raises {@code OverflowError} (which is not
  * raised if it is known to be an {@code int} of 32 bits);</li>
  * <li>other builtin values (e.g. a {@code str}) raise {@code TypeError};</li>
- * <li>for objects, the result is unknown, and any exception might be raised
- * (see {@link LibrarySpecificationProvider#UNKNOWN_EXCEPTION}), as their class
- * might define {@code __float__}.</li>
+ * <li>for objects, the result is unknown, as their class might define
+ * {@code __float__} (as for {@link MathFloor}).</li>
  * </ul>
  */
 public class MathSqrt extends PyNative {
@@ -97,10 +96,8 @@ public class MathSqrt extends PyNative {
 
 		if (notNumber)
 			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
-		if (object) {
+		if (object)
 			result = result.lub(unknown(analysis, context, state, null));
-			raise(raising, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
-		}
 		return raising.moveFrom(result);
 	}
 }

@@ -10,8 +10,8 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.libraries.PyNative;
+import it.unive.pylisa.libraries.lists.ListOperations;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +21,7 @@ import java.util.List;
  * {@code self ^ other} for two sets: a new set whose elements are some of the
  * ones of {@code self} and of {@code other} (which ones is not tracked, see
  * {@link SetModel}), allocated at a location different from the one of the
- * operation (see {@link DerivedLocation}).
+ * operation (see {@link ListOperations#allocation}).
  */
 public class SetUnion extends PyNative {
 
@@ -52,7 +52,7 @@ public class SetUnion extends PyNative {
 			if (!some.getExecutionState().isBottom())
 				elements.add(some);
 		}
-		return SetModel.create(analysis, context, state, st, new DerivedLocation(getLocation(), "set"), elements,
+		return SetModel.create(analysis, context, state, st, ListOperations.allocation(st, "set"), elements,
 				getMetaVariables());
 	}
 }
