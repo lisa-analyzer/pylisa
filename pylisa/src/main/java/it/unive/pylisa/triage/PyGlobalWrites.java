@@ -27,13 +27,12 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The global variables that the code of the members of a Python program
- * writes, as the verification of the warnings uses them (see
- * {@link GlobalWrites}). The global variables of a Python program are the names
- * of the namespaces of its modules ({@code <module>.<name>}, see
- * {@link PyNameRef#identifier}), and the attributes assigned through classes
- * ({@code C.name = v}, see {@link PyClassMember}). The code of a function or
- * of a module writes:
+ * The global variables that the code of the members of a Python program writes,
+ * as the verification of the warnings uses them (see {@link GlobalWrites}). The
+ * global variables of a Python program are the names of the namespaces of its
+ * modules ({@code <module>.<name>}, see {@link PyNameRef#identifier}), and the
+ * attributes assigned through classes ({@code C.name = v}, see
+ * {@link PyClassMember}). The code of a function or of a module writes:
  * <ul>
  * <li>the global names that are the targets of its bindings (assignments, also
  * augmented ones, {@code for} targets, {@code def}, {@code class},
@@ -42,14 +41,14 @@ import java.util.Set;
  * ({@code del});</li>
  * <li>the attributes it assigns through classes.</li>
  * </ul>
- * The global writes of code with a star import ({@code from m import *}),
- * whose bound names are not all known, are unknown. Library functions
- * (natives) write no global variable, except {@code exec} and {@code eval},
- * that might bind or delete any name of the module (see
+ * The global writes of code with a star import ({@code from m import *}), whose
+ * bound names are not all known, are unknown. Library functions (natives) write
+ * no global variable, except {@code exec} and {@code eval}, that might bind or
+ * delete any name of the module (see
  * {@link it.unive.pylisa.libraries.PyNative#havocGlobals}). The calls that
  * natives perform on behalf of the program (e.g., calling the functions passed
- * to them) are part of the call graph, so the global variables written by
- * their targets are found through it.
+ * to them) are part of the call graph, so the global variables written by their
+ * targets are found through it.
  */
 public class PyGlobalWrites
 		implements
@@ -77,9 +76,9 @@ public class PyGlobalWrites
 	/**
 	 * {@inheritDoc}<br>
 	 * <br>
-	 * The global variables of a Python program are not declared: they are
-	 * the global names (and the attributes assigned through classes) that its
-	 * code reads, binds or deletes.
+	 * The global variables of a Python program are not declared: they are the
+	 * global names (and the attributes assigned through classes) that its code
+	 * reads, binds or deletes.
 	 */
 	@Override
 	public synchronized Set<String> globalsOf(

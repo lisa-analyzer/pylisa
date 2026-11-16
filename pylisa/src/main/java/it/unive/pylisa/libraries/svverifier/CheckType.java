@@ -12,12 +12,12 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
+import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
 import it.unive.pylisa.libraries.TypeHints;
 import it.unive.pylisa.symbolic.PyNoneConstant;
-import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import java.util.Set;
 
 /**

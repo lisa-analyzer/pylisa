@@ -194,10 +194,10 @@ public final class PyExceptions {
 		}
 
 		/**
-		 * Raises the given exception in the executions of the given state
-		 * where {@code operand} has one of the {@code failing} types, among
-		 * its runtime types {@code types}: in all of them if all its types
-		 * fail, in the ones where it has the failing types otherwise (see
+		 * Raises the given exception in the executions of the given state where
+		 * {@code operand} has one of the {@code failing} types, among its
+		 * runtime types {@code types}: in all of them if all its types fail, in
+		 * the ones where it has the failing types otherwise (see
 		 * {@link PyBinaryDispatch#ofType}), under an unknown condition if they
 		 * cannot be told apart from the other ones (see
 		 * {@link PyBinaryDispatch#checkable}) or if {@code surely} does not

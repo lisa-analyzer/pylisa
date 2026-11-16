@@ -193,7 +193,8 @@ public class PyAssign extends Assignment {
 					if (call instanceof OpenCall && PyBinaryDispatch.fullyKnown(tSelf)) {
 						// all the methods of the class of the receiver are
 						// known, and none is a __setitem__ accepting the
-						// arguments (e.g. an int, a str, or None): raised where the
+						// arguments (e.g. an int, a str, or None): raised where
+						// the
 						// receiver has the type
 						raising.raiseOfTypes(indexState, selfSym, Set.of(tSelf), rtsSelf, true, getCFG(), loc, this,
 								LibrarySpecificationProvider.TYPE_ERROR);

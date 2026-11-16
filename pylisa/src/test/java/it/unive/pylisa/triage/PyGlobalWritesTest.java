@@ -81,8 +81,8 @@ public class PyGlobalWritesTest {
 	}
 
 	/**
-	 * The names written by the code of the given function, without the
-	 * module qualifying them.
+	 * The names written by the code of the given function, without the module
+	 * qualifying them.
 	 */
 	private static Set<String> written(
 			PyGlobalWrites writes,

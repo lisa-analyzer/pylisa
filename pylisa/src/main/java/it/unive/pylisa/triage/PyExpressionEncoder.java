@@ -10,11 +10,11 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
+import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
+import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonNe;
-import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.triage.encoding.ExpressionEncoder;
 import it.unive.lisa.triage.encoding.ExpressionEncoderFactory;
@@ -69,19 +69,18 @@ import java.util.function.Function;
  * {@code **}) follow Python's semantics (e.g., {@code /} always yields a
  * {@code float}, {@code //} rounds toward negative infinity, and the result of
  * {@code %} takes the sign of the divisor), also over operands that might be
- * both {@code int}s and {@code float}s, with the operations over
- * {@code float}s that the theory of floating point numbers cannot express
- * computed through
+ * both {@code int}s and {@code float}s, with the operations over {@code float}s
+ * that the theory of floating point numbers cannot express computed through
  * {@link SymbolTable#evaluable(String, Sort, List, Function, SymbolicExpression)};</li>
  * <li>comparisons compare numbers by their value and strings lexicographically,
  * and equality follows Python's rules across types (e.g., {@code True == 1},
  * while strings are only equal to strings);</li>
  * <li>identity is exact for {@code None} and for objects (references);</li>
  * <li>the truthiness of {@code not x}, the conversions {@code int(x)},
- * {@code float(x)}, {@code math.floor(x)}, {@code str(x)} and
- * {@code repr(x)}, the indexing and the repetition of strings, and
- * {@code isinstance} with builtin classes are encoded for the values they can
- * be precisely encoded for.</li>
+ * {@code float(x)}, {@code math.floor(x)}, {@code str(x)} and {@code repr(x)},
+ * the indexing and the repetition of strings, and {@code isinstance} with
+ * builtin classes are encoded for the values they can be precisely encoded
+ * for.</li>
  * </ul>
  * Whatever is not encoded precisely (e.g., the conversion of a {@code str} to a
  * {@code float}, or an operation on values of unknown kind) yields an unknown,
@@ -190,12 +189,17 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			return trueDivision(left, right, expression);
 		if (op instanceof FloorDivision)
 			return numeric(expression, left, right, PyExpressionEncoder::floorDiv,
-					(l, r) -> getSymbols().evaluable("$py.floordiv", Sort.FLOAT64, List.of(l, r),
-							args -> floorDiv(args.get(0).doubleValue(), args.get(1).doubleValue()), expression));
+					(
+							l,
+							r) -> getSymbols().evaluable("$py.floordiv", Sort.FLOAT64, List.of(l, r),
+									args -> floorDiv(args.get(0).doubleValue(), args.get(1).doubleValue()),
+									expression));
 		if (op instanceof Modulo)
 			return numeric(expression, left, right, PyExpressionEncoder::mod,
-					(l, r) -> getSymbols().evaluable("$py.mod", Sort.FLOAT64, List.of(l, r),
-							args -> mod(args.get(0).doubleValue(), args.get(1).doubleValue()), expression));
+					(
+							l,
+							r) -> getSymbols().evaluable("$py.mod", Sort.FLOAT64, List.of(l, r),
+									args -> mod(args.get(0).doubleValue(), args.get(1).doubleValue()), expression));
 		if (op instanceof FloatPower)
 			return floatPower(left, right, expression);
 		if (op instanceof Power)
@@ -208,8 +212,12 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			String smt = op instanceof AdditionOperator ? "+" : op instanceof SubtractionOperator ? "-" : "*";
 			String fp = op instanceof AdditionOperator ? "fp.add"
 					: op instanceof SubtractionOperator ? "fp.sub" : "fp.mul";
-			return numeric(expression, left, right, (l, r) -> Term.app(smt, Sort.INT, l, r),
-					(l, r) -> Term.app(fp, Sort.FLOAT64, rne(), l, r));
+			return numeric(expression, left, right, (
+					l,
+					r) -> Term.app(smt, Sort.INT, l, r),
+					(
+							l,
+							r) -> Term.app(fp, Sort.FLOAT64, rne(), l, r));
 		}
 		if (op instanceof ComparisonEq)
 			return equality(left, right, expression);
@@ -260,8 +268,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	}
 
 	/**
-	 * The term read as a term of the given sort, that is meaningful only if
-	 * it is of that sort (see {@link #is(Term, Sort)}).
+	 * The term read as a term of the given sort, that is meaningful only if it
+	 * is of that sort (see {@link #is(Term, Sort)}).
 	 */
 	private static Term as(
 			Term t,
@@ -304,9 +312,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 
 	/**
 	 * The term, that might be a number, as a 64-bits floating point number:
-	 * integers are converted as Python does (rounding to nearest), precisely
-	 * if their magnitude is below 2^63. Meaningful only if the term is a
-	 * number.
+	 * integers are converted as Python does (rounding to nearest), precisely if
+	 * their magnitude is below 2^63. Meaningful only if the term is a number.
 	 */
 	private Term asFloat(
 			Term t,
@@ -333,8 +340,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	/**
 	 * The term as a float (see {@link #asFloat(Term, SymbolicExpression)}) if
 	 * the condition holds, and 1.0 otherwise: the arguments of functions over
-	 * floats that are not used when the condition does not hold are fixed,
-	 * so that they agree with the functions they stand for (see
+	 * floats that are not used when the condition does not hold are fixed, so
+	 * that they agree with the functions they stand for (see
 	 * {@link SymbolTable#evaluable(String, Sort, List, Function, SymbolicExpression)}).
 	 */
 	private Term asFloatIf(
@@ -347,8 +354,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	}
 
 	/**
-	 * An unknown, but deterministic, function of the given arguments, used
-	 * when the guard does not hold (never precise then).
+	 * An unknown, but deterministic, function of the given arguments, used when
+	 * the guard does not hold (never precise then).
 	 */
 	private Term unknown(
 			String function,
@@ -380,10 +387,10 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 
 	/**
 	 * A chain of cases, each with a condition and the precise encoding of the
-	 * expression when it holds, ending with an unknown function of the
-	 * operands when no condition holds: the encoding is precise if some
-	 * condition holds (the guard of the unknown function being whether the
-	 * function is used, see
+	 * expression when it holds, ending with an unknown function of the operands
+	 * when no condition holds: the encoding is precise if some condition holds
+	 * (the guard of the unknown function being whether the function is used,
+	 * see
 	 * {@link SymbolTable#apply(String, Sort, List, SymbolicExpression, Term)}).
 	 * The terms of the cases must thus be precise.
 	 */
@@ -420,11 +427,11 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	// arithmetic
 
 	/**
-	 * Encodes a binary numeric operation of Python: between ints (or bools)
-	 * it is the given operation over integers, and between numbers of which
-	 * one is a float, it is the given operation over 64-bits floating point
-	 * numbers, the ints being converted to floats. The operands are required
-	 * to be numbers.
+	 * Encodes a binary numeric operation of Python: between ints (or bools) it
+	 * is the given operation over integers, and between numbers of which one is
+	 * a float, it is the given operation over 64-bits floating point numbers,
+	 * the ints being converted to floats. The operands are required to be
+	 * numbers.
 	 */
 	private Term numeric(
 			ValueExpression expression,
@@ -635,19 +642,27 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 				&& !(((Constant) exponent).getValue() instanceof Double)) {
 			long k = ((Number) ((Constant) exponent).getValue()).longValue();
 			if (k >= 0 && k <= 64)
-				return numeric(expression, left, right, (l, r) -> {
+				return numeric(expression, left, right, (
+						l,
+						r) -> {
 					Term result = Term.integer(1);
 					for (long i = 0; i < k; i++)
 						result = i == 0 ? l : Term.app("*", Sort.INT, result, l);
 					return result;
-				}, (l, r) -> getSymbols().evaluable("$py.pow", Sort.FLOAT64, List.of(l, r),
-						args -> pow(args.get(0).doubleValue(), args.get(1).doubleValue()), expression));
+				}, (
+						l,
+						r) -> getSymbols().evaluable("$py.pow", Sort.FLOAT64, List.of(l, r),
+								args -> pow(args.get(0).doubleValue(), args.get(1).doubleValue()), expression));
 		}
 		return numeric(expression, left, right,
-				(l, r) -> unknown("pow", Sort.INT, List.of(l, r), expression,
-						Term.not(Term.and(isInteger(left), isInteger(right)))),
-				(l, r) -> getSymbols().evaluable("$py.pow", Sort.FLOAT64, List.of(l, r),
-						args -> pow(args.get(0).doubleValue(), args.get(1).doubleValue()), expression));
+				(
+						l,
+						r) -> unknown("pow", Sort.INT, List.of(l, r), expression,
+								Term.not(Term.and(isInteger(left), isInteger(right)))),
+				(
+						l,
+						r) -> getSymbols().evaluable("$py.pow", Sort.FLOAT64, List.of(l, r),
+								args -> pow(args.get(0).doubleValue(), args.get(1).doubleValue()), expression));
 	}
 
 	/**
@@ -796,9 +811,9 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	/**
 	 * Python's {@code isinstance(x, C)} for the builtin classes whose values
 	 * have a sort of their own ({@code int}, of which {@code bool} is a
-	 * subclass, {@code bool}, {@code float}, {@code str} and
-	 * {@code NoneType}); any other class (or tuple of classes) yields an
-	 * unknown function of the value.
+	 * subclass, {@code bool}, {@code float}, {@code str} and {@code NoneType});
+	 * any other class (or tuple of classes) yields an unknown function of the
+	 * value.
 	 */
 	private Term isInstance(
 			Term value,
@@ -846,10 +861,10 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	// truthiness and conversions
 
 	/**
-	 * Python's truthiness of a value: false for {@code False}, zero,
-	 * {@code ""} and {@code None}, true for other bools, numbers and strings.
-	 * The truthiness of other values (e.g., lists, whose truthiness depends
-	 * on their length) is an unknown function of them.
+	 * Python's truthiness of a value: false for {@code False}, zero, {@code ""}
+	 * and {@code None}, true for other bools, numbers and strings. The
+	 * truthiness of other values (e.g., lists, whose truthiness depends on
+	 * their length) is an unknown function of them.
 	 */
 	private Term truthiness(
 			Term t,
@@ -911,8 +926,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 
 	/**
 	 * Converts a 64-bits floating point number to an integer, rounding with the
-	 * given mode: precise for finite numbers whose magnitude is below 2^63
-	 * (see {@link #inLongRange(Term)}).
+	 * given mode: precise for finite numbers whose magnitude is below 2^63 (see
+	 * {@link #inLongRange(Term)}).
 	 */
 	private Term floatToInt(
 			Term fp,
@@ -922,8 +937,7 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	}
 
 	/**
-	 * Whether the floating point number is finite, with a magnitude below
-	 * 2^63.
+	 * Whether the floating point number is finite, with a magnitude below 2^63.
 	 */
 	private static Term inLongRange(
 			Term fp) {
@@ -975,8 +989,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 
 	/**
 	 * Parses a string of decimal digits with an optional sign, yielding the
-	 * condition for the string to be one ({@code str.to_int} yields -1 for
-	 * the strings that are not made of decimal digits only) and its value.
+	 * condition for the string to be one ({@code str.to_int} yields -1 for the
+	 * strings that are not made of decimal digits only) and its value.
 	 */
 	private static Term[] parseInt(
 			Term s) {

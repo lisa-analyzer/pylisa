@@ -139,7 +139,8 @@ public class DictionaryCreation extends NaryExpression {
 		// for all objects (see PyNewObj): accessing __class__, that all
 		// objects have, makes the entries of the new dictionary known also
 		// when it is empty
-		AccessChild cls = new AccessChild(Untyped.INSTANCE, deref, new GlobalVariable(Untyped.INSTANCE, "__class__", loc),
+		AccessChild cls = new AccessChild(Untyped.INSTANCE, deref,
+				new GlobalVariable(Untyped.INSTANCE, "__class__", loc),
 				loc);
 		current = analysis.smallStepSemantics(current, cls, context, this)
 				.withExecutionExpressions(current.getExecutionExpressions());
