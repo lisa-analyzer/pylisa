@@ -76,7 +76,7 @@ public class StrJoin extends PyNative {
 		if (iterates != Satisfiability.NOT_SATISFIED && (mightBeStr || !nonEmpty))
 			result = result.lub(compute(analysis, context, state, new PushAny(StringType.INSTANCE, getLocation())));
 		if (iterates != Satisfiability.SATISFIED || mightNotBeStr)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 }

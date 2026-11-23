@@ -78,7 +78,7 @@ public class DivMod extends PyNative {
 					getMetaVariables()));
 		}
 		if (byZero != Satisfiability.NOT_SATISFIED)
-			raise(raising, state, LibrarySpecificationProvider.ZERO_DIVISION_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.ZERO_DIVISION_ERROR);
 		return raising.moveFrom(result);
 	}
 }

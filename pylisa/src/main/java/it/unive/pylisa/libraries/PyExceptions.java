@@ -125,8 +125,10 @@ public final class PyExceptions {
 	 * operands), so that they can be moved to the error channel with a
 	 * <i>partial</i> move once all the executions that continue normally are
 	 * known: exceptions are registered with
-	 * {@link #raise(AnalysisState, CFG, CodeLocation, Statement, String)}, and
-	 * {@link #moveFrom(AnalysisState)} performs the moves. If no execution
+	 * {@link #raise(Satisfiability, AnalysisState, CFG, CodeLocation, Statement, String)}
+	 * (or the helpers built on it, such as
+	 * {@link #raiseWhere(SymbolicExpression, boolean, AnalysisState, Statement, CFG, CodeLocation, Statement, String)}),
+	 * and {@link #moveFrom(AnalysisState)} performs the moves. If no execution
 	 * continues normally, the moves fall back to <i>total</i> ones.
 	 *
 	 * @param <A> the kind of {@link AbstractLattice} of the states
@@ -153,44 +155,6 @@ public final class PyExceptions {
 				ScopeId<?> context) {
 			this.analysis = analysis;
 			this.context = context;
-		}
-
-		/**
-		 * Yields whether no exception has been raised.
-		 *
-		 * @return whether no exception has been raised
-		 */
-		public boolean isEmpty() {
-			return raised.isEmpty();
-		}
-
-		/**
-		 * Raises the given exception in some of the executions of the given
-		 * state, that will be moved to the error channel by
-		 * {@link #moveFrom(AnalysisState)}: the executions raising it are not
-		 * known, so the exception is raised under an unknown condition (see
-		 * {@link #raise(Satisfiability, AnalysisState, CFG, CodeLocation, Statement, String)}
-		 * with {@link Satisfiability#UNKNOWN}). Executions that surely raise it
-		 * (e.g. a state restricted to the ones raising it) are raised with
-		 * {@link Satisfiability#SATISFIED}.
-		 *
-		 * @param state              the state of the executions that might
-		 *                               raise the exception
-		 * @param cfg                the cfg where the exception is raised
-		 * @param loc                the location where the exception is raised
-		 * @param thrower            the statement raising the exception
-		 * @param exceptionClassName the name of the class of the exception
-		 *
-		 * @throws SemanticException if the analysis fails
-		 */
-		public void raise(
-				AnalysisState<A> state,
-				CFG cfg,
-				CodeLocation loc,
-				Statement thrower,
-				String exceptionClassName)
-				throws SemanticException {
-			raise(Satisfiability.UNKNOWN, state, cfg, loc, thrower, exceptionClassName);
 		}
 
 		/**
@@ -316,7 +280,9 @@ public final class PyExceptions {
 		 * otherwise (see {@link ExceptionGuard#maybe}), so that the executions
 		 * raising it are not taken as all the executions of the state when the
 		 * condition raising it is not known (e.g. when the warnings are
-		 * verified).
+		 * verified). {@link Satisfiability#SATISFIED} is thus only for states
+		 * restricted to the executions raising the exception, and every call
+		 * states which one it is.
 		 *
 		 * @param raises             whether the exception is raised
 		 * @param state              the state of the executions that might
@@ -342,6 +308,66 @@ public final class PyExceptions {
 					: ExceptionGuard.maybe(analysis, context, state, thrower);
 			if (!raising.getExecutionState().isBottom())
 				collect(raising, cfg, loc, thrower, exceptionClassName);
+		}
+
+		/**
+		 * Raises the given exception exactly in the executions of the given
+		 * state where the given condition holds, yielding the ones where it
+		 * does not, that continue normally. The analysis decides whether the
+		 * condition holds (see {@link Analysis#satisfies}): if it surely does,
+		 * the exception is raised in all the executions; if it surely does
+		 * not, in none of them; otherwise, the state is restricted to the
+		 * executions where it holds to raise the exception (see
+		 * {@link ExceptionGuard#when}), and to the ones where it does not to
+		 * continue (see {@link ExceptionGuard#unless}). The executions where
+		 * the condition holds surely raise the exception only if
+		 * {@code surely} holds (e.g. not if an operand might also have a type
+		 * raising another exception), otherwise the exception is raised in
+		 * them under an unknown condition.
+		 *
+		 * @param condition          the condition under which the exception
+		 *                               is raised
+		 * @param surely             whether the executions where the
+		 *                               condition holds surely raise the
+		 *                               exception
+		 * @param state              the state of the executions that might
+		 *                               raise the exception
+		 * @param pp                 the program point where the condition is
+		 *                               checked
+		 * @param cfg                the cfg where the exception is raised
+		 * @param loc                the location where the exception is raised
+		 * @param thrower            the statement raising the exception
+		 * @param exceptionClassName the name of the class of the exception
+		 *
+		 * @return the state of the executions where the exception is not
+		 *             raised
+		 *
+		 * @throws SemanticException if the analysis fails
+		 */
+		public AnalysisState<A> raiseWhere(
+				SymbolicExpression condition,
+				boolean surely,
+				AnalysisState<A> state,
+				Statement pp,
+				CFG cfg,
+				CodeLocation loc,
+				Statement thrower,
+				String exceptionClassName)
+				throws SemanticException {
+			if (state.getExecutionState().isBottom())
+				return state;
+			Satisfiability sat = analysis.satisfies(state, condition, context, pp);
+			if (sat == Satisfiability.NOT_SATISFIED || sat == Satisfiability.BOTTOM)
+				return state;
+			Satisfiability raises = surely ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN;
+			if (sat == Satisfiability.SATISFIED) {
+				raise(raises, state, cfg, loc, thrower, exceptionClassName);
+				return state.bottomExecution();
+			}
+			AnalysisState<A> failing = ExceptionGuard.when(analysis, context, state, condition, pp);
+			if (!failing.getExecutionState().isBottom())
+				raise(raises, failing, cfg, loc, thrower, exceptionClassName);
+			return ExceptionGuard.unless(analysis, context, state, condition, pp);
 		}
 
 		/**

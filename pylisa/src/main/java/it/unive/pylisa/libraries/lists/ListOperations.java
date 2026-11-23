@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -100,8 +101,21 @@ public final class ListOperations {
 				new PushAny(Untyped.INSTANCE, st.getLocation()), context, st);
 		Set<Type> types = analysis.getRuntimeTypesOf(state, other, context, st);
 		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st) || !types.stream().allMatch(accepted)) {
+			// the receiver is not known: the exception might be raised only
+			// where the other operand does not have the accepted types, if
+			// they are known
 			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-			raising.raise(state, st.getCFG(), st.getLocation(), st, LibrarySpecificationProvider.TYPE_ERROR);
+			if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st))
+				raising.raise(Satisfiability.UNKNOWN, state, st.getCFG(), st.getLocation(), st,
+						LibrarySpecificationProvider.TYPE_ERROR);
+			else {
+				Set<Type> failing = new HashSet<>();
+				for (Type t : types)
+					if (!accepted.test(t))
+						failing.add(t);
+				raising.raiseOfTypes(state, other, failing, types, false, st.getCFG(), st.getLocation(), st,
+						LibrarySpecificationProvider.TYPE_ERROR);
+			}
 			return raising.moveFrom(result);
 		}
 		return result;

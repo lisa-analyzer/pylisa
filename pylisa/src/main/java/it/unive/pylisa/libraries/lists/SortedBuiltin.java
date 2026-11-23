@@ -85,15 +85,23 @@ public class SortedBuiltin extends PyNative {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		Expression[] subs = getSubExpressions();
 		for (SymbolicExpression key : params[1]) {
-			if (hasType(analysis, context, created, key, NONE) == Satisfiability.SATISFIED)
+			// the executions where the argument computed this value
+			AnalysisState<A> keyState = restrictTo(analysis, created, 1, key);
+			if (keyState.getExecutionState().isBottom())
 				continue;
-			if (PyValueCall.callable(analysis, context, created, key, st) == Satisfiability.UNKNOWN)
+			if (hasType(analysis, context, keyState, key, NONE) == Satisfiability.SATISFIED)
+				continue;
+			if (PyValueCall.callable(analysis, context, keyState, key, st) == Satisfiability.UNKNOWN)
 				// the code of key is not known
-				raise(raising, created, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+				raise(raising, Satisfiability.UNKNOWN, keyState, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 			for (SymbolicExpression iterable : params[0]) {
-				if (Iteration.iterable(analysis, context, created, iterable, st) == Satisfiability.NOT_SATISFIED)
+				// the executions where the argument computed this value
+				AnalysisState<A> iterableState = restrictTo(analysis, keyState, 0, iterable);
+				if (iterableState.getExecutionState().isBottom())
 					continue;
-				AnalysisState<A> elements = Iteration.elements(interprocedural, created,
+				if (Iteration.iterable(analysis, context, iterableState, iterable, st) == Satisfiability.NOT_SATISFIED)
+					continue;
+				AnalysisState<A> elements = Iteration.elements(interprocedural, iterableState,
 						subs.length > 0 ? subs[0] : null, iterable, st, getMetaVariables());
 				AnalysisState<A> keys = PyValueCall.call(interprocedural, elements, new ExpressionSet(key),
 						new ExpressionSet[] { elements.getExecutionExpressions() }, st, "key",
@@ -101,7 +109,7 @@ public class SortedBuiltin extends PyNative {
 				// the exceptions raised by key
 				result = result.lub(keys.bottomExecution());
 				if (!comparable(analysis, context, keys, keys.getExecutionExpressions()))
-					raise(raising, created, LibrarySpecificationProvider.TYPE_ERROR);
+					raise(raising, Satisfiability.UNKNOWN, iterableState, LibrarySpecificationProvider.TYPE_ERROR);
 			}
 		}
 		return raising.moveFrom(result);
@@ -167,7 +175,7 @@ public class SortedBuiltin extends PyNative {
 					&& !comparable(analysis, context, elements, elements.getExecutionExpressions()))
 				// without key, the elements are compared (with key, its results
 				// are, see forwardSemanticsAux)
-				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		}
 		return raising.moveFrom(typeChecked(state, typed, result, raising));
 	}

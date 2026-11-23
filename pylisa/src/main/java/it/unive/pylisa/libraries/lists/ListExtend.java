@@ -88,7 +88,7 @@ public class ListExtend extends PyNative {
 			result = compute(analysis, context, extended, new PyNoneConstant(loc));
 		}
 		if (iterable != Satisfiability.SATISFIED)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 }

@@ -156,12 +156,12 @@ public class StrGetItemNative extends PyNative {
 			} else {
 				// the step of a slice object is not known
 				result = result.lub(compute(analysis, context, state, value));
-				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 			}
 		}
 
 		if (integer != Satisfiability.SATISFIED && slice != Satisfiability.SATISFIED)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 }

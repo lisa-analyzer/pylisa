@@ -90,14 +90,14 @@ public class BytesBuiltin extends PyNative {
 		if (isStr != Satisfiability.NOT_SATISFIED)
 			if (missing(encoding))
 				// a string argument without an encoding
-				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 			else
 				result = result
 						.lub(CodecSemantics.semantics(this, analysis, context, state, Codec.ENCODE, source, encoding,
 								errors, raising));
 		if (isInt != Satisfiability.NOT_SATISFIED)
 			if (!noCodec)
-				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 			else
 				result = result.lub(ExceptionGuard.guardedCompute(analysis, context, state,
 						new BinaryExpression(BoolType.INSTANCE, source, new Constant(Int32Type.INSTANCE, 0, loc),
@@ -107,19 +107,19 @@ public class BytesBuiltin extends PyNative {
 						getOriginatingStatement(), getOriginatingStatement(), raising));
 		if (isBytes != Satisfiability.NOT_SATISFIED)
 			if (!noCodec)
-				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 			else
 				result = result.lub(compute(analysis, context, state, source));
 		if (isObject != Satisfiability.NOT_SATISFIED) {
 			// e.g. a list of integers, whose elements are not known
 			result = result.lub(unknown(analysis, context, state, PyBytesType.INSTANCE));
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
-			raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 		}
 		if (isStr != Satisfiability.SATISFIED && isInt != Satisfiability.SATISFIED
 				&& isBytes != Satisfiability.SATISFIED && isObject != Satisfiability.SATISFIED)
 			// e.g. a float
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 }

@@ -41,6 +41,8 @@ import it.unive.pylisa.cfg.ClassBases;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.symbolic.PyNoneConstant;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class PyNewObj extends NaryExpression {
@@ -87,7 +89,7 @@ public class PyNewObj extends NaryExpression {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> created = create(interprocedural, state, params, expressions, raising);
 		if (isAbstract == Satisfiability.UNKNOWN)
-			raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
+			raising.raise(Satisfiability.UNKNOWN, state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(created);
 	}
 
@@ -176,8 +178,21 @@ public class PyNewObj extends NaryExpression {
 			call.getMetaVariables().addAll(resolved.getMetaVariables());
 		}
 
-		// __init__ must return None
+		// __init__ must return None: the TypeError is raised where it returns
+		// something else, when the returned value is known
 		Satisfiability none = returnsNone(analysis, context, sem, resolved, this);
+		ExpressionSet returned = sem.getExecutionExpressions();
+		if (none == Satisfiability.UNKNOWN && returned.size() == 1 && !(returned.iterator().next() instanceof Skip)) {
+			SymbolicExpression value = returned.iterator().next();
+			Set<Type> types = analysis.getRuntimeTypesOf(sem, value, context, this);
+			Set<Type> failing = new HashSet<>();
+			for (Type t : types)
+				if (!t.isNullType())
+					failing.add(t);
+			raising.raiseOfTypes(sem, value, failing, types, true, call.getMetaVariables(), getCFG(), getLocation(),
+					this, LibrarySpecificationProvider.TYPE_ERROR);
+			none = Satisfiability.SATISFIED;
+		}
 
 		if (!call.getMetaVariables().isEmpty())
 			sem = sem.forgetIdentifiers(call.getMetaVariables(), this);

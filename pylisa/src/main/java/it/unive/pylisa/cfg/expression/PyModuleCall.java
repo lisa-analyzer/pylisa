@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
@@ -69,7 +70,7 @@ public class PyModuleCall extends UnresolvedCall {
 		if (resolved instanceof OpenCall) {
 			// not a function of the module: unknown code
 			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-			raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+			raising.raise(Satisfiability.UNKNOWN, state, getCFG(), getLocation(), this, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 			return raising.moveFrom(result);
 		}
 		return result;

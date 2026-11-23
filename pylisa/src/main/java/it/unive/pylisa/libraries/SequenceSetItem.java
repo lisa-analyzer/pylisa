@@ -20,9 +20,11 @@ import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -85,48 +87,60 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 
 		AnalysisState<A> result = state.bottomExecution();
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+		Expression[] subs = getSubExpressions();
 		for (SymbolicExpression self : params[0]) {
-			Set<Type> rts = analysis.getRuntimeTypesOf(state, self, context, this);
+			// each combination of the operands is evaluated in the executions
+			// computing it, as the statements of lisa do
+			AnalysisState<A> selfState = analysis.restrictTo(state, subs[0], self);
+			if (selfState.getExecutionState().isBottom())
+				continue;
+			Set<Type> rts = analysis.getRuntimeTypesOf(selfState, self, context, this);
 			for (Type t : rts) {
 				if (!t.isPointerType())
 					continue;
 				Type inner = t.asPointerType().getInnerType();
 
 				if (inner.canBeAssignedTo(tupleType)) {
-					raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
+					// tuples are immutable: raised where self is this tuple
+					raising.raiseOfTypes(selfState, self, Collections.singleton(t), rts, true, getCFG(), loc, st,
+							LibrarySpecificationProvider.TYPE_ERROR);
 					continue;
 				}
 
-				if (ListModel.isList(t)) {
-					// the elements of the list, or its slices
-					for (SymbolicExpression index : params[1]) {
-						Set<Type> indexTypes = analysis.getRuntimeTypesOf(state, index, context, this);
-						boolean slice = !indexTypes.isEmpty() && indexTypes.stream().allMatch(ListModel::isSlice);
-						for (SymbolicExpression value : params[2])
-							result = result.lub(slice
-									? ListModel.assignSlice(analysis, context, state, self, index, value, st,
-											getMetaVariables(), raising)
-									: ListModel.write(analysis, context, state, self, index, value, st, raising));
-					}
+				// the executions where self has this type (the type of a
+				// reference can be told apart from the other ones, see
+				// PyBinaryDispatch.checkable)
+				AnalysisState<A> typed = PyBinaryDispatch.ofType(analysis, context, selfState, self, t, rts, this);
+				if (typed.getExecutionState().isBottom())
 					continue;
-				}
 
-				if (DictModel.isDict(t)) {
-					// the entries of the dictionary
-					for (SymbolicExpression key : params[1])
-						for (SymbolicExpression value : params[2])
-							result = result
-									.lub(DictModel.write(analysis, context, state, self, key, value, st, raising));
-					continue;
-				}
-
-				HeapDereference deref = new HeapDereference(inner, self, loc);
 				for (SymbolicExpression index : params[1]) {
-					AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, index, loc);
-					AnalysisState<A> slotState = analysis.smallStepSemantics(state, slot, context, this);
-					for (SymbolicExpression value : params[2])
-						for (SymbolicExpression slotId : slotState.getExecutionExpressions())
-							result = result.lub(analysis.assign(slotState, slotId, value, context, this));
+					AnalysisState<A> indexState = analysis.restrictTo(typed, subs[1], index);
+					for (SymbolicExpression value : params[2]) {
+						AnalysisState<A> combination = analysis.restrictTo(indexState, subs[2], value);
+						if (combination.getExecutionState().isBottom())
+							continue;
+						if (ListModel.isList(t)) {
+							// the elements of the list, or its slices
+							Set<Type> indexTypes = analysis.getRuntimeTypesOf(combination, index, context, this);
+							boolean slice = !indexTypes.isEmpty() && indexTypes.stream().allMatch(ListModel::isSlice);
+							result = result.lub(slice
+									? ListModel.assignSlice(analysis, context, combination, self, index, value, st,
+											getMetaVariables(), raising)
+									: ListModel.write(analysis, context, combination, self, index, value, st,
+											raising));
+						} else if (DictModel.isDict(t))
+							// the entries of the dictionary
+							result = result.lub(
+									DictModel.write(analysis, context, combination, self, index, value, st, raising));
+						else {
+							HeapDereference deref = new HeapDereference(inner, self, loc);
+							AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, index, loc);
+							AnalysisState<A> slotState = analysis.smallStepSemantics(combination, slot, context, this);
+							for (SymbolicExpression slotId : slotState.getExecutionExpressions())
+								result = result.lub(analysis.assign(slotState, slotId, value, context, this));
+						}
+					}
 				}
 			}
 		}

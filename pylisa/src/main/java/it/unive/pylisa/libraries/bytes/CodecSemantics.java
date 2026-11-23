@@ -13,7 +13,6 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.pylisa.cfg.type.PyBytesType;
-import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
@@ -112,48 +111,22 @@ public final class CodecSemantics {
 				encoding, errors, new CodecRaises(codec, unicodeError), loc);
 		TernaryExpression lookupFailure = new TernaryExpression(BoolType.INSTANCE, value,
 				encoding, errors, new CodecRaises(codec, LibrarySpecificationProvider.LOOKUP_ERROR), loc);
-		Satisfiability failsUnicode = analysis.satisfies(state, unicodeFailure, context, n);
-		Satisfiability failsLookup = analysis.satisfies(state, lookupFailure, context, n);
-
 		AnalysisState<A> result = state.bottomExecution();
 		if (typed != Satisfiability.NOT_SATISFIED) {
 			// the codec is applied only to well-typed arguments, where it does
 			// not fail, and each exception is raised exactly where its
-			// condition holds
-			if (failsUnicode != Satisfiability.SATISFIED && failsLookup != Satisfiability.SATISFIED) {
-				AnalysisState<A> succeeding = state;
-				if (failsUnicode == Satisfiability.UNKNOWN)
-					succeeding = ExceptionGuard.unless(analysis, context, succeeding, unicodeFailure, n);
-				if (failsLookup == Satisfiability.UNKNOWN)
-					succeeding = ExceptionGuard.unless(analysis, context, succeeding, lookupFailure, n);
-				if (!succeeding.getExecutionState().isBottom())
-					result = result.lub(n.compute(analysis, context, succeeding,
-							new TernaryExpression(codec.isEncode() ? PyBytesType.INSTANCE : StringType.INSTANCE,
-									value, encoding, errors, codec, loc)));
-			}
-			raiseWhere(n, analysis, context, state, failsUnicode, unicodeFailure, unicodeError, raising);
-			raiseWhere(n, analysis, context, state, failsLookup, lookupFailure,
-					LibrarySpecificationProvider.LOOKUP_ERROR, raising);
+			// condition holds (surely, if the arguments are surely
+			// well-typed): the encoding is looked up before the value is
+			// encoded or decoded
+			boolean surely = typed == Satisfiability.SATISFIED;
+			AnalysisState<A> succeeding = n.raiseWhere(raising, lookupFailure, surely, state,
+					LibrarySpecificationProvider.LOOKUP_ERROR);
+			succeeding = n.raiseWhere(raising, unicodeFailure, surely, succeeding, unicodeError);
+			if (!succeeding.getExecutionState().isBottom())
+				result = n.compute(analysis, context, succeeding,
+						new TernaryExpression(codec.isEncode() ? PyBytesType.INSTANCE : StringType.INSTANCE,
+								value, encoding, errors, codec, loc));
 		}
 		return n.typeChecked(state, typed, result, raising);
-	}
-
-	// raises the exception where its condition holds
-	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> void raiseWhere(
-			PyNative n,
-			Analysis<A, D> analysis,
-			ScopeId<?> context,
-			AnalysisState<A> state,
-			Satisfiability fails,
-			SymbolicExpression failure,
-			String exception,
-			PyExceptions.Raising<A, D> raising)
-			throws SemanticException {
-		if (fails == Satisfiability.NOT_SATISFIED || fails == Satisfiability.BOTTOM)
-			return;
-		AnalysisState<A> failing = fails == Satisfiability.SATISFIED ? state
-				: ExceptionGuard.when(analysis, context, state, failure, n);
-		if (!failing.getExecutionState().isBottom())
-			n.raise(raising, Satisfiability.SATISFIED, failing, exception);
 	}
 }

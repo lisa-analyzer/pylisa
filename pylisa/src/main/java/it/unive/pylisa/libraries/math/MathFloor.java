@@ -96,13 +96,13 @@ public class MathFloor extends PyNative {
 			if (nan != Satisfiability.SATISFIED && inf != Satisfiability.SATISFIED)
 				result = result.lub(compute(analysis, context, state, value));
 			if (nan != Satisfiability.NOT_SATISFIED)
-				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 			if (inf != Satisfiability.NOT_SATISFIED)
-				raise(raising, state, LibrarySpecificationProvider.OVERFLOW_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.OVERFLOW_ERROR);
 		}
 
 		if (notNumber)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		if (object)
 			result = result.lub(unknown(analysis, context, state, Int32Type.INSTANCE));
 		return raising.moveFrom(result);

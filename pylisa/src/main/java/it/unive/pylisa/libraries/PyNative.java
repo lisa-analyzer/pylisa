@@ -106,9 +106,46 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression e : params[pos]) {
 			args[pos] = e;
-			result = result.lub(combinations(analysis, context, state, params, args, pos + 1));
+			// the executions where the argument computed this value, so that
+			// each combination is evaluated (and raises its exceptions) only
+			// in the executions computing it (e.g. in ord(a if c else b))
+			AnalysisState<A> computing = restrictTo(analysis, state, pos, e);
+			if (!computing.getExecutionState().isBottom())
+				result = result.lub(combinations(analysis, context, computing, params, args, pos + 1));
 		}
 		return result;
+	}
+
+	/**
+	 * Yields the executions of the given state where the argument at the given
+	 * position computed the given value (see
+	 * {@link Analysis#restrictTo(AnalysisState, it.unive.lisa.program.cfg.ProgramPoint, SymbolicExpression)}),
+	 * as the statements of lisa do for their operands: natives evaluating the
+	 * combinations of the values of their arguments by themselves (instead of
+	 * through {@link #semantics}) restrict the state with this.
+	 *
+	 * @param <A>      the kind of {@link AbstractLattice} of the state
+	 * @param <D>      the kind of {@link AbstractDomain} of the analysis
+	 * @param analysis the analysis
+	 * @param state    the state
+	 * @param pos      the position of the argument
+	 * @param value    the value of the argument
+	 *
+	 * @return the executions where the argument computed the value
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> restrictTo(
+			Analysis<A, D> analysis,
+			AnalysisState<A> state,
+			int pos,
+			SymbolicExpression value)
+			throws SemanticException {
+		Expression[] subs = getSubExpressions();
+		if (pos >= subs.length)
+			// e.g. a default value of a missing argument
+			return state;
+		return analysis.restrictTo(state, subs[pos], value);
 	}
 
 	/**
@@ -356,24 +393,32 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 	}
 
 	/**
-	 * Raises the given exception in some of the executions of the given state,
-	 * which are not known, collecting it in {@code raising} (see
-	 * {@link PyExceptions.Raising#raise(AnalysisState, CFG, CodeLocation, Statement, String)}):
-	 * executions that surely raise it are raised with
-	 * {@link #raise(PyExceptions.Raising, Satisfiability, AnalysisState, String)}.
+	 * Raises the given exception exactly in the executions of the given state
+	 * where the given condition holds, collecting it in {@code raising} (see
+	 * {@link PyExceptions.Raising#raiseWhere(SymbolicExpression, boolean, AnalysisState, Statement, CFG, CodeLocation, Statement, String)}).
 	 *
+	 * @param <A>       the kind of {@link AbstractLattice} of the states
+	 * @param <D>       the kind of {@link AbstractDomain} of the analysis
 	 * @param raising   where the raised exception is collected
-	 * @param state     the state of the executions raising the exception
+	 * @param condition the condition under which the exception is raised
+	 * @param surely    whether the executions where the condition holds surely
+	 *                      raise the exception
+	 * @param state     the state of the executions that might raise the
+	 *                      exception
 	 * @param exception the name of the exception
+	 *
+	 * @return the state of the executions where the exception is not raised
 	 *
 	 * @throws SemanticException if the analysis fails
 	 */
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> void raise(
+	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> raiseWhere(
 			PyExceptions.Raising<A, D> raising,
+			SymbolicExpression condition,
+			boolean surely,
 			AnalysisState<A> state,
 			String exception)
 			throws SemanticException {
-		raising.raise(state, getCFG(), getLocation(), st, exception);
+		return raising.raiseWhere(condition, surely, state, this, getCFG(), getLocation(), st, exception);
 	}
 
 	/**

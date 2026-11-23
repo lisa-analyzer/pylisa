@@ -77,7 +77,7 @@ public class IsInstanceBuiltin extends PyNative {
 		else if (maybeTrue || maybeFalse)
 			result = compute(analysis, context, state, new Constant(BoolType.INSTANCE, maybeTrue, loc));
 		if (raises)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 }

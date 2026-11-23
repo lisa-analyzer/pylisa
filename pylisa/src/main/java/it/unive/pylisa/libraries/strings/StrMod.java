@@ -8,7 +8,6 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
-import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
@@ -23,7 +22,6 @@ import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.expression.Unpacking;
 import it.unive.pylisa.cfg.type.PyBytesType;
-import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import it.unive.pylisa.libraries.PyNative;
@@ -96,41 +94,24 @@ public class StrMod extends BinaryExpression implements PluggableStatement {
 				BoolType.INSTANCE, left, right, StringFormatRaises.TYPE_ERROR, loc);
 		it.unive.lisa.symbolic.value.BinaryExpression valueError = new it.unive.lisa.symbolic.value.BinaryExpression(
 				BoolType.INSTANCE, left, right, StringFormatRaises.VALUE_ERROR, loc);
-		Satisfiability raisesTypeError = analysis.satisfies(state, typeError, context, this);
-		Satisfiability raisesValueError = analysis.satisfies(state, valueError, context, this);
-		if ((raisesTypeError != Satisfiability.NOT_SATISFIED || raisesValueError != Satisfiability.NOT_SATISFIED)
-				&& accepted(analysis, context, state, left, right)) {
-			raisesTypeError = Satisfiability.NOT_SATISFIED;
-			raisesValueError = Satisfiability.NOT_SATISFIED;
-		}
-
 		// bytes formats produce bytes
 		Type type = analysis.getRuntimeTypesOf(state, left, context, this).stream()
 				.anyMatch(t -> t instanceof PyBytesType) ? PyBytesType.INSTANCE : StringType.INSTANCE;
 		AnalysisState<A> result = state.bottomExecution();
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		// the formatting succeeds where neither exception is raised, and each
-		// exception is raised exactly where its condition holds
-		if (raisesTypeError != Satisfiability.SATISFIED && raisesValueError != Satisfiability.SATISFIED) {
-			AnalysisState<A> formatting = state;
-			if (raisesTypeError == Satisfiability.UNKNOWN)
-				formatting = ExceptionGuard.unless(analysis, context, formatting, typeError, this);
-			if (raisesValueError == Satisfiability.UNKNOWN)
-				formatting = ExceptionGuard.unless(analysis, context, formatting, valueError, this);
-			if (!formatting.getExecutionState().isBottom())
-				result = result.lub(analysis.smallStepSemantics(formatting,
-						new it.unive.lisa.symbolic.value.BinaryExpression(type, left, right, StringFormat.INSTANCE,
-								loc),
-						context, st));
+		// each exception is raised exactly where its condition holds, and the
+		// formatting succeeds where neither is raised
+		AnalysisState<A> formatting = state;
+		if (!accepted(analysis, context, state, left, right)) {
+			formatting = raising.raiseWhere(typeError, true, formatting, this, getCFG(), loc, st,
+					LibrarySpecificationProvider.TYPE_ERROR);
+			formatting = raising.raiseWhere(valueError, true, formatting, this, getCFG(), loc, st,
+					LibrarySpecificationProvider.VALUE_ERROR);
 		}
-		if (raisesTypeError != Satisfiability.NOT_SATISFIED)
-			raising.raise(raisesTypeError == Satisfiability.SATISFIED ? state
-					: ExceptionGuard.when(analysis, context, state, typeError, this),
-					getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
-		if (raisesValueError != Satisfiability.NOT_SATISFIED)
-			raising.raise(raisesValueError == Satisfiability.SATISFIED ? state
-					: ExceptionGuard.when(analysis, context, state, valueError, this),
-					getCFG(), loc, st, LibrarySpecificationProvider.VALUE_ERROR);
+		if (!formatting.getExecutionState().isBottom())
+			result = result.lub(analysis.smallStepSemantics(formatting,
+					new it.unive.lisa.symbolic.value.BinaryExpression(type, left, right, StringFormat.INSTANCE, loc),
+					context, st));
 		return raising.moveFrom(result);
 	}
 

@@ -75,32 +75,40 @@ public class Reduce extends PyNative {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression iterable : params[1]) {
-			Satisfiability it = Iteration.iterable(analysis, context, state, iterable, st);
+			// the executions where the argument computed this value
+			AnalysisState<A> iterableState = restrictTo(analysis, state, 1, iterable);
+			if (iterableState.getExecutionState().isBottom())
+				continue;
+			Satisfiability it = Iteration.iterable(analysis, context, iterableState, iterable, st);
 			if (it != Satisfiability.SATISFIED)
-				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, iterableState, LibrarySpecificationProvider.TYPE_ERROR);
 			if (it == Satisfiability.NOT_SATISFIED)
 				continue;
 
-			Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, context, st);
+			Set<Type> types = analysis.getRuntimeTypesOf(iterableState, iterable, context, st);
 			boolean list = !types.isEmpty() && types.stream().allMatch(ListModel::isList);
-			Integer length = list ? ListModel.length(analysis, context, state, iterable, st) : null;
+			Integer length = list ? ListModel.length(analysis, context, iterableState, iterable, st) : null;
 			// the number of elements that the iterable surely has
 			int surely = length != null ? length
 					: !list ? 0
-							: Math.max(ListModel.shape(analysis, context, state, iterable, st).prefix(),
-									ListModel.nonEmpty(analysis, context, state, iterable, st) ? 1 : 0);
+							: Math.max(ListModel.shape(analysis, context, iterableState, iterable, st).prefix(),
+									ListModel.nonEmpty(analysis, context, iterableState, iterable, st) ? 1 : 0);
 			for (SymbolicExpression initial : params[2]) {
+				// the executions where the argument computed this value
+				AnalysisState<A> initialState = restrictTo(analysis, iterableState, 2, initial);
+				if (initialState.getExecutionState().isBottom())
+					continue;
 				boolean given = !missing(initial);
 				if (!given && surely == 0)
 					// reduce() of an iterable that might be empty with no
 					// initial value
-					raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+					raise(raising, Satisfiability.UNKNOWN, initialState, LibrarySpecificationProvider.TYPE_ERROR);
 				if (!given && length != null && length == 0)
 					continue;
 
 				// the values of acc: initial, or the first element
-				AnalysisState<A> acc = given ? state.withExecutionExpressions(new ExpressionSet(initial))
-						: Iteration.elements(analysis, context, state, iterableExpr, iterable, st, getMetaVariables(),
+				AnalysisState<A> acc = given ? initialState.withExecutionExpressions(new ExpressionSet(initial))
+						: Iteration.elements(analysis, context, initialState, iterableExpr, iterable, st, getMetaVariables(),
 								raising);
 				if (given || length == null || length != 1)
 					// function is surely called if the iterable surely has an

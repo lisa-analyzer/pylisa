@@ -775,8 +775,6 @@ public final class ListModel {
 		// exceptions are raised where it is not (or where it is not an int)
 		AnalysisState<A> reading = range == null ? state
 				: ExceptionGuard.when(analysis, context, state, range, thrower);
-		boolean surelyNotInt = !types.isEmpty()
-				&& types.stream().noneMatch(t -> ListOperations.INT.test(t) || t.isUntyped());
 
 		if (any && !reading.getExecutionState().isBottom()) {
 			Set<SymbolicExpression> elements = elementsOf(analysis, context, reading, list, listType, thrower);
@@ -798,9 +796,28 @@ public final class ListModel {
 						thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
 		}
 		if (typeError)
-			raising.raise(surelyNotInt ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN, state,
-					thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
+			indexTypeError(state, index, types, thrower, raising);
 		return result;
+	}
+
+	// raises TypeError in the executions where the index, with the given
+	// runtime types, is not an int (under an unknown condition if they are not
+	// known)
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> void indexTypeError(
+			AnalysisState<A> state,
+			SymbolicExpression index,
+			Set<Type> types,
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
+		Set<Type> failing = new HashSet<>();
+		if (types.isEmpty())
+			failing.add(Untyped.INSTANCE);
+		for (Type t : types)
+			if (!ListOperations.INT.test(t))
+				failing.add(t);
+		raising.raiseOfTypes(state, index, failing, types, true, thrower.getCFG(), thrower.getLocation(), thrower,
+				LibrarySpecificationProvider.TYPE_ERROR);
 	}
 
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> element(
@@ -1201,11 +1218,7 @@ public final class ListModel {
 						thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
 		}
 		if (typeError)
-			raising.raise(!types.isEmpty()
-					&& types.stream().noneMatch(t -> ListOperations.INT.test(t) || t.isUntyped())
-							? Satisfiability.SATISFIED
-							: Satisfiability.UNKNOWN,
-					state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.TYPE_ERROR);
+			indexTypeError(state, index, types, thrower, raising);
 		return result;
 	}
 

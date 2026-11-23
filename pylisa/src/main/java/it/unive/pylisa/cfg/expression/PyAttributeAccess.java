@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
@@ -186,9 +187,17 @@ public class PyAttributeAccess extends UnaryExpression {
 		if (onlyMethods && !mightBeAssigned(analysis, context, state, expr))
 			// no instance attribute shadows the method
 			objects.clear();
-		if (isWriteTarget() && objects.removeIf(PyAttributeAccess::noAttributes))
-			// e.g. the attributes of a list cannot be assigned
-			raising.raise(state, getCFG(), loc, thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+		if (isWriteTarget() && objects.removeIf(PyAttributeAccess::noAttributes)) {
+			// e.g. the attributes of a list cannot be assigned: raised where
+			// the object has one of these types
+			Set<Type> failing = new HashSet<>();
+			for (Type t : types)
+				if (t.isPointerType() && t.asPointerType().getInnerType().isUnitType()
+						&& noAttributes(t.asPointerType().getInnerType()))
+					failing.add(t);
+			raising.raiseOfTypes(state, expr, failing, types, true, getCFG(), loc, thrower,
+					LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+		}
 		if (!objects.isEmpty()) {
 			Missing missing = isWriteTarget() ? null : missing(analysis, context, state, expr, objects, false);
 			if (missing == null || missing.assigned()) {
@@ -543,7 +552,7 @@ public class PyAttributeAccess extends UnaryExpression {
 						&& t.asPointerType().getInnerType().asUnitType().getUnit() == cls)
 					ofClass.add(t);
 			if (ofClass.isEmpty())
-				raising.raise(state, getCFG(), getLocation(), thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+				raising.raise(Satisfiability.UNKNOWN, state, getCFG(), getLocation(), thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			else
 				raising.raiseOfTypes(state, expr, ofClass, types, missing.surely(cls), getCFG(), getLocation(), thrower,
 						LibrarySpecificationProvider.ATTRIBUTE_ERROR);

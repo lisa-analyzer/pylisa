@@ -114,7 +114,7 @@ public class PyMinMax extends NaryExpression {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		if (positional == 0 || (hasDefault && positional > 1))
 			// e.g. min(), or min(a, b, default=c)
-			return raising.moveFrom(raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR));
+			return raising.moveFrom(raise(raising, Satisfiability.SATISFIED, state, LibrarySpecificationProvider.TYPE_ERROR));
 		return raising.moveFrom(
 				combinations(analysis, context, raising, state, params, new SymbolicExpression[params.length], 0));
 	}
@@ -134,7 +134,11 @@ public class PyMinMax extends NaryExpression {
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression e : params[pos]) {
 			args[pos] = e;
-			result = result.lub(combinations(analysis, context, raising, state, params, args, pos + 1));
+			// the executions where the argument computed this value, so that
+			// each combination raises its exceptions only in them
+			AnalysisState<A> computing = analysis.restrictTo(state, getSubExpressions()[pos], e);
+			if (!computing.getExecutionState().isBottom())
+				result = result.lub(combinations(analysis, context, raising, computing, params, args, pos + 1));
 		}
 		return result;
 	}
@@ -236,7 +240,7 @@ public class PyMinMax extends NaryExpression {
 			mightError = comparable(all, all) != Satisfiability.SATISFIED;
 		}
 		if (error)
-			return raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			return raise(raising, Satisfiability.SATISFIED, state, LibrarySpecificationProvider.TYPE_ERROR);
 
 		// the result is the value that is not smaller (or greater) than the
 		// others: this refines it when the values are ints (comparisons with
@@ -354,16 +358,6 @@ public class PyMinMax extends NaryExpression {
 			return TUPLE;
 		// e.g. an object of a class of the program
 		return UNKNOWN;
-	}
-
-	// raises the exception in the executions of the given state, that are
-	// moved to the error channel by raising: the result has no normal execution
-	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> raise(
-			PyExceptions.Raising<A, D> raising,
-			AnalysisState<A> state,
-			String exception)
-			throws SemanticException {
-		return raise(raising, Satisfiability.SATISFIED, state, exception);
 	}
 
 	// raises the exception in the executions of the given state where it is

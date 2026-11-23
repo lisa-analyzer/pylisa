@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
@@ -15,6 +16,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.call.Call;
+import it.unive.lisa.program.cfg.statement.call.ResolvedCall;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.language.parameterassignment.ParameterAssigningStrategy;
@@ -184,11 +186,19 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 				interprocedural,
 				call.getCFG(),
 				callState.bottom());
-		if (!matches)
+		if (!matches) {
 			// the arguments do not match the parameters of the callee: python
-			// raises TypeError
-			return Pair.of(PyExceptions.raise(interprocedural.getAnalysis(), context, callState, call.getCFG(),
-					call.getLocation(), call, LibrarySpecificationProvider.TYPE_ERROR), parameters);
+			// raises TypeError, in all the executions only if the callee is
+			// the only target of the call (the state is the one of all the
+			// targets)
+			if (call instanceof ResolvedCall && ((ResolvedCall) call).getTargets().size() == 1)
+				return Pair.of(PyExceptions.raise(analysis, context, callState, call.getCFG(), call.getLocation(), call,
+						LibrarySpecificationProvider.TYPE_ERROR), parameters);
+			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+			raising.raise(Satisfiability.UNKNOWN, callState, call.getCFG(), call.getLocation(), call,
+					LibrarySpecificationProvider.TYPE_ERROR);
+			return Pair.of(raising.moveFrom(callState.bottomExecution()), parameters);
+		}
 
 		Set<Identifier> metas = new HashSet<>();
 		if (varargs[0] != null) {
@@ -291,6 +301,26 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 	 * {@code TypeError} might be raised if the value might not be a dictionary,
 	 * or if a key might not be a {@code str}.
 	 */
+	// raises TypeError where the argument, with the given values and runtime
+	// types, has one of the failing types (under an unknown condition if the
+	// argument has several values, or its types are not known)
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> void raiseOfTypes(
+			AnalysisState<A> state,
+			Call call,
+			CodeLocation loc,
+			ExpressionSet values,
+			Set<Type> failing,
+			Set<Type> types,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
+		if (values.size() == 1 && !types.isEmpty())
+			raising.raiseOfTypes(state, values.iterator().next(), failing, types, true, call.getCFG(), loc, call,
+					LibrarySpecificationProvider.TYPE_ERROR);
+		else
+			raising.raise(Satisfiability.UNKNOWN, state, call.getCFG(), loc, call,
+					LibrarySpecificationProvider.TYPE_ERROR);
+	}
+
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Starred<A, D> doubleStarred(
 			Analysis<A, D> analysis,
 			ScopeId<?> context,
@@ -317,9 +347,14 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			}
 			DoubleStarArgument arg = (DoubleStarArgument) actuals[i];
 			CodeLocation loc = arg.getLocation();
-			if (types[i].isEmpty() || types[i].stream().anyMatch(t -> !DictModel.isDict(t)))
-				// e.g. f(**5)
-				raising.raise(state, call.getCFG(), loc, call, LibrarySpecificationProvider.TYPE_ERROR);
+			if (types[i].isEmpty() || types[i].stream().anyMatch(t -> !DictModel.isDict(t))) {
+				// e.g. f(**5): raised where the argument is not a dictionary
+				Set<Type> failing = new HashSet<>();
+				for (Type t : types[i])
+					if (!DictModel.isDict(t))
+						failing.add(t);
+				raiseOfTypes(state, call, loc, given[i], failing, types[i], raising);
+			}
 			if (types[i].stream().noneMatch(DictModel::isDict))
 				continue;
 			Set<Object> keys = null;
@@ -336,9 +371,16 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			for (Object key : keys)
 				if (key instanceof String)
 					names.add((String) key);
-				else
-					// keywords must be strings
-					raising.raise(state, call.getCFG(), loc, call, LibrarySpecificationProvider.TYPE_ERROR);
+				else {
+					// keywords must be strings: raised where the argument is
+					// a dictionary (whose keys are the ones of all the
+					// dictionaries it might be)
+					Set<Type> dicts = new HashSet<>();
+					for (Type t : types[i])
+						if (DictModel.isDict(t))
+							dicts.add(t);
+					raiseOfTypes(state, call, loc, given[i], dicts, types[i], raising);
+				}
 			Collections.sort(names);
 			for (String name : names) {
 				ExpressionSet value = new ExpressionSet();
@@ -436,7 +478,7 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			}
 			if (filled > 0 || !varargs)
 				// the length might not match the parameters
-				raising.raise(state, call.getCFG(), call.getLocation(), call, LibrarySpecificationProvider.TYPE_ERROR);
+				raising.raise(Satisfiability.UNKNOWN, state, call.getCFG(), call.getLocation(), call, LibrarySpecificationProvider.TYPE_ERROR);
 			if (!varargs)
 				unknown = null;
 		}

@@ -108,10 +108,15 @@ final class StrSearchSemantics {
 
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
+		// the errors of a search are surely raised only if the arguments
+		// surely have the types it accepts (otherwise, a TypeError might be
+		// raised instead)
 		if (isText != Satisfiability.NOT_SATISFIED)
 			result = result.lub(n.typeChecked(state, bounds, bounds == Satisfiability.NOT_SATISFIED
 					? state.bottomExecution()
-					: computed(n, analysis, context, state, value, raiseIfMissing, raising), raising));
+					: computed(n, analysis, context, state, value, raiseIfMissing,
+							isText == Satisfiability.SATISFIED && bounds == Satisfiability.SATISFIED, raising),
+					raising));
 
 		if (isByte != Satisfiability.NOT_SATISFIED) {
 			// a single byte must be between 0 and 255
@@ -121,24 +126,13 @@ final class StrSearchSemantics {
 					new BinaryExpression(BoolType.INSTANCE, sub, new Constant(Int32Type.INSTANCE, 255, loc),
 							ComparisonGt.INSTANCE, loc),
 					LogicalOr.INSTANCE, loc);
-			Satisfiability out = analysis.satisfies(state, outOfRange, context, n);
 			AnalysisState<A> byteResult = state.bottomExecution();
 			if (bounds != Satisfiability.NOT_SATISFIED) {
-				if (out != Satisfiability.SATISFIED) {
-					AnalysisState<A> inRange = out == Satisfiability.UNKNOWN
-							? ExceptionGuard.unless(analysis, context, state, outOfRange, n)
-							: state;
-					if (!inRange.getExecutionState().isBottom())
-						byteResult = byteResult
-								.lub(computed(n, analysis, context, inRange, value, raiseIfMissing, raising));
-				}
-				if (out != Satisfiability.NOT_SATISFIED) {
-					AnalysisState<A> failing = out == Satisfiability.UNKNOWN
-							? ExceptionGuard.when(analysis, context, state, outOfRange, n)
-							: state;
-					if (!failing.getExecutionState().isBottom())
-						n.raise(raising, Satisfiability.SATISFIED, failing, LibrarySpecificationProvider.VALUE_ERROR);
-				}
+				boolean surely = isByte == Satisfiability.SATISFIED && bounds == Satisfiability.SATISFIED;
+				AnalysisState<A> inRange = n.raiseWhere(raising, outOfRange, surely, state,
+						LibrarySpecificationProvider.VALUE_ERROR);
+				if (!inRange.getExecutionState().isBottom())
+					byteResult = computed(n, analysis, context, inRange, value, raiseIfMissing, surely, raising);
 			}
 			result = result.lub(n.typeChecked(state, bounds, byteResult, raising));
 		}
@@ -156,6 +150,7 @@ final class StrSearchSemantics {
 	}
 
 	// the search, raising ValueError if needed when the substring is missing
+	// (surely, if the arguments surely have the types the search accepts)
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> computed(
 			PyNative n,
 			Analysis<A, D> analysis,
@@ -163,6 +158,7 @@ final class StrSearchSemantics {
 			AnalysisState<A> state,
 			SymbolicExpression value,
 			boolean raiseIfMissing,
+			boolean surely,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		if (!raiseIfMissing)
@@ -170,7 +166,7 @@ final class StrSearchSemantics {
 		CodeLocation loc = n.getLocation();
 		BinaryExpression missing = new BinaryExpression(BoolType.INSTANCE, value,
 				new Constant(Int32Type.INSTANCE, -1, loc), ComparisonEq.INSTANCE, loc);
-		return ExceptionGuard.guardedCompute(analysis, context, state, missing,
+		return ExceptionGuard.guardedCompute(analysis, context, state, missing, surely,
 				LibrarySpecificationProvider.VALUE_ERROR,
 				value, n.getCFG(), loc, n.getOriginatingStatement(), n.getOriginatingStatement(), raising);
 	}

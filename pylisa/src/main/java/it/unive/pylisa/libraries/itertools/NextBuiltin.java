@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
@@ -99,10 +100,14 @@ public class NextBuiltin extends PyNative {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression it : params[0]) {
-			Set<Type> types = analysis.getRuntimeTypesOf(state, it, context, st);
+			// the executions where the argument computed this value
+			AnalysisState<A> itState = restrictTo(analysis, state, 0, it);
+			if (itState.getExecutionState().isBottom())
+				continue;
+			Set<Type> types = analysis.getRuntimeTypesOf(itState, it, context, st);
 			if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st)) {
-				result = result.lub(compute(analysis, context, state, new PushAny(Untyped.INSTANCE, loc)));
-				raise(raising, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+				result = result.lub(compute(analysis, context, itState, new PushAny(Untyped.INSTANCE, loc)));
+				raise(raising, Satisfiability.UNKNOWN, itState, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 				continue;
 			}
 			boolean iterators = false, finite = false, notIterators = false, unknown = false;
@@ -110,7 +115,7 @@ public class NextBuiltin extends PyNative {
 				if (iterator(t)) {
 					iterators = true;
 					finite |= !ItertoolsModel.isIterator(t)
-							|| !ItertoolsModel.infinite(analysis, context, state, it, st);
+							|| !ItertoolsModel.infinite(analysis, context, itState, it, st);
 				} else if (notIterator(t))
 					notIterators = true;
 				else
@@ -119,20 +124,20 @@ public class NextBuiltin extends PyNative {
 					unknown = true;
 			if (iterators)
 				result = result.lub(
-						Iteration.elements(interprocedural, state, null, it, st, getMetaVariables(), raising));
+						Iteration.elements(interprocedural, itState, null, it, st, getMetaVariables(), raising));
 			if (unknown) {
-				result = result.lub(compute(analysis, context, state, new PushAny(Untyped.INSTANCE, loc)));
-				raise(raising, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+				result = result.lub(compute(analysis, context, itState, new PushAny(Untyped.INSTANCE, loc)));
+				raise(raising, Satisfiability.UNKNOWN, itState, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 			}
 			if (notIterators)
-				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, itState, LibrarySpecificationProvider.TYPE_ERROR);
 			if (iterators && finite)
 				// the iterator might be exhausted
 				for (SymbolicExpression def : params.length > 1 ? params[1] : new ExpressionSet())
 					if (missing(def))
-						raise(raising, state, LibrarySpecificationProvider.STOP_ITERATION);
+						raise(raising, Satisfiability.UNKNOWN, itState, LibrarySpecificationProvider.STOP_ITERATION);
 					else
-						result = result.lub(compute(analysis, context, state, def));
+						result = result.lub(compute(analysis, context, itState, def));
 		}
 		return raising.moveFrom(result);
 	}

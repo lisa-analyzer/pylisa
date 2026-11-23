@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
@@ -100,8 +101,18 @@ public class ListAdd extends BinaryExpression implements PluggableStatement {
 		AnalysisState<A> result = state.bottomExecution();
 		if (unknown || types.stream().anyMatch(ListOperations.LIST))
 			result = concat(interprocedural, state, left, right, expressions);
-		if (unknown || !types.stream().allMatch(ListOperations.LIST))
-			raising.raise(state, st.getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
+		if (unknown)
+			// e.g. an object whose class defines __radd__
+			raising.raise(Satisfiability.UNKNOWN, state, st.getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
+		else {
+			// a list can only be concatenated to a list
+			Set<Type> failing = new HashSet<>();
+			for (Type t : types)
+				if (!ListOperations.LIST.test(t))
+					failing.add(t);
+			raising.raiseOfTypes(state, right, failing, types, true, st.getCFG(), loc, st,
+					LibrarySpecificationProvider.TYPE_ERROR);
+		}
 		return raising.moveFrom(result);
 	}
 

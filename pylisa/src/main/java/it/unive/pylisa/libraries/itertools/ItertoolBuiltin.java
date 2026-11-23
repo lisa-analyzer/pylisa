@@ -86,7 +86,7 @@ abstract class ItertoolBuiltin extends PyNative {
 		Satisfiability negative = analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, value,
 				new Constant(Int32Type.INSTANCE, 0, loc), ComparisonLt.INSTANCE, loc), context, st);
 		if (negative != Satisfiability.NOT_SATISFIED)
-			raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 	}
 
 	// permutations and combinations (where r might be None, if noneR)

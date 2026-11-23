@@ -98,18 +98,18 @@ public abstract class MathFloatFunction extends PyNative {
 			if (outside != Satisfiability.SATISFIED)
 				result = result.lub(compute(analysis, context, state, new PushAny(Float32Type.INSTANCE, loc)));
 			if (outside != Satisfiability.NOT_SATISFIED)
-				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 			if (integral && analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE,
 					new BinaryExpression(BoolType.INSTANCE, x,
 							new Constant(Int32Type.INSTANCE, Integer.MIN_VALUE, loc), ComparisonGe.INSTANCE, loc),
 					new BinaryExpression(BoolType.INSTANCE, x,
 							new Constant(Int32Type.INSTANCE, Integer.MAX_VALUE, loc), ComparisonLe.INSTANCE, loc),
 					LogicalAnd.INSTANCE, loc), context, this) != Satisfiability.SATISFIED)
-				raise(raising, state, LibrarySpecificationProvider.OVERFLOW_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.OVERFLOW_ERROR);
 		}
 
 		if (notNumber)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		if (object)
 			result = result.lub(unknown(analysis, context, state, null));
 		return raising.moveFrom(result);

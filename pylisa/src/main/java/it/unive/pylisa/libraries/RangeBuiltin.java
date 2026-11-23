@@ -251,10 +251,10 @@ public class RangeBuiltin extends PyNative {
 				result = result.lub(compute(analysis, context, created, ref));
 			}
 			if (zero != Satisfiability.NOT_SATISFIED)
-				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 		}
 		if (typed != Satisfiability.SATISFIED)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 }

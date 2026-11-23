@@ -76,10 +76,10 @@ public class DictUpdate extends PyNative {
 					// an iterable of pairs, whose entries are not known
 					updated = DictModel.anyEntry(analysis, context, state, dict, new PushAny(Untyped.INSTANCE, loc),
 							new PushAny(Untyped.INSTANCE, loc), st);
-					raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
-					raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+					raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
+					raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 				} else
-					raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+					raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 			}
 		}
 		if (!missing(kwargs))

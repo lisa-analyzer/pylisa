@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
@@ -227,6 +228,9 @@ public final class BoundMethods {
 				types[i].addAll(analysis.getRuntimeTypesOf(self, v, context, caller));
 		}
 		Set<Type> selfTypes = types[0];
+		// the method surely does not accept the arguments only if it is the
+		// only function that might be bound
+		boolean single = !unknown && names.size() == 1;
 		unknown |= selfTypes.isEmpty();
 
 		// a location of its own, as the callee might be the result of another
@@ -243,8 +247,14 @@ public final class BoundMethods {
 					result = result.lub(resolved.forwardSemanticsAux(interprocedural, self, actuals, expressions));
 					metas.addAll(resolved.getMetaVariables());
 				} else if (PyBinaryDispatch.fullyKnown(t))
-					// the method does not accept the arguments
-					raising.raise(self, caller.getCFG(), loc, caller, LibrarySpecificationProvider.TYPE_ERROR);
+					// the method does not accept the arguments: raised where
+					// the receiver has this type
+					if (actuals[0].size() == 1)
+						raising.raiseOfTypes(self, actuals[0].iterator().next(), Set.of(t), selfTypes, single,
+								caller.getCFG(), loc, caller, LibrarySpecificationProvider.TYPE_ERROR);
+					else
+						raising.raise(Satisfiability.UNKNOWN, self, caller.getCFG(), loc, caller,
+								LibrarySpecificationProvider.TYPE_ERROR);
 				else
 					unknown = true;
 			}

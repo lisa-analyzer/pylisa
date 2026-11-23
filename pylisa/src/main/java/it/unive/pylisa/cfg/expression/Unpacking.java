@@ -145,7 +145,10 @@ public final class Unpacking {
 		CodeLocation loc = pp.getLocation();
 		Set<Type> types = analysis.getRuntimeTypesOf(state, value, context, pp);
 		AnalysisState<A> result = state.bottomExecution();
-		boolean valueError = false, typeError = false;
+		boolean valueError = false;
+		// the types of the value that raise ValueError (surely, or under an
+		// unknown condition), and TypeError
+		Set<Type> surelyValue = new HashSet<>(), valueFailing = new HashSet<>(), typeFailing = new HashSet<>();
 
 		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, pp)) {
 			valueError = true;
@@ -165,7 +168,7 @@ public final class Unpacking {
 						// are immutable: each element is the one of all of them
 						n = targets.length;
 					if (n == null) {
-						valueError = true;
+						valueFailing.add(t);
 						AnalysisState<A> elements = state.bottomExecution();
 						if (shape.elements() == null)
 							elements = analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context,
@@ -177,13 +180,13 @@ public final class Unpacking {
 						result = result.lub(any(interprocedural, state, elements, targets, star, pp, assigner));
 					} else if (star < 0 ? n != targets.length : n < targets.length - 1)
 						// too many or too few values
-						valueError = true;
+						surelyValue.add(t);
 					else
 						result = result.lub(exact(interprocedural, state, deref, n, targets, star, pp, assigner));
 				} else if (MapBuiltin.isMap(t)) {
 					// the map object might have been iterated already, or have
 					// another number of elements
-					valueError = true;
+					valueFailing.add(t);
 					Set<Identifier> metas = new HashSet<>();
 					MapBuiltin.Positional<A> positional = MapBuiltin.positional(interprocedural, state, value, pp,
 							metas);
@@ -202,11 +205,11 @@ public final class Unpacking {
 								metas), targets, star, pp, assigner);
 					result = result.lub(unpacked.forgetIdentifiers(metas, pp));
 				} else if (DictModel.isDict(t)) {
-					valueError = true;
+					valueFailing.add(t);
 					result = result.lub(any(interprocedural, state, DictModel.keys(analysis, context, state, value, pp),
 							targets, star, pp, assigner));
 				} else if (t.isStringType() || t instanceof PyBytesType) {
-					valueError = true;
+					valueFailing.add(t);
 					Type element = t.isStringType() ? StringType.INSTANCE : Int32Type.INSTANCE;
 					result = result.lub(any(interprocedural, state,
 							analysis.smallStepSemantics(state, new PushAny(element, loc), context, pp), targets, star,
@@ -215,25 +218,26 @@ public final class Unpacking {
 				} else if (t.isCodeMemberType()
 						|| (PyBinaryDispatch.isBuiltinValueType(t) && PyBinaryDispatch.fullyKnown(t)))
 					// e.g. an int, or a function
-					typeError = true;
+					typeFailing.add(t);
 				else {
 					// e.g. an object whose class defines __iter__
-					valueError = true;
+					valueFailing.add(t);
 					result = result.lub(any(interprocedural, state,
 							analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, pp),
 							targets, star,
 							pp, assigner));
 				}
 
-		// an exception is surely raised only if it is the only outcome of the
-		// unpacking, otherwise it is raised under an unknown condition
-		boolean normal = !result.getExecutionState().isBottom();
+		// each exception is raised where the value has the types raising it
 		if (valueError)
-			raising.raise(normal || typeError ? Satisfiability.UNKNOWN : Satisfiability.SATISFIED, state,
-					pp.getCFG(), loc, pp, LibrarySpecificationProvider.VALUE_ERROR);
-		if (typeError)
-			raising.raise(normal || valueError ? Satisfiability.UNKNOWN : Satisfiability.SATISFIED, state,
-					pp.getCFG(), loc, pp, LibrarySpecificationProvider.TYPE_ERROR);
+			// the types of the value are not known
+			raising.raise(Satisfiability.UNKNOWN, state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.VALUE_ERROR);
+		raising.raiseOfTypes(state, value, surelyValue, types, true, pp.getCFG(), loc, pp,
+				LibrarySpecificationProvider.VALUE_ERROR);
+		raising.raiseOfTypes(state, value, valueFailing, types, false, pp.getCFG(), loc, pp,
+				LibrarySpecificationProvider.VALUE_ERROR);
+		raising.raiseOfTypes(state, value, typeFailing, types, true, pp.getCFG(), loc, pp,
+				LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 

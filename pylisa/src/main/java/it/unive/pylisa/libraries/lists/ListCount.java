@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -89,14 +90,14 @@ public class ListCount extends PyNative {
 				compared.addAll(analysis.getRuntimeTypesOf(state, element, context, this));
 		if (compared.isEmpty() || compared.stream().anyMatch(t -> t.isUntyped()
 				|| (!PyBinaryDispatch.isBuiltinValueType(t) && !PyBinaryDispatch.fullyKnown(t))))
-			raise(raising, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 		if (index)
 			// x might not be in the list (or in the given range)
-			raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 		for (int i = 2; i < args.length; i++)
 			if (!missing(args[i]) && analysis.getRuntimeTypesOf(state, args[i], context, this).stream()
 					.anyMatch(t -> !INT.test(t) && !t.isNullType()))
-				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 
 		// count: 0 <= result <= len, index: 0 <= result < len
 		Variable result = new Variable(Int32Type.INSTANCE, "$" + getConstructName() + "@" + loc.getCodeLocation(),

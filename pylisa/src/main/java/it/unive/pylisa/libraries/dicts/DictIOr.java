@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
@@ -83,7 +84,7 @@ public class DictIOr extends BinaryExpression implements PluggableStatement {
 		else {
 			// e.g. a list of pairs: any entry, or TypeError
 			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-			raising.raise(state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
+			raising.raise(Satisfiability.UNKNOWN, state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
 			result = raising
 					.moveFrom(DictModel.anyEntry(analysis, context, state, left, new PushAny(Untyped.INSTANCE, loc),
 							new PushAny(Untyped.INSTANCE, loc), st));

@@ -85,7 +85,7 @@ public class TupleBuiltin extends PyNative {
 			}
 		}
 		if (it != Satisfiability.SATISFIED)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 }

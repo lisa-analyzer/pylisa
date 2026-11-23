@@ -72,7 +72,7 @@ public class RandomRandrange extends PyNative {
 			Set<Type> types = analysis.getRuntimeTypesOf(state, arg, context, this);
 			boolean unknown = types.isEmpty() || types.stream().anyMatch(Type::isUntyped);
 			if (unknown || types.stream().anyMatch(t -> !INT.test(t) && PyBinaryDispatch.isBuiltinValueType(t)))
-				raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 			if (unknown || types.stream().anyMatch(t -> !PyBinaryDispatch.isBuiltinValueType(t)))
 				object = true;
 		}
@@ -91,7 +91,7 @@ public class RandomRandrange extends PyNative {
 						loc);
 				Satisfiability sat = analysis.satisfies(state, nonEmpty, context, this);
 				if (sat != Satisfiability.SATISFIED)
-					raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+					raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 				if (sat != Satisfiability.NOT_SATISFIED)
 					// low <= element < high
 					result = analysis.assume(chosen, new BinaryExpression(BoolType.INSTANCE,
@@ -99,7 +99,7 @@ public class RandomRandrange extends PyNative {
 							new BinaryExpression(BoolType.INSTANCE, element, high, ComparisonLt.INSTANCE, loc),
 							LogicalAnd.INSTANCE, loc), context, this, this);
 			} else {
-				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 				result = chosen;
 			}
 			if (!result.getExecutionState().isBottom()) {

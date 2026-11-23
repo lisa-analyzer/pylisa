@@ -76,7 +76,7 @@ public class BytesContains extends PyNative {
 		if (isBytes != Satisfiability.NOT_SATISFIED)
 			result = result.lub(compute(analysis, context, state, contains));
 		if (isInt != Satisfiability.SATISFIED && isBytes != Satisfiability.SATISFIED)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 }

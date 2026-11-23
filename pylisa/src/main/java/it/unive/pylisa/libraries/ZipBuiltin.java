@@ -115,7 +115,7 @@ public class ZipBuiltin extends PyNative {
 			created = compute(analysis, context, created, zip);
 			if (analysis.satisfies(state, strict, context, st) != Satisfiability.NOT_SATISFIED)
 				// strict, with iterables of different lengths
-				raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 		}
 		return raising.moveFrom(typeChecked(state, typed, created, raising));
 	}

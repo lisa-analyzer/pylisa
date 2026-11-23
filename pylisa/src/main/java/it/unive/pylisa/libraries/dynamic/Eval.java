@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -47,7 +48,7 @@ public class Eval extends PyNative {
 		// through an assignment expression), also when it raises an exception
 		AnalysisState<A> havocked = havocGlobals(analysis, context, state, args[1]);
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		raise(raising, havocked, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+		raise(raising, Satisfiability.UNKNOWN, havocked, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 		return raising.moveFrom(unknown(analysis, context, havocked, null));
 	}
 }

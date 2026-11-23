@@ -84,7 +84,7 @@ public class NamedTupleBuiltin extends PyNative {
 		if (name == null || !valid(name) || fields == null || !plain) {
 			// the class is not known
 			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-			raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 			return raising.moveFrom(compute(analysis, context, state, new PushAny(Untyped.INSTANCE, loc)));
 		}
 		NamedTupleClassType type = new NamedTupleClassType(name, fields, loc);

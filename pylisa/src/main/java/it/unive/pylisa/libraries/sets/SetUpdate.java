@@ -54,7 +54,7 @@ public class SetUpdate extends PyNative {
 		java.util.List<SymbolicExpression> iterables = ListModel.exactElements(analysis, context, state, others, st);
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		if (iterables == null) {
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 			return raising.moveFrom(compute(analysis, context, SetModel.invalidate(analysis, context, state, self, st),
 					new PyNoneConstant(getLocation())));
 		}
@@ -76,7 +76,7 @@ public class SetUpdate extends PyNative {
 		}
 		AnalysisState<A> result = compute(analysis, context, current, new PyNoneConstant(getLocation()));
 		if (typeError)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 }

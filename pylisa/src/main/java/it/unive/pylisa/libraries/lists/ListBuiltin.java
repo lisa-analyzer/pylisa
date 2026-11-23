@@ -109,7 +109,7 @@ public class ListBuiltin extends PyNative {
 			}
 		}
 		if (copy && iterable != Satisfiability.SATISFIED)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		getMetaVariables().addAll(creation.getMetaVariables());
 		return raising.moveFrom(result);
 	}

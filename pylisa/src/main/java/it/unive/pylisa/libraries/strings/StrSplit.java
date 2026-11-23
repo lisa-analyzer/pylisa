@@ -120,7 +120,7 @@ public class StrSplit extends PyNative {
 			result = result.lub(split);
 		}
 		if (empty != Satisfiability.NOT_SATISFIED)
-			raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 		return raising.moveFrom(typeChecked(state, typed, result, raising));
 	}
 }

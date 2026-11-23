@@ -6,6 +6,7 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
@@ -156,7 +157,7 @@ public class PyNameCall extends UnresolvedCall {
 		if (!decorated(getProgram(), getTargetName()))
 			return result;
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		raising.raise(state, getCFG(), getLocation(), this, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+		raising.raise(Satisfiability.UNKNOWN, state, getCFG(), getLocation(), this, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 		return result
 				.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()), context, this));
 	}

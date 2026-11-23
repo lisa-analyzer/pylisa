@@ -5,6 +5,7 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
@@ -103,9 +104,9 @@ public class Sum extends PyNative {
 		if (starts.isEmpty() || !starts.stream().allMatch(Sum::number)) {
 			// e.g. sum(lists, []): the additions are not executed
 			result = result.lub(unknown(analysis, context, state, Untyped.INSTANCE));
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 			if (starts.isEmpty() || starts.stream().anyMatch(Sum::object) || elements.stream().anyMatch(Sum::object))
-				raise(raising, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 			return raising.moveFrom(result);
 		}
 
@@ -131,11 +132,11 @@ public class Sum extends PyNative {
 				result = result.lub(unknown(analysis, context, state, Int32Type.INSTANCE));
 		}
 		if (elements.stream().anyMatch(Sum::notAddable))
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		if (elements.isEmpty() || elements.stream().anyMatch(Sum::object)) {
 			// e.g. an object whose class defines __radd__
 			result = result.lub(unknown(analysis, context, state, Untyped.INSTANCE));
-			raise(raising, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 		}
 		return raising.moveFrom(result);
 	}

@@ -111,7 +111,7 @@ public class DictBuiltin extends PyNative {
 						// a dictionary, or another iterable
 						filled = filled.lub(DictModel.unpackInto(analysis, context, state, dict, iterable, st, true));
 					if (it != Satisfiability.SATISFIED)
-						raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+						raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 				}
 			}
 			if (!missing(kwargs))
@@ -173,9 +173,9 @@ public class DictBuiltin extends PyNative {
 		}
 		if (unknown)
 			// e.g. a str, whose length is not known, or an object
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		if (unknown || wrongLength)
-			raise(raising, state, LibrarySpecificationProvider.VALUE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 		return current;
 	}
 }

@@ -70,7 +70,7 @@ public class SetBuiltin extends PyNative {
 			result = SetModel.create(analysis, context, elements, st, loc, List.of(elements), getMetaVariables());
 		}
 		if (it != Satisfiability.SATISFIED)
-			raise(raising, state, LibrarySpecificationProvider.TYPE_ERROR);
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 }

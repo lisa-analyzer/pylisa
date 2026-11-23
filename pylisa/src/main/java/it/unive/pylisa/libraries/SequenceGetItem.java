@@ -28,6 +28,7 @@ import it.unive.lisa.symbolic.value.operator.binary.LogicalOr;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
@@ -109,34 +110,40 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			anyPointer = true;
 			Type inner = t.asPointerType().getInnerType();
 			HeapDereference deref = new HeapDereference(inner, left, loc);
+			// the executions where the sequence has this type (the type of a
+			// reference can be told apart from the other ones, see
+			// PyBinaryDispatch.checkable)
+			AnalysisState<A> typed = PyBinaryDispatch.ofType(analysis, context, state, left, t, rts, this);
+			if (typed.getExecutionState().isBottom())
+				continue;
 
 			if (inner.canBeAssignedTo(tupleType)) {
-				Satisfiability integral = hasInt(analysis, context, state, right);
+				Satisfiability integral = hasInt(analysis, context, typed, right);
 				if (integral != Satisfiability.NOT_SATISFIED)
-					result = result.lub(readWithBoundsCheck(analysis, context, state, deref, right, loc, raising));
+					result = result.lub(readWithBoundsCheck(analysis, context, typed, deref, right, loc,
+							integral == Satisfiability.SATISFIED, raising));
 				if (integral != Satisfiability.SATISFIED)
 					// the index of a tuple must be an int (when its type is
 					// not known, the error is raised under an unknown
 					// condition)
-					raising.raise(integral == Satisfiability.NOT_SATISFIED ? state
-							: ExceptionGuard.maybe(analysis, context, state, this),
-							getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
+					raising.raise(integral == Satisfiability.NOT_SATISFIED ? Satisfiability.SATISFIED
+							: Satisfiability.UNKNOWN, typed, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
 			} else if (ListModel.isList(t)) {
 				// the index might be both a slice and something else (e.g. if
 				// it is unknown)
-				Set<Type> indexTypes = analysis.getRuntimeTypesOf(state, right, context, this);
+				Set<Type> indexTypes = analysis.getRuntimeTypesOf(typed, right, context, this);
 				if (indexTypes.stream().anyMatch(ListModel::isSlice))
 					// lst[start:stop:step]
-					result = result.lub(ListModel.slice(interprocedural, state, left, right, this, st, raising));
+					result = result.lub(ListModel.slice(interprocedural, typed, left, right, this, st, raising));
 				if (indexTypes.isEmpty() || !indexTypes.stream().allMatch(ListModel::isSlice))
 					// bounds and index checked on the elements of the list
-					result = result.lub(ListModel.read(analysis, context, state, left, right, st, raising));
+					result = result.lub(ListModel.read(analysis, context, typed, left, right, st, raising));
 			} else if (DictModel.isDict(t))
 				// the entries of the dictionary
-				result = result.lub(DictModel.read(analysis, context, state, left, right, st, raising));
+				result = result.lub(DictModel.read(analysis, context, typed, left, right, st, raising));
 			else {
 				AccessChild access = new AccessChild(Untyped.INSTANCE, deref, right, loc);
-				result = result.lub(analysis.smallStepSemantics(state, access, context, st));
+				result = result.lub(analysis.smallStepSemantics(typed, access, context, st));
 			}
 		}
 		if (!anyPointer) {
@@ -155,6 +162,7 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			HeapDereference deref,
 			SymbolicExpression index,
 			CodeLocation loc,
+			boolean surely,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
 		GlobalVariable lenKey = new GlobalVariable(Int32Type.INSTANCE, "length", loc);
@@ -177,24 +185,13 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			it.unive.lisa.symbolic.value.BinaryExpression outOfRange = new it.unive.lisa.symbolic.value.BinaryExpression(
 					BoolType.INSTANCE, tooLow, tooHigh, LogicalOr.INSTANCE, loc);
 
-			Satisfiability sat = analysis.satisfies(lenState, outOfRange, context, this);
-
-			if (sat != Satisfiability.SATISFIED) {
-				AnalysisState<A> reading = sat == Satisfiability.UNKNOWN
-						? ExceptionGuard.unless(analysis, context, lenState, outOfRange, this)
-						: lenState;
-				if (!reading.getExecutionState().isBottom()) {
-					AccessChild access = new AccessChild(Untyped.INSTANCE, deref, index, loc);
-					result = result.lub(analysis.smallStepSemantics(reading, access, context, st));
-				}
-			}
-			if (sat != Satisfiability.NOT_SATISFIED) {
-				AnalysisState<A> failing = sat == Satisfiability.UNKNOWN
-						? ExceptionGuard.when(analysis, context, lenState, outOfRange, this)
-						: lenState;
-				if (!failing.getExecutionState().isBottom())
-					raising.raise(Satisfiability.SATISFIED, failing, getCFG(), loc, st,
-							LibrarySpecificationProvider.INDEX_ERROR);
+			// the index is out of range only if it is an int: otherwise, the
+			// error is not surely an IndexError
+			AnalysisState<A> reading = raising.raiseWhere(outOfRange, surely, lenState, this, getCFG(), loc, st,
+					LibrarySpecificationProvider.INDEX_ERROR);
+			if (!reading.getExecutionState().isBottom()) {
+				AccessChild access = new AccessChild(Untyped.INSTANCE, deref, index, loc);
+				result = result.lub(analysis.smallStepSemantics(reading, access, context, st));
 			}
 		}
 
