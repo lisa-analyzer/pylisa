@@ -188,14 +188,14 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		if (op instanceof TrueDivision)
 			return trueDivision(left, right, expression);
 		if (op instanceof FloorDivision)
-			return numeric(expression, left, right, PyExpressionEncoder::floorDiv,
+			return numeric("floordiv", expression, left, right, PyExpressionEncoder::floorDiv,
 					(
 							l,
 							r) -> getSymbols().evaluable("$py.floordiv", Sort.FLOAT64, List.of(l, r),
 									args -> floorDiv(args.get(0).doubleValue(), args.get(1).doubleValue()),
 									expression));
 		if (op instanceof Modulo)
-			return numeric(expression, left, right, PyExpressionEncoder::mod,
+			return numeric("mod", expression, left, right, PyExpressionEncoder::mod,
 					(
 							l,
 							r) -> getSymbols().evaluable("$py.mod", Sort.FLOAT64, List.of(l, r),
@@ -212,7 +212,9 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			String smt = op instanceof AdditionOperator ? "+" : op instanceof SubtractionOperator ? "-" : "*";
 			String fp = op instanceof AdditionOperator ? "fp.add"
 					: op instanceof SubtractionOperator ? "fp.sub" : "fp.mul";
-			return numeric(expression, left, right, (
+			String function = op instanceof AdditionOperator ? "add"
+					: op instanceof SubtractionOperator ? "sub" : "mul";
+			return numeric(function, expression, left, right, (
 					l,
 					r) -> Term.app(smt, Sort.INT, l, r),
 					(
@@ -236,11 +238,11 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		if (op instanceof IsNot)
 			return Term.not(identity(left, right, expression));
 		if (op instanceof IsInstance)
-			return isInstance(left, expression);
+			return isInstance(left, right, expression);
 		if (op instanceof NotIsInstance)
-			return Term.not(isInstance(left, expression));
+			return Term.not(isInstance(left, right, expression));
 		if (op instanceof ToInt)
-			return toPyInt(left, expression);
+			return toPyInt(left, right, expression);
 		if (op instanceof StrGetItem)
 			return strGetItem(left, right, expression);
 		if (op instanceof StringMult)
@@ -431,9 +433,11 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	 * is the given operation over integers, and between numbers of which one is
 	 * a float, it is the given operation over 64-bits floating point numbers,
 	 * the ints being converted to floats. The operands are required to be
-	 * numbers.
+	 * numbers. Over other values, the result is an unknown function of the
+	 * operands, specific to the given operation.
 	 */
 	private Term numeric(
+			String function,
 			ValueExpression expression,
 			Term left,
 			Term right,
@@ -452,7 +456,7 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		if (!getSorts().encodesFloats()) {
 			// floating point numbers are not encoded: only ints are precise
 			Term result = ints.apply(asInteger(left), asInteger(right));
-			return values ? when(bothInts, ValueSort.wrap(result), "numeric", List.of(wrap(left), wrap(right)),
+			return values ? when(bothInts, ValueSort.wrap(result), function, List.of(wrap(left), wrap(right)),
 					expression) : result;
 		}
 		if (!values)
@@ -464,7 +468,7 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		Term numbers = Term.and(Term.or(isInteger(left), isFloat(left)), Term.or(isInteger(right), isFloat(right)));
 		Term result = Term.ite(bothInts, ValueSort.wrap(ints.apply(asInteger(left), asInteger(right))),
 				ValueSort.wrap(fp));
-		return when(numbers, result, "numeric", List.of(wrap(left), wrap(right)), expression);
+		return when(numbers, result, function, List.of(wrap(left), wrap(right)), expression);
 	}
 
 	private static Term wrap(
@@ -642,7 +646,7 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 				&& !(((Constant) exponent).getValue() instanceof Double)) {
 			long k = ((Number) ((Constant) exponent).getValue()).longValue();
 			if (k >= 0 && k <= 64)
-				return numeric(expression, left, right, (
+				return numeric("pow", expression, left, right, (
 						l,
 						r) -> {
 					Term result = Term.integer(1);
@@ -654,7 +658,7 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 						r) -> getSymbols().evaluable("$py.pow", Sort.FLOAT64, List.of(l, r),
 								args -> pow(args.get(0).doubleValue(), args.get(1).doubleValue()), expression));
 		}
-		return numeric(expression, left, right,
+		return numeric("pow", expression, left, right,
 				(
 						l,
 						r) -> unknown("pow", Sort.INT, List.of(l, r), expression,
@@ -813,25 +817,28 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	 * have a sort of their own ({@code int}, of which {@code bool} is a
 	 * subclass, {@code bool}, {@code float}, {@code str} and {@code NoneType});
 	 * any other class (or tuple of classes) yields an unknown function of the
-	 * value.
+	 * value and the class.
 	 */
 	private Term isInstance(
 			Term value,
+			Term cls,
 			BinaryExpression expression) {
-		String cls = className(expression.getRight());
-		if (cls != null) {
-			if (cls.equals(LibrarySpecificationProvider.INT))
+		String name = className(expression.getRight());
+		if (name != null) {
+			if (name.equals(LibrarySpecificationProvider.INT))
 				return isInteger(value);
-			if (cls.equals(LibrarySpecificationProvider.BOOL))
+			if (name.equals(LibrarySpecificationProvider.BOOL))
 				return is(value, Sort.BOOL);
-			if (cls.equals(LibrarySpecificationProvider.STR))
+			if (name.equals(LibrarySpecificationProvider.STR))
 				return is(value, Sort.STRING);
-			if (cls.equals(LibrarySpecificationProvider.FLOAT))
+			if (name.equals(LibrarySpecificationProvider.FLOAT))
 				return isFloat(value);
-			if (cls.equals(LibrarySpecificationProvider.NONE_TYPE))
+			if (name.equals(LibrarySpecificationProvider.NONE_TYPE))
 				return isValue(value) ? isNone(value) : Term.FALSE;
+			// a test against a known class
+			return unknown("isinstance " + name, Sort.BOOL, List.of(wrap(value)), expression, Term.FALSE);
 		}
-		return unknown("isinstance", Sort.BOOL, List.of(wrap(value)), expression, Term.FALSE);
+		return unknown("isinstance", Sort.BOOL, List.of(wrap(value), wrap(cls)), expression, Term.FALSE);
 	}
 
 	/**
@@ -969,10 +976,11 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	 */
 	private Term toPyInt(
 			Term t,
+			Term base,
 			BinaryExpression expression) {
 		if (!(expression.getRight() instanceof PyNoneConstant))
 			// a base is given
-			return unknown("int.base", Sort.INT, List.of(wrap(t)), expression, Term.FALSE);
+			return unknown("int.base", Sort.INT, List.of(wrap(t), wrap(base)), expression, Term.FALSE);
 		Cases cases = new Cases().add(isInteger(t), asInteger(t));
 		if (getSorts().encodesFloats() && (isValue(t) || t.getSort().isFloatingPoint())) {
 			Term fp = asFloatIf(isFloat(t), t, expression);

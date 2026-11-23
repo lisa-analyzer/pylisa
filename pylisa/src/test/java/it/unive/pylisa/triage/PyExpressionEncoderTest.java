@@ -41,6 +41,7 @@ import it.unive.pylisa.symbolic.operators.StringConstructor;
 import it.unive.pylisa.symbolic.operators.StringMult;
 import it.unive.pylisa.symbolic.operators.TrueDivision;
 import it.unive.pylisa.symbolic.operators.compare.Is;
+import it.unive.pylisa.symbolic.operators.compare.IsInstance;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonGe;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonGt;
 import it.unive.pylisa.symbolic.operators.compare.PyComparisonLe;
@@ -52,7 +53,9 @@ import it.unive.pylisa.symbolic.operators.conversions.ToRepr;
 import it.unive.pylisa.symbolic.operators.strings.StrGetItem;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -89,6 +92,11 @@ public class PyExpressionEncoderTest {
 
 		private final java.util.Map<Identifier, Term> constants = new HashMap<>();
 
+		/**
+		 * The unknown functions applied, with the sorts of their arguments.
+		 */
+		private final Set<String> applied = new HashSet<>();
+
 		@Override
 		public Term constant(
 				Identifier id,
@@ -111,6 +119,20 @@ public class PyExpressionEncoderTest {
 				Term guard) {
 			guards.add(guard);
 			return solver.declare("fresh#" + (counter++), sort);
+		}
+
+		@Override
+		public Term apply(
+				String function,
+				Sort result,
+				List<Term> arguments,
+				SymbolicExpression origin,
+				Term guard) {
+			List<Sort> sorts = new ArrayList<>();
+			for (Term arg : arguments)
+				sorts.add(arg.getSort());
+			applied.add(function + sorts);
+			return fresh(result, origin, guard);
 		}
 
 		@Override
@@ -396,6 +418,42 @@ public class PyExpressionEncoderTest {
 		check("truediv", 9007199254740993L, 1, 9007199254740992.0d, false);
 		check("repr", "x", null, "'x'", false);
 		check("eq", 9007199254740993L, 9007199254740992.0d, false, false);
+	}
+
+	/**
+	 * Yields the unknown functions applied by the encoding of the given
+	 * operation over values of unknown kinds.
+	 */
+	private static Set<String> applied(
+			SymbolicExpression expression)
+			throws SemanticException {
+		Symbols symbols = new Symbols();
+		PyExpressionEncoder encoder = new PyExpressionEncoder(new SortPolicy(new HashMap<>()).withDoubleFloats(),
+				symbols);
+		expression.accept(encoder);
+		return symbols.applied;
+	}
+
+	@Test
+	public void unknownFunctionsAreSpecificToTheOperation() throws SemanticException {
+		// unknown functions are identified by their name and sorts: different
+		// operations over the same operands must not be forced to be equal
+		Variable a = new Variable(Untyped.INSTANCE, "a", LOC);
+		Variable b = new Variable(Untyped.INSTANCE, "b", LOC);
+		Set<String> seen = new HashSet<>();
+		for (String op : List.of("add", "sub", "mul", "floordiv", "mod", "truediv"))
+			for (String function : applied(expression(op, a, b)))
+				assertTrue(op + " shares the unknown function " + function, seen.add(function));
+		// the class of isinstance and the base of int are arguments
+		Variable c = new Variable(Untyped.INSTANCE, "c", LOC);
+		for (BinaryExpression e : List.of(
+				new BinaryExpression(BoolType.INSTANCE, a, c, IsInstance.INSTANCE, LOC),
+				new BinaryExpression(Int32Type.INSTANCE, a, c, ToInt.INSTANCE, LOC))) {
+			Set<String> functions = applied(e);
+			assertEquals(e + " applies " + functions, 1, functions.size());
+			String function = functions.iterator().next();
+			assertTrue(e + " applies " + function, function.endsWith("[" + ValueSort.SORT + ", " + ValueSort.SORT + "]"));
+		}
 	}
 
 	@Test
