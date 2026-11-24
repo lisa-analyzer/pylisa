@@ -86,7 +86,7 @@ public class SortedBuiltin extends PyNative {
 		Expression[] subs = getSubExpressions();
 		for (SymbolicExpression key : params[1]) {
 			// the executions where the argument computed this value
-			AnalysisState<A> keyState = restrictTo(analysis, created, 1, key);
+			AnalysisState<A> keyState = restrictTo(interprocedural, created, null, key);
 			if (keyState.getExecutionState().isBottom())
 				continue;
 			if (hasType(analysis, context, keyState, key, NONE) == Satisfiability.SATISFIED)
@@ -96,7 +96,7 @@ public class SortedBuiltin extends PyNative {
 				raise(raising, Satisfiability.UNKNOWN, keyState, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
 			for (SymbolicExpression iterable : params[0]) {
 				// the executions where the argument computed this value
-				AnalysisState<A> iterableState = restrictTo(analysis, keyState, 0, iterable);
+				AnalysisState<A> iterableState = restrictTo(interprocedural, keyState, iterable);
 				if (iterableState.getExecutionState().isBottom())
 					continue;
 				if (Iteration.iterable(analysis, context, iterableState, iterable, st) == Satisfiability.NOT_SATISFIED)

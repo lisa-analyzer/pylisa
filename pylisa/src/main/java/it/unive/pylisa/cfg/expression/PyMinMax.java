@@ -116,29 +116,33 @@ public class PyMinMax extends NaryExpression {
 			// e.g. min(), or min(a, b, default=c)
 			return raising.moveFrom(raise(raising, Satisfiability.SATISFIED, state, LibrarySpecificationProvider.TYPE_ERROR));
 		return raising.moveFrom(
-				combinations(analysis, context, raising, state, params, new SymbolicExpression[params.length], 0));
+				combinations(interprocedural, raising, state, params, new SymbolicExpression[params.length], 0));
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> combinations(
-			Analysis<A, D> analysis,
-			ScopeId<?> context,
+			InterproceduralAnalysis<A, D> interprocedural,
 			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
 			SymbolicExpression[] args,
 			int pos)
 			throws SemanticException {
-		if (pos == params.length)
-			return positional == 1 ? ofIterable(analysis, context, raising, state, args[0], hasDefault ? args[1] : null)
-					: ofValues(analysis, context, raising, state, List.of(args), true);
+		if (pos == params.length) {
+			// the executions where the arguments computed these values, so
+			// that each combination raises its exceptions only in them
+			AnalysisState<A> computing = restrictTo(interprocedural, state, args);
+			if (computing.getExecutionState().isBottom())
+				return computing.bottomExecution();
+			Analysis<A, D> analysis = interprocedural.getAnalysis();
+			ScopeId<A> context = interprocedural.getCurrentContext();
+			return positional == 1
+					? ofIterable(analysis, context, raising, computing, args[0], hasDefault ? args[1] : null)
+					: ofValues(analysis, context, raising, computing, List.of(args), true);
+		}
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression e : params[pos]) {
 			args[pos] = e;
-			// the executions where the argument computed this value, so that
-			// each combination raises its exceptions only in them
-			AnalysisState<A> computing = analysis.restrictTo(state, getSubExpressions()[pos], e);
-			if (!computing.getExecutionState().isBottom())
-				result = result.lub(combinations(analysis, context, raising, computing, params, args, pos + 1));
+			result = result.lub(combinations(interprocedural, raising, state, params, args, pos + 1));
 		}
 		return result;
 	}

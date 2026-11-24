@@ -89,63 +89,33 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		return combinations(interprocedural.getAnalysis(), interprocedural.getCurrentContext(), state, params,
-				new SymbolicExpression[params.length], 0);
+		return combinations(interprocedural, state, params, new SymbolicExpression[params.length], 0);
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> combinations(
-			Analysis<A, D> analysis,
-			ScopeId<?> context,
+			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
 			SymbolicExpression[] args,
 			int pos)
 			throws SemanticException {
-		if (pos == params.length)
-			return semantics(analysis, context, state, args.clone());
+		if (pos == params.length) {
+			// the executions where the arguments computed these values, so
+			// that each combination is evaluated (and raises its exceptions)
+			// only in the executions computing it (e.g. in ord(a if c else
+			// b))
+			AnalysisState<A> computing = restrictTo(interprocedural, state, args);
+			if (args.length > 0 && computing.getExecutionState().isBottom())
+				return computing.bottomExecution();
+			return semantics(interprocedural.getAnalysis(), interprocedural.getCurrentContext(), computing,
+					args.clone());
+		}
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression e : params[pos]) {
 			args[pos] = e;
-			// the executions where the argument computed this value, so that
-			// each combination is evaluated (and raises its exceptions) only
-			// in the executions computing it (e.g. in ord(a if c else b))
-			AnalysisState<A> computing = restrictTo(analysis, state, pos, e);
-			if (!computing.getExecutionState().isBottom())
-				result = result.lub(combinations(analysis, context, computing, params, args, pos + 1));
+			result = result.lub(combinations(interprocedural, state, params, args, pos + 1));
 		}
 		return result;
-	}
-
-	/**
-	 * Yields the executions of the given state where the argument at the given
-	 * position computed the given value (see
-	 * {@link Analysis#restrictTo(AnalysisState, it.unive.lisa.program.cfg.ProgramPoint, SymbolicExpression)}),
-	 * as the statements of lisa do for their operands: natives evaluating the
-	 * combinations of the values of their arguments by themselves (instead of
-	 * through {@link #semantics}) restrict the state with this.
-	 *
-	 * @param <A>      the kind of {@link AbstractLattice} of the state
-	 * @param <D>      the kind of {@link AbstractDomain} of the analysis
-	 * @param analysis the analysis
-	 * @param state    the state
-	 * @param pos      the position of the argument
-	 * @param value    the value of the argument
-	 *
-	 * @return the executions where the argument computed the value
-	 *
-	 * @throws SemanticException if the analysis fails
-	 */
-	protected <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> restrictTo(
-			Analysis<A, D> analysis,
-			AnalysisState<A> state,
-			int pos,
-			SymbolicExpression value)
-			throws SemanticException {
-		Expression[] subs = getSubExpressions();
-		if (pos >= subs.length)
-			// e.g. a default value of a missing argument
-			return state;
-		return analysis.restrictTo(state, subs[pos], value);
 	}
 
 	/**

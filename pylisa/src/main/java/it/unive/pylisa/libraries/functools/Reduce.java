@@ -76,7 +76,7 @@ public class Reduce extends PyNative {
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression iterable : params[1]) {
 			// the executions where the argument computed this value
-			AnalysisState<A> iterableState = restrictTo(analysis, state, 1, iterable);
+			AnalysisState<A> iterableState = restrictTo(interprocedural, state, null, iterable);
 			if (iterableState.getExecutionState().isBottom())
 				continue;
 			Satisfiability it = Iteration.iterable(analysis, context, iterableState, iterable, st);
@@ -95,7 +95,7 @@ public class Reduce extends PyNative {
 									ListModel.nonEmpty(analysis, context, iterableState, iterable, st) ? 1 : 0);
 			for (SymbolicExpression initial : params[2]) {
 				// the executions where the argument computed this value
-				AnalysisState<A> initialState = restrictTo(analysis, iterableState, 2, initial);
+				AnalysisState<A> initialState = restrictTo(interprocedural, iterableState, null, null, initial);
 				if (initialState.getExecutionState().isBottom())
 					continue;
 				boolean given = !missing(initial);

@@ -101,7 +101,7 @@ public class NextBuiltin extends PyNative {
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression it : params[0]) {
 			// the executions where the argument computed this value
-			AnalysisState<A> itState = restrictTo(analysis, state, 0, it);
+			AnalysisState<A> itState = restrictTo(interprocedural, state, it);
 			if (itState.getExecutionState().isBottom())
 				continue;
 			Set<Type> types = analysis.getRuntimeTypesOf(itState, it, context, st);

@@ -87,11 +87,10 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 
 		AnalysisState<A> result = state.bottomExecution();
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		Expression[] subs = getSubExpressions();
 		for (SymbolicExpression self : params[0]) {
 			// each combination of the operands is evaluated in the executions
 			// computing it, as the statements of lisa do
-			AnalysisState<A> selfState = analysis.restrictTo(state, subs[0], self);
+			AnalysisState<A> selfState = restrictTo(interprocedural, state, self);
 			if (selfState.getExecutionState().isBottom())
 				continue;
 			Set<Type> rts = analysis.getRuntimeTypesOf(selfState, self, context, this);
@@ -115,9 +114,9 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 					continue;
 
 				for (SymbolicExpression index : params[1]) {
-					AnalysisState<A> indexState = analysis.restrictTo(typed, subs[1], index);
+					AnalysisState<A> indexState = restrictTo(interprocedural, typed, null, index);
 					for (SymbolicExpression value : params[2]) {
-						AnalysisState<A> combination = analysis.restrictTo(indexState, subs[2], value);
+						AnalysisState<A> combination = restrictTo(interprocedural, indexState, null, null, value);
 						if (combination.getExecutionState().isBottom())
 							continue;
 						if (ListModel.isList(t)) {
