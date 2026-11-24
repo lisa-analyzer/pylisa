@@ -31,8 +31,9 @@ import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Shared helper to raise a native Python exception from a library
- * implementation, mirroring how JLiSA raises {@code ArrayIndexOutOfBounds
- * Exception} in {@code JavaArrayAccess}: it allocates an instance of the given
+ * implementation, mirroring how JLiSA raises
+ * {@code ArrayIndexOutOfBoundsException} in {@code JavaArrayAccess}: it
+ * allocates an instance of the given
  * (built-in, field-less) exception class, wraps it in a {@link CFGThrow}, and
  * moves the resulting state to the error channel. The move is <i>total</i> (see
  * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState.Error, ScopeId, ProgramPoint)})
@@ -42,7 +43,15 @@ import org.apache.commons.lang3.tuple.Pair;
  * raise it, the move must instead be <i>partial</i> (see
  * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState, AnalysisState.Error, ScopeId, ProgramPoint)}),
  * knowing all the executions that continue normally: {@link Raising} collects
- * the raising executions until these are known.
+ * the raising executions until these are known.<br>
+ * <br>
+ * The executions raising an exception follow a discipline, on which the
+ * verification of the warnings relies: an exception is raised in all the
+ * executions of a state only if it is exactly the executions that raise it
+ * (e.g., narrowed to the ones where an operand has the failing types, or where
+ * the failing condition holds); otherwise, it is raised under an unknown
+ * condition, so that the verification never takes it for granted (see
+ * {@link Raising#raise(Satisfiability, AnalysisState, CFG, CodeLocation, Statement, String)}).
  */
 public final class PyExceptions {
 
@@ -128,9 +137,18 @@ public final class PyExceptions {
 	 * known: exceptions are registered with
 	 * {@link #raise(Satisfiability, AnalysisState, CFG, CodeLocation, Statement, String)}
 	 * (or the helpers built on it, such as
-	 * {@link #raiseWhere(SymbolicExpression, boolean, AnalysisState, Statement, CFG, CodeLocation, Statement, String)}),
+	 * {@link #raiseWhere(SymbolicExpression, boolean, AnalysisState, Statement, CFG, CodeLocation, Statement, String)}
+	 * and
+	 * {@link #raiseOfTypes(AnalysisState, SymbolicExpression, Set, Set, boolean, CFG, CodeLocation, Statement, String)}),
 	 * and {@link #moveFrom(AnalysisState)} performs the moves. If no execution
-	 * continues normally, the moves fall back to <i>total</i> ones.
+	 * continues normally, the moves fall back to <i>total</i> ones.<br>
+	 * <br>
+	 * An exception is raised with {@link Satisfiability#SATISFIED} only on a
+	 * state made exactly of the executions raising it, and with
+	 * {@link Satisfiability#UNKNOWN} (under an unknown condition) when the
+	 * state might also hold executions that do not raise it (see
+	 * {@link #certainOnlyIf(boolean)} for the states restricted to a
+	 * combination of the operands, that might not be exact).
 	 *
 	 * @param <A> the kind of {@link AbstractLattice} of the states
 	 * @param <D> the kind of {@link AbstractDomain} of the analysis

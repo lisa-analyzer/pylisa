@@ -124,6 +124,8 @@ public class PyTernaryOperator extends NaryExpression {
 		AnalysisState<A> tied = result.bottomExecution();
 		for (SymbolicExpression value : result.getExecutionExpressions())
 			if (value instanceof PushAny)
+				// evaluating an unknown value again would yield another
+				// fresh unknown value, unrelated to the one of the branch
 				tied = tied.lub(result.withExecutionExpression(value));
 			else
 				tied = tied.lub(analysis.smallStepSemantics(result, value, context, this));

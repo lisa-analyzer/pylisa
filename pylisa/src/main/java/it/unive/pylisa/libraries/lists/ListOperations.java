@@ -48,6 +48,25 @@ public final class ListOperations {
 	static final Predicate<Type> INT = t -> (t.isNumericType() && t.asNumericType().isIntegral())
 			|| t.isBooleanType();
 
+	/**
+	 * Whether a value with the given runtime types might not be an
+	 * {@code int} (or a {@code bool}): also if they are not known.
+	 */
+	static boolean mightNotBeInt(
+			Set<Type> types) {
+		return types.isEmpty() || !types.stream().allMatch(INT);
+	}
+
+	/**
+	 * Whether a value with the given runtime types might be an {@code int} (or
+	 * a {@code bool}): also if they are not known, or if it is an unknown
+	 * value (e.g. returned by an unknown function).
+	 */
+	static boolean mightBeInt(
+			Set<Type> types) {
+		return types.isEmpty() || types.stream().anyMatch(t -> INT.test(t) || t.isUntyped());
+	}
+
 	private ListOperations() {
 	}
 

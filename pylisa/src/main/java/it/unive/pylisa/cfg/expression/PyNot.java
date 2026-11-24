@@ -61,40 +61,70 @@ public class PyNot extends UnaryExpression {
 			SymbolicExpression expr,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		Analysis<A, D> analysis = interprocedural.getAnalysis();
-		ScopeId<A> context = interprocedural.getCurrentContext();
-		CodeLocation loc = getLocation();
-		Set<Type> types = analysis.getRuntimeTypesOf(state, expr, context, this);
-		it.unive.lisa.symbolic.value.UnaryExpression not = new it.unive.lisa.symbolic.value.UnaryExpression(
-				BoolType.INSTANCE, expr, LogicalNot.INSTANCE, loc);
-		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, this))
-			return analysis.smallStepSemantics(state, not, context, this);
+		return truthValue(interprocedural.getAnalysis(), interprocedural.getCurrentContext(), state, expr, true,
+				this);
+	}
 
-		// the negated truth value for each type of the operand, in the
-		// executions where it has that type (see PyBinaryDispatch#ofType)
+	/**
+	 * Computes Python's truth value of {@code value} ({@code bool(value)}), or
+	 * its negation ({@code not value}), for each type of the value, in the
+	 * executions where it has that type (see {@link PyBinaryDispatch#ofType}):
+	 * bools are themselves, values that are always true (see
+	 * {@link #alwaysTrue(Type)}) are true, objects whose class might define
+	 * {@code __bool__} or {@code __len__} have an unknown truth value, and the
+	 * other values (e.g. lists, numbers and strings) have a symbolic one (so
+	 * that, e.g., assuming that {@code not xs} does not hold refines the list
+	 * {@code xs}, see {@link it.unive.pylisa.analysis.PyDomain}).
+	 *
+	 * @param <A>      the kind of the analysis state
+	 * @param <D>      the kind of the abstract domain
+	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
+	 * @param state    the state where the value has been computed
+	 * @param value    the value
+	 * @param negated  whether the negation of the truth value is computed
+	 * @param pp       the program point computing the truth value
+	 *
+	 * @return the state computing the truth value
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> truthValue(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression value,
+			boolean negated,
+			Statement pp)
+			throws SemanticException {
+		CodeLocation loc = pp.getLocation();
+		Set<Type> types = analysis.getRuntimeTypesOf(state, value, context, pp);
+		it.unive.lisa.symbolic.value.UnaryExpression not = new it.unive.lisa.symbolic.value.UnaryExpression(
+				BoolType.INSTANCE, value, LogicalNot.INSTANCE, loc);
+		// the symbolic truth value: not x, or not not x
+		SymbolicExpression symbolic = negated ? not
+				: new it.unive.lisa.symbolic.value.UnaryExpression(BoolType.INSTANCE, not,
+						LogicalNegation.INSTANCE, loc);
+		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, pp))
+			return analysis.smallStepSemantics(state, symbolic, context, pp);
+
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type t : types) {
-			AnalysisState<A> typed = PyBinaryDispatch.ofType(analysis, context, state, expr, t, types, this);
+			AnalysisState<A> typed = PyBinaryDispatch.ofType(analysis, context, state, value, t, types, pp);
 			if (typed.getExecutionState().isBottom())
 				continue;
+			SymbolicExpression truth;
 			if (t.isBooleanType())
-				result = result.lub(analysis.smallStepSemantics(typed,
-						new it.unive.lisa.symbolic.value.UnaryExpression(BoolType.INSTANCE, expr,
-								LogicalNegation.INSTANCE, loc),
-						context, this));
+				truth = negated ? new it.unive.lisa.symbolic.value.UnaryExpression(BoolType.INSTANCE, value,
+						LogicalNegation.INSTANCE, loc) : value;
 			else if (alwaysTrue(t))
-				result = result.lub(
-						analysis.smallStepSemantics(typed, new Constant(BoolType.INSTANCE, false, loc), context, this));
-			else if (ListModel.isList(t))
-				// not xs is unknown, but kept symbolic so that assuming that it
-				// does not hold refines xs (see PyDomain)
-				result = result.lub(analysis.smallStepSemantics(typed, not, context, this));
-			else if (t.isPointerType())
-				// e.g. an object whose class defines __bool__
-				result = result.lub(
-						analysis.smallStepSemantics(typed, new PushAny(BoolType.INSTANCE, loc), context, this));
+				truth = new Constant(BoolType.INSTANCE, !negated, loc);
+			else if (ListModel.isList(t) || !t.isPointerType())
+				truth = symbolic;
 			else
-				result = result.lub(analysis.smallStepSemantics(typed, not, context, this));
+				// e.g. an object whose class defines __bool__
+				truth = new PushAny(BoolType.INSTANCE, loc);
+			result = result.lub(analysis.smallStepSemantics(typed, truth, context, pp));
 		}
 		return result;
 	}

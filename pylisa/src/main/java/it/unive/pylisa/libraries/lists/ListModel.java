@@ -721,12 +721,12 @@ public final class ListModel {
 		// the condition of the indices in range, when it is not decided
 		SymbolicExpression range = null;
 		Set<Type> types = analysis.getRuntimeTypesOf(state, index, context, thrower);
-		if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t)))
+		if (ListOperations.mightNotBeInt(types))
 			// e.g. a str, or an unknown value
 			typeError = true;
 		// an unknown value (e.g. returned by an unknown function) might be an
 		// int
-		if (types.isEmpty() || types.stream().anyMatch(t -> ListOperations.INT.test(t) || t.isUntyped())) {
+		if (ListOperations.mightBeInt(types)) {
 			// the indices the index might be equal to (also when it is not a
 			// constant, e.g. -1 or a variable): the ones of the elements
 			// that the list surely has
@@ -1177,11 +1177,11 @@ public final class ListModel {
 		// the condition of the index in range, when it is not decided
 		SymbolicExpression range = null;
 		Set<Type> types = analysis.getRuntimeTypesOf(state, index, context, thrower);
-		if (types.isEmpty() || types.stream().anyMatch(t -> !ListOperations.INT.test(t)))
+		if (ListOperations.mightNotBeInt(types))
 			typeError = true;
 		// an unknown value (e.g. returned by an unknown function) might be an
 		// int
-		if (types.isEmpty() || types.stream().anyMatch(t -> ListOperations.INT.test(t) || t.isUntyped())) {
+		if (ListOperations.mightBeInt(types)) {
 			int from = shape.length() == null ? 0 : -shape.length();
 			int to = shape.length() == null ? shape.prefix() : shape.length();
 			Integer exact = null;

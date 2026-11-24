@@ -772,7 +772,9 @@ public final class PyBinaryDispatch {
 		return result.lessOrEqual(state.bottomExecution()) ? null : result;
 	}
 
-	// the raised exceptions are collected by raising
+	// the raised exceptions are collected by raising; exact tells whether the
+	// state holds exactly the executions where the operands have the given
+	// types (see checkable)
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> fallback(
 			Analysis<A, D> analysis,
 			ScopeId<?> context,
@@ -782,7 +784,7 @@ public final class PyBinaryDispatch {
 			Fallback fallback,
 			Type left,
 			Type right,
-			boolean typed)
+			boolean exact)
 			throws SemanticException {
 		CodeLocation loc = operator.getLocation();
 		if (fallback != Fallback.TYPE_ERROR && left.isNullType() && right.isNullType())
@@ -806,7 +808,7 @@ public final class PyBinaryDispatch {
 		default:
 			// the state holds exactly the executions where the operands have
 			// these types, unless their types could not be checked
-			raising.raise(typed ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN, state, operator.getCFG(), loc,
+			raising.raise(exact ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN, state, operator.getCFG(), loc,
 					operator, LibrarySpecificationProvider.TYPE_ERROR);
 			return state.bottomExecution();
 		}

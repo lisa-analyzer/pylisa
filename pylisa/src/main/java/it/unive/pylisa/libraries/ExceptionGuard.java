@@ -16,19 +16,49 @@ import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.operator.unary.LogicalNegation;
 
 /**
- * Shared helper for operations that raise a Python exception under some
+ * Shared helpers for operations that raise a Python exception under some
  * condition on their operands (e.g. {@code ValueError} for a negative shift
- * count): it checks whether the condition (possibly) holds via
- * {@code Analysis#satisfies}, and either evaluates {@code operation} (when the
- * condition might not hold) or raises the exception (via {@link PyExceptions},
- * when it might hold), {@code lub}-ing both branches together when the
- * condition cannot be decided.
+ * count). The analysis decides whether the condition holds (see
+ * {@code Analysis#satisfies}): if it surely does, the exception is raised in
+ * all the executions; if it surely does not, the operation is computed in all
+ * of them; otherwise, each branch is narrowed to its executions by assuming the
+ * condition ({@link #when}) or its negation ({@link #unless}), so that, e.g.,
+ * the verification of the warnings sees under which condition the exception is
+ * raised (see
+ * {@link PyExceptions.Raising#raiseWhere(SymbolicExpression, boolean, AnalysisState, Statement, CFG, CodeLocation, Statement, String)}).
+ * Branches whose condition is not expressed happen under an unknown condition
+ * ({@link #maybe}).
  */
 public final class ExceptionGuard {
 
 	private ExceptionGuard() {
 	}
 
+	/**
+	 * Computes the given operation where the given condition does not hold,
+	 * raising the given exception exactly where it holds (see
+	 * {@link PyExceptions.Raising#raiseWhere(SymbolicExpression, boolean, AnalysisState, Statement, CFG, CodeLocation, Statement, String)}).
+	 *
+	 * @param <A>            the kind of {@link AbstractLattice} of the state
+	 * @param <D>            the kind of {@link AbstractDomain} of the analysis
+	 * @param analysis       the analysis
+	 * @param context        the interprocedural context where the computation
+	 *                           happens
+	 * @param state          the state where the operands have been evaluated
+	 * @param raiseCondition the condition under which the exception is raised
+	 * @param exception      the name of the class of the exception
+	 * @param operation      the operation computed when the exception is not
+	 *                           raised
+	 * @param cfg            the cfg where the exception is raised
+	 * @param loc            the location where the exception is raised
+	 * @param dispatchTarget the statement computing the operation
+	 * @param thrower        the statement raising the exception
+	 *
+	 * @return the state after the operation, where the executions raising the
+	 *             exception have been moved to the error channel
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> guardedCompute(
 			Analysis<A, D> analysis,
 			ScopeId<?> context,

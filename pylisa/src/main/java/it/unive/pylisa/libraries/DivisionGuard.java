@@ -29,6 +29,33 @@ public final class DivisionGuard {
 	private DivisionGuard() {
 	}
 
+	/**
+	 * Computes the given division, raising {@code ZeroDivisionError} exactly
+	 * in the executions where the divisor is zero (see
+	 * {@link ExceptionGuard#guardedCompute(Analysis, ScopeId, AnalysisState, SymbolicExpression, String, SymbolicExpression, CFG, CodeLocation, Statement, Statement)}).
+	 * An int divisor is compared with the int {@code 0}, also when the given
+	 * zero is a float, so that the domain of ints decides the comparison.
+	 *
+	 * @param <A>            the kind of {@link AbstractLattice} of the state
+	 * @param <D>            the kind of {@link AbstractDomain} of the analysis
+	 * @param analysis       the analysis
+	 * @param context        the interprocedural context where the computation
+	 *                           happens
+	 * @param state          the state where the operands have been evaluated
+	 * @param divisor        the divisor
+	 * @param zero           the zero of the type of the division
+	 * @param operation      the division, computed where the divisor is not
+	 *                           zero
+	 * @param cfg            the cfg where the exception is raised
+	 * @param loc            the location where the exception is raised
+	 * @param dispatchTarget the statement computing the division
+	 * @param thrower        the statement raising the exception
+	 *
+	 * @return the state after the division, where the executions raising the
+	 *             exception have been moved to the error channel
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> guardedCompute(
 			Analysis<A, D> analysis,
 			ScopeId<?> context,

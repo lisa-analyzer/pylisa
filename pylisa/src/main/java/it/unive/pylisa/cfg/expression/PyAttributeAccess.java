@@ -323,9 +323,13 @@ public class PyAttributeAccess extends UnaryExpression {
 	/**
 	 * The receiver objects that might not have the attribute.
 	 *
-	 * @param assigned whether some of the receiver objects have the attribute
-	 * @param classes  the classes of the receiver objects that might not have
-	 *                     the attribute
+	 * @param assigned       whether some of the receiver objects have the
+	 *                           attribute
+	 * @param classes        the classes of the receiver objects that might not
+	 *                           have the attribute
+	 * @param maybeAssigned  the classes among them whose objects might have
+	 *                           the attribute (so that they do not surely miss
+	 *                           it)
 	 */
 	private record Missing(
 			boolean assigned,

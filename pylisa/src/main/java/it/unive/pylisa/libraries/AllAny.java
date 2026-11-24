@@ -101,7 +101,8 @@ public abstract class AllAny extends PyNative {
 		CodeLocation loc = getLocation();
 		if (undecided && decided)
 			// the result depends on the elements, that are not tracked: it is
-			// an unknown boolean (not either constant in any execution)
+			// an unknown boolean (neither constant holds in all the
+			// executions)
 			return unknown(analysis, context, state, BoolType.INSTANCE);
 		AnalysisState<A> result = state.bottomExecution();
 		if (undecided)

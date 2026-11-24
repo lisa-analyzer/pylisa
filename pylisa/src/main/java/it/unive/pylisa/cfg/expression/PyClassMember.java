@@ -236,7 +236,6 @@ public class PyClassMember extends UnresolvedCall {
 		return functions;
 	}
 
-	// whether this read is the target of an assignment (C.name = ...)
 	/**
 	 * Yields the name of the variable holding the attribute that this assigns,
 	 * if this is the target of an assignment of an attribute assigned through a

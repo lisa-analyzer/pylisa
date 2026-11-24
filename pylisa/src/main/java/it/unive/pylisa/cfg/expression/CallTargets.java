@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * The targets of a call whose callee is a value (e.g. a variable holding a
@@ -82,12 +81,15 @@ final class CallTargets {
 	// call
 	private final Map<String, NamedTupleClassType> namedTuples = new TreeMap<>();
 
-	// whether the callee might be a value that cannot be called
-	private boolean notCallable = false;
+	// the runtime types of a value of the callee, and the ones that cannot be
+	// called
+	private record Callability(
+			Set<Type> types,
+			Set<Type> notCallable) {
+	}
 
-	// the values of the callee that might not be callable, with their
-	// runtime types and the ones that cannot be called
-	private final Map<SymbolicExpression, Pair<Set<Type>, Set<Type>>> notCallableTypes = new HashMap<>();
+	// the values of the callee that might not be callable
+	private final Map<SymbolicExpression, Callability> notCallableTypes = new HashMap<>();
 
 	// whether the callee might be a value whose callability is unknown
 	private boolean unknown = false;
@@ -227,15 +229,14 @@ final class CallTargets {
 	 * @return whether the callee might not be callable
 	 */
 	boolean notCallable() {
-		return notCallable;
+		return !notCallableTypes.isEmpty();
 	}
 
 	private void notCallable(
 			SymbolicExpression value,
 			Set<Type> types,
 			Type type) {
-		notCallable = true;
-		notCallableTypes.computeIfAbsent(value, v -> Pair.of(types, new HashSet<>())).getRight().add(type);
+		notCallableTypes.computeIfAbsent(value, v -> new Callability(types, new HashSet<>())).notCallable().add(type);
 	}
 
 	/**
@@ -263,8 +264,8 @@ final class CallTargets {
 			CodeLocation loc,
 			Statement pp)
 			throws SemanticException {
-		for (Map.Entry<SymbolicExpression, Pair<Set<Type>, Set<Type>>> e : notCallableTypes.entrySet())
-			raising.raiseOfTypes(state, e.getKey(), e.getValue().getRight(), e.getValue().getLeft(), true, consumed,
+		for (Map.Entry<SymbolicExpression, Callability> e : notCallableTypes.entrySet())
+			raising.raiseOfTypes(state, e.getKey(), e.getValue().notCallable(), e.getValue().types(), true, consumed,
 					cfg, loc, pp, LibrarySpecificationProvider.TYPE_ERROR);
 	}
 

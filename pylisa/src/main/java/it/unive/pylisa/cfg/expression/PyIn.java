@@ -122,8 +122,8 @@ public class PyIn extends BinaryExpression {
 
 				if (contains == null)
 					// no __contains__ for this type: real Python would fall
-					// back to
-					// iterating the container, which is not modeled here
+					// back to iterating the container, which is not modeled
+					// here
 					throw new UnsupportedStatementException(this);
 				// the container and the needle have already been evaluated:
 				// evaluating the call would evaluate them again (e.g. calling

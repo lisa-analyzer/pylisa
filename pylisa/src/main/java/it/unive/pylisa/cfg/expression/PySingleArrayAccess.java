@@ -115,8 +115,7 @@ public class PySingleArrayAccess extends BinaryExpression {
 
 				// type(container).__getitem__(container, index): try both a
 				// static-style registration (native types) and an
-				// instance-style
-				// one (Sequence), matching len()'s dual dispatch
+				// instance-style one (Sequence), matching len()'s dual dispatch
 				UnresolvedCall getitem = null;
 				for (CallType kind : new CallType[] { CallType.STATIC, CallType.INSTANCE }) {
 					UnresolvedCall candidate = CallSites.get(interprocedural, this, kind, null, "__getitem__",

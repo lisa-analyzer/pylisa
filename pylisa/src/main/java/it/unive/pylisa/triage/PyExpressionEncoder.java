@@ -1,7 +1,6 @@
 package it.unive.pylisa.triage;
 
 import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.type.Int64Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -93,9 +92,12 @@ import java.util.function.Function;
  * builtin classes are encoded for the values they can be precisely encoded
  * for.</li>
  * </ul>
- * Whatever is not encoded precisely (e.g., the conversion of a {@code str} to a
- * {@code float}, or an operation on values of unknown kind) yields an unknown,
- * but deterministic, function of the operands, never precise.
+ * Whatever is not encoded precisely is never precise: an operation on values
+ * of unknown kind, or not encoded for some of them (e.g., the conversion of a
+ * {@code str} to a {@code float}), yields an unknown, but deterministic,
+ * function of the operands, while an operation over operands that cannot be
+ * encoded at all (e.g., arithmetic on a string sort), or over floats when they
+ * are not encoded, yields a fresh unknown value.
  */
 public class PyExpressionEncoder extends ExpressionEncoder {
 
@@ -104,10 +106,9 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	 * numbers of Python are 64-bits ones, so they are encoded as such
 	 * ({@link SortPolicy#withDoubleFloats()}).
 	 */
-	// FIXME the frontend models Python's floats with 32-bits types (and
-	// literals): it should use 64-bits ones, so that the analysis agrees with
-	// the encoding, and float literals need no conversion (see
-	// encodeConstant)
+	// FIXME the frontend models Python's floats with 32-bits types: it should
+	// use 64-bits ones, so that the analysis agrees with the encoding (float
+	// literals keep their 64-bits value apart, see PyFloatConstant)
 	public static final ExpressionEncoderFactory FACTORY = new ExpressionEncoderFactory() {
 
 		@Override
@@ -391,6 +392,32 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	}
 
 	/**
+	 * Whether the term is a number (an int, a bool, read as an int, or a
+	 * float).
+	 */
+	private Term isNumber(
+			Term t) {
+		return Term.or(isInteger(t), isFloat(t));
+	}
+
+	/**
+	 * Whether the operands of a numeric operation can be numbers, requiring
+	 * them to be (see {@link #requireNumeric(Term)}): if they cannot (e.g.,
+	 * one is a string), the operation is not encoded.
+	 */
+	private boolean numericOperands(
+			Term left,
+			Term right) {
+		for (Term t : List.of(left, right))
+			if (!isValue(t) && !t.getSort().equals(Sort.INT) && !t.getSort().equals(Sort.BOOL)
+					&& !t.getSort().isFloatingPoint())
+				return false;
+		requireNumeric(left);
+		requireNumeric(right);
+		return true;
+	}
+
+	/**
 	 * The term, that might be a number, as a 64-bits floating point number:
 	 * integers are converted as Python does (rounding to nearest), precisely if
 	 * their magnitude is below 2^63. Meaningful only if the term is a number.
@@ -534,12 +561,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			Term right,
 			java.util.function.BinaryOperator<Term> ints,
 			java.util.function.BinaryOperator<Term> floats) {
-		for (Term t : List.of(left, right))
-			if (!isValue(t) && !t.getSort().equals(Sort.INT) && !t.getSort().equals(Sort.BOOL)
-					&& !t.getSort().isFloatingPoint())
-				return havoc(expression);
-		requireNumeric(left);
-		requireNumeric(right);
+		if (!numericOperands(left, right))
+			return havoc(expression);
 		boolean values = isValue(left) || isValue(right);
 		Term bothInts = Term.and(isInteger(left), isInteger(right));
 		if (!values && bothInts.equals(Term.TRUE))
@@ -547,7 +570,7 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		if (!getSorts().encodesFloats()) {
 			// floating point numbers are not encoded: only ints are precise
 			Term result = ints.apply(asInteger(left), asInteger(right));
-			return values ? when(bothInts, ValueSort.wrap(result), function, List.of(wrap(left), wrap(right)),
+			return values ? when(bothInts, ValueSort.wrap(result), function, List.of(asValue(left), asValue(right)),
 					expression) : result;
 		}
 		if (!values)
@@ -556,13 +579,14 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		// float (its operands are fixed otherwise, see asFloatIf)
 		Term fp = floats.apply(asFloatIf(Term.not(bothInts), left, expression),
 				asFloatIf(Term.not(bothInts), right, expression));
-		Term numbers = Term.and(Term.or(isInteger(left), isFloat(left)), Term.or(isInteger(right), isFloat(right)));
+		Term numbers = Term.and(isNumber(left), isNumber(right));
 		Term result = Term.ite(bothInts, ValueSort.wrap(ints.apply(asInteger(left), asInteger(right))),
 				ValueSort.wrap(fp));
-		return when(numbers, result, function, List.of(wrap(left), wrap(right)), expression);
+		return when(numbers, result, function, List.of(asValue(left), asValue(right)), expression);
 	}
 
-	private static Term wrap(
+	// the term as a value (see ValueSort), wrapping it if it is not one
+	private static Term asValue(
 			Term t) {
 		return isValue(t) ? t : ValueSort.wrap(t);
 	}
@@ -695,24 +719,20 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			BinaryExpression expression) {
 		if (!getSorts().encodesFloats())
 			return opaque(expression);
-		for (Term t : List.of(left, right))
-			if (!isValue(t) && !t.getSort().equals(Sort.INT) && !t.getSort().equals(Sort.BOOL)
-					&& !t.getSort().isFloatingPoint())
-				return havoc(expression);
-		requireNumeric(left);
-		requireNumeric(right);
+		if (!numericOperands(left, right))
+			return havoc(expression);
 		Term quotient = Term.app("fp.div", Sort.FLOAT64, rne(), asFloat(left, expression),
 				asFloat(right, expression));
 		// the quotient of two ints is the closest float to the exact one, while
 		// an int divided by a float (or vice versa) is converted to a float
 		Term bothInts = Term.and(isInteger(left), isInteger(right));
 		Term exact = Term.or(Term.not(bothInts), Term.and(exactlyFloat(left), exactlyFloat(right)));
-		Term numbers = Term.and(Term.or(isInteger(left), isFloat(left)), Term.or(isInteger(right), isFloat(right)));
+		Term numbers = Term.and(isNumber(left), isNumber(right));
 		boolean values = isValue(left) || isValue(right);
 		Term guard = Term.and(numbers, exact);
 		if (!values)
 			return when(guard, quotient, "truediv", List.of(left, right), expression);
-		return when(guard, ValueSort.wrap(quotient), "truediv", List.of(wrap(left), wrap(right)), expression);
+		return when(guard, ValueSort.wrap(quotient), "truediv", List.of(asValue(left), asValue(right)), expression);
 	}
 
 	/**
@@ -777,16 +797,16 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			BinaryExpression expression) {
 		if (!getSorts().encodesFloats())
 			return opaque(expression);
-		requireNumeric(left);
-		requireNumeric(right);
+		if (!numericOperands(left, right))
+			return havoc(expression);
 		// ints are converted to floats also when both operands are ints (as
 		// CPython's long_pow does for negative exponents)
-		Term numbers = Term.and(Term.or(isInteger(left), isFloat(left)), Term.or(isInteger(right), isFloat(right)));
+		Term numbers = Term.and(isNumber(left), isNumber(right));
 		Term result = getSymbols().evaluable("$py.pow", Sort.FLOAT64,
 				List.of(asFloat(left, expression), asFloat(right, expression)),
 				args -> pow(args.get(0).doubleValue(), args.get(1).doubleValue()), expression);
 		if (isValue(left) || isValue(right))
-			return when(numbers, ValueSort.wrap(result), "floatpow", List.of(wrap(left), wrap(right)), expression);
+			return when(numbers, ValueSort.wrap(result), "floatpow", List.of(asValue(left), asValue(right)), expression);
 		return when(numbers, result, "floatpow", List.of(left, right), expression);
 	}
 
@@ -819,7 +839,7 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		if (!shift && left.getSort().equals(Sort.BOOL) && right.getSort().equals(Sort.BOOL))
 			return booleanBitwise(op, left, right);
 
-		Term l = wrap(left), r = wrap(right);
+		Term l = asValue(left), r = asValue(right);
 		Term ints = Term.and(isInteger(l), isInteger(r));
 		Term a = asInteger(l), b = asInteger(r);
 		Term guard;
@@ -931,9 +951,9 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			return Term.FALSE;
 		}
 
-		Term l = wrap(left), r = wrap(right);
+		Term l = asValue(left), r = asValue(right);
 		Term ints = Term.and(isInteger(l), isInteger(r));
-		Term numbers = Term.and(Term.or(isInteger(l), isFloat(l)), Term.or(isInteger(r), isFloat(r)));
+		Term numbers = Term.and(isNumber(l), isNumber(r));
 		Term floats = Term.and(numbers, Term.or(isFloat(l), isFloat(r)));
 		Term strings = Term.and(ValueSort.is(l, Sort.STRING), ValueSort.is(r, Sort.STRING));
 		Term nones = Term.or(isNone(l), isNone(r));
@@ -988,14 +1008,13 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			return unknown("cmp" + op, Sort.BOOL, List.of(left, right), expression, Term.FALSE);
 		}
 
-		Term l = wrap(left), r = wrap(right);
+		Term l = asValue(left), r = asValue(right);
 		Term ints = Term.and(isInteger(l), isInteger(r));
 		Term strings = Term.and(ValueSort.is(l, Sort.STRING), ValueSort.is(r, Sort.STRING));
 		Cases cases = new Cases().add(ints, Term.app(op, Sort.BOOL, asInteger(l), asInteger(r)))
 				.add(strings, Term.app(strOp, Sort.BOOL, as(l, Sort.STRING), as(r, Sort.STRING)));
 		if (getSorts().encodesFloats()) {
-			Term floats = Term.and(Term.or(isInteger(l), isFloat(l)), Term.or(isInteger(r), isFloat(r)),
-					exactlyFloat(l), exactlyFloat(r));
+			Term floats = Term.and(isNumber(l), isNumber(r), exactlyFloat(l), exactlyFloat(r));
 			cases.add(floats,
 					Term.app(fpOp, Sort.BOOL, asFloatIf(floats, l, expression), asFloatIf(floats, r, expression)));
 		}
@@ -1013,7 +1032,7 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			Term left,
 			Term right,
 			BinaryExpression expression) {
-		Term l = wrap(left), r = wrap(right);
+		Term l = asValue(left), r = asValue(right);
 		Term nones = Term.or(isNone(l), isNone(r));
 		Term refs = Term.and(ValueSort.isReference(l), ValueSort.isReference(r));
 		Term differentKinds = Term.or(Term.and(ValueSort.isReference(l), Term.not(ValueSort.isReference(r))),
@@ -1056,9 +1075,9 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			if (name.equals(LibrarySpecificationProvider.NONE_TYPE))
 				return isValue(value) ? isNone(value) : Term.FALSE;
 			// a test against a known class
-			return unknown("isinstance " + name, Sort.BOOL, List.of(wrap(value)), expression, Term.FALSE);
+			return unknown("isinstance " + name, Sort.BOOL, List.of(asValue(value)), expression, Term.FALSE);
 		}
-		return unknown("isinstance", Sort.BOOL, List.of(wrap(value), wrap(cls)), expression, Term.FALSE);
+		return unknown("isinstance", Sort.BOOL, List.of(asValue(value), asValue(cls)), expression, Term.FALSE);
 	}
 
 	/**
@@ -1077,10 +1096,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		Type type = e.getStaticType();
 		if (type instanceof TypeTokenType && ((TypeTokenType) type).getTypes().size() == 1) {
 			Type t = ((TypeTokenType) type).getTypes().iterator().next();
-			if (t.isUnitType()) {
-				CompilationUnit unit = (CompilationUnit) t.asUnitType().getUnit();
-				return unit.getName();
-			}
+			if (t.isUnitType())
+				return t.asUnitType().getUnit().getName();
 		}
 		return null;
 	}
@@ -1146,7 +1163,7 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			return asFloat(t, expression);
 		if (!isValue(t))
 			return unknown("float", Sort.FLOAT64, List.of(t), expression, Term.FALSE);
-		Term numbers = Term.or(isInteger(t), isFloat(t));
+		Term numbers = isNumber(t);
 		return new Cases().add(numbers, asFloat(t, expression)).otherwise("float", Sort.FLOAT64, List.of(t),
 				expression);
 	}
@@ -1185,7 +1202,7 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			Term fp = asFloatIf(isFloat(t), t, expression);
 			cases.add(Term.and(isFloat(t), inLongRange(fp)), floatToInt(fp, "RTN"));
 		}
-		return cases.otherwise("floor", Sort.INT, List.of(wrap(t)), expression);
+		return cases.otherwise("floor", Sort.INT, List.of(asValue(t)), expression);
 	}
 
 	/**
@@ -1200,7 +1217,7 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			BinaryExpression expression) {
 		if (!(expression.getRight() instanceof PyNoneConstant))
 			// a base is given
-			return unknown("int.base", Sort.INT, List.of(wrap(t), wrap(base)), expression, Term.FALSE);
+			return unknown("int.base", Sort.INT, List.of(asValue(t), asValue(base)), expression, Term.FALSE);
 		Cases cases = new Cases().add(isInteger(t), asInteger(t));
 		if (getSorts().encodesFloats() && (isValue(t) || t.getSort().isFloatingPoint())) {
 			Term fp = asFloatIf(isFloat(t), t, expression);
@@ -1212,7 +1229,7 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			Term[] parsed = parseInt(s);
 			cases.add(Term.and(is(t, Sort.STRING), parsed[0]), parsed[1]);
 		}
-		return cases.otherwise("int", Sort.INT, List.of(wrap(t)), expression);
+		return cases.otherwise("int", Sort.INT, List.of(asValue(t)), expression);
 	}
 
 	/**
