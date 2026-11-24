@@ -120,17 +120,29 @@ public final class PowerSemantics {
 			return raising.moveFrom(result);
 		}
 
+		// the exponent decides the kind of the result: each kind is computed
+		// on the executions where the exponent has the corresponding sign
 		Satisfiability negative = analysis.satisfies(state, negativeExponent, context, thrower);
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
-		if (negative != Satisfiability.SATISFIED)
-			result = result.lub(analysis.smallStepSemantics(state,
-					new BinaryExpression(Int32Type.INSTANCE, base, exponent, Power.INSTANCE, loc), context,
-					dispatchTarget));
-		if (negative != Satisfiability.NOT_SATISFIED)
-			result = result.lub(ExceptionGuard.guardedCompute(analysis, context, state, zeroDivision,
-					LibrarySpecificationProvider.ZERO_DIVISION_ERROR, floatPower, cfg, loc, dispatchTarget, thrower,
-					raising));
+		if (negative != Satisfiability.SATISFIED) {
+			AnalysisState<A> nonNegative = negative == Satisfiability.NOT_SATISFIED ? state
+					: analysis.assume(state,
+							new BinaryExpression(BoolType.INSTANCE, exponent, zero, ComparisonGe.INSTANCE, loc),
+							context, thrower, thrower);
+			if (!nonNegative.getExecutionState().isBottom())
+				result = result.lub(analysis.smallStepSemantics(nonNegative,
+						new BinaryExpression(Int32Type.INSTANCE, base, exponent, Power.INSTANCE, loc), context,
+						dispatchTarget));
+		}
+		if (negative != Satisfiability.NOT_SATISFIED) {
+			AnalysisState<A> negativeState = negative == Satisfiability.SATISFIED ? state
+					: analysis.assume(state, negativeExponent, context, thrower, thrower);
+			if (!negativeState.getExecutionState().isBottom())
+				result = result.lub(ExceptionGuard.guardedCompute(analysis, context, negativeState, zeroDivision,
+						LibrarySpecificationProvider.ZERO_DIVISION_ERROR, floatPower, cfg, loc, dispatchTarget,
+						thrower, raising));
+		}
 		return raising.moveFrom(result);
 	}
 

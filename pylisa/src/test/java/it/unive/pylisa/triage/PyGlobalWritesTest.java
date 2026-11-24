@@ -45,6 +45,9 @@ public class PyGlobalWritesTest {
 			"    del count",
 			"def setter():",
 			"    C.attr = 3",
+			"def tuple_setter():",
+			"    C.other, y = 1, 2",
+			"    return y",
 			"def importer():",
 			"    global math2",
 			"    import math as math2",
@@ -102,6 +105,8 @@ public class PyGlobalWritesTest {
 		assertEquals(Set.of(), written(writes, program, "local_only"));
 		assertEquals(Set.of("count"), written(writes, program, "deleter"));
 		assertEquals(Set.of("attr"), written(writes, program, "setter"));
+		// also inside a tuple of targets
+		assertEquals(Set.of("other"), written(writes, program, "tuple_setter"));
 		assertEquals(Set.of("math2"), written(writes, program, "importer"));
 		assertEquals(Set.of("i"), written(writes, program, "loop"));
 		// the module binds its names

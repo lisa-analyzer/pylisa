@@ -7,14 +7,23 @@ import it.unive.lisa.program.type.Int64Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseAnd;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseOr;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseXor;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftLeft;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftRight;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonNe;
+import it.unive.lisa.symbolic.value.operator.ternary.StringReplace;
+import it.unive.lisa.symbolic.value.operator.unary.NumericAbs;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.triage.encoding.ExpressionEncoder;
 import it.unive.lisa.triage.encoding.ExpressionEncoderFactory;
@@ -27,6 +36,7 @@ import it.unive.lisa.triage.smt.Term;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeTokenType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.pylisa.symbolic.PyFloatConstant;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.FloatPower;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
@@ -62,7 +72,8 @@ import java.util.function.Function;
  * <ul>
  * <li>{@code None} is the null value of {@link ValueSort};</li>
  * <li>integers are mathematical integers, as Python's ones (the operators of
- * LiSA over them are the non-overflowing ones);</li>
+ * LiSA over them are the non-overflowing ones); bitwise operators are exact
+ * on integers within 128 bits, and shifts on constant amounts;</li>
  * <li>floating point numbers are 64-bits IEEE 754 numbers, as Python's ones
  * (see {@link #FACTORY});</li>
  * <li>the arithmetic operators of Python ({@code /}, {@code //}, {@code %},
@@ -146,11 +157,17 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		if (expression instanceof PyNoneConstant)
 			return ValueSort.nullValue();
 		Object value = expression.getValue();
+		if (expression instanceof PyFloatConstant)
+			// a float literal, whose 64-bits value is kept apart from the
+			// 32-bits one used by the analyses
+			return getSorts().encodesFloats() ? FloatingPoints.literal(((PyFloatConstant) expression).getExact())
+					: opaque(expression);
 		if (value instanceof Float)
-			// FIXME the frontend parses float literals as 32-bits numbers:
-			// the shortest decimal representation of the 32-bits number is
-			// the one of the literal (for literals with at most 7 significant
-			// digits), and Python's value is the 64-bits number closest to it
+			// other floats are modeled as 32-bits numbers, built from short
+			// literals: the shortest decimal representation of the 32-bits
+			// number is the one of the literal (for literals with at most 7
+			// significant digits), and Python's value is the 64-bits number
+			// closest to it
 			return getSorts().encodesFloats()
 					? FloatingPoints.literal(Double.parseDouble(Float.toString((Float) value)))
 					: opaque(expression);
@@ -175,7 +192,63 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			return str(arg, false, expression);
 		if (op instanceof ToRepr)
 			return str(arg, true, expression);
+		if (op instanceof NumericNegation || op instanceof NumericAbs)
+			return negationOrAbs(arg, op instanceof NumericNegation, expression);
 		return super.encodeUnary(expression, arg);
+	}
+
+	/**
+	 * Python's {@code -x} or {@code abs(x)}: over ints (or bools, read as
+	 * ints) it is the operation over integers, and over floats the one over
+	 * floating point numbers. The operand is required to be a number. Over
+	 * other values, the result is an unknown function of the operand.
+	 */
+	private Term negationOrAbs(
+			Term arg,
+			boolean negation,
+			UnaryExpression expression) {
+		String function = negation ? "neg" : "abs";
+		java.util.function.UnaryOperator<Term> ints = negation ? PyExpressionEncoder::neg
+				: i -> Term.ite(lt(i, Term.integer(0)), neg(i), i);
+		String fp = negation ? "fp.neg" : "fp.abs";
+		Sort sort = arg.getSort();
+		if (sort.isFloatingPoint())
+			return Term.app(fp, sort, arg);
+		if (sort.equals(Sort.INT) || sort.equals(Sort.BOOL))
+			return ints.apply(asInteger(arg));
+		if (!isValue(arg))
+			return havoc(expression);
+		requireNumeric(arg);
+		Cases cases = new Cases().add(isInteger(arg), ValueSort.wrap(ints.apply(asInteger(arg))));
+		Term floats = isFloat(arg);
+		cases.add(floats, ValueSort.wrap(Term.app(fp, Sort.FLOAT64, asFloatIf(floats, arg, expression))));
+		return cases.otherwise(function, ValueSort.SORT, List.of(arg), expression);
+	}
+
+	/**
+	 * {@inheritDoc}<br>
+	 * <br>
+	 * Python's {@code str.replace} without a count replaces all the occurrences
+	 * of the pattern (SMT's {@code str.replace_all}), while an empty pattern
+	 * inserts the replacement between the characters: that case yields an
+	 * unknown function of the operands.
+	 */
+	@Override
+	protected Term encodeTernary(
+			TernaryExpression expression,
+			Term left,
+			Term middle,
+			Term right)
+			throws SemanticException {
+		if (!(expression.getOperator() instanceof StringReplace))
+			return super.encodeTernary(expression, left, middle, right);
+		Term s = asString(left, expression);
+		Term pattern = asString(middle, expression);
+		Term replacement = asString(right, expression);
+		return new Cases()
+				.add(Term.not(Term.eq(pattern, Term.string(""))),
+						Term.app("str.replace_all", Sort.STRING, s, pattern, replacement))
+				.otherwise("str.replace", Sort.STRING, List.of(s, pattern, replacement), expression);
 	}
 
 	@Override
@@ -206,9 +279,11 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			return power(left, right, expression);
 		if ((op instanceof AdditionOperator || op instanceof SubtractionOperator
 				|| op instanceof MultiplicationOperator)
-				&& (isValue(left) || isValue(right)) && getSorts().encodesFloats()) {
-			// values might be ints or floats: the operation is the one of
-			// their kinds, with ints promoted to floats if needed
+				&& (isValue(left) || isValue(right) || left.getSort().equals(Sort.BOOL)
+						|| right.getSort().equals(Sort.BOOL))) {
+			// values might be ints, bools or floats: the operation is the one
+			// of their kinds, with bools promoted to ints and ints promoted to
+			// floats if needed
 			String smt = op instanceof AdditionOperator ? "+" : op instanceof SubtractionOperator ? "-" : "*";
 			String fp = op instanceof AdditionOperator ? "fp.add"
 					: op instanceof SubtractionOperator ? "fp.sub" : "fp.mul";
@@ -239,6 +314,9 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			return Term.not(identity(left, right, expression));
 		if (op instanceof IsInstance)
 			return isInstance(left, right, expression);
+		if (op instanceof BitwiseAnd || op instanceof BitwiseOr || op instanceof BitwiseXor
+				|| op instanceof BitwiseShiftLeft || op instanceof BitwiseShiftRight)
+			return bitwise(left, right, expression);
 		if (op instanceof NotIsInstance)
 			return Term.not(isInstance(left, right, expression));
 		if (op instanceof ToInt)
@@ -426,6 +504,19 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}<br>
+	 * <br>
+	 * Bools are numbers in Python.
+	 */
+	@Override
+	protected void requireNumeric(
+			Term term) {
+		if (isValue(term))
+			getSymbols().require(
+					Term.or(ValueSort.isNumeric(term, getSorts().encodesFloats()), ValueSort.is(term, Sort.BOOL)));
+	}
+
 	// arithmetic
 
 	/**
@@ -578,9 +669,12 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			return 1.0;
 		if (Double.isNaN(a) || Double.isNaN(b))
 			return Double.NaN;
-		if (a == 0 && b < 0)
+		if (a == -1.0 && Double.isInfinite(b))
+			// java yields NaN
+			return 1.0;
+		if (a == 0 && b < 0 && !Double.isInfinite(b))
 			throw new ArithmeticException("ZeroDivisionError");
-		if (a < 0 && !Double.isInfinite(b) && b != Math.floor(b))
+		if (a < 0 && !Double.isInfinite(a) && !Double.isInfinite(b) && b != Math.floor(b))
 			throw new ArithmeticException("complex result");
 		double result = StrictMath.pow(a, b);
 		if (Double.isInfinite(result) && !Double.isInfinite(a) && !Double.isInfinite(b))
@@ -592,7 +686,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	 * Python's true division: the quotient of the numbers as a float. The
 	 * quotient of two ints is the floating point number closest to the exact
 	 * quotient, that is the quotient of their conversions if they are exactly
-	 * represented (magnitude at most 2^53).
+	 * represented (magnitude at most 2^53). An int divided by a float (or vice
+	 * versa) is converted to the closest float.
 	 */
 	private Term trueDivision(
 			Term left,
@@ -608,7 +703,10 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		requireNumeric(right);
 		Term quotient = Term.app("fp.div", Sort.FLOAT64, rne(), asFloat(left, expression),
 				asFloat(right, expression));
-		Term exact = Term.and(exactlyFloat(left), exactlyFloat(right));
+		// the quotient of two ints is the closest float to the exact one, while
+		// an int divided by a float (or vice versa) is converted to a float
+		Term bothInts = Term.and(isInteger(left), isInteger(right));
+		Term exact = Term.or(Term.not(bothInts), Term.and(exactlyFloat(left), exactlyFloat(right)));
 		Term numbers = Term.and(Term.or(isInteger(left), isFloat(left)), Term.or(isInteger(right), isFloat(right)));
 		boolean values = isValue(left) || isValue(right);
 		Term guard = Term.and(numbers, exact);
@@ -681,15 +779,124 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			return opaque(expression);
 		requireNumeric(left);
 		requireNumeric(right);
-		Term exact = Term.and(exactlyFloat(left), exactlyFloat(right));
+		// ints are converted to floats also when both operands are ints (as
+		// CPython's long_pow does for negative exponents)
 		Term numbers = Term.and(Term.or(isInteger(left), isFloat(left)), Term.or(isInteger(right), isFloat(right)));
 		Term result = getSymbols().evaluable("$py.pow", Sort.FLOAT64,
 				List.of(asFloat(left, expression), asFloat(right, expression)),
 				args -> pow(args.get(0).doubleValue(), args.get(1).doubleValue()), expression);
 		if (isValue(left) || isValue(right))
-			return when(Term.and(numbers, exact), ValueSort.wrap(result), "floatpow", List.of(wrap(left), wrap(right)),
-					expression);
-		return when(Term.and(numbers, exact), result, "floatpow", List.of(left, right), expression);
+			return when(numbers, ValueSort.wrap(result), "floatpow", List.of(wrap(left), wrap(right)), expression);
+		return when(numbers, result, "floatpow", List.of(left, right), expression);
+	}
+
+	// bitwise operators
+
+	/**
+	 * The width of the bit vectors encoding the bitwise operators over
+	 * integers.
+	 */
+	private static final int BITS = 128;
+
+	/**
+	 * Python's bitwise operators over integers, that are unbounded:
+	 * {@code &}, {@code |} and {@code ^} are computed on bit vectors of
+	 * {@link #BITS} bits, exactly when both operands fit them (and then so does
+	 * the result); {@code <<} and {@code >>} are a multiplication and a floor
+	 * division by a power of two, exactly when the amount is a non-negative
+	 * constant. Over two booleans, {@code &}, {@code |} and {@code ^} yield a
+	 * boolean. Other operands (or amounts) yield an unknown function.
+	 */
+	private Term bitwise(
+			Term left,
+			Term right,
+			BinaryExpression expression) {
+		BinaryOperator op = expression.getOperator();
+		boolean shift = op instanceof BitwiseShiftLeft || op instanceof BitwiseShiftRight;
+		String name = op instanceof BitwiseAnd ? "and"
+				: op instanceof BitwiseOr ? "or"
+						: op instanceof BitwiseXor ? "xor" : op instanceof BitwiseShiftLeft ? "lshift" : "rshift";
+		if (!shift && left.getSort().equals(Sort.BOOL) && right.getSort().equals(Sort.BOOL))
+			return booleanBitwise(op, left, right);
+
+		Term l = wrap(left), r = wrap(right);
+		Term ints = Term.and(isInteger(l), isInteger(r));
+		Term a = asInteger(l), b = asInteger(r);
+		Term guard;
+		Term value;
+		if (shift) {
+			Long k = amount(expression.getRight());
+			if (k == null)
+				return unknownBitwise(name, left, right, expression);
+			Term power = Term.integer(BigInteger.ONE.shiftLeft(k.intValue()));
+			guard = ints;
+			value = op instanceof BitwiseShiftLeft ? Term.app("*", Sort.INT, a, power)
+					: Term.app("div", Sort.INT, a, power);
+		} else {
+			guard = Term.and(ints, fits(a), fits(b));
+			Sort bv = Sort.bitVector(BITS);
+			String toBits = "(_ int2bv " + BITS + ")";
+			String function = op instanceof BitwiseAnd ? "bvand" : op instanceof BitwiseOr ? "bvor" : "bvxor";
+			Term unsigned = Term.app("bv2int", Sort.INT,
+					Term.app(function, bv, Term.app(toBits, bv, a), Term.app(toBits, bv, b)));
+			// the bits are read in two's complement
+			value = Term.ite(Term.app(">=", Sort.BOOL, unsigned, Term.integer(BigInteger.ONE.shiftLeft(BITS - 1))),
+					Term.app("-", Sort.INT, unsigned, Term.integer(BigInteger.ONE.shiftLeft(BITS))), unsigned);
+		}
+		if (!isValue(left) && !isValue(right))
+			// ints and bools: an int
+			return when(guard, value, name, List.of(left, right), expression);
+		Cases cases = new Cases();
+		if (!shift)
+			cases.add(Term.and(ValueSort.is(l, Sort.BOOL), ValueSort.is(r, Sort.BOOL)),
+					ValueSort.wrap(booleanBitwise(op, as(l, Sort.BOOL), as(r, Sort.BOOL))));
+		return cases.add(guard, ValueSort.wrap(value)).otherwise(name, ValueSort.SORT, List.of(l, r), expression);
+	}
+
+	// the bitwise operator over two booleans
+	private static Term booleanBitwise(
+			BinaryOperator op,
+			Term left,
+			Term right) {
+		if (op instanceof BitwiseAnd)
+			return Term.and(left, right);
+		if (op instanceof BitwiseOr)
+			return Term.or(left, right);
+		return Term.not(Term.eq(left, right));
+	}
+
+	// an unknown function of the operands of a bitwise operator, of the sort
+	// of integers if they are ints or bools
+	private Term unknownBitwise(
+			String name,
+			Term left,
+			Term right,
+			BinaryExpression expression) {
+		boolean known = !isValue(left) && !isValue(right);
+		return unknown(name, known ? Sort.INT : ValueSort.SORT, List.of(left, right), expression, Term.FALSE);
+	}
+
+	// whether the integer fits the bit vectors of the bitwise operators
+	private static Term fits(
+			Term t) {
+		BigInteger half = BigInteger.ONE.shiftLeft(BITS - 1);
+		return Term.and(Term.app(">=", Sort.BOOL, t, Term.integer(half.negate())),
+				Term.app("<", Sort.BOOL, t, Term.integer(half)));
+	}
+
+	// the amount of a shift, if it is a non-negative constant (and not too
+	// large to be written as a power of two)
+	private static Long amount(
+			SymbolicExpression e) {
+		if (!(e instanceof Constant))
+			return null;
+		Object v = ((Constant) e).getValue();
+		if (v instanceof Boolean)
+			return (Boolean) v ? 1L : 0L;
+		if (!(v instanceof Integer) && !(v instanceof Long) && !(v instanceof Short) && !(v instanceof Byte))
+			return null;
+		long k = ((Number) v).longValue();
+		return k >= 0 && k <= 4096 ? k : null;
 	}
 
 	// comparisons
@@ -730,8 +937,11 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		Term floats = Term.and(numbers, Term.or(isFloat(l), isFloat(r)));
 		Term strings = Term.and(ValueSort.is(l, Sort.STRING), ValueSort.is(r, Sort.STRING));
 		Term nones = Term.or(isNone(l), isNone(r));
-		Term objects = Term.or(ValueSort.isReference(l), ValueSort.isOpaque(l), ValueSort.isReference(r),
-				ValueSort.isOpaque(r));
+		// opaque values (e.g., floats, when they are not encoded) might be
+		// numbers equal to other numbers, or a NaN not equal to itself: their
+		// equality is not known
+		Term objects = Term.or(ValueSort.isReference(l), ValueSort.isReference(r));
+		Term opaque = Term.or(ValueSort.isOpaque(l), ValueSort.isOpaque(r));
 		Cases cases = new Cases().add(ints, Term.eq(asInteger(l), asInteger(r)));
 		if (getSorts().encodesFloats())
 			cases.add(Term.and(floats, exactlyFloat(l), exactlyFloat(r)),
@@ -740,9 +950,10 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 				.add(nones, Term.and(isNone(l), isNone(r)))
 				// the same object is equal to itself (the equality of objects
 				// otherwise depends on their classes)
-				.add(Term.and(objects, Term.eq(l, r)), Term.TRUE)
-				// values of different kinds that are not numbers (nor objects)
-				.add(Term.and(Term.not(numbers), Term.not(objects)), Term.FALSE)
+				.add(Term.and(objects, Term.not(opaque), Term.eq(l, r)), Term.TRUE)
+				// values of different kinds that are not numbers (nor objects,
+				// nor opaque values)
+				.add(Term.and(Term.not(numbers), Term.not(objects), Term.not(opaque)), Term.FALSE)
 				.otherwise("eq", Sort.BOOL, List.of(l, r), expression);
 	}
 
@@ -793,7 +1004,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 
 	/**
 	 * Python's identity ({@code is}): exact when one of the operands is
-	 * {@code None} (the only {@code None}), or both are objects (the same
+	 * {@code None} (the only {@code None}) or a bool ({@code True} and
+	 * {@code False} being the only bools), or both are objects (the same
 	 * reference). The identity of other values (e.g., ints or strings) depends
 	 * on the implementation, and it is an unknown function of them.
 	 */
@@ -806,7 +1018,10 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 		Term refs = Term.and(ValueSort.isReference(l), ValueSort.isReference(r));
 		Term differentKinds = Term.or(Term.and(ValueSort.isReference(l), Term.not(ValueSort.isReference(r))),
 				Term.and(ValueSort.isReference(r), Term.not(ValueSort.isReference(l))));
+		// True and False are the only bools
+		Term bools = Term.or(ValueSort.is(l, Sort.BOOL), ValueSort.is(r, Sort.BOOL));
 		return new Cases().add(nones, Term.and(isNone(l), isNone(r)))
+				.add(bools, Term.and(Term.and(ValueSort.is(l, Sort.BOOL), ValueSort.is(r, Sort.BOOL)), Term.eq(l, r)))
 				.add(refs, Term.eq(l, r))
 				.add(differentKinds, Term.FALSE)
 				.otherwise("is", Sort.BOOL, List.of(l, r), expression);
@@ -832,7 +1047,12 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			if (name.equals(LibrarySpecificationProvider.STR))
 				return is(value, Sort.STRING);
 			if (name.equals(LibrarySpecificationProvider.FLOAT))
-				return isFloat(value);
+				// when floats are not encoded, a float is an opaque value
+				// (as other values might be): whether it is one is not known
+				return getSorts().encodesFloats() ? isFloat(value)
+						: isValue(value) ? Term.and(ValueSort.isOpaque(value),
+								unknown("isinstance float", Sort.BOOL, List.of(value), expression, Term.FALSE))
+								: Term.FALSE;
 			if (name.equals(LibrarySpecificationProvider.NONE_TYPE))
 				return isValue(value) ? isNone(value) : Term.FALSE;
 			// a test against a known class

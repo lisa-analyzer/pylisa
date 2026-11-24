@@ -50,6 +50,16 @@ public class PyCellsInit extends Statement {
 		this.parameters = parameters;
 	}
 
+	/**
+	 * Yields the parameters of the function that are cells, that are the
+	 * fields of the object holding the cells written by this statement.
+	 *
+	 * @return the parameters
+	 */
+	public List<String> getParameters() {
+		return parameters;
+	}
+
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
 			AnalysisState<A> entryState,

@@ -3,8 +3,8 @@ package it.unive.pylisa.libraries;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.literal.Float32Literal;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
+import it.unive.pylisa.cfg.expression.literal.PyFloatLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
 import java.util.Map;
 
@@ -46,7 +46,7 @@ public final class LibraryConstants {
 			String name) {
 		switch (module + "." + name) {
 		case "math.pi":
-			return new Float32Literal(cfg, location, Float.parseFloat("3.141592653589793"));
+			return new PyFloatLiteral(cfg, location, Math.PI);
 		case "re.IGNORECASE":
 			return new Int32Literal(cfg, location, 2);
 		case "re.UNICODE":

@@ -171,6 +171,15 @@ public class PyListComprehension extends NaryExpression {
 				"$key@" + location.getCodeLocation(), location);
 	}
 
+	/**
+	 * Yields the clauses of the comprehension.
+	 *
+	 * @return the clauses
+	 */
+	public List<Clause> getClauses() {
+		return clauses;
+	}
+
 	private static Expression[] subExpressions(
 			Expression key,
 			Expression element,

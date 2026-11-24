@@ -1343,13 +1343,15 @@ public class ConstantPropagationDomain
 
 		double b = base.doubleValue();
 		double e = exp.doubleValue();
-		if (b == 0 && e < 0)
-			// ZeroDivisionError, raised by the caller
+		if (b == 0 && e < 0 && !Double.isInfinite(e))
+			// ZeroDivisionError, raised by the caller (0.0 ** -inf is inf)
 			return ConstantPropagation.BOTTOM;
-		if (b < 0 && e != Math.rint(e))
+		if (b < 0 && !Double.isInfinite(b) && e != Math.rint(e))
 			// a negative number raised to a fractional power is complex
 			return ConstantPropagation.TOP;
-		return new ConstantPropagation(new Constant(Float32Type.INSTANCE, (float) Math.pow(b, e), pp.getLocation()));
+		// python's (-1.0) ** inf is 1.0, while java's is NaN
+		double res = b == -1.0 && Double.isInfinite(e) ? 1.0 : Math.pow(b, e);
+		return new ConstantPropagation(new Constant(Float32Type.INSTANCE, (float) res, pp.getLocation()));
 	}
 
 	private static boolean isIntegral(

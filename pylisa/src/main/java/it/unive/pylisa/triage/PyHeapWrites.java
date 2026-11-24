@@ -6,12 +6,17 @@ import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.triage.model.HeapModel;
 import it.unive.lisa.triage.model.HeapWrites;
 import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 import it.unive.pylisa.cfg.expression.ListCreation;
 import it.unive.pylisa.cfg.expression.PyAttributeAccess;
+import it.unive.pylisa.cfg.expression.PyClosureCreation;
+import it.unive.pylisa.cfg.expression.PyListComprehension;
 import it.unive.pylisa.cfg.expression.PyNameRef;
+import it.unive.pylisa.cfg.statement.PyCellsInit;
+import it.unive.pylisa.libraries.collections.NamedTupleBuiltin;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.dynamic.Eval;
 import it.unive.pylisa.libraries.dynamic.Exec;
@@ -31,7 +36,10 @@ import java.util.Set;
  * list); the cells are the elements of lists and the entries of dictionaries.
  * The attributes of the program are the names that its code assigns as
  * attributes ({@code o.name = v}), or binds as names (that might be fields of
- * the cells of closures): a function or module writes
+ * the cells of closures, also written when functions start and when closures
+ * are created), except the names that string literals might give to attributes
+ * written by other means (e.g., the fields of named tuples): a function or
+ * module writes
  * <ul>
  * <li>the attributes of the program it assigns or binds;</li>
  * <li>all the other fields (internal ones, and attributes that the program
@@ -66,7 +74,7 @@ public class PyHeapWrites
 			"it.unive.pylisa.libraries.floats", "it.unive.pylisa.libraries.functools",
 			"it.unive.pylisa.libraries.ints", "it.unive.pylisa.libraries.itertools",
 			"it.unive.pylisa.libraries.lists", "it.unive.pylisa.libraries.math",
-			"it.unive.pylisa.libraries.sets", "it.unive.pylisa.libraries.strings",
+			"it.unive.pylisa.libraries.random", "it.unive.pylisa.libraries.sets", "it.unive.pylisa.libraries.strings",
 			"it.unive.pylisa.libraries.svverifier");
 
 	/**
@@ -152,6 +160,42 @@ public class PyHeapWrites
 					names.add(((PyAttributeAccess) node).getName());
 				else if (node instanceof PyNameRef && ((PyNameRef) node).isTarget())
 					names.add(((PyNameRef) node).getName());
+				// the cells of closures are written also when the functions
+				// start, and when the closures are created
+				else if (node instanceof PyCellsInit)
+					names.addAll(((PyCellsInit) node).getParameters());
+				else if (node instanceof PyClosureCreation)
+					for (PyClosureCreation.FreeVariable free : ((PyClosureCreation) node).getFree())
+						names.add(free.name());
+				else if (node instanceof PyListComprehension)
+					for (PyListComprehension.Clause clause : ((PyListComprehension) node).getClauses())
+						names.addAll(clause.cells().keySet());
+				return true;
+			}
+		}, null);
+		return names;
+	}
+
+	/**
+	 * The names that string literals of the code of the given cfg might give to
+	 * attributes, that the program writes without assigning them (e.g., the
+	 * fields of named tuples, written when the tuples are created: their names
+	 * are listed by string literals, see {@link NamedTupleBuiltin}).
+	 */
+	private static Set<String> literalNames(
+			CFG cfg) {
+		Set<String> names = new HashSet<>();
+		cfg.accept(new GraphVisitor<CFG, Statement, Edge, Void>() {
+
+			@Override
+			public boolean visit(
+					Void tool,
+					CFG graph,
+					Statement node) {
+				if (node instanceof StringLiteral)
+					for (String part : ((StringLiteral) node).getValue().split("[\\s,]+"))
+						if (!part.isEmpty())
+							names.add(part);
 				return true;
 			}
 		}, null);
@@ -188,10 +232,15 @@ public class PyHeapWrites
 
 		private Attributes(
 				Program program) {
-			for (CFG cfg : program.getAllCFGs())
+			Set<String> literals = new HashSet<>();
+			for (CFG cfg : program.getAllCFGs()) {
 				names.addAll(names(cfg));
+				literals.addAll(literalNames(cfg));
+			}
 			names.removeAll(INTERNAL);
 			names.removeIf(n -> n.startsWith("$"));
+			// the names that are written by other means
+			names.removeAll(literals);
 		}
 	}
 }

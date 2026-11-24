@@ -83,6 +83,16 @@ public class PyClosureCreation extends Expression {
 		return function;
 	}
 
+	/**
+	 * Yields the free variables of the function, that are the fields of the
+	 * closure written by this expression.
+	 *
+	 * @return the free variables
+	 */
+	public List<FreeVariable> getFree() {
+		return free;
+	}
+
 	@Override
 	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> forwardSemantics(
 			AnalysisState<A> entryState,

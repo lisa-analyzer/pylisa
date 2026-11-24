@@ -20,7 +20,7 @@ import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.InstrumentedReceiver;
 import it.unive.lisa.symbolic.value.PushAny;
-import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.GlobalVariable;
 import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -177,6 +177,6 @@ public class ZipBuiltin extends PyNative {
 	private static AccessChild child(
 			HeapDereference zip,
 			CodeLocation loc) {
-		return new AccessChild(Untyped.INSTANCE, zip, new Variable(Untyped.INSTANCE, ITERABLES, loc), loc);
+		return new AccessChild(Untyped.INSTANCE, zip, new GlobalVariable(Untyped.INSTANCE, ITERABLES, loc), loc);
 	}
 }

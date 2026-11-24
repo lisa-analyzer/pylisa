@@ -1,9 +1,13 @@
 package it.unive.pylisa.triage;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
+import it.unive.lisa.program.Program;
+import it.unive.lisa.program.CodeUnit;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.type.BoolType;
@@ -13,9 +17,18 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.TernaryExpression;
+import it.unive.lisa.symbolic.value.operator.unary.NumericAbs;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
+import it.unive.lisa.symbolic.value.operator.ternary.StringReplace;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftRight;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftLeft;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseXor;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseOr;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseAnd;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonNe;
 import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingAdd;
@@ -32,6 +45,7 @@ import it.unive.lisa.triage.smt.Sort;
 import it.unive.lisa.triage.smt.Term;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.symbolic.PyFloatConstant;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
 import it.unive.pylisa.symbolic.operators.LogicalNot;
@@ -178,6 +192,9 @@ public class PyExpressionEncoderTest {
 			Object value) {
 		if (value == null)
 			return new PyNoneConstant(LOC);
+		if (value instanceof Double)
+			// a float literal
+			return new PyFloatConstant((Double) value, LOC);
 		Type type;
 		if (value instanceof Integer || value instanceof Long)
 			type = Int32Type.INSTANCE;
@@ -256,6 +273,20 @@ public class PyExpressionEncoderTest {
 			return new BinaryExpression(StringType.INSTANCE, a, b, StrGetItem.INSTANCE, LOC);
 		case "strmul":
 			return new BinaryExpression(StringType.INSTANCE, a, b, StringMult.INSTANCE, LOC);
+		case "and":
+			return new BinaryExpression(Int32Type.INSTANCE, a, b, BitwiseAnd.INSTANCE, LOC);
+		case "or":
+			return new BinaryExpression(Int32Type.INSTANCE, a, b, BitwiseOr.INSTANCE, LOC);
+		case "xor":
+			return new BinaryExpression(Int32Type.INSTANCE, a, b, BitwiseXor.INSTANCE, LOC);
+		case "neg":
+			return new UnaryExpression(t, a, NumericNegation.INSTANCE, LOC);
+		case "abs":
+			return new UnaryExpression(t, a, NumericAbs.INSTANCE, LOC);
+		case "lshift":
+			return new BinaryExpression(Int32Type.INSTANCE, a, b, BitwiseShiftLeft.INSTANCE, LOC);
+		case "rshift":
+			return new BinaryExpression(Int32Type.INSTANCE, a, b, BitwiseShiftRight.INSTANCE, LOC);
 		default:
 			throw new IllegalArgumentException(op);
 		}
@@ -389,9 +420,46 @@ public class PyExpressionEncoderTest {
 			{ "strmul", "ab", 0, "" },
 			{ "is", null, null, true },
 			{ "is", 0, null, false },
+			// True and False are the only bools
+			{ "is", true, true, true },
+			{ "is", false, true, false },
+			{ "is", 1, true, false },
+			{ "is", "x", false, false },
 			{ "float", 3, null, 3.0d },
 			{ "float", true, null, 1.0d },
 			{ "float", -2.5d, null, -2.5d },
+			{ "neg", 2.5d, null, -2.5d },
+			{ "neg", -3, null, 3 },
+			{ "neg", true, null, -1 },
+			{ "abs", -2.5d, null, 2.5d },
+			{ "abs", -3, null, 3 },
+			{ "abs", false, null, 0 },
+			// literals with more than 7 significant digits
+			{ "float", 0.1234567891d, null, 0.1234567891d },
+			{ "eq", 0.1234567891d, 0.12345679d, false },
+			{ "truediv", 1.0000000001d, 1, 1.0000000001d },
+			// ints divided by floats are converted to floats
+			{ "truediv", 9007199254740993L, 1.0d, 9007199254740992.0d },
+			{ "truediv", 1.0d, 9007199254740993L, 1.1102230246251565e-16d },
+			{ "lshift", 1, 32, 4294967296L },
+			{ "lshift", true, 3, 8 },
+			{ "rshift", -7, 1, -4 },
+			{ "rshift", 7, 1, 3 },
+			{ "rshift", -1, 5, -1 },
+			{ "and", -1, 255, 255 },
+			{ "or", 6, 9, 15 },
+			{ "xor", 5, 3, 6 },
+			{ "xor", -6, 3, -7 },
+			{ "and", 1L << 40, (1L << 40) + 5, 1L << 40 },
+			{ "and", true, false, false },
+			{ "or", true, false, true },
+			{ "xor", true, true, false },
+			{ "and", true, 3, 1 },
+			// bools are numbers
+			{ "add", true, 1, 2 },
+			{ "sub", 5, false, 5 },
+			{ "mul", true, 3.5d, 3.5d },
+			{ "truediv", true, 2, 0.5d },
 	};
 
 	@Test
@@ -404,10 +472,110 @@ public class PyExpressionEncoderTest {
 	@Test
 	public void operationsOnValuesOfUnknownKinds() throws SemanticException {
 		for (Object[] c : CASES)
-			// the repetition is precise only for constant counts
-			if (!c[0].equals("strmul") || c[3].equals(""))
+			// the repetition and the shifts are precise only for constant
+			// counts
+			if ((!c[0].equals("strmul") || c[3].equals("")) && !c[0].equals("lshift") && !c[0].equals("rshift"))
 				assertTrue(c[0] + "(" + c[1] + ", " + c[2] + ") is not precise on values",
 						check((String) c[0], c[1], c[2], c[3], true));
+	}
+
+	/**
+	 * Yields whether the encoding of the given condition, for an operand of
+	 * unknown kind that holds an opaque value (e.g., a float, when floats are
+	 * not encoded), is precise and always has the given value.
+	 */
+	private static boolean decidedOnOpaque(
+			java.util.function.Function<Variable, SymbolicExpression> condition,
+			boolean value)
+			throws SemanticException {
+		Symbols symbols = new Symbols();
+		PyExpressionEncoder encoder = new PyExpressionEncoder(new SortPolicy(new HashMap<>()).withoutFloats(),
+				symbols);
+		Variable a = new Variable(Untyped.INSTANCE, "a", LOC);
+		Term ta = a.accept(encoder);
+		// the guards tell whether the encoding is precise (other operands,
+		// e.g. a class, might be unknown values the result does not depend on)
+		Term term = condition.apply(a).accept(encoder);
+		solver.push();
+		try {
+			solver.assertTerm(ValueSort.isOpaque(ta));
+			for (Term r : symbols.requirements)
+				solver.assertTerm(r);
+			for (Term g : symbols.guards)
+				solver.assertTerm(g);
+			if (solver.check() != SmtResult.SAT)
+				// never precise
+				return false;
+			solver.assertTerm(value ? Term.not(term) : term);
+			return solver.check() == SmtResult.UNSAT;
+		} finally {
+			solver.pop();
+		}
+	}
+
+	/**
+	 * When floats are not encoded, a float is an opaque value: it might be a
+	 * NaN, not equal to itself, so x == x is not true for sure.
+	 */
+	@Test
+	public void opaqueValuesMightNotEqualThemselves() throws SemanticException {
+		assertFalse(decidedOnOpaque(a -> expression("eq", a, a), true));
+	}
+
+	/**
+	 * When floats are not encoded, a float is an opaque value: isinstance(x,
+	 * float) is not false for sure.
+	 */
+	@Test
+	public void opaqueValuesMightBeFloats() throws SemanticException {
+		Constant floatClass = new Constant(Untyped.INSTANCE,
+				new CodeUnit(LOC, new Program(null, null), LibrarySpecificationProvider.FLOAT), LOC);
+		assertFalse(decidedOnOpaque(
+				a -> new BinaryExpression(BoolType.INSTANCE, a, floatClass, IsInstance.INSTANCE, LOC), false));
+	}
+
+	/**
+	 * Yields whether the encoding of {@code s.replace(pattern, replacement)}
+	 * is precise, checking that it yields the expected string.
+	 */
+	private static boolean replaced(
+			String s,
+			String pattern,
+			String replacement,
+			String expected)
+			throws SemanticException {
+		Symbols symbols = new Symbols();
+		PyExpressionEncoder encoder = new PyExpressionEncoder(new SortPolicy(new HashMap<>()), symbols);
+		Term term = new TernaryExpression(StringType.INSTANCE, constant(s), constant(pattern), constant(replacement),
+				StringReplace.INSTANCE, LOC).accept(encoder);
+		solver.push();
+		try {
+			for (Term r : symbols.requirements)
+				solver.assertTerm(r);
+			for (Term g : symbols.guards)
+				solver.assertTerm(g);
+			if (solver.check() != SmtResult.SAT)
+				return false;
+			solver.assertTerm(Term.not(Term.eq(term, Term.string(expected))));
+			assertEquals(s + ".replace(" + pattern + ", " + replacement + ") should be " + expected,
+					SmtResult.UNSAT, solver.check());
+			return true;
+		} finally {
+			solver.pop();
+		}
+	}
+
+	/**
+	 * Python's replace replaces all the occurrences (computed with CPython).
+	 */
+	@Test
+	public void replaceReplacesAllTheOccurrences() throws SemanticException {
+		assertTrue(replaced("aXbXc", "X", "-", "a-b-c"));
+		assertTrue(replaced("aaa", "a", "bb", "bbbbbb"));
+		assertTrue(replaced("abc", "z", "-", "abc"));
+		// an empty pattern inserts the replacement between the characters:
+		// not encoded precisely
+		assertFalse(replaced("ab", "", "-", "-a-b-"));
 	}
 
 	@Test
@@ -486,6 +654,13 @@ public class PyExpressionEncoderTest {
 			{ 1.0d, Double.NaN, 1.0d },
 			{ 10.0d, -2.0d, 0.01d },
 			{ 0.0d, 0.0d, 1.0d },
+			{ -1.0d, Double.POSITIVE_INFINITY, 1.0d },
+			{ -1.0d, Double.NEGATIVE_INFINITY, 1.0d },
+			{ 0.0d, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY },
+			{ -0.0d, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY },
+			{ Double.NEGATIVE_INFINITY, 0.5d, Double.POSITIVE_INFINITY },
+			{ Double.NEGATIVE_INFINITY, -0.5d, 0.0d },
+			{ -0.5d, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY },
 	};
 
 	@Test

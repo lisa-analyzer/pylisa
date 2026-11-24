@@ -36,7 +36,6 @@ import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
-import it.unive.lisa.program.cfg.statement.literal.Float32Literal;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.type.Int32Type;
@@ -222,6 +221,7 @@ import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
 import it.unive.pylisa.cfg.expression.literal.PyBytesLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyFunctionLiteral;
+import it.unive.pylisa.cfg.expression.literal.PyFloatLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiterals;
@@ -3102,7 +3102,7 @@ public class PyStatementParser
 
 		if (text.contains("e") || text.contains("."))
 			// floating point
-			return new Float32Literal(currentCFG, getLocation(filePath, ctx), Float.parseFloat(text));
+			return new PyFloatLiteral(currentCFG, getLocation(filePath, ctx), Double.parseDouble(text));
 
 		// integer
 		BigInteger value;

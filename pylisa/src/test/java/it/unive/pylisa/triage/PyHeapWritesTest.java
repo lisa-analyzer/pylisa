@@ -50,8 +50,15 @@ public class PyHeapWritesTest {
 	public TemporaryFolder folder = new TemporaryFolder();
 
 	private Program parse() throws Exception {
-		File file = folder.newFile("heap.py");
-		Files.writeString(file.toPath(), SOURCE, StandardCharsets.UTF_8);
+		return parse(SOURCE, "heap");
+	}
+
+	private Program parse(
+			String source,
+			String name)
+			throws Exception {
+		File file = folder.newFile(name + ".py");
+		Files.writeString(file.toPath(), source, StandardCharsets.UTF_8);
 		return new PyFrontend().parseFromListOfFile(List.of(file.toString()));
 	}
 
@@ -110,6 +117,42 @@ public class PyHeapWritesTest {
 		assertNotNull(append);
 		assertFalse(append.writesField("count"));
 		assertTrue(append.writesCells());
+	}
+
+	private static final String OTHER_MEANS = String.join("\n",
+			"from collections import namedtuple",
+			"Point = namedtuple('Point', 'x y')",
+			"def make(a):",
+			"    return Point(a, 2)",
+			"def outer(n):",
+			"    def inner():",
+			"        return n",
+			"    return inner",
+			"def binder():",
+			"    x = 1",
+			"    n = 2",
+			"    return x + n",
+			"def reader(p):",
+			"    return p.x",
+			"make(1)",
+			"outer(3)",
+			"binder()",
+			"reader(make(1))",
+			"");
+
+	/**
+	 * Fields whose names the program binds, but that are also written without
+	 * being bound: the fields of named tuples, when the tuples are created, and
+	 * the cells of the parameters of functions, when the functions start.
+	 */
+	@Test
+	public void fieldsWrittenByOtherMeans() throws Exception {
+		Program program = parse(OTHER_MEANS, "other");
+		PyHeapWrites writes = new PyHeapWrites();
+		assertTrue(writes.writtenBy(cfg(program, "make")).writesField("x"));
+		assertTrue(writes.writtenBy(cfg(program, "outer")).writesField("n"));
+		// the other functions do not write the cell n
+		assertFalse(writes.writtenBy(cfg(program, "reader")).writesField("n"));
 	}
 
 	@Test

@@ -18,6 +18,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.GlobalVariable;
@@ -260,7 +261,15 @@ public class PyClassMember extends UnresolvedCall {
 		return tracker == null ? null : namespace(tracker) + "." + name;
 	}
 
+	// whether this is the target of an assignment, also inside a tuple of
+	// targets (C.x, y = ...)
 	private boolean isWriteTarget() {
-		return getParentStatement() instanceof Assignment && ((Assignment) getParentStatement()).getLeft() == this;
+		Statement child = this;
+		Statement parent = getParentStatement();
+		while (parent instanceof TupleCreation) {
+			child = parent;
+			parent = ((TupleCreation) parent).getParentStatement();
+		}
+		return parent instanceof Assignment && ((Assignment) parent).getLeft() == child;
 	}
 }
