@@ -90,9 +90,13 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 		for (SymbolicExpression self : params[0]) {
 			// each combination of the operands is evaluated in the executions
 			// computing it, as the statements of lisa do
+			// (if they are not known exactly, the exceptions are raised under
+			// an unknown condition)
 			AnalysisState<A> selfState = restrictTo(interprocedural, state, self);
 			if (selfState.getExecutionState().isBottom())
 				continue;
+			boolean selfExact = params[0].size() == 1 || restrictsExactly(interprocedural, state, self);
+			PyExceptions.Raising<A, D> selfRaising = raising.certainOnlyIf(selfExact);
 			Set<Type> rts = analysis.getRuntimeTypesOf(selfState, self, context, this);
 			for (Type t : rts) {
 				if (!t.isPointerType())
@@ -101,7 +105,7 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 
 				if (inner.canBeAssignedTo(tupleType)) {
 					// tuples are immutable: raised where self is this tuple
-					raising.raiseOfTypes(selfState, self, Collections.singleton(t), rts, true, getCFG(), loc, st,
+					selfRaising.raiseOfTypes(selfState, self, Collections.singleton(t), rts, true, getCFG(), loc, st,
 							LibrarySpecificationProvider.TYPE_ERROR);
 					continue;
 				}
@@ -115,23 +119,29 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 
 				for (SymbolicExpression index : params[1]) {
 					AnalysisState<A> indexState = restrictTo(interprocedural, typed, null, index);
+					boolean indexExact = params[1].size() == 1
+							|| restrictsExactly(interprocedural, typed, null, index);
 					for (SymbolicExpression value : params[2]) {
 						AnalysisState<A> combination = restrictTo(interprocedural, indexState, null, null, value);
 						if (combination.getExecutionState().isBottom())
 							continue;
+						PyExceptions.Raising<A, D> combinationRaising = raising.certainOnlyIf(selfExact && indexExact
+								&& (params[2].size() == 1
+										|| restrictsExactly(interprocedural, indexState, null, null, value)));
 						if (ListModel.isList(t)) {
 							// the elements of the list, or its slices
 							Set<Type> indexTypes = analysis.getRuntimeTypesOf(combination, index, context, this);
 							boolean slice = !indexTypes.isEmpty() && indexTypes.stream().allMatch(ListModel::isSlice);
 							result = result.lub(slice
 									? ListModel.assignSlice(analysis, context, combination, self, index, value, st,
-											getMetaVariables(), raising)
+											getMetaVariables(), combinationRaising)
 									: ListModel.write(analysis, context, combination, self, index, value, st,
-											raising));
+											combinationRaising));
 						} else if (DictModel.isDict(t))
 							// the entries of the dictionary
 							result = result.lub(
-									DictModel.write(analysis, context, combination, self, index, value, st, raising));
+									DictModel.write(analysis, context, combination, self, index, value, st,
+											combinationRaising));
 						else {
 							HeapDereference deref = new HeapDereference(inner, self, loc);
 							AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, index, loc);

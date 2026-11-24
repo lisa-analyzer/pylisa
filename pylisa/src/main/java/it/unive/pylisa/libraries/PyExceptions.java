@@ -17,6 +17,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.CallSites;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
@@ -141,7 +142,11 @@ public final class PyExceptions {
 		private final ScopeId<?> context;
 
 		// the state of the executions raising each error, not moved yet
-		private final Map<AnalysisState.Error, AnalysisState<A>> raised = new LinkedHashMap<>();
+		private final Map<AnalysisState.Error, AnalysisState<A>> raised;
+
+		// whether the exceptions raised in all the executions of a state are
+		// raised in all of them (see certainOnlyIf)
+		private final boolean certain;
 
 		/**
 		 * Builds the collector.
@@ -155,6 +160,37 @@ public final class PyExceptions {
 				ScopeId<?> context) {
 			this.analysis = analysis;
 			this.context = context;
+			this.raised = new LinkedHashMap<>();
+			this.certain = true;
+		}
+
+		private Raising(
+				Raising<A, D> other,
+				boolean certain) {
+			this.analysis = other.analysis;
+			this.context = other.context;
+			this.raised = other.raised;
+			this.certain = other.certain && certain;
+		}
+
+		/**
+		 * Yields a collector of the same exceptions as this one (moved together
+		 * with them) that, unless the given condition holds, raises under an
+		 * unknown condition also the exceptions that this would raise in all
+		 * the executions of a state. This is used with states that might have
+		 * more executions than the ones where the exceptions are raised (e.g.,
+		 * the executions computing a combination of the operands of a
+		 * statement, if they are not known exactly, see
+		 * {@link it.unive.lisa.program.cfg.statement.NaryExpression#restrictsExactly}).
+		 *
+		 * @param exact whether the states are made exactly of the executions
+		 *                  where the exceptions are raised
+		 *
+		 * @return the collector
+		 */
+		public Raising<A, D> certainOnlyIf(
+				boolean exact) {
+			return exact ? this : new Raising<>(this, false);
 		}
 
 		/**
@@ -257,6 +293,87 @@ public final class PyExceptions {
 			raise(raises, typed, cfg, loc, thrower, exceptionClassName);
 		}
 
+		/**
+		 * As
+		 * {@link #raiseOfTypes(AnalysisState, SymbolicExpression, Set, Set, boolean, CFG, CodeLocation, Statement, String)},
+		 * for an operand that might be any of the given values (a value whose
+		 * types are not known fails if {@link Untyped} is a failing type): in all the
+		 * executions if all the types of all the values fail, and otherwise
+		 * where each value has the failing types (under an unknown condition
+		 * if the executions where each value is the operand are not known
+		 * exactly). These are the executions where the given program point, if
+		 * any, computed the value (see
+		 * {@link Analysis#restrictTo(AnalysisState, ProgramPoint, SymbolicExpression)}).
+		 *
+		 * @param state              the state of the executions that might
+		 *                               raise the exception
+		 * @param values             the values of the operand
+		 * @param computing          the program point computing the values,
+		 *                               or {@code null} if it is not known
+		 * @param failing            the types of the operand raising the
+		 *                               exception
+		 * @param surely             whether the values of the failing types
+		 *                               surely raise the exception
+		 * @param cfg                the cfg where the exception is raised
+		 * @param loc                the location where the exception is raised
+		 * @param thrower            the statement raising the exception
+		 * @param exceptionClassName the name of the class of the exception
+		 *
+		 * @throws SemanticException if the analysis fails
+		 */
+		public void raiseOfTypes(
+				AnalysisState<A> state,
+				Collection<SymbolicExpression> values,
+				ProgramPoint computing,
+				Set<Type> failing,
+				boolean surely,
+				CFG cfg,
+				CodeLocation loc,
+				Statement thrower,
+				String exceptionClassName)
+				throws SemanticException {
+			if (failing.isEmpty() || values.isEmpty())
+				return;
+			Map<SymbolicExpression, Set<Type>> types = new LinkedHashMap<>();
+			boolean all = true;
+			for (SymbolicExpression v : values) {
+				Set<Type> t = analysis.getRuntimeTypesOf(state, v, context, thrower);
+				types.put(v, t);
+				all &= !t.isEmpty() && t.stream().noneMatch(Type::isUntyped) && failing.containsAll(t);
+			}
+			if (values.size() == 1) {
+				SymbolicExpression v = values.iterator().next();
+				raiseOfTypes(state, v, failing, types.get(v), surely, cfg, loc, thrower, exceptionClassName);
+				return;
+			}
+			if (all) {
+				// every value fails
+				raise(surely ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN, state, cfg, loc, thrower,
+						exceptionClassName);
+				return;
+			}
+			for (Map.Entry<SymbolicExpression, Set<Type>> v : types.entrySet()) {
+				// the failing types of this value (unknown ones, if unknown
+				// types fail)
+				Set<Type> ofValue = new java.util.HashSet<>();
+				if (v.getValue().isEmpty() && failing.stream().anyMatch(Type::isUntyped))
+					ofValue.add(Untyped.INSTANCE);
+				for (Type t : v.getValue())
+					if (failing.contains(t))
+						ofValue.add(t);
+				if (ofValue.isEmpty())
+					continue;
+				AnalysisState<A> computed = computing == null ? state
+						: analysis.restrictTo(state, computing, v.getKey());
+				// surely raised only if the executions computing the value
+				// are known exactly
+				boolean exact = computing != null && analysis.restrictsExactly(state, computing, v.getKey());
+				if (!computed.getExecutionState().isBottom())
+					raiseOfTypes(computed, v.getKey(), ofValue, v.getValue(), surely && exact, cfg, loc, thrower,
+							exceptionClassName);
+			}
+		}
+
 		// raises the exception in all the executions of the state
 		private void collect(
 				AnalysisState<A> state,
@@ -304,7 +421,7 @@ public final class PyExceptions {
 				throws SemanticException {
 			if (raises == Satisfiability.NOT_SATISFIED || raises == Satisfiability.BOTTOM)
 				return;
-			AnalysisState<A> raising = raises == Satisfiability.SATISFIED ? state
+			AnalysisState<A> raising = raises == Satisfiability.SATISFIED && certain ? state
 					: ExceptionGuard.maybe(analysis, context, state, thrower);
 			if (!raising.getExecutionState().isBottom())
 				collect(raising, cfg, loc, thrower, exceptionClassName);

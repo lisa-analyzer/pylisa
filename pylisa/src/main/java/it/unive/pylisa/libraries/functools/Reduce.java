@@ -98,6 +98,11 @@ public class Reduce extends PyNative {
 				AnalysisState<A> initialState = restrictTo(interprocedural, iterableState, null, null, initial);
 				if (initialState.getExecutionState().isBottom())
 					continue;
+				// if the executions computing the arguments are not known
+				// exactly, the exceptions might be raised in some of them
+				boolean exact = (params[1].size() == 1 || restrictsExactly(interprocedural, state, null, iterable))
+						&& (params[2].size() == 1
+								|| restrictsExactly(interprocedural, iterableState, null, null, initial));
 				boolean given = !missing(initial);
 				if (!given && surely == 0)
 					// reduce() of an iterable that might be empty with no
@@ -109,13 +114,13 @@ public class Reduce extends PyNative {
 				// the values of acc: initial, or the first element
 				AnalysisState<A> acc = given ? initialState.withExecutionExpressions(new ExpressionSet(initial))
 						: Iteration.elements(analysis, context, initialState, iterableExpr, iterable, st, getMetaVariables(),
-								raising);
+								raising.certainOnlyIf(exact));
 				if (given || length == null || length != 1)
 					// function is surely called if the iterable surely has an
 					// element (two, without an initial value)
 					acc = accumulate(interprocedural, acc, params[0], iterableExpr, iterable, expressions,
 							surely >= (given ? 1 : 2));
-				result = result.lub(acc);
+				result = result.lub(exact ? acc : analysis.uncertainErrors(initialState, acc, context, st));
 			}
 		}
 		return raising.moveFrom(result);

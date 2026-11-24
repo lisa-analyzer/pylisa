@@ -104,11 +104,17 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 			// that each combination is evaluated (and raises its exceptions)
 			// only in the executions computing it (e.g. in ord(a if c else
 			// b))
-			AnalysisState<A> computing = restrictTo(interprocedural, state, args);
-			if (args.length > 0 && computing.getExecutionState().isBottom())
-				return computing.bottomExecution();
-			return semantics(interprocedural.getAnalysis(), interprocedural.getCurrentContext(), computing,
-					args.clone());
+			// (if they are not known exactly, the errors are raised under an
+			// unknown condition, see ofCombination)
+			SymbolicExpression[] values = args.clone();
+			if (singleValues(params))
+				return semantics(interprocedural.getAnalysis(), interprocedural.getCurrentContext(), state, values);
+			return ofCombination(interprocedural, state, computing -> {
+				if (values.length > 0 && computing.getExecutionState().isBottom())
+					return computing.bottomExecution();
+				return semantics(interprocedural.getAnalysis(), interprocedural.getCurrentContext(), computing,
+						values);
+			}, values);
 		}
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression e : params[pos]) {

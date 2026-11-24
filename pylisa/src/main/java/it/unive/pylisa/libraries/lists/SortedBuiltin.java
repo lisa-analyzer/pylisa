@@ -106,6 +106,11 @@ public class SortedBuiltin extends PyNative {
 				AnalysisState<A> keys = PyValueCall.call(interprocedural, elements, new ExpressionSet(key),
 						new ExpressionSet[] { elements.getExecutionExpressions() }, st, "key",
 						new StatementStore<>(elements), getMetaVariables());
+				if (!(params[1].size() == 1 || restrictsExactly(interprocedural, created, null, key))
+						|| !(params[0].size() == 1 || restrictsExactly(interprocedural, keyState, iterable)))
+					// the executions computing the arguments are not known
+					// exactly: the exceptions might be raised in some of them
+					keys = analysis.uncertainErrors(iterableState, keys, context, st);
 				// the exceptions raised by key
 				result = result.lub(keys.bottomExecution());
 				if (!comparable(analysis, context, keys, keys.getExecutionExpressions()))

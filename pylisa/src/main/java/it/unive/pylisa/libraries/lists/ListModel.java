@@ -790,14 +790,32 @@ public final class ListModel {
 			AnalysisState<A> failing = range == null ? state
 					: ExceptionGuard.unless(analysis, context, state, range, thrower);
 			if (!failing.getExecutionState().isBottom())
-				// surely raised where the index is out of range, unless it
-				// might also not be an int
-				raising.raise(typeError ? Satisfiability.UNKNOWN : Satisfiability.SATISFIED, failing,
-						thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
+				indexError(failing, index, types, thrower, raising);
 		}
 		if (typeError)
 			indexTypeError(state, index, types, thrower, raising);
 		return result;
+	}
+
+	// raises IndexError in the executions where the index, with the given
+	// runtime types, is out of range (the ones of the given state) and is an
+	// int: surely, unless they cannot be told apart from the ones where it is
+	// not an int (e.g. if its types are not known)
+	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> void indexError(
+			AnalysisState<A> state,
+			SymbolicExpression index,
+			Set<Type> types,
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
+		Set<Type> ints = new HashSet<>();
+		if (types.isEmpty())
+			ints.add(Untyped.INSTANCE);
+		for (Type t : types)
+			if (ListOperations.INT.test(t) || t.isUntyped())
+				ints.add(t);
+		raising.raiseOfTypes(state, index, ints, types, true, thrower.getCFG(), thrower.getLocation(), thrower,
+				LibrarySpecificationProvider.INDEX_ERROR);
 	}
 
 	// raises TypeError in the executions where the index, with the given
@@ -1212,10 +1230,7 @@ public final class ListModel {
 			AnalysisState<A> failing = range == null ? state
 					: ExceptionGuard.unless(analysis, context, state, range, thrower);
 			if (!failing.getExecutionState().isBottom())
-				// surely raised where the index is out of range, unless it
-				// might also not be an int
-				raising.raise(typeError ? Satisfiability.UNKNOWN : Satisfiability.SATISFIED, failing,
-						thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.INDEX_ERROR);
+				indexError(failing, index, types, thrower, raising);
 		}
 		if (typeError)
 			indexTypeError(state, index, types, thrower, raising);

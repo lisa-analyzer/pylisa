@@ -6,7 +6,6 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
@@ -237,8 +236,9 @@ public final class BoundMethods {
 		// call at the location of the caller (as in o.f()())
 		CodeLocation location = new DerivedLocation(loc, "bound call");
 		AnalysisState<A> result = state.bottomExecution();
-		for (String name : names)
+		for (String name : names) {
 			// as o.name(...), for each class o might be an object of
+			Set<Type> failing = new HashSet<>();
 			for (Type t : selfTypes) {
 				types[0] = Set.of(t);
 				Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, self, caller, location,
@@ -247,17 +247,16 @@ public final class BoundMethods {
 					result = result.lub(resolved.forwardSemanticsAux(interprocedural, self, actuals, expressions));
 					metas.addAll(resolved.getMetaVariables());
 				} else if (PyBinaryDispatch.fullyKnown(t))
-					// the method does not accept the arguments: raised where
-					// the receiver has this type
-					if (actuals[0].size() == 1)
-						raising.raiseOfTypes(self, actuals[0].iterator().next(), Set.of(t), selfTypes, single,
-								caller.getCFG(), loc, caller, LibrarySpecificationProvider.TYPE_ERROR);
-					else
-						raising.raise(Satisfiability.UNKNOWN, self, caller.getCFG(), loc, caller,
-								LibrarySpecificationProvider.TYPE_ERROR);
+					failing.add(t);
 				else
 					unknown = true;
 			}
+			// the method does not accept the arguments: raised where the
+			// receiver has these types (the receivers, read from the bound
+			// method, are not computed by a program point)
+			raising.raiseOfTypes(self, actuals[0].elements(), null, failing, single, caller.getCFG(), loc, caller,
+					LibrarySpecificationProvider.TYPE_ERROR);
+		}
 		if (unknown)
 			result = result
 					.lub(analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, loc), context, caller));

@@ -14,6 +14,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
+import it.unive.lisa.program.cfg.statement.CombinationSemantics;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Int32Type;
@@ -115,13 +116,11 @@ public class PyMinMax extends NaryExpression {
 		if (positional == 0 || (hasDefault && positional > 1))
 			// e.g. min(), or min(a, b, default=c)
 			return raising.moveFrom(raise(raising, Satisfiability.SATISFIED, state, LibrarySpecificationProvider.TYPE_ERROR));
-		return raising.moveFrom(
-				combinations(interprocedural, raising, state, params, new SymbolicExpression[params.length], 0));
+		return combinations(interprocedural, state, params, new SymbolicExpression[params.length], 0);
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> combinations(
 			InterproceduralAnalysis<A, D> interprocedural,
-			PyExceptions.Raising<A, D> raising,
 			AnalysisState<A> state,
 			ExpressionSet[] params,
 			SymbolicExpression[] args,
@@ -129,20 +128,27 @@ public class PyMinMax extends NaryExpression {
 			throws SemanticException {
 		if (pos == params.length) {
 			// the executions where the arguments computed these values, so
-			// that each combination raises its exceptions only in them
-			AnalysisState<A> computing = restrictTo(interprocedural, state, args);
-			if (computing.getExecutionState().isBottom())
-				return computing.bottomExecution();
+			// that each combination raises its exceptions only in them (if
+			// they are not known exactly, the exceptions are raised under an
+			// unknown condition, see ofCombination)
 			Analysis<A, D> analysis = interprocedural.getAnalysis();
 			ScopeId<A> context = interprocedural.getCurrentContext();
-			return positional == 1
-					? ofIterable(analysis, context, raising, computing, args[0], hasDefault ? args[1] : null)
-					: ofValues(analysis, context, raising, computing, List.of(args), true);
+			SymbolicExpression[] values = args.clone();
+			CombinationSemantics<A> semantics = computing -> {
+				if (computing.getExecutionState().isBottom())
+					return computing.bottomExecution();
+				PyExceptions.Raising<A, D> own = new PyExceptions.Raising<>(analysis, context);
+				return own.moveFrom(positional == 1
+						? ofIterable(analysis, context, own, computing, values[0], hasDefault ? values[1] : null)
+						: ofValues(analysis, context, own, computing, List.of(values), true));
+			};
+			return singleValues(params) ? semantics.compute(state)
+					: ofCombination(interprocedural, state, semantics, values);
 		}
 		AnalysisState<A> result = state.bottomExecution();
 		for (SymbolicExpression e : params[pos]) {
 			args[pos] = e;
-			result = result.lub(combinations(interprocedural, raising, state, params, args, pos + 1));
+			result = result.lub(combinations(interprocedural, state, params, args, pos + 1));
 		}
 		return result;
 	}

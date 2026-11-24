@@ -1,0 +1,249 @@
+{
+  "warnings" : [ {
+    "location" : "'py-testcases/error-raising/error-raising.py':66:4",
+    "cfg" : "untyped py-testcases/error-raising/error-raising::$main()",
+    "text" : "index_of_two_types()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/error-raising/error-raising.py':66:4",
+    "definite" : true,
+    "reproducingInputs" : [ {
+      "location" : "'py-testcases/error-raising/error-raising.py':6:7",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "true"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':65:3",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "true"
+    } ],
+    "explanation" : "violation reached in 17 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), index_of_two_types = <function index_of_two_types>, store_of_two_types = <function store_of_two_types>, f = <function f>, double_star_never_dict = <function double_star_never_dict>, double_star_sometimes_dict = <function double_star_sometimes_dict>, A = A, B = B, bound_wrong_arity = <function bound_wrong_arity>, min_of_combinations = <function min_of_combinations>, nondet_bool(), index_of_two_types(), [$main > index_of_two_types] lst = list(1, 2), [$main > index_of_two_types] i = 5 if FLAG else \"a\", [$main > index_of_two_types] return lst[i], index_of_two_types() (raising errors)] (not yet certified by execution)"
+  }, {
+    "location" : "'py-testcases/error-raising/error-raising.py':66:4",
+    "cfg" : "untyped py-testcases/error-raising/error-raising::$main()",
+    "text" : "index_of_two_types()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/error-raising/error-raising.py':66:4",
+    "definite" : true,
+    "reproducingInputs" : [ {
+      "location" : "'py-testcases/error-raising/error-raising.py':6:7",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "false"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':65:3",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "true"
+    } ],
+    "explanation" : "violation reached in 17 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), index_of_two_types = <function index_of_two_types>, store_of_two_types = <function store_of_two_types>, f = <function f>, double_star_never_dict = <function double_star_never_dict>, double_star_sometimes_dict = <function double_star_sometimes_dict>, A = A, B = B, bound_wrong_arity = <function bound_wrong_arity>, min_of_combinations = <function min_of_combinations>, nondet_bool(), index_of_two_types(), [$main > index_of_two_types] lst = list(1, 2), [$main > index_of_two_types] i = 5 if FLAG else \"a\", [$main > index_of_two_types] return lst[i], index_of_two_types() (raising errors)] (not yet certified by execution)"
+  }, {
+    "location" : "'py-testcases/error-raising/error-raising.py':68:4",
+    "cfg" : "untyped py-testcases/error-raising/error-raising::$main()",
+    "text" : "store_of_two_types()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/error-raising/error-raising.py':68:4",
+    "definite" : true,
+    "reproducingInputs" : [ {
+      "location" : "'py-testcases/error-raising/error-raising.py':6:7",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "true"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':65:3",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "false"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':67:5",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "true"
+    } ],
+    "explanation" : "violation reached in 18 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), index_of_two_types = <function index_of_two_types>, store_of_two_types = <function store_of_two_types>, f = <function f>, double_star_never_dict = <function double_star_never_dict>, double_star_sometimes_dict = <function double_star_sometimes_dict>, A = A, B = B, bound_wrong_arity = <function bound_wrong_arity>, min_of_combinations = <function min_of_combinations>, nondet_bool(), nondet_bool(), store_of_two_types(), [$main > store_of_two_types] lst = list(1, 2), [$main > store_of_two_types] i = 5 if FLAG else \"a\", [$main > store_of_two_types] lst[i] = 3, store_of_two_types() (raising errors)] (not yet certified by execution)"
+  }, {
+    "location" : "'py-testcases/error-raising/error-raising.py':68:4",
+    "cfg" : "untyped py-testcases/error-raising/error-raising::$main()",
+    "text" : "store_of_two_types()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/error-raising/error-raising.py':68:4",
+    "definite" : true,
+    "reproducingInputs" : [ {
+      "location" : "'py-testcases/error-raising/error-raising.py':6:7",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "false"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':65:3",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "false"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':67:5",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "true"
+    } ],
+    "explanation" : "violation reached in 18 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), index_of_two_types = <function index_of_two_types>, store_of_two_types = <function store_of_two_types>, f = <function f>, double_star_never_dict = <function double_star_never_dict>, double_star_sometimes_dict = <function double_star_sometimes_dict>, A = A, B = B, bound_wrong_arity = <function bound_wrong_arity>, min_of_combinations = <function min_of_combinations>, nondet_bool(), nondet_bool(), store_of_two_types(), [$main > store_of_two_types] lst = list(1, 2), [$main > store_of_two_types] i = 5 if FLAG else \"a\", [$main > store_of_two_types] lst[i] = 3, store_of_two_types() (raising errors)] (not yet certified by execution)"
+  }, {
+    "location" : "'py-testcases/error-raising/error-raising.py':70:4",
+    "cfg" : "untyped py-testcases/error-raising/error-raising::$main()",
+    "text" : "double_star_never_dict()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/error-raising/error-raising.py':70:4",
+    "definite" : true,
+    "reproducingInputs" : [ {
+      "location" : "'py-testcases/error-raising/error-raising.py':6:7",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "true"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':65:3",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "false"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':67:5",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "false"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':69:5",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "true"
+    } ],
+    "explanation" : "violation reached in 17 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), index_of_two_types = <function index_of_two_types>, store_of_two_types = <function store_of_two_types>, f = <function f>, double_star_never_dict = <function double_star_never_dict>, double_star_sometimes_dict = <function double_star_sometimes_dict>, A = A, B = B, bound_wrong_arity = <function bound_wrong_arity>, min_of_combinations = <function min_of_combinations>, nondet_bool(), nondet_bool(), nondet_bool(), double_star_never_dict(), [$main > double_star_never_dict] return f(**(5 if FLAG else \"a\")), double_star_never_dict() (raising errors)] (not yet certified by execution)"
+  }, {
+    "location" : "'py-testcases/error-raising/error-raising.py':72:4",
+    "cfg" : "untyped py-testcases/error-raising/error-raising::$main()",
+    "text" : "double_star_sometimes_dict()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/error-raising/error-raising.py':72:4",
+    "definite" : false,
+    "explanation" : "violation reached in 19 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), index_of_two_types = <function index_of_two_types>, store_of_two_types = <function store_of_two_types>, f = <function f>, double_star_never_dict = <function double_star_never_dict>, double_star_sometimes_dict = <function double_star_sometimes_dict>, A = A, B = B, bound_wrong_arity = <function bound_wrong_arity>, min_of_combinations = <function min_of_combinations>, nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), double_star_sometimes_dict(), [$main > double_star_sometimes_dict] d = dict(\"x\", 1), [$main > double_star_sometimes_dict] return f(**(d if FLAG else 5)), double_star_sometimes_dict() (raising errors)], relying on values that are not computed precisely (call results, unsupported operations): imprecise return of f; CellKey"
+  }, {
+    "location" : "'py-testcases/error-raising/error-raising.py':74:4",
+    "cfg" : "untyped py-testcases/error-raising/error-raising::$main()",
+    "text" : "bound_wrong_arity()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/error-raising/error-raising.py':74:4",
+    "definite" : false,
+    "refuted" : true,
+    "explanation" : "inductive invariant found: {bound_wrong_arity() (raising errors)=[!true]}"
+  }, {
+    "location" : "'py-testcases/error-raising/error-raising.py':76:4",
+    "cfg" : "untyped py-testcases/error-raising/error-raising::$main()",
+    "text" : "min_of_combinations()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
+    "targetKind" : "EXPRESSION",
+    "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/error-raising/error-raising.py':76:4",
+    "definite" : true,
+    "reproducingInputs" : [ {
+      "location" : "'py-testcases/error-raising/error-raising.py':6:7",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "true"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':65:3",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "false"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':67:5",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "false"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':69:5",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "false"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':71:5",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "false"
+    }, {
+      "location" : "'py-testcases/error-raising/error-raising.py':73:5",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "false"
+    } ],
+    "explanation" : "violation reached in 19 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), index_of_two_types = <function index_of_two_types>, store_of_two_types = <function store_of_two_types>, f = <function f>, double_star_never_dict = <function double_star_never_dict>, double_star_sometimes_dict = <function double_star_sometimes_dict>, A = A, B = B, bound_wrong_arity = <function bound_wrong_arity>, min_of_combinations = <function min_of_combinations>, nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), min_of_combinations(), [$main > min_of_combinations] return min(\"s\" if FLAG else 0, 1), min_of_combinations() (raising errors)] (not yet certified by execution)"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_A.m(A__self)_6734e5386fa4d70d54231ed7590fdf92.graph.json", "untyped_B.m(B__self)_6734e5386fa4d70d54231ed7590fdf92.graph.json", "untyped_py-testcases_error-raising_error-raising.$main().graph.json", "untyped_py-testcases_error-raising_error-raising.bound_wrong_arity()_45a9daa64c9689d7401c6d892b0340df.graph.json", "untyped_py-testcases_error-raising_error-raising.double_star_never_dict()_f26b7ddc9f10108a6dacf05c08582b01.graph.json", "untyped_py-testcases_error-raising_error-raising.double_star_sometimes_dict()_ffc8e916e081f851e3850bb642e43193.graph.json", "untyped_py-testcases_error-raising_error-raising.f(untyped_kwargs)_123192e345cbcefc4dfa7406b20df199.graph.json", "untyped_py-testcases_error-raising_error-raising.f(untyped_kwargs)_aae759175ea24203362b2a33708bb6b7.graph.json", "untyped_py-testcases_error-raising_error-raising.index_of_two_types()_2b02020ff06ac78d447a9403755a1a3b.graph.json", "untyped_py-testcases_error-raising_error-raising.min_of_combinations()_e6738c5836a0dbf8047d4c9ac19fa913.graph.json", "untyped_py-testcases_error-raising_error-raising.store_of_two_types()_63ab01324bfa6f850b4191e807900465.graph.json" ],
+  "info" : {
+    "cfgs" : "13",
+    "duration" : "1s 947ms",
+    "end" : "2026-11-24T15:26:44.996+01:00",
+    "expressions" : "82",
+    "files" : "11",
+    "globals" : "0",
+    "members" : "222",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-11-24T15:26:43.049+01:00",
+    "statements" : "44",
+    "units" : "49",
+    "version" : "1.0",
+    "warnings" : "8"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/error-raising"
+  }
+}

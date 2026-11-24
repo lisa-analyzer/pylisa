@@ -123,8 +123,10 @@ public class NextBuiltin extends PyNative {
 					// not called
 					unknown = true;
 			if (iterators)
-				result = result.lub(
-						Iteration.elements(interprocedural, itState, null, it, st, getMetaVariables(), raising));
+				// (if the executions computing the value are not known exactly,
+				// the exceptions are raised under an unknown condition)
+				result = result.lub(Iteration.elements(interprocedural, itState, null, it, st, getMetaVariables(),
+						raising.certainOnlyIf(params[0].size() == 1 || restrictsExactly(interprocedural, state, it))));
 			if (unknown) {
 				result = result.lub(compute(analysis, context, itState, new PushAny(Untyped.INSTANCE, loc)));
 				raise(raising, Satisfiability.UNKNOWN, itState, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);

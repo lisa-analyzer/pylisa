@@ -301,24 +301,18 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 	 * {@code TypeError} might be raised if the value might not be a dictionary,
 	 * or if a key might not be a {@code str}.
 	 */
-	// raises TypeError where the argument, with the given values and runtime
-	// types, has one of the failing types (under an unknown condition if the
-	// argument has several values, or its types are not known)
+	// raises TypeError where the argument, computing the given values, has
+	// one of the failing types (see PyExceptions.Raising)
 	private static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> void raiseOfTypes(
 			AnalysisState<A> state,
 			Call call,
-			CodeLocation loc,
+			Expression argument,
 			ExpressionSet values,
 			Set<Type> failing,
-			Set<Type> types,
 			PyExceptions.Raising<A, D> raising)
 			throws SemanticException {
-		if (values.size() == 1 && !types.isEmpty())
-			raising.raiseOfTypes(state, values.iterator().next(), failing, types, true, call.getCFG(), loc, call,
-					LibrarySpecificationProvider.TYPE_ERROR);
-		else
-			raising.raise(Satisfiability.UNKNOWN, state, call.getCFG(), loc, call,
-					LibrarySpecificationProvider.TYPE_ERROR);
+		raising.raiseOfTypes(state, values.elements(), argument, failing, true, call.getCFG(),
+				argument.getLocation(), call, LibrarySpecificationProvider.TYPE_ERROR);
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Starred<A, D> doubleStarred(
@@ -350,15 +344,20 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			if (types[i].isEmpty() || types[i].stream().anyMatch(t -> !DictModel.isDict(t))) {
 				// e.g. f(**5): raised where the argument is not a dictionary
 				Set<Type> failing = new HashSet<>();
+				if (types[i].isEmpty())
+					failing.add(Untyped.INSTANCE);
 				for (Type t : types[i])
 					if (!DictModel.isDict(t))
 						failing.add(t);
-				raiseOfTypes(state, call, loc, given[i], failing, types[i], raising);
+				raiseOfTypes(state, call, arg, given[i], failing, raising);
 			}
 			if (types[i].stream().noneMatch(DictModel::isDict))
 				continue;
 			Set<Object> keys = null;
 			for (SymbolicExpression dict : given[i]) {
+				if (analysis.getRuntimeTypesOf(state, dict, context, call).stream().noneMatch(DictModel::isDict))
+					// not a dictionary: it raises TypeError (see above)
+					continue;
 				Set<Object> exact = DictModel.exactKeys(analysis, context, state, dict, call);
 				if (exact == null || (keys != null && !keys.equals(exact)))
 					throw new UnsupportedStatementException(
@@ -379,12 +378,14 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 					for (Type t : types[i])
 						if (DictModel.isDict(t))
 							dicts.add(t);
-					raiseOfTypes(state, call, loc, given[i], dicts, types[i], raising);
+					raiseOfTypes(state, call, arg, given[i], dicts, raising);
 				}
 			Collections.sort(names);
 			for (String name : names) {
 				ExpressionSet value = new ExpressionSet();
 				for (SymbolicExpression dict : given[i]) {
+					if (analysis.getRuntimeTypesOf(state, dict, context, call).stream().noneMatch(DictModel::isDict))
+						continue;
 					AccessChild entry = new AccessChild(Untyped.INSTANCE, new HeapDereference(dictType, dict, loc),
 							DictModel.child(name, loc), loc);
 					value = value.lub(analysis.smallStepSemantics(state, entry, context, call)
