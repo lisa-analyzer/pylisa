@@ -182,6 +182,34 @@ public final class SetModel {
 	}
 
 	/**
+	 * Yields whether the set surely has no elements (see
+	 * {@link #elements(Analysis, ScopeId, AnalysisState, SymbolicExpression, ProgramPoint)}),
+	 * without reading them.
+	 *
+	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
+	 * @param state    the current state
+	 * @param set      the set
+	 * @param pp       the program point using the set
+	 *
+	 * @return whether the set surely has no elements
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean surelyEmpty(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression set,
+			ProgramPoint pp)
+			throws SemanticException {
+		if (state.getExecutionState().isBottom())
+			return true;
+		ListModel.Shape shape = ListModel.shape(analysis, context, state, set, pp);
+		return shape.elements() != null && shape.elements().isEmpty();
+	}
+
+	/**
 	 * Adds the given element to the set (a weak update of its elements).
 	 *
 	 * @param analysis the analysis

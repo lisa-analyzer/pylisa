@@ -68,7 +68,14 @@ public class PyGlobalWrites
 			CodeMember member) {
 		if (cache.containsKey(member))
 			return cache.get(member);
-		Set<String> written = compute(member);
+		if (member instanceof CFG) {
+			// the cfgs of the program are visited once, collecting both the
+			// global variables of the program and the ones each cfg writes
+			globalsOf(member.getDescriptor().getUnit().getProgram());
+			if (cache.containsKey(member))
+				return cache.get(member);
+		}
+		Set<String> written = compute(member, new LinkedHashSet<>());
 		cache.put(member, written);
 		return written;
 	}
@@ -83,36 +90,26 @@ public class PyGlobalWrites
 	@Override
 	public synchronized Set<String> globalsOf(
 			Program program) {
-		return globals.computeIfAbsent(program, PyGlobalWrites::used);
+		return globals.computeIfAbsent(program, this::used);
 	}
 
-	private static Set<String> used(
+	// the global variables of the program, also recording the ones written by
+	// each of its cfgs
+	private Set<String> used(
 			Program program) {
 		Set<String> used = new LinkedHashSet<>();
-		for (CFG cfg : program.getAllCFGs())
-			cfg.accept(new GraphVisitor<CFG, Statement, Edge, Void>() {
-
-				@Override
-				public boolean visit(
-						Void tool,
-						CFG graph,
-						Statement node) {
-					if (node instanceof PyNameRef)
-						add((PyNameRef) node, used);
-					else if (node instanceof PyClassMember) {
-						String variable = ((PyClassMember) node).trackedVariable();
-						if (variable != null)
-							used.add(variable);
-					} else
-						collect(node, used);
-					return true;
-				}
-			}, null);
+		for (CFG cfg : program.getAllCFGs()) {
+			Set<String> written = compute(cfg, used);
+			cache.putIfAbsent(cfg, written);
+		}
 		return Collections.unmodifiableSet(used);
 	}
 
+	// the global variables written by the member (null if they are not
+	// known), adding to used the ones its code uses
 	private static Set<String> compute(
-			CodeMember member) {
+			CodeMember member,
+			Set<String> used) {
 		if (member instanceof NativeCFG)
 			return HAVOCKING.contains(((NativeCFG) member).getConstruct()) ? null : Collections.emptySet();
 		if (!(member instanceof CFG))
@@ -127,6 +124,14 @@ public class PyGlobalWrites
 					Void tool,
 					CFG graph,
 					Statement node) {
+				if (node instanceof PyNameRef)
+					add((PyNameRef) node, used);
+				else if (node instanceof PyClassMember) {
+					String variable = ((PyClassMember) node).trackedVariable();
+					if (variable != null)
+						used.add(variable);
+				} else
+					collect(node, used);
 				if (!collect(node, written))
 					unknown[0] = true;
 				return true;

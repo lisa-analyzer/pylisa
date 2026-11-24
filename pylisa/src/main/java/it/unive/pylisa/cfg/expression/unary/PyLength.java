@@ -27,6 +27,7 @@ import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -96,11 +97,12 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
+		// the types whose values have no length
+		Set<Type> failing = new HashSet<>();
 		for (Type t : rts) {
 			if (Iteration.lazyIterator(t)) {
 				// e.g. len(zip(xs, ys))
-				raising.raiseOfTypes(state, expr, Set.of(t), rts, true, getCFG(), getLocation(), thrower,
-						LibrarySpecificationProvider.TYPE_ERROR);
+				failing.add(t);
 				continue;
 			}
 			if (PyBinaryDispatch.isBuiltinValueType(t)) {
@@ -110,8 +112,7 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 						PyBinaryDispatch.classOf(t), "__len__", new Expression[] { getSubExpression() }, types);
 				if (resolved == null)
 					// e.g. len(5)
-					raising.raiseOfTypes(state, expr, Set.of(t), rts, true, getCFG(), getLocation(), thrower,
-							LibrarySpecificationProvider.TYPE_ERROR);
+					failing.add(t);
 				else {
 					result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
 							new ExpressionSet[] { new ExpressionSet(expr) }, expressions));
@@ -154,6 +155,9 @@ public class PyLength extends it.unive.lisa.program.cfg.statement.UnaryExpressio
 			getMetaVariables().addAll(len.getMetaVariables());
 		}
 
+		// raised where the argument has one of the failing types
+		raising.raiseOfTypes(state, expr, failing, rts, true, getCFG(), getLocation(), thrower,
+				LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 

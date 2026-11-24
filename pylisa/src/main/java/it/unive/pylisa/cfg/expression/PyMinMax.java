@@ -258,17 +258,17 @@ public class PyMinMax extends NaryExpression {
 		boolean ints = exact && types.stream().allMatch(t -> !t.isEmpty() && t.stream().allMatch(PyNative.INT))
 				&& values.stream().noneMatch(v -> v instanceof PushAny);
 		AnalysisState<A> result = state.bottomExecution();
+		// whether values[i] < values[j] surely holds, computed once for each
+		// pair (when needed)
+		Boolean[][] less = new Boolean[values.size()][values.size()];
 		for (int c = 0; c < values.size(); c++) {
 			boolean excluded = false;
 			if (exact)
 				for (int d = 0; d < values.size() && !excluded; d++)
-					if (d != c) {
+					if (d != c)
 						// min excludes c if d < c, max if c < d
-						SymbolicExpression smaller = max ? values.get(c) : values.get(d);
-						SymbolicExpression greater = max ? values.get(d) : values.get(c);
-						excluded = analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, smaller,
-								greater, ComparisonLt.INSTANCE, loc), context, this) == Satisfiability.SATISFIED;
-					}
+						excluded = max ? surelyLess(analysis, context, state, values, less, c, d)
+								: surelyLess(analysis, context, state, values, less, d, c);
 			if (excluded)
 				continue;
 			// the value is the result where it is the minimum (maximum): no
@@ -280,8 +280,12 @@ public class PyMinMax extends NaryExpression {
 			if (exact)
 				for (int d = 0; d < values.size() && !chosen.getExecutionState().isBottom(); d++)
 					if (d != c) {
-						SymbolicExpression first = max ? values.get(d) : values.get(c);
-						SymbolicExpression second = max ? values.get(c) : values.get(d);
+						int f = max ? d : c, g = max ? c : d;
+						if (ints && surelyLess(analysis, context, state, values, less, f, g))
+							// holds in the whole state, and so in chosen
+							continue;
+						SymbolicExpression first = values.get(f);
+						SymbolicExpression second = values.get(g);
 						BinaryOperator op = ints ? (d < c ? ComparisonLt.INSTANCE : ComparisonLe.INSTANCE)
 								: (d < c ? PyComparisonLt.INSTANCE : PyComparisonLe.INSTANCE);
 						BinaryExpression condition = new BinaryExpression(BoolType.INSTANCE, first, second, op, loc);
@@ -309,6 +313,23 @@ public class PyMinMax extends NaryExpression {
 		if (mightError)
 			result = result.lub(raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR));
 		return result;
+	}
+
+	// whether values[i] < values[j] surely holds in the state (ints are
+	// compared as numbers), caching the result in less
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean surelyLess(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			List<SymbolicExpression> values,
+			Boolean[][] less,
+			int i,
+			int j)
+			throws SemanticException {
+		if (less[i][j] == null)
+			less[i][j] = analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE, values.get(i),
+					values.get(j), ComparisonLt.INSTANCE, getLocation()), context, this) == Satisfiability.SATISFIED;
+		return less[i][j];
 	}
 
 	// whether values of types in left can be compared with values of types

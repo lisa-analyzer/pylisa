@@ -75,6 +75,9 @@ public class PyIn extends BinaryExpression {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type tContainer : rtsContainer) {
+			// the executions where the container has this type, computed once
+			// for all the types of the needle (only if needed)
+			AnalysisState<A> typedContainer = null;
 			for (Type tNeedle : rtsNeedle) {
 				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {
 					// str, bytes, int, ...: __contains__ is looked up in their
@@ -84,16 +87,16 @@ public class PyIn extends BinaryExpression {
 					Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, state, this,
 							PyBinaryDispatch.classOf(tContainer), "__contains__",
 							new Expression[] { getRight(), getLeft() }, types);
-					if (resolved == null)
+					if (resolved == null) {
 						// e.g. 1 in 5: the container is not iterable, raised
-						// where
-						// the container and the needle have these types
-						raising.raiseOfTypes(
-								PyBinaryDispatch.ofType(analysis, context, state, right, tContainer, rtsContainer,
-										this),
-								left, Set.of(tNeedle), rtsNeedle, PyBinaryDispatch.checkable(tContainer, rtsContainer),
-								getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
-					else {
+						// where the container and the needle have these types
+						if (typedContainer == null)
+							typedContainer = PyBinaryDispatch.ofType(analysis, context, state, right, tContainer,
+									rtsContainer, this);
+						raising.raiseOfTypes(typedContainer, left, Set.of(tNeedle), rtsNeedle,
+								PyBinaryDispatch.checkable(tContainer, rtsContainer), getCFG(), getLocation(), this,
+								LibrarySpecificationProvider.TYPE_ERROR);
+					} else {
 						result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
 								new ExpressionSet[] { new ExpressionSet(right), new ExpressionSet(left) },
 								expressions));

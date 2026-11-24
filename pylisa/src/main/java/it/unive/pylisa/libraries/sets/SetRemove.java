@@ -48,7 +48,7 @@ public class SetRemove extends PyNative {
 			SymbolicExpression[] args)
 			throws SemanticException {
 		AnalysisState<A> result = state.bottomExecution();
-		boolean empty = SetModel.elements(analysis, context, state, args[0], st).getExecutionState().isBottom();
+		boolean empty = SetModel.surelyEmpty(analysis, context, state, args[0], st);
 		if (!empty)
 			result = compute(analysis, context, state, new PyNoneConstant(getLocation()));
 		// KeyError if the element is not in the set: surely if the set has no

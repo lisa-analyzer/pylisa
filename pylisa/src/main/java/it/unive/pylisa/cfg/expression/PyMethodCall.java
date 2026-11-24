@@ -173,6 +173,8 @@ public class PyMethodCall extends UnresolvedCall {
 
 		Set<Type>[] types = parameterTypes(expressions, analysis, context);
 		boolean known = !PyBinaryDispatch.unknownTypes(receiverTypes, this);
+		// the types whose values have no such attribute
+		Set<Type> missing = new HashSet<>();
 		for (Type t : valueTypes) {
 			types[0] = Set.of(t);
 			Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, state, this,
@@ -181,13 +183,8 @@ public class PyMethodCall extends UnresolvedCall {
 					&& BuiltinAttributes.missing(PyBinaryDispatch.classOf(t), getTargetName()))
 				// the values of the class have no such attribute (e.g.
 				// (5).strip()), if the receiver is known to be of that class
-				// (not just any value): raised where the receiver has the type
-				for (SymbolicExpression receiver : params[0]) {
-					Set<Type> rts = analysis.getRuntimeTypesOf(state, receiver, context, this);
-					if (rts.contains(t))
-						raising.raiseOfTypes(state, receiver, Set.of(t), rts, true, getCFG(), getLocation(), this,
-								LibrarySpecificationProvider.ATTRIBUTE_ERROR);
-				}
+				// (not just any value)
+				missing.add(t);
 			else if (resolved == null)
 				// the method is not modeled
 				result = result.lub(analysis.smallStepSemantics(state,
@@ -197,6 +194,15 @@ public class PyMethodCall extends UnresolvedCall {
 				getMetaVariables().addAll(resolved.getMetaVariables());
 			}
 		}
+		if (!missing.isEmpty())
+			// raised where the receiver has one of these types
+			for (SymbolicExpression receiver : params[0]) {
+				Set<Type> rts = analysis.getRuntimeTypesOf(state, receiver, context, this);
+				Set<Type> failing = new HashSet<>(rts);
+				failing.retainAll(missing);
+				raising.raiseOfTypes(state, receiver, failing, rts, true, getCFG(), getLocation(), this,
+						LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+			}
 		return raising.moveFrom(result);
 	}
 

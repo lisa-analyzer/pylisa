@@ -79,28 +79,32 @@ public class PySingleArrayAccess extends BinaryExpression {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type tContainer : rtsContainer) {
+			if (Iteration.lazyIterator(tContainer)) {
+				// e.g. zip(xs, ys)[0]: the iterator is not subscriptable
+				raising.raiseOfTypes(state, left, Set.of(tContainer), rtsContainer, true, getCFG(), getLocation(),
+						this, LibrarySpecificationProvider.TYPE_ERROR);
+				continue;
+			}
+			// the executions where the container has this type, computed once
+			// for all the types of the index (only if needed)
+			AnalysisState<A> typedContainer = null;
 			for (Type tIndex : rtsIndex) {
-				if (Iteration.lazyIterator(tContainer)) {
-					// e.g. zip(xs, ys)[0]: the iterator is not subscriptable
-					raising.raiseOfTypes(state, left, Set.of(tContainer), rtsContainer, true, getCFG(), getLocation(),
-							this, LibrarySpecificationProvider.TYPE_ERROR);
-					continue;
-				}
 				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {
 					// str, int, ...: __getitem__ is looked up in their class
 					Set<Type>[] types = new Set[] { Collections.singleton(tContainer), Collections.singleton(tIndex) };
 					Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, state, this,
 							PyBinaryDispatch.classOf(tContainer), "__getitem__",
 							new Expression[] { getLeft(), getRight() }, types);
-					if (resolved == null)
+					if (resolved == null) {
 						// e.g. 5[0]: the object is not subscriptable, raised
-						// where
-						// the container and the index have these types
-						raising.raiseOfTypes(
-								PyBinaryDispatch.ofType(analysis, context, state, left, tContainer, rtsContainer, this),
-								right, Set.of(tIndex), rtsIndex, PyBinaryDispatch.checkable(tContainer, rtsContainer),
-								getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
-					else {
+						// where the container and the index have these types
+						if (typedContainer == null)
+							typedContainer = PyBinaryDispatch.ofType(analysis, context, state, left, tContainer,
+									rtsContainer, this);
+						raising.raiseOfTypes(typedContainer, right, Set.of(tIndex), rtsIndex,
+								PyBinaryDispatch.checkable(tContainer, rtsContainer), getCFG(), getLocation(), this,
+								LibrarySpecificationProvider.TYPE_ERROR);
+					} else {
 						result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
 								new ExpressionSet[] { new ExpressionSet(left), new ExpressionSet(right) },
 								expressions));

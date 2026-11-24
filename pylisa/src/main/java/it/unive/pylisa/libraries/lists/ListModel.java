@@ -905,6 +905,15 @@ public final class ListModel {
 
 		boolean typeError = !boundsTyped(analysis, context, state, slice, owner);
 		Satisfiability zero = stepZero(analysis, context, state, slice, owner);
+		// a step of 0
+		raising.raise(zero, state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.VALUE_ERROR);
+		if (typeError)
+			// the bounds might not be ints
+			raising.raise(Satisfiability.UNKNOWN, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.TYPE_ERROR);
+		if (zero == Satisfiability.SATISFIED)
+			// no slice is built
+			return state.bottomExecution();
 
 		// the slice is allocated at a location different from the one of the
 		// subscript (see DerivedLocation)
@@ -937,14 +946,6 @@ public final class ListModel {
 			result = result.lub(filled.withExecutionExpression(copy));
 		}
 		owner.getMetaVariables().addAll(creation.getMetaVariables());
-		if (zero == Satisfiability.SATISFIED)
-			result = result.bottomExecution();
-		// a step of 0
-		raising.raise(zero, state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.VALUE_ERROR);
-		if (typeError)
-			// the bounds might not be ints
-			raising.raise(Satisfiability.UNKNOWN, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.TYPE_ERROR);
 		return result;
 	}
 

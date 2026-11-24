@@ -135,7 +135,7 @@ public class PyHeapWrites
 		}
 		if (!(member instanceof CFG))
 			return null;
-		Set<String> own = names((CFG) member);
+		Set<String> own = new HashSet<>(known.bound((CFG) member));
 		own.retainAll(known.names);
 		if (own.isEmpty())
 			return known.anyMember;
@@ -143,11 +143,17 @@ public class PyHeapWrites
 	}
 
 	/**
-	 * The names that the code of the given cfg assigns as attributes, or binds.
+	 * The names that the code of the given cfg assigns as attributes, or binds
+	 * (in {@code bound}), and the names that its string literals might give to
+	 * attributes (in {@code literals}), that the program writes without
+	 * assigning them (e.g., the fields of named tuples, written when the tuples
+	 * are created: their names are listed by string literals, see
+	 * {@link NamedTupleBuiltin}), collected in a single visit of the cfg.
 	 */
-	private static Set<String> names(
-			CFG cfg) {
-		Set<String> names = new HashSet<>();
+	private static void names(
+			CFG cfg,
+			Set<String> bound,
+			Set<String> literals) {
 		// every statement and sub-expression of the cfg
 		cfg.accept(new GraphVisitor<CFG, Statement, Edge, Void>() {
 
@@ -157,49 +163,26 @@ public class PyHeapWrites
 					CFG graph,
 					Statement node) {
 				if (node instanceof PyAttributeAccess && ((PyAttributeAccess) node).isWriteTarget())
-					names.add(((PyAttributeAccess) node).getName());
+					bound.add(((PyAttributeAccess) node).getName());
 				else if (node instanceof PyNameRef && ((PyNameRef) node).isTarget())
-					names.add(((PyNameRef) node).getName());
+					bound.add(((PyNameRef) node).getName());
 				// the cells of closures are written also when the functions
 				// start, and when the closures are created
 				else if (node instanceof PyCellsInit)
-					names.addAll(((PyCellsInit) node).getParameters());
+					bound.addAll(((PyCellsInit) node).getParameters());
 				else if (node instanceof PyClosureCreation)
 					for (PyClosureCreation.FreeVariable free : ((PyClosureCreation) node).getFree())
-						names.add(free.name());
+						bound.add(free.name());
 				else if (node instanceof PyListComprehension)
 					for (PyListComprehension.Clause clause : ((PyListComprehension) node).getClauses())
-						names.addAll(clause.cells().keySet());
-				return true;
-			}
-		}, null);
-		return names;
-	}
-
-	/**
-	 * The names that string literals of the code of the given cfg might give to
-	 * attributes, that the program writes without assigning them (e.g., the
-	 * fields of named tuples, written when the tuples are created: their names
-	 * are listed by string literals, see {@link NamedTupleBuiltin}).
-	 */
-	private static Set<String> literalNames(
-			CFG cfg) {
-		Set<String> names = new HashSet<>();
-		cfg.accept(new GraphVisitor<CFG, Statement, Edge, Void>() {
-
-			@Override
-			public boolean visit(
-					Void tool,
-					CFG graph,
-					Statement node) {
-				if (node instanceof StringLiteral)
+						bound.addAll(clause.cells().keySet());
+				else if (node instanceof StringLiteral)
 					for (String part : ((StringLiteral) node).getValue().split("[\\s,]+"))
 						if (!part.isEmpty())
-							names.add(part);
+							literals.add(part);
 				return true;
 			}
 		}, null);
-		return names;
 	}
 
 	/**
@@ -230,17 +213,38 @@ public class PyHeapWrites
 		 */
 		private final Written anyMember = new Written(field -> !names.contains(simpleName(field)), true);
 
+		/**
+		 * The names that the code of each cfg of the program assigns as
+		 * attributes, or binds (computed once, with {@link #names}).
+		 */
+		private final Map<CFG, Set<String>> byCfg = new IdentityHashMap<>();
+
 		private Attributes(
 				Program program) {
 			Set<String> literals = new HashSet<>();
 			for (CFG cfg : program.getAllCFGs()) {
-				names.addAll(names(cfg));
-				literals.addAll(literalNames(cfg));
+				Set<String> bound = new HashSet<>();
+				names(cfg, bound, literals);
+				byCfg.put(cfg, bound);
+				names.addAll(bound);
 			}
 			names.removeAll(INTERNAL);
 			names.removeIf(n -> n.startsWith("$"));
 			// the names that are written by other means
 			names.removeAll(literals);
+		}
+
+		// the names that the code of the given cfg assigns as attributes, or
+		// binds
+		private Set<String> bound(
+				CFG cfg) {
+			Set<String> bound = byCfg.get(cfg);
+			if (bound == null) {
+				// not a cfg of the program (should not happen)
+				bound = new HashSet<>();
+				names(cfg, bound, new HashSet<>());
+			}
+			return bound;
 		}
 	}
 }

@@ -22,6 +22,7 @@ import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.literal.Literal;
 import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
@@ -225,7 +226,7 @@ public class PyAttributeAccess extends UnaryExpression {
 				// up in their class
 				for (ClassUnit cls : missing.classes())
 					result = result
-							.lub(classAttribute(interprocedural, state, expr, types, cls, missing, thrower, raising));
+							.lub(classAttribute(interprocedural, state, expr, types, cls, missing, thrower, raising, true));
 		}
 		if (others) {
 			// the methods of builtin values, read without calling them (e.g.
@@ -314,8 +315,8 @@ public class PyAttributeAccess extends UnaryExpression {
 		if (missing != null)
 			for (ClassUnit cls : missing.classes())
 				// only the errors: the value of the attribute is not known
-				result = result.lub(classAttribute(interprocedural, state, expr, types, cls, missing, thrower, raising)
-						.bottomExecution());
+				result = result.lub(classAttribute(interprocedural, state, expr, types, cls, missing, thrower, raising,
+						false).bottomExecution());
 		return result;
 	}
 
@@ -529,7 +530,9 @@ public class PyAttributeAccess extends UnaryExpression {
 
 	// reads the attribute from the given class, for an object that does not
 	// have it: an attribute that the class does not define raises
-	// AttributeError
+	// AttributeError; if the value is not needed (only the errors are), the
+	// value is computed only if it might raise errors, and its meta variables
+	// are forgotten
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> classAttribute(
 			InterproceduralAnalysis<A, D> interprocedural,
 			AnalysisState<A> state,
@@ -538,7 +541,8 @@ public class PyAttributeAccess extends UnaryExpression {
 			ClassUnit cls,
 			Missing missing,
 			Statement thrower,
-			PyExceptions.Raising<A, D> raising)
+			PyExceptions.Raising<A, D> raising,
+			boolean valueNeeded)
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		ScopeId<A> context = interprocedural.getCurrentContext();
@@ -558,12 +562,21 @@ public class PyAttributeAccess extends UnaryExpression {
 						LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			return state.bottomExecution();
 		}
+		if (!valueNeeded && (attribute.value() == null || attribute.value() instanceof Literal))
+			// no error is raised
+			return state.bottomExecution();
 		if (attribute.value() == null)
 			return analysis.smallStepSemantics(state, new PushAny(Untyped.INSTANCE, getLocation()), context, this);
 		// the body of the class is not executed: its constant value is
 		// computed here
 		Expression value = attribute.value();
 		AnalysisState<A> result = value.forwardSemantics(state, interprocedural, new StatementStore<>(state));
+		if (!valueNeeded) {
+			// the value is discarded
+			result = result.forgetIdentifiers(value.getMetaVariables(), this);
+			value.getMetaVariables().clear();
+			return result;
+		}
 		// e.g. the return value of the call computing -1: they are forgotten
 		// by the statement using this attribute
 		getMetaVariables().addAll(value.getMetaVariables());
