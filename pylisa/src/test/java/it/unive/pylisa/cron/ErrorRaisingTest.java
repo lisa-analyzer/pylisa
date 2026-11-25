@@ -28,4 +28,14 @@ public class ErrorRaisingTest extends AnalysisTestExecutor {
 		conf.programFile = "error-raising.py";
 		perform(conf);
 	}
+
+	@Test
+	public void testResumeAfterExpandedCall() {
+		CronConfiguration conf = TestHelper.svcompConfig();
+		conf.warningVerifier = new PdrVerifier<>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY)
+				.withGlobalWrites(new PyGlobalWrites()).withHeapWrites(new PyHeapWrites());
+		conf.testDir = "resume-split";
+		conf.programFile = "resume-split.py";
+		perform(conf);
+	}
 }

@@ -1,0 +1,65 @@
+{
+  "warnings" : [ {
+    "location" : "'py-testcases/resume-split/resume-split.py':24:0",
+    "cfg" : "untyped py-testcases/resume-split/resume-split::$main()",
+    "text" : "index_after_call()",
+    "context" : "<empty>",
+    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
+    "targetKind" : "EXPRESSION",
+    "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/resume-split/resume-split.py':24:0",
+    "definite" : true,
+    "reproducingInputs" : [ {
+      "location" : "'py-testcases/resume-split/resume-split.py':7:7",
+      "source" : "return of bool _sv_verifier::nondet_bool()",
+      "context" : "<empty>",
+      "occurrence" : 0,
+      "value" : "true"
+    }, {
+      "location" : "'py-testcases/resume-split/resume-split.py':15:8",
+      "source" : "return of int32 _sv_verifier::nondet_int()",
+      "context" : "['py-testcases/resume-split/resume-split.py':24:0]",
+      "occurrence" : 0,
+      "value" : "1"
+    } ],
+    "explanation" : "violation reached in 13 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), g = <function g>, index_after_call = <function index_after_call>, index_after_call(), [$main > index_after_call] n = nondet_int(), [$main > index_after_call] ||(<(n, 0), >(n, 2)), [$main > index_after_call] short = list(1, 2, 3, 4, 5, 6), [$main > index_after_call] long = list(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), [$main > index_after_call] return short if FLAG else long[g(n)], [$main > index_after_call > g] return +(n, 5), [$main > index_after_call] return short if FLAG else long[g(n)] (after [1 targets] g(n)), index_after_call() (raising errors)] (not yet certified by execution)"
+  } ],
+  "notices" : [ ],
+  "files" : [ "report.json", "untyped_py-testcases_resume-split_resume-split.$main().graph.json", "untyped_py-testcases_resume-split_resume-split.g(untyped_n)_e01b99773dcdf1360d688c4ef659dea6.graph.json", "untyped_py-testcases_resume-split_resume-split.index_after_call()_033abbb825454bc5fa6ae96e069bdacc.graph.json" ],
+  "info" : {
+    "cfgs" : "4",
+    "duration" : "1s 30ms",
+    "end" : "2026-11-25T12:29:43.590+01:00",
+    "expressions" : "45",
+    "files" : "3",
+    "globals" : "0",
+    "members" : "213",
+    "notices" : "0",
+    "programs" : "1",
+    "start" : "2026-11-25T12:29:42.560+01:00",
+    "statements" : "15",
+    "units" : "47",
+    "version" : "1.0",
+    "warnings" : "1"
+  },
+  "configuration" : {
+    "asynchronousListeners" : "",
+    "backwardDescendingFixpoint" : "unset",
+    "backwardFixpoint" : "BackwardAscendingFixpoint",
+    "dumpForcesUnwinding" : "false",
+    "fixpointWorkingSet" : "OrderBasedWorkingSet",
+    "forwardDescendingFixpoint" : "unset",
+    "forwardFixpoint" : "ForwardAscendingFixpoint",
+    "glbThreshold" : "5",
+    "hotspots" : "unset",
+    "openCallPolicy" : "ReturnTopPolicy",
+    "outputs" : "JSONReportDumper, JSONResults",
+    "recursionWideningThreshold" : "5",
+    "semanticChecks" : "ExceptionChecker",
+    "shouldSmashError" : "unset",
+    "synchronousListeners" : "",
+    "syntacticChecks" : "",
+    "useWideningPoints" : "true",
+    "wideningThreshold" : "5",
+    "workdir" : "py-outputs/resume-split"
+  }
+}
