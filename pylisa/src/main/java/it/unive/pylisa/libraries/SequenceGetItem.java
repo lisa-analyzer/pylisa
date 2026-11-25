@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
+import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -28,10 +29,13 @@ import it.unive.lisa.symbolic.value.operator.binary.LogicalOr;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
+import it.unive.pylisa.cfg.expression.TupleCreation;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.dicts.DictModel;
 import it.unive.pylisa.libraries.lists.ListModel;
+import java.util.HashSet;
 import java.util.Set;
 
 public class SequenceGetItem extends BinaryExpression implements PluggableStatement {
@@ -117,18 +121,9 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 			if (typed.getExecutionState().isBottom())
 				continue;
 
-			if (inner.canBeAssignedTo(tupleType)) {
-				Satisfiability integral = hasInt(analysis, context, typed, right);
-				if (integral != Satisfiability.NOT_SATISFIED)
-					result = result.lub(readWithBoundsCheck(analysis, context, typed, deref, right, loc,
-							integral == Satisfiability.SATISFIED, raising));
-				if (integral != Satisfiability.SATISFIED)
-					// the index of a tuple must be an int (when its type is
-					// not known, the error is raised under an unknown
-					// condition)
-					raising.raise(integral == Satisfiability.NOT_SATISFIED ? Satisfiability.SATISFIED
-							: Satisfiability.UNKNOWN, typed, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
-			} else if (ListModel.isList(t)) {
+			if (inner.canBeAssignedTo(tupleType))
+				result = result.lub(readTuple(interprocedural, typed, left, right, deref, raising));
+			else if (ListModel.isList(t)) {
 				// the index might be both a slice and something else (e.g. if
 				// it is unknown)
 				Set<Type> indexTypes = analysis.getRuntimeTypesOf(typed, right, context, this);
@@ -153,6 +148,62 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		}
 
 		return raising.moveFrom(result);
+	}
+
+	// reads the element of a tuple at an int index, or a slice of it
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> readTuple(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression tuple,
+			SymbolicExpression index,
+			HeapDereference deref,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
+		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
+		CodeLocation loc = getLocation();
+		AnalysisState<A> result = state.bottomExecution();
+		Set<Type> types = analysis.getRuntimeTypesOf(state, index, context, this);
+		boolean unknown = types.isEmpty() || types.stream().anyMatch(Type::isUntyped);
+		boolean slices = unknown || types.stream().anyMatch(ListModel::isSlice);
+		boolean ints = unknown || types.stream().anyMatch(SequenceGetItem::isIntegral);
+
+		if (ints) {
+			// the index is out of range surely only if it is surely an int
+			boolean surely = !unknown && types.stream().allMatch(SequenceGetItem::isIntegral);
+			result = result.lub(readWithBoundsCheck(analysis, context, state, deref, index, loc, surely, raising));
+		}
+
+		if (slices && ListModel.checkSlice(analysis, context, state, index, this, st, raising)) {
+			// t[start:stop:step]: a new tuple, whose length and elements are
+			// not known (allocated at a location different from the one of
+			// the subscript, see DerivedLocation)
+			DerivedLocation at = new DerivedLocation(loc, "slice");
+			AnalysisState<A> created = TupleCreation.create(analysis, context, state, st, at, new ExpressionSet[0],
+					getMetaVariables());
+			for (SymbolicExpression copy : created.getExecutionExpressions())
+				result = result.lub(TupleCreation.unknownLength(analysis, context, created, copy, st, at));
+		}
+
+		// the index of a tuple must be an int or a slice (when its type is not
+		// known, the error is raised under an unknown condition)
+		if (unknown)
+			raising.raise(Satisfiability.UNKNOWN, state, getCFG(), loc, st, LibrarySpecificationProvider.TYPE_ERROR);
+		else {
+			Set<Type> failing = new HashSet<>();
+			for (Type t : types)
+				if (!isIntegral(t) && !ListModel.isSlice(t))
+					failing.add(t);
+			raising.raiseOfTypes(state, index, failing, types, true, getCFG(), loc, st,
+					LibrarySpecificationProvider.TYPE_ERROR);
+		}
+		return result;
+	}
+
+	// whether the values of the type can index a sequence (ints and bools)
+	private static boolean isIntegral(
+			Type t) {
+		return (t.isNumericType() && t.asNumericType().isIntegral()) || t.isBooleanType();
 	}
 
 	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> readWithBoundsCheck(
@@ -196,22 +247,5 @@ public class SequenceGetItem extends BinaryExpression implements PluggableStatem
 		}
 
 		return result;
-	}
-
-	// whether the index is an int (or a bool)
-	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> Satisfiability hasInt(
-			Analysis<A, D> analysis,
-			ScopeId<?> context,
-			AnalysisState<A> state,
-			SymbolicExpression index)
-			throws SemanticException {
-		Set<Type> types = analysis.getRuntimeTypesOf(state, index, context, this);
-		if (types.isEmpty() || types.stream().anyMatch(Type::isUntyped))
-			return Satisfiability.UNKNOWN;
-		boolean ints = types.stream()
-				.anyMatch(t -> (t.isNumericType() && t.asNumericType().isIntegral()) || t.isBooleanType());
-		boolean others = types.stream()
-				.anyMatch(t -> !((t.isNumericType() && t.asNumericType().isIntegral()) || t.isBooleanType()));
-		return ints && others ? Satisfiability.UNKNOWN : ints ? Satisfiability.SATISFIED : Satisfiability.NOT_SATISFIED;
 	}
 }

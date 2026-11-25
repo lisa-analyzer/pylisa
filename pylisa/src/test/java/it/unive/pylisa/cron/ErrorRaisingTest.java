@@ -30,6 +30,16 @@ public class ErrorRaisingTest extends AnalysisTestExecutor {
 	}
 
 	@Test
+	public void testReviewSoundness() {
+		CronConfiguration conf = TestHelper.svcompConfig();
+		conf.warningVerifier = new PdrVerifier<>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY)
+				.withGlobalWrites(new PyGlobalWrites()).withHeapWrites(new PyHeapWrites());
+		conf.testDir = "review-soundness";
+		conf.programFile = "review-soundness.py";
+		perform(conf);
+	}
+
+	@Test
 	public void testResumeAfterExpandedCall() {
 		CronConfiguration conf = TestHelper.svcompConfig();
 		conf.warningVerifier = new PdrVerifier<>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY)

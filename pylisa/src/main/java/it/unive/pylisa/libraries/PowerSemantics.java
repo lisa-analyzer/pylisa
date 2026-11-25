@@ -106,14 +106,16 @@ public final class PowerSemantics {
 			// that is not modeled: the result is any value
 			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 			AnalysisState<A> result = state.bottomExecution();
-			AnalysisState<A> nonNegative = analysis.assume(state,
-					new BinaryExpression(BoolType.INSTANCE, base, zero, ComparisonGe.INSTANCE, loc), context, thrower,
-					thrower);
+			BinaryExpression nonNegativeBase = new BinaryExpression(BoolType.INSTANCE, base, zero,
+					ComparisonGe.INSTANCE, loc);
+			AnalysisState<A> nonNegative = analysis.assume(state, nonNegativeBase, context, thrower, thrower);
 			if (!nonNegative.getExecutionState().isBottom())
 				result = ExceptionGuard.guardedCompute(analysis, context, nonNegative, zeroDivision,
 						LibrarySpecificationProvider.ZERO_DIVISION_ERROR, floatPower, cfg, loc, dispatchTarget, thrower,
 						raising);
-			AnalysisState<A> negative = analysis.assume(state, negativeBase, context, thrower, thrower);
+			// the other executions: a negative base, or a NaN (that is
+			// neither negative nor non-negative)
+			AnalysisState<A> negative = ExceptionGuard.unless(analysis, context, state, nonNegativeBase, thrower);
 			if (!negative.getExecutionState().isBottom())
 				result = result.lub(analysis.smallStepSemantics(negative, new PushAny(Untyped.INSTANCE, loc), context,
 						dispatchTarget));

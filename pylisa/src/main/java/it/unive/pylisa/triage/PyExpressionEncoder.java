@@ -462,7 +462,12 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 
 	/**
 	 * An unknown, but deterministic, function of the given arguments, used when
-	 * the guard does not hold (never precise then).
+	 * the guard does not hold (never precise then). The result for references
+	 * (e.g., the truthiness of a list) depends on the contents of the objects
+	 * they point to, that might change while the references do not: when an
+	 * argument is a reference, the result is a fresh value instead, unless
+	 * the function depends only on the class of the objects (e.g.,
+	 * {@code isinstance}, see {@link #CLASS_FUNCTIONS}).
 	 */
 	private Term unknown(
 			String function,
@@ -471,11 +476,29 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			SymbolicExpression origin,
 			Term guard) {
 		List<Term> args = new ArrayList<>(arguments.size());
-		for (Term a : arguments)
-			args.add(isValue(a) || a.getSort().isFloatingPoint() || a.getSort().equals(Sort.INT)
-					|| a.getSort().equals(Sort.BOOL) || a.getSort().equals(Sort.STRING) ? a : ValueSort.wrap(a));
-		return getSymbols().apply("$py." + function, sort, args, origin, guard);
+		List<Term> references = new ArrayList<>();
+		for (Term a : arguments) {
+			Term arg = isValue(a) || a.getSort().isFloatingPoint() || a.getSort().equals(Sort.INT)
+					|| a.getSort().equals(Sort.BOOL) || a.getSort().equals(Sort.STRING) ? a : ValueSort.wrap(a);
+			args.add(arg);
+			if (isValue(arg))
+				references.add(ValueSort.isReference(arg));
+		}
+		Term applied = getSymbols().apply("$py." + function, sort, args, origin, guard);
+		if (references.isEmpty() || CLASS_FUNCTIONS.stream().anyMatch(function::startsWith))
+			return applied;
+		Term anyReference = references.size() == 1 ? references.get(0)
+				: Term.or(references.toArray(Term[]::new));
+		return Term.ite(anyReference, getSymbols().fresh(sort, origin, guard), applied);
 	}
+
+	/**
+	 * The prefixes of the names of the unknown functions whose results depend
+	 * only on the classes of the objects their arguments point to, that never
+	 * change: they are functions also of references (see
+	 * {@link #unknown(String, Sort, List, SymbolicExpression, Term)}).
+	 */
+	private static final List<String> CLASS_FUNCTIONS = List.of("isinstance");
 
 	/**
 	 * A term that is the given one when the guard holds, and an unknown value
@@ -1107,8 +1130,10 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	/**
 	 * Python's truthiness of a value: false for {@code False}, zero, {@code ""}
 	 * and {@code None}, true for other bools, numbers and strings. The
-	 * truthiness of other values (e.g., lists, whose truthiness depends on
-	 * their length) is an unknown function of them.
+	 * truthiness of other values is an unknown function of them, except for
+	 * references (e.g., lists, whose truthiness depends on their length, that
+	 * might change), whose truthiness is unknown (see
+	 * {@link #unknown(String, Sort, List, SymbolicExpression, Term)}).
 	 */
 	private Term truthiness(
 			Term t,

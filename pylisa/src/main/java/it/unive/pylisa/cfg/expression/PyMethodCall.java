@@ -177,6 +177,11 @@ public class PyMethodCall extends UnresolvedCall {
 		Set<Type> missing = new HashSet<>();
 		for (Type t : valueTypes) {
 			types[0] = Set.of(t);
+			// the executions where the receiver has this type: the method
+			// resolved for it runs only on them
+			AnalysisState<A> typed = ofReceiverType(analysis, context, state, params[0], t);
+			if (typed.getExecutionState().isBottom())
+				continue;
 			Call resolved = PyBinaryDispatch.resolveInClass(interprocedural, state, this,
 					PyBinaryDispatch.classOf(t), getTargetName(), getParameters(), types);
 			if (resolved == null && known
@@ -187,10 +192,10 @@ public class PyMethodCall extends UnresolvedCall {
 				missing.add(t);
 			else if (resolved == null)
 				// the method is not modeled
-				result = result.lub(analysis.smallStepSemantics(state,
+				result = result.lub(analysis.smallStepSemantics(typed,
 						new PushAny(Untyped.INSTANCE, getLocation()), context, this));
 			else {
-				result = result.lub(resolved.forwardSemanticsAux(interprocedural, state, params, expressions));
+				result = result.lub(resolved.forwardSemanticsAux(interprocedural, typed, params, expressions));
 				getMetaVariables().addAll(resolved.getMetaVariables());
 			}
 		}
@@ -204,6 +209,22 @@ public class PyMethodCall extends UnresolvedCall {
 						LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			}
 		return raising.moveFrom(result);
+	}
+
+	// the executions where the receiver (if it is a single value) has the
+	// given type (see PyBinaryDispatch.ofType)
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> ofReceiverType(
+			Analysis<A, D> analysis,
+			ScopeId<A> context,
+			AnalysisState<A> state,
+			ExpressionSet receivers,
+			Type t)
+			throws SemanticException {
+		if (receivers.size() != 1)
+			return state;
+		SymbolicExpression receiver = receivers.iterator().next();
+		return PyBinaryDispatch.ofType(analysis, context, state, receiver, t,
+				analysis.getRuntimeTypesOf(state, receiver, context, this), this);
 	}
 
 	// whether the objects of type t are of a class whose methods are all

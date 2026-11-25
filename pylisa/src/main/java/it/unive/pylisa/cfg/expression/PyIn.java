@@ -76,8 +76,12 @@ public class PyIn extends BinaryExpression {
 		AnalysisState<A> result = state.bottomExecution();
 		for (Type tContainer : rtsContainer) {
 			// the executions where the container has this type, computed once
-			// for all the types of the needle (only if needed)
-			AnalysisState<A> typedContainer = null;
+			// for all the types of the needle: the call resolved for the type
+			// runs only on them
+			AnalysisState<A> typedContainer = PyBinaryDispatch.ofType(analysis, context, state, right, tContainer,
+					rtsContainer, this);
+			if (typedContainer.getExecutionState().isBottom())
+				continue;
 			for (Type tNeedle : rtsNeedle) {
 				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {
 					// str, bytes, int, ...: __contains__ is looked up in their
@@ -90,14 +94,11 @@ public class PyIn extends BinaryExpression {
 					if (resolved == null) {
 						// e.g. 1 in 5: the container is not iterable, raised
 						// where the container and the needle have these types
-						if (typedContainer == null)
-							typedContainer = PyBinaryDispatch.ofType(analysis, context, state, right, tContainer,
-									rtsContainer, this);
 						raising.raiseOfTypes(typedContainer, left, Set.of(tNeedle), rtsNeedle,
 								PyBinaryDispatch.checkable(tContainer, rtsContainer), getCFG(), getLocation(), this,
 								LibrarySpecificationProvider.TYPE_ERROR);
 					} else {
-						result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
+						result = result.lub(resolved.forwardSemanticsAux(interprocedural, typedContainer,
 								new ExpressionSet[] { new ExpressionSet(right), new ExpressionSet(left) },
 								expressions));
 						getMetaVariables().addAll(resolved.getMetaVariables());
@@ -128,7 +129,7 @@ public class PyIn extends BinaryExpression {
 				// the container and the needle have already been evaluated:
 				// evaluating the call would evaluate them again (e.g. calling
 				// f twice in x in f())
-				result = result.lub(contains.forwardSemanticsAux(interprocedural, state,
+				result = result.lub(contains.forwardSemanticsAux(interprocedural, typedContainer,
 						new ExpressionSet[] { new ExpressionSet(right), new ExpressionSet(left) }, expressions));
 				getMetaVariables().addAll(contains.getMetaVariables());
 			}

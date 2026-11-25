@@ -86,8 +86,13 @@ public class PySingleArrayAccess extends BinaryExpression {
 				continue;
 			}
 			// the executions where the container has this type, computed once
-			// for all the types of the index (only if needed)
-			AnalysisState<A> typedContainer = null;
+			// for all the types of the index: the call resolved for the type
+			// runs only on them (e.g., the natives of str raise their errors
+			// only where the container is a str)
+			AnalysisState<A> typedContainer = PyBinaryDispatch.ofType(analysis, context, state, left, tContainer,
+					rtsContainer, this);
+			if (typedContainer.getExecutionState().isBottom())
+				continue;
 			for (Type tIndex : rtsIndex) {
 				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {
 					// str, int, ...: __getitem__ is looked up in their class
@@ -98,14 +103,11 @@ public class PySingleArrayAccess extends BinaryExpression {
 					if (resolved == null) {
 						// e.g. 5[0]: the object is not subscriptable, raised
 						// where the container and the index have these types
-						if (typedContainer == null)
-							typedContainer = PyBinaryDispatch.ofType(analysis, context, state, left, tContainer,
-									rtsContainer, this);
 						raising.raiseOfTypes(typedContainer, right, Set.of(tIndex), rtsIndex,
 								PyBinaryDispatch.checkable(tContainer, rtsContainer), getCFG(), getLocation(), this,
 								LibrarySpecificationProvider.TYPE_ERROR);
 					} else {
-						result = result.lub(resolved.forwardSemanticsAux(interprocedural, state,
+						result = result.lub(resolved.forwardSemanticsAux(interprocedural, typedContainer,
 								new ExpressionSet[] { new ExpressionSet(left), new ExpressionSet(right) },
 								expressions));
 						getMetaVariables().addAll(resolved.getMetaVariables());
@@ -138,7 +140,7 @@ public class PySingleArrayAccess extends BinaryExpression {
 				// the receiver and the index have already been evaluated:
 				// evaluating the call would evaluate them again (e.g. calling
 				// f twice in f()[0])
-				result = result.lub(getitem.forwardSemanticsAux(interprocedural, state,
+				result = result.lub(getitem.forwardSemanticsAux(interprocedural, typedContainer,
 						new ExpressionSet[] { new ExpressionSet(left), new ExpressionSet(right) }, expressions));
 				getMetaVariables().addAll(getitem.getMetaVariables());
 			}

@@ -866,6 +866,47 @@ public final class ListModel {
 	}
 
 	/**
+	 * Raises the exceptions of a slice used to read a sequence
+	 * ({@code seq[start:stop:step]}): {@code TypeError} if its bounds might not
+	 * be {@code int}s (or {@code None}), and {@code ValueError} if its step
+	 * might be {@code 0}.
+	 *
+	 * @param analysis the analysis
+	 * @param context  the interprocedural context where the computation happens
+	 * @param state    the state where the sequence and the slice have been
+	 *                     evaluated
+	 * @param slice    the slice
+	 * @param owner    the expression reading the slice
+	 * @param thrower  the statement reading the slice
+	 * @param raising  where the exceptions are collected
+	 *
+	 * @return whether a slice might be read (that is, unless the step is surely
+	 *             {@code 0})
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> boolean checkSlice(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			SymbolicExpression slice,
+			Expression owner,
+			Statement thrower,
+			PyExceptions.Raising<A, D> raising)
+			throws SemanticException {
+		CodeLocation loc = owner.getLocation();
+		boolean typeError = !boundsTyped(analysis, context, state, slice, owner);
+		Satisfiability zero = stepZero(analysis, context, state, slice, owner);
+		// a step of 0
+		raising.raise(zero, state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.VALUE_ERROR);
+		if (typeError)
+			// the bounds might not be ints
+			raising.raise(Satisfiability.UNKNOWN, state, thrower.getCFG(), loc, thrower,
+					LibrarySpecificationProvider.TYPE_ERROR);
+		return zero != Satisfiability.SATISFIED;
+	}
+
+	/**
 	 * Reads the slice of the list ({@code list[start:stop:step]}): the result
 	 * is a new list, whose elements are some of the elements of the list, at
 	 * unknown indices. A slice never raises {@code IndexError}, while
@@ -903,15 +944,7 @@ public final class ListModel {
 		HeapDereference source = new HeapDereference(listType, list, loc);
 		Shape shape = shape(analysis, context, state, list, owner);
 
-		boolean typeError = !boundsTyped(analysis, context, state, slice, owner);
-		Satisfiability zero = stepZero(analysis, context, state, slice, owner);
-		// a step of 0
-		raising.raise(zero, state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.VALUE_ERROR);
-		if (typeError)
-			// the bounds might not be ints
-			raising.raise(Satisfiability.UNKNOWN, state, thrower.getCFG(), loc, thrower,
-					LibrarySpecificationProvider.TYPE_ERROR);
-		if (zero == Satisfiability.SATISFIED)
+		if (!checkSlice(analysis, context, state, slice, owner, thrower, raising))
 			// no slice is built
 			return state.bottomExecution();
 

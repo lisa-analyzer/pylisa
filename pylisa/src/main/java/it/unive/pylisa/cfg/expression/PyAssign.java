@@ -200,7 +200,12 @@ public class PyAssign extends Assignment {
 								LibrarySpecificationProvider.TYPE_ERROR);
 						continue;
 					}
-					result = result.lub(call.forwardSemanticsAux(interprocedural, indexState, args, expressions));
+					// the call resolved for the type runs only where the
+					// receiver has it
+					AnalysisState<A> typed = PyBinaryDispatch.ofType(analysis, context, indexState, selfSym, tSelf,
+							rtsSelf, this);
+					if (!typed.getExecutionState().isBottom())
+						result = result.lub(call.forwardSemanticsAux(interprocedural, typed, args, expressions));
 					setitems.add(call);
 				} catch (CallResolutionException e) {
 					// this type does not support item assignment: it does not

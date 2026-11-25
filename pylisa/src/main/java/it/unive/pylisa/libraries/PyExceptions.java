@@ -15,7 +15,11 @@ import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.symbolic.CFGThrow;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.MemoryAllocation;
+import it.unive.lisa.symbolic.value.BinaryExpression;
+import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.TernaryExpression;
+import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.cfg.DerivedLocation;
@@ -450,8 +454,10 @@ public final class PyExceptions {
 		 * state where the given condition holds, yielding the ones where it
 		 * does not, that continue normally. The analysis decides whether the
 		 * condition holds (see {@link Analysis#satisfies}): if it surely does,
-		 * the exception is raised in all the executions; if it surely does
-		 * not, in none of them; otherwise, the state is restricted to the
+		 * the exception is raised in all the executions (under an unknown
+		 * condition, all of them continuing normally too, if the condition
+		 * involves floating point numbers other than literals, that the
+		 * analysis computes with less precision than python); if it surely does not, in none of them; otherwise, the state is restricted to the
 		 * executions where it holds to raise the exception (see
 		 * {@link ExceptionGuard#when}), and to the ones where it does not to
 		 * continue (see {@link ExceptionGuard#unless}). The executions where
@@ -495,6 +501,15 @@ public final class PyExceptions {
 			if (sat == Satisfiability.NOT_SATISFIED || sat == Satisfiability.BOTTOM)
 				return state;
 			Satisfiability raises = surely ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN;
+			if (sat == Satisfiability.SATISFIED && floats(state, condition, pp)) {
+				// the analysis computes floating point numbers with less
+				// precision than python (e.g., 0.1 + 0.2 - 0.3 is 0 for it):
+				// the condition might not hold, and the executions are not
+				// restricted, as the analysis would decide them in the same
+				// way
+				raise(Satisfiability.UNKNOWN, state, cfg, loc, thrower, exceptionClassName);
+				return state;
+			}
 			if (sat == Satisfiability.SATISFIED) {
 				raise(raises, state, cfg, loc, thrower, exceptionClassName);
 				return state.bottomExecution();
@@ -503,6 +518,38 @@ public final class PyExceptions {
 			if (!failing.getExecutionState().isBottom())
 				raise(raises, failing, cfg, loc, thrower, exceptionClassName);
 			return ExceptionGuard.unless(analysis, context, state, condition, pp);
+		}
+
+		// whether some operand of the condition might be a floating point
+		// number computed by the analysis (literals keep their sign, and
+		// whether they are zero, also with less precision)
+		private boolean floats(
+				AnalysisState<A> state,
+				SymbolicExpression condition,
+				ProgramPoint pp)
+				throws SemanticException {
+			if (condition instanceof UnaryExpression)
+				return floats(state, ((UnaryExpression) condition).getExpression(), pp);
+			if (condition instanceof BinaryExpression)
+				return floats(state, ((BinaryExpression) condition).getLeft(), pp)
+						|| floats(state, ((BinaryExpression) condition).getRight(), pp);
+			if (condition instanceof TernaryExpression)
+				return floats(state, ((TernaryExpression) condition).getLeft(), pp)
+						|| floats(state, ((TernaryExpression) condition).getMiddle(), pp)
+						|| floats(state, ((TernaryExpression) condition).getRight(), pp);
+			if (condition instanceof Constant)
+				return false;
+			if (isFloat(condition.getStaticType()))
+				return true;
+			for (Type t : analysis.getRuntimeTypesOf(state, condition, context, pp))
+				if (isFloat(t))
+					return true;
+			return false;
+		}
+
+		private static boolean isFloat(
+				Type t) {
+			return t.isNumericType() && !t.asNumericType().isIntegral();
 		}
 
 		/**
