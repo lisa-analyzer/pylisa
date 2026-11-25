@@ -675,4 +675,52 @@ public class PyExpressionEncoderTest {
 			assertEquals(c[0] + " ** " + c[1], Double.doubleToLongBits(c[2]),
 					Double.doubleToLongBits(PyExpressionEncoder.pow(c[0], c[1])));
 	}
+
+	/**
+	 * The truthiness of a list depends on its contents, that might change while
+	 * its reference does not: {@code not lst} before and after a mutation might
+	 * differ, while the unknown truthiness of other values is a function of
+	 * them.
+	 */
+	@Test
+	public void truthinessOfReferencesIsNotAFunctionOfThem() throws SemanticException {
+		java.util.Map<String, String> functions = new HashMap<>();
+		Symbols symbols = new Symbols() {
+			@Override
+			public Term apply(
+					String function,
+					Sort result,
+					List<Term> arguments,
+					SymbolicExpression origin,
+					Term guard) {
+				// a deterministic function
+				List<Sort> sorts = new ArrayList<>();
+				for (Term arg : arguments)
+					sorts.add(arg.getSort());
+				String name = functions.computeIfAbsent(function + sorts + result,
+						k -> solver.declareFunction("f#" + (counter++), sorts, result));
+				return Term.app(name, result, arguments.toArray(Term[]::new));
+			}
+		};
+		PyExpressionEncoder encoder = new PyExpressionEncoder(new SortPolicy(new HashMap<>()).withDoubleFloats(),
+				symbols);
+		Variable lst = new Variable(Untyped.INSTANCE, "lst", LOC);
+		Term value = lst.accept(encoder);
+		// two evaluations of not lst (e.g., before and after lst.append(1))
+		Term before = expression("not", lst, null).accept(encoder);
+		Term after = expression("not", lst, null).accept(encoder);
+		Term differ = Term.not(Term.eq(before, after));
+
+		solver.push();
+		solver.assertTerm(ValueSort.isReference(value));
+		solver.assertTerm(differ);
+		assertEquals(SmtResult.SAT, solver.check());
+		solver.pop();
+
+		solver.push();
+		solver.assertTerm(Term.not(ValueSort.isReference(value)));
+		solver.assertTerm(differ);
+		assertEquals(SmtResult.UNSAT, solver.check());
+		solver.pop();
+	}
 }

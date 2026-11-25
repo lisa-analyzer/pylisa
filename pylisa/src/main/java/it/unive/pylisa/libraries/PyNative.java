@@ -102,10 +102,9 @@ public abstract class PyNative extends NaryExpression implements PluggableStatem
 		if (pos == params.length) {
 			// the executions where the arguments computed these values, so
 			// that each combination is evaluated (and raises its exceptions)
-			// only in the executions computing it (e.g. in ord(a if c else
-			// b))
-			// (if they are not known exactly, the errors are raised under an
-			// unknown condition, see ofCombination)
+			// only in the executions computing it, e.g., in ord(a if c else
+			// b); if they are not known exactly, the errors are raised under
+			// an unknown condition (see ofCombination)
 			SymbolicExpression[] values = args.clone();
 			if (singleValues(params))
 				return semantics(interprocedural.getAnalysis(), interprocedural.getCurrentContext(), state, values);

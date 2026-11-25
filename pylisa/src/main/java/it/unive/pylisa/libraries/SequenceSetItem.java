@@ -89,9 +89,9 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		for (SymbolicExpression self : params[0]) {
 			// each combination of the operands is evaluated in the executions
-			// computing it, as the statements of lisa do
-			// (if they are not known exactly, the exceptions are raised under
-			// an unknown condition)
+			// computing it, as the statements of lisa do: if they are not
+			// known exactly, the exceptions are raised under an unknown
+			// condition
 			AnalysisState<A> selfState = restrictTo(interprocedural, state, self);
 			if (selfState.getExecutionState().isBottom())
 				continue;

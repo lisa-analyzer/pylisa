@@ -30,17 +30,18 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Python's {@code container[index]} (single-index read; slices go through
- * {@link PyDoubleArrayAccess}). It calls {@code type(container).__getitem__(
+ * Python's {@code container[index]} (a single index, also a slice such as
+ * {@code 1:3}; {@link PyDoubleArrayAccess} is only used for
+ * {@code base[i, j]} when pandas is loaded). It calls {@code type(container).__getitem__(
  * container, index)} &mdash; the real dunder, so any type registering
  * {@code __getitem__} (the {@code Sequence} hierarchy via
  * {@code SequenceGetItem}, or a user-defined class) is handled the same way,
  * general Python semantics rather than a structure baked into this node. There
- * is no reflected method (indexing is one-directional), so if no runtime type
- * pair resolves it, real Python raises {@code TypeError}; this codebase does
- * not model exceptions, so that is surfaced as
- * {@link UnsupportedStatementException} instead (mirroring {@code in}'s
- * {@code __contains__} dispatch).
+ * is no reflected method (indexing is one-directional). Values of builtin
+ * classes that do not define {@code __getitem__} (e.g., {@code 5[0]}) and
+ * lazy iterators raise {@code TypeError}; if no runtime type pair of an
+ * object resolves it, {@link UnsupportedStatementException} is thrown
+ * (mirroring {@code in}'s {@code __contains__} dispatch).
  */
 public class PySingleArrayAccess extends BinaryExpression {
 

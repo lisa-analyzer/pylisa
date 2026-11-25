@@ -310,33 +310,10 @@ public class PyNameRef extends VariableRef {
 	}
 
 	/**
-	 * Raises the error of reading or deleting the name when it is not bound:
-	 * {@code NameError} for global names, {@code UnboundLocalError} for local
-	 * ones.
-	 *
-	 * @param <A>      the kind of {@link AbstractLattice} of the state
-	 * @param <D>      the kind of {@link AbstractDomain} of the analysis
-	 * @param analysis the analysis
-	 * @param context  the interprocedural context where the computation happens
-	 * @param state    the state
-	 *
-	 * @return the state where the error has been raised
-	 *
-	 * @throws SemanticException if the analysis fails
-	 */
-	public <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> unboundError(
-			Analysis<A, D> analysis,
-			ScopeId<?> context,
-			AnalysisState<A> state)
-			throws SemanticException {
-		return PyExceptions.raise(analysis, context, state, getCFG(), getLocation(), this, unboundErrorName());
-	}
-
-	/**
 	 * Raises the error of reading or deleting the name when it is not bound
-	 * (see {@link #unboundError(Analysis, ScopeId, AnalysisState)}) in the
-	 * executions of the given state, when only some executions raise it: the
-	 * executions are moved to the error channel by the given
+	 * ({@code NameError} for global names, {@code UnboundLocalError} for local
+	 * ones) in the executions of the given state, when only some executions
+	 * raise it: the executions are moved to the error channel by the given
 	 * {@link PyExceptions.Raising}. The error is surely raised if the name is
 	 * surely not bound, and under an unknown condition if it might be bound
 	 * (the executions where it is not are not known).

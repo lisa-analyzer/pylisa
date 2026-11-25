@@ -28,6 +28,7 @@ import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.type.PyClassType;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -37,9 +38,9 @@ import org.apache.commons.lang3.tuple.Pair;
  * Shared helper to raise a native Python exception from a library
  * implementation, mirroring how JLiSA raises
  * {@code ArrayIndexOutOfBoundsException} in {@code JavaArrayAccess}: it
- * allocates an instance of the given
- * (built-in, field-less) exception class, wraps it in a {@link CFGThrow}, and
- * moves the resulting state to the error channel. The move is <i>total</i> (see
+ * allocates an instance of the given (built-in, field-less) exception class,
+ * wraps it in a {@link CFGThrow}, and moves the resulting state to the error
+ * channel. The move is <i>total</i> (see
  * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState.Error, ScopeId, ProgramPoint)})
  * when all executions raise the exception, as in
  * {@link #raise(Analysis, ScopeId, AnalysisState, CFG, CodeLocation, Statement, String)},
@@ -374,25 +375,28 @@ public final class PyExceptions {
 						exceptionClassName);
 				return;
 			}
-			for (Map.Entry<SymbolicExpression, Set<Type>> v : types.entrySet()) {
+			for (SymbolicExpression v : types.keySet()) {
+				AnalysisState<A> computed = computing == null ? state : analysis.restrictTo(state, computing, v);
+				if (computed.getExecutionState().isBottom())
+					continue;
+				// the types of this value in the executions computing it
+				Set<Type> valueTypes = computing == null ? types.get(v)
+						: analysis.getRuntimeTypesOf(computed, v, context, thrower);
 				// the failing types of this value (unknown ones, if unknown
 				// types fail)
-				Set<Type> ofValue = new java.util.HashSet<>();
-				if (v.getValue().isEmpty() && failing.stream().anyMatch(Type::isUntyped))
+				Set<Type> ofValue = new HashSet<>();
+				if (valueTypes.isEmpty() && failing.stream().anyMatch(Type::isUntyped))
 					ofValue.add(Untyped.INSTANCE);
-				for (Type t : v.getValue())
+				for (Type t : valueTypes)
 					if (failing.contains(t))
 						ofValue.add(t);
 				if (ofValue.isEmpty())
 					continue;
-				AnalysisState<A> computed = computing == null ? state
-						: analysis.restrictTo(state, computing, v.getKey());
 				// surely raised only if the executions computing the value
 				// are known exactly
-				boolean exact = computing != null && analysis.restrictsExactly(state, computing, v.getKey());
-				if (!computed.getExecutionState().isBottom())
-					raiseOfTypes(computed, v.getKey(), ofValue, v.getValue(), surely && exact, cfg, loc, thrower,
-							exceptionClassName);
+				boolean exact = computing != null && analysis.restrictsExactly(state, computing, v);
+				raiseOfTypes(computed, v, ofValue, valueTypes, surely && exact, cfg, loc, thrower,
+						exceptionClassName);
 			}
 		}
 
