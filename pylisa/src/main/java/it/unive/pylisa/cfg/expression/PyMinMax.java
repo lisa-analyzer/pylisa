@@ -12,9 +12,9 @@ import it.unive.lisa.lattices.ExpressionSet;
 import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.statement.CombinationSemantics;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
-import it.unive.lisa.program.cfg.statement.CombinationSemantics;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Int32Type;
@@ -115,7 +115,8 @@ public class PyMinMax extends NaryExpression {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		if (positional == 0 || (hasDefault && positional > 1))
 			// e.g. min(), or min(a, b, default=c)
-			return raising.moveFrom(raise(raising, Satisfiability.SATISFIED, state, LibrarySpecificationProvider.TYPE_ERROR));
+			return raising
+					.moveFrom(raise(raising, Satisfiability.SATISFIED, state, LibrarySpecificationProvider.TYPE_ERROR));
 		return combinations(interprocedural, state, params, new SymbolicExpression[params.length], 0);
 	}
 

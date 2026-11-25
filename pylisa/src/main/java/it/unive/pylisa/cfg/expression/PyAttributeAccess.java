@@ -6,10 +6,10 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.lattices.heap.allocations.AllocationSite;
 import it.unive.lisa.lattices.heap.allocations.AllocationSites;
 import it.unive.lisa.lattices.heap.allocations.HeapEnvWithFields;
@@ -22,8 +22,8 @@ import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.literal.Literal;
 import it.unive.lisa.program.cfg.statement.UnaryExpression;
+import it.unive.lisa.program.cfg.statement.literal.Literal;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.heap.AccessChild;
 import it.unive.lisa.symbolic.heap.HeapDereference;
@@ -226,7 +226,8 @@ public class PyAttributeAccess extends UnaryExpression {
 				// up in their class
 				for (ClassUnit cls : missing.classes())
 					result = result
-							.lub(classAttribute(interprocedural, state, expr, types, cls, missing, thrower, raising, true));
+							.lub(classAttribute(interprocedural, state, expr, types, cls, missing, thrower, raising,
+									true));
 		}
 		if (others) {
 			// the methods of builtin values, read without calling them (e.g.
@@ -323,13 +324,12 @@ public class PyAttributeAccess extends UnaryExpression {
 	/**
 	 * The receiver objects that might not have the attribute.
 	 *
-	 * @param assigned       whether some of the receiver objects have the
-	 *                           attribute
-	 * @param classes        the classes of the receiver objects that might not
-	 *                           have the attribute
-	 * @param maybeAssigned  the classes among them whose objects might have
-	 *                           the attribute (so that they do not surely miss
-	 *                           it)
+	 * @param assigned      whether some of the receiver objects have the
+	 *                          attribute
+	 * @param classes       the classes of the receiver objects that might not
+	 *                          have the attribute
+	 * @param maybeAssigned the classes among them whose objects might have the
+	 *                          attribute (so that they do not surely miss it)
 	 */
 	private record Missing(
 			boolean assigned,
@@ -560,7 +560,8 @@ public class PyAttributeAccess extends UnaryExpression {
 						&& t.asPointerType().getInnerType().asUnitType().getUnit() == cls)
 					ofClass.add(t);
 			if (ofClass.isEmpty())
-				raising.raise(Satisfiability.UNKNOWN, state, getCFG(), getLocation(), thrower, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+				raising.raise(Satisfiability.UNKNOWN, state, getCFG(), getLocation(), thrower,
+						LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			else
 				raising.raiseOfTypes(state, expr, ofClass, types, missing.surely(cls), getCFG(), getLocation(), thrower,
 						LibrarySpecificationProvider.ATTRIBUTE_ERROR);

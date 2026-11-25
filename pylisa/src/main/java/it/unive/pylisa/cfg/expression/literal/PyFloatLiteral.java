@@ -13,8 +13,8 @@ import it.unive.pylisa.symbolic.PyFloatConstant;
 
 /**
  * A Python float literal: its value is the 32-bits number used by the analyses,
- * and its semantics is a {@link PyFloatConstant} also keeping Python's (64-bits)
- * value of the literal.
+ * and its semantics is a {@link PyFloatConstant} also keeping Python's
+ * (64-bits) value of the literal.
  */
 public class PyFloatLiteral extends Float32Literal {
 

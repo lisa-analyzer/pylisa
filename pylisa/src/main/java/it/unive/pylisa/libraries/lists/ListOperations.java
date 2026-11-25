@@ -5,9 +5,9 @@ import it.unive.lisa.analysis.AbstractLattice;
 import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
-import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
@@ -49,8 +49,8 @@ public final class ListOperations {
 			|| t.isBooleanType();
 
 	/**
-	 * Whether a value with the given runtime types might not be an
-	 * {@code int} (or a {@code bool}): also if they are not known.
+	 * Whether a value with the given runtime types might not be an {@code int}
+	 * (or a {@code bool}): also if they are not known.
 	 */
 	static boolean mightNotBeInt(
 			Set<Type> types) {
@@ -59,8 +59,8 @@ public final class ListOperations {
 
 	/**
 	 * Whether a value with the given runtime types might be an {@code int} (or
-	 * a {@code bool}): also if they are not known, or if it is an unknown
-	 * value (e.g. returned by an unknown function).
+	 * a {@code bool}): also if they are not known, or if it is an unknown value
+	 * (e.g. returned by an unknown function).
 	 */
 	static boolean mightBeInt(
 			Set<Type> types) {

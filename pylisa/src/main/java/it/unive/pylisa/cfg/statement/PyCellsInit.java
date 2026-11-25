@@ -51,8 +51,8 @@ public class PyCellsInit extends Statement {
 	}
 
 	/**
-	 * Yields the parameters of the function that are cells, that are the
-	 * fields of the object holding the cells written by this statement.
+	 * Yields the parameters of the function that are cells, that are the fields
+	 * of the object holding the cells written by this statement.
 	 *
 	 * @return the parameters
 	 */

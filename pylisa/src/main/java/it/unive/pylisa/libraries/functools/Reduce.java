@@ -113,7 +113,8 @@ public class Reduce extends PyNative {
 
 				// the values of acc: initial, or the first element
 				AnalysisState<A> acc = given ? initialState.withExecutionExpressions(new ExpressionSet(initial))
-						: Iteration.elements(analysis, context, initialState, iterableExpr, iterable, st, getMetaVariables(),
+						: Iteration.elements(analysis, context, initialState, iterableExpr, iterable, st,
+								getMetaVariables(),
 								raising.certainOnlyIf(exact));
 				if (given || length == null || length != 1)
 					// function is surely called if the iterable surely has an

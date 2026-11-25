@@ -12,12 +12,12 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
+import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseAnd;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseOr;
-import it.unive.lisa.symbolic.value.operator.binary.BitwiseXor;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftLeft;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftRight;
-import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseXor;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonNe;
 import it.unive.lisa.symbolic.value.operator.ternary.StringReplace;
@@ -71,8 +71,8 @@ import java.util.function.Function;
  * <ul>
  * <li>{@code None} is the null value of {@link ValueSort};</li>
  * <li>integers are mathematical integers, as Python's ones (the operators of
- * LiSA over them are the non-overflowing ones); bitwise operators are exact
- * on integers within 128 bits, and shifts on constant amounts;</li>
+ * LiSA over them are the non-overflowing ones); bitwise operators are exact on
+ * integers within 128 bits, and shifts on constant amounts;</li>
  * <li>floating point numbers are 64-bits IEEE 754 numbers, as Python's ones
  * (see {@link #FACTORY});</li>
  * <li>the arithmetic operators of Python ({@code /}, {@code //}, {@code %},
@@ -92,8 +92,8 @@ import java.util.function.Function;
  * builtin classes are encoded for the values they can be precisely encoded
  * for.</li>
  * </ul>
- * Whatever is not encoded precisely is never precise: an operation on values
- * of unknown kind, or not encoded for some of them (e.g., the conversion of a
+ * Whatever is not encoded precisely is never precise: an operation on values of
+ * unknown kind, or not encoded for some of them (e.g., the conversion of a
  * {@code str} to a {@code float}), yields an unknown, but deterministic,
  * function of the operands, while an operation over operands that cannot be
  * encoded at all (e.g., arithmetic on a string sort), or over floats when they
@@ -199,10 +199,10 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	}
 
 	/**
-	 * Python's {@code -x} or {@code abs(x)}: over ints (or bools, read as
-	 * ints) it is the operation over integers, and over floats the one over
-	 * floating point numbers. The operand is required to be a number. Over
-	 * other values, the result is an unknown function of the operand.
+	 * Python's {@code -x} or {@code abs(x)}: over ints (or bools, read as ints)
+	 * it is the operation over integers, and over floats the one over floating
+	 * point numbers. The operand is required to be a number. Over other values,
+	 * the result is an unknown function of the operand.
 	 */
 	private Term negationOrAbs(
 			Term arg,
@@ -402,8 +402,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 
 	/**
 	 * Whether the operands of a numeric operation can be numbers, requiring
-	 * them to be (see {@link #requireNumeric(Term)}): if they cannot (e.g.,
-	 * one is a string), the operation is not encoded.
+	 * them to be (see {@link #requireNumeric(Term)}): if they cannot (e.g., one
+	 * is a string), the operation is not encoded.
 	 */
 	private boolean numericOperands(
 			Term left,
@@ -465,8 +465,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	 * the guard does not hold (never precise then). The result for references
 	 * (e.g., the truthiness of a list) depends on the contents of the objects
 	 * they point to, that might change while the references do not: when an
-	 * argument is a reference, the result is a fresh value instead, unless
-	 * the function depends only on the class of the objects (e.g.,
+	 * argument is a reference, the result is a fresh value instead, unless the
+	 * function depends only on the class of the objects (e.g.,
 	 * {@code isinstance}, see {@link #CLASS_FUNCTIONS}).
 	 */
 	private Term unknown(
@@ -829,7 +829,8 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 				List.of(asFloat(left, expression), asFloat(right, expression)),
 				args -> pow(args.get(0).doubleValue(), args.get(1).doubleValue()), expression);
 		if (isValue(left) || isValue(right))
-			return when(numbers, ValueSort.wrap(result), "floatpow", List.of(asValue(left), asValue(right)), expression);
+			return when(numbers, ValueSort.wrap(result), "floatpow", List.of(asValue(left), asValue(right)),
+					expression);
 		return when(numbers, result, "floatpow", List.of(left, right), expression);
 	}
 
@@ -842,13 +843,13 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	private static final int BITS = 128;
 
 	/**
-	 * Python's bitwise operators over integers, that are unbounded:
-	 * {@code &}, {@code |} and {@code ^} are computed on bit vectors of
-	 * {@link #BITS} bits, exactly when both operands fit them (and then so does
-	 * the result); {@code <<} and {@code >>} are a multiplication and a floor
-	 * division by a power of two, exactly when the amount is a non-negative
-	 * constant. Over two booleans, {@code &}, {@code |} and {@code ^} yield a
-	 * boolean. Other operands (or amounts) yield an unknown function.
+	 * Python's bitwise operators over integers, that are unbounded: {@code &},
+	 * {@code |} and {@code ^} are computed on bit vectors of {@link #BITS}
+	 * bits, exactly when both operands fit them (and then so does the result);
+	 * {@code <<} and {@code >>} are a multiplication and a floor division by a
+	 * power of two, exactly when the amount is a non-negative constant. Over
+	 * two booleans, {@code &}, {@code |} and {@code ^} yield a boolean. Other
+	 * operands (or amounts) yield an unknown function.
 	 */
 	private Term bitwise(
 			Term left,

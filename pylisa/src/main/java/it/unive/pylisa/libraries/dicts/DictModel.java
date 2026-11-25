@@ -452,7 +452,8 @@ public final class DictModel {
 							.withExecutionExpressions(defaulted.getExecutionExpressions()));
 			if (entries.defaulted().size() < entries.keys().size())
 				// some of the objects are dictionaries
-				raising.raise(Satisfiability.UNKNOWN, state, thrower.getCFG(), loc, thrower, LibrarySpecificationProvider.KEY_ERROR);
+				raising.raise(Satisfiability.UNKNOWN, state, thrower.getCFG(), loc, thrower,
+						LibrarySpecificationProvider.KEY_ERROR);
 		} else if (keyError && dflt == null)
 			raising.raise(missing ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN, state, thrower.getCFG(), loc,
 					thrower, LibrarySpecificationProvider.KEY_ERROR);

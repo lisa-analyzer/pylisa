@@ -6,18 +6,18 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.SyntheticLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.call.Call;
-import it.unive.lisa.program.cfg.statement.call.ResolvedCall;
 import it.unive.lisa.program.cfg.statement.call.NamedParameterExpression;
+import it.unive.lisa.program.cfg.statement.call.ResolvedCall;
 import it.unive.lisa.program.cfg.statement.literal.StringLiteral;
 import it.unive.lisa.program.language.parameterassignment.ParameterAssigningStrategy;
 import it.unive.lisa.program.type.Int32Type;
@@ -479,7 +479,8 @@ public class PyAssigningStrategy implements ParameterAssigningStrategy {
 			}
 			if (filled > 0 || !varargs)
 				// the length might not match the parameters
-				raising.raise(Satisfiability.UNKNOWN, state, call.getCFG(), call.getLocation(), call, LibrarySpecificationProvider.TYPE_ERROR);
+				raising.raise(Satisfiability.UNKNOWN, state, call.getCFG(), call.getLocation(), call,
+						LibrarySpecificationProvider.TYPE_ERROR);
 			if (!varargs)
 				unknown = null;
 		}

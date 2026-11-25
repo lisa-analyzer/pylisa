@@ -6,10 +6,10 @@ import it.unive.lisa.analysis.Analysis;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
-import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Unit;
@@ -135,7 +135,8 @@ public class PyClassMember extends UnresolvedCall {
 			// the attribute might be assigned through the class (C.name = v),
 			// or defined by its metaclass
 			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-			raising.raise(Satisfiability.UNKNOWN, state, getCFG(), loc, this, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+			raising.raise(Satisfiability.UNKNOWN, state, getCFG(), loc, this,
+					LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			return raising.moveFrom(unknown);
 		}
 		ClassAttribute attribute = ClassBases.isProgramClass(definer)
@@ -211,7 +212,8 @@ public class PyClassMember extends UnresolvedCall {
 			result = analysis.smallStepSemantics(state, variable(tracker), context, this);
 		if (status.mightBeUnbound()) {
 			PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-			raising.raise(Satisfiability.UNKNOWN, state, getCFG(), getLocation(), this, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+			raising.raise(Satisfiability.UNKNOWN, state, getCFG(), getLocation(), this,
+					LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 			result = raising.moveFrom(result);
 		}
 		return result;

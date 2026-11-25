@@ -320,19 +320,19 @@ public final class PyExceptions {
 		 * As
 		 * {@link #raiseOfTypes(AnalysisState, SymbolicExpression, Set, Set, boolean, CFG, CodeLocation, Statement, String)},
 		 * for an operand that might be any of the given values (a value whose
-		 * types are not known fails if {@link Untyped} is a failing type): in all the
-		 * executions if all the types of all the values fail, and otherwise
-		 * where each value has the failing types (under an unknown condition
-		 * if the executions where each value is the operand are not known
-		 * exactly). These are the executions where the given program point, if
-		 * any, computed the value (see
+		 * types are not known fails if {@link Untyped} is a failing type): in
+		 * all the executions if all the types of all the values fail, and
+		 * otherwise where each value has the failing types (under an unknown
+		 * condition if the executions where each value is the operand are not
+		 * known exactly). These are the executions where the given program
+		 * point, if any, computed the value (see
 		 * {@link Analysis#restrictTo(AnalysisState, ProgramPoint, SymbolicExpression)}).
 		 *
 		 * @param state              the state of the executions that might
 		 *                               raise the exception
 		 * @param values             the values of the operand
-		 * @param computing          the program point computing the values,
-		 *                               or {@code null} if it is not known
+		 * @param computing          the program point computing the values, or
+		 *                               {@code null} if it is not known
 		 * @param failing            the types of the operand raising the
 		 *                               exception
 		 * @param surely             whether the values of the failing types
@@ -461,20 +461,20 @@ public final class PyExceptions {
 		 * the exception is raised in all the executions (under an unknown
 		 * condition, all of them continuing normally too, if the condition
 		 * involves floating point numbers other than literals, that the
-		 * analysis computes with less precision than python); if it surely does not, in none of them; otherwise, the state is restricted to the
+		 * analysis computes with less precision than python); if it surely does
+		 * not, in none of them; otherwise, the state is restricted to the
 		 * executions where it holds to raise the exception (see
 		 * {@link ExceptionGuard#when}), and to the ones where it does not to
 		 * continue (see {@link ExceptionGuard#unless}). The executions where
-		 * the condition holds surely raise the exception only if
-		 * {@code surely} holds (e.g. not if an operand might also have a type
-		 * raising another exception), otherwise the exception is raised in
-		 * them under an unknown condition.
+		 * the condition holds surely raise the exception only if {@code surely}
+		 * holds (e.g. not if an operand might also have a type raising another
+		 * exception), otherwise the exception is raised in them under an
+		 * unknown condition.
 		 *
-		 * @param condition          the condition under which the exception
-		 *                               is raised
-		 * @param surely             whether the executions where the
-		 *                               condition holds surely raise the
-		 *                               exception
+		 * @param condition          the condition under which the exception is
+		 *                               raised
+		 * @param surely             whether the executions where the condition
+		 *                               holds surely raise the exception
 		 * @param state              the state of the executions that might
 		 *                               raise the exception
 		 * @param pp                 the program point where the condition is
@@ -484,8 +484,7 @@ public final class PyExceptions {
 		 * @param thrower            the statement raising the exception
 		 * @param exceptionClassName the name of the class of the exception
 		 *
-		 * @return the state of the executions where the exception is not
-		 *             raised
+		 * @return the state of the executions where the exception is not raised
 		 *
 		 * @throws SemanticException if the analysis fails
 		 */

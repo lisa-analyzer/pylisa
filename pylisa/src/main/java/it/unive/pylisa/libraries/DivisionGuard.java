@@ -30,8 +30,8 @@ public final class DivisionGuard {
 	}
 
 	/**
-	 * Computes the given division, raising {@code ZeroDivisionError} exactly
-	 * in the executions where the divisor is zero (see
+	 * Computes the given division, raising {@code ZeroDivisionError} exactly in
+	 * the executions where the divisor is zero (see
 	 * {@link ExceptionGuard#guardedCompute(Analysis, ScopeId, AnalysisState, SymbolicExpression, String, SymbolicExpression, CFG, CodeLocation, Statement, Statement)}).
 	 * An int divisor is compared with the int {@code 0}, also when the given
 	 * zero is a float, so that the domain of ints decides the comparison.

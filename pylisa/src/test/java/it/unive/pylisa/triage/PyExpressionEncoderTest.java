@@ -5,10 +5,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
-import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.lisa.program.Program;
-import it.unive.lisa.program.CodeUnit;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.program.CodeUnit;
+import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.program.type.Float32Type;
@@ -17,23 +16,23 @@ import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.TernaryExpression;
-import it.unive.lisa.symbolic.value.operator.unary.NumericAbs;
-import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
-import it.unive.lisa.symbolic.value.operator.ternary.StringReplace;
 import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.TernaryExpression;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.Variable;
-import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftRight;
-import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftLeft;
-import it.unive.lisa.symbolic.value.operator.binary.BitwiseXor;
-import it.unive.lisa.symbolic.value.operator.binary.BitwiseOr;
 import it.unive.lisa.symbolic.value.operator.binary.BitwiseAnd;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseOr;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftLeft;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseShiftRight;
+import it.unive.lisa.symbolic.value.operator.binary.BitwiseXor;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonNe;
 import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingAdd;
 import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingMul;
 import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingSub;
+import it.unive.lisa.symbolic.value.operator.ternary.StringReplace;
+import it.unive.lisa.symbolic.value.operator.unary.NumericAbs;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.triage.encoding.SortPolicy;
 import it.unive.lisa.triage.encoding.SymbolTable;
 import it.unive.lisa.triage.encoding.ValueSort;
@@ -45,6 +44,7 @@ import it.unive.lisa.triage.smt.Sort;
 import it.unive.lisa.triage.smt.Term;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.symbolic.PyFloatConstant;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
@@ -535,8 +535,8 @@ public class PyExpressionEncoderTest {
 	}
 
 	/**
-	 * Yields whether the encoding of {@code s.replace(pattern, replacement)}
-	 * is precise, checking that it yields the expected string.
+	 * Yields whether the encoding of {@code s.replace(pattern, replacement)} is
+	 * precise, checking that it yields the expected string.
 	 */
 	private static boolean replaced(
 			String s,
@@ -620,7 +620,8 @@ public class PyExpressionEncoderTest {
 			Set<String> functions = applied(e);
 			assertEquals(e + " applies " + functions, 1, functions.size());
 			String function = functions.iterator().next();
-			assertTrue(e + " applies " + function, function.endsWith("[" + ValueSort.SORT + ", " + ValueSort.SORT + "]"));
+			assertTrue(e + " applies " + function,
+					function.endsWith("[" + ValueSort.SORT + ", " + ValueSort.SORT + "]"));
 		}
 	}
 

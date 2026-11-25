@@ -89,7 +89,8 @@ public class PyNewObj extends NaryExpression {
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> created = create(interprocedural, state, params, expressions, raising);
 		if (isAbstract == Satisfiability.UNKNOWN)
-			raising.raise(Satisfiability.UNKNOWN, state, getCFG(), getLocation(), this, LibrarySpecificationProvider.TYPE_ERROR);
+			raising.raise(Satisfiability.UNKNOWN, state, getCFG(), getLocation(), this,
+					LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(created);
 	}
 

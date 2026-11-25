@@ -231,7 +231,8 @@ public final class Unpacking {
 		// each exception is raised where the value has the types raising it
 		if (valueError)
 			// the types of the value are not known
-			raising.raise(Satisfiability.UNKNOWN, state, pp.getCFG(), loc, pp, LibrarySpecificationProvider.VALUE_ERROR);
+			raising.raise(Satisfiability.UNKNOWN, state, pp.getCFG(), loc, pp,
+					LibrarySpecificationProvider.VALUE_ERROR);
 		raising.raiseOfTypes(state, value, surelyValue, types, true, pp.getCFG(), loc, pp,
 				LibrarySpecificationProvider.VALUE_ERROR);
 		raising.raiseOfTypes(state, value, valueFailing, types, false, pp.getCFG(), loc, pp,

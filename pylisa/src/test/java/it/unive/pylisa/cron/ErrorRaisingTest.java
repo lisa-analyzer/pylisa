@@ -12,8 +12,8 @@ import org.junit.Test;
 /**
  * Tests on the errors raised where the operands might have several types, or
  * several values, whose warnings are verified one by one with a
- * {@link PdrVerifier} (as the one of the SV-COMP verifier): each error is raised
- * exactly where it happens, so that its warning can be confirmed.
+ * {@link PdrVerifier} (as the one of the SV-COMP verifier): each error is
+ * raised exactly where it happens, so that its warning can be confirmed.
  */
 public class ErrorRaisingTest extends AnalysisTestExecutor {
 

@@ -7,11 +7,11 @@ import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.StatementStore;
 import it.unive.lisa.analysis.symbols.SymbolAliasing;
-import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.interprocedural.callgraph.CallResolutionException;
 import it.unive.lisa.lattices.ExpressionSet;
+import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
@@ -115,9 +115,11 @@ public class PySuperCall extends UnresolvedCall {
 				if (params.length == 1)
 					result = result.lub(analysis.smallStepSemantics(state, new PyNoneConstant(loc), context, this));
 				else
-					raising.raise(Satisfiability.UNKNOWN, state, getCFG(), loc, this, LibrarySpecificationProvider.TYPE_ERROR);
+					raising.raise(Satisfiability.UNKNOWN, state, getCFG(), loc, this,
+							LibrarySpecificationProvider.TYPE_ERROR);
 			else
-				raising.raise(Satisfiability.UNKNOWN, state, getCFG(), loc, this, LibrarySpecificationProvider.ATTRIBUTE_ERROR);
+				raising.raise(Satisfiability.UNKNOWN, state, getCFG(), loc, this,
+						LibrarySpecificationProvider.ATTRIBUTE_ERROR);
 		}
 
 		Set<Type>[] types = parameterTypes(expressions, analysis, context);
@@ -133,7 +135,8 @@ public class PySuperCall extends UnresolvedCall {
 			}
 			if (resolved instanceof OpenCall)
 				// it does not accept the arguments
-				raising.raise(Satisfiability.UNKNOWN, state, getCFG(), loc, this, LibrarySpecificationProvider.TYPE_ERROR);
+				raising.raise(Satisfiability.UNKNOWN, state, getCFG(), loc, this,
+						LibrarySpecificationProvider.TYPE_ERROR);
 			else {
 				result = result.lub(resolved.forwardSemanticsAux(interprocedural, state, params, expressions));
 				getMetaVariables().addAll(resolved.getMetaVariables());
