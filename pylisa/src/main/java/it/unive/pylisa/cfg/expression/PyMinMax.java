@@ -310,8 +310,24 @@ public class PyMinMax extends NaryExpression {
 			// are not refined
 			for (SymbolicExpression v : values)
 				result = result.lub(analysis.smallStepSemantics(state, v, context, this));
-		if (mightError)
-			result = result.lub(raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR));
+		if (mightError) {
+			if (exact && types.stream().noneMatch(Set::isEmpty)) {
+				// raised where the first value and another one have types
+				// that might not be comparable (under an unknown condition,
+				// as the result is computed in all the executions)
+				for (int i = 1; i < values.size(); i++)
+					for (Type first : types.get(0))
+						for (Type other : types.get(i))
+							if (comparable(first, other) != Satisfiability.SATISFIED) {
+								AnalysisState<A> pair = PyBinaryDispatch.ofType(analysis, context, state,
+										values.get(0), first, types.get(0), this);
+								pair = PyBinaryDispatch.ofType(analysis, context, pair, values.get(i), other,
+										types.get(i), this);
+								raise(raising, Satisfiability.UNKNOWN, pair, LibrarySpecificationProvider.TYPE_ERROR);
+							}
+			} else
+				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
+		}
 		return result;
 	}
 

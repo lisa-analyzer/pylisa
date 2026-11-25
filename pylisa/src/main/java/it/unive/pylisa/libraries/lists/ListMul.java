@@ -33,6 +33,7 @@ import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -134,13 +135,27 @@ public class ListMul extends BinaryExpression implements PluggableStatement {
 		boolean unknown = types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st);
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
-		if (unknown || types.stream().anyMatch(ListOperations.INT))
+		if (unknown) {
 			result = repetition(interprocedural, state, list, times, owner, st, expressions);
-		if (unknown || ListOperations.mightNotBeInt(types))
-			// surely raised only if the count is surely not an int
-			raising.raise(!unknown && !ListOperations.mightBeInt(types) ? Satisfiability.SATISFIED
-					: Satisfiability.UNKNOWN, state, st.getCFG(), owner.getLocation(), st,
+			raising.raise(Satisfiability.UNKNOWN, state, st.getCFG(), owner.getLocation(), st,
 					LibrarySpecificationProvider.TYPE_ERROR);
+			return raising.moveFrom(result);
+		}
+		// the repetition happens where the count is an int, and TypeError is
+		// raised where it has the other types
+		Set<Type> failing = new HashSet<>();
+		AnalysisState<A> ints = state.bottomExecution();
+		for (Type t : types) {
+			// an untyped value might be an int or not
+			if (ListOperations.INT.test(t) || t.isUntyped())
+				ints = ints.lub(PyBinaryDispatch.ofType(analysis, context, state, times, t, types, st));
+			if (!ListOperations.INT.test(t))
+				failing.add(t);
+		}
+		if (!ints.getExecutionState().isBottom())
+			result = repetition(interprocedural, ints, list, times, owner, st, expressions);
+		raising.raiseOfTypes(state, times, failing, types, true, st.getCFG(), owner.getLocation(), st,
+				LibrarySpecificationProvider.TYPE_ERROR);
 		return raising.moveFrom(result);
 	}
 

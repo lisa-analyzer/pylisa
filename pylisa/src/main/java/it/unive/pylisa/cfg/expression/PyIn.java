@@ -16,8 +16,9 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
+import it.unive.lisa.program.cfg.statement.call.Call;
+import it.unive.lisa.program.cfg.statement.call.ResolvedCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -26,6 +27,7 @@ import it.unive.pylisa.UnsupportedStatementException;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -82,6 +84,9 @@ public class PyIn extends BinaryExpression {
 					rtsContainer, this);
 			if (typedContainer.getExecutionState().isBottom())
 				continue;
+			// the calls already evaluated for this type (the same call is
+			// resolved for several types of the needle)
+			Set<Object> evaluated = new HashSet<>();
 			for (Type tNeedle : rtsNeedle) {
 				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {
 					// str, bytes, int, ...: __contains__ is looked up in their
@@ -97,7 +102,7 @@ public class PyIn extends BinaryExpression {
 						raising.raiseOfTypes(typedContainer, left, Set.of(tNeedle), rtsNeedle,
 								PyBinaryDispatch.checkable(tContainer, rtsContainer), getCFG(), getLocation(), this,
 								LibrarySpecificationProvider.TYPE_ERROR);
-					} else {
+					} else if (evaluated.add(evaluationKey(resolved))) {
 						result = result.lub(resolved.forwardSemanticsAux(interprocedural, typedContainer,
 								new ExpressionSet[] { new ExpressionSet(right), new ExpressionSet(left) },
 								expressions));
@@ -129,12 +134,22 @@ public class PyIn extends BinaryExpression {
 				// the container and the needle have already been evaluated:
 				// evaluating the call would evaluate them again (e.g. calling
 				// f twice in x in f())
-				result = result.lub(contains.forwardSemanticsAux(interprocedural, typedContainer,
-						new ExpressionSet[] { new ExpressionSet(right), new ExpressionSet(left) }, expressions));
-				getMetaVariables().addAll(contains.getMetaVariables());
+				if (evaluated.add(evaluationKey(contains))) {
+					result = result.lub(contains.forwardSemanticsAux(interprocedural, typedContainer,
+							new ExpressionSet[] { new ExpressionSet(right), new ExpressionSet(left) }, expressions));
+					getMetaVariables().addAll(contains.getMetaVariables());
+				}
 			}
 		}
 
 		return raising.moveFrom(result);
+	}
+
+	// the key identifying the evaluation of a call (its targets, if it is
+	// resolved): calls with the same key evaluated on the same state, with
+	// the same arguments, have the same result
+	private static Object evaluationKey(
+			Call call) {
+		return call instanceof ResolvedCall ? new HashSet<>(((ResolvedCall) call).getTargets()) : call;
 	}
 }

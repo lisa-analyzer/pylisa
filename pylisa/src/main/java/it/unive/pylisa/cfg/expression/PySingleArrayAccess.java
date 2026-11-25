@@ -16,8 +16,9 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
+import it.unive.lisa.program.cfg.statement.call.Call;
+import it.unive.lisa.program.cfg.statement.call.ResolvedCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
@@ -25,6 +26,7 @@ import it.unive.pylisa.UnsupportedStatementException;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -93,6 +95,9 @@ public class PySingleArrayAccess extends BinaryExpression {
 					rtsContainer, this);
 			if (typedContainer.getExecutionState().isBottom())
 				continue;
+			// the calls already evaluated for this type (the same call is
+			// resolved for several types of the index)
+			Set<Object> evaluated = new HashSet<>();
 			for (Type tIndex : rtsIndex) {
 				if (PyBinaryDispatch.isBuiltinValueType(tContainer)) {
 					// str, int, ...: __getitem__ is looked up in their class
@@ -106,7 +111,7 @@ public class PySingleArrayAccess extends BinaryExpression {
 						raising.raiseOfTypes(typedContainer, right, Set.of(tIndex), rtsIndex,
 								PyBinaryDispatch.checkable(tContainer, rtsContainer), getCFG(), getLocation(), this,
 								LibrarySpecificationProvider.TYPE_ERROR);
-					} else {
+					} else if (evaluated.add(evaluationKey(resolved))) {
 						result = result.lub(resolved.forwardSemanticsAux(interprocedural, typedContainer,
 								new ExpressionSet[] { new ExpressionSet(left), new ExpressionSet(right) },
 								expressions));
@@ -140,12 +145,22 @@ public class PySingleArrayAccess extends BinaryExpression {
 				// the receiver and the index have already been evaluated:
 				// evaluating the call would evaluate them again (e.g. calling
 				// f twice in f()[0])
-				result = result.lub(getitem.forwardSemanticsAux(interprocedural, typedContainer,
-						new ExpressionSet[] { new ExpressionSet(left), new ExpressionSet(right) }, expressions));
-				getMetaVariables().addAll(getitem.getMetaVariables());
+				if (evaluated.add(evaluationKey(getitem))) {
+					result = result.lub(getitem.forwardSemanticsAux(interprocedural, typedContainer,
+							new ExpressionSet[] { new ExpressionSet(left), new ExpressionSet(right) }, expressions));
+					getMetaVariables().addAll(getitem.getMetaVariables());
+				}
 			}
 		}
 
 		return raising.moveFrom(result);
+	}
+
+	// the key identifying the evaluation of a call (its targets, if it is
+	// resolved): calls with the same key evaluated on the same state, with
+	// the same arguments, have the same result
+	private static Object evaluationKey(
+			Call call) {
+		return call instanceof ResolvedCall ? new HashSet<>(((ResolvedCall) call).getTargets()) : call;
 	}
 }
