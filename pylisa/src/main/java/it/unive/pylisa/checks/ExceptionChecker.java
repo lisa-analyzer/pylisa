@@ -16,7 +16,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.triage.reachability.Reachability;
+import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.type.PyClassType;
@@ -199,7 +199,7 @@ public class ExceptionChecker<A extends AbstractLattice<A>, D extends AbstractDo
 	private static Statement node(
 			Statement thrower) {
 		// calls resolved from calls of the cfg are not part of it
-		Statement st = Reachability.sourceOf(thrower);
+		Statement st = Call.originalOf(thrower);
 		Statement root = st instanceof Expression ? ((Expression) st).getRootStatement() : st;
 		return root != null && st.getCFG().containsNode(root) ? root : st;
 	}
