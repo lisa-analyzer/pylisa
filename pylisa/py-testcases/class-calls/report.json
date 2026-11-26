@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type is used (uncaught TypeError) at 'py-testcases/class-calls/class-calls.py':16:4",
-    "definite" : true
+    "verification" : {
+      "outcome" : "confirmed"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_C.m(C__self,_untyped_x)_5b7587ea95a57d93116f4da55bc136eb.graph.json", "untyped_C.n(C__self)_902b7f15838cd5fde87fb086dd467390.graph.json", "untyped_C.n(C__self)_a8e80daa3277b889015d57c7f202e95e.graph.json", "untyped_py-testcases_class-calls_class-calls.$main().graph.json" ],

@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/item-assignment/item-assignment.py':17:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/item-assignment/item-assignment.py':20:4",
     "cfg" : "untyped py-testcases/item-assignment/item-assignment::$main()",
@@ -16,7 +18,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/item-assignment/item-assignment.py':20:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/item-assignment/item-assignment.py':23:4",
     "cfg" : "untyped py-testcases/item-assignment/item-assignment::$main()",
@@ -25,7 +29,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/item-assignment/item-assignment.py':23:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/item-assignment/item-assignment.py':26:4",
     "cfg" : "untyped py-testcases/item-assignment/item-assignment::$main()",
@@ -34,7 +40,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/item-assignment/item-assignment.py':26:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/item-assignment/item-assignment.py':33:0",
     "cfg" : "untyped py-testcases/item-assignment/item-assignment::$main()",
@@ -43,21 +51,23 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/item-assignment/item-assignment.py':33:0",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_B.__setitem__(B__self,_untyped_i,_untyped_v)_961b9cc133a0f1e1d234bd1f4cede601.graph.json", "untyped_py-testcases_item-assignment_item-assignment.$main().graph.json" ],
   "info" : {
     "cfgs" : "5",
-    "duration" : "5ms",
-    "end" : "2026-11-16T15:33:49.206+01:00",
+    "duration" : "27ms",
+    "end" : "2026-11-26T20:08:59.129+01:00",
     "expressions" : "53",
     "files" : "2",
     "globals" : "0",
     "members" : "214",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-16T15:33:49.201+01:00",
+    "start" : "2026-11-26T20:08:59.102+01:00",
     "statements" : "27",
     "units" : "49",
     "version" : "1.0",

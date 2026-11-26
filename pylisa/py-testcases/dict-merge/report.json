@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/dict-merge/dict-merge.py':18:0",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/dict-merge/dict-merge.py':24:0",
     "cfg" : "untyped py-testcases/dict-merge/dict-merge::$main()",
@@ -16,7 +18,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-merge/dict-merge.py':24:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/dict-merge/dict-merge.py':27:0",
     "cfg" : "untyped py-testcases/dict-merge/dict-merge::$main()",
@@ -25,21 +29,23 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/dict-merge/dict-merge.py':27:6",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_dict-merge_dict-merge.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "7ms",
-    "end" : "2026-11-16T15:33:44.050+01:00",
+    "duration" : "45ms",
+    "end" : "2026-11-26T20:08:54.599+01:00",
     "expressions" : "97",
     "files" : "1",
     "globals" : "0",
     "members" : "211",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-16T15:33:44.043+01:00",
+    "start" : "2026-11-26T20:08:54.554+01:00",
     "statements" : "23",
     "units" : "47",
     "version" : "1.0",

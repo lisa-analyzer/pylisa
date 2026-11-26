@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/split-join/split-join.py':14:10",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/split-join/split-join.py':25:4",
     "cfg" : "untyped py-testcases/split-join/split-join::$main()",
@@ -16,7 +18,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/split-join/split-join.py':25:10",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/split-join/split-join.py':28:4",
     "cfg" : "untyped py-testcases/split-join/split-join::$main()",
@@ -25,21 +29,23 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/split-join/split-join.py':28:10",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_split-join_split-join.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "170ms",
-    "end" : "2026-11-16T15:36:59.768+01:00",
+    "duration" : "32ms",
+    "end" : "2026-11-26T20:09:13.422+01:00",
     "expressions" : "69",
     "files" : "1",
     "globals" : "0",
     "members" : "211",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-16T15:36:59.598+01:00",
+    "start" : "2026-11-26T20:09:13.390+01:00",
     "statements" : "29",
     "units" : "47",
     "version" : "1.0",

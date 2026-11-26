@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/namedtuple/namedtuple.py':22:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/namedtuple/namedtuple.py':25:4",
     "cfg" : "untyped py-testcases/namedtuple/namedtuple::$main()",
@@ -16,7 +18,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/namedtuple/namedtuple.py':25:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/namedtuple/namedtuple.py':28:4",
     "cfg" : "untyped py-testcases/namedtuple/namedtuple::$main()",
@@ -25,7 +29,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/namedtuple/namedtuple.py':28:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/namedtuple/namedtuple.py':31:4",
     "cfg" : "untyped py-testcases/namedtuple/namedtuple::$main()",
@@ -34,21 +40,23 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/namedtuple/namedtuple.py':31:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_namedtuple_namedtuple.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "19ms",
-    "end" : "2026-11-26T15:01:07.948+01:00",
+    "duration" : "31ms",
+    "end" : "2026-11-26T20:09:05.352+01:00",
     "expressions" : "62",
     "files" : "1",
     "globals" : "0",
     "members" : "214",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-26T15:01:07.929+01:00",
+    "start" : "2026-11-26T20:09:05.321+01:00",
     "statements" : "27",
     "units" : "48",
     "version" : "1.0",

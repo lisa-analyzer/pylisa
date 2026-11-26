@@ -4,99 +4,85 @@
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::maybe()",
     "targetKind" : "EXPRESSION",
-    "message" : "ARITHMETIC: code that is not known might raise FloatingPointError (uncaught FloatingPointError) at 'py-testcases/package-aliases/main.py':15:4",
-    "definite" : false
+    "message" : "ARITHMETIC: code that is not known might raise FloatingPointError (uncaught FloatingPointError) at 'py-testcases/package-aliases/main.py':15:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':15:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::maybe()",
     "targetKind" : "EXPRESSION",
-    "message" : "ARITHMETIC: code that is not known might raise ZeroDivisionError (uncaught ZeroDivisionError) at 'py-testcases/package-aliases/main.py':15:4",
-    "definite" : false
+    "message" : "ARITHMETIC: code that is not known might raise ZeroDivisionError (uncaught ZeroDivisionError) at 'py-testcases/package-aliases/main.py':15:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':15:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::maybe()",
     "targetKind" : "EXPRESSION",
-    "message" : "ASSERTIONS: code that is not known might raise AssertionError (uncaught AssertionError) at 'py-testcases/package-aliases/main.py':15:4",
-    "definite" : false
+    "message" : "ASSERTIONS: code that is not known might raise AssertionError (uncaught AssertionError) at 'py-testcases/package-aliases/main.py':15:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':15:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::maybe()",
     "targetKind" : "EXPRESSION",
-    "message" : "LOOKUP: code that is not known might raise IndexError (uncaught IndexError) at 'py-testcases/package-aliases/main.py':15:4",
-    "definite" : false
+    "message" : "LOOKUP: code that is not known might raise IndexError (uncaught IndexError) at 'py-testcases/package-aliases/main.py':15:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':15:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::maybe()",
     "targetKind" : "EXPRESSION",
-    "message" : "LOOKUP: code that is not known might raise KeyError (uncaught KeyError) at 'py-testcases/package-aliases/main.py':15:4",
-    "definite" : false
+    "message" : "LOOKUP: code that is not known might raise KeyError (uncaught KeyError) at 'py-testcases/package-aliases/main.py':15:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':15:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::maybe()",
     "targetKind" : "EXPRESSION",
-    "message" : "TYPING: code that is not known might raise AttributeError (uncaught AttributeError) at 'py-testcases/package-aliases/main.py':15:4",
-    "definite" : false
+    "message" : "TYPING: code that is not known might raise AttributeError (uncaught AttributeError) at 'py-testcases/package-aliases/main.py':15:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':15:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::maybe()",
     "targetKind" : "EXPRESSION",
-    "message" : "TYPING: code that is not known might raise TypeError (uncaught TypeError) at 'py-testcases/package-aliases/main.py':15:4",
-    "definite" : false
+    "message" : "TYPING: code that is not known might raise TypeError (uncaught TypeError) at 'py-testcases/package-aliases/main.py':15:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':18:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::twice()",
     "targetKind" : "EXPRESSION",
-    "message" : "ARITHMETIC: code that is not known might raise FloatingPointError (uncaught FloatingPointError) at 'py-testcases/package-aliases/main.py':18:4",
-    "definite" : false
+    "message" : "ARITHMETIC: code that is not known might raise FloatingPointError (uncaught FloatingPointError) at 'py-testcases/package-aliases/main.py':18:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':18:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::twice()",
     "targetKind" : "EXPRESSION",
-    "message" : "ARITHMETIC: code that is not known might raise ZeroDivisionError (uncaught ZeroDivisionError) at 'py-testcases/package-aliases/main.py':18:4",
-    "definite" : false
+    "message" : "ARITHMETIC: code that is not known might raise ZeroDivisionError (uncaught ZeroDivisionError) at 'py-testcases/package-aliases/main.py':18:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':18:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::twice()",
     "targetKind" : "EXPRESSION",
-    "message" : "ASSERTIONS: code that is not known might raise AssertionError (uncaught AssertionError) at 'py-testcases/package-aliases/main.py':18:4",
-    "definite" : false
+    "message" : "ASSERTIONS: code that is not known might raise AssertionError (uncaught AssertionError) at 'py-testcases/package-aliases/main.py':18:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':18:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::twice()",
     "targetKind" : "EXPRESSION",
-    "message" : "LOOKUP: code that is not known might raise IndexError (uncaught IndexError) at 'py-testcases/package-aliases/main.py':18:4",
-    "definite" : false
+    "message" : "LOOKUP: code that is not known might raise IndexError (uncaught IndexError) at 'py-testcases/package-aliases/main.py':18:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':18:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::twice()",
     "targetKind" : "EXPRESSION",
-    "message" : "LOOKUP: code that is not known might raise KeyError (uncaught KeyError) at 'py-testcases/package-aliases/main.py':18:4",
-    "definite" : false
+    "message" : "LOOKUP: code that is not known might raise KeyError (uncaught KeyError) at 'py-testcases/package-aliases/main.py':18:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':18:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::twice()",
     "targetKind" : "EXPRESSION",
-    "message" : "TYPING: code that is not known might raise AttributeError (uncaught AttributeError) at 'py-testcases/package-aliases/main.py':18:4",
-    "definite" : false
+    "message" : "TYPING: code that is not known might raise AttributeError (uncaught AttributeError) at 'py-testcases/package-aliases/main.py':18:4"
   }, {
     "location" : "'py-testcases/package-aliases/main.py':18:4",
     "cfg" : "untyped py-testcases/package-aliases/main::$main()",
     "text" : "py-testcases/package-aliases/pkg/__init__::twice()",
     "targetKind" : "EXPRESSION",
-    "message" : "TYPING: code that is not known might raise TypeError (uncaught TypeError) at 'py-testcases/package-aliases/main.py':18:4",
-    "definite" : false
+    "message" : "TYPING: code that is not known might raise TypeError (uncaught TypeError) at 'py-testcases/package-aliases/main.py':18:4"
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_package-aliases_main.$main().graph.json", "untyped_py-testcases_package-aliases_pkg___init__.$main().graph.json", "untyped_py-testcases_package-aliases_pkg_helpers.$main().graph.json", "untyped_py-testcases_package-aliases_pkg_helpers.half()_a630199acfad54b3c0364027e32f5167.graph.json", "untyped_py-testcases_package-aliases_pkg_mod.$main().graph.json", "untyped_py-testcases_package-aliases_pkg_mod.number()_549ef1f1d3573f4e6a7facccef1a6c4e.graph.json", "untyped_py-testcases_package-aliases_pkg_mod.number()_e986338e33b3fa8cc81eab318aed78cc.graph.json", "untyped_py-testcases_package-aliases_pkg_other.$main().graph.json", "untyped_py-testcases_package-aliases_pkg_other.text()_00e9d33343793f763f51412b06a3653b.graph.json", "untyped_py-testcases_package-aliases_pkg_other.text()_da0e738ffe0b45e597331bce78613798.graph.json" ],

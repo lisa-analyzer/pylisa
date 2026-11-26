@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/try-except/try-except.py':62:8",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/try-except/try-except.py':69:8",
     "cfg" : "untyped py-testcases/try-except/try-except::$main()",
@@ -16,21 +18,23 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/try-except/try-except.py':69:8",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_A.__init__(A__self,_untyped_payload)_07d9c18a9c2ccff2a715f8716576e302.graph.json", "untyped_A.__init__(A__self,_untyped_payload)_11371bcc53d6fb3245e76a7bb9a8bfa9.graph.json", "untyped_A.__init__(A__self,_untyped_payload)_6c612c900a928e05821a13cf4c5d8ad4.graph.json", "untyped_py-testcases_try-except_try-except.$main().graph.json", "untyped_py-testcases_try-except_try-except.f(untyped_x)_c00efc56bbfc5f6a9de475dd0ae53a34.graph.json", "untyped_py-testcases_try-except_try-except.f(untyped_x)_c047ad9bc666314df2a41b0d12557509.graph.json" ],
   "info" : {
     "cfgs" : "6",
-    "duration" : "8ms",
-    "end" : "2026-11-16T15:34:02.119+01:00",
+    "duration" : "31ms",
+    "end" : "2026-11-26T20:09:14.554+01:00",
     "expressions" : "91",
     "files" : "6",
     "globals" : "0",
     "members" : "215",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-16T15:34:02.111+01:00",
+    "start" : "2026-11-26T20:09:14.523+01:00",
     "statements" : "57",
     "units" : "49",
     "version" : "1.0",

@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "ARITHMETIC: division by zero (uncaught ZeroDivisionError) at 'py-testcases/match/match.py':35:4",
-    "definite" : true
+    "verification" : {
+      "outcome" : "confirmed"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_match_match.$main().graph.json", "untyped_py-testcases_match_match.f(untyped_v)_22dea3d963c5bb70109d03bf89a4588a.graph.json", "untyped_py-testcases_match_match.f(untyped_v)_5147cf5a9da399ded6cb19e97afa40f8.graph.json", "untyped_py-testcases_match_match.f(untyped_v)_ce0a18aceb870a5b6302d1fab0e43be0.graph.json", "untyped_py-testcases_match_match.f(untyped_v)_e37460b3fd475c936c7bc12fc4091b1f.graph.json", "untyped_py-testcases_match_match.f(untyped_v)_eb75984c590ce065640ae19b326fe5e1.graph.json", "untyped_py-testcases_match_match.h(untyped_v)_28b8ce8a8f3a0e50003d7a3ac86815fa.graph.json" ],

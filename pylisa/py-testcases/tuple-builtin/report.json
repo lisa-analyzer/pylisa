@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the index might be out of range (uncaught IndexError) at 'py-testcases/tuple-builtin/tuple-builtin.py':20:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/tuple-builtin/tuple-builtin.py':23:4",
     "cfg" : "untyped py-testcases/tuple-builtin/tuple-builtin::$main()",
@@ -16,7 +18,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/tuple-builtin/tuple-builtin.py':23:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/tuple-builtin/tuple-builtin.py':26:4",
     "cfg" : "untyped py-testcases/tuple-builtin/tuple-builtin::$main()",
@@ -25,21 +29,23 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/tuple-builtin/tuple-builtin.py':26:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_tuple-builtin_tuple-builtin.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "6ms",
-    "end" : "2026-11-16T15:34:02.283+01:00",
+    "duration" : "20ms",
+    "end" : "2026-11-26T20:09:14.904+01:00",
     "expressions" : "51",
     "files" : "1",
     "globals" : "0",
     "members" : "211",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-16T15:34:02.277+01:00",
+    "start" : "2026-11-26T20:09:14.884+01:00",
     "statements" : "23",
     "units" : "47",
     "version" : "1.0",

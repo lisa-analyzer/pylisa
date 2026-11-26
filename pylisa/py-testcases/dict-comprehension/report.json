@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/dict-comprehension/dict-comprehension.py':16:8",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/dict-comprehension/dict-comprehension.py':6:0",
     "cfg" : "untyped py-testcases/dict-comprehension/dict-comprehension::$main()",
@@ -16,7 +18,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-comprehension/dict-comprehension.py':6:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/dict-comprehension/dict-comprehension.py':8:0",
     "cfg" : "untyped py-testcases/dict-comprehension/dict-comprehension::$main()",
@@ -25,21 +29,23 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/dict-comprehension/dict-comprehension.py':8:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_dict-comprehension_dict-comprehension.$main().graph.json" ],
   "info" : {
     "cfgs" : "2",
-    "duration" : "13ms",
-    "end" : "2026-11-16T15:33:43.875+01:00",
+    "duration" : "68ms",
+    "end" : "2026-11-26T20:08:54.096+01:00",
     "expressions" : "84",
     "files" : "1",
     "globals" : "0",
     "members" : "211",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-16T15:33:43.862+01:00",
+    "start" : "2026-11-26T20:08:54.028+01:00",
     "statements" : "17",
     "units" : "47",
     "version" : "1.0",

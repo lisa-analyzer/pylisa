@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted-key/sorted-key.py':15:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/sorted-key/sorted-key.py':18:4",
     "cfg" : "untyped py-testcases/sorted-key/sorted-key::$main()",
@@ -16,7 +18,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "LOOKUP: the key might not be in the mapping (uncaught KeyError) at 'py-testcases/sorted-key/sorted-key.py':18:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/sorted-key/sorted-key.py':18:4",
     "cfg" : "untyped py-testcases/sorted-key/sorted-key::$main()",
@@ -25,21 +29,23 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/sorted-key/sorted-key.py':18:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_sorted-key_sorted-key.$lambda@12_26(untyped_v)_121d701b6ce3084dd395f93b09334ee4.graph.json", "untyped_py-testcases_sorted-key_sorted-key.$lambda@15_25(untyped_v)_e224c5c56fd3bb1573c53a971b6654ca.graph.json", "untyped_py-testcases_sorted-key_sorted-key.$lambda@18_21(untyped_x)_7df209558f1f4ef75b94b943e4255eb1.graph.json", "untyped_py-testcases_sorted-key_sorted-key.$lambda@5_22(untyped_x)_4870def9e3fb28ff4e2229af20687adc.graph.json", "untyped_py-testcases_sorted-key_sorted-key.$lambda@8_24(untyped_v)_90bcab15fc3bcc96b755bc40a1cd1b28.graph.json", "untyped_py-testcases_sorted-key_sorted-key.$main().graph.json" ],
   "info" : {
     "cfgs" : "7",
-    "duration" : "11ms",
-    "end" : "2026-11-16T15:33:59.530+01:00",
+    "duration" : "43ms",
+    "end" : "2026-11-26T20:09:12.571+01:00",
     "expressions" : "84",
     "files" : "6",
     "globals" : "0",
     "members" : "216",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-16T15:33:59.519+01:00",
+    "start" : "2026-11-26T20:09:12.528+01:00",
     "statements" : "29",
     "units" : "47",
     "version" : "1.0",

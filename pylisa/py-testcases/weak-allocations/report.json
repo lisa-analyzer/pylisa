@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/weak-allocations/weak-allocations.py':27:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/weak-allocations/weak-allocations.py':43:0",
     "cfg" : "untyped py-testcases/weak-allocations/weak-allocations::$main()",
@@ -16,7 +18,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/weak-allocations/weak-allocations.py':43:0",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/weak-allocations/weak-allocations.py':43:0",
     "cfg" : "untyped py-testcases/weak-allocations/weak-allocations::$main()",
@@ -25,21 +29,23 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/weak-allocations/weak-allocations.py':43:7",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_weak-allocations_weak-allocations.$main().graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.a(untyped_x)_e8c4ad88f6dbd35a978436edde38b464.graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.b(untyped_x)_e8c4ad88f6dbd35a978436edde38b464.graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.dec(untyped_f)_baaaed5c9f6f6ef31388f72a40512f80.graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.dec(untyped_f)_bf330e8de874fcb6113801c85963dd77.graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.dec._locals_.inner(untyped_$closure,_untyped_x)_6e4d37c791158296607efc572abf0d70.graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.mk(untyped_v)_1b3cb6cf0462eb6b843b4b7ea853b86a.graph.json", "untyped_py-testcases_weak-allocations_weak-allocations.mk(untyped_v)_aa542d96e11cd90d975778a49fe3874b.graph.json" ],
   "info" : {
     "cfgs" : "8",
-    "duration" : "6ms",
-    "end" : "2026-11-16T15:34:03.290+01:00",
+    "duration" : "29ms",
+    "end" : "2026-11-26T20:09:15.899+01:00",
     "expressions" : "51",
     "files" : "8",
     "globals" : "0",
     "members" : "217",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-16T15:34:03.284+01:00",
+    "start" : "2026-11-26T20:09:15.870+01:00",
     "statements" : "28",
     "units" : "48",
     "version" : "1.0",

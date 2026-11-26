@@ -7,8 +7,10 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/review-regressions/review-regressions.py':47:4",
-    "definite" : false,
-    "explanation" : "violation reached in 13 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), nan_base = <function nan_base>, exponent_sign = <function exponent_sign>, zero_to_negative = <function zero_to_negative>, min_of_list = <function min_of_list>, tuple_store = <function tuple_store>, nondet_bool(), nan_base(), [$main > nan_base] y = **(nondet_float(), 0.5), [$main > nan_base] !=(y, y), [$main > nan_base] assert false, nan_base() (raising errors)], relying on values that are not computed precisely (merged values): merged path conditions"
+    "verification" : {
+      "outcome" : "possible",
+      "explanation" : "violation reached in 13 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), nan_base = <function nan_base>, exponent_sign = <function exponent_sign>, zero_to_negative = <function zero_to_negative>, min_of_list = <function min_of_list>, tuple_store = <function tuple_store>, nondet_bool(), nan_base(), [$main > nan_base] y = **(nondet_float(), 0.5), [$main > nan_base] !=(y, y), [$main > nan_base] assert false, nan_base() (raising errors)], relying on values that are not computed precisely (merged values): merged path conditions"
+    }
   }, {
     "location" : "'py-testcases/review-regressions/review-regressions.py':49:4",
     "cfg" : "untyped py-testcases/review-regressions/review-regressions::$main()",
@@ -17,27 +19,29 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/review-regressions/review-regressions.py':49:4",
-    "definite" : true,
-    "reproducingInputs" : [ {
-      "location" : "'py-testcases/review-regressions/review-regressions.py':6:7",
-      "source" : "return of bool _sv_verifier::nondet_bool()",
-      "context" : "<empty>",
-      "occurrence" : 0,
-      "value" : "true"
-    }, {
-      "location" : "'py-testcases/review-regressions/review-regressions.py':46:3",
-      "source" : "return of bool _sv_verifier::nondet_bool()",
-      "context" : "<empty>",
-      "occurrence" : 0,
-      "value" : "false"
-    }, {
-      "location" : "'py-testcases/review-regressions/review-regressions.py':48:5",
-      "source" : "return of bool _sv_verifier::nondet_bool()",
-      "context" : "<empty>",
-      "occurrence" : 0,
-      "value" : "true"
-    } ],
-    "explanation" : "violation reached in 15 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), nan_base = <function nan_base>, exponent_sign = <function exponent_sign>, zero_to_negative = <function zero_to_negative>, min_of_list = <function min_of_list>, tuple_store = <function tuple_store>, nondet_bool(), nondet_bool(), exponent_sign(), [$main > exponent_sign] n = -(1) if FLAG else 1, [$main > exponent_sign] r = **(2, n), [$main > exponent_sign] <(r, 1), [$main > exponent_sign] assert false, exponent_sign() (raising errors)] (not yet certified by execution)"
+    "verification" : {
+      "outcome" : "confirmed",
+      "reproducingInputs" : [ {
+        "location" : "'py-testcases/review-regressions/review-regressions.py':6:7",
+        "source" : "return of bool _sv_verifier::nondet_bool()",
+        "context" : "<empty>",
+        "occurrence" : 0,
+        "value" : "true"
+      }, {
+        "location" : "'py-testcases/review-regressions/review-regressions.py':46:3",
+        "source" : "return of bool _sv_verifier::nondet_bool()",
+        "context" : "<empty>",
+        "occurrence" : 0,
+        "value" : "false"
+      }, {
+        "location" : "'py-testcases/review-regressions/review-regressions.py':48:5",
+        "source" : "return of bool _sv_verifier::nondet_bool()",
+        "context" : "<empty>",
+        "occurrence" : 0,
+        "value" : "true"
+      } ],
+      "explanation" : "violation reached in 15 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), nan_base = <function nan_base>, exponent_sign = <function exponent_sign>, zero_to_negative = <function zero_to_negative>, min_of_list = <function min_of_list>, tuple_store = <function tuple_store>, nondet_bool(), nondet_bool(), exponent_sign(), [$main > exponent_sign] n = -(1) if FLAG else 1, [$main > exponent_sign] r = **(2, n), [$main > exponent_sign] <(r, 1), [$main > exponent_sign] assert false, exponent_sign() (raising errors)] (not yet certified by execution)"
+    }
   }, {
     "location" : "'py-testcases/review-regressions/review-regressions.py':51:4",
     "cfg" : "untyped py-testcases/review-regressions/review-regressions::$main()",
@@ -46,33 +50,35 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "ARITHMETIC: possible division by zero (uncaught ZeroDivisionError) at 'py-testcases/review-regressions/review-regressions.py':51:4",
-    "definite" : true,
-    "reproducingInputs" : [ {
-      "location" : "'py-testcases/review-regressions/review-regressions.py':46:3",
-      "source" : "return of bool _sv_verifier::nondet_bool()",
-      "context" : "<empty>",
-      "occurrence" : 0,
-      "value" : "false"
-    }, {
-      "location" : "'py-testcases/review-regressions/review-regressions.py':48:5",
-      "source" : "return of bool _sv_verifier::nondet_bool()",
-      "context" : "<empty>",
-      "occurrence" : 0,
-      "value" : "false"
-    }, {
-      "location" : "'py-testcases/review-regressions/review-regressions.py':50:5",
-      "source" : "return of bool _sv_verifier::nondet_bool()",
-      "context" : "<empty>",
-      "occurrence" : 0,
-      "value" : "true"
-    }, {
-      "location" : "'py-testcases/review-regressions/review-regressions.py':26:8",
-      "source" : "return of int32 _sv_verifier::nondet_int()",
-      "context" : "['py-testcases/review-regressions/review-regressions.py':51:4]",
-      "occurrence" : 0,
-      "value" : "-1"
-    } ],
-    "explanation" : "violation reached in 15 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), nan_base = <function nan_base>, exponent_sign = <function exponent_sign>, zero_to_negative = <function zero_to_negative>, min_of_list = <function min_of_list>, tuple_store = <function tuple_store>, nondet_bool(), nondet_bool(), nondet_bool(), zero_to_negative(), [$main > zero_to_negative] n = nondet_int(), [$main > zero_to_negative] <(n, -(1)), [$main > zero_to_negative] return **(0, n), zero_to_negative() (raising errors)] (not yet certified by execution)"
+    "verification" : {
+      "outcome" : "confirmed",
+      "reproducingInputs" : [ {
+        "location" : "'py-testcases/review-regressions/review-regressions.py':46:3",
+        "source" : "return of bool _sv_verifier::nondet_bool()",
+        "context" : "<empty>",
+        "occurrence" : 0,
+        "value" : "false"
+      }, {
+        "location" : "'py-testcases/review-regressions/review-regressions.py':48:5",
+        "source" : "return of bool _sv_verifier::nondet_bool()",
+        "context" : "<empty>",
+        "occurrence" : 0,
+        "value" : "false"
+      }, {
+        "location" : "'py-testcases/review-regressions/review-regressions.py':50:5",
+        "source" : "return of bool _sv_verifier::nondet_bool()",
+        "context" : "<empty>",
+        "occurrence" : 0,
+        "value" : "true"
+      }, {
+        "location" : "'py-testcases/review-regressions/review-regressions.py':26:8",
+        "source" : "return of int32 _sv_verifier::nondet_int()",
+        "context" : "['py-testcases/review-regressions/review-regressions.py':51:4]",
+        "occurrence" : 0,
+        "value" : "-1"
+      } ],
+      "explanation" : "violation reached in 15 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), nan_base = <function nan_base>, exponent_sign = <function exponent_sign>, zero_to_negative = <function zero_to_negative>, min_of_list = <function min_of_list>, tuple_store = <function tuple_store>, nondet_bool(), nondet_bool(), nondet_bool(), zero_to_negative(), [$main > zero_to_negative] n = nondet_int(), [$main > zero_to_negative] <(n, -(1)), [$main > zero_to_negative] return **(0, n), zero_to_negative() (raising errors)] (not yet certified by execution)"
+    }
   }, {
     "location" : "'py-testcases/review-regressions/review-regressions.py':53:4",
     "cfg" : "untyped py-testcases/review-regressions/review-regressions::$main()",
@@ -81,8 +87,10 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/review-regressions/review-regressions.py':53:4",
-    "definite" : false,
-    "explanation" : "violation reached in 16 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), nan_base = <function nan_base>, exponent_sign = <function exponent_sign>, zero_to_negative = <function zero_to_negative>, min_of_list = <function min_of_list>, tuple_store = <function tuple_store>, nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), min_of_list(), [$main > min_of_list] lst = list(3, \"a\") if FLAG else list(1, 2), [$main > min_of_list] m = min(lst), [$main > min_of_list] assert false, min_of_list() (raising errors)], relying on values that are not computed precisely (heap values): choice among the heap locations accessed by min(lst)"
+    "verification" : {
+      "outcome" : "possible",
+      "explanation" : "violation reached in 16 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), nan_base = <function nan_base>, exponent_sign = <function exponent_sign>, zero_to_negative = <function zero_to_negative>, min_of_list = <function min_of_list>, tuple_store = <function tuple_store>, nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), min_of_list(), [$main > min_of_list] lst = list(3, \"a\") if FLAG else list(1, 2), [$main > min_of_list] m = min(lst), [$main > min_of_list] assert false, min_of_list() (raising errors)], relying on values that are not computed precisely (heap values): choice among the heap locations accessed by min(lst)"
+    }
   }, {
     "location" : "'py-testcases/review-regressions/review-regressions.py':53:4",
     "cfg" : "untyped py-testcases/review-regressions/review-regressions::$main()",
@@ -91,8 +99,10 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/review-regressions/review-regressions.py':53:4",
-    "definite" : false,
-    "explanation" : "violation reached in 15 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), nan_base = <function nan_base>, exponent_sign = <function exponent_sign>, zero_to_negative = <function zero_to_negative>, min_of_list = <function min_of_list>, tuple_store = <function tuple_store>, nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), min_of_list(), [$main > min_of_list] lst = list(3, \"a\") if FLAG else list(1, 2), [$main > min_of_list] m = min(lst), min_of_list() (raising errors)], relying on values that are not computed precisely (unsupported expressions): unknown value of type bool produced by 'min(lst)'"
+    "verification" : {
+      "outcome" : "possible",
+      "explanation" : "violation reached in 15 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), nan_base = <function nan_base>, exponent_sign = <function exponent_sign>, zero_to_negative = <function zero_to_negative>, min_of_list = <function min_of_list>, tuple_store = <function tuple_store>, nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), min_of_list(), [$main > min_of_list] lst = list(3, \"a\") if FLAG else list(1, 2), [$main > min_of_list] m = min(lst), min_of_list() (raising errors)], relying on values that are not computed precisely (unsupported expressions): unknown value of type bool produced by 'min(lst)'"
+    }
   }, {
     "location" : "'py-testcases/review-regressions/review-regressions.py':55:4",
     "cfg" : "untyped py-testcases/review-regressions/review-regressions::$main()",
@@ -101,33 +111,35 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/review-regressions/review-regressions.py':55:4",
-    "definite" : true,
-    "reproducingInputs" : [ {
-      "location" : "'py-testcases/review-regressions/review-regressions.py':46:3",
-      "source" : "return of bool _sv_verifier::nondet_bool()",
-      "context" : "<empty>",
-      "occurrence" : 0,
-      "value" : "false"
-    }, {
-      "location" : "'py-testcases/review-regressions/review-regressions.py':48:5",
-      "source" : "return of bool _sv_verifier::nondet_bool()",
-      "context" : "<empty>",
-      "occurrence" : 0,
-      "value" : "false"
-    }, {
-      "location" : "'py-testcases/review-regressions/review-regressions.py':50:5",
-      "source" : "return of bool _sv_verifier::nondet_bool()",
-      "context" : "<empty>",
-      "occurrence" : 0,
-      "value" : "false"
-    }, {
-      "location" : "'py-testcases/review-regressions/review-regressions.py':52:5",
-      "source" : "return of bool _sv_verifier::nondet_bool()",
-      "context" : "<empty>",
-      "occurrence" : 0,
-      "value" : "false"
-    } ],
-    "explanation" : "violation reached in 15 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), nan_base = <function nan_base>, exponent_sign = <function exponent_sign>, zero_to_negative = <function zero_to_negative>, min_of_list = <function min_of_list>, tuple_store = <function tuple_store>, nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), tuple_store(), [$main > tuple_store] t = tuple(1, 2), [$main > tuple_store] t[0] = 3, tuple_store() (raising errors)] (not yet certified by execution)"
+    "verification" : {
+      "outcome" : "confirmed",
+      "reproducingInputs" : [ {
+        "location" : "'py-testcases/review-regressions/review-regressions.py':46:3",
+        "source" : "return of bool _sv_verifier::nondet_bool()",
+        "context" : "<empty>",
+        "occurrence" : 0,
+        "value" : "false"
+      }, {
+        "location" : "'py-testcases/review-regressions/review-regressions.py':48:5",
+        "source" : "return of bool _sv_verifier::nondet_bool()",
+        "context" : "<empty>",
+        "occurrence" : 0,
+        "value" : "false"
+      }, {
+        "location" : "'py-testcases/review-regressions/review-regressions.py':50:5",
+        "source" : "return of bool _sv_verifier::nondet_bool()",
+        "context" : "<empty>",
+        "occurrence" : 0,
+        "value" : "false"
+      }, {
+        "location" : "'py-testcases/review-regressions/review-regressions.py':52:5",
+        "source" : "return of bool _sv_verifier::nondet_bool()",
+        "context" : "<empty>",
+        "occurrence" : 0,
+        "value" : "false"
+      } ],
+      "explanation" : "violation reached in 15 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), nan_base = <function nan_base>, exponent_sign = <function exponent_sign>, zero_to_negative = <function zero_to_negative>, min_of_list = <function min_of_list>, tuple_store = <function tuple_store>, nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), tuple_store(), [$main > tuple_store] t = tuple(1, 2), [$main > tuple_store] t[0] = 3, tuple_store() (raising errors)] (not yet certified by execution)"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_review-regressions_review-regressions.$main().graph.json", "untyped_py-testcases_review-regressions_review-regressions.exponent_sign()_b455f459cbcb580eba654ced88883470.graph.json", "untyped_py-testcases_review-regressions_review-regressions.min_of_list()_6fb7ec9637b5f104d4d11384a21e6339.graph.json", "untyped_py-testcases_review-regressions_review-regressions.nan_base()_b1d051b30f7bed71f093ed3f09b76620.graph.json", "untyped_py-testcases_review-regressions_review-regressions.tuple_store()_57e7bf9638851756ee982e96a25fd678.graph.json", "untyped_py-testcases_review-regressions_review-regressions.zero_to_negative()_145818e5c920dae13dfcd7bb718e8b50.graph.json" ],

@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_chained/main.py':32:0",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/svcomp/assignments_chained/main.py':34:0",
     "cfg" : "untyped py-testcases/svcomp/assignments_chained/main::$main()",
@@ -16,7 +18,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_chained/main.py':34:0",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/svcomp/assignments_chained/main.py':36:4",
     "cfg" : "untyped py-testcases/svcomp/assignments_chained/main::$main()",
@@ -25,7 +29,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_chained/main.py':36:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/svcomp/assignments_chained/main.py':38:4",
     "cfg" : "untyped py-testcases/svcomp/assignments_chained/main::$main()",
@@ -34,21 +40,23 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "STATEMENT",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/svcomp/assignments_chained/main.py':38:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_svcomp_assignments_chained_main.$main().graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func1()_5a42390098022a0ca0983e185fb12ca0.graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func1()_88ce0571083db038aa7af46850bcb511.graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func1()_8c6a0918c7c3574a6c3376cc2966e38f.graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func2()_5a42390098022a0ca0983e185fb12ca0.graph.json", "untyped_py-testcases_svcomp_assignments_chained_main.func2()_8c6a0918c7c3574a6c3376cc2966e38f.graph.json" ],
   "info" : {
     "cfgs" : "4",
-    "duration" : "4ms",
-    "end" : "2026-11-16T15:33:58.507+01:00",
+    "duration" : "20ms",
+    "end" : "2026-11-26T20:09:10.557+01:00",
     "expressions" : "38",
     "files" : "6",
     "globals" : "0",
     "members" : "213",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-16T15:33:58.503+01:00",
+    "start" : "2026-11-26T20:09:10.537+01:00",
     "statements" : "20",
     "units" : "47",
     "version" : "1.0",

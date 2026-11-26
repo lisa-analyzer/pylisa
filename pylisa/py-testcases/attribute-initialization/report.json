@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/attribute-initialization/attribute-initialization.py':19:8",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/attribute-initialization/attribute-initialization.py':22:4",
     "cfg" : "untyped py-testcases/attribute-initialization/attribute-initialization::$main()",
@@ -16,7 +18,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/attribute-initialization/attribute-initialization.py':22:8",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/attribute-initialization/attribute-initialization.py':38:4",
     "cfg" : "untyped py-testcases/attribute-initialization/attribute-initialization::$main()",
@@ -25,21 +29,23 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: an attribute that might not be defined is accessed (uncaught AttributeError) at 'py-testcases/attribute-initialization/attribute-initialization.py':38:8",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_C.__init__(C__self,_untyped_v)_c1b5a19481216078e7d19a55fd2293dc.graph.json", "untyped_C.get(C__self)_1bf11f9bdf7b346d3b3679da3ead1efa.graph.json", "untyped_py-testcases_attribute-initialization_attribute-initialization.$main().graph.json" ],
   "info" : {
     "cfgs" : "6",
-    "duration" : "9ms",
-    "end" : "2026-11-16T15:33:37.461+01:00",
+    "duration" : "92ms",
+    "end" : "2026-11-26T20:08:48.262+01:00",
     "expressions" : "42",
     "files" : "3",
     "globals" : "0",
     "members" : "215",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-16T15:33:37.452+01:00",
+    "start" : "2026-11-26T20:08:48.170+01:00",
     "statements" : "27",
     "units" : "49",
     "version" : "1.0",

@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':30:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/type-hints/type-hints.py':33:4",
     "cfg" : "untyped py-testcases/type-hints/type-hints::$main()",
@@ -16,7 +18,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':33:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/type-hints/type-hints.py':36:4",
     "cfg" : "untyped py-testcases/type-hints/type-hints::$main()",
@@ -25,7 +29,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':36:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   }, {
     "location" : "'py-testcases/type-hints/type-hints.py':39:4",
     "cfg" : "untyped py-testcases/type-hints/type-hints::$main()",
@@ -34,21 +40,23 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type might be used (uncaught TypeError) at 'py-testcases/type-hints/type-hints.py':39:4",
-    "definite" : false
+    "verification" : {
+      "outcome" : "possible"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_type-hints_type-hints.$main().graph.json" ],
   "info" : {
     "cfgs" : "4",
-    "duration" : "6ms",
-    "end" : "2026-11-16T15:34:03.146+01:00",
+    "duration" : "19ms",
+    "end" : "2026-11-26T20:09:15.538+01:00",
     "expressions" : "61",
     "files" : "1",
     "globals" : "0",
     "members" : "213",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-16T15:34:03.140+01:00",
+    "start" : "2026-11-26T20:09:15.519+01:00",
     "statements" : "30",
     "units" : "49",
     "version" : "1.0",

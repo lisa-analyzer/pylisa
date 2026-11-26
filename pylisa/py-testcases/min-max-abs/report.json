@@ -7,7 +7,9 @@
     "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
     "targetKind" : "EXPRESSION",
     "message" : "TYPING: a value of the wrong type is used (uncaught TypeError) at 'py-testcases/min-max-abs/min-max-abs.py':19:4",
-    "definite" : true
+    "verification" : {
+      "outcome" : "confirmed"
+    }
   } ],
   "notices" : [ ],
   "files" : [ "report.json", "untyped_py-testcases_min-max-abs_min-max-abs.$main().graph.json" ],
