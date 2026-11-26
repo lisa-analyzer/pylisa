@@ -9,7 +9,6 @@ import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.UserInput;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.libraries.PyNative;
@@ -18,9 +17,7 @@ import it.unive.pylisa.libraries.PyNative;
  * Native implementation of {@code _sv_verifier.nondet_bool()}: the result is
  * any {@code bool}.
  */
-public class NondetBool extends PyNative
-		implements
-		UserInput {
+public class NondetBool extends PyNative {
 
 	protected NondetBool(
 			CFG cfg,

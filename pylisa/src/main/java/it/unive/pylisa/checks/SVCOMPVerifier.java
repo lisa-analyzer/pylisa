@@ -16,6 +16,7 @@ import it.unive.pylisa.cfg.type.PyClassType;
 import it.unive.pylisa.triage.PyExpressionEncoder;
 import it.unive.pylisa.triage.PyGlobalWrites;
 import it.unive.pylisa.triage.PyHeapWrites;
+import it.unive.pylisa.triage.PyUserInputs;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -55,7 +56,8 @@ public class SVCOMPVerifier<A extends AbstractLattice<A>, D extends AbstractDoma
 	 * {@link PdrVerifier} encodes the values and the operators of Python
 	 * ({@link PyExpressionEncoder#FACTORY}), and knows the global variables and
 	 * the contents of the heap written by the code of the program
-	 * ({@link PyGlobalWrites} and {@link PyHeapWrites}).
+	 * ({@link PyGlobalWrites} and {@link PyHeapWrites}) and the natives
+	 * producing user inputs ({@link PyUserInputs}).
 	 *
 	 * @param <A> the kind of {@link AbstractLattice} produced by the domain
 	 *                {@code D}
@@ -66,7 +68,7 @@ public class SVCOMPVerifier<A extends AbstractLattice<A>, D extends AbstractDoma
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> FirstViolationVerifier<A,
 			D> firstViolation() {
 		return new FirstViolationVerifier<>(new ReachabilityVerifier<>(),
-				new PdrVerifier<A, D>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY)
+				new PdrVerifier<A, D>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY).withUserInputs(new PyUserInputs())
 						.withGlobalWrites(new PyGlobalWrites()).withHeapWrites(new PyHeapWrites()));
 	}
 

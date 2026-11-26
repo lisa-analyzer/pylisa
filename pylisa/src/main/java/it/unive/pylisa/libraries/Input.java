@@ -9,7 +9,6 @@ import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.UserInput;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
 
@@ -18,9 +17,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
  * (it is printed with {@code str}), and the result is a {@code str} read from
  * the standard input, whose value is unknown.
  */
-public class Input extends PyNative
-		implements
-		UserInput {
+public class Input extends PyNative {
 
 	protected Input(
 			CFG cfg,

@@ -14,7 +14,6 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.CodeMember;
 import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.UserInput;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.CFGCall;
 import it.unive.lisa.program.cfg.statement.call.Call;
@@ -59,9 +58,7 @@ import java.util.Set;
  * are unknown. The list might also be empty, when {@code nondet_elem} is never
  * called.
  */
-public class NondetList extends PyNative
-		implements
-		UserInput {
+public class NondetList extends PyNative {
 
 	// the types of the values returned by the nondet_* functions
 	private static final Map<String, Type> NONDET_TYPES = Map.of(

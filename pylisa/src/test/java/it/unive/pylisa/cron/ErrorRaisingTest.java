@@ -7,6 +7,7 @@ import it.unive.pylisa.helpers.TestHelper;
 import it.unive.pylisa.triage.PyExpressionEncoder;
 import it.unive.pylisa.triage.PyGlobalWrites;
 import it.unive.pylisa.triage.PyHeapWrites;
+import it.unive.pylisa.triage.PyUserInputs;
 import org.junit.Test;
 
 /**
@@ -22,7 +23,7 @@ public class ErrorRaisingTest extends AnalysisTestExecutor {
 		CronConfiguration conf = TestHelper.svcompConfig();
 		// each warning is verified (confirming it, if the error is raised
 		// exactly where it happens)
-		conf.warningVerifier = new PdrVerifier<>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY)
+		conf.warningVerifier = new PdrVerifier<>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY).withUserInputs(new PyUserInputs())
 				.withGlobalWrites(new PyGlobalWrites()).withHeapWrites(new PyHeapWrites());
 		conf.testDir = "error-raising";
 		conf.programFile = "error-raising.py";
@@ -32,7 +33,7 @@ public class ErrorRaisingTest extends AnalysisTestExecutor {
 	@Test
 	public void testReviewSoundness() {
 		CronConfiguration conf = TestHelper.svcompConfig();
-		conf.warningVerifier = new PdrVerifier<>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY)
+		conf.warningVerifier = new PdrVerifier<>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY).withUserInputs(new PyUserInputs())
 				.withGlobalWrites(new PyGlobalWrites()).withHeapWrites(new PyHeapWrites());
 		conf.testDir = "review-soundness";
 		conf.programFile = "review-soundness.py";
@@ -42,7 +43,7 @@ public class ErrorRaisingTest extends AnalysisTestExecutor {
 	@Test
 	public void testReviewRegressions() {
 		CronConfiguration conf = TestHelper.svcompConfig();
-		conf.warningVerifier = new PdrVerifier<>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY)
+		conf.warningVerifier = new PdrVerifier<>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY).withUserInputs(new PyUserInputs())
 				.withGlobalWrites(new PyGlobalWrites()).withHeapWrites(new PyHeapWrites());
 		conf.testDir = "review-regressions";
 		conf.programFile = "review-regressions.py";
@@ -52,7 +53,7 @@ public class ErrorRaisingTest extends AnalysisTestExecutor {
 	@Test
 	public void testResumeAfterExpandedCall() {
 		CronConfiguration conf = TestHelper.svcompConfig();
-		conf.warningVerifier = new PdrVerifier<>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY)
+		conf.warningVerifier = new PdrVerifier<>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY).withUserInputs(new PyUserInputs())
 				.withGlobalWrites(new PyGlobalWrites()).withHeapWrites(new PyHeapWrites());
 		conf.testDir = "resume-split";
 		conf.programFile = "resume-split.py";
