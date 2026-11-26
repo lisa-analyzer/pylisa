@@ -82,78 +82,73 @@ public class SequenceSetItem extends NaryExpression implements PluggableStatemen
 			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		ScopeId<A> context = interprocedural.getCurrentContext();
+		AnalysisState<A> result = state.bottomExecution();
+		// each combination of the operands is evaluated through the analysis,
+		// that might evaluate it only in the executions computing it
+		boolean single = singleValues(params);
+		for (SymbolicExpression self : params[0])
+			for (SymbolicExpression index : params[1])
+				for (SymbolicExpression value : params[2])
+					result = result.lub(single ? store(analysis, context, state, self, index, value)
+							: ofCombination(interprocedural, state,
+									s -> store(analysis, context, s, self, index, value), self, index, value));
+		return result;
+	}
+
+	// self[index] = value, raising its exceptions
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> store(
+			Analysis<A, D> analysis,
+			ScopeId<A> context,
+			AnalysisState<A> state,
+			SymbolicExpression self,
+			SymbolicExpression index,
+			SymbolicExpression value)
+			throws SemanticException {
 		CodeLocation loc = getLocation();
 		Type tupleType = PyClassType.lookup(LibrarySpecificationProvider.TUPLE);
-
 		AnalysisState<A> result = state.bottomExecution();
+		if (state.getExecutionState().isBottom())
+			return result;
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		for (SymbolicExpression self : params[0]) {
-			// each combination of the operands is evaluated in the executions
-			// computing it, as the statements of lisa do: if they are not
-			// known exactly, the exceptions are raised under an unknown
-			// condition
-			AnalysisState<A> selfState = restrictTo(interprocedural, state, self);
-			if (selfState.getExecutionState().isBottom())
+		Set<Type> rts = analysis.getRuntimeTypesOf(state, self, context, this);
+		for (Type t : rts) {
+			if (!t.isPointerType())
 				continue;
-			boolean selfExact = params[0].size() == 1 || restrictsExactly(interprocedural, state, self);
-			PyExceptions.Raising<A, D> selfRaising = raising.certainOnlyIf(selfExact);
-			Set<Type> rts = analysis.getRuntimeTypesOf(selfState, self, context, this);
-			for (Type t : rts) {
-				if (!t.isPointerType())
-					continue;
-				Type inner = t.asPointerType().getInnerType();
+			Type inner = t.asPointerType().getInnerType();
 
-				if (inner.canBeAssignedTo(tupleType)) {
-					// tuples are immutable: raised where self is this tuple
-					selfRaising.raiseOfTypes(selfState, self, Collections.singleton(t), rts, true, getCFG(), loc, st,
-							LibrarySpecificationProvider.TYPE_ERROR);
-					continue;
-				}
+			if (inner.canBeAssignedTo(tupleType)) {
+				// tuples are immutable: raised where self is this tuple
+				raising.raiseOfTypes(state, self, Collections.singleton(t), rts, true, getCFG(), loc, st,
+						LibrarySpecificationProvider.TYPE_ERROR);
+				continue;
+			}
 
-				// the executions where self has this type (the type of a
-				// reference can be told apart from the other ones, see
-				// PyBinaryDispatch.checkable)
-				AnalysisState<A> typed = PyBinaryDispatch.ofType(analysis, context, selfState, self, t, rts, this);
-				if (typed.getExecutionState().isBottom())
-					continue;
+			// the executions where self has this type (the type of a
+			// reference can be told apart from the other ones, see
+			// PyBinaryDispatch.checkable)
+			AnalysisState<A> typed = PyBinaryDispatch.ofType(analysis, context, state, self, t, rts, this);
+			if (typed.getExecutionState().isBottom())
+				continue;
 
-				for (SymbolicExpression index : params[1]) {
-					AnalysisState<A> indexState = restrictTo(interprocedural, typed, null, index);
-					boolean indexExact = params[1].size() == 1
-							|| restrictsExactly(interprocedural, typed, null, index);
-					for (SymbolicExpression value : params[2]) {
-						AnalysisState<A> combination = restrictTo(interprocedural, indexState, null, null, value);
-						if (combination.getExecutionState().isBottom())
-							continue;
-						PyExceptions.Raising<A, D> combinationRaising = raising.certainOnlyIf(selfExact && indexExact
-								&& (params[2].size() == 1
-										|| restrictsExactly(interprocedural, indexState, null, null, value)));
-						if (ListModel.isList(t)) {
-							// the elements of the list, or its slices
-							Set<Type> indexTypes = analysis.getRuntimeTypesOf(combination, index, context, this);
-							boolean slice = !indexTypes.isEmpty() && indexTypes.stream().allMatch(ListModel::isSlice);
-							result = result.lub(slice
-									? ListModel.assignSlice(analysis, context, combination, self, index, value, st,
-											getMetaVariables(), combinationRaising)
-									: ListModel.write(analysis, context, combination, self, index, value, st,
-											combinationRaising));
-						} else if (DictModel.isDict(t))
-							// the entries of the dictionary
-							result = result.lub(
-									DictModel.write(analysis, context, combination, self, index, value, st,
-											combinationRaising));
-						else {
-							HeapDereference deref = new HeapDereference(inner, self, loc);
-							AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, index, loc);
-							AnalysisState<A> slotState = analysis.smallStepSemantics(combination, slot, context, this);
-							for (SymbolicExpression slotId : slotState.getExecutionExpressions())
-								result = result.lub(analysis.assign(slotState, slotId, value, context, this));
-						}
-					}
-				}
+			if (ListModel.isList(t)) {
+				// the elements of the list, or its slices
+				Set<Type> indexTypes = analysis.getRuntimeTypesOf(typed, index, context, this);
+				boolean slice = !indexTypes.isEmpty() && indexTypes.stream().allMatch(ListModel::isSlice);
+				result = result.lub(slice
+						? ListModel.assignSlice(analysis, context, typed, self, index, value, st, getMetaVariables(),
+								raising)
+						: ListModel.write(analysis, context, typed, self, index, value, st, raising));
+			} else if (DictModel.isDict(t))
+				// the entries of the dictionary
+				result = result.lub(DictModel.write(analysis, context, typed, self, index, value, st, raising));
+			else {
+				HeapDereference deref = new HeapDereference(inner, self, loc);
+				AccessChild slot = new AccessChild(Untyped.INSTANCE, deref, index, loc);
+				AnalysisState<A> slotState = analysis.smallStepSemantics(typed, slot, context, this);
+				for (SymbolicExpression slotId : slotState.getExecutionExpressions())
+					result = result.lub(analysis.assign(slotState, slotId, value, context, this));
 			}
 		}
-
 		return raising.moveFrom(result);
 	}
 }

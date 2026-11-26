@@ -26,10 +26,12 @@ import it.unive.pylisa.cfg.DerivedLocation;
 import it.unive.pylisa.cfg.expression.CallSites;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.type.PyClassType;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
@@ -151,9 +153,7 @@ public final class PyExceptions {
 	 * An exception is raised with {@link Satisfiability#SATISFIED} only on a
 	 * state made exactly of the executions raising it, and with
 	 * {@link Satisfiability#UNKNOWN} (under an unknown condition) when the
-	 * state might also hold executions that do not raise it (see
-	 * {@link #certainOnlyIf(boolean)} for the states restricted to a
-	 * combination of the operands, that might not be exact).
+	 * state might also hold executions that do not raise it.
 	 *
 	 * @param <A> the kind of {@link AbstractLattice} of the states
 	 * @param <D> the kind of {@link AbstractDomain} of the analysis
@@ -167,9 +167,10 @@ public final class PyExceptions {
 		// the state of the executions raising each error, not moved yet
 		private final Map<AnalysisState.Error, AnalysisState<A>> raised;
 
-		// whether the exceptions raised in all the executions of a state are
-		// raised in all of them (see certainOnlyIf)
-		private final boolean certain;
+		// states without normal executions, whose errors have already been
+		// moved (e.g., the ones raised on a value of an operand, see
+		// raiseOfTypes)
+		private final List<AnalysisState<A>> moved;
 
 		/**
 		 * Builds the collector.
@@ -184,36 +185,7 @@ public final class PyExceptions {
 			this.analysis = analysis;
 			this.context = context;
 			this.raised = new LinkedHashMap<>();
-			this.certain = true;
-		}
-
-		private Raising(
-				Raising<A, D> other,
-				boolean certain) {
-			this.analysis = other.analysis;
-			this.context = other.context;
-			this.raised = other.raised;
-			this.certain = other.certain && certain;
-		}
-
-		/**
-		 * Yields a collector of the same exceptions as this one (moved together
-		 * with them) that, unless the given condition holds, raises under an
-		 * unknown condition also the exceptions that this would raise in all
-		 * the executions of a state. This is used with states that might have
-		 * more executions than the ones where the exceptions are raised (e.g.,
-		 * the executions computing a combination of the operands of a
-		 * statement, if they are not known exactly, see
-		 * {@link it.unive.lisa.program.cfg.statement.NaryExpression#restrictsExactly}).
-		 *
-		 * @param exact whether the states are made exactly of the executions
-		 *                  where the exceptions are raised
-		 *
-		 * @return the collector
-		 */
-		public Raising<A, D> certainOnlyIf(
-				boolean exact) {
-			return exact ? this : new Raising<>(this, false);
+			this.moved = new ArrayList<>();
 		}
 
 		/**
@@ -322,11 +294,13 @@ public final class PyExceptions {
 		 * for an operand that might be any of the given values (a value whose
 		 * types are not known fails if {@link Untyped} is a failing type): in
 		 * all the executions if all the types of all the values fail, and
-		 * otherwise where each value has the failing types (under an unknown
-		 * condition if the executions where each value is the operand are not
-		 * known exactly). These are the executions where the given program
-		 * point, if any, computed the value (see
-		 * {@link Analysis#restrictTo(AnalysisState, ProgramPoint, SymbolicExpression)}).
+		 * otherwise where each value has the failing types. The exception of
+		 * each value is raised through
+		 * {@link Analysis#ofCombination(AnalysisState, ScopeId, ProgramPoint, ProgramPoint[], SymbolicExpression[], it.unive.lisa.analysis.CombinationSemantics)},
+		 * as the value computed by the given program point, so that the
+		 * analysis might raise it only in the executions computing the value
+		 * (without the program point, it is raised under an unknown
+		 * condition).
 		 *
 		 * @param state              the state of the executions that might
 		 *                               raise the exception
@@ -376,28 +350,47 @@ public final class PyExceptions {
 				return;
 			}
 			for (SymbolicExpression v : types.keySet()) {
-				AnalysisState<A> computed = computing == null ? state : analysis.restrictTo(state, computing, v);
-				if (computed.getExecutionState().isBottom())
+				if (computing == null) {
+					raiseOfValue(state, v, types.get(v), failing, false, cfg, loc, thrower, exceptionClassName);
 					continue;
-				// the types of this value in the executions computing it
-				Set<Type> valueTypes = computing == null ? types.get(v)
-						: analysis.getRuntimeTypesOf(computed, v, context, thrower);
-				// the failing types of this value (unknown ones, if unknown
-				// types fail)
-				Set<Type> ofValue = new HashSet<>();
-				if (valueTypes.isEmpty() && failing.stream().anyMatch(Type::isUntyped))
-					ofValue.add(Untyped.INSTANCE);
-				for (Type t : valueTypes)
-					if (failing.contains(t))
-						ofValue.add(t);
-				if (ofValue.isEmpty())
-					continue;
-				// surely raised only if the executions computing the value
-				// are known exactly
-				boolean exact = computing != null && analysis.restrictsExactly(state, computing, v);
-				raiseOfTypes(computed, v, ofValue, valueTypes, surely && exact, cfg, loc, thrower,
-						exceptionClassName);
+				}
+				// the errors of this value, already moved
+				moved.add(analysis.ofCombination(state, context, thrower, new ProgramPoint[] { computing },
+						new SymbolicExpression[] { v }, computed -> {
+							Raising<A, D> ofValue = new Raising<>(analysis, context);
+							ofValue.raiseOfValue(computed, v,
+									analysis.getRuntimeTypesOf(computed, v, context, thrower), failing, surely, cfg,
+									loc, thrower, exceptionClassName);
+							return ofValue.moveFrom(computed.bottomExecution());
+						}));
 			}
+		}
+
+		// raises the given exception where the given value, with the given
+		// types, has one of the failing types
+		private void raiseOfValue(
+				AnalysisState<A> state,
+				SymbolicExpression value,
+				Set<Type> valueTypes,
+				Set<Type> failing,
+				boolean surely,
+				CFG cfg,
+				CodeLocation loc,
+				Statement thrower,
+				String exceptionClassName)
+				throws SemanticException {
+			if (state.getExecutionState().isBottom())
+				return;
+			// the failing types of this value (unknown ones, if unknown types
+			// fail)
+			Set<Type> ofValue = new HashSet<>();
+			if (valueTypes.isEmpty() && failing.stream().anyMatch(Type::isUntyped))
+				ofValue.add(Untyped.INSTANCE);
+			for (Type t : valueTypes)
+				if (failing.contains(t))
+					ofValue.add(t);
+			if (!ofValue.isEmpty())
+				raiseOfTypes(state, value, ofValue, valueTypes, surely, cfg, loc, thrower, exceptionClassName);
 		}
 
 		// raises the exception in all the executions of the state
@@ -447,7 +440,7 @@ public final class PyExceptions {
 				throws SemanticException {
 			if (raises == Satisfiability.NOT_SATISFIED || raises == Satisfiability.BOTTOM)
 				return;
-			AnalysisState<A> raising = raises == Satisfiability.SATISFIED && certain ? state
+			AnalysisState<A> raising = raises == Satisfiability.SATISFIED ? state
 					: ExceptionGuard.maybe(analysis, context, state, thrower);
 			if (!raising.getExecutionState().isBottom())
 				collect(raising, cfg, loc, thrower, exceptionClassName);
@@ -573,6 +566,8 @@ public final class PyExceptions {
 			for (Map.Entry<AnalysisState.Error, AnalysisState<A>> entry : raised.entrySet())
 				result = analysis.moveExecutionToError(result, entry.getValue(), entry.getKey(),
 						context, entry.getKey().getThrower());
+			for (AnalysisState<A> errors : moved)
+				result = result.lub(errors);
 			return result;
 		}
 	}

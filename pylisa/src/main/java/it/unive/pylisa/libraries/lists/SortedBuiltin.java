@@ -70,7 +70,6 @@ public class SortedBuiltin extends PyNative {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
-		ScopeId<A> context = interprocedural.getCurrentContext();
 		// the new list: the state of the arguments is the one where it has
 		// been created, whose computed expressions are the list (see
 		// semantics)
@@ -80,44 +79,49 @@ public class SortedBuiltin extends PyNative {
 		getMetaVariables().addAll(creation.getMetaVariables());
 		AnalysisState<A> result = super.forwardSemanticsAux(interprocedural, created, params, expressions);
 
-		// key is called on the elements, and its results are compared
+		// key is called on the elements, and its results are compared: the
+		// exceptions it raises on each combination of the iterable and key are
+		// evaluated through the analysis, that might evaluate them only in the
+		// executions computing it
+		boolean single = params[0].size() == 1 && params[1].size() == 1;
+		for (SymbolicExpression key : params[1])
+			for (SymbolicExpression iterable : params[0])
+				result = result.lub(single ? keyErrors(interprocedural, created, iterable, key)
+						: ofCombination(interprocedural, created, s -> keyErrors(interprocedural, s, iterable, key),
+								iterable, key));
+		return result;
+	}
+
+	// the exceptions raised by calling key on the elements of the iterable, and
+	// by comparing its results (a state with no normal execution)
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> keyErrors(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression iterable,
+			SymbolicExpression key)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
+		ScopeId<A> context = interprocedural.getCurrentContext();
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
+		AnalysisState<A> none = state.bottomExecution();
+		if (state.getExecutionState().isBottom()
+				|| hasType(analysis, context, state, key, NONE) == Satisfiability.SATISFIED)
+			return none;
+		if (PyValueCall.callable(analysis, context, state, key, st) == Satisfiability.UNKNOWN)
+			// the code of key is not known
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+		if (Iteration.iterable(analysis, context, state, iterable, st) == Satisfiability.NOT_SATISFIED)
+			return raising.moveFrom(none);
 		Expression[] subs = getSubExpressions();
-		for (SymbolicExpression key : params[1]) {
-			// the executions where the argument computed this value
-			AnalysisState<A> keyState = restrictTo(interprocedural, created, null, key);
-			if (keyState.getExecutionState().isBottom())
-				continue;
-			if (hasType(analysis, context, keyState, key, NONE) == Satisfiability.SATISFIED)
-				continue;
-			if (PyValueCall.callable(analysis, context, keyState, key, st) == Satisfiability.UNKNOWN)
-				// the code of key is not known
-				raise(raising, Satisfiability.UNKNOWN, keyState, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
-			for (SymbolicExpression iterable : params[0]) {
-				// the executions where the argument computed this value
-				AnalysisState<A> iterableState = restrictTo(interprocedural, keyState, iterable);
-				if (iterableState.getExecutionState().isBottom())
-					continue;
-				if (Iteration.iterable(analysis, context, iterableState, iterable, st) == Satisfiability.NOT_SATISFIED)
-					continue;
-				AnalysisState<A> elements = Iteration.elements(interprocedural, iterableState,
-						subs.length > 0 ? subs[0] : null, iterable, st, getMetaVariables());
-				AnalysisState<A> keys = PyValueCall.call(interprocedural, elements, new ExpressionSet(key),
-						new ExpressionSet[] { elements.getExecutionExpressions() }, st, "key",
-						new StatementStore<>(elements), getMetaVariables());
-				if (!(params[1].size() == 1 || restrictsExactly(interprocedural, created, null, key))
-						|| !(params[0].size() == 1 || restrictsExactly(interprocedural, keyState, iterable)))
-					// the executions computing the arguments are not known
-					// exactly: the exceptions might be raised in some of them
-					keys = analysis.uncertainErrors(iterableState, keys, context, st);
-				// the exceptions raised by key
-				result = result.lub(keys.bottomExecution());
-				if (!comparable(analysis, context, keys, keys.getExecutionExpressions()))
-					raise(raising, Satisfiability.UNKNOWN, iterableState, LibrarySpecificationProvider.TYPE_ERROR);
-			}
-		}
-		return raising.moveFrom(result);
+		AnalysisState<A> elements = Iteration.elements(interprocedural, state, subs.length > 0 ? subs[0] : null,
+				iterable, st, getMetaVariables());
+		AnalysisState<A> keys = PyValueCall.call(interprocedural, elements, new ExpressionSet(key),
+				new ExpressionSet[] { elements.getExecutionExpressions() }, st, "key", new StatementStore<>(elements),
+				getMetaVariables());
+		if (!comparable(analysis, context, keys, keys.getExecutionExpressions()))
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
+		// the exceptions raised by key
+		return raising.moveFrom(keys.bottomExecution());
 	}
 
 	// whether the values can be compared with each other: there are none, or

@@ -94,53 +94,62 @@ public class NextBuiltin extends PyNative {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		AnalysisState<A> result = state.bottomExecution();
+		// each value of the argument is evaluated through the analysis, that
+		// might evaluate it only in the executions computing it
+		for (SymbolicExpression it : params[0])
+			result = result.lub(params[0].size() == 1 ? next(interprocedural, state, it, params)
+					: ofCombination(interprocedural, state, s -> next(interprocedural, s, it, params), it));
+		return result;
+	}
+
+	// next(it, default), raising its exceptions
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> next(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			SymbolicExpression it,
+			ExpressionSet[] params)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		ScopeId<A> context = interprocedural.getCurrentContext();
 		CodeLocation loc = getLocation();
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
 		AnalysisState<A> result = state.bottomExecution();
-		for (SymbolicExpression it : params[0]) {
-			// the executions where the argument computed this value
-			AnalysisState<A> itState = restrictTo(interprocedural, state, it);
-			if (itState.getExecutionState().isBottom())
-				continue;
-			Set<Type> types = analysis.getRuntimeTypesOf(itState, it, context, st);
-			if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st)) {
-				result = result.lub(compute(analysis, context, itState, new PushAny(Untyped.INSTANCE, loc)));
-				raise(raising, Satisfiability.UNKNOWN, itState, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
-				continue;
-			}
-			boolean iterators = false, finite = false, notIterators = false, unknown = false;
-			for (Type t : types)
-				if (iterator(t)) {
-					iterators = true;
-					finite |= !ItertoolsModel.isIterator(t)
-							|| !ItertoolsModel.infinite(analysis, context, itState, it, st);
-				} else if (notIterator(t))
-					notIterators = true;
-				else
-					// e.g. an object whose class defines __next__, that is
-					// not called
-					unknown = true;
-			if (iterators)
-				// (if the executions computing the value are not known exactly,
-				// the exceptions are raised under an unknown condition)
-				result = result.lub(Iteration.elements(interprocedural, itState, null, it, st, getMetaVariables(),
-						raising.certainOnlyIf(params[0].size() == 1 || restrictsExactly(interprocedural, state, it))));
-			if (unknown) {
-				result = result.lub(compute(analysis, context, itState, new PushAny(Untyped.INSTANCE, loc)));
-				raise(raising, Satisfiability.UNKNOWN, itState, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
-			}
-			if (notIterators)
-				raise(raising, Satisfiability.UNKNOWN, itState, LibrarySpecificationProvider.TYPE_ERROR);
-			if (iterators && finite)
-				// the iterator might be exhausted
-				for (SymbolicExpression def : params.length > 1 ? params[1] : new ExpressionSet())
-					if (missing(def))
-						raise(raising, Satisfiability.UNKNOWN, itState, LibrarySpecificationProvider.STOP_ITERATION);
-					else
-						result = result.lub(compute(analysis, context, itState, def));
+		if (state.getExecutionState().isBottom())
+			return result;
+		Set<Type> types = analysis.getRuntimeTypesOf(state, it, context, st);
+		if (types.isEmpty() || PyBinaryDispatch.unknownTypes(types, st)) {
+			result = result.lub(compute(analysis, context, state, new PushAny(Untyped.INSTANCE, loc)));
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+			return raising.moveFrom(result);
 		}
+		boolean iterators = false, finite = false, notIterators = false, unknown = false;
+		for (Type t : types)
+			if (iterator(t)) {
+				iterators = true;
+				finite |= !ItertoolsModel.isIterator(t)
+						|| !ItertoolsModel.infinite(analysis, context, state, it, st);
+			} else if (notIterator(t))
+				notIterators = true;
+			else
+				// e.g. an object whose class defines __next__, that is
+				// not called
+				unknown = true;
+		if (iterators)
+			result = result.lub(Iteration.elements(interprocedural, state, null, it, st, getMetaVariables(), raising));
+		if (unknown) {
+			result = result.lub(compute(analysis, context, state, new PushAny(Untyped.INSTANCE, loc)));
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.UNKNOWN_EXCEPTION);
+		}
+		if (notIterators)
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
+		if (iterators && finite)
+			// the iterator might be exhausted
+			for (SymbolicExpression def : params.length > 1 ? params[1] : new ExpressionSet())
+				if (missing(def))
+					raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.STOP_ITERATION);
+				else
+					result = result.lub(compute(analysis, context, state, def));
 		return raising.moveFrom(result);
 	}
 

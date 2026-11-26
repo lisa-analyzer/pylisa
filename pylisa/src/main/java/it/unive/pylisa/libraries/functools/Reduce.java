@@ -68,63 +68,69 @@ public class Reduce extends PyNative {
 			ExpressionSet[] params,
 			StatementStore<A> expressions)
 			throws SemanticException {
+		AnalysisState<A> result = state.bottomExecution();
+		// each combination of the iterable and the initial value is evaluated
+		// through the analysis, that might evaluate it only in the executions
+		// computing it
+		boolean single = params[1].size() == 1 && params[2].size() == 1;
+		for (SymbolicExpression iterable : params[1])
+			for (SymbolicExpression initial : params[2])
+				result = result.lub(single
+						? reduce(interprocedural, state, params[0], iterable, initial, expressions)
+						: ofCombination(interprocedural, state,
+								s -> reduce(interprocedural, s, params[0], iterable, initial, expressions), null,
+								iterable, initial));
+		return result;
+	}
+
+	// reduce(function, iterable, initial), raising its exceptions
+	private <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> reduce(
+			InterproceduralAnalysis<A, D> interprocedural,
+			AnalysisState<A> state,
+			ExpressionSet function,
+			SymbolicExpression iterable,
+			SymbolicExpression initial,
+			StatementStore<A> expressions)
+			throws SemanticException {
 		Analysis<A, D> analysis = interprocedural.getAnalysis();
 		ScopeId<A> context = interprocedural.getCurrentContext();
 		Expression[] subs = getSubExpressions();
 		Expression iterableExpr = subs.length > 1 ? subs[1] : null;
+		if (state.getExecutionState().isBottom())
+			return state.bottomExecution();
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);
-		AnalysisState<A> result = state.bottomExecution();
-		for (SymbolicExpression iterable : params[1]) {
-			// the executions where the argument computed this value
-			AnalysisState<A> iterableState = restrictTo(interprocedural, state, null, iterable);
-			if (iterableState.getExecutionState().isBottom())
-				continue;
-			Satisfiability it = Iteration.iterable(analysis, context, iterableState, iterable, st);
-			if (it != Satisfiability.SATISFIED)
-				raise(raising, Satisfiability.UNKNOWN, iterableState, LibrarySpecificationProvider.TYPE_ERROR);
-			if (it == Satisfiability.NOT_SATISFIED)
-				continue;
+		Satisfiability it = Iteration.iterable(analysis, context, state, iterable, st);
+		if (it != Satisfiability.SATISFIED)
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
+		if (it == Satisfiability.NOT_SATISFIED)
+			return raising.moveFrom(state.bottomExecution());
 
-			Set<Type> types = analysis.getRuntimeTypesOf(iterableState, iterable, context, st);
-			boolean list = !types.isEmpty() && types.stream().allMatch(ListModel::isList);
-			Integer length = list ? ListModel.length(analysis, context, iterableState, iterable, st) : null;
-			// the number of elements that the iterable surely has
-			int surely = length != null ? length
-					: !list ? 0
-							: Math.max(ListModel.shape(analysis, context, iterableState, iterable, st).prefix(),
-									ListModel.nonEmpty(analysis, context, iterableState, iterable, st) ? 1 : 0);
-			for (SymbolicExpression initial : params[2]) {
-				// the executions where the argument computed this value
-				AnalysisState<A> initialState = restrictTo(interprocedural, iterableState, null, null, initial);
-				if (initialState.getExecutionState().isBottom())
-					continue;
-				// if the executions computing the arguments are not known
-				// exactly, the exceptions might be raised in some of them
-				boolean exact = (params[1].size() == 1 || restrictsExactly(interprocedural, state, null, iterable))
-						&& (params[2].size() == 1
-								|| restrictsExactly(interprocedural, iterableState, null, null, initial));
-				boolean given = !missing(initial);
-				if (!given && surely == 0)
-					// reduce() of an iterable that might be empty with no
-					// initial value
-					raise(raising, Satisfiability.UNKNOWN, initialState, LibrarySpecificationProvider.TYPE_ERROR);
-				if (!given && length != null && length == 0)
-					continue;
+		Set<Type> types = analysis.getRuntimeTypesOf(state, iterable, context, st);
+		boolean list = !types.isEmpty() && types.stream().allMatch(ListModel::isList);
+		Integer length = list ? ListModel.length(analysis, context, state, iterable, st) : null;
+		// the number of elements that the iterable surely has
+		int surely = length != null ? length
+				: !list ? 0
+						: Math.max(ListModel.shape(analysis, context, state, iterable, st).prefix(),
+								ListModel.nonEmpty(analysis, context, state, iterable, st) ? 1 : 0);
+		boolean given = !missing(initial);
+		if (!given && surely == 0)
+			// reduce() of an iterable that might be empty with no initial
+			// value
+			raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.TYPE_ERROR);
+		if (!given && length != null && length == 0)
+			return raising.moveFrom(state.bottomExecution());
 
-				// the values of acc: initial, or the first element
-				AnalysisState<A> acc = given ? initialState.withExecutionExpressions(new ExpressionSet(initial))
-						: Iteration.elements(analysis, context, initialState, iterableExpr, iterable, st,
-								getMetaVariables(),
-								raising.certainOnlyIf(exact));
-				if (given || length == null || length != 1)
-					// function is surely called if the iterable surely has an
-					// element (two, without an initial value)
-					acc = accumulate(interprocedural, acc, params[0], iterableExpr, iterable, expressions,
-							surely >= (given ? 1 : 2));
-				result = result.lub(exact ? acc : analysis.uncertainErrors(initialState, acc, context, st));
-			}
-		}
-		return raising.moveFrom(result);
+		// the values of acc: initial, or the first element
+		AnalysisState<A> acc = given ? state.withExecutionExpressions(new ExpressionSet(initial))
+				: Iteration.elements(analysis, context, state, iterableExpr, iterable, st, getMetaVariables(),
+						raising);
+		if (given || length == null || length != 1)
+			// function is surely called if the iterable surely has an element
+			// (two, without an initial value)
+			acc = accumulate(interprocedural, acc, function, iterableExpr, iterable, expressions,
+					surely >= (given ? 1 : 2));
+		return raising.moveFrom(acc);
 	}
 
 	@Override
