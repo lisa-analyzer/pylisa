@@ -14,7 +14,7 @@ import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.pylisa.libraries.DivisionGuard;
@@ -73,7 +73,7 @@ public class FloatMod extends BinaryExpression implements PluggableStatement {
 
 		it.unive.lisa.symbolic.value.BinaryExpression mod = new it.unive.lisa.symbolic.value.BinaryExpression(
 				getStaticType(), left, right, Modulo.INSTANCE, loc);
-		Constant zero = new Constant(Float32Type.INSTANCE, 0f, loc);
+		Constant zero = new Constant(Float64Type.INSTANCE, 0f, loc);
 		return DivisionGuard.guardedCompute(analysis, context, state, right, zero, mod, getCFG(), loc, st, st);
 	}
 }

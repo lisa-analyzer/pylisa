@@ -13,7 +13,7 @@ import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -296,7 +296,7 @@ public final class ItertoolsModel {
 					ints &= (t.isNumericType() && t.asNumericType().isIntegral()) || t.isBooleanType();
 		}
 		return analysis.smallStepSemantics(state,
-				new PushAny(ints ? Int32Type.INSTANCE : Float32Type.INSTANCE, loc), context, pp);
+				new PushAny(ints ? Int32Type.INSTANCE : Float64Type.INSTANCE, loc), context, pp);
 	}
 
 	// the elements of the iterable held by the given child

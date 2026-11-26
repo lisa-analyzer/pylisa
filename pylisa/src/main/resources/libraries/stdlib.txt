@@ -25,7 +25,7 @@ method int: it.unive.pylisa.libraries.conversions.IntBuiltin
     param base type it.unive.lisa.type.Untyped::INSTANCE default missing
 
 method float: it.unive.pylisa.libraries.conversions.FloatBuiltin
-    type it.unive.lisa.program.type.Float32Type::INSTANCE
+    type it.unive.lisa.program.type.Float64Type::INSTANCE
     param x type it.unive.lisa.type.Untyped::INSTANCE default missing
 
 method input: it.unive.pylisa.libraries.Input

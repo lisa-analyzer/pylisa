@@ -4,7 +4,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
@@ -51,9 +51,9 @@ public class MathSin extends MathFloatFunction {
 			CodeLocation loc) {
 		return new BinaryExpression(BoolType.INSTANCE,
 				new BinaryExpression(BoolType.INSTANCE, x,
-						new Constant(Float32Type.INSTANCE, Float.POSITIVE_INFINITY, loc), ComparisonEq.INSTANCE, loc),
+						new Constant(Float64Type.INSTANCE, Double.POSITIVE_INFINITY, loc), ComparisonEq.INSTANCE, loc),
 				new BinaryExpression(BoolType.INSTANCE, x,
-						new Constant(Float32Type.INSTANCE, Float.NEGATIVE_INFINITY, loc), ComparisonEq.INSTANCE, loc),
+						new Constant(Float64Type.INSTANCE, Double.NEGATIVE_INFINITY, loc), ComparisonEq.INSTANCE, loc),
 				LogicalOr.INSTANCE, loc);
 	}
 }

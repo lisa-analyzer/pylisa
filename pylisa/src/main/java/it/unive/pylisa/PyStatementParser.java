@@ -1,8 +1,5 @@
 package it.unive.pylisa;
 
-import static it.unive.pylisa.PyParsingUtils.getLine;
-import static it.unive.pylisa.PyParsingUtils.getLocation;
-
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
@@ -36,6 +33,7 @@ import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.program.cfg.statement.global.AccessInstanceGlobal;
 import it.unive.lisa.program.cfg.statement.literal.FalseLiteral;
+import it.unive.lisa.program.cfg.statement.literal.Float64Literal;
 import it.unive.lisa.program.cfg.statement.literal.Int32Literal;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.program.type.Int32Type;
@@ -220,7 +218,6 @@ import it.unive.pylisa.cfg.expression.comparison.PyLessThan;
 import it.unive.pylisa.cfg.expression.comparison.PyNotEqual;
 import it.unive.pylisa.cfg.expression.comparison.PyOr;
 import it.unive.pylisa.cfg.expression.literal.PyBytesLiteral;
-import it.unive.pylisa.cfg.expression.literal.PyFloatLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyFunctionLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyNoneLiteral;
 import it.unive.pylisa.cfg.expression.literal.PyStringLiteral;
@@ -266,6 +263,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import static it.unive.pylisa.PyParsingUtils.getLine;
+import static it.unive.pylisa.PyParsingUtils.getLocation;
 
 public class PyStatementParser
 		extends
@@ -3102,7 +3101,7 @@ public class PyStatementParser
 
 		if (text.contains("e") || text.contains("."))
 			// floating point
-			return new PyFloatLiteral(currentCFG, getLocation(filePath, ctx), Double.parseDouble(text));
+			return new Float64Literal(currentCFG, getLocation(filePath, ctx), Double.parseDouble(text));
 
 		// integer
 		BigInteger value;

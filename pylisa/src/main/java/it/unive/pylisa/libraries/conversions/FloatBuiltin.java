@@ -11,7 +11,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
@@ -55,10 +55,10 @@ public class FloatBuiltin extends PyNative {
 		CodeLocation loc = getLocation();
 		SymbolicExpression x = args[0];
 		if (missing(x))
-			return compute(analysis, context, state, new Constant(Float32Type.INSTANCE, 0f, loc));
+			return compute(analysis, context, state, new Constant(Float64Type.INSTANCE, 0f, loc));
 
 		Satisfiability typed = hasType(analysis, context, state, x, STR.or(INT.or(t -> t.isNumericType())));
-		UnaryExpression value = new UnaryExpression(Float32Type.INSTANCE, x, ToFloat.INSTANCE, loc);
+		UnaryExpression value = new UnaryExpression(Float64Type.INSTANCE, x, ToFloat.INSTANCE, loc);
 		BinaryExpression raises = new BinaryExpression(BoolType.INSTANCE, x, new PyNoneConstant(loc),
 				ConversionRaises.FLOAT, loc);
 		PyExceptions.Raising<A, D> raising = new PyExceptions.Raising<>(analysis, context);

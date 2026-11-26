@@ -121,7 +121,7 @@
     "targetKind" : "EXPRESSION",
     "message" : "ASSERTIONS: the assertion might fail (uncaught AssertionError) at 'py-testcases/review-soundness/review-soundness.py':80:4",
     "definite" : false,
-    "explanation" : "violation reached in 20 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), tuple_slice = <function tuple_slice>, tuple_str_index = <function tuple_str_index>, C = C, multicall_arity = <function multicall_arity>, mutated_truthiness = <function mutated_truthiness>, nan_power = <function nan_power>, str_or_list_index = <function str_or_list_index>, float_division = <function float_division>, nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), nan_power(), [$main > nan_power] y = **(nondet_float(), 0.5), [$main > nan_power] !=(y, y), [$main > nan_power] assert false, nan_power() (raising errors)], relying on values that are not computed precisely (merged values, call results): merged path conditions; imprecise return of bool Bytes::__ne__(bytes self, bytes other) or bool Integral::__ne__(int32 self, int32 other) or bool List::__ne__(List* self, untyped other) or bool Real::__ne__(float32 self, float32 other) or bool Str::__ne__(string self, string other)"
+    "explanation" : "violation reached in 20 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), tuple_slice = <function tuple_slice>, tuple_str_index = <function tuple_str_index>, C = C, multicall_arity = <function multicall_arity>, mutated_truthiness = <function mutated_truthiness>, nan_power = <function nan_power>, str_or_list_index = <function str_or_list_index>, float_division = <function float_division>, nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), nan_power(), [$main > nan_power] y = **(nondet_float(), 0.5), [$main > nan_power] !=(y, y), [$main > nan_power] assert false, nan_power() (raising errors)], relying on values that are not computed precisely (merged values, call results): merged path conditions; imprecise return of bool Bytes::__ne__(bytes self, bytes other) or bool Integral::__ne__(int32 self, int32 other) or bool List::__ne__(List* self, untyped other) or bool Real::__ne__(float64 self, float64 other) or bool Str::__ne__(string self, string other)"
   }, {
     "location" : "'py-testcases/review-soundness/review-soundness.py':82:4",
     "cfg" : "untyped py-testcases/review-soundness/review-soundness::$main()",
@@ -133,16 +133,6 @@
     "definite" : false,
     "refuted" : true,
     "explanation" : "inductive invariant found: {str_or_list_index() (raising errors)=[!true]}"
-  }, {
-    "location" : "'py-testcases/review-soundness/review-soundness.py':84:4",
-    "cfg" : "untyped py-testcases/review-soundness/review-soundness::$main()",
-    "text" : "float_division()",
-    "context" : "<empty>",
-    "contextHash" : "eb5f5da91de44083d423fe942c39ec56",
-    "targetKind" : "EXPRESSION",
-    "message" : "ARITHMETIC: possible division by zero (uncaught ZeroDivisionError) at 'py-testcases/review-soundness/review-soundness.py':84:4",
-    "definite" : false,
-    "explanation" : "violation reached in 20 steps through [init-namespaces, import _sv_verifier, FLAG = nondet_bool(), tuple_slice = <function tuple_slice>, tuple_str_index = <function tuple_str_index>, C = C, multicall_arity = <function multicall_arity>, mutated_truthiness = <function mutated_truthiness>, nan_power = <function nan_power>, str_or_list_index = <function str_or_list_index>, float_division = <function float_division>, nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), nondet_bool(), float_division(), [$main > float_division] d = -(+(0.1, 0.2), 0.3), [$main > float_division] z = /(1, d), float_division() (raising errors)], relying on values that are not computed precisely (call results): imprecise return of float32 Integral::__truediv__(int32 self, int32 other) or float32 Real::__rtruediv__(float32 self, float32 other)"
   }, {
     "location" : "'py-testcases/review-soundness/review-soundness.py':84:4",
     "cfg" : "untyped py-testcases/review-soundness/review-soundness::$main()",
@@ -195,19 +185,19 @@
   "files" : [ "report.json", "untyped_C.append(C__self)_5b32f98b47a750c04a8d9fdc7eac11c4.graph.json", "untyped_py-testcases_review-soundness_review-soundness.$main().graph.json", "untyped_py-testcases_review-soundness_review-soundness.float_division()_1dc627f3be2a28e4c73e771af6ccfc98.graph.json", "untyped_py-testcases_review-soundness_review-soundness.multicall_arity()_bfa0c301c52864cbd7d597764652fa67.graph.json", "untyped_py-testcases_review-soundness_review-soundness.mutated_truthiness()_87d818461305528ea6f139648a55dd37.graph.json", "untyped_py-testcases_review-soundness_review-soundness.nan_power()_7f3c0e8b56cfdfbd8e51540265b5428d.graph.json", "untyped_py-testcases_review-soundness_review-soundness.str_or_list_index()_08fdea28d188c6c77799d7eeb81043e6.graph.json", "untyped_py-testcases_review-soundness_review-soundness.tuple_slice()_1b1d803aaea321504b46e8f840b0e085.graph.json", "untyped_py-testcases_review-soundness_review-soundness.tuple_str_index()_32728fa8a45c2803cb1769d34eb03119.graph.json" ],
   "info" : {
     "cfgs" : "11",
-    "duration" : "18s 884ms",
-    "end" : "2026-11-25T17:18:12.428+01:00",
+    "duration" : "17s 317ms",
+    "end" : "2026-11-26T15:00:31.574+01:00",
     "expressions" : "99",
     "files" : "9",
     "globals" : "0",
     "members" : "220",
     "notices" : "0",
     "programs" : "1",
-    "start" : "2026-11-25T17:17:53.544+01:00",
+    "start" : "2026-11-26T15:00:14.257+01:00",
     "statements" : "59",
     "units" : "48",
     "version" : "1.0",
-    "warnings" : "9"
+    "warnings" : "8"
   },
   "configuration" : {
     "asynchronousListeners" : "",

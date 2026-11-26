@@ -11,7 +11,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
@@ -85,10 +85,10 @@ public class MathFloor extends PyNative {
 			BinaryExpression isNan = new BinaryExpression(BoolType.INSTANCE, x, x, ComparisonNe.INSTANCE, loc);
 			BinaryExpression isInf = new BinaryExpression(BoolType.INSTANCE,
 					new BinaryExpression(BoolType.INSTANCE, x,
-							new Constant(Float32Type.INSTANCE, Float.POSITIVE_INFINITY, loc), ComparisonEq.INSTANCE,
+							new Constant(Float64Type.INSTANCE, Double.POSITIVE_INFINITY, loc), ComparisonEq.INSTANCE,
 							loc),
 					new BinaryExpression(BoolType.INSTANCE, x,
-							new Constant(Float32Type.INSTANCE, Float.NEGATIVE_INFINITY, loc), ComparisonEq.INSTANCE,
+							new Constant(Float64Type.INSTANCE, Double.NEGATIVE_INFINITY, loc), ComparisonEq.INSTANCE,
 							loc),
 					LogicalOr.INSTANCE, loc);
 			Satisfiability nan = analysis.satisfies(state, isNan, context, this);

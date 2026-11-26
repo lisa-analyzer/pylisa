@@ -35,7 +35,6 @@ import it.unive.lisa.triage.smt.Term;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeTokenType;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.PyFloatConstant;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.FloatPower;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
@@ -106,9 +105,6 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 	 * numbers of Python are 64-bits ones, so they are encoded as such
 	 * ({@link SortPolicy#withDoubleFloats()}).
 	 */
-	// FIXME the frontend models Python's floats with 32-bits types: it should
-	// use 64-bits ones, so that the analysis agrees with the encoding (float
-	// literals keep their 64-bits value apart, see PyFloatConstant)
 	public static final ExpressionEncoderFactory FACTORY = new ExpressionEncoderFactory() {
 
 		@Override
@@ -157,21 +153,6 @@ public class PyExpressionEncoder extends ExpressionEncoder {
 			throws SemanticException {
 		if (expression instanceof PyNoneConstant)
 			return ValueSort.nullValue();
-		Object value = expression.getValue();
-		if (expression instanceof PyFloatConstant)
-			// a float literal, whose 64-bits value is kept apart from the
-			// 32-bits one used by the analyses
-			return getSorts().encodesFloats() ? FloatingPoints.literal(((PyFloatConstant) expression).getExact())
-					: opaque(expression);
-		if (value instanceof Float)
-			// other floats are modeled as 32-bits numbers, built from short
-			// literals: the shortest decimal representation of the 32-bits
-			// number is the one of the literal (for literals with at most 7
-			// significant digits), and Python's value is the 64-bits number
-			// closest to it
-			return getSorts().encodesFloats()
-					? FloatingPoints.literal(Double.parseDouble(Float.toString((Float) value)))
-					: opaque(expression);
 		return super.encodeConstant(expression);
 	}
 

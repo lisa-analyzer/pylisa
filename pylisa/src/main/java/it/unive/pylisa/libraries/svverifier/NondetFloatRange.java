@@ -10,7 +10,7 @@ import it.unive.lisa.lattices.Satisfiability;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.libraries.PyNative;
@@ -47,6 +47,6 @@ public class NondetFloatRange extends PyNative {
 			throws SemanticException {
 		Satisfiability typed = hasType(analysis, context, state, args[0], INT.or(Type::isNumericType))
 				.and(hasType(analysis, context, state, args[1], INT.or(Type::isNumericType)));
-		return typeChecked(analysis, context, state, typed, unknown(analysis, context, state, Float32Type.INSTANCE));
+		return typeChecked(analysis, context, state, typed, unknown(analysis, context, state, Float64Type.INSTANCE));
 	}
 }

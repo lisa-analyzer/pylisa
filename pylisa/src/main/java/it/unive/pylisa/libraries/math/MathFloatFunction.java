@@ -11,7 +11,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
@@ -96,7 +96,7 @@ public abstract class MathFloatFunction extends PyNative {
 		if (number) {
 			Satisfiability outside = analysis.satisfies(state, outsideDomain(x, loc), context, this);
 			if (outside != Satisfiability.SATISFIED)
-				result = result.lub(compute(analysis, context, state, new PushAny(Float32Type.INSTANCE, loc)));
+				result = result.lub(compute(analysis, context, state, new PushAny(Float64Type.INSTANCE, loc)));
 			if (outside != Satisfiability.NOT_SATISFIED)
 				raise(raising, Satisfiability.UNKNOWN, state, LibrarySpecificationProvider.VALUE_ERROR);
 			if (integral && analysis.satisfies(state, new BinaryExpression(BoolType.INSTANCE,

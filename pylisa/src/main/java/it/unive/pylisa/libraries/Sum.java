@@ -11,7 +11,7 @@ import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
@@ -127,7 +127,7 @@ public class Sum extends PyNative {
 			boolean floats = numbers.stream().allMatch(Sum::isFloat);
 			boolean someFloat = starts.stream().anyMatch(Sum::isFloat) || numbers.stream().anyMatch(Sum::isFloat);
 			if (floatStart || floats || someFloat)
-				result = result.lub(unknown(analysis, context, state, Float32Type.INSTANCE));
+				result = result.lub(unknown(analysis, context, state, Float64Type.INSTANCE));
 			if (!floatStart && !floats)
 				result = result.lub(unknown(analysis, context, state, Int32Type.INSTANCE));
 		}
@@ -148,7 +148,7 @@ public class Sum extends PyNative {
 			Set<Type> starts,
 			Set<Type> types) {
 		Type type = starts.stream().anyMatch(Sum::isFloat) || types.stream().anyMatch(Sum::isFloat)
-				? Float32Type.INSTANCE
+				? Float64Type.INSTANCE
 				: Int32Type.INSTANCE;
 		SymbolicExpression sum = start;
 		for (SymbolicExpression e : elements)

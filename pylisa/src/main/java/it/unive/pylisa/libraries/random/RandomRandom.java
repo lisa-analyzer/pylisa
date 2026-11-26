@@ -9,7 +9,7 @@ import it.unive.lisa.interprocedural.ScopeId;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.pylisa.libraries.PyNative;
 
@@ -40,6 +40,6 @@ public class RandomRandom extends PyNative {
 			AnalysisState<A> state,
 			SymbolicExpression[] args)
 			throws SemanticException {
-		return unknown(analysis, context, state, Float32Type.INSTANCE);
+		return unknown(analysis, context, state, Float64Type.INSTANCE);
 	}
 }

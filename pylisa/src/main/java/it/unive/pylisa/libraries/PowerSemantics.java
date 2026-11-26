@@ -11,7 +11,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.BinaryExpression;
@@ -89,7 +89,7 @@ public final class PowerSemantics {
 		BinaryExpression zeroBase = new BinaryExpression(BoolType.INSTANCE, base, zero, ComparisonEq.INSTANCE, loc);
 		BinaryExpression zeroDivision = new BinaryExpression(BoolType.INSTANCE, zeroBase, negativeExponent,
 				LogicalAnd.INSTANCE, loc);
-		BinaryExpression floatPower = new BinaryExpression(Float32Type.INSTANCE, base, exponent,
+		BinaryExpression floatPower = new BinaryExpression(Float64Type.INSTANCE, base, exponent,
 				FloatPower.INSTANCE, loc);
 
 		if (!intOperands) {

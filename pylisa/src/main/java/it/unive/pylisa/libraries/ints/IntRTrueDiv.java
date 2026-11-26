@@ -14,7 +14,7 @@ import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.PluggableStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.Constant;
@@ -78,7 +78,7 @@ public class IntRTrueDiv extends BinaryExpression implements PluggableStatement 
 		CodeLocation loc = getLocation();
 
 		it.unive.lisa.symbolic.value.BinaryExpression div = new it.unive.lisa.symbolic.value.BinaryExpression(
-				Float32Type.INSTANCE, right, left, TrueDivision.INSTANCE, loc);
+				Float64Type.INSTANCE, right, left, TrueDivision.INSTANCE, loc);
 		Constant zero = new Constant(Int32Type.INSTANCE, 0, loc);
 		return DivisionGuard.guardedCompute(analysis, context, state, left, zero, div, getCFG(), loc, st, st);
 	}

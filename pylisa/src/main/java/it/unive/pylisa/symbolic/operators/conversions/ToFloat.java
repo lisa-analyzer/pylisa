@@ -1,6 +1,6 @@
 package it.unive.pylisa.symbolic.operators.conversions;
 
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
@@ -25,7 +25,7 @@ public class ToFloat implements UnaryOperator {
 	public Set<Type> typeInference(
 			TypeSystem types,
 			Set<Type> argument) {
-		return Collections.singleton(Float32Type.INSTANCE);
+		return Collections.singleton(Float64Type.INSTANCE);
 	}
 
 	@Override

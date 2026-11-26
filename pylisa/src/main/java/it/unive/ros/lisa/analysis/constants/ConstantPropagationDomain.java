@@ -4,7 +4,6 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.program.cfg.ProgramPoint;
-import it.unive.lisa.program.type.Float32Type;
 import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.program.type.Int16Type;
 import it.unive.lisa.program.type.Int32Type;
@@ -130,9 +129,9 @@ public class ConstantPropagationDomain
 			if (arg.is(Integer.class))
 				return new ConstantPropagation(
 						new Constant(Int32Type.INSTANCE, -1 * arg.as(Integer.class), pp.getLocation()));
-			else if (arg.is(Float.class))
+			else if (arg.is(Double.class))
 				return new ConstantPropagation(
-						new Constant(Float32Type.INSTANCE, -1 * arg.as(Float.class), pp.getLocation()));
+						new Constant(Float64Type.INSTANCE, -1 * arg.as(Double.class), pp.getLocation()));
 
 		// String constructor
 		if (operator == StringConstructor.INSTANCE)
@@ -163,13 +162,13 @@ public class ConstantPropagationDomain
 				c = sum(left, right, pp);
 			else if (operator instanceof DivisionOperator)
 				if ((right.is(Integer.class) && right.as(Integer.class) == 0)
-						|| (right.is(Float.class) && right.as(Float.class) == 0f))
+						|| (right.is(Double.class) && right.as(Double.class) == 0d))
 					return ConstantPropagation.BOTTOM;
 				else
 					c = div(left, right, pp);
 			else if (operator instanceof RemainderOperator || operator instanceof ModuloOperator)
 				if ((right.is(Integer.class) && right.as(Integer.class) == 0)
-						|| (right.is(Float.class) && right.as(Float.class) == 0f))
+						|| (right.is(Double.class) && right.as(Double.class) == 0d))
 					return ConstantPropagation.BOTTOM;
 				else
 					c = rem(left, right, pp);
@@ -290,13 +289,13 @@ public class ConstantPropagationDomain
 			Integer r = right.as(Integer.class);
 			c = l % r == 0
 					? new Constant(Int32Type.INSTANCE, l / r, pp.getLocation())
-					: new Constant(Float32Type.INSTANCE, l / (float) r, pp.getLocation());
-		} else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) / right.as(Integer.class), pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) / right.as(Float.class), pp.getLocation());
+					: new Constant(Float64Type.INSTANCE, l / (double) r, pp.getLocation());
+		} else if (left.is(Double.class) && right.is(Integer.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) / right.as(Integer.class), pp.getLocation());
+		else if (left.is(Integer.class) && right.is(Double.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Integer.class) / right.as(Double.class), pp.getLocation());
 		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) / right.as(Float.class), pp.getLocation());
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) / right.as(Double.class), pp.getLocation());
 		return c;
 	}
 
@@ -310,13 +309,13 @@ public class ConstantPropagationDomain
 			Integer r = right.as(Integer.class);
 			c = l % r == 0
 					? new Constant(Int32Type.INSTANCE, l % r, pp.getLocation())
-					: new Constant(Float32Type.INSTANCE, l % (float) r, pp.getLocation());
-		} else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) % right.as(Integer.class), pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) % right.as(Float.class), pp.getLocation());
+					: new Constant(Float64Type.INSTANCE, l % (double) r, pp.getLocation());
+		} else if (left.is(Double.class) && right.is(Integer.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) % right.as(Integer.class), pp.getLocation());
+		else if (left.is(Integer.class) && right.is(Double.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Integer.class) % right.as(Double.class), pp.getLocation());
 		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) % right.as(Float.class), pp.getLocation());
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) % right.as(Double.class), pp.getLocation());
 		return c;
 	}
 
@@ -328,14 +327,14 @@ public class ConstantPropagationDomain
 		if (left.is(Integer.class) && right.is(Integer.class))
 			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) + right.as(Integer.class),
 					pp.getLocation());
-		else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) + right.as(Integer.class),
+		else if (left.is(Double.class) && right.is(Integer.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) + right.as(Integer.class),
 					pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) + right.as(Float.class),
+		else if (left.is(Integer.class) && right.is(Double.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Integer.class) + right.as(Double.class),
 					pp.getLocation());
 		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) + right.as(Float.class),
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) + right.as(Double.class),
 					pp.getLocation());
 		return c;
 	}
@@ -348,14 +347,14 @@ public class ConstantPropagationDomain
 		if (left.is(Integer.class) && right.is(Integer.class))
 			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) - right.as(Integer.class),
 					pp.getLocation());
-		else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) - right.as(Integer.class),
+		else if (left.is(Double.class) && right.is(Integer.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) - right.as(Integer.class),
 					pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) - right.as(Float.class),
+		else if (left.is(Integer.class) && right.is(Double.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Integer.class) - right.as(Double.class),
 					pp.getLocation());
 		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) - right.as(Float.class),
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) - right.as(Double.class),
 					pp.getLocation());
 		return c;
 	}
@@ -368,14 +367,14 @@ public class ConstantPropagationDomain
 		if (left.is(Integer.class) && right.is(Integer.class))
 			c = new Constant(Int32Type.INSTANCE, left.as(Integer.class) * right.as(Integer.class),
 					pp.getLocation());
-		else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) * right.as(Integer.class),
+		else if (left.is(Double.class) && right.is(Integer.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) * right.as(Integer.class),
 					pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) * right.as(Float.class),
+		else if (left.is(Integer.class) && right.is(Double.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Integer.class) * right.as(Double.class),
 					pp.getLocation());
 		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) * right.as(Float.class),
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) * right.as(Double.class),
 					pp.getLocation());
 		return c;
 	}
@@ -453,13 +452,13 @@ public class ConstantPropagationDomain
 			if (superType.is32Bits()) {
 				if (!superType.isIntegral()) {
 					return new ConstantPropagation(
-							new Constant(Float32Type.INSTANCE,
-									(float) (Math.pow((double) left.as(Float.class), (double) right.as(Float.class))),
+							new Constant(Float64Type.INSTANCE,
+									(double) (Math.pow((double) left.as(Double.class), (double) right.as(Double.class))),
 									pp.getLocation()));
 				} else {
 					if (right.as(Integer.class) < 0) {
 						return new ConstantPropagation(
-								new Constant(Float32Type.INSTANCE, (float) (Math.pow((double) left.as(Integer.class),
+								new Constant(Float64Type.INSTANCE, (double) (Math.pow((double) left.as(Integer.class),
 										(double) right.as(Integer.class))), pp.getLocation()));
 
 					} else {

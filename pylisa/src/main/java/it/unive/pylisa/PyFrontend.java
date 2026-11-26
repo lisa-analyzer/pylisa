@@ -9,7 +9,7 @@ import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.program.cfg.statement.NaryStatement;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.type.NullType;
@@ -91,7 +91,7 @@ public class PyFrontend
 		types.registerType(StringType.INSTANCE);
 		types.registerType(PyBytesType.INSTANCE);
 		types.registerType(Int32Type.INSTANCE);
-		types.registerType(Float32Type.INSTANCE);
+		types.registerType(Float64Type.INSTANCE);
 		types.registerType(NullType.INSTANCE);
 		types.registerType(VoidType.INSTANCE);
 		types.registerType(Untyped.INSTANCE);

@@ -38,12 +38,12 @@ class Integral:
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 
 	method __truediv__: it.unive.pylisa.libraries.ints.IntTrueDiv
-		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		type it.unive.lisa.program.type.Float64Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.program.type.Int32Type::INSTANCE
 
 	method __rtruediv__: it.unive.pylisa.libraries.ints.IntRTrueDiv
-		type it.unive.lisa.program.type.Float32Type::INSTANCE
+		type it.unive.lisa.program.type.Float64Type::INSTANCE
 		param self type it.unive.lisa.program.type.Int32Type::INSTANCE
 		param other type it.unive.lisa.program.type.Int32Type::INSTANCE
 

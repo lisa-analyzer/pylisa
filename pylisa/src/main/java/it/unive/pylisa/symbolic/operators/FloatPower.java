@@ -1,6 +1,6 @@
 package it.unive.pylisa.symbolic.operators;
 
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.TypeSystem;
 import java.util.Collections;
@@ -34,6 +34,6 @@ public class FloatPower extends Power {
 			Set<Type> right) {
 		if (left.stream().noneMatch(Type::isNumericType) || right.stream().noneMatch(Type::isNumericType))
 			return Collections.emptySet();
-		return Collections.singleton(Float32Type.INSTANCE);
+		return Collections.singleton(Float64Type.INSTANCE);
 	}
 }

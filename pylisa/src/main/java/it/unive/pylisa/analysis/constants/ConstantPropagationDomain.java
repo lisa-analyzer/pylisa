@@ -6,7 +6,7 @@ import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -180,9 +180,9 @@ public class ConstantPropagationDomain
 			if (arg.is(Integer.class))
 				return new ConstantPropagation(
 						new Constant(Int32Type.INSTANCE, -1 * arg.as(Integer.class), pp.getLocation()));
-			else if (arg.is(Float.class))
+			else if (arg.is(Double.class))
 				return new ConstantPropagation(
-						new Constant(Float32Type.INSTANCE, -1 * arg.as(Float.class), pp.getLocation()));
+						new Constant(Float64Type.INSTANCE, -1 * arg.as(Double.class), pp.getLocation()));
 
 		if (operator == LogicalNegation.INSTANCE || operator == LogicalNot.INSTANCE) {
 			// not x, on the truthiness of x
@@ -274,7 +274,7 @@ public class ConstantPropagationDomain
 			Double d = v instanceof String ? PyNumbers.parseFloat((String) v)
 					: v instanceof Boolean ? ((Boolean) v ? 1.0 : 0.0)
 							: v instanceof Number ? ((Number) v).doubleValue() : null;
-			return new ConstantPropagation(new Constant(Float32Type.INSTANCE, d.floatValue(), pp.getLocation()));
+			return new ConstantPropagation(new Constant(Float64Type.INSTANCE, d.doubleValue(), pp.getLocation()));
 		}
 		return ConstantPropagation.TOP;
 	}
@@ -297,13 +297,13 @@ public class ConstantPropagationDomain
 				c = sum(left, right, pp);
 			else if (operator instanceof DivisionOperator)
 				if ((right.is(Integer.class) && right.as(Integer.class) == 0)
-						|| (right.is(Float.class) && right.as(Float.class) == 0f))
+						|| (right.is(Double.class) && right.as(Double.class) == 0d))
 					return ConstantPropagation.BOTTOM;
 				else
 					c = div(left, right, pp);
 			else if (operator instanceof RemainderOperator || operator instanceof ModuloOperator)
 				if ((right.is(Integer.class) && right.as(Integer.class) == 0)
-						|| (right.is(Float.class) && right.as(Float.class) == 0f))
+						|| (right.is(Double.class) && right.as(Double.class) == 0d))
 					return ConstantPropagation.BOTTOM;
 				else
 					c = rem(left, right, pp);
@@ -321,7 +321,7 @@ public class ConstantPropagationDomain
 					|| !right.constant.getStaticType().isNumericType())
 				return ConstantPropagation.TOP;
 			if ((right.is(Integer.class) && right.as(Integer.class) == 0)
-					|| (right.is(Float.class) && right.as(Float.class) == 0f))
+					|| (right.is(Double.class) && right.as(Double.class) == 0d))
 				return ConstantPropagation.BOTTOM;
 			return new ConstantPropagation(floorDiv(left, right, pp));
 		} else if (operator instanceof Modulo) {
@@ -332,7 +332,7 @@ public class ConstantPropagationDomain
 			if (!left.constant.getStaticType().isNumericType() || !right.constant.getStaticType().isNumericType())
 				return ConstantPropagation.TOP;
 			if ((right.is(Integer.class) && right.as(Integer.class) == 0)
-					|| (right.is(Float.class) && right.as(Float.class) == 0f))
+					|| (right.is(Double.class) && right.as(Double.class) == 0d))
 				return ConstantPropagation.BOTTOM;
 			return new ConstantPropagation(pymod(left, right, pp));
 		} else if (operator instanceof StringContains)
@@ -1112,9 +1112,9 @@ public class ConstantPropagationDomain
 			ProgramPoint pp) {
 		// python's true division always yields a float, even between ints
 		// that divide exactly (6 / 3 == 2.0)
-		float l = ((Number) left.getConstant()).floatValue();
-		float r = ((Number) right.getConstant()).floatValue();
-		return new Constant(Float32Type.INSTANCE, l / r, pp.getLocation());
+		double l = ((Number) left.getConstant()).doubleValue();
+		double r = ((Number) right.getConstant()).doubleValue();
+		return new Constant(Float64Type.INSTANCE, l / r, pp.getLocation());
 	}
 
 	private Constant floorDiv(
@@ -1126,15 +1126,15 @@ public class ConstantPropagationDomain
 		if (left.is(Integer.class) && right.is(Integer.class))
 			return new Constant(Int32Type.INSTANCE,
 					Math.floorDiv(left.as(Integer.class), right.as(Integer.class)), pp.getLocation());
-		else if (left.is(Float.class) && right.is(Integer.class))
-			return new Constant(Float32Type.INSTANCE,
-					(float) Math.floor(left.as(Float.class) / right.as(Integer.class)), pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			return new Constant(Float32Type.INSTANCE,
-					(float) Math.floor(left.as(Integer.class) / right.as(Float.class)), pp.getLocation());
+		else if (left.is(Double.class) && right.is(Integer.class))
+			return new Constant(Float64Type.INSTANCE,
+					(double) Math.floor(left.as(Double.class) / right.as(Integer.class)), pp.getLocation());
+		else if (left.is(Integer.class) && right.is(Double.class))
+			return new Constant(Float64Type.INSTANCE,
+					(double) Math.floor(left.as(Integer.class) / right.as(Double.class)), pp.getLocation());
 		else
-			return new Constant(Float32Type.INSTANCE,
-					(float) Math.floor(left.as(Float.class) / right.as(Float.class)), pp.getLocation());
+			return new Constant(Float64Type.INSTANCE,
+					(double) Math.floor(left.as(Double.class) / right.as(Double.class)), pp.getLocation());
 	}
 
 	private Constant pymod(
@@ -1146,20 +1146,20 @@ public class ConstantPropagationDomain
 		if (left.is(Integer.class) && right.is(Integer.class))
 			return new Constant(Int32Type.INSTANCE,
 					Math.floorMod(left.as(Integer.class), right.as(Integer.class)), pp.getLocation());
-		else if (left.is(Float.class) && right.is(Integer.class))
-			return floatPymod(left.as(Float.class), right.as(Integer.class), pp);
-		else if (left.is(Integer.class) && right.is(Float.class))
-			return floatPymod(left.as(Integer.class), right.as(Float.class), pp);
+		else if (left.is(Double.class) && right.is(Integer.class))
+			return floatPymod(left.as(Double.class), right.as(Integer.class), pp);
+		else if (left.is(Integer.class) && right.is(Double.class))
+			return floatPymod(left.as(Integer.class), right.as(Double.class), pp);
 		else
-			return floatPymod(left.as(Float.class), right.as(Float.class), pp);
+			return floatPymod(left.as(Double.class), right.as(Double.class), pp);
 	}
 
 	private Constant floatPymod(
-			float left,
-			float right,
+			double left,
+			double right,
 			ProgramPoint pp) {
-		float result = left - (float) Math.floor(left / right) * right;
-		return new Constant(Float32Type.INSTANCE, result, pp.getLocation());
+		double result = left - (double) Math.floor(left / right) * right;
+		return new Constant(Float64Type.INSTANCE, result, pp.getLocation());
 	}
 
 	private Constant rem(
@@ -1172,13 +1172,13 @@ public class ConstantPropagationDomain
 			Integer r = right.as(Integer.class);
 			c = l % r == 0
 					? new Constant(Int32Type.INSTANCE, l % r, pp.getLocation())
-					: new Constant(Float32Type.INSTANCE, l % (float) r, pp.getLocation());
-		} else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) % right.as(Integer.class), pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) % right.as(Float.class), pp.getLocation());
+					: new Constant(Float64Type.INSTANCE, l % (double) r, pp.getLocation());
+		} else if (left.is(Double.class) && right.is(Integer.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) % right.as(Integer.class), pp.getLocation());
+		else if (left.is(Integer.class) && right.is(Double.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Integer.class) % right.as(Double.class), pp.getLocation());
 		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) % right.as(Float.class), pp.getLocation());
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) % right.as(Double.class), pp.getLocation());
 		return c;
 	}
 
@@ -1196,14 +1196,14 @@ public class ConstantPropagationDomain
 				// 32-bit integers
 				return null;
 			}
-		else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) + right.as(Integer.class),
+		else if (left.is(Double.class) && right.is(Integer.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) + right.as(Integer.class),
 					pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) + right.as(Float.class),
+		else if (left.is(Integer.class) && right.is(Double.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Integer.class) + right.as(Double.class),
 					pp.getLocation());
 		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) + right.as(Float.class),
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) + right.as(Double.class),
 					pp.getLocation());
 		return c;
 	}
@@ -1223,14 +1223,14 @@ public class ConstantPropagationDomain
 				// 32-bit integers
 				return null;
 			}
-		else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) - right.as(Integer.class),
+		else if (left.is(Double.class) && right.is(Integer.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) - right.as(Integer.class),
 					pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) - right.as(Float.class),
+		else if (left.is(Integer.class) && right.is(Double.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Integer.class) - right.as(Double.class),
 					pp.getLocation());
 		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) - right.as(Float.class),
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) - right.as(Double.class),
 					pp.getLocation());
 		return c;
 	}
@@ -1250,14 +1250,14 @@ public class ConstantPropagationDomain
 				// 32-bit integers
 				return null;
 			}
-		else if (left.is(Float.class) && right.is(Integer.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) * right.as(Integer.class),
+		else if (left.is(Double.class) && right.is(Integer.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) * right.as(Integer.class),
 					pp.getLocation());
-		else if (left.is(Integer.class) && right.is(Float.class))
-			c = new Constant(Float32Type.INSTANCE, left.as(Integer.class) * right.as(Float.class),
+		else if (left.is(Integer.class) && right.is(Double.class))
+			c = new Constant(Float64Type.INSTANCE, left.as(Integer.class) * right.as(Double.class),
 					pp.getLocation());
 		else
-			c = new Constant(Float32Type.INSTANCE, left.as(Float.class) * right.as(Float.class),
+			c = new Constant(Float64Type.INSTANCE, left.as(Double.class) * right.as(Double.class),
 					pp.getLocation());
 		return c;
 	}
@@ -1351,7 +1351,7 @@ public class ConstantPropagationDomain
 			return ConstantPropagation.TOP;
 		// python's (-1.0) ** inf is 1.0, while java's is NaN
 		double res = b == -1.0 && Double.isInfinite(e) ? 1.0 : Math.pow(b, e);
-		return new ConstantPropagation(new Constant(Float32Type.INSTANCE, (float) res, pp.getLocation()));
+		return new ConstantPropagation(new Constant(Float64Type.INSTANCE, (double) res, pp.getLocation()));
 	}
 
 	private static boolean isIntegral(

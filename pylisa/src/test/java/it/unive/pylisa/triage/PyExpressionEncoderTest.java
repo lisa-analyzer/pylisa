@@ -10,7 +10,7 @@ import it.unive.lisa.program.CodeUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -45,7 +45,6 @@ import it.unive.lisa.triage.smt.Term;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
-import it.unive.pylisa.symbolic.PyFloatConstant;
 import it.unive.pylisa.symbolic.PyNoneConstant;
 import it.unive.pylisa.symbolic.operators.FloorDivision;
 import it.unive.pylisa.symbolic.operators.LogicalNot;
@@ -192,16 +191,13 @@ public class PyExpressionEncoderTest {
 			Object value) {
 		if (value == null)
 			return new PyNoneConstant(LOC);
-		if (value instanceof Double)
-			// a float literal
-			return new PyFloatConstant((Double) value, LOC);
 		Type type;
 		if (value instanceof Integer || value instanceof Long)
 			type = Int32Type.INSTANCE;
 		else if (value instanceof Boolean)
 			type = BoolType.INSTANCE;
 		else if (value instanceof Double || value instanceof Float)
-			type = Float32Type.INSTANCE;
+			type = Float64Type.INSTANCE;
 		else
 			type = StringType.INSTANCE;
 		return new Constant(type, value, LOC);
@@ -230,7 +226,7 @@ public class PyExpressionEncoderTest {
 		Type t = Untyped.INSTANCE;
 		switch (op) {
 		case "truediv":
-			return new BinaryExpression(Float32Type.INSTANCE, a, b, TrueDivision.INSTANCE, LOC);
+			return new BinaryExpression(Float64Type.INSTANCE, a, b, TrueDivision.INSTANCE, LOC);
 		case "floordiv":
 			return new BinaryExpression(t, a, b, FloorDivision.INSTANCE, LOC);
 		case "mod":
@@ -262,7 +258,7 @@ public class PyExpressionEncoderTest {
 		case "int":
 			return new BinaryExpression(Int32Type.INSTANCE, a, new PyNoneConstant(LOC), ToInt.INSTANCE, LOC);
 		case "float":
-			return new UnaryExpression(Float32Type.INSTANCE, a, ToFloat.INSTANCE, LOC);
+			return new UnaryExpression(Float64Type.INSTANCE, a, ToFloat.INSTANCE, LOC);
 		case "floor":
 			return new UnaryExpression(Int32Type.INSTANCE, a, Floor.INSTANCE, LOC);
 		case "str":
@@ -627,11 +623,11 @@ public class PyExpressionEncoderTest {
 
 	@Test
 	public void floatLiteralsAreTheirDecimalValues() throws SemanticException {
-		// 0.1 is parsed as a 32-bits number, but it is Python's 0.1
+		// Python's floats are 64-bits numbers, also for the analysis
 		Symbols symbols = new Symbols();
 		PyExpressionEncoder encoder = new PyExpressionEncoder(new SortPolicy(new HashMap<>()).withDoubleFloats(),
 				symbols);
-		Term term = new Constant(Float32Type.INSTANCE, 0.1f, LOC).accept(encoder);
+		Term term = new Constant(Float64Type.INSTANCE, 0.1d, LOC).accept(encoder);
 		assertEquals(FloatingPoints.literal(0.1d), term);
 	}
 

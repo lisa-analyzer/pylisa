@@ -22,7 +22,7 @@ import it.unive.lisa.program.cfg.statement.call.NativeCall;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import it.unive.lisa.program.type.BoolType;
-import it.unive.lisa.program.type.Float32Type;
+import it.unive.lisa.program.type.Float64Type;
 import it.unive.lisa.program.type.Int32Type;
 import it.unive.lisa.program.type.StringType;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -64,7 +64,7 @@ public class NondetList extends PyNative {
 	private static final Map<String, Type> NONDET_TYPES = Map.of(
 			"nondet_bool", BoolType.INSTANCE,
 			"nondet_int", Int32Type.INSTANCE,
-			"nondet_float", Float32Type.INSTANCE,
+			"nondet_float", Float64Type.INSTANCE,
 			"nondet_str", StringType.INSTANCE);
 
 	protected NondetList(
