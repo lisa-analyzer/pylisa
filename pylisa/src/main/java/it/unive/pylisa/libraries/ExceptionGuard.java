@@ -11,7 +11,6 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.type.BoolType;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.symbolic.value.PushAny;
 import it.unive.lisa.symbolic.value.UnaryExpression;
 import it.unive.lisa.symbolic.value.operator.unary.LogicalNegation;
 
@@ -26,8 +25,9 @@ import it.unive.lisa.symbolic.value.operator.unary.LogicalNegation;
  * the verification of the warnings sees under which condition the exception is
  * raised (see
  * {@link PyExceptions.Raising#raiseWhere(SymbolicExpression, boolean, AnalysisState, Statement, CFG, CodeLocation, Statement, String)}).
- * Branches whose condition is not expressed happen under an unknown condition
- * ({@link #maybe}).
+ * Exceptions whose condition is not expressed are raised telling the analysis
+ * that the executions might not all raise them (see
+ * {@link PyExceptions.Raising#raise(it.unive.lisa.lattices.Satisfiability, AnalysisState, CFG, CodeLocation, Statement, String)}).
  */
 public final class ExceptionGuard {
 
@@ -234,32 +234,4 @@ public final class ExceptionGuard {
 				context, pp, pp);
 	}
 
-	/**
-	 * Restricts the given state to the executions of a branch whose condition
-	 * is not expressed (e.g., an exception raised when an operand might have an
-	 * unsupported type, or when a complex condition on the operands might
-	 * hold): the branch happens under an unknown condition. The analysis is not
-	 * affected (the condition is any boolean), while the verification of the
-	 * warnings sees that the branch might not happen, and never takes it for
-	 * granted (the unknown value does not model an input of the program).
-	 *
-	 * @param <A>      the kind of {@link AbstractLattice} of the state
-	 * @param <D>      the kind of {@link AbstractDomain} of the analysis
-	 * @param analysis the analysis
-	 * @param context  the interprocedural context
-	 * @param state    the state
-	 * @param pp       the program point of the branch
-	 *
-	 * @return the restricted state
-	 *
-	 * @throws SemanticException if the analysis fails
-	 */
-	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> maybe(
-			Analysis<A, D> analysis,
-			ScopeId<?> context,
-			AnalysisState<A> state,
-			Statement pp)
-			throws SemanticException {
-		return analysis.assume(state, new PushAny(BoolType.INSTANCE, pp.getLocation()), context, pp, pp);
-	}
 }

@@ -43,12 +43,12 @@ import org.apache.commons.lang3.tuple.Pair;
  * allocates an instance of the given (built-in, field-less) exception class,
  * wraps it in a {@link CFGThrow}, and moves the resulting state to the error
  * channel. The move is <i>total</i> (see
- * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState.Error, ScopeId, ProgramPoint)})
+ * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState.Error, boolean, ScopeId, ProgramPoint)})
  * when all executions raise the exception, as in
  * {@link #raise(Analysis, ScopeId, AnalysisState, CFG, CodeLocation, Statement, String)},
  * whose returned state has an empty normal execution. When only some executions
  * raise it, the move must instead be <i>partial</i> (see
- * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState, AnalysisState.Error, ScopeId, ProgramPoint)}),
+ * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState, AnalysisState.Error, boolean, ScopeId, ProgramPoint)}),
  * knowing all the executions that continue normally: {@link Raising} collects
  * the raising executions until these are known.<br>
  * <br>
@@ -97,10 +97,51 @@ public final class PyExceptions {
 			Statement thrower,
 			String exceptionClassName)
 			throws SemanticException {
+		return raise(analysis, context, state, true, cfg, loc, thrower, exceptionClassName);
+	}
+
+	/**
+	 * Raises the given exception in all executions of the given state
+	 * (<i>total</i> move), as
+	 * {@link #raise(Analysis, ScopeId, AnalysisState, CFG, CodeLocation, Statement, String)},
+	 * telling the analysis whether all of them raise it or the state might also
+	 * hold executions that do not (see
+	 * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState.Error, boolean, ScopeId, ProgramPoint)}).
+	 *
+	 * @param <A>                the kind of {@link AbstractLattice} of the
+	 *                               state
+	 * @param <D>                the kind of {@link AbstractDomain} of the
+	 *                               analysis
+	 * @param analysis           the analysis
+	 * @param context            the interprocedural context where the
+	 *                               computation happens
+	 * @param state              the state of the executions raising the
+	 *                               exception
+	 * @param allExecutions      whether all the executions of the state raise
+	 *                               the exception
+	 * @param cfg                the cfg where the exception is raised
+	 * @param loc                the location where the exception is raised
+	 * @param thrower            the statement raising the exception
+	 * @param exceptionClassName the name of the class of the exception
+	 *
+	 * @return the state where the exception has been raised
+	 *
+	 * @throws SemanticException if the analysis fails
+	 */
+	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> AnalysisState<A> raise(
+			Analysis<A, D> analysis,
+			ScopeId<?> context,
+			AnalysisState<A> state,
+			boolean allExecutions,
+			CFG cfg,
+			CodeLocation loc,
+			Statement thrower,
+			String exceptionClassName)
+			throws SemanticException {
 		Pair<AnalysisState.Error, AnalysisState<A>> raising = prepare(analysis, context, state, cfg, loc, thrower,
 				exceptionClassName);
 		AnalysisState.Error error = raising.getLeft();
-		return analysis.moveExecutionToError(raising.getRight(), error, context, error.getThrower());
+		return analysis.moveExecutionToError(raising.getRight(), error, allExecutions, context, error.getThrower());
 	}
 
 	// yields the error raised by the given exception and the state of the
@@ -167,6 +208,10 @@ public final class PyExceptions {
 		// the state of the executions raising each error, not moved yet
 		private final Map<AnalysisState.Error, AnalysisState<A>> raised;
 
+		// the state of the executions that might raise each error, under an
+		// unknown condition, not moved yet
+		private final Map<AnalysisState.Error, AnalysisState<A>> uncertain;
+
 		// states without normal executions, whose errors have already been
 		// moved (e.g., the ones raised on a value of an operand, see
 		// raiseOfTypes)
@@ -185,6 +230,7 @@ public final class PyExceptions {
 			this.analysis = analysis;
 			this.context = context;
 			this.raised = new LinkedHashMap<>();
+			this.uncertain = new LinkedHashMap<>();
 			this.moved = new ArrayList<>();
 		}
 
@@ -396,6 +442,7 @@ public final class PyExceptions {
 		// raises the exception in all the executions of the state
 		private void collect(
 				AnalysisState<A> state,
+				boolean certain,
 				CFG cfg,
 				CodeLocation loc,
 				Statement thrower,
@@ -403,8 +450,9 @@ public final class PyExceptions {
 				throws SemanticException {
 			Pair<AnalysisState.Error, AnalysisState<A>> raising = prepare(analysis, context, state, cfg, loc, thrower,
 					exceptionClassName);
-			AnalysisState<A> previous = raised.get(raising.getLeft());
-			raised.put(raising.getLeft(),
+			Map<AnalysisState.Error, AnalysisState<A>> target = certain ? raised : uncertain;
+			AnalysisState<A> previous = target.get(raising.getLeft());
+			target.put(raising.getLeft(),
 					previous == null ? raising.getRight() : previous.lub(raising.getRight()));
 		}
 
@@ -413,7 +461,10 @@ public final class PyExceptions {
 		 * it is raised, according to {@code raises}: in none of them if it is
 		 * {@link Satisfiability#NOT_SATISFIED}, in all of them if it is
 		 * {@link Satisfiability#SATISFIED}, and under an unknown condition
-		 * otherwise (see {@link ExceptionGuard#maybe}), so that the executions
+		 * otherwise (the executions are moved telling the analysis that they
+		 * might not all raise it, see
+		 * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState, AnalysisState.Error, boolean, ScopeId, ProgramPoint)}),
+		 * so that the executions
 		 * raising it are not taken as all the executions of the state when the
 		 * condition raising it is not known (e.g. when the warnings are
 		 * verified). {@link Satisfiability#SATISFIED} is thus only for states
@@ -440,10 +491,8 @@ public final class PyExceptions {
 				throws SemanticException {
 			if (raises == Satisfiability.NOT_SATISFIED || raises == Satisfiability.BOTTOM)
 				return;
-			AnalysisState<A> raising = raises == Satisfiability.SATISFIED ? state
-					: ExceptionGuard.maybe(analysis, context, state, thrower);
-			if (!raising.getExecutionState().isBottom())
-				collect(raising, cfg, loc, thrower, exceptionClassName);
+			if (!state.getExecutionState().isBottom())
+				collect(state, raises == Satisfiability.SATISFIED, cfg, loc, thrower, exceptionClassName);
 		}
 
 		/**
@@ -564,7 +613,12 @@ public final class PyExceptions {
 				throws SemanticException {
 			AnalysisState<A> result = normal;
 			for (Map.Entry<AnalysisState.Error, AnalysisState<A>> entry : raised.entrySet())
-				result = analysis.moveExecutionToError(result, entry.getValue(), entry.getKey(),
+				result = analysis.moveExecutionToError(result, entry.getValue(), entry.getKey(), true,
+						context, entry.getKey().getThrower());
+			// the executions that might raise an error are moved telling the
+			// analysis that they might not all raise it
+			for (Map.Entry<AnalysisState.Error, AnalysisState<A>> entry : uncertain.entrySet())
+				result = analysis.moveExecutionToError(result, entry.getValue(), entry.getKey(), false,
 						context, entry.getKey().getThrower());
 			for (AnalysisState<A> errors : moved)
 				result = result.lub(errors);

@@ -21,7 +21,6 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import it.unive.pylisa.cfg.expression.PyBinaryDispatch;
 import it.unive.pylisa.cfg.type.PyClassType;
-import it.unive.pylisa.libraries.ExceptionGuard;
 import it.unive.pylisa.libraries.LibrarySpecificationProvider;
 import it.unive.pylisa.libraries.PyExceptions;
 import java.util.Set;
@@ -94,18 +93,18 @@ public class PyRaise extends NaryStatement {
 			Set<Type> types = analysis.getRuntimeTypesOf(state, e, context, this);
 			for (Type t : types) {
 				// the executions where the raised value has the type (see
-				// PyBinaryDispatch#ofType), under an unknown condition if they
-				// cannot be told apart from the ones of the other types
+				// PyBinaryDispatch#ofType): they might not all raise the
+				// exception if they cannot be told apart from the ones of the
+				// other types
 				AnalysisState<A> typed = PyBinaryDispatch.ofType(analysis, context, state, e, t, types, this);
-				if (!PyBinaryDispatch.checkable(t, types))
-					typed = ExceptionGuard.maybe(analysis, context, typed, this);
+				boolean exact = PyBinaryDispatch.checkable(t, types);
 				if (typed.getExecutionState().isBottom())
 					continue;
 				Type exception = exceptionType(t, base);
 				if (exception == null) {
 					// TypeError: exceptions must derive from BaseException
-					result = result.lub(PyExceptions.raise(analysis, context, forgetMetas(typed), getCFG(), loc, this,
-							LibrarySpecificationProvider.TYPE_ERROR));
+					result = result.lub(PyExceptions.raise(analysis, context, forgetMetas(typed), exact, getCFG(), loc,
+							this, LibrarySpecificationProvider.TYPE_ERROR));
 					continue;
 				}
 
@@ -115,7 +114,7 @@ public class PyRaise extends NaryStatement {
 				// as forgetting them later only affects the normal execution
 				sem = forgetMetas(sem);
 				result = result.lub(analysis.moveExecutionToError(sem.withExecutionExpression(thrown),
-						new AnalysisState.Error(exception, this), context, this));
+						new AnalysisState.Error(exception, this), exact, context, this));
 			}
 		}
 		return result;
