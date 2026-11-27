@@ -68,7 +68,8 @@ public class SVCOMPVerifier<A extends AbstractLattice<A>, D extends AbstractDoma
 	public static <A extends AbstractLattice<A>, D extends AbstractDomain<A>> FirstViolationVerifier<A,
 			D> firstViolation() {
 		return new FirstViolationVerifier<>(new ReachabilityVerifier<>(),
-				new PdrVerifier<A, D>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY).withUserInputs(new PyUserInputs())
+				new PdrVerifier<A, D>().withFixpointCheck(false).withEncoder(PyExpressionEncoder.FACTORY)
+						.withUserInputs(new PyUserInputs())
 						.withGlobalWrites(new PyGlobalWrites()).withHeapWrites(new PyHeapWrites()));
 	}
 

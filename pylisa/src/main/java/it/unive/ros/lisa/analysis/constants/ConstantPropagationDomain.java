@@ -453,7 +453,8 @@ public class ConstantPropagationDomain
 				if (!superType.isIntegral()) {
 					return new ConstantPropagation(
 							new Constant(Float64Type.INSTANCE,
-									(double) (Math.pow((double) left.as(Double.class), (double) right.as(Double.class))),
+									(double) (Math.pow((double) left.as(Double.class),
+											(double) right.as(Double.class))),
 									pp.getLocation()));
 				} else {
 					if (right.as(Integer.class) < 0) {

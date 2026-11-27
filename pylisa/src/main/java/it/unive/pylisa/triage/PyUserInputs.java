@@ -13,8 +13,8 @@ import java.util.Set;
 
 /**
  * The natives of the Python libraries whose unknown results are inputs provided
- * by the user (see {@link UserInputs}): {@code input()}, that reads the standard
- * input, and the nondeterministic choices of {@code _sv_verifier}.
+ * by the user (see {@link UserInputs}): {@code input()}, that reads the
+ * standard input, and the nondeterministic choices of {@code _sv_verifier}.
  *
  * @author <a href="mailto:luca.negrini@unive.it">Luca Negrini</a>
  */

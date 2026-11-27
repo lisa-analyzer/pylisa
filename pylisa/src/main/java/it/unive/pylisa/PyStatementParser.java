@@ -1,5 +1,8 @@
 package it.unive.pylisa;
 
+import static it.unive.pylisa.PyParsingUtils.getLine;
+import static it.unive.pylisa.PyParsingUtils.getLocation;
+
 import it.unive.lisa.program.ClassUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
@@ -263,8 +266,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import static it.unive.pylisa.PyParsingUtils.getLine;
-import static it.unive.pylisa.PyParsingUtils.getLocation;
 
 public class PyStatementParser
 		extends

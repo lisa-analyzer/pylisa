@@ -341,8 +341,7 @@ public final class PyExceptions {
 		 * {@link Analysis#ofCombination(AnalysisState, ScopeId, ProgramPoint, ProgramPoint[], SymbolicExpression[], it.unive.lisa.analysis.CombinationSemantics)},
 		 * as the value computed by the given program point, so that the
 		 * analysis might raise it only in the executions computing the value
-		 * (without the program point, it is raised under an unknown
-		 * condition).
+		 * (without the program point, it is raised under an unknown condition).
 		 *
 		 * @param state              the state of the executions that might
 		 *                               raise the exception
@@ -460,12 +459,11 @@ public final class PyExceptions {
 		 * otherwise (the executions are moved telling the analysis that they
 		 * might not all raise it, see
 		 * {@link Analysis#moveExecutionToError(AnalysisState, AnalysisState, AnalysisState.Error, boolean, ScopeId, ProgramPoint)}),
-		 * so that the executions
-		 * raising it are not taken as all the executions of the state when the
-		 * condition raising it is not known (e.g. when the warnings are
-		 * verified). {@link Satisfiability#SATISFIED} is thus only for states
-		 * restricted to the executions raising the exception, and every call
-		 * states which one it is.
+		 * so that the executions raising it are not taken as all the executions
+		 * of the state when the condition raising it is not known (e.g. when
+		 * the warnings are verified). {@link Satisfiability#SATISFIED} is thus
+		 * only for states restricted to the executions raising the exception,
+		 * and every call states which one it is.
 		 *
 		 * @param raises             whether the exception is raised
 		 * @param state              the state of the executions that might
@@ -496,9 +494,9 @@ public final class PyExceptions {
 		 * state where the given condition holds, yielding the ones where it
 		 * does not, that continue normally. The analysis decides whether the
 		 * condition holds (see {@link Analysis#satisfies}): if it surely does,
-		 * the exception is raised in all the executions; if it surely does
-		 * not, in none of them; otherwise, the state is restricted to the
-		 * executions where it holds to raise the exception (see
+		 * the exception is raised in all the executions; if it surely does not,
+		 * in none of them; otherwise, the state is restricted to the executions
+		 * where it holds to raise the exception (see
 		 * {@link ExceptionGuard#when}), and to the ones where it does not to
 		 * continue (see {@link ExceptionGuard#unless}). The executions where
 		 * the condition holds surely raise the exception only if {@code surely}
